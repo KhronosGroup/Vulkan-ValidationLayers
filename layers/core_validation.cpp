@@ -8518,7 +8518,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     skip |= LogError(
                         device, vuid,
                         "%s: Aspect mask for input attachment reference %d in subpass %d includes VK_IMAGE_ASPECT_METADATA_BIT.",
-                        function_name, i, j);
+                        function_name, j, i);
                 }
 
                 if (attachment_ref.attachment < pCreateInfo->attachmentCount) {
@@ -8553,6 +8553,19 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                              attachment_ref.aspectMask);
                         }
                     }
+                }
+
+                const VkFormatFeatureFlags valid_flags =
+                    VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_ref.attachment].format;
+                const VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(attachment_format);
+                if ((format_features & valid_flags) == 0) {
+                    vuid = use_rp2 ? "VUID-VkSubpassDescription2-pInputAttachments-02897"
+                                   : "VUID-VkSubpassDescription-pInputAttachments-02647";
+                    skip |= LogError(device, vuid,
+                                     "%s: Input attachment reference %d in subpass %d format (%s) does not contain "
+                                     "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                                     function_name, j, i, string_VkFormat(attachment_format));
                 }
             }
         }
@@ -8597,18 +8610,39 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                 string_VkSampleCountFlagBits(pCreateInfo->pAttachments[attachment_ref.attachment].samples));
                         }
                     }
+
+                    const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_ref.attachment].format;
+                    const VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(attachment_format);
+                    if ((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
+                        vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-02899"
+                                       : "VUID-VkSubpassDescription-pResolveAttachments-02649";
+                        skip |= LogError(device, vuid,
+                                         "%s: Resolve attachment reference %d in subpass %d format (%s) does not contain "
+                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
+                                         function_name, j, i, string_VkFormat(attachment_format));
+                    }
                 }
             }
         }
 
         if (subpass.pDepthStencilAttachment) {
-            if (subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                skip |= ValidateAttachmentIndex(rp_version, subpass.pDepthStencilAttachment->attachment,
-                                                pCreateInfo->attachmentCount, "Depth", function_name);
-                if (subpass.pDepthStencilAttachment->attachment < pCreateInfo->attachmentCount) {
-                    skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts,
-                                             subpass.pDepthStencilAttachment->attachment, ATTACHMENT_DEPTH,
+            const uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
+            if (attachment != VK_ATTACHMENT_UNUSED) {
+                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, "Depth", function_name);
+                if (attachment < pCreateInfo->attachmentCount) {
+                    skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment, ATTACHMENT_DEPTH,
                                              subpass.pDepthStencilAttachment->layout);
+                }
+
+                const VkFormat attachment_format = pCreateInfo->pAttachments[attachment].format;
+                const VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(attachment_format);
+                if ((format_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                    vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900"
+                                   : "VUID-VkSubpassDescription-pDepthStencilAttachment-02650";
+                    skip |= LogError(device, vuid,
+                                     "%s: Depth Stencil attachment in subpass %d format (%s) does not contain "
+                                     "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                                     function_name, i, string_VkFormat(attachment_format));
                 }
             }
         }
@@ -8682,6 +8716,17 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             string_VkSampleCountFlagBits(current_sample_count));
                         break;
                     }
+                }
+
+                const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_ref.attachment].format;
+                const VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(attachment_format);
+                if ((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
+                    vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-02898"
+                                   : "VUID-VkSubpassDescription-pColorAttachments-02648";
+                    skip |= LogError(device, vuid,
+                                     "%s: Color attachment reference %d in subpass %d format (%s) does not contain "
+                                     "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
+                                     function_name, j, i, string_VkFormat(attachment_format));
                 }
             }
 
@@ -11562,7 +11607,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
     }
 
     // Gets VkFormatFeatureFlags according to Sampler Ycbcr Conversion Format Features
-    // (vkspec.html#resources-sampler-ycbcr-conversion-format-features)
+    // (vkspec.html#potential-format-features)
     VkFormatFeatureFlags format_features = VK_FORMAT_FEATURE_FLAG_BITS_MAX_ENUM;
     if (conversion_format == VK_FORMAT_UNDEFINED) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
