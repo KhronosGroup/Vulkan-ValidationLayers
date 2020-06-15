@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.141 */
+/* Vulkan specification version: 1.2.145 */
 /*
  * Vulkan
  *
@@ -52,7 +52,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03538", "If update is VK_TRUE, srcAccelerationStructure must have been built before with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set in VkAccelerationStructureBuildGeometryInfoKHR::flags", "1.2-extensions"},
     {"VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03540", "If update is VK_TRUE, the srcAccelerationStructure and dstAccelerationStructure objects must either be the same object or not have any memory aliasing", "1.2-extensions"},
     {"VUID-VkAccelerationStructureBuildOffsetInfoKHR-primitiveOffset-03551", "For geometries of type VK_GEOMETRY_TYPE_TRIANGLES_KHR, if the geometry uses indices, the offset primitiveOffset from VkAccelerationStructureGeometryTrianglesDataKHR::indexData must be a multiple of the element size of VkAccelerationStructureGeometryTrianglesDataKHR::indexType", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureBuildOffsetInfoKHR-primitiveOffset-03552", "For geometries of type VK_GEOMETRY_TYPE_TRIANGLES_KHR, if the geometry doesn't use indices, the offset primitiveOffset from VkAccelerationStructureGeometryTrianglesDataKHR::vertexData must be a multiple of the component size of VkAccelerationStructureGeometryTrianglesDataKHR::vertexType", "1.2-extensions"},
+    {"VUID-VkAccelerationStructureBuildOffsetInfoKHR-primitiveOffset-03552", "For geometries of type VK_GEOMETRY_TYPE_TRIANGLES_KHR, if the geometry doesn't use indices, the offset primitiveOffset from VkAccelerationStructureGeometryTrianglesDataKHR::vertexData must be a multiple of the component size of VkAccelerationStructureGeometryTrianglesDataKHR::vertexFormat", "1.2-extensions"},
     {"VUID-VkAccelerationStructureBuildOffsetInfoKHR-primitiveOffset-03554", "For geometries of type VK_GEOMETRY_TYPE_AABBS_KHR, the offset primitiveOffset from VkAccelerationStructureGeometryAabbsDataKHR::data must be a multiple of 8", "1.2-extensions"},
     {"VUID-VkAccelerationStructureBuildOffsetInfoKHR-primitiveOffset-03555", "For geometries of type VK_GEOMETRY_TYPE_INSTANCES_KHR, the offset   primitiveOffset from   VkAccelerationStructureGeometryInstancesDataKHR::data must   be a multiple of 16 // TODO - Almost certainly should be more here", "1.2-extensions"},
     {"VUID-VkAccelerationStructureBuildOffsetInfoKHR-transformOffset-03553", "For geometries of type VK_GEOMETRY_TYPE_TRIANGLES_KHR, the offset transformOffset from VkAccelerationStructureGeometryTrianglesDataKHR::transformData must be a multiple of 16", "1.2-extensions"},
@@ -92,22 +92,21 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryAabbsDataKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545", "stride must be a multiple of 8", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureGeometryDataKHR-aabbs-parameter", "aabbs must be a valid VkAccelerationStructureGeometryAabbsDataKHR structure", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureGeometryDataKHR-instances-parameter", "instances must be a valid VkAccelerationStructureGeometryInstancesDataKHR structure", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureGeometryDataKHR-triangles-parameter", "triangles must be a valid VkAccelerationStructureGeometryTrianglesDataKHR structure", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryInstancesDataKHR-arrayOfPointers-03550", "If arrayOfPointers is true, each pointer must be aligned to 16 bytes", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryInstancesDataKHR-data-03549", "data must be aligned to 16 bytes", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryInstancesDataKHR-data-parameter", "data must be a valid VkDeviceOrHostAddressConstKHR union", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryInstancesDataKHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR", "1.2-extensions"},
+    {"VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter", "If geometryType is VK_GEOMETRY_TYPE_AABBS_KHR, the aabbs member of geometry must be a valid VkAccelerationStructureGeometryAabbsDataKHR structure", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryKHR-flags-parameter", "flags must be a valid combination of VkGeometryFlagBitsKHR values", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureGeometryKHR-geometry-parameter", "geometry must be a valid VkAccelerationStructureGeometryDataKHR union", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryKHR-geometryType-03541", "If geometryType is VK_GEOMETRY_TYPE_AABBS_KHR, the aabbs member of geometry must be a valid VkAccelerationStructureGeometryAabbsDataKHR structure", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryKHR-geometryType-03542", "If geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR, the triangles member of geometry must be a valid VkAccelerationStructureGeometryTrianglesDataKHR structure", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryKHR-geometryType-03543", "If geometryType is VK_GEOMETRY_TYPE_INSTANCES_KHR, the instances member of geometry must be a valid VkAccelerationStructureGeometryInstancesDataKHR structure", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter", "geometryType must be a valid VkGeometryTypeKHR value", "1.2-extensions"},
+    {"VUID-VkAccelerationStructureGeometryKHR-instances-parameter", "If geometryType is VK_GEOMETRY_TYPE_INSTANCES_KHR, the instances member of geometry must be a valid VkAccelerationStructureGeometryInstancesDataKHR structure", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR", "1.2-extensions"},
+    {"VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", "If geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR, the triangles member of geometry must be a valid VkAccelerationStructureGeometryTrianglesDataKHR structure", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexData-parameter", "If indexData is not 0, indexData must be a valid VkDeviceOrHostAddressConstKHR union", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter", "indexType must be a valid VkIndexType value", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
@@ -116,8 +115,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexData-parameter", "vertexData must be a valid VkDeviceOrHostAddressConstKHR union", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter", "vertexFormat must be a valid VkFormat value", "1.2-extensions"},
     {"VUID-VkAccelerationStructureInfoNV-flags-02592", "If flags has the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV bit set, then it must not have the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV bit set", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureInfoNV-flags-03486", "flags must be a valid combination of VkBuildAccelerationStructureFlagBitsNV values", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureInfoNV-flags-zerobitmask", "flags must be 0", "1.2-extensions"},
+    {"VUID-VkAccelerationStructureInfoNV-flags-parameter", "flags must be a valid combination of VkBuildAccelerationStructureFlagBitsNV values", "1.2-extensions"},
     {"VUID-VkAccelerationStructureInfoNV-geometryCount-02422", "geometryCount must be less than or equal to VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount", "1.2-extensions"},
     {"VUID-VkAccelerationStructureInfoNV-instanceCount-02423", "instanceCount must be less than or equal to VkPhysicalDeviceRayTracingPropertiesNV::maxInstanceCount", "1.2-extensions"},
     {"VUID-VkAccelerationStructureInfoNV-instanceData-02782", "If instanceData is not VK_NULL_HANDLE, instanceData must have been created with VK_BUFFER_USAGE_RAY_TRACING_BIT_NV usage flag", "1.2-extensions"},
@@ -410,7 +408,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBufferImageCopy-bufferImageHeight-00196", "bufferImageHeight must be 0, or greater than or equal to the height member of imageExtent", "1.2-extensions"},
     {"VUID-VkBufferImageCopy-bufferImageHeight-00204", "If the calling command's VkImage parameter is a compressed image, bufferImageHeight must be a multiple of the compressed texel block height", "1.0"},
     {"VUID-VkBufferImageCopy-bufferOffset-00193", "If the calling command's VkImage parameter's format is not a depth/stencil format, then bufferOffset must be a multiple of the format's texel block size", "1.0"},
-    {"VUID-VkBufferImageCopy-bufferOffset-00194", "bufferOffset must be a multiple of 4", "1.2-extensions"},
     {"VUID-VkBufferImageCopy-bufferOffset-00206", "If the calling command's VkImage parameter is a compressed image, bufferOffset must be a multiple of the compressed texel block size in bytes", "1.0"},
     {"VUID-VkBufferImageCopy-bufferOffset-01558", "If the calling command's VkImage parameter's format is not a depth/stencil format or a multi-planar format, then bufferOffset must be a multiple of the format's texel block size", "1.2-extensions"},
     {"VUID-VkBufferImageCopy-bufferOffset-01559", "If the calling command's VkImage parameter's format is a multi-planar format, then bufferOffset must be a multiple of the element size of the compatible format for the format and the aspectMask of the imageSubresource as defined in Compatible formats of planes of multi-planar formats", "1.2-extensions"},
@@ -428,19 +425,17 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBufferImageCopy-srcImage-00201", "If the calling command's srcImage (vkCmdCopyImageToBuffer) or dstImage (vkCmdCopyBufferToImage) is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then imageOffset.z must be 0 and imageExtent.depth must be 1", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-buffer-01190", "If buffer was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, srcQueueFamilyIndex and dstQueueFamilyIndex must both be VK_QUEUE_FAMILY_IGNORED", "1.0"},
     {"VUID-VkBufferMemoryBarrier-buffer-01191", "If buffer was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, at least one of srcQueueFamilyIndex and dstQueueFamilyIndex must be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
-    {"VUID-VkBufferMemoryBarrier-buffer-01192", "If buffer was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, srcQueueFamilyIndex and dstQueueFamilyIndex must either both be VK_QUEUE_FAMILY_IGNORED, or both be a valid queue family (see Queue Family Properties)", "1.0"},
-    {"VUID-VkBufferMemoryBarrier-buffer-01193", "If buffer was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE and srcQueueFamilyIndex is VK_QUEUE_FAMILY_IGNORED, dstQueueFamilyIndex must also be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
-    {"VUID-VkBufferMemoryBarrier-buffer-01196", "If buffer was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, and srcQueueFamilyIndex and dstQueueFamilyIndex are not VK_QUEUE_FAMILY_IGNORED, at least one of them must be the same as the family of the queue that will execute this barrier", "1.2-extensions"},
-    {"VUID-VkBufferMemoryBarrier-buffer-01763", "If buffer was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, and one of srcQueueFamilyIndex and dstQueueFamilyIndex is VK_QUEUE_FAMILY_IGNORED, the other must be VK_QUEUE_FAMILY_IGNORED or a special queue family reserved for external memory ownership transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
-    {"VUID-VkBufferMemoryBarrier-buffer-01764", "If buffer was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE and srcQueueFamilyIndex is not VK_QUEUE_FAMILY_IGNORED, it must be a valid queue family or a special queue family reserved for external memory transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
-    {"VUID-VkBufferMemoryBarrier-buffer-01765", "If buffer was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE and dstQueueFamilyIndex is not VK_QUEUE_FAMILY_IGNORED, it must be a valid queue family or a special queue family reserved for external memory transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-buffer-01931", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkBufferMemoryBarrier-buffer-04086", "If buffer was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, and srcQueueFamilyIndex and dstQueueFamilyIndex are not equal, srcQueueFamilyIndex and dstQueueFamilyIndex must be valid queue families", "1.0"},
+    {"VUID-VkBufferMemoryBarrier-buffer-04088", "If buffer was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, srcQueueFamilyIndex and dstQueueFamilyIndex are not equal, and one of srcQueueFamilyIndex and dstQueueFamilyIndex is a special queue family values reserved for external memory transfers, the other must be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
+    {"VUID-VkBufferMemoryBarrier-buffer-04089", "If buffer was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, and srcQueueFamilyIndex and dstQueueFamilyIndex are not equal, srcQueueFamilyIndex and dstQueueFamilyIndex must both be valid queue families, or one of the special queue family values reserved for external memory transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-offset-01187", "offset must be less than the size of buffer", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-sType-sType", "sType must be VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-size-01188", "If size is not equal to VK_WHOLE_SIZE, size must be greater than 0", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-size-01189", "If size is not equal to VK_WHOLE_SIZE, size must be less than or equal to than the size of buffer minus offset", "1.2-extensions"},
+    {"VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-04087", "If srcQueueFamilyIndex is not equal to dstQueueFamilyIndex, at least one must not be a special queue family reserved for external memory ownership transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
     {"VUID-VkBufferMemoryRequirementsInfo2-buffer-04005", "If buffer was created with the VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID external memory handle type, then buffer must be bound to memory", "1.2-extensions"},
     {"VUID-VkBufferMemoryRequirementsInfo2-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-VkBufferMemoryRequirementsInfo2-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
@@ -462,7 +457,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBufferViewCreateInfo-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkBufferViewCreateInfo-range-00928", "If range is not equal to VK_WHOLE_SIZE, range must be greater than 0", "1.2-extensions"},
     {"VUID-VkBufferViewCreateInfo-range-00929", "If range is not equal to VK_WHOLE_SIZE, range must be an integer multiple of the texel block size of format", "1.2-extensions"},
-    {"VUID-VkBufferViewCreateInfo-range-00930", "If range is not equal to VK_WHOLE_SIZE, range divided by the texel block size of format, multiplied by the number of texels per texel block for that format (as defined in the Compatible Formats table), must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements", "1.2-extensions"},
+    {"VUID-VkBufferViewCreateInfo-range-00930", "If range is not equal to VK_WHOLE_SIZE, the number of texel buffer elements given by ({lfloor}range / (texel block size){rfloor} {times} (texels per block)) where texel block size and texels per block are as defined in the Compatible Formats table for format, must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements", "1.2-extensions"},
+    {"VUID-VkBufferViewCreateInfo-range-04059", "If range is equal to VK_WHOLE_SIZE, the number of texel buffer elements given by ({lfloor}(size - offset) / (texel block size){rfloor} {times} (texels per block)) where size is the size of buffer, and texel block size and texels per block are as defined in the Compatible Formats table for format, must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements", "1.2-extensions"},
     {"VUID-VkBufferViewCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO", "1.2-extensions"},
     {"VUID-VkCalibratedTimestampInfoEXT-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkCalibratedTimestampInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT", "1.2-extensions"},
@@ -776,7 +772,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDeviceCreateInfo-pNext-00373", "If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-pNext-02829", "If the pNext chain includes a VkPhysicalDeviceVulkan11Features structure, then it must not include a VkPhysicalDevice16BitStorageFeatures, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceSamplerYcbcrConversionFeatures, or VkPhysicalDeviceShaderDrawParametersFeatures structure", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-pNext-02830", "If the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then it must not include a VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceBufferDeviceAddressFeatures, or VkPhysicalDeviceVulkanMemoryModelFeatures structure", "1.2-extensions"},
-    {"VUID-VkDeviceCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceRayTracingFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, or VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", "1.2-extensions"},
+    {"VUID-VkDeviceCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkDevicePrivateDataCreateInfoEXT, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDevicePrivateDataFeaturesEXT, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceRayTracingFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, or VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter", "pQueueCreateInfos must be a valid pointer to an array of queueCreateInfoCount valid VkDeviceQueueCreateInfo structures", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374", "ppEnabledExtensionNames must not contain both VK_KHR_maintenance1 and VK_AMD_negative_viewport_height", "1.0-extensions"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840", "ppEnabledExtensionNames must not contain VK_AMD_negative_viewport_height", "1.2-extensions"},
@@ -792,7 +788,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDeviceCreateInfo-queueFamilyIndex-00372", "The queueFamilyIndex member of each element of pQueueCreateInfos must be unique within pQueueCreateInfos", "1.0-extensions"},
     {"VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", "The queueFamilyIndex member of each element of pQueueCreateInfos must be unique within pQueueCreateInfos, except that two members can share the same queueFamilyIndex if one is a protected-capable queue and one is not a protected-capable queue", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO", "1.2-extensions"},
-    {"VUID-VkDeviceCreateInfo-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
+    {"VUID-VkDeviceCreateInfo-sType-unique", "The sType value of each struct in the pNext chain must be unique, with the exception of structures of type VkDevicePrivateDataCreateInfoEXT", "1.2-extensions"},
     {"VUID-VkDeviceDiagnosticsConfigCreateInfoNV-flags-parameter", "flags must be a valid combination of VkDeviceDiagnosticsConfigFlagBitsNV values", "1.2-extensions"},
     {"VUID-VkDeviceDiagnosticsConfigCreateInfoNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV", "1.2-extensions"},
     {"VUID-VkDeviceEventInfoEXT-deviceEvent-parameter", "deviceEvent must be a valid VkDeviceEventTypeEXT value", "1.2-extensions"},
@@ -845,7 +841,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO", "1.2-extensions"},
     {"VUID-VkDeviceMemoryOverallocationCreateInfoAMD-overallocationBehavior-parameter", "overallocationBehavior must be a valid VkMemoryOverallocationBehaviorAMD value", "1.2-extensions"},
     {"VUID-VkDeviceMemoryOverallocationCreateInfoAMD-sType-sType", "sType must be VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD", "1.2-extensions"},
-    {"VUID-VkDevicePrivateDataCreateInfoEXT-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkDevicePrivateDataCreateInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT", "1.2-extensions"},
     {"VUID-VkDeviceQueueCreateInfo-flags-02861", "If the protected memory feature is not enabled, the VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT bit of flags must not be set", "1.2-extensions"},
     {"VUID-VkDeviceQueueCreateInfo-flags-parameter", "flags must be a valid combination of VkDeviceQueueCreateFlagBits values", "1.2-extensions"},
@@ -909,7 +904,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDisplaySurfaceCreateInfoKHR-width-01256", "The width and height members of imageExtent must be less than the maxImageDimensions2D member of VkPhysicalDeviceLimits", "1.2-extensions"},
     {"VUID-VkDrawIndexedIndirectCommand-None-00552", "For a given vertex buffer binding, any attribute data fetched must be entirely contained within the corresponding vertex buffer binding, as described in Vertex Input Description", "1.2-extensions"},
     {"VUID-VkDrawIndexedIndirectCommand-firstInstance-00554", "If the drawIndirectFirstInstance feature is not enabled, firstInstance must be 0", "1.2-extensions"},
-    {"VUID-VkDrawIndexedIndirectCommand-indexSize-00553", "(indexSize * (firstIndex + indexCount) + offset) must be less than or equal to the size of the bound index buffer, with indexSize being based on the type specified by indexType, where the index buffer, indexType, and offset are specified via vkCmdBindIndexBuffer", "1.2-extensions"},
+    {"VUID-VkDrawIndexedIndirectCommand-indexSize-00553", "(indexSize {times} (firstIndex + indexCount) + offset) must be less than or equal to the size of the bound index buffer, with indexSize being based on the type specified by indexType, where the index buffer, indexType, and offset are specified via vkCmdBindIndexBuffer", "1.2-extensions"},
     {"VUID-VkDrawIndirectCommand-None-00500", "For a given vertex buffer binding, any attribute data fetched must be entirely contained within the corresponding vertex buffer binding, as described in Vertex Input Description", "1.2-extensions"},
     {"VUID-VkDrawIndirectCommand-firstInstance-00501", "If the drawIndirectFirstInstance feature is not enabled, firstInstance must be 0", "1.2-extensions"},
     {"VUID-VkDrawMeshTasksIndirectCommandNV-taskCount-02175", "taskCount must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount", "1.2-extensions"},
@@ -1008,6 +1003,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkFramebufferCreateInfo-flags-03203", "If flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, the usage member of any element of the pAttachmentImageInfos member of a VkFramebufferAttachmentsCreateInfo structure included in the pNext chain that refers to an attachment used as a depth/stencil resolve attachment by renderPass must include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkFramebufferCreateInfo-flags-03204", "If flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, the usage member of any element of the pAttachmentImageInfos member of a VkFramebufferAttachmentsCreateInfo structure included in the pNext chain that refers to an attachment used as an input attachment by renderPass must include VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkFramebufferCreateInfo-flags-03205", "If flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, at least one element of the pViewFormats member of any element of the pAttachmentImageInfos member of a VkFramebufferAttachmentsCreateInfo structure included in the pNext chain must be equal to the corresponding value of VkAttachmentDescription::format used to create renderPass", "1.2-extensions"},
+    {"VUID-VkFramebufferCreateInfo-flags-04113", "If flags does not include VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, each element of pAttachments must have been created with VkImageViewCreateInfo::viewType not equal to VK_IMAGE_VIEW_TYPE_3D", "1.2-extensions"},
     {"VUID-VkFramebufferCreateInfo-flags-parameter", "flags must be a valid combination of VkFramebufferCreateFlagBits values", "1.2-extensions"},
     {"VUID-VkFramebufferCreateInfo-height-00887", "height must be greater than 0", "1.2-extensions"},
     {"VUID-VkFramebufferCreateInfo-height-00888", "height must be less than or equal to VkPhysicalDeviceLimits::maxFramebufferHeight", "1.2-extensions"},
@@ -1149,6 +1145,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, and the sampleLocationsEnable member of a VkPipelineSampleLocationsStateCreateInfoEXT structure included in the pNext chain of pMultisampleState is VK_TRUE, sampleLocationsInfo.sampleLocationsPerPixel must equal rasterizationSamples", "1.2-extensions"},
     {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, and the viewportWScalingEnable member of a VkPipelineViewportWScalingStateCreateInfoNV structure, included in the pNext chain of pViewportState, is VK_TRUE, the pViewportWScalings member of the VkPipelineViewportWScalingStateCreateInfoNV must be a pointer to an array of VkPipelineViewportWScalingStateCreateInfoNV::viewportCount valid VkViewportWScalingNV structures", "1.2-extensions"},
     {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", "If the VK_EXT_depth_range_unrestricted extension is not enabled and no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_DEPTH_BOUNDS, and the depthBoundsTestEnable member of pDepthStencilState is VK_TRUE, the minDepthBounds and maxDepthBounds members of pDepthStencilState must be between 0.0 and 1.0, inclusive", "1.2-extensions"},
+    {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378", "If the extendedDynamicState feature is not enabled, there must be no element of the pDynamicStates member of pDynamicState set to VK_DYNAMIC_STATE_CULL_MODE_EXT, VK_DYNAMIC_STATE_FRONT_FACE_EXT, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT, VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT, or VK_DYNAMIC_STATE_STENCIL_OP_EXT", "1.2-extensions"},
+    {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03379", "If VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT is included in the pDynamicStates array then viewportCount must be zero", "1.2-extensions"},
+    {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380", "If VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT is included in the pDynamicStates array then scissorCount must be zero", "1.2-extensions"},
+    {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04056", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, and if pViewportState->pNext chain includes a VkPipelineViewportExclusiveScissorStateCreateInfoNV structure, and if its exclusiveScissorCount member is not 0, then its pExclusiveScissors member must be a valid pointer to an array of exclusiveScissorCount VkRect2D structures", "1.2-extensions"},
+    {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04057", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV, and if pViewportState->pNext chain includes a VkPipelineViewportShadingRateImageStateCreateInfoNV structure, then its pShadingRatePalettes member must be a valid pointer to an array of viewportCount valid VkShadingRatePaletteNV structures", "1.2-extensions"},
+    {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04058", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, and if pNext chain includes a VkPipelineDiscardRectangleStateCreateInfoEXT structure, and if its discardRectangleCount member is not 0, then its pDiscardRectangles member must be a valid pointer to an array of discardRectangleCount VkRect2D structures", "1.2-extensions"},
     {"VUID-VkGraphicsPipelineCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkGraphicsPipelineShaderGroupsCreateInfoNV, VkPipelineCompilerControlCreateInfoAMD, VkPipelineCreationFeedbackCreateInfoEXT, VkPipelineDiscardRectangleStateCreateInfoEXT, or VkPipelineRepresentativeFragmentTestStateCreateInfoNV", "1.2-extensions"},
     {"VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-parameter", "pRasterizationState must be a valid pointer to a valid VkPipelineRasterizationStateCreateInfo structure", "1.2-extensions"},
     {"VUID-VkGraphicsPipelineCreateInfo-pStages-00729", "If pStages includes a tessellation control shader stage, it must include a tessellation evaluation shader stage", "1.2-extensions"},
@@ -1415,47 +1417,46 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageDrmFormatModifierListCreateInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT", "1.2-extensions"},
     {"VUID-VkImageDrmFormatModifierPropertiesEXT-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkImageDrmFormatModifierPropertiesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT", "1.2-extensions"},
-    {"VUID-VkImageFormatListCreateInfo-flags-01579", "If VkImageCreateInfo::flags does not contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, viewFormatCount must be 0 or 1", "1.2-extensions"},
     {"VUID-VkImageFormatListCreateInfo-pViewFormats-parameter", "If viewFormatCount is not 0, pViewFormats must be a valid pointer to an array of viewFormatCount valid VkFormat values", "1.2-extensions"},
     {"VUID-VkImageFormatListCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO", "1.2-extensions"},
-    {"VUID-VkImageFormatListCreateInfo-viewFormatCount-01578", "If viewFormatCount is not 0, all of the formats in the pViewFormats array must be compatible with the format specified in the format field of VkImageCreateInfo, as described in the compatibility table", "1.2-extensions"},
-    {"VUID-VkImageFormatListCreateInfo-viewFormatCount-01580", "If viewFormatCount is not 0, VkImageCreateInfo::format must be in pViewFormats", "1.2-extensions"},
     {"VUID-VkImageFormatProperties2-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkAndroidHardwareBufferUsageANDROID, VkExternalImageFormatProperties, VkFilterCubicImageViewImageFormatPropertiesEXT, VkSamplerYcbcrConversionImageFormatProperties, or VkTextureLODGatherFormatPropertiesAMD", "1.2-extensions"},
     {"VUID-VkImageFormatProperties2-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2", "1.2-extensions"},
     {"VUID-VkImageFormatProperties2-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-image-01199", "If image was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, srcQueueFamilyIndex and dstQueueFamilyIndex must both be VK_QUEUE_FAMILY_IGNORED", "1.0"},
-    {"VUID-VkImageMemoryBarrier-image-01200", "If image was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, srcQueueFamilyIndex and dstQueueFamilyIndex must either both be VK_QUEUE_FAMILY_IGNORED, or both be a valid queue family (see Queue Family Properties)", "1.0"},
-    {"VUID-VkImageMemoryBarrier-image-01201", "If image was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE and srcQueueFamilyIndex is VK_QUEUE_FAMILY_IGNORED, dstQueueFamilyIndex must also be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-image-01205", "If image was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, and srcQueueFamilyIndex and dstQueueFamilyIndex are not VK_QUEUE_FAMILY_IGNORED, at least one of them must be the same as the family of the queue that will execute this barrier", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-image-01207", "If image has a depth/stencil format with both depth and stencil components, then the aspectMask member of subresourceRange must include both VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT", "1.1"},
     {"VUID-VkImageMemoryBarrier-image-01381", "If image was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, at least one of srcQueueFamilyIndex and dstQueueFamilyIndex must be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-image-01671", "If image has a color format and either the format is single-plane or the image is not disjoint then the aspectMask member of subresourceRange must only include VK_IMAGE_ASPECT_COLOR_BIT", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-image-01671", "If image has a single-plane color format or is not disjoint, then the aspectMask member of subresourceRange must be VK_IMAGE_ASPECT_COLOR_BIT", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-image-01672", "If image has a multi-planar format and the image is disjoint, then the aspectMask member of subresourceRange must include either at least one of VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, and VK_IMAGE_ASPECT_PLANE_2_BIT; or must include VK_IMAGE_ASPECT_COLOR_BIT", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-image-01673", "If image has a multi-planar format with only two planes, then the aspectMask member of subresourceRange must not include VK_IMAGE_ASPECT_PLANE_2_BIT", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-image-01766", "If image was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, and one of srcQueueFamilyIndex and dstQueueFamilyIndex is VK_QUEUE_FAMILY_IGNORED, the other must be VK_QUEUE_FAMILY_IGNORED or a special queue family reserved for external memory transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-image-01767", "If image was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE and srcQueueFamilyIndex is not VK_QUEUE_FAMILY_IGNORED, it must be a valid queue family or a special queue family reserved for external memory transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-image-01768", "If image was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE and dstQueueFamilyIndex is not VK_QUEUE_FAMILY_IGNORED, it must be a valid queue family or a special queue family reserved for external memory transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-image-01932", "If image is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-image-02902", "If image has a color format, then the aspectMask member of subresourceRange must only include VK_IMAGE_ASPECT_COLOR_BIT", "1.0"},
+    {"VUID-VkImageMemoryBarrier-image-02902", "If image has a color format, then the aspectMask member of subresourceRange must be VK_IMAGE_ASPECT_COLOR_BIT", "1.0"},
     {"VUID-VkImageMemoryBarrier-image-03319", "If image has a depth/stencil format with both depth and stencil and the separateDepthStencilLayouts feature is enabled, then the aspectMask member of subresourceRange must include either or both VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-image-03320", "If image has a depth/stencil format with both depth and stencil and the separateDepthStencilLayouts feature is not enabled, then the aspectMask member of subresourceRange must include both VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-image-04069", "If image was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, and srcQueueFamilyIndex and dstQueueFamilyIndex are not equal, srcQueueFamilyIndex and dstQueueFamilyIndex must be valid queue families", "1.0"},
+    {"VUID-VkImageMemoryBarrier-image-04071", "If image was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, srcQueueFamilyIndex and dstQueueFamilyIndex are not equal, and one of srcQueueFamilyIndex and dstQueueFamilyIndex is a special queue family values reserved for external memory transfers, the other must be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-image-04072", "If image was created with a sharing mode of VK_SHARING_MODE_EXCLUSIVE, and srcQueueFamilyIndex and dstQueueFamilyIndex are not equal, srcQueueFamilyIndex and dstQueueFamilyIndex must both be valid queue families, or one of the special queue family values reserved for external memory transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-image-parameter", "image must be a valid VkImage handle", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-newLayout-01198", "newLayout must not be VK_IMAGE_LAYOUT_UNDEFINED or VK_IMAGE_LAYOUT_PREINITIALIZED", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-newLayout-01198", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, newLayout must not be VK_IMAGE_LAYOUT_UNDEFINED or VK_IMAGE_LAYOUT_PREINITIALIZED", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-newLayout-parameter", "newLayout must be a valid VkImageLayout value", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01197", "oldLayout must be VK_IMAGE_LAYOUT_UNDEFINED or the current layout of the image subresources affected by the barrier", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01208", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL then image must have been created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01209", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01210", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01211", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL then image must have been created with VK_IMAGE_USAGE_SAMPLED_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01212", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL then image must have been created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01213", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL then image must have been created with VK_IMAGE_USAGE_TRANSFER_DST_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01658", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-01659", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
-    {"VUID-VkImageMemoryBarrier-oldLayout-02088", "If either oldLayout or newLayout is VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV then image must have been created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01197", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, oldLayout must be VK_IMAGE_LAYOUT_UNDEFINED or the current layout of the image subresources affected by the barrier", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01208", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL then image must have been created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01209", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01210", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01211", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL then image must have been created with VK_IMAGE_USAGE_SAMPLED_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01212", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL then image must have been created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01213", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL then image must have been created with VK_IMAGE_USAGE_TRANSFER_DST_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01658", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-01659", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-oldLayout-02088", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV then image must have been created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-oldLayout-parameter", "oldLayout must be a valid VkImageLayout value", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-pNext-pNext", "pNext must be NULL or a pointer to a valid instance of VkSampleLocationsInfoEXT", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04065", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR then image must have been created with at least one of VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_USAGE_SAMPLED_BIT, or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04066", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04067", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR then image must have been created with at least one of VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_USAGE_SAMPLED_BIT, or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04068", "If srcQueueFamilyIndex and dstQueueFamilyIndex define a queue family ownership transfer or oldLayout and newLayout define a image layout transition, and oldLayout or newLayout is VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR then image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT set", "1.2-extensions"},
+    {"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04070", "If srcQueueFamilyIndex is not equal to dstQueueFamilyIndex, at least one must not be a special queue family reserved for external memory ownership transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-subresourceRange-01486", "subresourceRange.baseMipLevel must be less than the mipLevels specified in VkImageCreateInfo when image was created", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-subresourceRange-01488", "subresourceRange.baseArrayLayer must be less than the arrayLayers specified in VkImageCreateInfo when image was created", "1.2-extensions"},
     {"VUID-VkImageMemoryBarrier-subresourceRange-01724", "If subresourceRange.levelCount is not VK_REMAINING_MIP_LEVELS, subresourceRange.baseMipLevel + subresourceRange.levelCount must be less than or equal to the mipLevels specified in VkImageCreateInfo when image was created", "1.2-extensions"},
@@ -1522,13 +1523,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231", "If the decodeModeSharedExponent feature is not enabled, decodeMode must not be VK_FORMAT_E5B9G9R9_UFLOAT_PACK32", "1.2-extensions"},
     {"VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02232", "If decodeMode is VK_FORMAT_R8G8B8A8_UNORM the image view must not include blocks using any of the ASTC HDR modes", "1.2-extensions"},
     {"VUID-VkImageViewASTCDecodeModeEXT-decodeMode-parameter", "decodeMode must be a valid VkFormat value", "1.2-extensions"},
-    {"VUID-VkImageViewASTCDecodeModeEXT-format-02233", "format of the image view must be one of VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_FORMAT_ASTC_4x4_SRGB_BLOCK, VK_FORMAT_ASTC_5x4_UNORM_BLOCK, VK_FORMAT_ASTC_5x4_SRGB_BLOCK, VK_FORMAT_ASTC_5x5_UNORM_BLOCK, VK_FORMAT_ASTC_5x5_SRGB_BLOCK, VK_FORMAT_ASTC_6x5_UNORM_BLOCK, VK_FORMAT_ASTC_6x5_SRGB_BLOCK, VK_FORMAT_ASTC_6x6_UNORM_BLOCK, VK_FORMAT_ASTC_6x6_SRGB_BLOCK, VK_FORMAT_ASTC_8x5_UNORM_BLOCK, VK_FORMAT_ASTC_8x5_SRGB_BLOCK, VK_FORMAT_ASTC_8x6_UNORM_BLOCK, VK_FORMAT_ASTC_8x6_SRGB_BLOCK, VK_FORMAT_ASTC_8x8_UNORM_BLOCK, VK_FORMAT_ASTC_8x8_SRGB_BLOCK, VK_FORMAT_ASTC_10x5_UNORM_BLOCK, VK_FORMAT_ASTC_10x5_SRGB_BLOCK, VK_FORMAT_ASTC_10x6_UNORM_BLOCK, VK_FORMAT_ASTC_10x6_SRGB_BLOCK, VK_FORMAT_ASTC_10x8_UNORM_BLOCK, VK_FORMAT_ASTC_10x8_SRGB_BLOCK, VK_FORMAT_ASTC_10x10_UNORM_BLOCK, VK_FORMAT_ASTC_10x10_SRGB_BLOCK, VK_FORMAT_ASTC_12x10_UNORM_BLOCK, VK_FORMAT_ASTC_12x10_SRGB_BLOCK, VK_FORMAT_ASTC_12x12_UNORM_BLOCK, or VK_FORMAT_ASTC_12x12_SRGB_BLOCK", "1.2-extensions"},
+    {"VUID-VkImageViewASTCDecodeModeEXT-format-04084", "format of the image view must be one of the ASTC Compressed Image Formats", "1.2-extensions"},
     {"VUID-VkImageViewASTCDecodeModeEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT", "1.2-extensions"},
     {"VUID-VkImageViewAddressPropertiesNVX-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkImageViewAddressPropertiesNVX-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-None-02273", "The format features of the resultant image view must contain at least one bit", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-components-parameter", "components must be a valid VkComponentMapping structure", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-flags-02572", "If dynamic fragment density map feature is not enabled, flags must not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-flags-04083", "If flags dose not contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and the pNext chain include a VkImageFormatListCreateInfo structure then VkImageFormatListCreateInfo::viewFormatCount must be 0 or 1", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-flags-parameter", "flags must be a valid combination of VkImageViewCreateFlagBits values", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-format-parameter", "format must be a valid VkFormat value", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-01003", "If image was not created with VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT then viewType must not be VK_IMAGE_VIEW_TYPE_CUBE or VK_IMAGE_VIEW_TYPE_CUBE_ARRAY", "1.2-extensions"},
@@ -1550,19 +1552,20 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageViewCreateInfo-image-02087", "If image was created with usage containing VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, format must be VK_FORMAT_R8_UINT", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-02399", "If image has an external format, format must be VK_FORMAT_UNDEFINED", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-02400", "If image has an external format, the pNext chain must include a VkSamplerYcbcrConversionInfo structure with a conversion object created with the same external format as image", "1.2-extensions"},
-    {"VUID-VkImageViewCreateInfo-image-02401", "If image has an external format, all members of components must be VK_COMPONENT_SWIZZLE_IDENTITY", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-image-02401", "If image has an external format, all members of components must be the identity swizzle", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-02569", "image must have been created with a usage value containing at least one of VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, or VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT", "default"},
     {"VUID-VkImageViewCreateInfo-image-02570", "image must have been created with a usage value containing at least one of VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, or VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-02571", "If image was created with usage containing VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, subresourceRange.levelCount must be 1", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-02573", "If dynamic fragment density map feature is not enabled and image was created with usage containing VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, flags must not contain any of VK_IMAGE_CREATE_PROTECTED_BIT, VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-02724", "If image is a 3D image created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT set, and viewType is VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY, subresourceRange.baseArrayLayer must be less than the depth computed from baseMipLevel and extent.depth specified in VkImageCreateInfo when image was created, according to the formula defined in Image Miplevel Sizing", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-parameter", "image must be a valid VkImage handle", "1.2-extensions"},
-    {"VUID-VkImageViewCreateInfo-pNext-01585", "If a VkImageFormatListCreateInfo structure was included in the pNext chain of the VkImageCreateInfo structure used when creating image and the viewFormatCount field of VkImageFormatListCreateInfo is not zero then format must be one of the formats in VkImageFormatListCreateInfo::pViewFormats", "1.2-extensions"},
-    {"VUID-VkImageViewCreateInfo-pNext-01970", "If the pNext chain includes a VkSamplerYcbcrConversionInfo structure with a conversion value other than VK_NULL_HANDLE, all members of components must have the value VK_COMPONENT_SWIZZLE_IDENTITY", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-pNext-01585", "If a VkImageFormatListCreateInfo structure was included in the pNext chain of the VkImageCreateInfo structure used when creating image and VkImageFormatListCreateInfo::viewFormatCount is not zero then format must be one of the formats in VkImageFormatListCreateInfo::pViewFormats", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-pNext-01970", "If the pNext chain includes a VkSamplerYcbcrConversionInfo structure with a conversion value other than VK_NULL_HANDLE, all members of components must have the identity swizzle", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-02661", "If the pNext chain includes a VkImageViewUsageCreateInfo structure, its usage member must not include any bits that were not set in the usage member of the VkImageCreateInfo structure used to create image", "1.2-khr-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-02662", "If the pNext chain includes a VkImageViewUsageCreateInfo structure, and image was not created with a VkImageStencilUsageCreateInfo structure included in the pNext chain of VkImageCreateInfo, its usage member must not include any bits that were not set in the usage member of the VkImageCreateInfo structure used to create image", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-02663", "If the pNext chain includes a VkImageViewUsageCreateInfo structure, image was created with a VkImageStencilUsageCreateInfo structure included in the pNext chain of VkImageCreateInfo, and subResourceRange.aspectMask includes VK_IMAGE_ASPECT_STENCIL_BIT, the usage member of the VkImageViewUsageCreateInfo instance must not include any bits that were not set in the usage member of the VkImageStencilUsageCreateInfo structure used to create image", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-02664", "If the pNext chain includes a VkImageViewUsageCreateInfo structure, image was created with a VkImageStencilUsageCreateInfo structure included in the pNext chain of VkImageCreateInfo, and subResourceRange.aspectMask includes bits other than VK_IMAGE_ASPECT_STENCIL_BIT, the usage member of the VkImageViewUsageCreateInfo structure must not include any bits that were not set in the usage member of the VkImageCreateInfo structure used to create image", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-pNext-04082", "If a VkImageFormatListCreateInfo structure was included in the pNext chain of the VkImageCreateInfo structure used when creating image and VkImageFormatListCreateInfo::viewFormatCount is not zero then all of the formats in VkImageFormatListCreateInfo::pViewFormats must be compatible with the format as described in the compatibility table", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkImageViewASTCDecodeModeEXT, VkImageViewUsageCreateInfo, or VkSamplerYcbcrConversionInfo", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
@@ -1599,7 +1602,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageViewUsageCreateInfo-usage-parameter", "usage must be a valid combination of VkImageUsageFlagBits values", "1.2-extensions"},
     {"VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask", "usage must not be 0", "1.2-extensions"},
     {"VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01880", "If buffer is not NULL, Android hardware buffers must be supported for import, as reported by VkExternalImageFormatProperties or VkExternalBufferProperties", "1.2-extensions"},
-    {"VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881", "If buffer is not NULL, it must be a valid Android hardware buffer object with AHardwareBuffer_Desc::format and AHardwareBuffer_Desc::usage compatible with Vulkan as described in Android Hardware Buffers", "1.2-extensions"},
+    {"VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881", "If buffer is not NULL, it must be a valid Android hardware buffer object with AHardwareBuffer_Desc::usage compatible with Vulkan as described in Android Hardware Buffers", "1.2-extensions"},
     {"VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-parameter", "buffer must be a valid pointer to an AHardwareBuffer value", "1.2-extensions"},
     {"VUID-VkImportAndroidHardwareBufferInfoANDROID-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID", "1.2-extensions"},
     {"VUID-VkImportFenceFdInfoKHR-fd-01541", "fd must obey any requirements listed for handleType in external fence handle types compatibility", "1.2-extensions"},
@@ -1769,7 +1772,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkMemoryAllocateInfo-pNext-00641", "If the pNext chain includes a VkImportMemoryWin32HandleInfoKHR structure, it must not include a VkImportMemoryWin32HandleInfoNV structure", "1.2-extensions"},
     {"VUID-VkMemoryAllocateInfo-pNext-01874", "If the parameters do not define an import operation, and the pNext chain includes a VkExportMemoryAllocateInfo structure with VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID included in its handleTypes member, and the pNext chain includes a VkMemoryDedicatedAllocateInfo structure with image not equal to VK_NULL_HANDLE, then allocationSize must be 0, otherwise allocationSize must be greater than 0", "1.2-extensions"},
     {"VUID-VkMemoryAllocateInfo-pNext-02384", "If the parameters define an import operation and the external handle type is VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID, and the pNext chain does not include a VkMemoryDedicatedAllocateInfo structure or VkMemoryDedicatedAllocateInfo::image is VK_NULL_HANDLE, the Android hardware buffer must have a AHardwareBuffer_Desc::format of AHARDWAREBUFFER_FORMAT_BLOB and a AHardwareBuffer_Desc::usage that includes AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER", "1.2-extensions"},
-    {"VUID-VkMemoryAllocateInfo-pNext-02386", "If the parameters define an import operation, the external handle is an Android hardware buffer, and the pNext chain includes a VkMemoryDedicatedAllocateInfo with image that is not VK_NULL_HANDLE, the Android hardware buffer's AHardwareBuffer::usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT or AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE", "1.2-extensions"},
+    {"VUID-VkMemoryAllocateInfo-pNext-02386", "If the parameters define an import operation, the external handle is an Android hardware buffer, and the pNext chain includes a VkMemoryDedicatedAllocateInfo with image that is not VK_NULL_HANDLE, the Android hardware buffer's AHardwareBuffer::usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER or AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE", "1.2-extensions"},
     {"VUID-VkMemoryAllocateInfo-pNext-02387", "If the parameters define an import operation, the external handle is an Android hardware buffer, and the pNext chain includes a VkMemoryDedicatedAllocateInfo with image that is not VK_NULL_HANDLE, the format of image must be VK_FORMAT_UNDEFINED or the format returned by vkGetAndroidHardwareBufferPropertiesANDROID in VkAndroidHardwareBufferFormatPropertiesANDROID::format for the Android hardware buffer", "1.2-extensions"},
     {"VUID-VkMemoryAllocateInfo-pNext-02388", "If the parameters define an import operation, the external handle is an Android hardware buffer, and the pNext chain includes a VkMemoryDedicatedAllocateInfo structure with image that is not VK_NULL_HANDLE, the width, height, and array layer dimensions of image and the Android hardware buffer's AHardwareBuffer_Desc must be identical", "1.2-extensions"},
     {"VUID-VkMemoryAllocateInfo-pNext-02389", "If the parameters define an import operation, the external handle is an Android hardware buffer, and the pNext chain includes a VkMemoryDedicatedAllocateInfo structure with image that is not VK_NULL_HANDLE, and the Android hardware buffer's AHardwareBuffer::usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE, the image must have a complete mipmap chain", "1.2-extensions"},
@@ -1854,9 +1857,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPerformanceStreamMarkerInfoINTEL-marker-02735", "The value written by the application into marker must only used the valid bits as reported by vkGetPerformanceParameterINTEL with the VK_PERFORMANCE_PARAMETER_TYPE_STREAM_MARKER_VALID_BITS_INTEL", "1.2-extensions"},
     {"VUID-VkPerformanceStreamMarkerInfoINTEL-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkPerformanceStreamMarkerInfoINTEL-sType-sType", "sType must be VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL", "1.2-extensions"},
-    {"VUID-VkPerformanceValueDataINTEL-valueString-parameter", "valueString must be a null-terminated UTF-8 string", "1.2-extensions"},
-    {"VUID-VkPerformanceValueINTEL-data-parameter", "data must be a valid VkPerformanceValueDataINTEL union", "1.2-extensions"},
     {"VUID-VkPerformanceValueINTEL-type-parameter", "type must be a valid VkPerformanceValueTypeINTEL value", "1.2-extensions"},
+    {"VUID-VkPerformanceValueINTEL-valueString-parameter", "If type is VK_PERFORMANCE_VALUE_TYPE_STRING_INTEL, the valueString member of data must be a null-terminated UTF-8 string", "1.2-extensions"},
     {"VUID-VkPhysicalDevice16BitStorageFeatures-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES", "1.2-extensions"},
     {"VUID-VkPhysicalDevice8BitStorageFeatures-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceASTCDecodeFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT", "1.2-extensions"},
@@ -1885,6 +1887,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPhysicalDeviceDiscardRectanglePropertiesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceDriverProperties-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceExclusiveScissorFeaturesNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV", "1.2-extensions"},
+    {"VUID-VkPhysicalDeviceExtendedDynamicStateFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceExternalBufferInfo-flags-parameter", "flags must be a valid combination of VkBufferCreateFlagBits values", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceExternalBufferInfo-handleType-parameter", "handleType must be a valid VkExternalMemoryHandleTypeFlagBits value", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceExternalBufferInfo-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
@@ -1954,7 +1957,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT", "1.2-extensions"},
     {"VUID-VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR", "1.2-extensions"},
     {"VUID-VkPhysicalDevicePointClippingProperties-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES", "1.2-extensions"},
-    {"VUID-VkPhysicalDevicePrivateDataFeaturesEXT-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkPhysicalDevicePrivateDataFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceProperties2-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT, VkPhysicalDeviceConservativeRasterizationPropertiesEXT, VkPhysicalDeviceCooperativeMatrixPropertiesNV, VkPhysicalDeviceCustomBorderColorPropertiesEXT, VkPhysicalDeviceDepthStencilResolveProperties, VkPhysicalDeviceDescriptorIndexingProperties, VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV, VkPhysicalDeviceDiscardRectanglePropertiesEXT, VkPhysicalDeviceDriverProperties, VkPhysicalDeviceExternalMemoryHostPropertiesEXT, VkPhysicalDeviceFloatControlsProperties, VkPhysicalDeviceFragmentDensityMapPropertiesEXT, VkPhysicalDeviceIDProperties, VkPhysicalDeviceInlineUniformBlockPropertiesEXT, VkPhysicalDeviceLineRasterizationPropertiesEXT, VkPhysicalDeviceMaintenance3Properties, VkPhysicalDeviceMeshShaderPropertiesNV, VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX, VkPhysicalDeviceMultiviewProperties, VkPhysicalDevicePCIBusInfoPropertiesEXT, VkPhysicalDevicePerformanceQueryPropertiesKHR, VkPhysicalDevicePointClippingProperties, VkPhysicalDeviceProtectedMemoryProperties, VkPhysicalDevicePushDescriptorPropertiesKHR, VkPhysicalDeviceRayTracingPropertiesKHR, VkPhysicalDeviceRayTracingPropertiesNV, VkPhysicalDeviceRobustness2PropertiesEXT, VkPhysicalDeviceSampleLocationsPropertiesEXT, VkPhysicalDeviceSamplerFilterMinmaxProperties, VkPhysicalDeviceShaderCoreProperties2AMD, VkPhysicalDeviceShaderCorePropertiesAMD, VkPhysicalDeviceShaderSMBuiltinsPropertiesNV, VkPhysicalDeviceShadingRateImagePropertiesNV, VkPhysicalDeviceSubgroupProperties, VkPhysicalDeviceSubgroupSizeControlPropertiesEXT, VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT, VkPhysicalDeviceTimelineSemaphoreProperties, VkPhysicalDeviceTransformFeedbackPropertiesEXT, VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT, VkPhysicalDeviceVulkan11Properties, or VkPhysicalDeviceVulkan12Properties", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceProperties2-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2", "1.2-extensions"},
@@ -2295,15 +2297,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027", "If the multiple viewports feature is not enabled, exclusiveScissorCount must be 0 or 1", "1.2-extensions"},
     {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028", "exclusiveScissorCount must be less than or equal to VkPhysicalDeviceLimits::maxViewports", "1.2-extensions"},
     {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029", "exclusiveScissorCount must be 0 or identical to the viewportCount member of VkPipelineViewportStateCreateInfo", "1.2-extensions"},
-    {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-pDynamicStates-02030", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV and exclusiveScissorCount is not 0, pExclusiveScissors must be a valid pointer to an array of exclusiveScissorCount VkRect2D structures", "1.2-extensions"},
-    {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-pExclusiveScissors-parameter", "If exclusiveScissorCount is not 0, and pExclusiveScissors is not NULL, pExclusiveScissors must be a valid pointer to an array of exclusiveScissorCount VkRect2D structures", "1.2-extensions"},
     {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV", "1.2-extensions"},
-    {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-pDynamicStates-02057", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV, pShadingRatePalettes must be a valid pointer to an array of viewportCount VkShadingRatePaletteNV structures", "1.2-extensions"},
-    {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-pShadingRatePalettes-parameter", "If viewportCount is not 0, and pShadingRatePalettes is not NULL, pShadingRatePalettes must be a valid pointer to an array of viewportCount valid VkShadingRatePaletteNV structures", "1.2-extensions"},
     {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV", "1.2-extensions"},
     {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056", "If shadingRateImageEnable is VK_TRUE, viewportCount must be equal to the viewportCount member of VkPipelineViewportStateCreateInfo", "1.2-extensions"},
     {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054", "If the multiple viewports feature is not enabled, viewportCount must be 0 or 1", "1.2-extensions"},
     {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02055", "viewportCount must be less than or equal to VkPhysicalDeviceLimits::maxViewports", "1.2-extensions"},
+    {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-arraylength", "viewportCount must be greater than 0", "1.2-extensions"},
     {"VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask", "flags must be 0", "1.2-extensions"},
     {"VUID-VkPipelineViewportStateCreateInfo-offset-02822", "Evaluation of (offset.x + extent.width) must not cause a signed integer addition overflow for any element of pScissors", "1.2-extensions"},
     {"VUID-VkPipelineViewportStateCreateInfo-offset-02823", "Evaluation of (offset.y + extent.height) must not cause a signed integer addition overflow for any element of pScissors", "1.2-extensions"},
@@ -2472,6 +2471,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkRectLayerKHR-offset-01261", "The sum of offset and extent must be no greater than the imageExtent member of the VkSwapchainCreateInfoKHR structure passed to vkCreateSwapchainKHR", "1.2-extensions"},
     {"VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218", "Each element of pAttachments must only specify a single mip level", "1.2-extensions"},
     {"VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219", "Each element of pAttachments must have been created with the identity swizzle", "1.2-extensions"},
+    {"VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114", "Each element of pAttachments must have been created with VkImageViewCreateInfo::viewType not equal to VK_IMAGE_VIEW_TYPE_3D", "1.2-extensions"},
     {"VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter", "If attachmentCount is not 0, pAttachments must be a valid pointer to an array of attachmentCount valid VkImageView handles", "1.2-extensions"},
     {"VUID-VkRenderPassAttachmentBeginInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO", "1.2-extensions"},
     {"VUID-VkRenderPassBeginInfo-clearValueCount-00902", "clearValueCount must be greater than the largest attachment index in renderPass that specifies a loadOp (or stencilLoadOp, if the attachment has a depth/stencil format) of VK_ATTACHMENT_LOAD_OP_CLEAR", "1.2-extensions"},
@@ -2601,6 +2601,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSamplerCreateInfo-borderColor-04011", "If borderColor is set to one of VK_BORDER_COLOR_FLOAT_CUSTOM_EXT or VK_BORDER_COLOR_INT_CUSTOM_EXT, then a VkSamplerCustomBorderColorCreateInfoEXT must be present in the pNext chain", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-compareEnable-01080", "If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-compareEnable-01423", "If compareEnable is VK_TRUE, the reductionMode member of VkSamplerReductionModeCreateInfo must be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE", "1.2-extensions"},
+    {"VUID-VkSamplerCreateInfo-customBorderColors-04085", "If the customBorderColors feature is not enabled, borderColor must not be set to VK_BORDER_COLOR_FLOAT_CUSTOM_EXT or VK_BORDER_COLOR_INT_CUSTOM_EXT", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-flags-02574", "If flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, then minFilter and magFilter must be equal", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-flags-02575", "If flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, then mipmapMode must be VK_SAMPLER_MIPMAP_MODE_NEAREST", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-flags-02576", "If flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, then minLod and maxLod must be zero", "1.2-extensions"},
@@ -2613,7 +2614,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSamplerCreateInfo-magFilter-01422", "If either magFilter or minFilter is VK_FILTER_CUBIC_EXT, the reductionMode member of VkSamplerReductionModeCreateInfo must be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE", "default"},
     {"VUID-VkSamplerCreateInfo-magFilter-parameter", "magFilter must be a valid VkFilter value", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-maxLod-01973", "maxLod must be greater than or equal to minLod", "1.2-extensions"},
-    {"VUID-VkSamplerCreateInfo-minFilter-01645", "If sampler {YCbCr} conversion is enabled and the sampler {YCbCr} conversion's features do not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT, minFilter and magFilter must be equal to the sampler {YCbCr} conversion's chromaFilter", "1.2-extensions"},
+    {"VUID-VkSamplerCreateInfo-minFilter-01645", "If sampler {YCbCr} conversion is enabled and the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT, minFilter and magFilter must be equal to the sampler {YCbCr} conversion's chromaFilter", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-minFilter-parameter", "minFilter must be a valid VkFilter value", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-mipLodBias-01069", "The absolute value of mipLodBias must be less than or equal to VkPhysicalDeviceLimits::maxSamplerLodBias", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-mipmapMode-parameter", "mipmapMode must be a valid VkSamplerMipmapMode value", "1.2-extensions"},
@@ -2628,30 +2629,30 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01077", "If unnormalizedCoordinates is VK_TRUE, compareEnable must be VK_FALSE", "1.2-extensions"},
     {"VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04013", "If provided format is not VK_FORMAT_UNDEFINED then the VkSamplerCreateInfo::borderColor type must match the sampled type of the provided format, as shown in the SPIR-V Sampled Type column of the Interpretation of Numeric Format table", "1.2-extensions"},
     {"VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014", "If the customBorderColorWithoutFormat feature is not enabled then format must not be VK_FORMAT_UNDEFINED", "1.2-extensions"},
-    {"VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015", "If the sampler is used to sample an image view of VK_FORMAT_B4G4R4A4_UNORM_PACK16 format then format must not be VK_FORMAT_UNDEFINED", "1.2-extensions"},
+    {"VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015", "If the sampler is used to sample an image view of VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_FORMAT_B5G6R5_UNORM_PACK16, or VK_FORMAT_B5G5R5A1_UNORM_PACK16 format then format must not be VK_FORMAT_UNDEFINED", "1.2-extensions"},
     {"VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-parameter", "format must be a valid VkFormat value", "1.2-extensions"},
     {"VUID-VkSamplerCustomBorderColorCreateInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT", "1.2-extensions"},
     {"VUID-VkSamplerReductionModeCreateInfo-reductionMode-parameter", "reductionMode must be a valid VkSamplerReductionMode value", "1.2-extensions"},
     {"VUID-VkSamplerReductionModeCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657", "If the sampler {YCbCr} conversion's features do not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT, chromaFilter must not be VK_FILTER_LINEAR", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT, chromaFilter must not be VK_FILTER_LINEAR", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-parameter", "chromaFilter must be a valid VkFilter value", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02581", "If the format has a _422 or _420 suffix, then components.g must be VK_COMPONENT_SWIZZLE_IDENTITY", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02582", "If the format has a _422 or _420 suffix, then components.a must be VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_ONE, or VK_COMPONENT_SWIZZLE_ZERO", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02583", "If the format has a _422 or _420 suffix, then components.r must be VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_B", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02584", "If the format has a _422 or _420 suffix, then components.b must be VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_R", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02585", "If the format has a _422 or _420 suffix, and if either components.r or components.b is VK_COMPONENT_SWIZZLE_IDENTITY, both values must be VK_COMPONENT_SWIZZLE_IDENTITY", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02581", "If the format has a _422 or _420 suffix, then components.g must be the identity swizzle", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02582", "If the format has a _422 or _420 suffix, then components.a must be the identity swizzle, VK_COMPONENT_SWIZZLE_ONE, or VK_COMPONENT_SWIZZLE_ZERO", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02583", "If the format has a _422 or _420 suffix, then components.r must be the identity swizzle or VK_COMPONENT_SWIZZLE_B", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02584", "If the format has a _422 or _420 suffix, then components.b must be the identity swizzle or VK_COMPONENT_SWIZZLE_R", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-components-02585", "If the format has a _422 or _420 suffix, and if either components.r or components.b is the identity swizzle, both values must be the identity swizzle", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-components-parameter", "components must be a valid VkComponentMapping structure", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656", "If the sampler {YCbCr} conversion's features do not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT forceExplicitReconstruction must be VK_FALSE", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-01649", "format must not be VK_FORMAT_UNDEFINED", "1.2-khr-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-01650", "The sampler {YCbCr} conversion's features must support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT or VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-01653", "If an external format conversion is not being created, format must represent unsigned normalized values (i.e. the format must be a UNORM format)", "1.2-khr-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-01904", "If an external format conversion is being created, format must be VK_FORMAT_UNDEFINED, otherwise it must not be VK_FORMAT_UNDEFINED", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT forceExplicitReconstruction must be VK_FALSE", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-01650", "The potential format features of the sampler {YCbCr} conversion must support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT or VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-01904", "If an external format conversion is being created, format must be VK_FORMAT_UNDEFINED", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-04060", "format must represent unsigned normalized values (i.e. the format must be a UNORM format)", "1.2-khr-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-format-04061", "If an external format conversion is not being created, format must represent unsigned normalized values (i.e. the format must be a UNORM format)", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-format-parameter", "format must be a valid VkFormat value", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-pNext-pNext", "pNext must be NULL or a pointer to a valid instance of VkExternalFormatANDROID", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651", "If the sampler {YCbCr} conversion's features do not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_COSITED_EVEN", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652", "If the sampler {YCbCr} conversion's features do not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_MIDPOINT", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_COSITED_EVEN", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_MIDPOINT", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-parameter", "xChromaOffset must be a valid VkChromaLocation value", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-yChromaOffset-parameter", "yChromaOffset must be a valid VkChromaLocation value", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655", "If ycbcrModel is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY, then components.r, components.g, and components.b must correspond to channels of the format; that is, components.r, components.g, and components.b must not be VK_COMPONENT_SWIZZLE_ZERO or VK_COMPONENT_SWIZZLE_ONE, and must not correspond to a channel which contains zero or one as a consequence of conversion to RGBA", "1.2-extensions"},
@@ -2711,7 +2712,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkShaderModuleCreateInfo-pCode-01088", "pCode must adhere to the validation rules described by the Validation Rules within a Module section of the SPIR-V Environment appendix", "1.2-khr-extensions"},
     {"VUID-VkShaderModuleCreateInfo-pCode-01089", "pCode must declare the Shader capability for SPIR-V code", "1.2-extensions"},
     {"VUID-VkShaderModuleCreateInfo-pCode-01090", "pCode must not declare any capability that is not supported by the API, as described by the Capabilities section of the SPIR-V Environment appendix", "1.2-extensions"},
-    {"VUID-VkShaderModuleCreateInfo-pCode-01091", "If pCode declares any of the capabilities listed as optional in the SPIR-V Environment appendix, the corresponding feature(s) must be enabled", "1.2-extensions"},
+    {"VUID-VkShaderModuleCreateInfo-pCode-01091", "If pCode declares any of the capabilities listed in the SPIR-V Environment appendix, one of the corresponding requirements must be satisfied", "1.2-extensions"},
     {"VUID-VkShaderModuleCreateInfo-pCode-01376", "If pCode is a pointer to SPIR-V code, codeSize must be a multiple of 4", "1.2-extensions"},
     {"VUID-VkShaderModuleCreateInfo-pCode-01377", "pCode must point to either valid SPIR-V code, formatted and packed as described by the Khronos SPIR-V Specification or valid GLSL code which must be written to the GL_KHR_vulkan_glsl extension specification", "1.2-extensions"},
     {"VUID-VkShaderModuleCreateInfo-pCode-01378", "If pCode is a pointer to SPIR-V code, that code must adhere to the validation rules described by the Validation Rules within a Module section of the SPIR-V Environment appendix", "1.2-extensions"},
@@ -2871,12 +2872,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSubpassDescription-loadOp-00846", "If the first use of an attachment in this render pass is as an input attachment, and the attachment is not also used as a color or depth/stencil attachment in the same subpass, then loadOp must not be VK_ATTACHMENT_LOAD_OP_CLEAR", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pColorAttachments-01417", "All attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have the same sample count", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pColorAttachments-01506", "If the VK_AMD_mixed_attachment_samples extension is enabled, and all attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have a sample count that is smaller than or equal to the sample count of pDepthStencilAttachment if it is not VK_ATTACHMENT_UNUSED", "1.2-extensions"},
-    {"VUID-VkSubpassDescription-pColorAttachments-02648", "All attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have formats whose features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription-pColorAttachments-02648", "All attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have image formats whose potential format features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pColorAttachments-parameter", "If colorAttachmentCount is not 0, pColorAttachments must be a valid pointer to an array of colorAttachmentCount valid VkAttachmentReference structures", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pDepthStencilAttachment-01418", "If neither the VK_AMD_mixed_attachment_samples nor the VK_NV_framebuffer_mixed_samples extensions are enabled, and if pDepthStencilAttachment is not VK_ATTACHMENT_UNUSED and any attachments in pColorAttachments are not VK_ATTACHMENT_UNUSED, they must have the same sample count", "1.2-extensions"},
-    {"VUID-VkSubpassDescription-pDepthStencilAttachment-02650", "If pDepthStencilAttachment is not NULL and the attachment is not VK_ATTACHMENT_UNUSED then it must have a format whose features contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription-pDepthStencilAttachment-02650", "If pDepthStencilAttachment is not NULL and the attachment is not VK_ATTACHMENT_UNUSED then it must have a image format whose potential format features contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pDepthStencilAttachment-parameter", "If pDepthStencilAttachment is not NULL, pDepthStencilAttachment must be a valid pointer to a valid VkAttachmentReference structure", "1.2-extensions"},
-    {"VUID-VkSubpassDescription-pInputAttachments-02647", "All attachments in pInputAttachments that are not VK_ATTACHMENT_UNUSED must have formats whose features contain at least one of VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription-pInputAttachments-02647", "All attachments in pInputAttachments that are not VK_ATTACHMENT_UNUSED must have image formats whose potential format features contain at least VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pInputAttachments-02868", "If the render pass is created with VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM each of the elements of pInputAttachments must be VK_ATTACHMENT_UNUSED", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pInputAttachments-parameter", "If inputAttachmentCount is not 0, pInputAttachments must be a valid pointer to an array of inputAttachmentCount valid VkAttachmentReference structures", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pPreserveAttachments-00854", "Each element of pPreserveAttachments must not also be an element of any other member of the subpass description", "1.2-extensions"},
@@ -2885,7 +2886,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSubpassDescription-pResolveAttachments-00848", "If pResolveAttachments is not NULL, for each resolve attachment that is not VK_ATTACHMENT_UNUSED, the corresponding color attachment must not have a sample count of VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pResolveAttachments-00849", "If pResolveAttachments is not NULL, each resolve attachment that is not VK_ATTACHMENT_UNUSED must have a sample count of VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pResolveAttachments-00850", "If pResolveAttachments is not NULL, each resolve attachment that is not VK_ATTACHMENT_UNUSED must have the same VkFormat as its corresponding color attachment", "1.2-extensions"},
-    {"VUID-VkSubpassDescription-pResolveAttachments-02649", "All attachments in pResolveAttachments that are not VK_ATTACHMENT_UNUSED must have formats whose features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription-pResolveAttachments-02649", "All attachments in pResolveAttachments that are not VK_ATTACHMENT_UNUSED must have image formats whose potential format features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pResolveAttachments-parameter", "If colorAttachmentCount is not 0, and pResolveAttachments is not NULL, pResolveAttachments must be a valid pointer to an array of colorAttachmentCount valid VkAttachmentReference structures", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pipelineBindPoint-00844", "pipelineBindPoint must be VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-VkSubpassDescription-pipelineBindPoint-parameter", "pipelineBindPoint must be a valid VkPipelineBindPoint value", "1.2-extensions"},
@@ -2898,18 +2899,18 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSubpassDescription2-flags-parameter", "flags must be a valid combination of VkSubpassDescriptionFlagBits values", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-layout-02528", "If any attachment is used by more than one VkAttachmentReference member, then each use must use the same layout", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-loadOp-03064", "If the first use of an attachment in this render pass is as an input attachment, and the attachment is not also used as a color or depth/stencil attachment in the same subpass, then loadOp must not be VK_ATTACHMENT_LOAD_OP_CLEAR", "1.2-extensions"},
-    {"VUID-VkSubpassDescription2-pColorAttachments-02898", "All attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have formats whose features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription2-pColorAttachments-02898", "All attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have image formats whose potential format features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pColorAttachments-03069", "All attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have the same sample count", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pColorAttachments-03070", "If the VK_AMD_mixed_attachment_samples extension is enabled, all attachments in pColorAttachments that are not VK_ATTACHMENT_UNUSED must have a sample count that is smaller than or equal to the sample count of pDepthStencilAttachment if it is not VK_ATTACHMENT_UNUSED", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pColorAttachments-parameter", "If colorAttachmentCount is not 0, pColorAttachments must be a valid pointer to an array of colorAttachmentCount valid VkAttachmentReference2 structures", "1.2-extensions"},
-    {"VUID-VkSubpassDescription2-pDepthStencilAttachment-02900", "If pDepthStencilAttachment is not NULL and the attachment is not VK_ATTACHMENT_UNUSED then it must have a format whose features contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription2-pDepthStencilAttachment-02900", "If pDepthStencilAttachment is not NULL and the attachment is not VK_ATTACHMENT_UNUSED then it must have a image format whose potential format features contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pDepthStencilAttachment-03071", "If neither the VK_AMD_mixed_attachment_samples nor the VK_NV_framebuffer_mixed_samples extensions are enabled, and if pDepthStencilAttachment is not VK_ATTACHMENT_UNUSED and any attachments in pColorAttachments are not VK_ATTACHMENT_UNUSED, they must have the same sample count", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pDepthStencilAttachment-parameter", "If pDepthStencilAttachment is not NULL, pDepthStencilAttachment must be a valid pointer to a valid VkAttachmentReference2 structure", "1.2-extensions"},
-    {"VUID-VkSubpassDescription2-pInputAttachments-02897", "All attachments in pInputAttachments that are not VK_ATTACHMENT_UNUSED must have formats whose features contain at least one of VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription2-pInputAttachments-02897", "All attachments in pInputAttachments that are not VK_ATTACHMENT_UNUSED must have image formats whose potential format features contain at least VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pInputAttachments-parameter", "If inputAttachmentCount is not 0, pInputAttachments must be a valid pointer to an array of inputAttachmentCount valid VkAttachmentReference2 structures", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pPreserveAttachments-03074", "Any given element of pPreserveAttachments must not also be an element of any other member of the subpass description", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pPreserveAttachments-parameter", "If preserveAttachmentCount is not 0, pPreserveAttachments must be a valid pointer to an array of preserveAttachmentCount uint32_t values", "1.2-extensions"},
-    {"VUID-VkSubpassDescription2-pResolveAttachments-02899", "All attachments in pResolveAttachments that are not VK_ATTACHMENT_UNUSED must have formats whose features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkSubpassDescription2-pResolveAttachments-02899", "All attachments in pResolveAttachments that are not VK_ATTACHMENT_UNUSED must have image formats whose potential format features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pResolveAttachments-03065", "If pResolveAttachments is not NULL, for each resolve attachment that does not have the value VK_ATTACHMENT_UNUSED, the corresponding color attachment must not have the value VK_ATTACHMENT_UNUSED", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pResolveAttachments-03066", "If pResolveAttachments is not NULL, for each resolve attachment that is not VK_ATTACHMENT_UNUSED, the corresponding color attachment must not have a sample count of VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
     {"VUID-VkSubpassDescription2-pResolveAttachments-03067", "If pResolveAttachments is not NULL, each resolve attachment that is not VK_ATTACHMENT_UNUSED must have a sample count of VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
@@ -2959,6 +2960,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSwapchainCreateInfoKHR-compositeAlpha-parameter", "compositeAlpha must be a valid VkCompositeAlphaFlagBitsKHR value", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-flags-03168", "If flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR then the pNext chain must include a VkImageFormatListCreateInfo structure with a viewFormatCount greater than zero and pViewFormats must have an element equal to imageFormat", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-flags-03187", "If flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR, then VkSurfaceProtectedCapabilitiesKHR::supportsProtected must be VK_TRUE in the VkSurfaceProtectedCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilities2KHR for surface", "1.2-extensions"},
+    {"VUID-VkSwapchainCreateInfoKHR-flags-04100", "If flags dose not contain VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR and the pNext chain include a VkImageFormatListCreateInfo structure then VkImageFormatListCreateInfo::viewFormatCount must be 0 or 1", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-flags-parameter", "flags must be a valid combination of VkSwapchainCreateFlagBitsKHR values", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", "imageArrayLayers must be greater than 0 and less than or equal to the maxImageArrayLayers member of the VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-imageColorSpace-parameter", "imageColorSpace must be a valid VkColorSpaceKHR value", "1.2-extensions"},
@@ -2983,6 +2985,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parameter", "If oldSwapchain is not VK_NULL_HANDLE, oldSwapchain must be a valid VkSwapchainKHR handle", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parent", "If oldSwapchain is a valid handle, it must have been created, allocated, or retrieved from surface", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-pNext-02679", "If the pNext chain includes a VkSurfaceFullScreenExclusiveInfoEXT structure with its fullScreenExclusive member set to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT, and surface was created using vkCreateWin32SurfaceKHR, a VkSurfaceFullScreenExclusiveWin32InfoEXT structure must be included in the pNext chain", "1.2-extensions"},
+    {"VUID-VkSwapchainCreateInfoKHR-pNext-04099", "If a VkImageFormatListCreateInfo structure was included in the pNext chain and VkImageFormatListCreateInfo::viewFormatCount is not zero then all of the formats in VkImageFormatListCreateInfo::pViewFormats must be compatible with the format as described in the compatibility table", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceGroupSwapchainCreateInfoKHR, VkImageFormatListCreateInfo, VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT, VkSwapchainCounterCreateInfoEXT, or VkSwapchainDisplayNativeHdrCreateInfoAMD", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429", "If the logical device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1, flags must not contain VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-preTransform-01279", "preTransform must be one of the bits present in the supportedTransforms member of the VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface", "1.2-extensions"},
@@ -3185,6 +3188,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkAllocateDescriptorSets-pDescriptorSets-parameter", "pDescriptorSets must be a valid pointer to an array of pAllocateInfo->descriptorSetCount VkDescriptorSet handles", "1.2-extensions"},
     {"VUID-vkAllocateMemory-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
     {"VUID-vkAllocateMemory-deviceCoherentMemory-02790", "If the deviceCoherentMemory feature is not enabled, pAllocateInfo->memoryTypeIndex must not identify a memory type supporting VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD", "1.2-extensions"},
+    {"VUID-vkAllocateMemory-maxMemoryAllocationCount-04101", "There must be less than VkPhysicalDeviceLimits::maxMemoryAllocationCount device memory allocations currently allocated on the device.", "1.2-extensions"},
     {"VUID-vkAllocateMemory-pAllocateInfo-01713", "pAllocateInfo->allocationSize must be less than or equal to VkPhysicalDeviceMemoryProperties::memoryHeaps[memindex].size where memindex = VkPhysicalDeviceMemoryProperties::memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex as returned by vkGetPhysicalDeviceMemoryProperties for the VkPhysicalDevice that device was created from", "1.2-extensions"},
     {"VUID-vkAllocateMemory-pAllocateInfo-01714", "pAllocateInfo->memoryTypeIndex must be less than VkPhysicalDeviceMemoryProperties::memoryTypeCount as returned by vkGetPhysicalDeviceMemoryProperties for the VkPhysicalDevice that device was created from", "1.2-extensions"},
     {"VUID-vkAllocateMemory-pAllocateInfo-parameter", "pAllocateInfo must be a valid pointer to a valid VkMemoryAllocateInfo structure", "1.2-extensions"},
@@ -3340,6 +3344,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdBeginRenderPass-initialLayout-00900", "If any of the initialLayout members of the VkAttachmentDescription structures specified when creating the render pass specified in the renderPass member of pRenderPassBegin is not VK_IMAGE_LAYOUT_UNDEFINED, then each such initialLayout must be equal to the current layout of the corresponding attachment image subresource of the framebuffer specified in the framebuffer member of pRenderPassBegin", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass-initialLayout-01758", "If any of the initialLayout or finalLayout member of the VkAttachmentDescription structures or the layout member of the VkAttachmentReference structures specified when creating the render pass specified in the renderPass member of pRenderPassBegin is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, or VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL then the corresponding attachment image view of the framebuffer specified in the framebuffer member of pRenderPassBegin must have been created with a usage value including VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass-initialLayout-02842", "If any of the initialLayout or finalLayout member of the VkAttachmentDescription structures or the layout member of the VkAttachmentReference structures specified when creating the render pass specified in the renderPass member of pRenderPassBegin is VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, or VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL then the corresponding attachment image view of the framebuffer specified in the framebuffer member of pRenderPassBegin must have been created with a usage value including VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass-pAttachments-04102", "Each element of the pAttachments of framebuffer that is referenced by any element of the pInputAttachments of any element of pSubpasses of renderPass must have image view format features containing at least VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass-pAttachments-04103", "Each element of the pAttachments of framebuffer that is referenced by any element of the pColorAttachments of any element of pSubpasses of renderPass must have image view format features containing VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass-pAttachments-04104", "Each element of the pAttachments of framebuffer that is referenced by any element of the pResolveAttachments of any element of pSubpasses of renderPass must have image view format features containing VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass-pAttachments-04105", "Each element of the pAttachments of framebuffer that is referenced by any element of the pDepthStencilAttachment of any element of pSubpasses of renderPass must have image view format features containing VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter", "pRenderPassBegin must be a valid pointer to a valid VkRenderPassBeginInfo structure", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass-srcStageMask-00901", "The srcStageMask and dstStageMask members of any element of the pDependencies member of VkRenderPassCreateInfo used to create renderPass must be supported by the capabilities of the queue family identified by the queueFamilyIndex member of the VkCommandPoolCreateInfo used to create the command pool which commandBuffer was allocated from", "1.2-extensions"},
@@ -3357,6 +3365,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdBeginRenderPass2-initialLayout-03098", "If any of the initialLayout or finalLayout member of the VkAttachmentDescription structures or the layout member of the VkAttachmentReference structures specified when creating the render pass specified in the renderPass member of pRenderPassBegin is VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL then the corresponding attachment image view of the framebuffer specified in the framebuffer member of pRenderPassBegin must have been created with a usage value including VK_IMAGE_USAGE_TRANSFER_SRC_BIT", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass2-initialLayout-03099", "If any of the initialLayout or finalLayout member of the VkAttachmentDescription structures or the layout member of the VkAttachmentReference structures specified when creating the render pass specified in the renderPass member of pRenderPassBegin is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL then the corresponding attachment image view of the framebuffer specified in the framebuffer member of pRenderPassBegin must have been created with a usage value including VK_IMAGE_USAGE_TRANSFER_DST_BIT", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass2-initialLayout-03100", "If any of the initialLayout members of the VkAttachmentDescription structures specified when creating the render pass specified in the renderPass member of pRenderPassBegin is not VK_IMAGE_LAYOUT_UNDEFINED, then each such initialLayout must be equal to the current layout of the corresponding attachment image subresource of the framebuffer specified in the framebuffer member of pRenderPassBegin", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass2-pAttachments-04106", "Each element of the pAttachments of framebuffer that is referenced by any element of the pInputAttachments of any element of pSubpasses of renderPass must have image view format features contain at least VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass2-pAttachments-04107", "Each element of the pAttachments of framebuffer that is referenced by any element of the pColorAttachments of any element of pSubpasses of renderPass must have image view format features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass2-pAttachments-04108", "Each element of the pAttachments of framebuffer that is referenced by any element of the pResolveAttachments of any element of pSubpasses of renderPass must have image view format features contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-vkCmdBeginRenderPass2-pAttachments-04109", "Each element of the pAttachments of framebuffer that is referenced by any element of the pDepthStencilAttachment of any element of pSubpasses of renderPass must have image view format features contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass2-pRenderPassBegin-parameter", "pRenderPassBegin must be a valid pointer to a valid VkRenderPassBeginInfo structure", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass2-pSubpassBeginInfo-parameter", "pSubpassBeginInfo must be a valid pointer to a valid VkSubpassBeginInfo structure", "1.2-extensions"},
     {"VUID-vkCmdBeginRenderPass2-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
@@ -3475,6 +3487,26 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdBindVertexBuffers-pBuffers-parameter", "pBuffers must be a valid pointer to an array of bindingCount valid or VK_NULL_HANDLE VkBuffer handles", "1.2-extensions"},
     {"VUID-vkCmdBindVertexBuffers-pOffsets-00626", "All elements of pOffsets must be less than the size of the corresponding element in pBuffers", "1.2-extensions"},
     {"VUID-vkCmdBindVertexBuffers-pOffsets-parameter", "pOffsets must be a valid pointer to an array of bindingCount VkDeviceSize values", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength", "If any of pSizes, or pStrides are not NULL, bindingCount must be greater than 0", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-commonparent", "Both of commandBuffer, and the elements of pBuffers must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03355", "firstBinding must be less than VkPhysicalDeviceLimits::maxVertexInputBindings", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03356", "The sum of firstBinding and bindingCount must be less than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pBuffers-03359", "All elements of pBuffers must have been created with the VK_BUFFER_USAGE_VERTEX_BUFFER_BIT flag", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pBuffers-03360", "Each element of pBuffers that is non-sparse must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04111", "If the nullDescriptor feature is not enabled, all elements of pBuffers must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04112", "If an element of pBuffers is VK_NULL_HANDLE, then the corresponding element of pOffsets must be zero", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pBuffers-parameter", "pBuffers must be a valid pointer to an array of bindingCount valid VkBuffer handles", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pOffsets-03357", "All elements of pOffsets must be less than the size of the corresponding element in pBuffers", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pOffsets-parameter", "pOffsets must be a valid pointer to an array of bindingCount VkDeviceSize values", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pSizes-03358", "If pSizes is not NULL, all elements of pOffsets plus pSizes must be less than or equal to the size of the corresponding element in pBuffers", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pSizes-parameter", "If pSizes is not NULL, pSizes must be a valid pointer to an array of bindingCount VkDeviceSize values", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pStrides-03361", "If the bound pipeline state object was created with the VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT dynamic state enabled then pStrides must not be NULL, otherwise pStrides must be NULL", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pStrides-03362", "If pStrides is not NULL each element of pStrides must be less than or equal to VkPhysicalDeviceLimits::maxVertexInputBindingStride", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pStrides-03363", "If pStrides is not NULL each element of pStrides must be greater than or equal to the maximum extent of of all vertex input attributes fetched from the corresponding binding, where the extent is calculated as the VkVertexInputAttributeDescription::offset plus VkVertexInputAttributeDescription::format size", "1.2-extensions"},
+    {"VUID-vkCmdBindVertexBuffers2EXT-pStrides-parameter", "If pStrides is not NULL, pStrides must be a valid pointer to an array of bindingCount VkDeviceSize values", "1.2-extensions"},
     {"VUID-vkCmdBlitImage-commandBuffer-01834", "If commandBuffer is an unprotected command buffer, then srcImage must not be a protected image", "1.2-extensions"},
     {"VUID-vkCmdBlitImage-commandBuffer-01835", "If commandBuffer is an unprotected command buffer, then dstImage must not be a protected image", "1.2-extensions"},
     {"VUID-vkCmdBlitImage-commandBuffer-01836", "If commandBuffer is a protected command buffer, then dstImage must not be an unprotected image", "1.2-extensions"},
@@ -3696,6 +3728,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-01828", "If commandBuffer is an unprotected command buffer, then srcBuffer must not be a protected buffer", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-01829", "If commandBuffer is an unprotected command buffer, then dstImage must not be a protected image", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-01830", "If commandBuffer is a protected command buffer, then dstImage must not be an unprotected image", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage-commandBuffer-04052", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT or VK_QUEUE_COMPUTE_BIT, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -3705,6 +3738,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyBufferToImage-dstImage-00179", "dstImage must have a sample count equal to VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-dstImage-01997", "The format features of dstImage must contain VK_FORMAT_FEATURE_TRANSFER_DST_BIT", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-dstImage-02543", "dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage-dstImage-04053", "If dstImage has a depth/stencil format, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-dstImage-parameter", "dstImage must be a valid VkImage handle", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-dstImageLayout-00180", "dstImageLayout must specify the layout of the image subresources of dstImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-dstImageLayout-00181", "dstImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
@@ -3765,6 +3799,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyImageToBuffer-commandBuffer-01831", "If commandBuffer is an unprotected command buffer, then srcImage must not be a protected image", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-commandBuffer-01832", "If commandBuffer is an unprotected command buffer, then dstBuffer must not be a protected buffer", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-commandBuffer-01833", "If commandBuffer is a protected command buffer, then dstBuffer must not be an unprotected buffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer-commandBuffer-04054", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT or VK_QUEUE_COMPUTE_BIT, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -3786,6 +3821,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyImageToBuffer-srcImage-00188", "srcImage must have a sample count equal to VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-srcImage-01998", "The format features of srcImage must contain VK_FORMAT_FEATURE_TRANSFER_SRC_BIT", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-srcImage-02544", "srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer-srcImage-04055", "If srcImage has a depth/stencil format, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-srcImage-parameter", "srcImage must be a valid VkImage handle", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189", "srcImageLayout must specify the layout of the image subresources of srcImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
@@ -3849,6 +3885,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDispatch-None-02705", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a uniform buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDispatch-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDispatch-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
+    {"VUID-vkCmdDispatch-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDispatch-commandBuffer-02701", "If the VkPipeline object bound to the pipeline bind point used by this command requires any dynamic state, that state must have been set for commandBuffer, and done so after any previously bound pipeline with the corresponding state not specified as dynamic", "1.2-extensions"},
     {"VUID-vkCmdDispatch-commandBuffer-02707", "If commandBuffer is an unprotected command buffer, any resource accessed by the VkPipeline object bound to the pipeline bind point used by this command must not be a protected resource", "1.2-extensions"},
     {"VUID-vkCmdDispatch-commandBuffer-02712", "If commandBuffer is a protected command buffer, any resource written to by the VkPipeline object bound to the pipeline bind point used by this command must not be an unprotected resource", "1.2-extensions"},
@@ -3877,6 +3914,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDispatchBase-None-02705", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a uniform buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDispatchBase-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDispatchBase-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
+    {"VUID-vkCmdDispatchBase-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDispatchBase-baseGroupX-00421", "baseGroupX must be less than VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0]", "1.2-extensions"},
     {"VUID-vkCmdDispatchBase-baseGroupX-00422", "baseGroupX must be less than VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1]", "1.2-extensions"},
     {"VUID-vkCmdDispatchBase-baseGroupX-00427", "If any of baseGroupX, baseGroupY, or baseGroupZ are not zero, then the bound compute pipeline must have been created with the VK_PIPELINE_CREATE_DISPATCH_BASE flag", "1.2-extensions"},
@@ -3907,6 +3945,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDispatchIndirect-None-02705", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a uniform buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDispatchIndirect-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDispatchIndirect-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
+    {"VUID-vkCmdDispatchIndirect-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDispatchIndirect-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdDispatchIndirect-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdDispatchIndirect-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -3942,6 +3981,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDraw-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdDraw-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdDraw-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdDraw-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDraw-commandBuffer-02701", "If the VkPipeline object bound to the pipeline bind point used by this command requires any dynamic state, that state must have been set for commandBuffer, and done so after any previously bound pipeline with the corresponding state not specified as dynamic", "1.2-extensions"},
     {"VUID-vkCmdDraw-commandBuffer-02707", "If commandBuffer is an unprotected command buffer, any resource accessed by the VkPipeline object bound to the pipeline bind point used by this command must not be a protected resource", "1.2-extensions"},
     {"VUID-vkCmdDraw-commandBuffer-02712", "If commandBuffer is a protected command buffer, any resource written to by the VkPipeline object bound to the pipeline bind point used by this command must not be an unprotected resource", "1.2-extensions"},
@@ -3953,10 +3993,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDraw-filterCubicMinmax-02695", "Any VkImageView being sampled with VK_FILTER_CUBIC_EXT with a reduction mode of either VK_SAMPLER_REDUCTION_MODE_MIN or VK_SAMPLER_REDUCTION_MODE_MAX as a result of this command must have a VkImageViewType and format that supports cubic filtering together with minmax filtering, as specified by VkFilterCubicImageViewImageFormatPropertiesEXT::filterCubicMinmax returned by vkGetPhysicalDeviceImageFormatProperties2", "1.2-extensions"},
     {"VUID-vkCmdDraw-flags-02696", "Any VkImage created with a VkImageCreateInfo::flags containing VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV sampled as a result of this command must only be sampled using a VkSamplerAddressMode of VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE", "1.2-extensions"},
     {"VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
+    {"VUID-vkCmdDraw-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDraw-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDraw-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDraw-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDraw-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDraw-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDraw-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDraw-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -3976,6 +4020,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndexed-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexed-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-commandBuffer-02701", "If the VkPipeline object bound to the pipeline bind point used by this command requires any dynamic state, that state must have been set for commandBuffer, and done so after any previously bound pipeline with the corresponding state not specified as dynamic", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-commandBuffer-02707", "If commandBuffer is an unprotected command buffer, any resource accessed by the VkPipeline object bound to the pipeline bind point used by this command must not be a protected resource", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-commandBuffer-02712", "If commandBuffer is a protected command buffer, any resource written to by the VkPipeline object bound to the pipeline bind point used by this command must not be an unprotected resource", "1.2-extensions"},
@@ -3986,12 +4031,16 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndexed-filterCubic-02694", "Any VkImageView being sampled with VK_FILTER_CUBIC_EXT as a result of this command must have a VkImageViewType and format that supports cubic filtering, as specified by VkFilterCubicImageViewImageFormatPropertiesEXT::filterCubic returned by vkGetPhysicalDeviceImageFormatProperties2", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-filterCubicMinmax-02695", "Any VkImageView being sampled with VK_FILTER_CUBIC_EXT with a reduction mode of either VK_SAMPLER_REDUCTION_MODE_MIN or VK_SAMPLER_REDUCTION_MODE_MAX as a result of this command must have a VkImageViewType and format that supports cubic filtering together with minmax filtering, as specified by VkFilterCubicImageViewImageFormatPropertiesEXT::filterCubicMinmax returned by vkGetPhysicalDeviceImageFormatProperties2", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-flags-02696", "Any VkImage created with a VkImageCreateInfo::flags containing VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV sampled as a result of this command must only be sampled using a VkSamplerAddressMode of VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE", "1.2-extensions"},
-    {"VUID-vkCmdDrawIndexed-indexSize-00463", "(indexSize * (firstIndex + indexCount) + offset) must be less than or equal to the size of the bound index buffer, with indexSize being based on the type specified by indexType, where the index buffer, indexType, and offset are specified via vkCmdBindIndexBuffer", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexed-indexSize-00463", "(indexSize {times} (firstIndex + indexCount) + offset) must be less than or equal to the size of the bound index buffer, with indexSize being based on the type specified by indexType, where the index buffer, indexType, and offset are specified via vkCmdBindIndexBuffer", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexed-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexed-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexed-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexed-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexed-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4012,6 +4061,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndexedIndirect-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirect-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -4033,10 +4083,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndexedIndirect-flags-02696", "Any VkImage created with a VkImageCreateInfo::flags containing VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV sampled as a result of this command must only be sampled using a VkSamplerAddressMode of VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-offset-02710", "offset must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirect-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirect-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirect-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirect-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirect-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4056,6 +4110,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndexedIndirectCount-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirectCount-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -4079,11 +4134,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", "If maxDrawCount is greater than or equal to 1, (stride {times} (maxDrawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand)) must be less than or equal to the size of buffer", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-offset-02710", "offset must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirectCount-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-stride-03142", "stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndexedIndirectCommand)", "1.2-extensions"},
     {"VUID-vkCmdDrawIndexedIndirectCount-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4103,6 +4162,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndirect-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirect-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -4124,10 +4184,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndirect-flags-02696", "Any VkImage created with a VkImageCreateInfo::flags containing VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV sampled as a result of this command must only be sampled using a VkSamplerAddressMode of VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-offset-02710", "offset must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirect-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirect-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirect-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirect-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirect-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4147,6 +4211,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndirectByteCountEXT-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectByteCountEXT-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646", "commandBuffer must not be a protected command buffer", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02701", "If the VkPipeline object bound to the pipeline bind point used by this command requires any dynamic state, that state must have been set for commandBuffer, and done so after any previously bound pipeline with the corresponding state not specified as dynamic", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02707", "If commandBuffer is an unprotected command buffer, any resource accessed by the VkPipeline object bound to the pipeline bind point used by this command must not be a protected resource", "1.2-extensions"},
@@ -4160,13 +4225,17 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndirectByteCountEXT-filterCubicMinmax-02695", "Any VkImageView being sampled with VK_FILTER_CUBIC_EXT with a reduction mode of either VK_SAMPLER_REDUCTION_MODE_MIN or VK_SAMPLER_REDUCTION_MODE_MAX as a result of this command must have a VkImageViewType and format that supports cubic filtering together with minmax filtering, as specified by VkFilterCubicImageViewImageFormatPropertiesEXT::filterCubicMinmax returned by vkGetPhysicalDeviceImageFormatProperties2", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-flags-02696", "Any VkImage created with a VkImageCreateInfo::flags containing VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV sampled as a result of this command must only be sampled using a VkSamplerAddressMode of VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectByteCountEXT-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectByteCountEXT-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287", "VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback must be enabled", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288", "The implementation must support VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289", "vertexStride must be greater than 0 and less than or equal to VkPhysicalDeviceLimits::maxTransformFeedbackBufferDataStride", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4187,6 +4256,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndirectCount-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectCount-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -4210,11 +4280,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", "If maxDrawCount is greater than or equal to 1, (stride {times} (maxDrawCount - 1) + offset + sizeof(VkDrawIndirectCommand)) must be less than or equal to the size of buffer", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-offset-02710", "offset must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectCount-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectCount-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-stride-03110", "stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndirectCommand)", "1.2-extensions"},
     {"VUID-vkCmdDrawIndirectCount-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectCount-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawIndirectCount-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4231,6 +4305,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02705", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a uniform buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -4254,11 +4329,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", "If maxDrawCount is greater than or equal to 1, (stride {times} (maxDrawCount - 1) + offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) must be less than or equal to the size of buffer", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02710", "offset must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectCountNV-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", "stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawMeshTasksIndirectCommandNV)", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4275,6 +4354,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawMeshTasksIndirectNV-None-02705", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a uniform buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectNV-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -4295,10 +4375,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawMeshTasksIndirectNV-flags-02696", "Any VkImage created with a VkImageCreateInfo::flags containing VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV sampled as a result of this command must only be sampled using a VkSamplerAddressMode of VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710", "offset must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectNV-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectNV-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-None-02686", "Every input attachment used by the current subpass must be bound to the pipeline via a descriptor set", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-None-02687", "Image subresources used as attachments in the current render pass must not be accessed in any way other than as an attachment by this command", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
@@ -4315,6 +4399,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawMeshTasksNV-None-02705", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a uniform buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksNV-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-commandBuffer-02701", "If the VkPipeline object bound to the pipeline bind point used by this command requires any dynamic state, that state must have been set for commandBuffer, and done so after any previously bound pipeline with the corresponding state not specified as dynamic", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-commandBuffer-02707", "If commandBuffer is an unprotected command buffer, any resource accessed by the VkPipeline object bound to the pipeline bind point used by this command must not be a protected resource", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
@@ -4324,11 +4409,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdDrawMeshTasksNV-filterCubicMinmax-02695", "Any VkImageView being sampled with VK_FILTER_CUBIC_EXT with a reduction mode of either VK_SAMPLER_REDUCTION_MODE_MIN or VK_SAMPLER_REDUCTION_MODE_MAX as a result of this command must have a VkImageViewType and format that supports cubic filtering together with minmax filtering, as specified by VkFilterCubicImageViewImageFormatPropertiesEXT::filterCubicMinmax returned by vkGetPhysicalDeviceImageFormatProperties2", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-flags-02696", "Any VkImage created with a VkImageCreateInfo::flags containing VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV sampled as a result of this command must only be sampled using a VkSamplerAddressMode of VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksNV-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksNV-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdDrawMeshTasksNV-taskCount-02119", "taskCount must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksNV-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdDrawMeshTasksNV-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdEndConditionalRenderingEXT-None-01985", "Conditional rendering must be active", "1.2-extensions"},
     {"VUID-vkCmdEndConditionalRenderingEXT-None-01986", "If conditional rendering was made active outside of a render pass instance, it must not be ended inside a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdEndConditionalRenderingEXT-None-01987", "If conditional rendering was made active within a subpass it must be ended in the same subpass", "1.2-extensions"},
@@ -4442,6 +4531,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdExecuteGeneratedCommandsNV-None-02910", "Transform feedback must not be active", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-None-04007", "All vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must have either valid or VK_NULL_HANDLE buffers bound", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-None-04008", "If the nullDescriptor feature is not enabled, all vertex input bindings accessed via vertex input variables declared in the vertex shader entry point's interface must not be VK_NULL_HANDLE", "1.2-extensions"},
+    {"VUID-vkCmdExecuteGeneratedCommandsNV-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-02701", "If the VkPipeline object bound to the pipeline bind point used by this command requires any dynamic state, that state must have been set for commandBuffer, and done so after any previously bound pipeline with the corresponding state not specified as dynamic", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-02707", "If commandBuffer is an unprotected command buffer, any resource accessed by the VkPipeline object bound to the pipeline bind point used by this command must not be a protected resource", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-02970", "commandBuffer must not be a protected command buffer", "1.2-extensions"},
@@ -4456,10 +4546,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdExecuteGeneratedCommandsNV-maxMultiviewInstanceIndex-02688", "If the draw is recorded in a render pass instance with multiview enabled, the maximum instance index must be less than or equal to VkPhysicalDeviceMultiviewProperties::maxMultiviewInstanceIndex", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-pGeneratedCommandsInfo-parameter", "pGeneratedCommandsInfo must be a valid pointer to a valid VkGeneratedCommandsInfoNV structure", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-pipeline-02909", "VkGeneratedCommandsInfoNV::pipeline must match the current bound pipeline at VkGeneratedCommandsInfoNV::pipelineBindPoint", "1.2-extensions"},
+    {"VUID-vkCmdExecuteGeneratedCommandsNV-primitiveTopology-03420", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT dynamic state enabled then vkCmdSetPrimitiveTopologyEXT must have been called in the current command buffer prior to this draw command, and the primitiveTopology parameter of vkCmdSetPrimitiveTopologyEXT must be of the same topology class as the pipeline VkPipelineInputAssemblyStateCreateInfo::topology state", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-renderPass-02684", "The current render pass must be compatible with the renderPass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-sampleLocationsEnable-02689", "If the bound graphics pipeline was created with VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsEnable set to VK_TRUE and the current subpass has a depth/stencil attachment, then that attachment must have been created with the VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT bit set", "1.2-extensions"},
+    {"VUID-vkCmdExecuteGeneratedCommandsNV-scissorCount-03418", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the scissorCount parameter of vkCmdSetScissorWithCountEXT must match the VkPipelineViewportStateCreateInfo::viewportCount of the pipeline", "1.2-extensions"},
     {"VUID-vkCmdExecuteGeneratedCommandsNV-subpass-02685", "The subpass index of the current render pass must be equal to the subpass member of the VkGraphicsPipelineCreateInfo structure specified when creating the VkPipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS", "1.2-extensions"},
+    {"VUID-vkCmdExecuteGeneratedCommandsNV-viewportCount-03417", "If the bound graphics pipeline state was created with the VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic state enabled, but not the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT dynamic state enabled, then then vkCmdSetViewportWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the VkPipelineViewportStateCreateInfo::scissorCount of the pipeline", "1.2-extensions"},
+    {"VUID-vkCmdExecuteGeneratedCommandsNV-viewportCount-03419", "If the bound graphics pipeline state was created with both the VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT dynamic states enabled then both vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT must have been called in the current command buffer prior to this draw command, and the viewportCount parameter of vkCmdSetViewportWithCountEXT must match the scissorCount parameter of vkCmdSetScissorWithCountEXT", "1.2-extensions"},
     {"VUID-vkCmdFillBuffer-commandBuffer-00030", "The VkCommandPool that commandBuffer was allocated from must support graphics or compute operations", "1.0"},
     {"VUID-vkCmdFillBuffer-commandBuffer-01811", "If commandBuffer is an unprotected command buffer, then dstBuffer must not be a protected buffer", "1.2-extensions"},
     {"VUID-vkCmdFillBuffer-commandBuffer-01812", "If commandBuffer is a protected command buffer, then dstBuffer must not be an unprotected buffer", "1.2-extensions"},
@@ -4497,39 +4591,45 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "pSubpassBeginInfo must be a valid pointer to a valid VkSubpassBeginInfo structure", "1.2-extensions"},
     {"VUID-vkCmdNextSubpass2-pSubpassEndInfo-parameter", "pSubpassEndInfo must be a valid pointer to a valid VkSubpassEndInfo structure", "1.2-extensions"},
     {"VUID-vkCmdNextSubpass2-renderpass", "This command must only be called inside of a render pass instance", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-bufferMemoryBarrierCount-01178", "If vkCmdPipelineBarrier is called within a render pass instance, bufferMemoryBarrierCount must be 0", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-bufferMemoryBarrierCount-01178", "If fname:vkCmdPipelineBarrier is called within a render pass instance, it must not include any buffer memory barriers", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-dependencyFlags-01186", "If vkCmdPipelineBarrier is called outside of a render pass instance, dependencyFlags must not include VK_DEPENDENCY_VIEW_LOCAL_BIT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dependencyFlags-01186", "If fname:vkCmdPipelineBarrier is called outside of a render pass instance, VK_DEPENDENCY_VIEW_LOCAL_BIT must not be included in the dependency flags", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-dependencyFlags-parameter", "dependencyFlags must be a valid combination of VkDependencyFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-dstAccessMask-02816", "The dstAccessMask member of each element of pMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-dstStageMask-01169", "If the geometry shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-dstStageMask-01171", "If the tessellation shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-dstStageMask-02117", "If the mesh shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-dstStageMask-02118", "If the task shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04090", "If the geometry shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04091", "If the tessellation shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04092", "If the conditional rendering feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04093", "If the fragment density map feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04094", "If the transform feedback feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04095", "If the mesh shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04096", "If the task shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-04097", "If the shading rate image feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-dstStageMask-4098", "Any pipeline stage included in pname:dstStageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-dstStageMask-parameter", "dstStageMask must be a valid combination of VkPipelineStageFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-dstStageMask-requiredbitmask", "dstStageMask must not be 0", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-image-02635", "If vkCmdPipelineBarrier is called within a render pass instance, the image member of any element of pImageMemoryBarriers must be equal to one of the elements of pAttachments that the current framebuffer was created with, that is also referred to by one of the elements of the pColorAttachments, pResolveAttachments or pDepthStencilAttachment members of the VkSubpassDescription instance or by the pDepthStencilResolveAttachment member of the VkSubpassDescriptionDepthStencilResolve structure that the current subpass was created with", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-image-02637", "If vkCmdPipelineBarrier is called within a render pass instance, the image member of any element of pImageMemoryBarriers must be equal to one of the elements of pAttachments that the current framebuffer was created with, that is also referred to by one of the elements of the pColorAttachments, pResolveAttachments or pDepthStencilAttachment members of the VkSubpassDescription instance that the current subpass was created with", "1.1"},
-    {"VUID-vkCmdPipelineBarrier-oldLayout-01181", "If vkCmdPipelineBarrier is called within a render pass instance, the oldLayout and newLayout members of an element of pImageMemoryBarriers must be equal", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-oldLayout-02636", "If vkCmdPipelineBarrier is called within a render pass instance, the oldLayout and newLayout members of any element of pImageMemoryBarriers must be equal to the layout member of an element of the pColorAttachments, pResolveAttachments or pDepthStencilAttachment members of the VkSubpassDescription instance or by the pDepthStencilResolveAttachment member of the VkSubpassDescriptionDepthStencilResolve structure that the current subpass was created with, that refers to the same image", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-oldLayout-02638", "If vkCmdPipelineBarrier is called within a render pass instance, the oldLayout and newLayout members of any element of pImageMemoryBarriers must be equal to the layout member of an element of the pColorAttachments, pResolveAttachments or pDepthStencilAttachment members of the VkSubpassDescription instance that the current subpass was created with, that refers to the same image", "1.1"},
+    {"VUID-vkCmdPipelineBarrier-image-04073", "If fname:vkCmdPipelineBarrier is called within a render pass instance, the image member of any image memory barrier included in this command must be an attachment used in the current subpass both as an input attachment, and as either a color or depth/stencil attachment", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-oldLayout-01181", "If fname:vkCmdPipelineBarrier is called within a render pass instance, the oldLayout and newLayout members of any image memory barrier included in this command must be equal", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-02817", "For any element of pBufferMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its srcQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its srcAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-02818", "For any element of pBufferMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its dstQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its dstAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-parameter", "If bufferMemoryBarrierCount is not 0, pBufferMemoryBarriers must be a valid pointer to an array of bufferMemoryBarrierCount valid VkBufferMemoryBarrier structures", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-pDependencies-02285", "If vkCmdPipelineBarrier is called within a render pass instance, the render pass must have been created with at least one VkSubpassDependency instance in VkRenderPassCreateInfo::pDependencies that expresses a dependency from the current subpass to itself, and for which srcStageMask contains a subset of the bit values in VkSubpassDependency::srcStageMask, dstStageMask contains a subset of the bit values in VkSubpassDependency::dstStageMask, dependencyFlags is equal to VkSubpassDependency::dependencyFlags, srcAccessMask member of each element of pMemoryBarriers and pImageMemoryBarriers contains a subset of the bit values in VkSubpassDependency::srcAccessMask, and dstAccessMask member of each element of pMemoryBarriers and pImageMemoryBarriers contains a subset of the bit values in VkSubpassDependency::dstAccessMask", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-pDependencies-02285", "If fname:vkCmdPipelineBarrier is called within a render pass instance, the render pass must have been created with at least one VkSubpassDependency instance in VkRenderPassCreateInfo::pDependencies that expresses a dependency from the current subpass to itself, with synchronization scopes and access scopes that are all supersets of the scopes defined in this command", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-02819", "For any element of pImageMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its srcQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its srcAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-02820", "For any element of pImageMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its dstQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its dstAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-parameter", "If imageMemoryBarrierCount is not 0, pImageMemoryBarriers must be a valid pointer to an array of imageMemoryBarrierCount valid VkImageMemoryBarrier structures", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-pMemoryBarriers-parameter", "If memoryBarrierCount is not 0, pMemoryBarriers must be a valid pointer to an array of memoryBarrierCount valid VkMemoryBarrier structures", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-srcAccessMask-02815", "The srcAccessMask member of each element of pMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182", "If vkCmdPipelineBarrier is called within a render pass instance, the srcQueueFamilyIndex and dstQueueFamilyIndex members of any element of pImageMemoryBarriers must be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-srcStageMask-01168", "If the geometry shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-srcStageMask-01170", "If the tessellation shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-srcStageMask-01183", "Any pipeline stage included in srcStageMask or dstStageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-srcStageMask-02115", "If the mesh shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
-    {"VUID-vkCmdPipelineBarrier-srcStageMask-02116", "If the task shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182", "If fname:vkCmdPipelineBarrier is called within a render pass instance, the srcQueueFamilyIndex and dstQueueFamilyIndex members of any image memory barrier included in this command must be equal", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04090", "If the geometry shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04091", "If the tessellation shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04092", "If the conditional rendering feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04093", "If the fragment density map feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04094", "If the transform feedback feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04095", "If the mesh shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04096", "If the task shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-04097", "If the shading rate image feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdPipelineBarrier-srcStageMask-4098", "Any pipeline stage included in pname:srcStageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-srcStageMask-parameter", "srcStageMask must be a valid combination of VkPipelineStageFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdPipelineBarrier-srcStageMask-requiredbitmask", "srcStageMask must not be 0", "1.2-extensions"},
     {"VUID-vkCmdPreprocessGeneratedCommandsNV-commandBuffer-02974", "commandBuffer must not be a protected command buffer", "1.2-extensions"},
@@ -4583,10 +4683,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdResetEvent-event-parameter", "event must be a valid VkEvent handle", "1.2-extensions"},
     {"VUID-vkCmdResetEvent-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdResetEvent-stageMask-01153", "stageMask must not include VK_PIPELINE_STAGE_HOST_BIT", "1.2-extensions"},
-    {"VUID-vkCmdResetEvent-stageMask-01154", "If the geometry shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdResetEvent-stageMask-01155", "If the tessellation shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdResetEvent-stageMask-02109", "If the mesh shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
-    {"VUID-vkCmdResetEvent-stageMask-02110", "If the task shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04090", "If the geometry shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04091", "If the tessellation shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04092", "If the conditional rendering feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04093", "If the fragment density map feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04094", "If the transform feedback feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04095", "If the mesh shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04096", "If the task shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-04097", "If the shading rate image feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdResetEvent-stageMask-4098", "Any pipeline stage included in pname:stageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
     {"VUID-vkCmdResetEvent-stageMask-parameter", "stageMask must be a valid combination of VkPipelineStageFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdResetEvent-stageMask-requiredbitmask", "stageMask must not be 0", "1.2-extensions"},
     {"VUID-vkCmdResetQueryPool-None-02841", "All queries used by the command must not be active", "1.2-extensions"},
@@ -4617,8 +4722,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdResolveImage-dstImageLayout-parameter", "dstImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
     {"VUID-vkCmdResolveImage-dstSubresource-01710", "The dstSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
     {"VUID-vkCmdResolveImage-dstSubresource-01712", "The dstSubresource.baseArrayLayer + dstSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
-    {"VUID-vkCmdResolveImage-pRegions-00253", "The source region specified by each element of pRegions must be a region that is contained within srcImage", "1.2-extensions"},
-    {"VUID-vkCmdResolveImage-pRegions-00254", "The destination region specified by each element of pRegions must be a region that is contained within dstImage", "1.2-extensions"},
     {"VUID-vkCmdResolveImage-pRegions-00255", "The union of all source regions, and the union of all destination regions, specified by the elements of pRegions, must not overlap in memory", "1.2-extensions"},
     {"VUID-vkCmdResolveImage-pRegions-parameter", "pRegions must be a valid pointer to an array of regionCount valid VkImageResolve structures", "1.2-extensions"},
     {"VUID-vkCmdResolveImage-regionCount-arraylength", "regionCount must be greater than 0", "1.2-extensions"},
@@ -4646,6 +4749,11 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdSetCoarseSampleOrderNV-pCustomSampleOrders-parameter", "If customSampleOrderCount is not 0, pCustomSampleOrders must be a valid pointer to an array of customSampleOrderCount valid VkCoarseSampleOrderCustomNV structures", "1.2-extensions"},
     {"VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081", "If sampleOrderType is not VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, customSamplerOrderCount must be 0", "1.2-extensions"},
     {"VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-parameter", "sampleOrderType must be a valid VkCoarseSampleOrderTypeNV value", "1.2-extensions"},
+    {"VUID-vkCmdSetCullModeEXT-None-03384", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetCullModeEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetCullModeEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetCullModeEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetCullModeEXT-cullMode-parameter", "cullMode must be a valid combination of VkCullModeFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdSetDepthBias-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
     {"VUID-vkCmdSetDepthBias-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetDepthBias-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -4657,6 +4765,23 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdSetDepthBounds-maxDepthBounds-02509", "maxDepthBounds must be between 0.0 and 1.0, inclusive", "1.2-khr-extensions"},
     {"VUID-vkCmdSetDepthBounds-minDepthBounds-00600", "Unless the VK_EXT_depth_range_unrestricted extension is enabled minDepthBounds must be between 0.0 and 1.0, inclusive", "1.2-extensions"},
     {"VUID-vkCmdSetDepthBounds-minDepthBounds-02508", "minDepthBounds must be between 0.0 and 1.0, inclusive", "1.2-khr-extensions"},
+    {"VUID-vkCmdSetDepthBoundsTestEnableEXT-None-03349", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthCompareOpEXT-None-03353", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthCompareOpEXT-depthCompareOp-parameter", "depthCompareOp must be a valid VkCompareOp value", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthTestEnableEXT-None-03352", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthWriteEnableEXT-None-03354", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
     {"VUID-vkCmdSetDeviceMask-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics, compute, or transfer operations", "1.2-extensions"},
     {"VUID-vkCmdSetDeviceMask-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetDeviceMask-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -4681,10 +4806,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdSetEvent-event-parameter", "event must be a valid VkEvent handle", "1.2-extensions"},
     {"VUID-vkCmdSetEvent-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdSetEvent-stageMask-01149", "stageMask must not include VK_PIPELINE_STAGE_HOST_BIT", "1.2-extensions"},
-    {"VUID-vkCmdSetEvent-stageMask-01150", "If the geometry shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdSetEvent-stageMask-01151", "If the tessellation shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdSetEvent-stageMask-02107", "If the mesh shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
-    {"VUID-vkCmdSetEvent-stageMask-02108", "If the task shaders feature is not enabled, stageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04090", "If the geometry shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04091", "If the tessellation shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04092", "If the conditional rendering feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04093", "If the fragment density map feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04094", "If the transform feedback feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04095", "If the mesh shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04096", "If the task shaders feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-04097", "If the shading rate image feature is not enabled, pname:stageMask must not contain VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdSetEvent-stageMask-4098", "Any pipeline stage included in pname:stageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
     {"VUID-vkCmdSetEvent-stageMask-parameter", "stageMask must be a valid combination of VkPipelineStageFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdSetEvent-stageMask-requiredbitmask", "stageMask must not be 0", "1.2-extensions"},
     {"VUID-vkCmdSetExclusiveScissorNV-None-02031", "The exclusive scissor feature must be enabled", "1.2-extensions"},
@@ -4700,6 +4830,11 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdSetExclusiveScissorNV-offset-02039", "Evaluation of (offset.y + extent.height) for each member of pExclusiveScissors must not cause a signed integer addition overflow", "1.2-extensions"},
     {"VUID-vkCmdSetExclusiveScissorNV-pExclusiveScissors-parameter", "pExclusiveScissors must be a valid pointer to an array of exclusiveScissorCount VkRect2D structures", "1.2-extensions"},
     {"VUID-vkCmdSetExclusiveScissorNV-x-02037", "The x and y members of offset in each member of pExclusiveScissors must be greater than or equal to 0", "1.2-extensions"},
+    {"VUID-vkCmdSetFrontFaceEXT-None-03383", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetFrontFaceEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetFrontFaceEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetFrontFaceEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetFrontFaceEXT-frontFace-parameter", "frontFace must be a valid VkFrontFace value", "1.2-extensions"},
     {"VUID-vkCmdSetLineStippleEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
     {"VUID-vkCmdSetLineStippleEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetLineStippleEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -4721,6 +4856,11 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdSetPerformanceStreamMarkerINTEL-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetPerformanceStreamMarkerINTEL-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
     {"VUID-vkCmdSetPerformanceStreamMarkerINTEL-pMarkerInfo-parameter", "pMarkerInfo must be a valid pointer to a valid VkPerformanceStreamMarkerInfoINTEL structure", "1.2-extensions"},
+    {"VUID-vkCmdSetPrimitiveTopologyEXT-None-03347", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetPrimitiveTopologyEXT-primitiveTopology-parameter", "primitiveTopology must be a valid VkPrimitiveTopology value", "1.2-extensions"},
     {"VUID-vkCmdSetSampleLocationsEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
     {"VUID-vkCmdSetSampleLocationsEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -4739,16 +4879,41 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdSetScissor-scissorCount-00594", "If the multiple viewports feature is not enabled, scissorCount must be 1", "1.2-extensions"},
     {"VUID-vkCmdSetScissor-scissorCount-arraylength", "scissorCount must be greater than 0", "1.2-extensions"},
     {"VUID-vkCmdSetScissor-x-00595", "The x and y members of offset member of any element of pScissors must be greater than or equal to 0", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-None-03396", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-offset-03400", "Evaluation of (offset.x + extent.width) must not cause a signed integer addition overflow for any element of pScissors", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-offset-03401", "Evaluation of (offset.y + extent.height) must not cause a signed integer addition overflow for any element of pScissors", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-pScissors-parameter", "pScissors must be a valid pointer to an array of scissorCount VkRect2D structures", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-scissorCount-03397", "scissorCount must be between 1 and VkPhysicalDeviceLimits::maxViewports, inclusive", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-scissorCount-03398", "If the multiple viewports feature is not enabled, scissorCount must be 1", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-scissorCount-arraylength", "scissorCount must be greater than 0", "1.2-extensions"},
+    {"VUID-vkCmdSetScissorWithCountEXT-x-03399", "The x and y members of offset member of any element of pScissors must be greater than or equal to 0", "1.2-extensions"},
     {"VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
     {"VUID-vkCmdSetStencilCompareMask-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetStencilCompareMask-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
     {"VUID-vkCmdSetStencilCompareMask-faceMask-parameter", "faceMask must be a valid combination of VkStencilFaceFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdSetStencilCompareMask-faceMask-requiredbitmask", "faceMask must not be 0", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-None-03351", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-compareOp-parameter", "compareOp must be a valid VkCompareOp value", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-depthFailOp-parameter", "depthFailOp must be a valid VkStencilOp value", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-faceMask-parameter", "faceMask must be a valid combination of VkStencilFaceFlagBits values", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-faceMask-requiredbitmask", "faceMask must not be 0", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-failOp-parameter", "failOp must be a valid VkStencilOp value", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilOpEXT-passOp-parameter", "passOp must be a valid VkStencilOp value", "1.2-extensions"},
     {"VUID-vkCmdSetStencilReference-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
     {"VUID-vkCmdSetStencilReference-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetStencilReference-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
     {"VUID-vkCmdSetStencilReference-faceMask-parameter", "faceMask must be a valid combination of VkStencilFaceFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdSetStencilReference-faceMask-requiredbitmask", "faceMask must not be 0", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilTestEnableEXT-None-03350", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
     {"VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
     {"VUID-vkCmdSetStencilWriteMask-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetStencilWriteMask-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -4780,6 +4945,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdSetViewportWScalingNV-firstViewport-01324", "The sum of firstViewport and viewportCount must be between 1 and VkPhysicalDeviceLimits::maxViewports, inclusive", "1.2-extensions"},
     {"VUID-vkCmdSetViewportWScalingNV-pViewportWScalings-parameter", "pViewportWScalings must be a valid pointer to an array of viewportCount VkViewportWScalingNV structures", "1.2-extensions"},
     {"VUID-vkCmdSetViewportWScalingNV-viewportCount-arraylength", "viewportCount must be greater than 0", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-None-03393", "The extendedDynamicState feature must be enabled", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-pViewports-parameter", "pViewports must be a valid pointer to an array of viewportCount valid VkViewport structures", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-viewportCount-03394", "viewportCount must be between 1 and VkPhysicalDeviceLimits::maxViewports, inclusive", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-viewportCount-03395", "If the multiple viewports feature is not enabled, viewportCount must be 1", "1.2-extensions"},
+    {"VUID-vkCmdSetViewportWithCountEXT-viewportCount-arraylength", "viewportCount must be greater than 0", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-None-02690", "If a VkImageView is sampled with VK_FILTER_LINEAR as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-None-02691", "If a VkImageView is accessed using atomic operations as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-None-02692", "If a VkImageView is sampled with VK_FILTER_CUBIC_EXT as a result of this command, then the image view's format features must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT", "1.2-extensions"},
@@ -4795,6 +4968,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdTraceRaysIndirectKHR-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-None-03429", "Any shader group handle referenced by this call must have been queried from the currently bound ray tracing shader pipeline", "1.2-extensions"},
+    {"VUID-vkCmdTraceRaysIndirectKHR-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-buffer-02708", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-buffer-02709", "buffer must have been created with the VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysIndirectKHR-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
@@ -4862,6 +5036,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdTraceRaysKHR-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysKHR-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysKHR-None-03429", "Any shader group handle referenced by this call must have been queried from the currently bound ray tracing shader pipeline", "1.2-extensions"},
+    {"VUID-vkCmdTraceRaysKHR-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysKHR-commandBuffer-02701", "If the VkPipeline object bound to the pipeline bind point used by this command requires any dynamic state, that state must have been set for commandBuffer, and done so after any previously bound pipeline with the corresponding state not specified as dynamic", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysKHR-commandBuffer-02707", "If commandBuffer is an unprotected command buffer, any resource accessed by the VkPipeline object bound to the pipeline bind point used by this command must not be a protected resource", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysKHR-commandBuffer-02712", "If commandBuffer is a protected command buffer, any resource written to by the VkPipeline object bound to the pipeline bind point used by this command must not be an unprotected resource", "1.2-extensions"},
@@ -4926,6 +5101,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdTraceRaysNV-None-02706", "If the robust buffer access feature is not enabled, and if the VkPipeline object bound to the pipeline bind point used by this command accesses a storage buffer, it must not access values outside of the range of the buffer as specified in the descriptor set bound to the same pipeline bind point", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysNV-None-02859", "There must not have been any calls to dynamic state setting commands for any state not specified as dynamic in the VkPipeline object bound to the pipeline bind point used by this command, since that pipeline was bound", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysNV-None-03429", "Any shader group handle referenced by this call must have been queried from the currently bound ray tracing shader pipeline", "1.2-extensions"},
+    {"VUID-vkCmdTraceRaysNV-None-04115", "If a VkImageView is accessed using OpImageWrite as a result of this command, then the Type of the Texel operand of that instruction must have at least as many components as the image view's format.", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02461", "callableShaderBindingOffset must be less than the size of callableShaderBindingTableBuffer", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462", "callableShaderBindingOffset must be a multiple of VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment", "1.2-extensions"},
     {"VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02465", "callableShaderBindingStride must be a multiple of VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize", "1.2-extensions"},
@@ -4986,33 +5162,40 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdWaitEvents-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-commonparent", "Both of commandBuffer, and the elements of pEvents must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-dstAccessMask-02810", "The dstAccessMask member of each element of pMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-dstAccessMask-02812", "The dstAccessMask member of each element of pBufferMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-dstAccessMask-02814", "The dstAccessMask member of any element of pImageMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-dstStageMask-01160", "If the geometry shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-dstStageMask-01162", "If the tessellation shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-dstStageMask-02113", "If the mesh shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-dstStageMask-02114", "If the task shaders feature is not enabled, dstStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstAccessMask-02816", "The dstAccessMask member of each element of pMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04090", "If the geometry shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04091", "If the tessellation shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04092", "If the conditional rendering feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04093", "If the fragment density map feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04094", "If the transform feedback feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04095", "If the mesh shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04096", "If the task shaders feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-04097", "If the shading rate image feature is not enabled, pname:dstStageMask must not contain VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-dstStageMask-4098", "Any pipeline stage included in pname:dstStageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-dstStageMask-parameter", "dstStageMask must be a valid combination of VkPipelineStageFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-dstStageMask-requiredbitmask", "dstStageMask must not be 0", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-eventCount-arraylength", "eventCount must be greater than 0", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-pBufferMemoryBarriers-02817", "For any element of pBufferMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its srcQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its srcAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-pBufferMemoryBarriers-02818", "For any element of pBufferMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its dstQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its dstAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-pBufferMemoryBarriers-parameter", "If bufferMemoryBarrierCount is not 0, pBufferMemoryBarriers must be a valid pointer to an array of bufferMemoryBarrierCount valid VkBufferMemoryBarrier structures", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-pEvents-01163", "If pEvents includes one or more events that will be signaled by vkSetEvent after commandBuffer has been submitted to a queue, then vkCmdWaitEvents must not be called inside a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-pEvents-parameter", "pEvents must be a valid pointer to an array of eventCount valid VkEvent handles", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-pImageMemoryBarriers-02819", "For any element of pImageMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its srcQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its srcAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-pImageMemoryBarriers-02820", "For any element of pImageMemoryBarriers, if its srcQueueFamilyIndex and dstQueueFamilyIndex members are equal, or if its dstQueueFamilyIndex is the queue family index that was used to create the command pool that commandBuffer was allocated from, then its dstAccessMask member must only contain access flags that are supported by one or more of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-pImageMemoryBarriers-parameter", "If imageMemoryBarrierCount is not 0, pImageMemoryBarriers must be a valid pointer to an array of imageMemoryBarrierCount valid VkImageMemoryBarrier structures", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-pMemoryBarriers-01165", "Each element of pMemoryBarriers, pBufferMemoryBarriers or pImageMemoryBarriers must not have any access flag included in its srcAccessMask member if that bit is not supported by any of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-pMemoryBarriers-01166", "Each element of pMemoryBarriers, pBufferMemoryBarriers or pImageMemoryBarriers must not have any access flag included in its dstAccessMask member if that bit is not supported by any of the pipeline stages in dstStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-pMemoryBarriers-parameter", "If memoryBarrierCount is not 0, pMemoryBarriers must be a valid pointer to an array of memoryBarrierCount valid VkMemoryBarrier structures", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcAccessMask-02809", "The srcAccessMask member of each element of pMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcAccessMask-02811", "The srcAccessMask member of each element of pBufferMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcAccessMask-02813", "The srcAccessMask member of each element of pImageMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcAccessMask-02815", "The srcAccessMask member of each element of pMemoryBarriers must only include access flags that are supported by one or more of the pipeline stages in srcStageMask, as specified in the table of supported access types", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803", "The srcQueueFamilyIndex and dstQueueFamilyIndex members of any element of pBufferMemoryBarriers or pImageMemoryBarriers must be equal", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-srcStageMask-01158", "srcStageMask must be the bitwise OR of the stageMask parameter used in previous calls to vkCmdSetEvent with any of the members of pEvents and VK_PIPELINE_STAGE_HOST_BIT if any of the members of pEvents was set using vkSetEvent", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcStageMask-01159", "If the geometry shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcStageMask-01161", "If the tessellation shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcStageMask-01164", "Any pipeline stage included in srcStageMask or dstStageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcStageMask-02111", "If the mesh shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
-    {"VUID-vkCmdWaitEvents-srcStageMask-02112", "If the task shaders feature is not enabled, srcStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04090", "If the geometry shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04091", "If the tessellation shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04092", "If the conditional rendering feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04093", "If the fragment density map feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04094", "If the transform feedback feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04095", "If the mesh shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04096", "If the task shaders feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-04097", "If the shading rate image feature is not enabled, pname:srcStageMask must not contain VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWaitEvents-srcStageMask-4098", "Any pipeline stage included in pname:srcStageMask must be supported by the capabilities of the queue family specified by the queueFamilyIndex member of the VkCommandPoolCreateInfo structure that was used to create the VkCommandPool that commandBuffer was allocated from, as specified in the table of supported pipeline stages", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-srcStageMask-parameter", "srcStageMask must be a valid combination of VkPipelineStageFlagBits values", "1.2-extensions"},
     {"VUID-vkCmdWaitEvents-srcStageMask-requiredbitmask", "srcStageMask must not be 0", "1.2-extensions"},
     {"VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructureCount-arraylength", "accelerationStructureCount must be greater than 0", "1.2-extensions"},
@@ -5037,12 +5220,28 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdWriteBufferMarkerAMD-dstBuffer-parameter", "dstBuffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdWriteBufferMarkerAMD-dstOffset-01798", "dstOffset must be less than or equal to the size of dstBuffer minus 4", "1.2-extensions"},
     {"VUID-vkCmdWriteBufferMarkerAMD-dstOffset-01801", "dstOffset must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04074", "pipelineStage must be a valid stage for the queue family that was used to create the command pool that commandBuffer was allocated from", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04075", "If the geometry shaders feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04076", "If the tessellation shaders feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04077", "If the conditional rendering feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04078", "If the fragment density map feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04079", "If the transform feedback feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04080", "If the mesh shaders feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV or VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-04081", "If the shading rate image feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
     {"VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-parameter", "pipelineStage must be a valid VkPipelineStageFlagBits value", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-None-00830", "All queries used by the command must be unavailable", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-commonparent", "Both of commandBuffer, and queryPool must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04074", "pipelineStage must be a valid stage for the queue family that was used to create the command pool that commandBuffer was allocated from", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04075", "If the geometry shaders feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04076", "If the tessellation shaders feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT or VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04077", "If the conditional rendering feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04078", "If the fragment density map feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04079", "If the transform feedback feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04080", "If the mesh shaders feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV or VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV", "1.2-extensions"},
+    {"VUID-vkCmdWriteTimestamp-pipelineStage-04081", "If the shading rate image feature is not enabled, pipelineStage must not be VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-pipelineStage-parameter", "pipelineStage must be a valid VkPipelineStageFlagBits value", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-query-00831", "If vkCmdWriteTimestamp is called within a render pass instance, the sum of query and the number of bits set in the current subpass's view mask must be less than or equal to the number of queries in queryPool", "1.2-extensions"},
     {"VUID-vkCmdWriteTimestamp-queryPool-00828", "The query identified by queryPool and query must be unavailable", "1.2-extensions"},
@@ -5252,6 +5451,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCreateRenderPass2-pCreateInfo-parameter", "pCreateInfo must be a valid pointer to a valid VkRenderPassCreateInfo2 structure", "1.2-extensions"},
     {"VUID-vkCreateRenderPass2-pRenderPass-parameter", "pRenderPass must be a valid pointer to a VkRenderPass handle", "1.2-extensions"},
     {"VUID-vkCreateSampler-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
+    {"VUID-vkCreateSampler-maxSamplerAllocationCount-04110", "There must be less than VkPhysicalDeviceLimits::maxSamplerAllocationCount VkSampler objects currently created on the device.", "1.2-extensions"},
     {"VUID-vkCreateSampler-pAllocator-parameter", "If pAllocator is not NULL, pAllocator must be a valid pointer to a valid VkAllocationCallbacks structure", "1.2-extensions"},
     {"VUID-vkCreateSampler-pCreateInfo-parameter", "pCreateInfo must be a valid pointer to a valid VkSamplerCreateInfo structure", "1.2-extensions"},
     {"VUID-vkCreateSampler-pSampler-parameter", "pSampler must be a valid pointer to a VkSampler handle", "1.2-extensions"},
@@ -5459,6 +5659,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkDestroyPipelineLayout-pipelineLayout-02004", "pipelineLayout must not have been passed to any vkCmd* command for any command buffers that are still in the recording state when vkDestroyPipelineLayout is called", "1.2-extensions"},
     {"VUID-vkDestroyPipelineLayout-pipelineLayout-parameter", "If pipelineLayout is not VK_NULL_HANDLE, pipelineLayout must be a valid VkPipelineLayout handle", "1.2-extensions"},
     {"VUID-vkDestroyPipelineLayout-pipelineLayout-parent", "If pipelineLayout is a valid handle, it must have been created, allocated, or retrieved from device", "1.2-extensions"},
+    {"VUID-vkDestroyPrivateDataSlotEXT-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
+    {"VUID-vkDestroyPrivateDataSlotEXT-pAllocator-parameter", "If pAllocator is not NULL, pAllocator must be a valid pointer to a valid VkAllocationCallbacks structure", "1.2-extensions"},
+    {"VUID-vkDestroyPrivateDataSlotEXT-privateDataSlot-04062", "If VkAllocationCallbacks were provided when privateDataSlot was created, a compatible set of callbacks must be provided here", "1.2-extensions"},
+    {"VUID-vkDestroyPrivateDataSlotEXT-privateDataSlot-04063", "If no VkAllocationCallbacks were provided when privateDataSlot was created, pAllocator must be NULL", "1.2-extensions"},
+    {"VUID-vkDestroyPrivateDataSlotEXT-privateDataSlot-parameter", "If privateDataSlot is not VK_NULL_HANDLE, privateDataSlot must be a valid VkPrivateDataSlotEXT handle", "1.2-extensions"},
+    {"VUID-vkDestroyPrivateDataSlotEXT-privateDataSlot-parent", "If privateDataSlot is a valid handle, it must have been created, allocated, or retrieved from device", "1.2-extensions"},
     {"VUID-vkDestroyQueryPool-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
     {"VUID-vkDestroyQueryPool-pAllocator-parameter", "If pAllocator is not NULL, pAllocator must be a valid pointer to a valid VkAllocationCallbacks structure", "1.2-extensions"},
     {"VUID-vkDestroyQueryPool-queryPool-00793", "All submitted commands that refer to queryPool must have completed execution", "1.2-extensions"},
@@ -6287,91 +6493,103 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     prefix##BINDSHADINGRATEIMAGENV = 12,\
     prefix##BINDTRANSFORMFEEDBACKBUFFERSEXT = 13,\
     prefix##BINDVERTEXBUFFERS = 14,\
-    prefix##BLITIMAGE = 15,\
-    prefix##BUILDACCELERATIONSTRUCTUREINDIRECTKHR = 16,\
-    prefix##BUILDACCELERATIONSTRUCTUREKHR = 17,\
-    prefix##BUILDACCELERATIONSTRUCTURENV = 18,\
-    prefix##CLEARATTACHMENTS = 19,\
-    prefix##CLEARCOLORIMAGE = 20,\
-    prefix##CLEARDEPTHSTENCILIMAGE = 21,\
-    prefix##COPYACCELERATIONSTRUCTUREKHR = 22,\
-    prefix##COPYACCELERATIONSTRUCTURENV = 23,\
-    prefix##COPYACCELERATIONSTRUCTURETOMEMORYKHR = 24,\
-    prefix##COPYBUFFER = 25,\
-    prefix##COPYBUFFERTOIMAGE = 26,\
-    prefix##COPYIMAGE = 27,\
-    prefix##COPYIMAGETOBUFFER = 28,\
-    prefix##COPYMEMORYTOACCELERATIONSTRUCTUREKHR = 29,\
-    prefix##COPYQUERYPOOLRESULTS = 30,\
-    prefix##DEBUGMARKERBEGINEXT = 31,\
-    prefix##DEBUGMARKERENDEXT = 32,\
-    prefix##DEBUGMARKERINSERTEXT = 33,\
-    prefix##DISPATCH = 34,\
-    prefix##DISPATCHBASE = 35,\
-    prefix##DISPATCHINDIRECT = 36,\
-    prefix##DRAW = 37,\
-    prefix##DRAWINDEXED = 38,\
-    prefix##DRAWINDEXEDINDIRECT = 39,\
-    prefix##DRAWINDEXEDINDIRECTCOUNT = 40,\
-    prefix##DRAWINDIRECT = 41,\
-    prefix##DRAWINDIRECTBYTECOUNTEXT = 42,\
-    prefix##DRAWINDIRECTCOUNT = 43,\
-    prefix##DRAWMESHTASKSINDIRECTCOUNTNV = 44,\
-    prefix##DRAWMESHTASKSINDIRECTNV = 45,\
-    prefix##DRAWMESHTASKSNV = 46,\
-    prefix##ENDCONDITIONALRENDERINGEXT = 47,\
-    prefix##ENDDEBUGUTILSLABELEXT = 48,\
-    prefix##ENDQUERY = 49,\
-    prefix##ENDQUERYINDEXEDEXT = 50,\
-    prefix##ENDRENDERPASS = 51,\
-    prefix##ENDRENDERPASS2 = 52,\
-    prefix##ENDTRANSFORMFEEDBACKEXT = 53,\
-    prefix##EXECUTECOMMANDS = 54,\
-    prefix##EXECUTEGENERATEDCOMMANDSNV = 55,\
-    prefix##FILLBUFFER = 56,\
-    prefix##INSERTDEBUGUTILSLABELEXT = 57,\
-    prefix##NEXTSUBPASS = 58,\
-    prefix##NEXTSUBPASS2 = 59,\
-    prefix##PIPELINEBARRIER = 60,\
-    prefix##PREPROCESSGENERATEDCOMMANDSNV = 61,\
-    prefix##PUSHCONSTANTS = 62,\
-    prefix##PUSHDESCRIPTORSETKHR = 63,\
-    prefix##PUSHDESCRIPTORSETWITHTEMPLATEKHR = 64,\
-    prefix##RESETEVENT = 65,\
-    prefix##RESETQUERYPOOL = 66,\
-    prefix##RESOLVEIMAGE = 67,\
-    prefix##SETBLENDCONSTANTS = 68,\
-    prefix##SETCHECKPOINTNV = 69,\
-    prefix##SETCOARSESAMPLEORDERNV = 70,\
-    prefix##SETDEPTHBIAS = 71,\
-    prefix##SETDEPTHBOUNDS = 72,\
-    prefix##SETDEVICEMASK = 73,\
-    prefix##SETDISCARDRECTANGLEEXT = 74,\
-    prefix##SETEVENT = 75,\
-    prefix##SETEXCLUSIVESCISSORNV = 76,\
-    prefix##SETLINESTIPPLEEXT = 77,\
-    prefix##SETLINEWIDTH = 78,\
-    prefix##SETPERFORMANCEMARKERINTEL = 79,\
-    prefix##SETPERFORMANCEOVERRIDEINTEL = 80,\
-    prefix##SETPERFORMANCESTREAMMARKERINTEL = 81,\
-    prefix##SETSAMPLELOCATIONSEXT = 82,\
-    prefix##SETSCISSOR = 83,\
-    prefix##SETSTENCILCOMPAREMASK = 84,\
-    prefix##SETSTENCILREFERENCE = 85,\
-    prefix##SETSTENCILWRITEMASK = 86,\
-    prefix##SETVIEWPORT = 87,\
-    prefix##SETVIEWPORTSHADINGRATEPALETTENV = 88,\
-    prefix##SETVIEWPORTWSCALINGNV = 89,\
-    prefix##TRACERAYSINDIRECTKHR = 90,\
-    prefix##TRACERAYSKHR = 91,\
-    prefix##TRACERAYSNV = 92,\
-    prefix##UPDATEBUFFER = 93,\
-    prefix##WAITEVENTS = 94,\
-    prefix##WRITEACCELERATIONSTRUCTURESPROPERTIESKHR = 95,\
-    prefix##WRITEBUFFERMARKERAMD = 96,\
-    prefix##WRITETIMESTAMP = 97,\
-    prefix##ENDCOMMANDBUFFER = 98,\
-    prefix##RANGE_SIZE = 99
+    prefix##BINDVERTEXBUFFERS2EXT = 15,\
+    prefix##BLITIMAGE = 16,\
+    prefix##BUILDACCELERATIONSTRUCTUREINDIRECTKHR = 17,\
+    prefix##BUILDACCELERATIONSTRUCTUREKHR = 18,\
+    prefix##BUILDACCELERATIONSTRUCTURENV = 19,\
+    prefix##CLEARATTACHMENTS = 20,\
+    prefix##CLEARCOLORIMAGE = 21,\
+    prefix##CLEARDEPTHSTENCILIMAGE = 22,\
+    prefix##COPYACCELERATIONSTRUCTUREKHR = 23,\
+    prefix##COPYACCELERATIONSTRUCTURENV = 24,\
+    prefix##COPYACCELERATIONSTRUCTURETOMEMORYKHR = 25,\
+    prefix##COPYBUFFER = 26,\
+    prefix##COPYBUFFERTOIMAGE = 27,\
+    prefix##COPYIMAGE = 28,\
+    prefix##COPYIMAGETOBUFFER = 29,\
+    prefix##COPYMEMORYTOACCELERATIONSTRUCTUREKHR = 30,\
+    prefix##COPYQUERYPOOLRESULTS = 31,\
+    prefix##DEBUGMARKERBEGINEXT = 32,\
+    prefix##DEBUGMARKERENDEXT = 33,\
+    prefix##DEBUGMARKERINSERTEXT = 34,\
+    prefix##DISPATCH = 35,\
+    prefix##DISPATCHBASE = 36,\
+    prefix##DISPATCHINDIRECT = 37,\
+    prefix##DRAW = 38,\
+    prefix##DRAWINDEXED = 39,\
+    prefix##DRAWINDEXEDINDIRECT = 40,\
+    prefix##DRAWINDEXEDINDIRECTCOUNT = 41,\
+    prefix##DRAWINDIRECT = 42,\
+    prefix##DRAWINDIRECTBYTECOUNTEXT = 43,\
+    prefix##DRAWINDIRECTCOUNT = 44,\
+    prefix##DRAWMESHTASKSINDIRECTCOUNTNV = 45,\
+    prefix##DRAWMESHTASKSINDIRECTNV = 46,\
+    prefix##DRAWMESHTASKSNV = 47,\
+    prefix##ENDCONDITIONALRENDERINGEXT = 48,\
+    prefix##ENDDEBUGUTILSLABELEXT = 49,\
+    prefix##ENDQUERY = 50,\
+    prefix##ENDQUERYINDEXEDEXT = 51,\
+    prefix##ENDRENDERPASS = 52,\
+    prefix##ENDRENDERPASS2 = 53,\
+    prefix##ENDTRANSFORMFEEDBACKEXT = 54,\
+    prefix##EXECUTECOMMANDS = 55,\
+    prefix##EXECUTEGENERATEDCOMMANDSNV = 56,\
+    prefix##FILLBUFFER = 57,\
+    prefix##INSERTDEBUGUTILSLABELEXT = 58,\
+    prefix##NEXTSUBPASS = 59,\
+    prefix##NEXTSUBPASS2 = 60,\
+    prefix##PIPELINEBARRIER = 61,\
+    prefix##PREPROCESSGENERATEDCOMMANDSNV = 62,\
+    prefix##PUSHCONSTANTS = 63,\
+    prefix##PUSHDESCRIPTORSETKHR = 64,\
+    prefix##PUSHDESCRIPTORSETWITHTEMPLATEKHR = 65,\
+    prefix##RESETEVENT = 66,\
+    prefix##RESETQUERYPOOL = 67,\
+    prefix##RESOLVEIMAGE = 68,\
+    prefix##SETBLENDCONSTANTS = 69,\
+    prefix##SETCHECKPOINTNV = 70,\
+    prefix##SETCOARSESAMPLEORDERNV = 71,\
+    prefix##SETCULLMODEEXT = 72,\
+    prefix##SETDEPTHBIAS = 73,\
+    prefix##SETDEPTHBOUNDS = 74,\
+    prefix##SETDEPTHBOUNDSTESTENABLEEXT = 75,\
+    prefix##SETDEPTHCOMPAREOPEXT = 76,\
+    prefix##SETDEPTHTESTENABLEEXT = 77,\
+    prefix##SETDEPTHWRITEENABLEEXT = 78,\
+    prefix##SETDEVICEMASK = 79,\
+    prefix##SETDISCARDRECTANGLEEXT = 80,\
+    prefix##SETEVENT = 81,\
+    prefix##SETEXCLUSIVESCISSORNV = 82,\
+    prefix##SETFRONTFACEEXT = 83,\
+    prefix##SETLINESTIPPLEEXT = 84,\
+    prefix##SETLINEWIDTH = 85,\
+    prefix##SETPERFORMANCEMARKERINTEL = 86,\
+    prefix##SETPERFORMANCEOVERRIDEINTEL = 87,\
+    prefix##SETPERFORMANCESTREAMMARKERINTEL = 88,\
+    prefix##SETPRIMITIVETOPOLOGYEXT = 89,\
+    prefix##SETSAMPLELOCATIONSEXT = 90,\
+    prefix##SETSCISSOR = 91,\
+    prefix##SETSCISSORWITHCOUNTEXT = 92,\
+    prefix##SETSTENCILCOMPAREMASK = 93,\
+    prefix##SETSTENCILOPEXT = 94,\
+    prefix##SETSTENCILREFERENCE = 95,\
+    prefix##SETSTENCILTESTENABLEEXT = 96,\
+    prefix##SETSTENCILWRITEMASK = 97,\
+    prefix##SETVIEWPORT = 98,\
+    prefix##SETVIEWPORTSHADINGRATEPALETTENV = 99,\
+    prefix##SETVIEWPORTWSCALINGNV = 100,\
+    prefix##SETVIEWPORTWITHCOUNTEXT = 101,\
+    prefix##TRACERAYSINDIRECTKHR = 102,\
+    prefix##TRACERAYSKHR = 103,\
+    prefix##TRACERAYSNV = 104,\
+    prefix##UPDATEBUFFER = 105,\
+    prefix##WAITEVENTS = 106,\
+    prefix##WRITEACCELERATIONSTRUCTURESPROPERTIESKHR = 107,\
+    prefix##WRITEBUFFERMARKERAMD = 108,\
+    prefix##WRITETIMESTAMP = 109,\
+    prefix##ENDCOMMANDBUFFER = 110,\
+    prefix##RANGE_SIZE = 111
 
 #define VUID_CMD_NAME_LIST\
     "Command_Undefined",\
@@ -6389,6 +6607,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "vkCmdBindShadingRateImageNV",\
     "vkCmdBindTransformFeedbackBuffersEXT",\
     "vkCmdBindVertexBuffers",\
+    "vkCmdBindVertexBuffers2EXT",\
     "vkCmdBlitImage",\
     "vkCmdBuildAccelerationStructureIndirectKHR",\
     "vkCmdBuildAccelerationStructureKHR",\
@@ -6445,25 +6664,36 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "vkCmdSetBlendConstants",\
     "vkCmdSetCheckpointNV",\
     "vkCmdSetCoarseSampleOrderNV",\
+    "vkCmdSetCullModeEXT",\
     "vkCmdSetDepthBias",\
     "vkCmdSetDepthBounds",\
+    "vkCmdSetDepthBoundsTestEnableEXT",\
+    "vkCmdSetDepthCompareOpEXT",\
+    "vkCmdSetDepthTestEnableEXT",\
+    "vkCmdSetDepthWriteEnableEXT",\
     "vkCmdSetDeviceMask",\
     "vkCmdSetDiscardRectangleEXT",\
     "vkCmdSetEvent",\
     "vkCmdSetExclusiveScissorNV",\
+    "vkCmdSetFrontFaceEXT",\
     "vkCmdSetLineStippleEXT",\
     "vkCmdSetLineWidth",\
     "vkCmdSetPerformanceMarkerINTEL",\
     "vkCmdSetPerformanceOverrideINTEL",\
     "vkCmdSetPerformanceStreamMarkerINTEL",\
+    "vkCmdSetPrimitiveTopologyEXT",\
     "vkCmdSetSampleLocationsEXT",\
     "vkCmdSetScissor",\
+    "vkCmdSetScissorWithCountEXT",\
     "vkCmdSetStencilCompareMask",\
+    "vkCmdSetStencilOpEXT",\
     "vkCmdSetStencilReference",\
+    "vkCmdSetStencilTestEnableEXT",\
     "vkCmdSetStencilWriteMask",\
     "vkCmdSetViewport",\
     "vkCmdSetViewportShadingRatePaletteNV",\
     "vkCmdSetViewportWScalingNV",\
+    "vkCmdSetViewportWithCountEXT",\
     "vkCmdTraceRaysIndirectKHR",\
     "vkCmdTraceRaysKHR",\
     "vkCmdTraceRaysNV",\
@@ -6490,6 +6720,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "VUID-vkCmdBindShadingRateImageNV-commandBuffer-recording",\
     "VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-recording",\
     "VUID-vkCmdBindVertexBuffers-commandBuffer-recording",\
+    "VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-recording",\
     "VUID-vkCmdBlitImage-commandBuffer-recording",\
     "VUID-vkCmdBuildAccelerationStructureIndirectKHR-commandBuffer-recording",\
     "VUID-vkCmdBuildAccelerationStructureKHR-commandBuffer-recording",\
@@ -6546,25 +6777,36 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "VUID-vkCmdSetBlendConstants-commandBuffer-recording",\
     "VUID-vkCmdSetCheckpointNV-commandBuffer-recording",\
     "VUID-vkCmdSetCoarseSampleOrderNV-commandBuffer-recording",\
+    "VUID-vkCmdSetCullModeEXT-commandBuffer-recording",\
     "VUID-vkCmdSetDepthBias-commandBuffer-recording",\
     "VUID-vkCmdSetDepthBounds-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-recording",\
     "VUID-vkCmdSetDeviceMask-commandBuffer-recording",\
     "VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-recording",\
     "VUID-vkCmdSetEvent-commandBuffer-recording",\
     "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-recording",\
+    "VUID-vkCmdSetFrontFaceEXT-commandBuffer-recording",\
     "VUID-vkCmdSetLineStippleEXT-commandBuffer-recording",\
     "VUID-vkCmdSetLineWidth-commandBuffer-recording",\
     "VUID-vkCmdSetPerformanceMarkerINTEL-commandBuffer-recording",\
     "VUID-vkCmdSetPerformanceOverrideINTEL-commandBuffer-recording",\
     "VUID-vkCmdSetPerformanceStreamMarkerINTEL-commandBuffer-recording",\
+    "VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-recording",\
     "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording",\
     "VUID-vkCmdSetScissor-commandBuffer-recording",\
+    "VUID-vkCmdSetScissorWithCountEXT-commandBuffer-recording",\
     "VUID-vkCmdSetStencilCompareMask-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilOpEXT-commandBuffer-recording",\
     "VUID-vkCmdSetStencilReference-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-recording",\
     "VUID-vkCmdSetStencilWriteMask-commandBuffer-recording",\
     "VUID-vkCmdSetViewport-commandBuffer-recording",\
     "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-recording",\
     "VUID-vkCmdSetViewportWScalingNV-commandBuffer-recording",\
+    "VUID-vkCmdSetViewportWithCountEXT-commandBuffer-recording",\
     "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-recording",\
     "VUID-vkCmdTraceRaysKHR-commandBuffer-recording",\
     "VUID-vkCmdTraceRaysNV-commandBuffer-recording",\

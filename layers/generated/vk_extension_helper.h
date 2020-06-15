@@ -352,6 +352,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_descriptor_indexing{kNotEnabled};
     ExtEnabled vk_ext_discard_rectangles{kNotEnabled};
     ExtEnabled vk_ext_display_control{kNotEnabled};
+    ExtEnabled vk_ext_extended_dynamic_state{kNotEnabled};
     ExtEnabled vk_ext_external_memory_dma_buf{kNotEnabled};
     ExtEnabled vk_ext_external_memory_host{kNotEnabled};
     ExtEnabled vk_ext_filter_cubic{kNotEnabled};
@@ -564,6 +565,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_display_control, {{
                            {&DeviceExtensions::vk_ext_display_surface_counter, VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_external_memory_dma_buf, {{
                            {&DeviceExtensions::vk_khr_external_memory_fd, VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_external_memory_host, {{
@@ -719,7 +722,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_performance_query, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
-            std::make_pair(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_executable_properties, {})),
+            std::make_pair(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_executable_properties, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             std::make_pair(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_library, {})),
 #endif
@@ -981,6 +985,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
     VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME,
     VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME,
+    VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
     VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
     VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME,
     VK_EXT_FILTER_CUBIC_EXTENSION_NAME,

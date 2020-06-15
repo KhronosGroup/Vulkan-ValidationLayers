@@ -1864,6 +1864,53 @@ bool PreCallValidateResetQueryPoolEXT(
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
     uint32_t                                    queryCount) const;
+bool PreCallValidateCmdSetCullModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCullModeFlags                             cullMode) const;
+bool PreCallValidateCmdSetFrontFaceEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkFrontFace                                 frontFace) const;
+bool PreCallValidateCmdSetPrimitiveTopologyEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPrimitiveTopology                         primitiveTopology) const;
+bool PreCallValidateCmdSetViewportWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    viewportCount,
+    const VkViewport*                           pViewports) const;
+bool PreCallValidateCmdSetScissorWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    scissorCount,
+    const VkRect2D*                             pScissors) const;
+bool PreCallValidateCmdBindVertexBuffers2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBuffer*                             pBuffers,
+    const VkDeviceSize*                         pOffsets,
+    const VkDeviceSize*                         pSizes,
+    const VkDeviceSize*                         pStrides) const;
+bool PreCallValidateCmdSetDepthTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthTestEnable) const;
+bool PreCallValidateCmdSetDepthWriteEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthWriteEnable) const;
+bool PreCallValidateCmdSetDepthCompareOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCompareOp                                 depthCompareOp) const;
+bool PreCallValidateCmdSetDepthBoundsTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthBoundsTestEnable) const;
+bool PreCallValidateCmdSetStencilTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    stencilTestEnable) const;
+bool PreCallValidateCmdSetStencilOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkStencilFaceFlags                          faceMask,
+    VkStencilOp                                 failOp,
+    VkStencilOp                                 passOp,
+    VkStencilOp                                 depthFailOp,
+    VkCompareOp                                 compareOp) const;
 bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,

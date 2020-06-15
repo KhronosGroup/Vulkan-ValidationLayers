@@ -39,6 +39,33 @@
 template <VkStructureType id> struct LvlSTypeMap {};
 template <typename T> struct LvlTypeMap {};
 
+// Map type VkBufferMemoryBarrier to id VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
+template <> struct LvlTypeMap<VkBufferMemoryBarrier> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER> {
+    typedef VkBufferMemoryBarrier Type;
+};
+
+// Map type VkImageMemoryBarrier to id VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
+template <> struct LvlTypeMap<VkImageMemoryBarrier> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER> {
+    typedef VkImageMemoryBarrier Type;
+};
+
+// Map type VkMemoryBarrier to id VK_STRUCTURE_TYPE_MEMORY_BARRIER
+template <> struct LvlTypeMap<VkMemoryBarrier> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_BARRIER> {
+    typedef VkMemoryBarrier Type;
+};
+
 // Map type VkApplicationInfo to id VK_STRUCTURE_TYPE_APPLICATION_INFO
 template <> struct LvlTypeMap<VkApplicationInfo> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -84,15 +111,6 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SUBMIT_INFO> {
     typedef VkSubmitInfo Type;
 };
 
-// Map type VkMemoryAllocateInfo to id VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
-template <> struct LvlTypeMap<VkMemoryAllocateInfo> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO> {
-    typedef VkMemoryAllocateInfo Type;
-};
-
 // Map type VkMappedMemoryRange to id VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE
 template <> struct LvlTypeMap<VkMappedMemoryRange> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -100,6 +118,15 @@ template <> struct LvlTypeMap<VkMappedMemoryRange> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE> {
     typedef VkMappedMemoryRange Type;
+};
+
+// Map type VkMemoryAllocateInfo to id VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
+template <> struct LvlTypeMap<VkMemoryAllocateInfo> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO> {
+    typedef VkMemoryAllocateInfo Type;
 };
 
 // Map type VkBindSparseInfo to id VK_STRUCTURE_TYPE_BIND_SPARSE_INFO
@@ -210,6 +237,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_IN
     typedef VkPipelineShaderStageCreateInfo Type;
 };
 
+// Map type VkComputePipelineCreateInfo to id VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO
+template <> struct LvlTypeMap<VkComputePipelineCreateInfo> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO> {
+    typedef VkComputePipelineCreateInfo Type;
+};
+
 // Map type VkPipelineVertexInputStateCreateInfo to id VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
 template <> struct LvlTypeMap<VkPipelineVertexInputStateCreateInfo> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -300,15 +336,6 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO> 
     typedef VkGraphicsPipelineCreateInfo Type;
 };
 
-// Map type VkComputePipelineCreateInfo to id VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO
-template <> struct LvlTypeMap<VkComputePipelineCreateInfo> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO> {
-    typedef VkComputePipelineCreateInfo Type;
-};
-
 // Map type VkPipelineLayoutCreateInfo to id VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
 template <> struct LvlTypeMap<VkPipelineLayoutCreateInfo> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -327,13 +354,13 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO> {
     typedef VkSamplerCreateInfo Type;
 };
 
-// Map type VkDescriptorSetLayoutCreateInfo to id VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
-template <> struct LvlTypeMap<VkDescriptorSetLayoutCreateInfo> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+// Map type VkCopyDescriptorSet to id VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET
+template <> struct LvlTypeMap<VkCopyDescriptorSet> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
 };
 
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO> {
-    typedef VkDescriptorSetLayoutCreateInfo Type;
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET> {
+    typedef VkCopyDescriptorSet Type;
 };
 
 // Map type VkDescriptorPoolCreateInfo to id VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
@@ -354,6 +381,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO> {
     typedef VkDescriptorSetAllocateInfo Type;
 };
 
+// Map type VkDescriptorSetLayoutCreateInfo to id VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
+template <> struct LvlTypeMap<VkDescriptorSetLayoutCreateInfo> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO> {
+    typedef VkDescriptorSetLayoutCreateInfo Type;
+};
+
 // Map type VkWriteDescriptorSet to id VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET
 template <> struct LvlTypeMap<VkWriteDescriptorSet> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -361,15 +397,6 @@ template <> struct LvlTypeMap<VkWriteDescriptorSet> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET> {
     typedef VkWriteDescriptorSet Type;
-};
-
-// Map type VkCopyDescriptorSet to id VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET
-template <> struct LvlTypeMap<VkCopyDescriptorSet> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET> {
-    typedef VkCopyDescriptorSet Type;
 };
 
 // Map type VkFramebufferCreateInfo to id VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
@@ -424,33 +451,6 @@ template <> struct LvlTypeMap<VkCommandBufferBeginInfo> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO> {
     typedef VkCommandBufferBeginInfo Type;
-};
-
-// Map type VkMemoryBarrier to id VK_STRUCTURE_TYPE_MEMORY_BARRIER
-template <> struct LvlTypeMap<VkMemoryBarrier> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_BARRIER> {
-    typedef VkMemoryBarrier Type;
-};
-
-// Map type VkBufferMemoryBarrier to id VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
-template <> struct LvlTypeMap<VkBufferMemoryBarrier> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER> {
-    typedef VkBufferMemoryBarrier Type;
-};
-
-// Map type VkImageMemoryBarrier to id VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
-template <> struct LvlTypeMap<VkImageMemoryBarrier> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER> {
-    typedef VkImageMemoryBarrier Type;
 };
 
 // Map type VkRenderPassBeginInfo to id VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
@@ -2566,15 +2566,6 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_
     typedef VkDebugUtilsMessengerCallbackDataEXT Type;
 };
 
-// Map type VkDebugUtilsObjectTagInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT
-template <> struct LvlTypeMap<VkDebugUtilsObjectTagInfoEXT> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT> {
-    typedef VkDebugUtilsObjectTagInfoEXT Type;
-};
-
 // Map type VkDebugUtilsMessengerCreateInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkDebugUtilsMessengerCreateInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -2582,6 +2573,15 @@ template <> struct LvlTypeMap<VkDebugUtilsMessengerCreateInfoEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT> {
     typedef VkDebugUtilsMessengerCreateInfoEXT Type;
+};
+
+// Map type VkDebugUtilsObjectTagInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT
+template <> struct LvlTypeMap<VkDebugUtilsObjectTagInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT> {
+    typedef VkDebugUtilsObjectTagInfoEXT Type;
 };
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -3632,6 +3632,15 @@ template <> struct LvlTypeMap<VkPhysicalDeviceIndexTypeUint8FeaturesEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT> {
     typedef VkPhysicalDeviceIndexTypeUint8FeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceExtendedDynamicStateFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT> {
+    typedef VkPhysicalDeviceExtendedDynamicStateFeaturesEXT Type;
 };
 
 // Map type VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT

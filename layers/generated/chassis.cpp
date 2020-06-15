@@ -10033,6 +10033,270 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(
 
 
 
+VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCullModeFlags                             cullMode) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetCullModeEXT(commandBuffer, cullMode);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetCullModeEXT(commandBuffer, cullMode);
+    }
+    DispatchCmdSetCullModeEXT(commandBuffer, cullMode);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetCullModeEXT(commandBuffer, cullMode);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkFrontFace                                 frontFace) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetFrontFaceEXT(commandBuffer, frontFace);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetFrontFaceEXT(commandBuffer, frontFace);
+    }
+    DispatchCmdSetFrontFaceEXT(commandBuffer, frontFace);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetFrontFaceEXT(commandBuffer, frontFace);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopologyEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPrimitiveTopology                         primitiveTopology) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+    }
+    DispatchCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    viewportCount,
+    const VkViewport*                           pViewports) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+    }
+    DispatchCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    scissorCount,
+    const VkRect2D*                             pScissors) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+    }
+    DispatchCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBuffer*                             pBuffers,
+    const VkDeviceSize*                         pOffsets,
+    const VkDeviceSize*                         pSizes,
+    const VkDeviceSize*                         pStrides) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    }
+    DispatchCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthTestEnable) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+    }
+    DispatchCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthWriteEnable) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+    }
+    DispatchCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCompareOp                                 depthCompareOp) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+    }
+    DispatchCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthBoundsTestEnable) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+    }
+    DispatchCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    stencilTestEnable) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+    }
+    DispatchCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkStencilFaceFlags                          faceMask,
+    VkStencilOp                                 failOp,
+    VkStencilOp                                 passOp,
+    VkStencilOp                                 depthFailOp,
+    VkCompareOp                                 compareOp) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+    }
+    DispatchCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+    }
+}
+
+
 
 VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
@@ -11137,6 +11401,18 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCreateHeadlessSurfaceEXT", {kFuncTypeInst, (void*)CreateHeadlessSurfaceEXT}},
     {"vkCmdSetLineStippleEXT", {kFuncTypeDev, (void*)CmdSetLineStippleEXT}},
     {"vkResetQueryPoolEXT", {kFuncTypeDev, (void*)ResetQueryPoolEXT}},
+    {"vkCmdSetCullModeEXT", {kFuncTypeDev, (void*)CmdSetCullModeEXT}},
+    {"vkCmdSetFrontFaceEXT", {kFuncTypeDev, (void*)CmdSetFrontFaceEXT}},
+    {"vkCmdSetPrimitiveTopologyEXT", {kFuncTypeDev, (void*)CmdSetPrimitiveTopologyEXT}},
+    {"vkCmdSetViewportWithCountEXT", {kFuncTypeDev, (void*)CmdSetViewportWithCountEXT}},
+    {"vkCmdSetScissorWithCountEXT", {kFuncTypeDev, (void*)CmdSetScissorWithCountEXT}},
+    {"vkCmdBindVertexBuffers2EXT", {kFuncTypeDev, (void*)CmdBindVertexBuffers2EXT}},
+    {"vkCmdSetDepthTestEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthTestEnableEXT}},
+    {"vkCmdSetDepthWriteEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthWriteEnableEXT}},
+    {"vkCmdSetDepthCompareOpEXT", {kFuncTypeDev, (void*)CmdSetDepthCompareOpEXT}},
+    {"vkCmdSetDepthBoundsTestEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthBoundsTestEnableEXT}},
+    {"vkCmdSetStencilTestEnableEXT", {kFuncTypeDev, (void*)CmdSetStencilTestEnableEXT}},
+    {"vkCmdSetStencilOpEXT", {kFuncTypeDev, (void*)CmdSetStencilOpEXT}},
     {"vkGetGeneratedCommandsMemoryRequirementsNV", {kFuncTypeDev, (void*)GetGeneratedCommandsMemoryRequirementsNV}},
     {"vkCmdPreprocessGeneratedCommandsNV", {kFuncTypeDev, (void*)CmdPreprocessGeneratedCommandsNV}},
     {"vkCmdExecuteGeneratedCommandsNV", {kFuncTypeDev, (void*)CmdExecuteGeneratedCommandsNV}},

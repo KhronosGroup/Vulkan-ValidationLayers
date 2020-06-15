@@ -4574,6 +4574,124 @@ void PostCallRecordResetQueryPoolEXT(
     uint32_t                                    firstQuery,
     uint32_t                                    queryCount);
 
+void PreCallRecordCmdSetCullModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCullModeFlags                             cullMode);
+
+void PostCallRecordCmdSetCullModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCullModeFlags                             cullMode);
+
+void PreCallRecordCmdSetFrontFaceEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkFrontFace                                 frontFace);
+
+void PostCallRecordCmdSetFrontFaceEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkFrontFace                                 frontFace);
+
+void PreCallRecordCmdSetPrimitiveTopologyEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPrimitiveTopology                         primitiveTopology);
+
+void PostCallRecordCmdSetPrimitiveTopologyEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPrimitiveTopology                         primitiveTopology);
+
+void PreCallRecordCmdSetViewportWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    viewportCount,
+    const VkViewport*                           pViewports);
+
+void PostCallRecordCmdSetViewportWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    viewportCount,
+    const VkViewport*                           pViewports);
+
+void PreCallRecordCmdSetScissorWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    scissorCount,
+    const VkRect2D*                             pScissors);
+
+void PostCallRecordCmdSetScissorWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    scissorCount,
+    const VkRect2D*                             pScissors);
+
+void PreCallRecordCmdBindVertexBuffers2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBuffer*                             pBuffers,
+    const VkDeviceSize*                         pOffsets,
+    const VkDeviceSize*                         pSizes,
+    const VkDeviceSize*                         pStrides);
+
+void PostCallRecordCmdBindVertexBuffers2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBuffer*                             pBuffers,
+    const VkDeviceSize*                         pOffsets,
+    const VkDeviceSize*                         pSizes,
+    const VkDeviceSize*                         pStrides);
+
+void PreCallRecordCmdSetDepthTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthTestEnable);
+
+void PostCallRecordCmdSetDepthTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthTestEnable);
+
+void PreCallRecordCmdSetDepthWriteEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthWriteEnable);
+
+void PostCallRecordCmdSetDepthWriteEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthWriteEnable);
+
+void PreCallRecordCmdSetDepthCompareOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCompareOp                                 depthCompareOp);
+
+void PostCallRecordCmdSetDepthCompareOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCompareOp                                 depthCompareOp);
+
+void PreCallRecordCmdSetDepthBoundsTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthBoundsTestEnable);
+
+void PostCallRecordCmdSetDepthBoundsTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthBoundsTestEnable);
+
+void PreCallRecordCmdSetStencilTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    stencilTestEnable);
+
+void PostCallRecordCmdSetStencilTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    stencilTestEnable);
+
+void PreCallRecordCmdSetStencilOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkStencilFaceFlags                          faceMask,
+    VkStencilOp                                 failOp,
+    VkStencilOp                                 passOp,
+    VkStencilOp                                 depthFailOp,
+    VkCompareOp                                 compareOp);
+
+void PostCallRecordCmdSetStencilOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkStencilFaceFlags                          faceMask,
+    VkStencilOp                                 failOp,
+    VkStencilOp                                 passOp,
+    VkStencilOp                                 depthFailOp,
+    VkCompareOp                                 compareOp);
+
 void PreCallRecordGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,

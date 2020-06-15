@@ -687,6 +687,20 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_EXT_host_query_reset extension commands
     PFN_vkResetQueryPoolEXT ResetQueryPoolEXT;
 
+    // ---- VK_EXT_extended_dynamic_state extension commands
+    PFN_vkCmdSetCullModeEXT CmdSetCullModeEXT;
+    PFN_vkCmdSetFrontFaceEXT CmdSetFrontFaceEXT;
+    PFN_vkCmdSetPrimitiveTopologyEXT CmdSetPrimitiveTopologyEXT;
+    PFN_vkCmdSetViewportWithCountEXT CmdSetViewportWithCountEXT;
+    PFN_vkCmdSetScissorWithCountEXT CmdSetScissorWithCountEXT;
+    PFN_vkCmdBindVertexBuffers2EXT CmdBindVertexBuffers2EXT;
+    PFN_vkCmdSetDepthTestEnableEXT CmdSetDepthTestEnableEXT;
+    PFN_vkCmdSetDepthWriteEnableEXT CmdSetDepthWriteEnableEXT;
+    PFN_vkCmdSetDepthCompareOpEXT CmdSetDepthCompareOpEXT;
+    PFN_vkCmdSetDepthBoundsTestEnableEXT CmdSetDepthBoundsTestEnableEXT;
+    PFN_vkCmdSetStencilTestEnableEXT CmdSetStencilTestEnableEXT;
+    PFN_vkCmdSetStencilOpEXT CmdSetStencilOpEXT;
+
     // ---- VK_NV_device_generated_commands extension commands
     PFN_vkGetGeneratedCommandsMemoryRequirementsNV GetGeneratedCommandsMemoryRequirementsNV;
     PFN_vkCmdPreprocessGeneratedCommandsNV CmdPreprocessGeneratedCommandsNV;

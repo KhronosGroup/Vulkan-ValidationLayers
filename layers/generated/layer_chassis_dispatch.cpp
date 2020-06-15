@@ -7288,6 +7288,137 @@ void DispatchResetQueryPoolEXT(
 
 }
 
+void DispatchCmdSetCullModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCullModeFlags                             cullMode)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetCullModeEXT(commandBuffer, cullMode);
+
+}
+
+void DispatchCmdSetFrontFaceEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkFrontFace                                 frontFace)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetFrontFaceEXT(commandBuffer, frontFace);
+
+}
+
+void DispatchCmdSetPrimitiveTopologyEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPrimitiveTopology                         primitiveTopology)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+
+}
+
+void DispatchCmdSetViewportWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    viewportCount,
+    const VkViewport*                           pViewports)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+
+}
+
+void DispatchCmdSetScissorWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    scissorCount,
+    const VkRect2D*                             pScissors)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+
+}
+
+void DispatchCmdBindVertexBuffers2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBuffer*                             pBuffers,
+    const VkDeviceSize*                         pOffsets,
+    const VkDeviceSize*                         pSizes,
+    const VkDeviceSize*                         pStrides)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    VkBuffer var_local_pBuffers[DISPATCH_MAX_STACK_ALLOCATIONS];
+    VkBuffer *local_pBuffers = NULL;
+    {
+        if (pBuffers) {
+            local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
+            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+                local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, (const VkBuffer*)local_pBuffers, pOffsets, pSizes, pStrides);
+    if (local_pBuffers != var_local_pBuffers)
+        delete[] local_pBuffers;
+}
+
+void DispatchCmdSetDepthTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthTestEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+
+}
+
+void DispatchCmdSetDepthWriteEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthWriteEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+
+}
+
+void DispatchCmdSetDepthCompareOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCompareOp                                 depthCompareOp)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+
+}
+
+void DispatchCmdSetDepthBoundsTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthBoundsTestEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+
+}
+
+void DispatchCmdSetStencilTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    stencilTestEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+
+}
+
+void DispatchCmdSetStencilOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkStencilFaceFlags                          faceMask,
+    VkStencilOp                                 failOp,
+    VkStencilOp                                 passOp,
+    VkStencilOp                                 depthFailOp,
+    VkCompareOp                                 compareOp)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+
+}
+
 void DispatchGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
