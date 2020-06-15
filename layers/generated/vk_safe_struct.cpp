@@ -54,6 +54,7 @@ safe_VkApplicationInfo::safe_VkApplicationInfo(const VkApplicationInfo* in_struc
 }
 
 safe_VkApplicationInfo::safe_VkApplicationInfo() :
+    sType(VK_STRUCTURE_TYPE_APPLICATION_INFO),
     pNext(nullptr),
     pApplicationName(nullptr),
     pEngineName(nullptr)
@@ -143,6 +144,7 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const VkInstanceCreateInfo*
 }
 
 safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO),
     pNext(nullptr),
     pApplicationInfo(nullptr),
     ppEnabledLayerNames(nullptr),
@@ -356,6 +358,7 @@ safe_VkDeviceQueueCreateInfo::safe_VkDeviceQueueCreateInfo(const VkDeviceQueueCr
 }
 
 safe_VkDeviceQueueCreateInfo::safe_VkDeviceQueueCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO),
     pNext(nullptr),
     pQueuePriorities(nullptr)
 {}
@@ -465,6 +468,7 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_st
 }
 
 safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO),
     pNext(nullptr),
     pQueueCreateInfos(nullptr),
     ppEnabledLayerNames(nullptr),
@@ -675,6 +679,7 @@ safe_VkSubmitInfo::safe_VkSubmitInfo(const VkSubmitInfo* in_struct) :
 }
 
 safe_VkSubmitInfo::safe_VkSubmitInfo() :
+    sType(VK_STRUCTURE_TYPE_SUBMIT_INFO),
     pNext(nullptr),
     pWaitSemaphores(nullptr),
     pWaitDstStageMask(nullptr),
@@ -852,6 +857,7 @@ safe_VkMemoryAllocateInfo::safe_VkMemoryAllocateInfo(const VkMemoryAllocateInfo*
 }
 
 safe_VkMemoryAllocateInfo::safe_VkMemoryAllocateInfo() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO),
     pNext(nullptr)
 {}
 
@@ -910,6 +916,7 @@ safe_VkMappedMemoryRange::safe_VkMappedMemoryRange(const VkMappedMemoryRange* in
 }
 
 safe_VkMappedMemoryRange::safe_VkMappedMemoryRange() :
+    sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE),
     pNext(nullptr)
 {}
 
@@ -1255,6 +1262,7 @@ safe_VkBindSparseInfo::safe_VkBindSparseInfo(const VkBindSparseInfo* in_struct) 
 }
 
 safe_VkBindSparseInfo::safe_VkBindSparseInfo() :
+    sType(VK_STRUCTURE_TYPE_BIND_SPARSE_INFO),
     pNext(nullptr),
     pWaitSemaphores(nullptr),
     pBufferBinds(nullptr),
@@ -1488,6 +1496,7 @@ safe_VkFenceCreateInfo::safe_VkFenceCreateInfo(const VkFenceCreateInfo* in_struc
 }
 
 safe_VkFenceCreateInfo::safe_VkFenceCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -1540,6 +1549,7 @@ safe_VkSemaphoreCreateInfo::safe_VkSemaphoreCreateInfo(const VkSemaphoreCreateIn
 }
 
 safe_VkSemaphoreCreateInfo::safe_VkSemaphoreCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -1592,6 +1602,7 @@ safe_VkEventCreateInfo::safe_VkEventCreateInfo(const VkEventCreateInfo* in_struc
 }
 
 safe_VkEventCreateInfo::safe_VkEventCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_EVENT_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -1647,6 +1658,7 @@ safe_VkQueryPoolCreateInfo::safe_VkQueryPoolCreateInfo(const VkQueryPoolCreateIn
 }
 
 safe_VkQueryPoolCreateInfo::safe_VkQueryPoolCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -1720,6 +1732,7 @@ safe_VkBufferCreateInfo::safe_VkBufferCreateInfo(const VkBufferCreateInfo* in_st
 }
 
 safe_VkBufferCreateInfo::safe_VkBufferCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO),
     pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
@@ -1817,6 +1830,7 @@ safe_VkBufferViewCreateInfo::safe_VkBufferViewCreateInfo(const VkBufferViewCreat
 }
 
 safe_VkBufferViewCreateInfo::safe_VkBufferViewCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -1901,6 +1915,7 @@ safe_VkImageCreateInfo::safe_VkImageCreateInfo(const VkImageCreateInfo* in_struc
 }
 
 safe_VkImageCreateInfo::safe_VkImageCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO),
     pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
@@ -2027,6 +2042,7 @@ safe_VkImageViewCreateInfo::safe_VkImageViewCreateInfo(const VkImageViewCreateIn
 }
 
 safe_VkImageViewCreateInfo::safe_VkImageViewCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -2105,6 +2121,7 @@ safe_VkShaderModuleCreateInfo::safe_VkShaderModuleCreateInfo(const VkShaderModul
 }
 
 safe_VkShaderModuleCreateInfo::safe_VkShaderModuleCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO),
     pNext(nullptr),
     pCode(nullptr)
 {}
@@ -2188,6 +2205,7 @@ safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo(const VkPipelineC
 }
 
 safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO),
     pNext(nullptr),
     pInitialData(nullptr)
 {}
@@ -2333,6 +2351,7 @@ safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const
 }
 
 safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO),
     pNext(nullptr),
     pName(nullptr),
     pSpecializationInfo(nullptr)
@@ -2429,6 +2448,7 @@ safe_VkPipelineVertexInputStateCreateInfo::safe_VkPipelineVertexInputStateCreate
 }
 
 safe_VkPipelineVertexInputStateCreateInfo::safe_VkPipelineVertexInputStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO),
     pNext(nullptr),
     pVertexBindingDescriptions(nullptr),
     pVertexAttributeDescriptions(nullptr)
@@ -2541,6 +2561,7 @@ safe_VkPipelineInputAssemblyStateCreateInfo::safe_VkPipelineInputAssemblyStateCr
 }
 
 safe_VkPipelineInputAssemblyStateCreateInfo::safe_VkPipelineInputAssemblyStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -2602,6 +2623,7 @@ safe_VkPipelineTessellationStateCreateInfo::safe_VkPipelineTessellationStateCrea
 }
 
 safe_VkPipelineTessellationStateCreateInfo::safe_VkPipelineTessellationStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -2674,6 +2696,7 @@ safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo(c
 }
 
 safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO),
     pNext(nullptr),
     pViewports(nullptr),
     pScissors(nullptr)
@@ -2810,6 +2833,7 @@ safe_VkPipelineRasterizationStateCreateInfo::safe_VkPipelineRasterizationStateCr
 }
 
 safe_VkPipelineRasterizationStateCreateInfo::safe_VkPipelineRasterizationStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -2911,6 +2935,7 @@ safe_VkPipelineMultisampleStateCreateInfo::safe_VkPipelineMultisampleStateCreate
 }
 
 safe_VkPipelineMultisampleStateCreateInfo::safe_VkPipelineMultisampleStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO),
     pNext(nullptr),
     pSampleMask(nullptr)
 {}
@@ -3013,6 +3038,7 @@ safe_VkPipelineDepthStencilStateCreateInfo::safe_VkPipelineDepthStencilStateCrea
 }
 
 safe_VkPipelineDepthStencilStateCreateInfo::safe_VkPipelineDepthStencilStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -3112,6 +3138,7 @@ safe_VkPipelineColorBlendStateCreateInfo::safe_VkPipelineColorBlendStateCreateIn
 }
 
 safe_VkPipelineColorBlendStateCreateInfo::safe_VkPipelineColorBlendStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO),
     pNext(nullptr),
     pAttachments(nullptr)
 {}
@@ -3219,6 +3246,7 @@ safe_VkPipelineDynamicStateCreateInfo::safe_VkPipelineDynamicStateCreateInfo(con
 }
 
 safe_VkPipelineDynamicStateCreateInfo::safe_VkPipelineDynamicStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO),
     pNext(nullptr),
     pDynamicStates(nullptr)
 {}
@@ -3376,6 +3404,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
 }
 
 safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO),
     pNext(nullptr),
     pStages(nullptr),
     pVertexInputState(nullptr),
@@ -3750,6 +3779,7 @@ safe_VkComputePipelineCreateInfo::safe_VkComputePipelineCreateInfo(const VkCompu
 }
 
 safe_VkComputePipelineCreateInfo::safe_VkComputePipelineCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -3832,6 +3862,7 @@ safe_VkPipelineLayoutCreateInfo::safe_VkPipelineLayoutCreateInfo(const VkPipelin
 }
 
 safe_VkPipelineLayoutCreateInfo::safe_VkPipelineLayoutCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO),
     pNext(nullptr),
     pSetLayouts(nullptr),
     pPushConstantRanges(nullptr)
@@ -3965,6 +3996,7 @@ safe_VkSamplerCreateInfo::safe_VkSamplerCreateInfo(const VkSamplerCreateInfo* in
 }
 
 safe_VkSamplerCreateInfo::safe_VkSamplerCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -4182,6 +4214,7 @@ safe_VkDescriptorSetLayoutCreateInfo::safe_VkDescriptorSetLayoutCreateInfo(const
 }
 
 safe_VkDescriptorSetLayoutCreateInfo::safe_VkDescriptorSetLayoutCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO),
     pNext(nullptr),
     pBindings(nullptr)
 {}
@@ -4278,6 +4311,7 @@ safe_VkDescriptorPoolCreateInfo::safe_VkDescriptorPoolCreateInfo(const VkDescrip
 }
 
 safe_VkDescriptorPoolCreateInfo::safe_VkDescriptorPoolCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO),
     pNext(nullptr),
     pPoolSizes(nullptr)
 {}
@@ -4371,6 +4405,7 @@ safe_VkDescriptorSetAllocateInfo::safe_VkDescriptorSetAllocateInfo(const VkDescr
 }
 
 safe_VkDescriptorSetAllocateInfo::safe_VkDescriptorSetAllocateInfo() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO),
     pNext(nullptr),
     pSetLayouts(nullptr)
 {}
@@ -4503,6 +4538,7 @@ safe_VkWriteDescriptorSet::safe_VkWriteDescriptorSet(const VkWriteDescriptorSet*
 }
 
 safe_VkWriteDescriptorSet::safe_VkWriteDescriptorSet() :
+    sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET),
     pNext(nullptr),
     pImageInfo(nullptr),
     pBufferInfo(nullptr),
@@ -4748,6 +4784,7 @@ safe_VkCopyDescriptorSet::safe_VkCopyDescriptorSet(const VkCopyDescriptorSet* in
 }
 
 safe_VkCopyDescriptorSet::safe_VkCopyDescriptorSet() :
+    sType(VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET),
     pNext(nullptr)
 {}
 
@@ -4836,6 +4873,7 @@ safe_VkFramebufferCreateInfo::safe_VkFramebufferCreateInfo(const VkFramebufferCr
 }
 
 safe_VkFramebufferCreateInfo::safe_VkFramebufferCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO),
     pNext(nullptr),
     pAttachments(nullptr)
 {}
@@ -5163,6 +5201,7 @@ safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo(const VkRenderPassCreat
 }
 
 safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO),
     pNext(nullptr),
     pAttachments(nullptr),
     pSubpasses(nullptr),
@@ -5311,6 +5350,7 @@ safe_VkCommandPoolCreateInfo::safe_VkCommandPoolCreateInfo(const VkCommandPoolCr
 }
 
 safe_VkCommandPoolCreateInfo::safe_VkCommandPoolCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -5369,6 +5409,7 @@ safe_VkCommandBufferAllocateInfo::safe_VkCommandBufferAllocateInfo(const VkComma
 }
 
 safe_VkCommandBufferAllocateInfo::safe_VkCommandBufferAllocateInfo() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO),
     pNext(nullptr)
 {}
 
@@ -5434,6 +5475,7 @@ safe_VkCommandBufferInheritanceInfo::safe_VkCommandBufferInheritanceInfo(const V
 }
 
 safe_VkCommandBufferInheritanceInfo::safe_VkCommandBufferInheritanceInfo() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO),
     pNext(nullptr)
 {}
 
@@ -5509,6 +5551,7 @@ safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo(const VkCommandBuff
 }
 
 safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO),
     pNext(nullptr),
     pInheritanceInfo(nullptr)
 {}
@@ -5579,6 +5622,7 @@ safe_VkMemoryBarrier::safe_VkMemoryBarrier(const VkMemoryBarrier* in_struct) :
 }
 
 safe_VkMemoryBarrier::safe_VkMemoryBarrier() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER),
     pNext(nullptr)
 {}
 
@@ -5641,6 +5685,7 @@ safe_VkBufferMemoryBarrier::safe_VkBufferMemoryBarrier(const VkBufferMemoryBarri
 }
 
 safe_VkBufferMemoryBarrier::safe_VkBufferMemoryBarrier() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER),
     pNext(nullptr)
 {}
 
@@ -5724,6 +5769,7 @@ safe_VkImageMemoryBarrier::safe_VkImageMemoryBarrier(const VkImageMemoryBarrier*
 }
 
 safe_VkImageMemoryBarrier::safe_VkImageMemoryBarrier() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER),
     pNext(nullptr)
 {}
 
@@ -5812,6 +5858,7 @@ safe_VkRenderPassBeginInfo::safe_VkRenderPassBeginInfo(const VkRenderPassBeginIn
 }
 
 safe_VkRenderPassBeginInfo::safe_VkRenderPassBeginInfo() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO),
     pNext(nullptr),
     pClearValues(nullptr)
 {}
@@ -5904,6 +5951,7 @@ safe_VkPhysicalDeviceSubgroupProperties::safe_VkPhysicalDeviceSubgroupProperties
 }
 
 safe_VkPhysicalDeviceSubgroupProperties::safe_VkPhysicalDeviceSubgroupProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -5970,6 +6018,7 @@ safe_VkBindBufferMemoryInfo::safe_VkBindBufferMemoryInfo(const VkBindBufferMemor
 }
 
 safe_VkBindBufferMemoryInfo::safe_VkBindBufferMemoryInfo() :
+    sType(VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO),
     pNext(nullptr)
 {}
 
@@ -6032,6 +6081,7 @@ safe_VkBindImageMemoryInfo::safe_VkBindImageMemoryInfo(const VkBindImageMemoryIn
 }
 
 safe_VkBindImageMemoryInfo::safe_VkBindImageMemoryInfo() :
+    sType(VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO),
     pNext(nullptr)
 {}
 
@@ -6095,6 +6145,7 @@ safe_VkPhysicalDevice16BitStorageFeatures::safe_VkPhysicalDevice16BitStorageFeat
 }
 
 safe_VkPhysicalDevice16BitStorageFeatures::safe_VkPhysicalDevice16BitStorageFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES),
     pNext(nullptr)
 {}
 
@@ -6160,6 +6211,7 @@ safe_VkMemoryDedicatedRequirements::safe_VkMemoryDedicatedRequirements(const VkM
 }
 
 safe_VkMemoryDedicatedRequirements::safe_VkMemoryDedicatedRequirements() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS),
     pNext(nullptr)
 {}
 
@@ -6217,6 +6269,7 @@ safe_VkMemoryDedicatedAllocateInfo::safe_VkMemoryDedicatedAllocateInfo(const VkM
 }
 
 safe_VkMemoryDedicatedAllocateInfo::safe_VkMemoryDedicatedAllocateInfo() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO),
     pNext(nullptr)
 {}
 
@@ -6274,6 +6327,7 @@ safe_VkMemoryAllocateFlagsInfo::safe_VkMemoryAllocateFlagsInfo(const VkMemoryAll
 }
 
 safe_VkMemoryAllocateFlagsInfo::safe_VkMemoryAllocateFlagsInfo() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO),
     pNext(nullptr)
 {}
 
@@ -6336,6 +6390,7 @@ safe_VkDeviceGroupRenderPassBeginInfo::safe_VkDeviceGroupRenderPassBeginInfo(con
 }
 
 safe_VkDeviceGroupRenderPassBeginInfo::safe_VkDeviceGroupRenderPassBeginInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO),
     pNext(nullptr),
     pDeviceRenderAreas(nullptr)
 {}
@@ -6417,6 +6472,7 @@ safe_VkDeviceGroupCommandBufferBeginInfo::safe_VkDeviceGroupCommandBufferBeginIn
 }
 
 safe_VkDeviceGroupCommandBufferBeginInfo::safe_VkDeviceGroupCommandBufferBeginInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO),
     pNext(nullptr)
 {}
 
@@ -6486,6 +6542,7 @@ safe_VkDeviceGroupSubmitInfo::safe_VkDeviceGroupSubmitInfo(const VkDeviceGroupSu
 }
 
 safe_VkDeviceGroupSubmitInfo::safe_VkDeviceGroupSubmitInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO),
     pNext(nullptr),
     pWaitSemaphoreDeviceIndices(nullptr),
     pCommandBufferDeviceMasks(nullptr),
@@ -6622,6 +6679,7 @@ safe_VkDeviceGroupBindSparseInfo::safe_VkDeviceGroupBindSparseInfo(const VkDevic
 }
 
 safe_VkDeviceGroupBindSparseInfo::safe_VkDeviceGroupBindSparseInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO),
     pNext(nullptr)
 {}
 
@@ -6683,6 +6741,7 @@ safe_VkBindBufferMemoryDeviceGroupInfo::safe_VkBindBufferMemoryDeviceGroupInfo(c
 }
 
 safe_VkBindBufferMemoryDeviceGroupInfo::safe_VkBindBufferMemoryDeviceGroupInfo() :
+    sType(VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO),
     pNext(nullptr),
     pDeviceIndices(nullptr)
 {}
@@ -6771,6 +6830,7 @@ safe_VkBindImageMemoryDeviceGroupInfo::safe_VkBindImageMemoryDeviceGroupInfo(con
 }
 
 safe_VkBindImageMemoryDeviceGroupInfo::safe_VkBindImageMemoryDeviceGroupInfo() :
+    sType(VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO),
     pNext(nullptr),
     pDeviceIndices(nullptr),
     pSplitInstanceBindRegions(nullptr)
@@ -6881,6 +6941,7 @@ safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties(const
 }
 
 safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -6954,6 +7015,7 @@ safe_VkDeviceGroupDeviceCreateInfo::safe_VkDeviceGroupDeviceCreateInfo(const VkD
 }
 
 safe_VkDeviceGroupDeviceCreateInfo::safe_VkDeviceGroupDeviceCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO),
     pNext(nullptr),
     pPhysicalDevices(nullptr)
 {}
@@ -7031,6 +7093,7 @@ safe_VkBufferMemoryRequirementsInfo2::safe_VkBufferMemoryRequirementsInfo2(const
 }
 
 safe_VkBufferMemoryRequirementsInfo2::safe_VkBufferMemoryRequirementsInfo2() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2),
     pNext(nullptr)
 {}
 
@@ -7083,6 +7146,7 @@ safe_VkImageMemoryRequirementsInfo2::safe_VkImageMemoryRequirementsInfo2(const V
 }
 
 safe_VkImageMemoryRequirementsInfo2::safe_VkImageMemoryRequirementsInfo2() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2),
     pNext(nullptr)
 {}
 
@@ -7135,6 +7199,7 @@ safe_VkImageSparseMemoryRequirementsInfo2::safe_VkImageSparseMemoryRequirementsI
 }
 
 safe_VkImageSparseMemoryRequirementsInfo2::safe_VkImageSparseMemoryRequirementsInfo2() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2),
     pNext(nullptr)
 {}
 
@@ -7187,6 +7252,7 @@ safe_VkMemoryRequirements2::safe_VkMemoryRequirements2(const VkMemoryRequirement
 }
 
 safe_VkMemoryRequirements2::safe_VkMemoryRequirements2() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2),
     pNext(nullptr)
 {}
 
@@ -7239,6 +7305,7 @@ safe_VkSparseImageMemoryRequirements2::safe_VkSparseImageMemoryRequirements2(con
 }
 
 safe_VkSparseImageMemoryRequirements2::safe_VkSparseImageMemoryRequirements2() :
+    sType(VK_STRUCTURE_TYPE_SPARSE_IMAGE_MEMORY_REQUIREMENTS_2),
     pNext(nullptr)
 {}
 
@@ -7291,6 +7358,7 @@ safe_VkPhysicalDeviceFeatures2::safe_VkPhysicalDeviceFeatures2(const VkPhysicalD
 }
 
 safe_VkPhysicalDeviceFeatures2::safe_VkPhysicalDeviceFeatures2() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2),
     pNext(nullptr)
 {}
 
@@ -7343,6 +7411,7 @@ safe_VkPhysicalDeviceProperties2::safe_VkPhysicalDeviceProperties2(const VkPhysi
 }
 
 safe_VkPhysicalDeviceProperties2::safe_VkPhysicalDeviceProperties2() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2),
     pNext(nullptr)
 {}
 
@@ -7395,6 +7464,7 @@ safe_VkFormatProperties2::safe_VkFormatProperties2(const VkFormatProperties2* in
 }
 
 safe_VkFormatProperties2::safe_VkFormatProperties2() :
+    sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2),
     pNext(nullptr)
 {}
 
@@ -7447,6 +7517,7 @@ safe_VkImageFormatProperties2::safe_VkImageFormatProperties2(const VkImageFormat
 }
 
 safe_VkImageFormatProperties2::safe_VkImageFormatProperties2() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2),
     pNext(nullptr)
 {}
 
@@ -7503,6 +7574,7 @@ safe_VkPhysicalDeviceImageFormatInfo2::safe_VkPhysicalDeviceImageFormatInfo2(con
 }
 
 safe_VkPhysicalDeviceImageFormatInfo2::safe_VkPhysicalDeviceImageFormatInfo2() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2),
     pNext(nullptr)
 {}
 
@@ -7571,6 +7643,7 @@ safe_VkQueueFamilyProperties2::safe_VkQueueFamilyProperties2(const VkQueueFamily
 }
 
 safe_VkQueueFamilyProperties2::safe_VkQueueFamilyProperties2() :
+    sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2),
     pNext(nullptr)
 {}
 
@@ -7623,6 +7696,7 @@ safe_VkPhysicalDeviceMemoryProperties2::safe_VkPhysicalDeviceMemoryProperties2(c
 }
 
 safe_VkPhysicalDeviceMemoryProperties2::safe_VkPhysicalDeviceMemoryProperties2() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2),
     pNext(nullptr)
 {}
 
@@ -7675,6 +7749,7 @@ safe_VkSparseImageFormatProperties2::safe_VkSparseImageFormatProperties2(const V
 }
 
 safe_VkSparseImageFormatProperties2::safe_VkSparseImageFormatProperties2() :
+    sType(VK_STRUCTURE_TYPE_SPARSE_IMAGE_FORMAT_PROPERTIES_2),
     pNext(nullptr)
 {}
 
@@ -7731,6 +7806,7 @@ safe_VkPhysicalDeviceSparseImageFormatInfo2::safe_VkPhysicalDeviceSparseImageFor
 }
 
 safe_VkPhysicalDeviceSparseImageFormatInfo2::safe_VkPhysicalDeviceSparseImageFormatInfo2() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2),
     pNext(nullptr)
 {}
 
@@ -7799,6 +7875,7 @@ safe_VkPhysicalDevicePointClippingProperties::safe_VkPhysicalDevicePointClipping
 }
 
 safe_VkPhysicalDevicePointClippingProperties::safe_VkPhysicalDevicePointClippingProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -7856,6 +7933,7 @@ safe_VkRenderPassInputAttachmentAspectCreateInfo::safe_VkRenderPassInputAttachme
 }
 
 safe_VkRenderPassInputAttachmentAspectCreateInfo::safe_VkRenderPassInputAttachmentAspectCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO),
     pNext(nullptr),
     pAspectReferences(nullptr)
 {}
@@ -7933,6 +8011,7 @@ safe_VkImageViewUsageCreateInfo::safe_VkImageViewUsageCreateInfo(const VkImageVi
 }
 
 safe_VkImageViewUsageCreateInfo::safe_VkImageViewUsageCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -7985,6 +8064,7 @@ safe_VkPipelineTessellationDomainOriginStateCreateInfo::safe_VkPipelineTessellat
 }
 
 safe_VkPipelineTessellationDomainOriginStateCreateInfo::safe_VkPipelineTessellationDomainOriginStateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -8054,6 +8134,7 @@ safe_VkRenderPassMultiviewCreateInfo::safe_VkRenderPassMultiviewCreateInfo(const
 }
 
 safe_VkRenderPassMultiviewCreateInfo::safe_VkRenderPassMultiviewCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO),
     pNext(nullptr),
     pViewMasks(nullptr),
     pViewOffsets(nullptr),
@@ -8191,6 +8272,7 @@ safe_VkPhysicalDeviceMultiviewFeatures::safe_VkPhysicalDeviceMultiviewFeatures(c
 }
 
 safe_VkPhysicalDeviceMultiviewFeatures::safe_VkPhysicalDeviceMultiviewFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES),
     pNext(nullptr)
 {}
 
@@ -8252,6 +8334,7 @@ safe_VkPhysicalDeviceMultiviewProperties::safe_VkPhysicalDeviceMultiviewProperti
 }
 
 safe_VkPhysicalDeviceMultiviewProperties::safe_VkPhysicalDeviceMultiviewProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -8309,6 +8392,7 @@ safe_VkPhysicalDeviceVariablePointersFeatures::safe_VkPhysicalDeviceVariablePoin
 }
 
 safe_VkPhysicalDeviceVariablePointersFeatures::safe_VkPhysicalDeviceVariablePointersFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES),
     pNext(nullptr)
 {}
 
@@ -8365,6 +8449,7 @@ safe_VkPhysicalDeviceProtectedMemoryFeatures::safe_VkPhysicalDeviceProtectedMemo
 }
 
 safe_VkPhysicalDeviceProtectedMemoryFeatures::safe_VkPhysicalDeviceProtectedMemoryFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES),
     pNext(nullptr)
 {}
 
@@ -8417,6 +8502,7 @@ safe_VkPhysicalDeviceProtectedMemoryProperties::safe_VkPhysicalDeviceProtectedMe
 }
 
 safe_VkPhysicalDeviceProtectedMemoryProperties::safe_VkPhysicalDeviceProtectedMemoryProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -8471,6 +8557,7 @@ safe_VkDeviceQueueInfo2::safe_VkDeviceQueueInfo2(const VkDeviceQueueInfo2* in_st
 }
 
 safe_VkDeviceQueueInfo2::safe_VkDeviceQueueInfo2() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2),
     pNext(nullptr)
 {}
 
@@ -8531,6 +8618,7 @@ safe_VkProtectedSubmitInfo::safe_VkProtectedSubmitInfo(const VkProtectedSubmitIn
 }
 
 safe_VkProtectedSubmitInfo::safe_VkProtectedSubmitInfo() :
+    sType(VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO),
     pNext(nullptr)
 {}
 
@@ -8590,6 +8678,7 @@ safe_VkSamplerYcbcrConversionCreateInfo::safe_VkSamplerYcbcrConversionCreateInfo
 }
 
 safe_VkSamplerYcbcrConversionCreateInfo::safe_VkSamplerYcbcrConversionCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -8670,6 +8759,7 @@ safe_VkSamplerYcbcrConversionInfo::safe_VkSamplerYcbcrConversionInfo(const VkSam
 }
 
 safe_VkSamplerYcbcrConversionInfo::safe_VkSamplerYcbcrConversionInfo() :
+    sType(VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO),
     pNext(nullptr)
 {}
 
@@ -8722,6 +8812,7 @@ safe_VkBindImagePlaneMemoryInfo::safe_VkBindImagePlaneMemoryInfo(const VkBindIma
 }
 
 safe_VkBindImagePlaneMemoryInfo::safe_VkBindImagePlaneMemoryInfo() :
+    sType(VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO),
     pNext(nullptr)
 {}
 
@@ -8774,6 +8865,7 @@ safe_VkImagePlaneMemoryRequirementsInfo::safe_VkImagePlaneMemoryRequirementsInfo
 }
 
 safe_VkImagePlaneMemoryRequirementsInfo::safe_VkImagePlaneMemoryRequirementsInfo() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO),
     pNext(nullptr)
 {}
 
@@ -8826,6 +8918,7 @@ safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::safe_VkPhysicalDeviceSample
 }
 
 safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES),
     pNext(nullptr)
 {}
 
@@ -8878,6 +8971,7 @@ safe_VkSamplerYcbcrConversionImageFormatProperties::safe_VkSamplerYcbcrConversio
 }
 
 safe_VkSamplerYcbcrConversionImageFormatProperties::safe_VkSamplerYcbcrConversionImageFormatProperties() :
+    sType(VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -8941,6 +9035,7 @@ safe_VkDescriptorUpdateTemplateCreateInfo::safe_VkDescriptorUpdateTemplateCreate
 }
 
 safe_VkDescriptorUpdateTemplateCreateInfo::safe_VkDescriptorUpdateTemplateCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO),
     pNext(nullptr),
     pDescriptorUpdateEntries(nullptr)
 {}
@@ -9042,6 +9137,7 @@ safe_VkPhysicalDeviceExternalImageFormatInfo::safe_VkPhysicalDeviceExternalImage
 }
 
 safe_VkPhysicalDeviceExternalImageFormatInfo::safe_VkPhysicalDeviceExternalImageFormatInfo() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO),
     pNext(nullptr)
 {}
 
@@ -9094,6 +9190,7 @@ safe_VkExternalImageFormatProperties::safe_VkExternalImageFormatProperties(const
 }
 
 safe_VkExternalImageFormatProperties::safe_VkExternalImageFormatProperties() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -9148,6 +9245,7 @@ safe_VkPhysicalDeviceExternalBufferInfo::safe_VkPhysicalDeviceExternalBufferInfo
 }
 
 safe_VkPhysicalDeviceExternalBufferInfo::safe_VkPhysicalDeviceExternalBufferInfo() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO),
     pNext(nullptr)
 {}
 
@@ -9208,6 +9306,7 @@ safe_VkExternalBufferProperties::safe_VkExternalBufferProperties(const VkExterna
 }
 
 safe_VkExternalBufferProperties::safe_VkExternalBufferProperties() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -9270,6 +9369,7 @@ safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties(const VkPhy
 }
 
 safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -9362,6 +9462,7 @@ safe_VkExternalMemoryImageCreateInfo::safe_VkExternalMemoryImageCreateInfo(const
 }
 
 safe_VkExternalMemoryImageCreateInfo::safe_VkExternalMemoryImageCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -9414,6 +9515,7 @@ safe_VkExternalMemoryBufferCreateInfo::safe_VkExternalMemoryBufferCreateInfo(con
 }
 
 safe_VkExternalMemoryBufferCreateInfo::safe_VkExternalMemoryBufferCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -9466,6 +9568,7 @@ safe_VkExportMemoryAllocateInfo::safe_VkExportMemoryAllocateInfo(const VkExportM
 }
 
 safe_VkExportMemoryAllocateInfo::safe_VkExportMemoryAllocateInfo() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO),
     pNext(nullptr)
 {}
 
@@ -9518,6 +9621,7 @@ safe_VkPhysicalDeviceExternalFenceInfo::safe_VkPhysicalDeviceExternalFenceInfo(c
 }
 
 safe_VkPhysicalDeviceExternalFenceInfo::safe_VkPhysicalDeviceExternalFenceInfo() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO),
     pNext(nullptr)
 {}
 
@@ -9572,6 +9676,7 @@ safe_VkExternalFenceProperties::safe_VkExternalFenceProperties(const VkExternalF
 }
 
 safe_VkExternalFenceProperties::safe_VkExternalFenceProperties() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -9632,6 +9737,7 @@ safe_VkExportFenceCreateInfo::safe_VkExportFenceCreateInfo(const VkExportFenceCr
 }
 
 safe_VkExportFenceCreateInfo::safe_VkExportFenceCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -9684,6 +9790,7 @@ safe_VkExportSemaphoreCreateInfo::safe_VkExportSemaphoreCreateInfo(const VkExpor
 }
 
 safe_VkExportSemaphoreCreateInfo::safe_VkExportSemaphoreCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -9736,6 +9843,7 @@ safe_VkPhysicalDeviceExternalSemaphoreInfo::safe_VkPhysicalDeviceExternalSemapho
 }
 
 safe_VkPhysicalDeviceExternalSemaphoreInfo::safe_VkPhysicalDeviceExternalSemaphoreInfo() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO),
     pNext(nullptr)
 {}
 
@@ -9790,6 +9898,7 @@ safe_VkExternalSemaphoreProperties::safe_VkExternalSemaphoreProperties(const VkE
 }
 
 safe_VkExternalSemaphoreProperties::safe_VkExternalSemaphoreProperties() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -9851,6 +9960,7 @@ safe_VkPhysicalDeviceMaintenance3Properties::safe_VkPhysicalDeviceMaintenance3Pr
 }
 
 safe_VkPhysicalDeviceMaintenance3Properties::safe_VkPhysicalDeviceMaintenance3Properties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -9907,6 +10017,7 @@ safe_VkDescriptorSetLayoutSupport::safe_VkDescriptorSetLayoutSupport(const VkDes
 }
 
 safe_VkDescriptorSetLayoutSupport::safe_VkDescriptorSetLayoutSupport() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_SUPPORT),
     pNext(nullptr)
 {}
 
@@ -9959,6 +10070,7 @@ safe_VkPhysicalDeviceShaderDrawParametersFeatures::safe_VkPhysicalDeviceShaderDr
 }
 
 safe_VkPhysicalDeviceShaderDrawParametersFeatures::safe_VkPhysicalDeviceShaderDrawParametersFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES),
     pNext(nullptr)
 {}
 
@@ -10022,6 +10134,7 @@ safe_VkPhysicalDeviceVulkan11Features::safe_VkPhysicalDeviceVulkan11Features(con
 }
 
 safe_VkPhysicalDeviceVulkan11Features::safe_VkPhysicalDeviceVulkan11Features() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES),
     pNext(nullptr)
 {}
 
@@ -10138,6 +10251,7 @@ safe_VkPhysicalDeviceVulkan11Properties::safe_VkPhysicalDeviceVulkan11Properties
 }
 
 safe_VkPhysicalDeviceVulkan11Properties::safe_VkPhysicalDeviceVulkan11Properties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -10316,6 +10430,7 @@ safe_VkPhysicalDeviceVulkan12Features::safe_VkPhysicalDeviceVulkan12Features(con
 }
 
 safe_VkPhysicalDeviceVulkan12Features::safe_VkPhysicalDeviceVulkan12Features() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES),
     pNext(nullptr)
 {}
 
@@ -10607,6 +10722,7 @@ safe_VkPhysicalDeviceVulkan12Properties::safe_VkPhysicalDeviceVulkan12Properties
 }
 
 safe_VkPhysicalDeviceVulkan12Properties::safe_VkPhysicalDeviceVulkan12Properties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -10884,6 +11000,7 @@ safe_VkImageFormatListCreateInfo::safe_VkImageFormatListCreateInfo(const VkImage
 }
 
 safe_VkImageFormatListCreateInfo::safe_VkImageFormatListCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO),
     pNext(nullptr),
     pViewFormats(nullptr)
 {}
@@ -10969,6 +11086,7 @@ safe_VkAttachmentDescription2::safe_VkAttachmentDescription2(const VkAttachmentD
 }
 
 safe_VkAttachmentDescription2::safe_VkAttachmentDescription2() :
+    sType(VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2),
     pNext(nullptr)
 {}
 
@@ -11055,6 +11173,7 @@ safe_VkAttachmentReference2::safe_VkAttachmentReference2(const VkAttachmentRefer
 }
 
 safe_VkAttachmentReference2::safe_VkAttachmentReference2() :
+    sType(VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2),
     pNext(nullptr)
 {}
 
@@ -11149,6 +11268,7 @@ safe_VkSubpassDescription2::safe_VkSubpassDescription2(const VkSubpassDescriptio
 }
 
 safe_VkSubpassDescription2::safe_VkSubpassDescription2() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2),
     pNext(nullptr),
     pInputAttachments(nullptr),
     pColorAttachments(nullptr),
@@ -11369,6 +11489,7 @@ safe_VkSubpassDependency2::safe_VkSubpassDependency2(const VkSubpassDependency2*
 }
 
 safe_VkSubpassDependency2::safe_VkSubpassDependency2() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2),
     pNext(nullptr)
 {}
 
@@ -11479,6 +11600,7 @@ safe_VkRenderPassCreateInfo2::safe_VkRenderPassCreateInfo2(const VkRenderPassCre
 }
 
 safe_VkRenderPassCreateInfo2::safe_VkRenderPassCreateInfo2() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2),
     pNext(nullptr),
     pAttachments(nullptr),
     pSubpasses(nullptr),
@@ -11671,6 +11793,7 @@ safe_VkSubpassBeginInfo::safe_VkSubpassBeginInfo(const VkSubpassBeginInfo* in_st
 }
 
 safe_VkSubpassBeginInfo::safe_VkSubpassBeginInfo() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO),
     pNext(nullptr)
 {}
 
@@ -11722,6 +11845,7 @@ safe_VkSubpassEndInfo::safe_VkSubpassEndInfo(const VkSubpassEndInfo* in_struct) 
 }
 
 safe_VkSubpassEndInfo::safe_VkSubpassEndInfo() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_END_INFO),
     pNext(nullptr)
 {}
 
@@ -11772,6 +11896,7 @@ safe_VkPhysicalDevice8BitStorageFeatures::safe_VkPhysicalDevice8BitStorageFeatur
 }
 
 safe_VkPhysicalDevice8BitStorageFeatures::safe_VkPhysicalDevice8BitStorageFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES),
     pNext(nullptr)
 {}
 
@@ -11839,6 +11964,7 @@ safe_VkPhysicalDeviceDriverProperties::safe_VkPhysicalDeviceDriverProperties(con
 }
 
 safe_VkPhysicalDeviceDriverProperties::safe_VkPhysicalDeviceDriverProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -11920,6 +12046,7 @@ safe_VkPhysicalDeviceShaderAtomicInt64Features::safe_VkPhysicalDeviceShaderAtomi
 }
 
 safe_VkPhysicalDeviceShaderAtomicInt64Features::safe_VkPhysicalDeviceShaderAtomicInt64Features() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES),
     pNext(nullptr)
 {}
 
@@ -11977,6 +12104,7 @@ safe_VkPhysicalDeviceShaderFloat16Int8Features::safe_VkPhysicalDeviceShaderFloat
 }
 
 safe_VkPhysicalDeviceShaderFloat16Int8Features::safe_VkPhysicalDeviceShaderFloat16Int8Features() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES),
     pNext(nullptr)
 {}
 
@@ -12049,6 +12177,7 @@ safe_VkPhysicalDeviceFloatControlsProperties::safe_VkPhysicalDeviceFloatControls
 }
 
 safe_VkPhysicalDeviceFloatControlsProperties::safe_VkPhysicalDeviceFloatControlsProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -12170,6 +12299,7 @@ safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::safe_VkDescriptorSetLayoutBind
 }
 
 safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::safe_VkDescriptorSetLayoutBindingFlagsCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO),
     pNext(nullptr),
     pBindingFlags(nullptr)
 {}
@@ -12266,6 +12396,7 @@ safe_VkPhysicalDeviceDescriptorIndexingFeatures::safe_VkPhysicalDeviceDescriptor
 }
 
 safe_VkPhysicalDeviceDescriptorIndexingFeatures::safe_VkPhysicalDeviceDescriptorIndexingFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES),
     pNext(nullptr)
 {}
 
@@ -12416,6 +12547,7 @@ safe_VkPhysicalDeviceDescriptorIndexingProperties::safe_VkPhysicalDeviceDescript
 }
 
 safe_VkPhysicalDeviceDescriptorIndexingProperties::safe_VkPhysicalDeviceDescriptorIndexingProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -12561,6 +12693,7 @@ safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::safe_VkDescriptorSetVar
 }
 
 safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::safe_VkDescriptorSetVariableDescriptorCountAllocateInfo() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO),
     pNext(nullptr),
     pDescriptorCounts(nullptr)
 {}
@@ -12638,6 +12771,7 @@ safe_VkDescriptorSetVariableDescriptorCountLayoutSupport::safe_VkDescriptorSetVa
 }
 
 safe_VkDescriptorSetVariableDescriptorCountLayoutSupport::safe_VkDescriptorSetVariableDescriptorCountLayoutSupport() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT),
     pNext(nullptr)
 {}
 
@@ -12694,6 +12828,7 @@ safe_VkSubpassDescriptionDepthStencilResolve::safe_VkSubpassDescriptionDepthSten
 }
 
 safe_VkSubpassDescriptionDepthStencilResolve::safe_VkSubpassDescriptionDepthStencilResolve() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE),
     pNext(nullptr),
     pDepthStencilResolveAttachment(nullptr)
 {}
@@ -12770,6 +12905,7 @@ safe_VkPhysicalDeviceDepthStencilResolveProperties::safe_VkPhysicalDeviceDepthSt
 }
 
 safe_VkPhysicalDeviceDepthStencilResolveProperties::safe_VkPhysicalDeviceDepthStencilResolveProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -12834,6 +12970,7 @@ safe_VkPhysicalDeviceScalarBlockLayoutFeatures::safe_VkPhysicalDeviceScalarBlock
 }
 
 safe_VkPhysicalDeviceScalarBlockLayoutFeatures::safe_VkPhysicalDeviceScalarBlockLayoutFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES),
     pNext(nullptr)
 {}
 
@@ -12886,6 +13023,7 @@ safe_VkImageStencilUsageCreateInfo::safe_VkImageStencilUsageCreateInfo(const VkI
 }
 
 safe_VkImageStencilUsageCreateInfo::safe_VkImageStencilUsageCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -12938,6 +13076,7 @@ safe_VkSamplerReductionModeCreateInfo::safe_VkSamplerReductionModeCreateInfo(con
 }
 
 safe_VkSamplerReductionModeCreateInfo::safe_VkSamplerReductionModeCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -12991,6 +13130,7 @@ safe_VkPhysicalDeviceSamplerFilterMinmaxProperties::safe_VkPhysicalDeviceSampler
 }
 
 safe_VkPhysicalDeviceSamplerFilterMinmaxProperties::safe_VkPhysicalDeviceSamplerFilterMinmaxProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -13049,6 +13189,7 @@ safe_VkPhysicalDeviceVulkanMemoryModelFeatures::safe_VkPhysicalDeviceVulkanMemor
 }
 
 safe_VkPhysicalDeviceVulkanMemoryModelFeatures::safe_VkPhysicalDeviceVulkanMemoryModelFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES),
     pNext(nullptr)
 {}
 
@@ -13109,6 +13250,7 @@ safe_VkPhysicalDeviceImagelessFramebufferFeatures::safe_VkPhysicalDeviceImageles
 }
 
 safe_VkPhysicalDeviceImagelessFramebufferFeatures::safe_VkPhysicalDeviceImagelessFramebufferFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES),
     pNext(nullptr)
 {}
 
@@ -13171,6 +13313,7 @@ safe_VkFramebufferAttachmentImageInfo::safe_VkFramebufferAttachmentImageInfo(con
 }
 
 safe_VkFramebufferAttachmentImageInfo::safe_VkFramebufferAttachmentImageInfo() :
+    sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO),
     pNext(nullptr),
     pViewFormats(nullptr)
 {}
@@ -13275,6 +13418,7 @@ safe_VkFramebufferAttachmentsCreateInfo::safe_VkFramebufferAttachmentsCreateInfo
 }
 
 safe_VkFramebufferAttachmentsCreateInfo::safe_VkFramebufferAttachmentsCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO),
     pNext(nullptr),
     pAttachmentImageInfos(nullptr)
 {}
@@ -13367,6 +13511,7 @@ safe_VkRenderPassAttachmentBeginInfo::safe_VkRenderPassAttachmentBeginInfo(const
 }
 
 safe_VkRenderPassAttachmentBeginInfo::safe_VkRenderPassAttachmentBeginInfo() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO),
     pNext(nullptr),
     pAttachments(nullptr)
 {}
@@ -13452,6 +13597,7 @@ safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures::safe_VkPhysicalDeviceU
 }
 
 safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures::safe_VkPhysicalDeviceUniformBufferStandardLayoutFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES),
     pNext(nullptr)
 {}
 
@@ -13504,6 +13650,7 @@ safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::safe_VkPhysicalDeviceS
 }
 
 safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES),
     pNext(nullptr)
 {}
 
@@ -13556,6 +13703,7 @@ safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures::safe_VkPhysicalDeviceS
 }
 
 safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures::safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES),
     pNext(nullptr)
 {}
 
@@ -13608,6 +13756,7 @@ safe_VkAttachmentReferenceStencilLayout::safe_VkAttachmentReferenceStencilLayout
 }
 
 safe_VkAttachmentReferenceStencilLayout::safe_VkAttachmentReferenceStencilLayout() :
+    sType(VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT),
     pNext(nullptr)
 {}
 
@@ -13661,6 +13810,7 @@ safe_VkAttachmentDescriptionStencilLayout::safe_VkAttachmentDescriptionStencilLa
 }
 
 safe_VkAttachmentDescriptionStencilLayout::safe_VkAttachmentDescriptionStencilLayout() :
+    sType(VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT),
     pNext(nullptr)
 {}
 
@@ -13717,6 +13867,7 @@ safe_VkPhysicalDeviceHostQueryResetFeatures::safe_VkPhysicalDeviceHostQueryReset
 }
 
 safe_VkPhysicalDeviceHostQueryResetFeatures::safe_VkPhysicalDeviceHostQueryResetFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES),
     pNext(nullptr)
 {}
 
@@ -13769,6 +13920,7 @@ safe_VkPhysicalDeviceTimelineSemaphoreFeatures::safe_VkPhysicalDeviceTimelineSem
 }
 
 safe_VkPhysicalDeviceTimelineSemaphoreFeatures::safe_VkPhysicalDeviceTimelineSemaphoreFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES),
     pNext(nullptr)
 {}
 
@@ -13821,6 +13973,7 @@ safe_VkPhysicalDeviceTimelineSemaphoreProperties::safe_VkPhysicalDeviceTimelineS
 }
 
 safe_VkPhysicalDeviceTimelineSemaphoreProperties::safe_VkPhysicalDeviceTimelineSemaphoreProperties() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES),
     pNext(nullptr)
 {}
 
@@ -13874,6 +14027,7 @@ safe_VkSemaphoreTypeCreateInfo::safe_VkSemaphoreTypeCreateInfo(const VkSemaphore
 }
 
 safe_VkSemaphoreTypeCreateInfo::safe_VkSemaphoreTypeCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -13941,6 +14095,7 @@ safe_VkTimelineSemaphoreSubmitInfo::safe_VkTimelineSemaphoreSubmitInfo(const VkT
 }
 
 safe_VkTimelineSemaphoreSubmitInfo::safe_VkTimelineSemaphoreSubmitInfo() :
+    sType(VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO),
     pNext(nullptr),
     pWaitSemaphoreValues(nullptr),
     pSignalSemaphoreValues(nullptr)
@@ -14060,6 +14215,7 @@ safe_VkSemaphoreWaitInfo::safe_VkSemaphoreWaitInfo(const VkSemaphoreWaitInfo* in
 }
 
 safe_VkSemaphoreWaitInfo::safe_VkSemaphoreWaitInfo() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO),
     pNext(nullptr),
     pSemaphores(nullptr),
     pValues(nullptr)
@@ -14175,6 +14331,7 @@ safe_VkSemaphoreSignalInfo::safe_VkSemaphoreSignalInfo(const VkSemaphoreSignalIn
 }
 
 safe_VkSemaphoreSignalInfo::safe_VkSemaphoreSignalInfo() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO),
     pNext(nullptr)
 {}
 
@@ -14233,6 +14390,7 @@ safe_VkPhysicalDeviceBufferDeviceAddressFeatures::safe_VkPhysicalDeviceBufferDev
 }
 
 safe_VkPhysicalDeviceBufferDeviceAddressFeatures::safe_VkPhysicalDeviceBufferDeviceAddressFeatures() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES),
     pNext(nullptr)
 {}
 
@@ -14293,6 +14451,7 @@ safe_VkBufferDeviceAddressInfo::safe_VkBufferDeviceAddressInfo(const VkBufferDev
 }
 
 safe_VkBufferDeviceAddressInfo::safe_VkBufferDeviceAddressInfo() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO),
     pNext(nullptr)
 {}
 
@@ -14345,6 +14504,7 @@ safe_VkBufferOpaqueCaptureAddressCreateInfo::safe_VkBufferOpaqueCaptureAddressCr
 }
 
 safe_VkBufferOpaqueCaptureAddressCreateInfo::safe_VkBufferOpaqueCaptureAddressCreateInfo() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO),
     pNext(nullptr)
 {}
 
@@ -14397,6 +14557,7 @@ safe_VkMemoryOpaqueCaptureAddressAllocateInfo::safe_VkMemoryOpaqueCaptureAddress
 }
 
 safe_VkMemoryOpaqueCaptureAddressAllocateInfo::safe_VkMemoryOpaqueCaptureAddressAllocateInfo() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO),
     pNext(nullptr)
 {}
 
@@ -14449,6 +14610,7 @@ safe_VkDeviceMemoryOpaqueCaptureAddressInfo::safe_VkDeviceMemoryOpaqueCaptureAdd
 }
 
 safe_VkDeviceMemoryOpaqueCaptureAddressInfo::safe_VkDeviceMemoryOpaqueCaptureAddressInfo() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO),
     pNext(nullptr)
 {}
 
@@ -14520,6 +14682,7 @@ safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR(const VkSwapchainCr
 }
 
 safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR),
     pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
@@ -14678,6 +14841,7 @@ safe_VkPresentInfoKHR::safe_VkPresentInfoKHR(const VkPresentInfoKHR* in_struct) 
 }
 
 safe_VkPresentInfoKHR::safe_VkPresentInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR),
     pNext(nullptr),
     pWaitSemaphores(nullptr),
     pSwapchains(nullptr),
@@ -14850,6 +15014,7 @@ safe_VkImageSwapchainCreateInfoKHR::safe_VkImageSwapchainCreateInfoKHR(const VkI
 }
 
 safe_VkImageSwapchainCreateInfoKHR::safe_VkImageSwapchainCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -14903,6 +15068,7 @@ safe_VkBindImageMemorySwapchainInfoKHR::safe_VkBindImageMemorySwapchainInfoKHR(c
 }
 
 safe_VkBindImageMemorySwapchainInfoKHR::safe_VkBindImageMemorySwapchainInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -14963,6 +15129,7 @@ safe_VkAcquireNextImageInfoKHR::safe_VkAcquireNextImageInfoKHR(const VkAcquireNe
 }
 
 safe_VkAcquireNextImageInfoKHR::safe_VkAcquireNextImageInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15034,6 +15201,7 @@ safe_VkDeviceGroupPresentCapabilitiesKHR::safe_VkDeviceGroupPresentCapabilitiesK
 }
 
 safe_VkDeviceGroupPresentCapabilitiesKHR::safe_VkDeviceGroupPresentCapabilitiesKHR() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_CAPABILITIES_KHR),
     pNext(nullptr)
 {}
 
@@ -15104,6 +15272,7 @@ safe_VkDeviceGroupPresentInfoKHR::safe_VkDeviceGroupPresentInfoKHR(const VkDevic
 }
 
 safe_VkDeviceGroupPresentInfoKHR::safe_VkDeviceGroupPresentInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_INFO_KHR),
     pNext(nullptr),
     pDeviceMasks(nullptr)
 {}
@@ -15185,6 +15354,7 @@ safe_VkDeviceGroupSwapchainCreateInfoKHR::safe_VkDeviceGroupSwapchainCreateInfoK
 }
 
 safe_VkDeviceGroupSwapchainCreateInfoKHR::safe_VkDeviceGroupSwapchainCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15308,6 +15478,7 @@ safe_VkDisplayModeCreateInfoKHR::safe_VkDisplayModeCreateInfoKHR(const VkDisplay
 }
 
 safe_VkDisplayModeCreateInfoKHR::safe_VkDisplayModeCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15371,6 +15542,7 @@ safe_VkDisplaySurfaceCreateInfoKHR::safe_VkDisplaySurfaceCreateInfoKHR(const VkD
 }
 
 safe_VkDisplaySurfaceCreateInfoKHR::safe_VkDisplaySurfaceCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15453,6 +15625,7 @@ safe_VkDisplayPresentInfoKHR::safe_VkDisplayPresentInfoKHR(const VkDisplayPresen
 }
 
 safe_VkDisplayPresentInfoKHR::safe_VkDisplayPresentInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_PRESENT_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15517,6 +15690,7 @@ safe_VkImportMemoryWin32HandleInfoKHR::safe_VkImportMemoryWin32HandleInfoKHR(con
 }
 
 safe_VkImportMemoryWin32HandleInfoKHR::safe_VkImportMemoryWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15586,6 +15760,7 @@ safe_VkExportMemoryWin32HandleInfoKHR::safe_VkExportMemoryWin32HandleInfoKHR(con
 }
 
 safe_VkExportMemoryWin32HandleInfoKHR::safe_VkExportMemoryWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr),
     pAttributes(nullptr)
 {}
@@ -15667,6 +15842,7 @@ safe_VkMemoryWin32HandlePropertiesKHR::safe_VkMemoryWin32HandlePropertiesKHR(con
 }
 
 safe_VkMemoryWin32HandlePropertiesKHR::safe_VkMemoryWin32HandlePropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR),
     pNext(nullptr)
 {}
 
@@ -15724,6 +15900,7 @@ safe_VkMemoryGetWin32HandleInfoKHR::safe_VkMemoryGetWin32HandleInfoKHR(const VkM
 }
 
 safe_VkMemoryGetWin32HandleInfoKHR::safe_VkMemoryGetWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15783,6 +15960,7 @@ safe_VkImportMemoryFdInfoKHR::safe_VkImportMemoryFdInfoKHR(const VkImportMemoryF
 }
 
 safe_VkImportMemoryFdInfoKHR::safe_VkImportMemoryFdInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15839,6 +16017,7 @@ safe_VkMemoryFdPropertiesKHR::safe_VkMemoryFdPropertiesKHR(const VkMemoryFdPrope
 }
 
 safe_VkMemoryFdPropertiesKHR::safe_VkMemoryFdPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR),
     pNext(nullptr)
 {}
 
@@ -15892,6 +16071,7 @@ safe_VkMemoryGetFdInfoKHR::safe_VkMemoryGetFdInfoKHR(const VkMemoryGetFdInfoKHR*
 }
 
 safe_VkMemoryGetFdInfoKHR::safe_VkMemoryGetFdInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -15980,6 +16160,7 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::safe_VkWin32KeyedMutexAcquireReleas
 }
 
 safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::safe_VkWin32KeyedMutexAcquireReleaseInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR),
     pNext(nullptr),
     pAcquireSyncs(nullptr),
     pAcquireKeys(nullptr),
@@ -16185,6 +16366,7 @@ safe_VkImportSemaphoreWin32HandleInfoKHR::safe_VkImportSemaphoreWin32HandleInfoK
 }
 
 safe_VkImportSemaphoreWin32HandleInfoKHR::safe_VkImportSemaphoreWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -16262,6 +16444,7 @@ safe_VkExportSemaphoreWin32HandleInfoKHR::safe_VkExportSemaphoreWin32HandleInfoK
 }
 
 safe_VkExportSemaphoreWin32HandleInfoKHR::safe_VkExportSemaphoreWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr),
     pAttributes(nullptr)
 {}
@@ -16354,6 +16537,7 @@ safe_VkD3D12FenceSubmitInfoKHR::safe_VkD3D12FenceSubmitInfoKHR(const VkD3D12Fenc
 }
 
 safe_VkD3D12FenceSubmitInfoKHR::safe_VkD3D12FenceSubmitInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR),
     pNext(nullptr),
     pWaitSemaphoreValues(nullptr),
     pSignalSemaphoreValues(nullptr)
@@ -16465,6 +16649,7 @@ safe_VkSemaphoreGetWin32HandleInfoKHR::safe_VkSemaphoreGetWin32HandleInfoKHR(con
 }
 
 safe_VkSemaphoreGetWin32HandleInfoKHR::safe_VkSemaphoreGetWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -16526,6 +16711,7 @@ safe_VkImportSemaphoreFdInfoKHR::safe_VkImportSemaphoreFdInfoKHR(const VkImportS
 }
 
 safe_VkImportSemaphoreFdInfoKHR::safe_VkImportSemaphoreFdInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -16591,6 +16777,7 @@ safe_VkSemaphoreGetFdInfoKHR::safe_VkSemaphoreGetFdInfoKHR(const VkSemaphoreGetF
 }
 
 safe_VkSemaphoreGetFdInfoKHR::safe_VkSemaphoreGetFdInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -16647,6 +16834,7 @@ safe_VkPhysicalDevicePushDescriptorPropertiesKHR::safe_VkPhysicalDevicePushDescr
 }
 
 safe_VkPhysicalDevicePushDescriptorPropertiesKHR::safe_VkPhysicalDevicePushDescriptorPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR),
     pNext(nullptr)
 {}
 
@@ -16773,6 +16961,7 @@ safe_VkPresentRegionsKHR::safe_VkPresentRegionsKHR(const VkPresentRegionsKHR* in
 }
 
 safe_VkPresentRegionsKHR::safe_VkPresentRegionsKHR() :
+    sType(VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR),
     pNext(nullptr),
     pRegions(nullptr)
 {}
@@ -16858,6 +17047,7 @@ safe_VkSharedPresentSurfaceCapabilitiesKHR::safe_VkSharedPresentSurfaceCapabilit
 }
 
 safe_VkSharedPresentSurfaceCapabilitiesKHR::safe_VkSharedPresentSurfaceCapabilitiesKHR() :
+    sType(VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR),
     pNext(nullptr)
 {}
 
@@ -16916,6 +17106,7 @@ safe_VkImportFenceWin32HandleInfoKHR::safe_VkImportFenceWin32HandleInfoKHR(const
 }
 
 safe_VkImportFenceWin32HandleInfoKHR::safe_VkImportFenceWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -16993,6 +17184,7 @@ safe_VkExportFenceWin32HandleInfoKHR::safe_VkExportFenceWin32HandleInfoKHR(const
 }
 
 safe_VkExportFenceWin32HandleInfoKHR::safe_VkExportFenceWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_FENCE_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr),
     pAttributes(nullptr)
 {}
@@ -17075,6 +17267,7 @@ safe_VkFenceGetWin32HandleInfoKHR::safe_VkFenceGetWin32HandleInfoKHR(const VkFen
 }
 
 safe_VkFenceGetWin32HandleInfoKHR::safe_VkFenceGetWin32HandleInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -17136,6 +17329,7 @@ safe_VkImportFenceFdInfoKHR::safe_VkImportFenceFdInfoKHR(const VkImportFenceFdIn
 }
 
 safe_VkImportFenceFdInfoKHR::safe_VkImportFenceFdInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -17201,6 +17395,7 @@ safe_VkFenceGetFdInfoKHR::safe_VkFenceGetFdInfoKHR(const VkFenceGetFdInfoKHR* in
 }
 
 safe_VkFenceGetFdInfoKHR::safe_VkFenceGetFdInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -17258,6 +17453,7 @@ safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::safe_VkPhysicalDevicePerforman
 }
 
 safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::safe_VkPhysicalDevicePerformanceQueryFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR),
     pNext(nullptr)
 {}
 
@@ -17314,6 +17510,7 @@ safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::safe_VkPhysicalDevicePerform
 }
 
 safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::safe_VkPhysicalDevicePerformanceQueryPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR),
     pNext(nullptr)
 {}
 
@@ -17371,6 +17568,7 @@ safe_VkPerformanceCounterKHR::safe_VkPerformanceCounterKHR(const VkPerformanceCo
 }
 
 safe_VkPerformanceCounterKHR::safe_VkPerformanceCounterKHR() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR),
     pNext(nullptr)
 {}
 
@@ -17452,6 +17650,7 @@ safe_VkPerformanceCounterDescriptionKHR::safe_VkPerformanceCounterDescriptionKHR
 }
 
 safe_VkPerformanceCounterDescriptionKHR::safe_VkPerformanceCounterDescriptionKHR() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR),
     pNext(nullptr)
 {}
 
@@ -17546,6 +17745,7 @@ safe_VkQueryPoolPerformanceCreateInfoKHR::safe_VkQueryPoolPerformanceCreateInfoK
 }
 
 safe_VkQueryPoolPerformanceCreateInfoKHR::safe_VkQueryPoolPerformanceCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR),
     pNext(nullptr),
     pCounterIndices(nullptr)
 {}
@@ -17628,6 +17828,7 @@ safe_VkAcquireProfilingLockInfoKHR::safe_VkAcquireProfilingLockInfoKHR(const VkA
 }
 
 safe_VkAcquireProfilingLockInfoKHR::safe_VkAcquireProfilingLockInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -17684,6 +17885,7 @@ safe_VkPerformanceQuerySubmitInfoKHR::safe_VkPerformanceQuerySubmitInfoKHR(const
 }
 
 safe_VkPerformanceQuerySubmitInfoKHR::safe_VkPerformanceQuerySubmitInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -17736,6 +17938,7 @@ safe_VkPhysicalDeviceSurfaceInfo2KHR::safe_VkPhysicalDeviceSurfaceInfo2KHR(const
 }
 
 safe_VkPhysicalDeviceSurfaceInfo2KHR::safe_VkPhysicalDeviceSurfaceInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR),
     pNext(nullptr)
 {}
 
@@ -17788,6 +17991,7 @@ safe_VkSurfaceCapabilities2KHR::safe_VkSurfaceCapabilities2KHR(const VkSurfaceCa
 }
 
 safe_VkSurfaceCapabilities2KHR::safe_VkSurfaceCapabilities2KHR() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR),
     pNext(nullptr)
 {}
 
@@ -17840,6 +18044,7 @@ safe_VkSurfaceFormat2KHR::safe_VkSurfaceFormat2KHR(const VkSurfaceFormat2KHR* in
 }
 
 safe_VkSurfaceFormat2KHR::safe_VkSurfaceFormat2KHR() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR),
     pNext(nullptr)
 {}
 
@@ -17892,6 +18097,7 @@ safe_VkDisplayProperties2KHR::safe_VkDisplayProperties2KHR(const VkDisplayProper
 }
 
 safe_VkDisplayProperties2KHR::safe_VkDisplayProperties2KHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR),
     pNext(nullptr)
 {}
 
@@ -17944,6 +18150,7 @@ safe_VkDisplayPlaneProperties2KHR::safe_VkDisplayPlaneProperties2KHR(const VkDis
 }
 
 safe_VkDisplayPlaneProperties2KHR::safe_VkDisplayPlaneProperties2KHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_PLANE_PROPERTIES_2_KHR),
     pNext(nullptr)
 {}
 
@@ -17996,6 +18203,7 @@ safe_VkDisplayModeProperties2KHR::safe_VkDisplayModeProperties2KHR(const VkDispl
 }
 
 safe_VkDisplayModeProperties2KHR::safe_VkDisplayModeProperties2KHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR),
     pNext(nullptr)
 {}
 
@@ -18049,6 +18257,7 @@ safe_VkDisplayPlaneInfo2KHR::safe_VkDisplayPlaneInfo2KHR(const VkDisplayPlaneInf
 }
 
 safe_VkDisplayPlaneInfo2KHR::safe_VkDisplayPlaneInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR),
     pNext(nullptr)
 {}
 
@@ -18105,6 +18314,7 @@ safe_VkDisplayPlaneCapabilities2KHR::safe_VkDisplayPlaneCapabilities2KHR(const V
 }
 
 safe_VkDisplayPlaneCapabilities2KHR::safe_VkDisplayPlaneCapabilities2KHR() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_PLANE_CAPABILITIES_2_KHR),
     pNext(nullptr)
 {}
 
@@ -18158,6 +18368,7 @@ safe_VkPhysicalDeviceShaderClockFeaturesKHR::safe_VkPhysicalDeviceShaderClockFea
 }
 
 safe_VkPhysicalDeviceShaderClockFeaturesKHR::safe_VkPhysicalDeviceShaderClockFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR),
     pNext(nullptr)
 {}
 
@@ -18214,6 +18425,7 @@ safe_VkSurfaceProtectedCapabilitiesKHR::safe_VkSurfaceProtectedCapabilitiesKHR(c
 }
 
 safe_VkSurfaceProtectedCapabilitiesKHR::safe_VkSurfaceProtectedCapabilitiesKHR() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR),
     pNext(nullptr)
 {}
 
@@ -18268,6 +18480,7 @@ safe_VkDeferredOperationInfoKHR::safe_VkDeferredOperationInfoKHR(const VkDeferre
 }
 
 safe_VkDeferredOperationInfoKHR::safe_VkDeferredOperationInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -18322,6 +18535,7 @@ safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR::safe_VkPhysicalDev
 }
 
 safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR::safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR),
     pNext(nullptr)
 {}
 
@@ -18374,6 +18588,7 @@ safe_VkPipelineInfoKHR::safe_VkPipelineInfoKHR(const VkPipelineInfoKHR* in_struc
 }
 
 safe_VkPipelineInfoKHR::safe_VkPipelineInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -18433,6 +18648,7 @@ safe_VkPipelineExecutablePropertiesKHR::safe_VkPipelineExecutablePropertiesKHR(c
 }
 
 safe_VkPipelineExecutablePropertiesKHR::safe_VkPipelineExecutablePropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR),
     pNext(nullptr)
 {}
 
@@ -18514,6 +18730,7 @@ safe_VkPipelineExecutableInfoKHR::safe_VkPipelineExecutableInfoKHR(const VkPipel
 }
 
 safe_VkPipelineExecutableInfoKHR::safe_VkPipelineExecutableInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -18577,6 +18794,7 @@ safe_VkPipelineExecutableStatisticKHR::safe_VkPipelineExecutableStatisticKHR(con
 }
 
 safe_VkPipelineExecutableStatisticKHR::safe_VkPipelineExecutableStatisticKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR),
     pNext(nullptr)
 {}
 
@@ -18665,6 +18883,7 @@ safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInt
 }
 
 safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInternalRepresentationKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_REPRESENTATION_KHR),
     pNext(nullptr),
     pData(nullptr)
 {}
@@ -18759,6 +18978,7 @@ safe_VkPipelineLibraryCreateInfoKHR::safe_VkPipelineLibraryCreateInfoKHR(const V
 }
 
 safe_VkPipelineLibraryCreateInfoKHR::safe_VkPipelineLibraryCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR),
     pNext(nullptr),
     pLibraries(nullptr)
 {}
@@ -18848,6 +19068,7 @@ safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT
 }
 
 safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT),
     pNext(nullptr),
     pUserData(nullptr)
 {}
@@ -18909,6 +19130,7 @@ safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasteriza
 }
 
 safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasterizationStateRasterizationOrderAMD() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD),
     pNext(nullptr)
 {}
 
@@ -18963,6 +19185,7 @@ safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT(const V
 }
 
 safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT),
     pNext(nullptr),
     pObjectName(nullptr)
 {}
@@ -19030,6 +19253,7 @@ safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT(const VkD
 }
 
 safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_TAG_INFO_EXT),
     pNext(nullptr),
     pTag(nullptr)
 {}
@@ -19102,6 +19326,7 @@ safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const VkDebugMa
 }
 
 safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT),
     pNext(nullptr),
     pMarkerName(nullptr)
 {}
@@ -19169,6 +19394,7 @@ safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCrea
 }
 
 safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -19221,6 +19447,7 @@ safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCr
 }
 
 safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -19274,6 +19501,7 @@ safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemory
 }
 
 safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemoryAllocateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -19331,6 +19559,7 @@ safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::safe_VkPhysicalDeviceTransfor
 }
 
 safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -19396,6 +19625,7 @@ safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::safe_VkPhysicalDeviceTransf
 }
 
 safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -19485,6 +19715,7 @@ safe_VkPipelineRasterizationStateStreamCreateInfoEXT::safe_VkPipelineRasterizati
 }
 
 safe_VkPipelineRasterizationStateStreamCreateInfoEXT::safe_VkPipelineRasterizationStateStreamCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_STREAM_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -19543,6 +19774,7 @@ safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX(const VkImageViewHa
 }
 
 safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX),
     pNext(nullptr)
 {}
 
@@ -19604,6 +19836,7 @@ safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX(const
 }
 
 safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX),
     pNext(nullptr)
 {}
 
@@ -19660,6 +19893,7 @@ safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropert
 }
 
 safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD() :
+    sType(VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD),
     pNext(nullptr)
 {}
 
@@ -19715,6 +19949,7 @@ safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreat
 }
 
 safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP() :
+    sType(VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP),
     pNext(nullptr)
 {}
 
@@ -19773,6 +20008,7 @@ safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSa
 }
 
 safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -19825,6 +20061,7 @@ safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV(c
 }
 
 safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -19877,6 +20114,7 @@ safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV(const VkExp
 }
 
 safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -19932,6 +20170,7 @@ safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV(const
 }
 
 safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -19996,6 +20235,7 @@ safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const
 }
 
 safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV),
     pNext(nullptr),
     pAttributes(nullptr)
 {}
@@ -20103,6 +20343,7 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireRelease
 }
 
 safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireReleaseInfoNV() :
+    sType(VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV),
     pNext(nullptr),
     pAcquireSyncs(nullptr),
     pAcquireKeys(nullptr),
@@ -20307,6 +20548,7 @@ safe_VkValidationFlagsEXT::safe_VkValidationFlagsEXT(const VkValidationFlagsEXT*
 }
 
 safe_VkValidationFlagsEXT::safe_VkValidationFlagsEXT() :
+    sType(VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT),
     pNext(nullptr),
     pDisabledValidationChecks(nullptr)
 {}
@@ -20387,6 +20629,7 @@ safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const VkViSurfaceCrea
 }
 
 safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN() :
+    sType(VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN),
     pNext(nullptr),
     window(nullptr)
 {}
@@ -20446,6 +20689,7 @@ safe_VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT::safe_VkPhysicalDevice
 }
 
 safe_VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT::safe_VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -20498,6 +20742,7 @@ safe_VkImageViewASTCDecodeModeEXT::safe_VkImageViewASTCDecodeModeEXT(const VkIma
 }
 
 safe_VkImageViewASTCDecodeModeEXT::safe_VkImageViewASTCDecodeModeEXT() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT),
     pNext(nullptr)
 {}
 
@@ -20550,6 +20795,7 @@ safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::safe_VkPhysicalDeviceASTCDecodeFeatu
 }
 
 safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::safe_VkPhysicalDeviceASTCDecodeFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -20604,6 +20850,7 @@ safe_VkConditionalRenderingBeginInfoEXT::safe_VkConditionalRenderingBeginInfoEXT
 }
 
 safe_VkConditionalRenderingBeginInfoEXT::safe_VkConditionalRenderingBeginInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -20665,6 +20912,7 @@ safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::safe_VkPhysicalDeviceCondi
 }
 
 safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -20721,6 +20969,7 @@ safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::safe_VkCommandBuffer
 }
 
 safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -20779,6 +21028,7 @@ safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalin
 }
 
 safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalingStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV),
     pNext(nullptr),
     pViewportWScalings(nullptr)
 {}
@@ -20870,6 +21120,7 @@ safe_VkSurfaceCapabilities2EXT::safe_VkSurfaceCapabilities2EXT(const VkSurfaceCa
 }
 
 safe_VkSurfaceCapabilities2EXT::safe_VkSurfaceCapabilities2EXT() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT),
     pNext(nullptr)
 {}
 
@@ -20962,6 +21213,7 @@ safe_VkDisplayPowerInfoEXT::safe_VkDisplayPowerInfoEXT(const VkDisplayPowerInfoE
 }
 
 safe_VkDisplayPowerInfoEXT::safe_VkDisplayPowerInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_POWER_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -21014,6 +21266,7 @@ safe_VkDeviceEventInfoEXT::safe_VkDeviceEventInfoEXT(const VkDeviceEventInfoEXT*
 }
 
 safe_VkDeviceEventInfoEXT::safe_VkDeviceEventInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_EVENT_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -21066,6 +21319,7 @@ safe_VkDisplayEventInfoEXT::safe_VkDisplayEventInfoEXT(const VkDisplayEventInfoE
 }
 
 safe_VkDisplayEventInfoEXT::safe_VkDisplayEventInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_EVENT_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -21118,6 +21372,7 @@ safe_VkSwapchainCounterCreateInfoEXT::safe_VkSwapchainCounterCreateInfoEXT(const
 }
 
 safe_VkSwapchainCounterCreateInfoEXT::safe_VkSwapchainCounterCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -21175,6 +21430,7 @@ safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE(const VkPresentTime
 }
 
 safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE() :
+    sType(VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE),
     pNext(nullptr),
     pTimes(nullptr)
 {}
@@ -21252,6 +21508,7 @@ safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDev
 }
 
 safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX),
     pNext(nullptr)
 {}
 
@@ -21310,6 +21567,7 @@ safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleS
 }
 
 safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV),
     pNext(nullptr),
     pViewportSwizzles(nullptr)
 {}
@@ -21391,6 +21649,7 @@ safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::safe_VkPhysicalDeviceDiscard
 }
 
 safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -21450,6 +21709,7 @@ safe_VkPipelineDiscardRectangleStateCreateInfoEXT::safe_VkPipelineDiscardRectang
 }
 
 safe_VkPipelineDiscardRectangleStateCreateInfoEXT::safe_VkPipelineDiscardRectangleStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_DISCARD_RECTANGLE_STATE_CREATE_INFO_EXT),
     pNext(nullptr),
     pDiscardRectangles(nullptr)
 {}
@@ -21543,6 +21803,7 @@ safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::safe_VkPhysicalDevi
 }
 
 safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -21629,6 +21890,7 @@ safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::safe_VkPipelineRaste
 }
 
 safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::safe_VkPipelineRasterizationConservativeStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -21689,6 +21951,7 @@ safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::safe_VkPhysicalDeviceDepthClipE
 }
 
 safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -21742,6 +22005,7 @@ safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::safe_VkPipelineRasteriz
 }
 
 safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -21805,6 +22069,7 @@ safe_VkHdrMetadataEXT::safe_VkHdrMetadataEXT(const VkHdrMetadataEXT* in_struct) 
 }
 
 safe_VkHdrMetadataEXT::safe_VkHdrMetadataEXT() :
+    sType(VK_STRUCTURE_TYPE_HDR_METADATA_EXT),
     pNext(nullptr)
 {}
 
@@ -21888,6 +22153,7 @@ safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const VkDebugUtilsLabelEXT*
 }
 
 safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT),
     pNext(nullptr),
     pLabelName(nullptr)
 {}
@@ -21957,6 +22223,7 @@ safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT(const VkD
 }
 
 safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT),
     pNext(nullptr),
     pObjectName(nullptr)
 {}
@@ -22047,6 +22314,7 @@ safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDat
 }
 
 safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDataEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT),
     pNext(nullptr),
     pMessageIdName(nullptr),
     pMessage(nullptr),
@@ -22232,6 +22500,7 @@ safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT(const VkDeb
 }
 
 safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT),
     pNext(nullptr),
     pTag(nullptr)
 {}
@@ -22305,6 +22574,7 @@ safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT
 }
 
 safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT),
     pNext(nullptr),
     pUserData(nullptr)
 {}
@@ -22376,6 +22646,7 @@ safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDRO
 }
 
 safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID),
     pNext(nullptr)
 {}
 
@@ -22433,6 +22704,7 @@ safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPrope
 }
 
 safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID),
     pNext(nullptr)
 {}
 
@@ -22500,6 +22772,7 @@ safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBuffe
 }
 
 safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID),
     pNext(nullptr)
 {}
 
@@ -22585,6 +22858,7 @@ safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBuffe
 }
 
 safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBufferInfoANDROID() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID),
     pNext(nullptr),
     buffer(nullptr)
 {}
@@ -22642,6 +22916,7 @@ safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwar
 }
 
 safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID),
     pNext(nullptr)
 {}
 
@@ -22698,6 +22973,7 @@ safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID(const VkExternalForma
 }
 
 safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID),
     pNext(nullptr)
 {}
 
@@ -22753,6 +23029,7 @@ safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT::safe_VkPhysicalDeviceInlineU
 }
 
 safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT::safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -22813,6 +23090,7 @@ safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT::safe_VkPhysicalDeviceInlin
 }
 
 safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT::safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -22882,6 +23160,7 @@ safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineU
 }
 
 safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineUniformBlockEXT() :
+    sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT),
     pNext(nullptr),
     pData(nullptr)
 {}
@@ -22939,6 +23218,7 @@ safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT::safe_VkDescriptorPoolInlin
 }
 
 safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT::safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -22998,6 +23278,7 @@ safe_VkSampleLocationsInfoEXT::safe_VkSampleLocationsInfoEXT(const VkSampleLocat
 }
 
 safe_VkSampleLocationsInfoEXT::safe_VkSampleLocationsInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT),
     pNext(nullptr),
     pSampleLocations(nullptr)
 {}
@@ -23094,6 +23375,7 @@ safe_VkRenderPassSampleLocationsBeginInfoEXT::safe_VkRenderPassSampleLocationsBe
 }
 
 safe_VkRenderPassSampleLocationsBeginInfoEXT::safe_VkRenderPassSampleLocationsBeginInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT),
     pNext(nullptr),
     pAttachmentInitialSampleLocations(nullptr),
     pPostSubpassSampleLocations(nullptr)
@@ -23201,6 +23483,7 @@ safe_VkPipelineSampleLocationsStateCreateInfoEXT::safe_VkPipelineSampleLocations
 }
 
 safe_VkPipelineSampleLocationsStateCreateInfoEXT::safe_VkPipelineSampleLocationsStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -23263,6 +23546,7 @@ safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLo
 }
 
 safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLocationsPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -23339,6 +23623,7 @@ safe_VkMultisamplePropertiesEXT::safe_VkMultisamplePropertiesEXT(const VkMultisa
 }
 
 safe_VkMultisamplePropertiesEXT::safe_VkMultisamplePropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -23391,6 +23676,7 @@ safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::safe_VkPhysicalDeviceBle
 }
 
 safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -23448,6 +23734,7 @@ safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::safe_VkPhysicalDeviceB
 }
 
 safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -23522,6 +23809,7 @@ safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::safe_VkPipelineColorBlendAd
 }
 
 safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -23584,6 +23872,7 @@ safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorS
 }
 
 safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -23652,6 +23941,7 @@ safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModul
 }
 
 safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModulationStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV),
     pNext(nullptr),
     pCoverageModulationTable(nullptr)
 {}
@@ -23742,6 +24032,7 @@ safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSM
 }
 
 safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -23798,6 +24089,7 @@ safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBu
 }
 
 safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -23855,6 +24147,7 @@ safe_VkDrmFormatModifierPropertiesListEXT::safe_VkDrmFormatModifierPropertiesLis
 }
 
 safe_VkDrmFormatModifierPropertiesListEXT::safe_VkDrmFormatModifierPropertiesListEXT() :
+    sType(VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT),
     pNext(nullptr),
     pDrmFormatModifierProperties(nullptr)
 {}
@@ -23939,6 +24232,7 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDr
 }
 
 safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT),
     pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
@@ -24029,6 +24323,7 @@ safe_VkImageDrmFormatModifierListCreateInfoEXT::safe_VkImageDrmFormatModifierLis
 }
 
 safe_VkImageDrmFormatModifierListCreateInfoEXT::safe_VkImageDrmFormatModifierListCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT),
     pNext(nullptr),
     pDrmFormatModifiers(nullptr)
 {}
@@ -24112,6 +24407,7 @@ safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::safe_VkImageDrmFormatModifie
 }
 
 safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::safe_VkImageDrmFormatModifierExplicitCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT),
     pNext(nullptr),
     pPlaneLayouts(nullptr)
 {}
@@ -24193,6 +24489,7 @@ safe_VkImageDrmFormatModifierPropertiesEXT::safe_VkImageDrmFormatModifierPropert
 }
 
 safe_VkImageDrmFormatModifierPropertiesEXT::safe_VkImageDrmFormatModifierPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -24247,6 +24544,7 @@ safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT(const V
 }
 
 safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT),
     pNext(nullptr),
     pInitialData(nullptr)
 {}
@@ -24308,6 +24606,7 @@ safe_VkShaderModuleValidationCacheCreateInfoEXT::safe_VkShaderModuleValidationCa
 }
 
 safe_VkShaderModuleValidationCacheCreateInfoEXT::safe_VkShaderModuleValidationCacheCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -24435,6 +24734,7 @@ safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::safe_VkPipelineViewpor
 }
 
 safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::safe_VkPipelineViewportShadingRateImageStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV),
     pNext(nullptr),
     pShadingRatePalettes(nullptr)
 {}
@@ -24525,6 +24825,7 @@ safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRat
 }
 
 safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRateImageFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -24583,6 +24884,7 @@ safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingR
 }
 
 safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingRateImagePropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -24728,6 +25030,7 @@ safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::safe_VkPipelineViewpo
 }
 
 safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV),
     pNext(nullptr),
     pCustomSampleOrders(nullptr)
 {}
@@ -24821,6 +25124,7 @@ safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfo
 }
 
 safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -24909,6 +25213,7 @@ safe_VkRayTracingPipelineCreateInfoNV::safe_VkRayTracingPipelineCreateInfoNV(con
 }
 
 safe_VkRayTracingPipelineCreateInfoNV::safe_VkRayTracingPipelineCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV),
     pNext(nullptr),
     pStages(nullptr),
     pGroups(nullptr)
@@ -25061,6 +25366,7 @@ safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV(const VkGeometryTriangles
 }
 
 safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV() :
+    sType(VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV),
     pNext(nullptr)
 {}
 
@@ -25156,6 +25462,7 @@ safe_VkGeometryAABBNV::safe_VkGeometryAABBNV(const VkGeometryAABBNV* in_struct) 
 }
 
 safe_VkGeometryAABBNV::safe_VkGeometryAABBNV() :
+    sType(VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV),
     pNext(nullptr)
 {}
 
@@ -25222,6 +25529,7 @@ safe_VkGeometryNV::safe_VkGeometryNV(const VkGeometryNV* in_struct) :
 }
 
 safe_VkGeometryNV::safe_VkGeometryNV() :
+    sType(VK_STRUCTURE_TYPE_GEOMETRY_NV),
     pNext(nullptr)
 {}
 
@@ -25292,6 +25600,7 @@ safe_VkAccelerationStructureInfoNV::safe_VkAccelerationStructureInfoNV(const VkA
 }
 
 safe_VkAccelerationStructureInfoNV::safe_VkAccelerationStructureInfoNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV),
     pNext(nullptr),
     pGeometries(nullptr)
 {}
@@ -25390,6 +25699,7 @@ safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfo
 }
 
 safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -25454,6 +25764,7 @@ safe_VkBindAccelerationStructureMemoryInfoKHR::safe_VkBindAccelerationStructureM
 }
 
 safe_VkBindAccelerationStructureMemoryInfoKHR::safe_VkBindAccelerationStructureMemoryInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR),
     pNext(nullptr),
     pDeviceIndices(nullptr)
 {}
@@ -25550,6 +25861,7 @@ safe_VkWriteDescriptorSetAccelerationStructureKHR::safe_VkWriteDescriptorSetAcce
 }
 
 safe_VkWriteDescriptorSetAccelerationStructureKHR::safe_VkWriteDescriptorSetAccelerationStructureKHR() :
+    sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR),
     pNext(nullptr),
     pAccelerationStructures(nullptr)
 {}
@@ -25636,6 +25948,7 @@ safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructu
 }
 
 safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructureMemoryRequirementsInfoNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -25699,6 +26012,7 @@ safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingProp
 }
 
 safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -25779,6 +26093,7 @@ safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDevice
 }
 
 safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -25831,6 +26146,7 @@ safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepre
 }
 
 safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -25883,6 +26199,7 @@ safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::safe_VkPhysicalDeviceImageView
 }
 
 safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::safe_VkPhysicalDeviceImageViewImageFormatInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -25936,6 +26253,7 @@ safe_VkFilterCubicImageViewImageFormatPropertiesEXT::safe_VkFilterCubicImageView
 }
 
 safe_VkFilterCubicImageViewImageFormatPropertiesEXT::safe_VkFilterCubicImageViewImageFormatPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -25992,6 +26310,7 @@ safe_VkDeviceQueueGlobalPriorityCreateInfoEXT::safe_VkDeviceQueueGlobalPriorityC
 }
 
 safe_VkDeviceQueueGlobalPriorityCreateInfoEXT::safe_VkDeviceQueueGlobalPriorityCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -26045,6 +26364,7 @@ safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT(con
 }
 
 safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT),
     pNext(nullptr),
     pHostPointer(nullptr)
 {}
@@ -26102,6 +26422,7 @@ safe_VkMemoryHostPointerPropertiesEXT::safe_VkMemoryHostPointerPropertiesEXT(con
 }
 
 safe_VkMemoryHostPointerPropertiesEXT::safe_VkMemoryHostPointerPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -26154,6 +26475,7 @@ safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::safe_VkPhysicalDeviceExter
 }
 
 safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -26206,6 +26528,7 @@ safe_VkPipelineCompilerControlCreateInfoAMD::safe_VkPipelineCompilerControlCreat
 }
 
 safe_VkPipelineCompilerControlCreateInfoAMD::safe_VkPipelineCompilerControlCreateInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD),
     pNext(nullptr)
 {}
 
@@ -26258,6 +26581,7 @@ safe_VkCalibratedTimestampInfoEXT::safe_VkCalibratedTimestampInfoEXT(const VkCal
 }
 
 safe_VkCalibratedTimestampInfoEXT::safe_VkCalibratedTimestampInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -26323,6 +26647,7 @@ safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePro
 }
 
 safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePropertiesAMD() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD),
     pNext(nullptr)
 {}
 
@@ -26427,6 +26752,7 @@ safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocatio
 }
 
 safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocationCreateInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD),
     pNext(nullptr)
 {}
 
@@ -26479,6 +26805,7 @@ safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::safe_VkPhysicalDeviceV
 }
 
 safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -26536,6 +26863,7 @@ safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::safe_VkPipelineVertexInputD
 }
 
 safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::safe_VkPipelineVertexInputDivisorStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT),
     pNext(nullptr),
     pVertexBindingDivisors(nullptr)
 {}
@@ -26614,6 +26942,7 @@ safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::safe_VkPhysicalDeviceVer
 }
 
 safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -26672,6 +27001,7 @@ safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP(const VkPresentFrameTok
 }
 
 safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP() :
+    sType(VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP),
     pNext(nullptr)
 {}
 
@@ -26735,6 +27065,7 @@ safe_VkPipelineCreationFeedbackCreateInfoEXT::safe_VkPipelineCreationFeedbackCre
 }
 
 safe_VkPipelineCreationFeedbackCreateInfoEXT::safe_VkPipelineCreationFeedbackCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT),
     pNext(nullptr),
     pPipelineCreationFeedback(nullptr),
     pPipelineStageCreationFeedbacks(nullptr)
@@ -26834,6 +27165,7 @@ safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceCo
 }
 
 safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -26891,6 +27223,7 @@ safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeatur
 }
 
 safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -26963,6 +27296,7 @@ safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderProp
 }
 
 safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -27079,6 +27413,7 @@ safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::safe_VkPhysicalDeviceF
 }
 
 safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -27131,6 +27466,7 @@ safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShader
 }
 
 safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -27188,6 +27524,7 @@ safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewpor
 }
 
 safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV),
     pNext(nullptr),
     pExclusiveScissors(nullptr)
 {}
@@ -27265,6 +27602,7 @@ safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveS
 }
 
 safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveScissorFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -27317,6 +27655,7 @@ safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointProperties
 }
 
 safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -27370,6 +27709,7 @@ safe_VkCheckpointDataNV::safe_VkCheckpointDataNV(const VkCheckpointDataNV* in_st
 }
 
 safe_VkCheckpointDataNV::safe_VkCheckpointDataNV() :
+    sType(VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV),
     pNext(nullptr),
     pCheckpointMarker(nullptr)
 {}
@@ -27427,6 +27767,7 @@ safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::safe_VkPhysicalDevice
 }
 
 safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL),
     pNext(nullptr)
 {}
 
@@ -27535,6 +27876,7 @@ safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINT
 }
 
 safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL),
     pNext(nullptr),
     pUserData(nullptr)
 {}
@@ -27588,6 +27930,7 @@ safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::safe_VkQueryPoolPerformanceQuer
 }
 
 safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::safe_VkQueryPoolPerformanceQueryCreateInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL),
     pNext(nullptr)
 {}
 
@@ -27640,6 +27983,7 @@ safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL(const VkPer
 }
 
 safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL),
     pNext(nullptr)
 {}
 
@@ -27692,6 +28036,7 @@ safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL
 }
 
 safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL),
     pNext(nullptr)
 {}
 
@@ -27746,6 +28091,7 @@ safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL(const V
 }
 
 safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL),
     pNext(nullptr)
 {}
 
@@ -27806,6 +28152,7 @@ safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfiguration
 }
 
 safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfigurationAcquireInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL),
     pNext(nullptr)
 {}
 
@@ -27861,6 +28208,7 @@ safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::safe_VkPhysicalDevicePCIBusInfoPro
 }
 
 safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::safe_VkPhysicalDevicePCIBusInfoPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -27925,6 +28273,7 @@ safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCap
 }
 
 safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_NATIVE_HDR_SURFACE_CAPABILITIES_AMD),
     pNext(nullptr)
 {}
 
@@ -27977,6 +28326,7 @@ safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrC
 }
 
 safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrCreateInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD),
     pNext(nullptr)
 {}
 
@@ -28032,6 +28382,7 @@ safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHS
 }
 
 safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA),
     pNext(nullptr)
 {}
 
@@ -28092,6 +28443,7 @@ safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::safe_VkPhysicalDeviceFragmen
 }
 
 safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -28154,6 +28506,7 @@ safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::safe_VkPhysicalDeviceFragm
 }
 
 safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -28214,6 +28567,7 @@ safe_VkRenderPassFragmentDensityMapCreateInfoEXT::safe_VkRenderPassFragmentDensi
 }
 
 safe_VkRenderPassFragmentDensityMapCreateInfoEXT::safe_VkRenderPassFragmentDensityMapCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -28267,6 +28621,7 @@ safe_VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::safe_VkPhysicalDeviceSubgro
 }
 
 safe_VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::safe_VkPhysicalDeviceSubgroupSizeControlFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -28326,6 +28681,7 @@ safe_VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::safe_VkPhysicalDeviceSubg
 }
 
 safe_VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::safe_VkPhysicalDeviceSubgroupSizeControlPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -28390,6 +28746,7 @@ safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT::safe_VkPipelineShad
 }
 
 safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT::safe_VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -28443,6 +28800,7 @@ safe_VkPhysicalDeviceShaderCoreProperties2AMD::safe_VkPhysicalDeviceShaderCorePr
 }
 
 safe_VkPhysicalDeviceShaderCoreProperties2AMD::safe_VkPhysicalDeviceShaderCoreProperties2AMD() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD),
     pNext(nullptr)
 {}
 
@@ -28499,6 +28857,7 @@ safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::safe_VkPhysicalDeviceCoherentMem
 }
 
 safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD),
     pNext(nullptr)
 {}
 
@@ -28556,6 +28915,7 @@ safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudge
 }
 
 safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -28628,6 +28988,7 @@ safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::safe_VkPhysicalDeviceMemoryPrior
 }
 
 safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -28680,6 +29041,7 @@ safe_VkMemoryPriorityAllocateInfoEXT::safe_VkMemoryPriorityAllocateInfoEXT(const
 }
 
 safe_VkMemoryPriorityAllocateInfoEXT::safe_VkMemoryPriorityAllocateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -28732,6 +29094,7 @@ safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysical
 }
 
 safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -28786,6 +29149,7 @@ safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::safe_VkPhysicalDeviceBuffer
 }
 
 safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -28846,6 +29210,7 @@ safe_VkBufferDeviceAddressCreateInfoEXT::safe_VkBufferDeviceAddressCreateInfoEXT
 }
 
 safe_VkBufferDeviceAddressCreateInfoEXT::safe_VkBufferDeviceAddressCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -28910,6 +29275,7 @@ safe_VkPhysicalDeviceToolPropertiesEXT::safe_VkPhysicalDeviceToolPropertiesEXT(c
 }
 
 safe_VkPhysicalDeviceToolPropertiesEXT::safe_VkPhysicalDeviceToolPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -29021,6 +29387,7 @@ safe_VkValidationFeaturesEXT::safe_VkValidationFeaturesEXT(const VkValidationFea
 }
 
 safe_VkValidationFeaturesEXT::safe_VkValidationFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT),
     pNext(nullptr),
     pEnabledValidationFeatures(nullptr),
     pDisabledValidationFeatures(nullptr)
@@ -29134,6 +29501,7 @@ safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV(const
 }
 
 safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -29215,6 +29583,7 @@ safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperati
 }
 
 safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -29271,6 +29640,7 @@ safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCoopera
 }
 
 safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -29323,6 +29693,7 @@ safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCover
 }
 
 safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -29376,6 +29747,7 @@ safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReduct
 }
 
 safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReductionStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_REDUCTION_STATE_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -29435,6 +29807,7 @@ safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombi
 }
 
 safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombinationNV() :
+    sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_MIXED_SAMPLES_COMBINATION_NV),
     pNext(nullptr)
 {}
 
@@ -29501,6 +29874,7 @@ safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::safe_VkPhysicalDeviceFr
 }
 
 safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -29561,6 +29935,7 @@ safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::safe_VkPhysicalDeviceYcbcrImag
 }
 
 safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -29615,6 +29990,7 @@ safe_VkSurfaceFullScreenExclusiveInfoEXT::safe_VkSurfaceFullScreenExclusiveInfoE
 }
 
 safe_VkSurfaceFullScreenExclusiveInfoEXT::safe_VkSurfaceFullScreenExclusiveInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -29671,6 +30047,7 @@ safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFull
 }
 
 safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT),
     pNext(nullptr)
 {}
 
@@ -29727,6 +30104,7 @@ safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusive
 }
 
 safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusiveWin32InfoEXT() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -29781,6 +30159,7 @@ safe_VkHeadlessSurfaceCreateInfoEXT::safe_VkHeadlessSurfaceCreateInfoEXT(const V
 }
 
 safe_VkHeadlessSurfaceCreateInfoEXT::safe_VkHeadlessSurfaceCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -29838,6 +30217,7 @@ safe_VkPhysicalDeviceLineRasterizationFeaturesEXT::safe_VkPhysicalDeviceLineRast
 }
 
 safe_VkPhysicalDeviceLineRasterizationFeaturesEXT::safe_VkPhysicalDeviceLineRasterizationFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -29910,6 +30290,7 @@ safe_VkPhysicalDeviceLineRasterizationPropertiesEXT::safe_VkPhysicalDeviceLineRa
 }
 
 safe_VkPhysicalDeviceLineRasterizationPropertiesEXT::safe_VkPhysicalDeviceLineRasterizationPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -29965,6 +30346,7 @@ safe_VkPipelineRasterizationLineStateCreateInfoEXT::safe_VkPipelineRasterization
 }
 
 safe_VkPipelineRasterizationLineStateCreateInfoEXT::safe_VkPipelineRasterizationLineStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -30029,6 +30411,7 @@ safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT::safe_VkPhysicalDeviceIndexTypeUi
 }
 
 safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT::safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -30081,6 +30464,7 @@ safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::safe_VkPhysicalD
 }
 
 safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -30141,6 +30525,7 @@ safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::safe_VkPhysicalDeviceD
 }
 
 safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV),
     pNext(nullptr)
 {}
 
@@ -30225,6 +30610,7 @@ safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::safe_VkPhysicalDeviceDev
 }
 
 safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -30290,6 +30676,7 @@ safe_VkGraphicsShaderGroupCreateInfoNV::safe_VkGraphicsShaderGroupCreateInfoNV(c
 }
 
 safe_VkGraphicsShaderGroupCreateInfoNV::safe_VkGraphicsShaderGroupCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GRAPHICS_SHADER_GROUP_CREATE_INFO_NV),
     pNext(nullptr),
     pStages(nullptr),
     pVertexInputState(nullptr),
@@ -30424,6 +30811,7 @@ safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::safe_VkGraphicsPipelineShaderGr
 }
 
 safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::safe_VkGraphicsPipelineShaderGroupsCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV),
     pNext(nullptr),
     pGroups(nullptr),
     pPipelines(nullptr)
@@ -30566,6 +30954,7 @@ safe_VkIndirectCommandsLayoutTokenNV::safe_VkIndirectCommandsLayoutTokenNV(const
 }
 
 safe_VkIndirectCommandsLayoutTokenNV::safe_VkIndirectCommandsLayoutTokenNV() :
+    sType(VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_TOKEN_NV),
     pNext(nullptr),
     pIndexTypes(nullptr),
     pIndexTypeValues(nullptr)
@@ -30723,6 +31112,7 @@ safe_VkIndirectCommandsLayoutCreateInfoNV::safe_VkIndirectCommandsLayoutCreateIn
 }
 
 safe_VkIndirectCommandsLayoutCreateInfoNV::safe_VkIndirectCommandsLayoutCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NV),
     pNext(nullptr),
     pTokens(nullptr),
     pStreamStrides(nullptr)
@@ -30863,6 +31253,7 @@ safe_VkGeneratedCommandsInfoNV::safe_VkGeneratedCommandsInfoNV(const VkGenerated
 }
 
 safe_VkGeneratedCommandsInfoNV::safe_VkGeneratedCommandsInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_NV),
     pNext(nullptr),
     pStreams(nullptr)
 {}
@@ -30995,6 +31386,7 @@ safe_VkGeneratedCommandsMemoryRequirementsInfoNV::safe_VkGeneratedCommandsMemory
 }
 
 safe_VkGeneratedCommandsMemoryRequirementsInfoNV::safe_VkGeneratedCommandsMemoryRequirementsInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -31059,6 +31451,7 @@ safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::safe_VkPhysicalDeviceTexel
 }
 
 safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -31114,6 +31507,7 @@ safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::safe_VkPhysicalDeviceTex
 }
 
 safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -31178,6 +31572,7 @@ safe_VkRenderPassTransformBeginInfoQCOM::safe_VkRenderPassTransformBeginInfoQCOM
 }
 
 safe_VkRenderPassTransformBeginInfoQCOM::safe_VkRenderPassTransformBeginInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM),
     pNext(nullptr)
 {}
 
@@ -31231,6 +31626,7 @@ safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::safe_VkCommandBuffer
 }
 
 safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM),
     pNext(nullptr)
 {}
 
@@ -31289,6 +31685,7 @@ safe_VkPhysicalDeviceRobustness2FeaturesEXT::safe_VkPhysicalDeviceRobustness2Fea
 }
 
 safe_VkPhysicalDeviceRobustness2FeaturesEXT::safe_VkPhysicalDeviceRobustness2FeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -31350,6 +31747,7 @@ safe_VkPhysicalDeviceRobustness2PropertiesEXT::safe_VkPhysicalDeviceRobustness2P
 }
 
 safe_VkPhysicalDeviceRobustness2PropertiesEXT::safe_VkPhysicalDeviceRobustness2PropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -31407,6 +31805,7 @@ safe_VkSamplerCustomBorderColorCreateInfoEXT::safe_VkSamplerCustomBorderColorCre
 }
 
 safe_VkSamplerCustomBorderColorCreateInfoEXT::safe_VkSamplerCustomBorderColorCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -31463,6 +31862,7 @@ safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT::safe_VkPhysicalDeviceCustom
 }
 
 safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT::safe_VkPhysicalDeviceCustomBorderColorPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT),
     pNext(nullptr)
 {}
 
@@ -31516,6 +31916,7 @@ safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT::safe_VkPhysicalDeviceCustomBo
 }
 
 safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT::safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -31572,6 +31973,7 @@ safe_VkPhysicalDevicePrivateDataFeaturesEXT::safe_VkPhysicalDevicePrivateDataFea
 }
 
 safe_VkPhysicalDevicePrivateDataFeaturesEXT::safe_VkPhysicalDevicePrivateDataFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -31624,6 +32026,7 @@ safe_VkDevicePrivateDataCreateInfoEXT::safe_VkDevicePrivateDataCreateInfoEXT(con
 }
 
 safe_VkDevicePrivateDataCreateInfoEXT::safe_VkDevicePrivateDataCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -31676,6 +32079,7 @@ safe_VkPrivateDataSlotCreateInfoEXT::safe_VkPrivateDataSlotCreateInfoEXT(const V
 }
 
 safe_VkPrivateDataSlotCreateInfoEXT::safe_VkPrivateDataSlotCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT),
     pNext(nullptr)
 {}
 
@@ -31728,6 +32132,7 @@ safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT::safe_VkPhysicalDev
 }
 
 safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT::safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT),
     pNext(nullptr)
 {}
 
@@ -31780,6 +32185,7 @@ safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::safe_VkPhysicalDeviceDiagnosti
 }
 
 safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV),
     pNext(nullptr)
 {}
 
@@ -31832,6 +32238,7 @@ safe_VkDeviceDiagnosticsConfigCreateInfoNV::safe_VkDeviceDiagnosticsConfigCreate
 }
 
 safe_VkDeviceDiagnosticsConfigCreateInfoNV::safe_VkDeviceDiagnosticsConfigCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV),
     pNext(nullptr)
 {}
 
@@ -31983,6 +32390,7 @@ safe_VkRayTracingShaderGroupCreateInfoKHR::safe_VkRayTracingShaderGroupCreateInf
 }
 
 safe_VkRayTracingShaderGroupCreateInfoKHR::safe_VkRayTracingShaderGroupCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR),
     pNext(nullptr),
     pShaderGroupCaptureReplayHandle(nullptr)
 {}
@@ -32062,6 +32470,7 @@ safe_VkRayTracingPipelineInterfaceCreateInfoKHR::safe_VkRayTracingPipelineInterf
 }
 
 safe_VkRayTracingPipelineInterfaceCreateInfoKHR::safe_VkRayTracingPipelineInterfaceCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_INTERFACE_CREATE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -32150,6 +32559,7 @@ safe_VkRayTracingPipelineCreateInfoKHR::safe_VkRayTracingPipelineCreateInfoKHR(c
 }
 
 safe_VkRayTracingPipelineCreateInfoKHR::safe_VkRayTracingPipelineCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR),
     pNext(nullptr),
     pStages(nullptr),
     pGroups(nullptr),
@@ -32322,6 +32732,7 @@ safe_VkAccelerationStructureGeometryTrianglesDataKHR::safe_VkAccelerationStructu
 }
 
 safe_VkAccelerationStructureGeometryTrianglesDataKHR::safe_VkAccelerationStructureGeometryTrianglesDataKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR),
     pNext(nullptr)
 {}
 
@@ -32399,6 +32810,7 @@ safe_VkAccelerationStructureGeometryAabbsDataKHR::safe_VkAccelerationStructureGe
 }
 
 safe_VkAccelerationStructureGeometryAabbsDataKHR::safe_VkAccelerationStructureGeometryAabbsDataKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR),
     pNext(nullptr)
 {}
 
@@ -32460,6 +32872,7 @@ safe_VkAccelerationStructureGeometryInstancesDataKHR::safe_VkAccelerationStructu
 }
 
 safe_VkAccelerationStructureGeometryInstancesDataKHR::safe_VkAccelerationStructureGeometryInstancesDataKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR),
     pNext(nullptr)
 {}
 
@@ -32522,6 +32935,7 @@ safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR
 }
 
 safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR),
     pNext(nullptr)
 {}
 
@@ -32607,6 +33021,7 @@ safe_VkAccelerationStructureBuildGeometryInfoKHR::safe_VkAccelerationStructureBu
 }
 
 safe_VkAccelerationStructureBuildGeometryInfoKHR::safe_VkAccelerationStructureBuildGeometryInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR),
     pNext(nullptr),
     ppGeometries(nullptr)
 {}
@@ -32772,6 +33187,7 @@ safe_VkAccelerationStructureCreateGeometryTypeInfoKHR::safe_VkAccelerationStruct
 }
 
 safe_VkAccelerationStructureCreateGeometryTypeInfoKHR::safe_VkAccelerationStructureCreateGeometryTypeInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -32859,6 +33275,7 @@ safe_VkAccelerationStructureCreateInfoKHR::safe_VkAccelerationStructureCreateInf
 }
 
 safe_VkAccelerationStructureCreateInfoKHR::safe_VkAccelerationStructureCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR),
     pNext(nullptr),
     pGeometryInfos(nullptr)
 {}
@@ -32966,6 +33383,7 @@ safe_VkAccelerationStructureMemoryRequirementsInfoKHR::safe_VkAccelerationStruct
 }
 
 safe_VkAccelerationStructureMemoryRequirementsInfoKHR::safe_VkAccelerationStructureMemoryRequirementsInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -33038,6 +33456,7 @@ safe_VkPhysicalDeviceRayTracingFeaturesKHR::safe_VkPhysicalDeviceRayTracingFeatu
 }
 
 safe_VkPhysicalDeviceRayTracingFeaturesKHR::safe_VkPhysicalDeviceRayTracingFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR),
     pNext(nullptr)
 {}
 
@@ -33134,6 +33553,7 @@ safe_VkPhysicalDeviceRayTracingPropertiesKHR::safe_VkPhysicalDeviceRayTracingPro
 }
 
 safe_VkPhysicalDeviceRayTracingPropertiesKHR::safe_VkPhysicalDeviceRayTracingPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR),
     pNext(nullptr)
 {}
 
@@ -33222,6 +33642,7 @@ safe_VkAccelerationStructureDeviceAddressInfoKHR::safe_VkAccelerationStructureDe
 }
 
 safe_VkAccelerationStructureDeviceAddressInfoKHR::safe_VkAccelerationStructureDeviceAddressInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -33282,6 +33703,7 @@ safe_VkAccelerationStructureVersionKHR::safe_VkAccelerationStructureVersionKHR(c
 }
 
 safe_VkAccelerationStructureVersionKHR::safe_VkAccelerationStructureVersionKHR() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_VERSION_KHR),
     pNext(nullptr),
     versionData(nullptr)
 {}
@@ -33361,6 +33783,7 @@ safe_VkCopyAccelerationStructureToMemoryInfoKHR::safe_VkCopyAccelerationStructur
 }
 
 safe_VkCopyAccelerationStructureToMemoryInfoKHR::safe_VkCopyAccelerationStructureToMemoryInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -33427,6 +33850,7 @@ safe_VkCopyMemoryToAccelerationStructureInfoKHR::safe_VkCopyMemoryToAcceleration
 }
 
 safe_VkCopyMemoryToAccelerationStructureInfoKHR::safe_VkCopyMemoryToAccelerationStructureInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR),
     pNext(nullptr)
 {}
 
@@ -33493,6 +33917,7 @@ safe_VkCopyAccelerationStructureInfoKHR::safe_VkCopyAccelerationStructureInfoKHR
 }
 
 safe_VkCopyAccelerationStructureInfoKHR::safe_VkCopyAccelerationStructureInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR),
     pNext(nullptr)
 {}
 
