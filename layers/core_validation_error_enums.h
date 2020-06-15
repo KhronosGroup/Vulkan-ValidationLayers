@@ -35,6 +35,7 @@
 
 // clang-format off
 
+static const char DECORATE_UNUSED *kVUID_Core_Bound_Resource_FreedMemoryAccess = "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_FenceState = "UNASSIGNED-CoreValidation-MemTrack-FenceState";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidMap = "UNASSIGNED-CoreValidation-MemTrack-InvalidMap";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidState = "UNASSIGNED-CoreValidation-MemTrack-InvalidState";
