@@ -973,6 +973,8 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
     return base_ptr;
 }
 
+// Gets union of all features defined by Potential Format Features
+// except, does not handle the external format case for AHB as that only can be used for sampled images
 VkFormatFeatureFlags ValidationStateTracker::GetPotentialFormatFeatures(VkFormat format) const {
     VkFormatFeatureFlags format_features = 0;
 

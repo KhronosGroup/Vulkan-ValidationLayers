@@ -6507,7 +6507,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
     VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_UNDEFINED;
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     rpci.pAttachments = &attach_desc;
@@ -6541,6 +6541,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_errorMonitor->VerifyFound();
     subpass.colorAttachmentCount = 0;
     subpass.pDepthStencilAttachment = &attach;
+    attach_desc.format = VK_FORMAT_D16_UNORM;
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
     // perf warning for GENERAL layout on DS attachment
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");

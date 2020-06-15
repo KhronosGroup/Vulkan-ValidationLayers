@@ -5311,6 +5311,12 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    if (ds_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
     struct TestCase {
         VkSampleCountFlagBits color_samples;
         VkSampleCountFlagBits depth_samples;
@@ -5332,7 +5338,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
         att[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        att[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
+        att[1].format = ds_format;
         att[1].samples = test_case.depth_samples;
         att[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         att[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
