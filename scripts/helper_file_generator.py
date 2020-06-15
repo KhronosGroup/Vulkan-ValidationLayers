@@ -1396,6 +1396,10 @@ class HelperFileOutputGenerator(OutputGenerator):
                     member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                     if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
                         m_type = 'safe_%s' % member.type
+                if member.name == 'sType':
+                    if item.name in self.structTypes:
+                        struct_type = self.structTypes[item.name]
+                        default_init_list += '\n    %s(%s),' % (member.name, struct_type.value)
                 if member.ispointer and 'safe_' not in m_type and self.TypeContainsObjectHandle(member.type, False) == False:
                     # Ptr types w/o a safe_struct, for non-null case need to allocate new ptr and copy data in
                     if m_type in ['void', 'char']:
