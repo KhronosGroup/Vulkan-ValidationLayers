@@ -1103,6 +1103,36 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     vk::CreateRenderPass(device, &rpci, NULL, &m_renderpass);
 }
 
+VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthStencil) {
+    if (!depthStencil) {
+        VkRenderpassObj(dev, format);
+    } else {
+        // Create a renderPass with a depth/stencil attachment
+        VkAttachmentReference attach = {};
+        attach.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass = {};
+        subpass.pDepthStencilAttachment = &attach;
+
+        VkRenderPassCreateInfo rpci = {};
+        rpci.subpassCount = 1;
+        rpci.pSubpasses = &subpass;
+        rpci.attachmentCount = 1;
+
+        VkAttachmentDescription attach_desc = {};
+        attach_desc.format = format;
+        attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+        attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        rpci.pAttachments = &attach_desc;
+        rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+        device = dev->device();
+        vk::CreateRenderPass(device, &rpci, NULL, &m_renderpass);
+    }
+}
+
 VkRenderpassObj::~VkRenderpassObj() NOEXCEPT { vk::DestroyRenderPass(device, m_renderpass, NULL); }
 
 VkImageObj::VkImageObj(VkDeviceObj *dev) {
