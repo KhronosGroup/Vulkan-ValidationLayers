@@ -10878,3 +10878,218 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
 
     vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
+
+TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
+    TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
+
+#ifdef _WIN32
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+
+    // Check for external memory instance extensions
+    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s External memory extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool bind_memory2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
+        m_device_extension_names.push_back(ext_mem_extension_name);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        if (bind_memory2) {
+            m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        }
+    } else {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, ext_mem_extension_name);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+
+    // Create Export Image
+    VkImage image_export = VK_NULL_HANDLE;
+    VkExternalMemoryImageCreateInfo external_image_info = {};
+    external_image_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    external_image_info.pNext = nullptr;
+    external_image_info.handleTypes = handle_type;
+    VkImageCreateInfo image_info = {};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.pNext = &external_image_info;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.arrayLayers = 1;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.mipLevels = 1;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    vk::CreateImage(device(), &image_info, NULL, &image_export);
+
+    // Create export memory with different handleType
+    VkExportMemoryAllocateInfo export_memory_info = {};
+    export_memory_info.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    export_memory_info.pNext = nullptr;
+    export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT_KHR;
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.pNext = &export_memory_info;
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetImageMemoryRequirements(m_device->device(), image_export, &mem_reqs);
+    alloc_info.allocationSize = mem_reqs.size;
+    VkMemoryPropertyFlagBits property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    alloc_info.memoryTypeIndex = phys_mem_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+        if ((mem_reqs.memoryTypeBits & (1 << i)) && ((phys_mem_props.memoryTypes[i].propertyFlags & property) == property)) {
+            alloc_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+    if (alloc_info.memoryTypeIndex >= phys_mem_props.memoryTypeCount) {
+        printf("%s No valid memory type index could be found; skipped.\n", kSkipPrefix);
+        vk::DestroyImage(device(), image_export, nullptr);
+        return;
+    }
+
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    vk::AllocateMemory(device(), &alloc_info, NULL, &memory);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02728");
+    vk::BindImageMemory(device(), image_export, memory, 0);
+    m_errorMonitor->VerifyFound();
+
+    if (bind_memory2 == true) {
+        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
+            (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+
+        VkBindImageMemoryInfo bind_image_info = {};
+        bind_image_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+        bind_image_info.pNext = nullptr;
+        bind_image_info.image = image_export;
+        bind_image_info.memory = memory;
+        bind_image_info.memoryOffset = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-handleTypes-02793");
+        vkBindImageMemory2Function(device(), 1, &bind_image_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::FreeMemory(device(), memory, nullptr);
+    vk::DestroyImage(device(), image_export, nullptr);
+}
+
+TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
+    TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
+
+#ifdef _WIN32
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+
+    // Check for external memory instance extensions
+    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s External memory extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool bind_memory2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
+        m_device_extension_names.push_back(ext_mem_extension_name);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        if (bind_memory2) {
+            m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        }
+    } else {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, ext_mem_extension_name);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+
+    // Create Export Buffer
+    VkBuffer buffer_export = VK_NULL_HANDLE;
+    VkExternalMemoryBufferCreateInfo external_buffer_info = {};
+    external_buffer_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
+    external_buffer_info.pNext = nullptr;
+    external_buffer_info.handleTypes = handle_type;
+    VkBufferCreateInfo buffer_info = {};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.pNext = &external_buffer_info;
+    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_info.size = 4096;
+    vk::CreateBuffer(device(), &buffer_info, NULL, &buffer_export);
+
+    // Create export memory with different handleType
+    VkExportMemoryAllocateInfo export_memory_info = {};
+    export_memory_info.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    export_memory_info.pNext = nullptr;
+    export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT_KHR;
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.pNext = &export_memory_info;
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer_export, &mem_reqs);
+    alloc_info.allocationSize = mem_reqs.size;
+    VkMemoryPropertyFlagBits property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    alloc_info.memoryTypeIndex = phys_mem_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+        if ((mem_reqs.memoryTypeBits & (1 << i)) && ((phys_mem_props.memoryTypes[i].propertyFlags & property) == property)) {
+            alloc_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+    if (alloc_info.memoryTypeIndex >= phys_mem_props.memoryTypeCount) {
+        printf("%s No valid memory type index could be found; skipped.\n", kSkipPrefix);
+        vk::DestroyBuffer(device(), buffer_export, nullptr);
+        return;
+    }
+
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    vk::AllocateMemory(device(), &alloc_info, NULL, &memory);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-02726");
+    vk::BindBufferMemory(device(), buffer_export, memory, 0);
+    m_errorMonitor->VerifyFound();
+
+    if (bind_memory2 == true) {
+        PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
+            (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR");
+
+        VkBindBufferMemoryInfo bind_buffer_info = {};
+        bind_buffer_info.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
+        bind_buffer_info.pNext = nullptr;
+        bind_buffer_info.buffer = buffer_export;
+        bind_buffer_info.memory = memory;
+        bind_buffer_info.memoryOffset = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-handleTypes-02791");
+        vkBindBufferMemory2Function(device(), 1, &bind_buffer_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::FreeMemory(device(), memory, nullptr);
+    vk::DestroyBuffer(device(), buffer_export, nullptr);
+}
