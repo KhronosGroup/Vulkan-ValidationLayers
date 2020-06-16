@@ -3225,6 +3225,8 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     if (VK_SUCCESS != result) return;
     auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE>(*pAccelerationStructure, pCreateInfo);
 
+    // Some validation code keys off of sType to decide between NV and KHR
+    memset(&as_state->create_infoKHR, 0, sizeof(as_state->create_infoKHR));
     // Query the requirements in case the application doesn't (to avoid bind/validation time query)
     VkAccelerationStructureMemoryRequirementsInfoNV as_memory_requirements_info = {};
     as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
@@ -3257,6 +3259,8 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
     if (VK_SUCCESS != result) return;
     auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE>(*pAccelerationStructure, pCreateInfo);
 
+    // Some validation code keys off of sType to decide between NV and KHR
+    memset(&as_state->create_infoNV, 0, sizeof(as_state->create_infoNV));
     // Query the requirements in case the application doesn't (to avoid bind/validation time query)
     VkAccelerationStructureMemoryRequirementsInfoKHR as_memory_requirements_info = {};
     as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
