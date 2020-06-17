@@ -808,7 +808,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     InitBestPracticesFramework();
     InitState();
 
-    if (IsPlatform(kNexusPlayer)) {
+    if (IsPlatform(kNexusPlayer) || IsPlatform(kShieldTV)) {
         return;
     }
 
