@@ -9361,7 +9361,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
 
     // test non external conversion with a VK_FORMAT_UNDEFINED
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060");
     vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 

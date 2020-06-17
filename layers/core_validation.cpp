@@ -11553,9 +11553,10 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateCreateSamplerYcbcrConversionANDROID(func_name, create_info);
     } else {  // Not android hardware buffer
-        if (VK_FORMAT_UNDEFINED == conversion_format) {
-            skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649",
-                             "%s: CreateInfo format type is VK_FORMAT_UNDEFINED.", func_name);
+        if (FormatIsUNorm(conversion_format) == false) {
+            skip |=
+                LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060",
+                         "%s: CreateInfo format type (%s) is not an UNORM format.", func_name, string_VkFormat(conversion_format));
         }
     }
 
