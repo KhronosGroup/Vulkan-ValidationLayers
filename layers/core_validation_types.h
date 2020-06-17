@@ -477,6 +477,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
   public:
     VkAccelerationStructureNV acceleration_structure;
+    bool is_khr;
     safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
     safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
     bool memory_requirements_checked = false;
@@ -492,12 +493,14 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
         : acceleration_structure(as),
+          is_khr(false),
           create_infoNV(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements_checked{} {}
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci)
         : acceleration_structure(as),
+          is_khr(true),
           create_infoKHR(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},
