@@ -68,6 +68,7 @@ struct SyncStageAccess {
 
 struct ResourceUsageTag {
     uint64_t index;
+    CMD_TYPE command;
     const static uint64_t kMaxIndex = std::numeric_limits<uint64_t>::max();
     ResourceUsageTag &operator++() {
         index++;
@@ -76,8 +77,8 @@ struct ResourceUsageTag {
     bool IsBefore(const ResourceUsageTag &rhs) const { return index < rhs.index; }
     bool operator==(const ResourceUsageTag &rhs) const { return (index == rhs.index); }
     bool operator!=(const ResourceUsageTag &rhs) const { return !(*this == rhs); }
-    ResourceUsageTag() : index(0) {}
-    ResourceUsageTag(uint64_t index_) : index(index_) {}
+    ResourceUsageTag() : index(0), command(CMD_NONE) {}
+    ResourceUsageTag(uint64_t index_, CMD_TYPE command_) : index(index_), command(command_) {}
 };
 
 struct HazardResult {
@@ -436,8 +437,8 @@ class CommandBufferAccessContext {
         // TODO: add command encoding to ResourceUsageTag.
         // What else we what to include.  Do we want some sort of "parent" or global sequence number
         command_number_++;
-        ResourceUsageTag next;
-        next.index = (static_cast<uint64_t>(reset_count_) << 32) | command_number_;
+        const auto index = (static_cast<uint64_t>(reset_count_) << 32) | command_number_;
+        ResourceUsageTag next(index, command);
         return next;
     }
 
