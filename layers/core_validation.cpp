@@ -64,9 +64,6 @@
 #include "vk_layer_utils.h"
 #include "command_counter.h"
 
-// Array of command names indexed by CMD_TYPE enum
-static const std::array<const char *, CMD_RANGE_SIZE> command_name_list = {{VUID_CMD_NAME_LIST}};
-
 static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
     return (layout == non_normal) ? normal : layout;
 }
@@ -863,7 +860,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         result |= LogError(objlist, vuid.compatible_pipeline,
                            "%s(): %s defined with %s is not compatible for maximum set statically used %" PRIu32
                            " with bound descriptor sets, last bound with %s",
-                           command_name_list[cmd_type], report_data->FormatHandle(pPipe->pipeline).c_str(),
+                           CommandTypeString(cmd_type), report_data->FormatHandle(pPipe->pipeline).c_str(),
                            report_data->FormatHandle(pipeline_layout->layout).c_str(), pPipe->max_active_slot,
                            report_data->FormatHandle(state.pipeline_layout).c_str());
     }
