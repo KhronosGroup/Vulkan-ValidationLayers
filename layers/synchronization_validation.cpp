@@ -83,7 +83,8 @@ static const char *string_SyncHazard(SyncHazard hazard) {
 
 static std::string string_UsageTag(const ResourceUsageTag &tag) {
     std::stringstream out;
-    out << "( command #" << (tag.index & 0xFFFFFFFF) << ", reset #" << (tag.index >> 32) << ")";
+    out << "(command " << CommandTypeString(tag.command) << ", seq #" << (tag.index & 0xFFFFFFFF) << ", reset #"
+        << (tag.index >> 32) << ")";
     return out.str();
 }
 
@@ -106,7 +107,7 @@ static constexpr SyncOrderingBarrier kDepthStencilAttachmentRasterOrder = {kDept
 static constexpr SyncOrderingBarrier kAttachmentRasterOrder = {kDepthStencilAttachmentExecScope | kColorAttachmentExecScope,
                                                                kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope};
 // Sometimes we have an internal access conflict, and we using the kCurrentCommandTag to set and detect in temporary/proxy contexts
-static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex);
+static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, CMD_NONE);
 
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
     if (size == VK_WHOLE_SIZE) {
