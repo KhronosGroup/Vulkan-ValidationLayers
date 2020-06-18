@@ -1271,6 +1271,139 @@ VkBufferTest::~VkBufferTest() {
     }
 }
 
+VkArmBestPracticesLayerTest::Image VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width,
+                                                                            const uint32_t height) {
+    VkImage image{VK_NULL_HANDLE};
+    VkDeviceMemory memory{VK_NULL_HANDLE};
+    VkImageView view{VK_NULL_HANDLE};
+
+    // Create image and imageview
+    VkImageCreateInfo image_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.format = format;
+    image_info.extent.width = width;
+    image_info.extent.height = height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                       VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    vk::CreateImage(m_device->handle(), &image_info, nullptr, &image);
+
+    VkMemoryRequirements memory_requirements;
+    vk::GetImageMemoryRequirements(m_device->handle(), image, &memory_requirements);
+
+    uint32_t memory_type = ~0u;
+    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++) {
+        if (memory_requirements.memoryTypeBits & (1u << i)) {
+            memory_type = i;
+            break;
+        }
+    }
+
+    // Allocate memory
+    VkMemoryAllocateInfo alloc = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+    alloc.allocationSize = memory_requirements.size;
+    alloc.memoryTypeIndex = memory_type;
+    vk::AllocateMemory(m_device->handle(), &alloc, nullptr, &memory);
+
+    // Bind
+    vk::BindImageMemory(m_device->handle(), image, memory, 0);
+
+    // Create image view
+    VkImageViewCreateInfo image_view_info = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    image_view_info.image = image;
+    image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_info.format = format;
+    image_view_info.components.r = VK_COMPONENT_SWIZZLE_R;
+    image_view_info.components.g = VK_COMPONENT_SWIZZLE_G;
+    image_view_info.components.b = VK_COMPONENT_SWIZZLE_B;
+    image_view_info.components.a = VK_COMPONENT_SWIZZLE_A;
+    image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_view_info.subresourceRange.levelCount = 1;
+    image_view_info.subresourceRange.layerCount = 1;
+
+    vk::CreateImageView(m_device->handle(), &image_view_info, nullptr, &view);
+
+    return {image, memory, view};
+}
+
+VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op,
+                                                           VkAttachmentStoreOp store_op) {
+    VkRenderPass renderpass{VK_NULL_HANDLE};
+
+    // Create renderpass
+    VkAttachmentDescription attachment = {};
+    attachment.format = format;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = load_op;
+    attachment.storeOp = store_op;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference attachment_reference = {};
+    attachment_reference.attachment = 0;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_reference;
+
+    VkRenderPassCreateInfo rpinf = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+    };
+    rpinf.attachmentCount = 1;
+    rpinf.pAttachments = &attachment;
+    rpinf.subpassCount = 1;
+    rpinf.pSubpasses = &subpass;
+    rpinf.dependencyCount = 0;
+    rpinf.pDependencies = nullptr;
+
+    vk::CreateRenderPass(m_device->handle(), &rpinf, nullptr, &renderpass);
+
+    return renderpass;
+}
+
+VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view,
+                                                             VkRenderPass renderpass) {
+    VkFramebuffer framebuffer{VK_NULL_HANDLE};
+
+    VkFramebufferCreateInfo framebuffer_create_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+    framebuffer_create_info.renderPass = renderpass;
+    framebuffer_create_info.attachmentCount = 1;
+    framebuffer_create_info.pAttachments = &image_view;
+    framebuffer_create_info.width = width;
+    framebuffer_create_info.height = height;
+    framebuffer_create_info.layers = 1;
+
+    vk::CreateFramebuffer(m_device->handle(), &framebuffer_create_info, nullptr, &framebuffer);
+
+    return framebuffer;
+}
+
+VkSampler VkArmBestPracticesLayerTest::CreateDefaultSampler() {
+    VkSampler sampler{VK_NULL_HANDLE};
+
+    VkSamplerCreateInfo sampler_create_info = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+    sampler_create_info.magFilter = VK_FILTER_NEAREST;
+    sampler_create_info.minFilter = VK_FILTER_NEAREST;
+    sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    sampler_create_info.maxLod = VK_LOD_CLAMP_NONE;
+
+    vk::CreateSampler(m_device->handle(), &sampler_create_info, nullptr, &sampler);
+
+    return sampler;
+}
+
 bool VkBufferTest::GetBufferCurrent() { return AllocateCurrent && BoundCurrent && CreateCurrent; }
 
 const VkBuffer &VkBufferTest::GetBuffer() { return VulkanBuffer; }
