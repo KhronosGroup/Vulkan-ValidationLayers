@@ -50,7 +50,12 @@ if (TARGET Vulkan::Headers)
     get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
     get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
 else()
+    set(VK_HDR_MIN_VER "1.2.141")
+
     find_package(VulkanHeaders REQUIRED)
+    if ("${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}" VERSION_LESS "${VK_HDR_MIN_VER}")
+        message(FATAL_ERROR "Minimum version of Vulkan headers is ${VK_HDR_MIN_VER}")
+    endif()
 
     # xxxnsubtil: this should eventually be replaced by exported targets
     add_library(Vulkan-Headers INTERFACE)
