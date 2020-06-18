@@ -8450,3 +8450,183 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
                                                       (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, LimitsMaxSampleMaskWords) {
+    TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+
+    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    // Set limit to match with hardcoded values in shaders
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxSampleMaskWords = 3;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Valid input of sample mask
+    char const *validSource =
+        "#version 450\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   int x = gl_SampleMaskIn[2];\n"
+        "   int y = gl_SampleMaskIn[0];\n"
+        "   uFragColor = vec4(0,1,0,1) * x * y;\n"
+        "}\n";
+    VkShaderObj fsValid(m_device, validSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto validPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsValid.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit | kWarningBit, "", true);
+
+    // Exceed sample mask input array size
+    char const *inputSource =
+        "#version 450\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   int x = gl_SampleMaskIn[3];\n"
+        "   uFragColor = vec4(0,1,0,1) * x;\n"
+        "}\n";
+    VkShaderObj fsInput(m_device, inputSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto inputPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsInput.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, inputPipeline, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711");
+
+    // Exceed sample mask output array size
+    char const *outputSource =
+        "#version 450\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   gl_SampleMask[3] = 1;\n"
+        "   uFragColor = vec4(0,1,0,1);\n"
+        "}\n";
+    VkShaderObj fsOutput(m_device, outputSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsOutput.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711");
+}
+
+TEST_F(VkLayerTest, LimitsMaxClipAndCullDistances) {
+    TEST_DESCRIPTION("Test limit of for cull and clip distances.");
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    // Determine if required device features are available
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+
+    if ((VK_TRUE != device_features.shaderClipDistance) || (VK_TRUE != device_features.shaderCullDistance)) {
+        printf("%s Test requires shaderClipDistance and shaderCullDistance feature. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
+        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
+        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+
+    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    // Set limit to match with hardcoded values in shaders
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxClipDistances = 3;
+    props.limits.maxCullDistances = 3;
+    props.limits.maxCombinedClipAndCullDistances = 4;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Valid use of both clip and cull together
+    char const *validSource =
+        "#version 450\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   float x = gl_ClipDistance[2];\n"
+        "   float y = gl_ClipDistance[0];\n"
+        "   float z = gl_CullDistance[0];\n"
+        "   uFragColor = vec4(x,y,z,1);\n"
+        "}\n";
+    VkShaderObj fsValid(m_device, validSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto validPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsValid.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit | kWarningBit, "", true);
+
+    // Exceed clip distance array size
+    char const *clipSource =
+        "#version 450\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   float x = gl_ClipDistance[3];\n"
+        "   uFragColor = vec4(x,1,0,1);\n"
+        "}\n";
+    VkShaderObj fsClip(m_device, clipSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto clipPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsClip.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, clipPipeline, kErrorBit,
+                                      "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708");
+
+    // Exceed cull distance array size
+    char const *cullSource =
+        "#version 450\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   float y = gl_CullDistance[3];\n"
+        "   uFragColor = vec4(0,y,0,1);\n"
+        "}\n";
+    VkShaderObj fsCull(m_device, cullSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto cullPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsCull.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, cullPipeline, kErrorBit,
+                                      "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709");
+
+    // Exceed combined clip and cull distance array size
+    char const *combinedSource =
+        "#version 450\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   float x = gl_ClipDistance[1];\n"
+        "   float y = gl_CullDistance[2];\n"
+        "   uFragColor = vec4(x,y,0,1);\n"
+        "}\n";
+    VkShaderObj fsCombined(m_device, combinedSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto combinedPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fsCombined.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, combinedPipeline, kErrorBit,
+                                      "VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710");
+}
