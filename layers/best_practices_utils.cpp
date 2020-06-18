@@ -1911,7 +1911,7 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
             for (uint32_t binding = 0; binding < descriptor_set->GetBindingCount(); ++binding) {
                 auto index_range = descriptor_set->GetGlobalIndexRangeFromBinding(binding);
                 for (uint32_t i = index_range.start; i < index_range.end; ++i) {
-                    VkImageView image_view = nullptr;
+                    VkImageView image_view{VK_NULL_HANDLE};
 
                     auto descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
                     switch (descriptor->GetClass()) {
@@ -1926,6 +1926,8 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
                                 image_view = image_sampler_descriptor->GetImageView();
                             }
                         }
+                        default:
+                            continue;
                     }
 
                     if (image_view) {
