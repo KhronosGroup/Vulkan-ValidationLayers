@@ -1296,6 +1296,24 @@ static inline bool RenderPassUsesAttachmentOnTile(const safe_VkRenderPassCreateI
     return false;
 }
 
+static inline bool RenderPassUsesAttachmentAsImageOnly(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
+    if (RenderPassUsesAttachmentOnTile(createInfo, attachment)) {
+        return false;
+    }
+
+    for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
+        auto& subpassInfo = createInfo.pSubpasses[subpass];
+
+        for (uint32_t i = 0; i < subpassInfo.inputAttachmentCount; i++) {
+            if (subpassInfo.pInputAttachments[i].attachment == attachment) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                                const VkRenderPassBeginInfo* pRenderPassBegin) const {
     bool skip = false;
@@ -1349,6 +1367,149 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
     }
 
     return skip;
+}
+
+void BestPractices::ValidateImageView(IMAGE_VIEW_STATE* view, const IMAGE_ATTACHMENT_USAGE& usage) {
+    if (view) {
+        ValidateImage(GetImageState(view->create_info.image), usage, view->create_info.subresourceRange);
+    }
+}
+
+void BestPractices::ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USAGE& usage,
+                                  const VkImageSubresourceRange& subresource_range) {
+    uint32_t max_layers = image->createInfo.arrayLayers - subresource_range.baseArrayLayer;
+    uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
+    uint32_t max_levels = image->createInfo.mipLevels - subresource_range.baseMipLevel;
+    uint32_t mip_levels = std::min(image->createInfo.mipLevels, max_levels);
+
+    for (uint32_t layer = 0; layer < array_layers; layer++) {
+        for (uint32_t level = 0; level < mip_levels; level++) {
+            ValidateImage(image, usage, layer + subresource_range.baseArrayLayer, level + subresource_range.baseMipLevel);
+        }
+    }
+}
+
+void BestPractices::ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USAGE& usage,
+                                  const VkImageSubresourceLayers& subresource_layers) {
+    uint32_t max_layers = image->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
+    uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
+
+    for (uint32_t layer = 0; layer < array_layers; layer++) {
+        ValidateImage(image, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
+    }
+}
+
+void BestPractices::ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USAGE& usage, uint32_t array_layer,
+                                  uint32_t mip_level) {
+    // Resize usages
+    if (static_cast<uint32_t>(image->usages.size()) != image->createInfo.arrayLayers) {
+        image->usages.resize(image->createInfo.arrayLayers);
+    }
+    for (auto& mips : image->usages) {
+        if (static_cast<uint32_t>(mips.size()) != image->createInfo.mipLevels) {
+            mips.resize(image->createInfo.mipLevels, IMAGE_ATTACHMENT_USAGE::UNDEFINED);
+        }
+    }
+
+    IMAGE_ATTACHMENT_USAGE last_usage = image->usages[array_layer][mip_level];
+
+    // Swapchain images are implicitly read so clear after store is expected.
+    if (usage == IMAGE_ATTACHMENT_USAGE::RENDER_PASS_CLEARED && last_usage == IMAGE_ATTACHMENT_USAGE::RENDER_PASS_STORED &&
+        !image->is_swapchain_image) {
+        VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(
+                device, kVUID_BestPractices_RenderPass_RedundantStore,
+                "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+                "image was used, it was written to with STORE_OP_STORE. "
+                "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
+                "architectures.",
+                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+
+    } else if (usage == IMAGE_ATTACHMENT_USAGE::RENDER_PASS_CLEARED && last_usage == IMAGE_ATTACHMENT_USAGE::CLEARED) {
+        VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(
+                device, kVUID_BestPractices_RenderPass_RedundantClear,
+                "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+                "image was used, it was written to with vkCmdClear*Image(). "
+                "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
+                "tile-based architectures."
+                "architectures.",
+                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+    } else if (usage == IMAGE_ATTACHMENT_USAGE::RENDER_PASS_READ_TO_TILE && last_usage == IMAGE_ATTACHMENT_USAGE::CLEARED) {
+        VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(
+                device, kVUID_BestPractices_RenderPass_InefficientClear,
+                "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
+                "time image was used, it was written to with vkCmdClear*Image(). "
+                "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
+                "tile-based architectures. "
+                "Use LOAD_OP_CLEAR instead to clear the image for free.",
+                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+    }
+
+    image->usages[array_layer][mip_level] = usage;
+}
+
+void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                    VkSubpassContents contents) {
+    if (!pRenderPassBegin) {
+        return;
+    }
+
+    auto rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
+    if (rp_state) {
+        // Check load ops
+        for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
+            auto& attachment = rp_state->createInfo.pAttachments[att];
+
+            if (!RenderPassUsesAttachmentAsImageOnly(rp_state->createInfo, att) &&
+                !RenderPassUsesAttachmentOnTile(rp_state->createInfo, att)) {
+                continue;
+            }
+
+            IMAGE_ATTACHMENT_USAGE usage = IMAGE_ATTACHMENT_USAGE::UNDEFINED;
+
+            if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) ||
+                (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD)) {
+                usage = IMAGE_ATTACHMENT_USAGE::RENDER_PASS_READ_TO_TILE;
+            }
+
+            if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) ||
+                (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)) {
+                usage = IMAGE_ATTACHMENT_USAGE::RENDER_PASS_CLEARED;
+            }
+
+            if (RenderPassUsesAttachmentAsImageOnly(rp_state->createInfo, att)) {
+                usage = IMAGE_ATTACHMENT_USAGE::RESOURCE_READ;
+            }
+
+            auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
+            auto image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+
+            ValidateImageView(image_view, usage);
+        }
+
+        // Check store ops
+        for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
+            auto& attachment = rp_state->createInfo.pAttachments[att];
+
+            if (!RenderPassUsesAttachmentOnTile(rp_state->createInfo, att)) {
+                continue;
+            }
+
+            IMAGE_ATTACHMENT_USAGE usage = IMAGE_ATTACHMENT_USAGE::RENDER_PASS_DISCARDED;
+
+            if ((!FormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE) ||
+                (FormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
+                usage = IMAGE_ATTACHMENT_USAGE::RENDER_PASS_STORED;
+            }
+
+            auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
+            auto image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+
+            ValidateImageView(image_view, usage);
+        }
+    }
 }
 
 bool BestPractices::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -1677,6 +1838,8 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
         cmd_state->small_indexed_draw_call_count++;
     }
+
+    ValidateBoundDescriptorSets(commandBuffer);
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -1740,6 +1903,63 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
     RecordCmdDrawType(commandBuffer, count, "vkCmdDrawIndexedIndirect()");
 }
 
+void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
+    const CMD_BUFFER_STATE* cb_state = GetCBState(commandBuffer);
+
+    if (cb_state) {
+        for (auto descriptor_set : cb_state->validated_descriptor_sets) {
+            for (uint32_t binding = 0; binding < descriptor_set->GetBindingCount(); ++binding) {
+                auto index_range = descriptor_set->GetGlobalIndexRangeFromBinding(binding);
+                for (uint32_t i = index_range.start; i < index_range.end; ++i) {
+                    VkImageView image_view = nullptr;
+
+                    auto descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                    switch (descriptor->GetClass()) {
+                        case cvdescriptorset::DescriptorClass::Image: {
+                            if (const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor*>(descriptor)) {
+                                image_view = image_descriptor->GetImageView();
+                            }
+                        }
+                        case cvdescriptorset::DescriptorClass::ImageSampler: {
+                            if (const auto image_sampler_descriptor =
+                                    static_cast<const cvdescriptorset::ImageSamplerDescriptor*>(descriptor)) {
+                                image_view = image_sampler_descriptor->GetImageView();
+                            }
+                        }
+                    }
+
+                    if (image_view) {
+                        IMAGE_VIEW_STATE* image_view_state = GetImageViewState(image_view);
+
+                        if (descriptor_set->GetTypeFromIndex(i) == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+                            ValidateImageView(image_view_state, IMAGE_ATTACHMENT_USAGE::RESOURCE_READ);
+                        }
+
+                        if (descriptor_set->GetTypeFromIndex(i) == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                            ValidateImageView(image_view_state, IMAGE_ATTACHMENT_USAGE::RESOURCE_WRITE);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void BestPractices::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
+                                         uint32_t firstVertex, uint32_t firstInstance) {
+    ValidateBoundDescriptorSets(commandBuffer);
+}
+
+void BestPractices::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 uint32_t drawCount, uint32_t stride) {
+    ValidateBoundDescriptorSets(commandBuffer);
+}
+
+void BestPractices::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                        uint32_t drawCount, uint32_t stride) {
+    ValidateBoundDescriptorSets(commandBuffer);
+}
+
 bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                                uint32_t groupCountZ) const {
     bool skip = false;
@@ -1776,6 +1996,14 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
     }
 
     return skip;
+}
+
+void BestPractices::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
+    ValidateBoundDescriptorSets(commandBuffer);
+}
+
+void BestPractices::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    ValidateBoundDescriptorSets(commandBuffer);
 }
 
 bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
@@ -2169,6 +2397,81 @@ bool BestPractices::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBu
                                   VendorSpecificTag(kBPVendorArm));
 
     return skip;
+}
+
+void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                 const VkImageResolve* pRegions) {
+    auto* src = GetImageState(srcImage);
+    auto* dst = GetImageState(dstImage);
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        ValidateImage(src, IMAGE_ATTACHMENT_USAGE::RESOURCE_READ, pRegions[i].srcSubresource);
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::RESOURCE_WRITE, pRegions[i].dstSubresource);
+    }
+}
+
+void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                    const VkClearColorValue* pColor, uint32_t rangeCount,
+                                                    const VkImageSubresourceRange* pRanges) {
+    auto* dst = GetImageState(image);
+
+    for (uint32_t i = 0; i < rangeCount; i++) {
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::CLEARED, pRanges[i]);
+    }
+}
+
+void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                           const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                           const VkImageSubresourceRange* pRanges) {
+    auto* dst = GetImageState(image);
+
+    for (uint32_t i = 0; i < rangeCount; i++) {
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::CLEARED, pRanges[i]);
+    }
+}
+
+void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              const VkImageCopy* pRegions) {
+    auto* src = GetImageState(srcImage);
+    auto* dst = GetImageState(dstImage);
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        ValidateImage(src, IMAGE_ATTACHMENT_USAGE::RESOURCE_READ, pRegions[i].srcSubresource);
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::RESOURCE_WRITE, pRegions[i].dstSubresource);
+    }
+}
+
+void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                      const VkBufferImageCopy* pRegions) {
+    auto* dst = GetImageState(dstImage);
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::RESOURCE_WRITE, pRegions[i].imageSubresource);
+    }
+}
+
+void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+    auto* src = GetImageState(srcImage);
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        ValidateImage(src, IMAGE_ATTACHMENT_USAGE::RESOURCE_READ, pRegions[i].imageSubresource);
+    }
+}
+
+void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              const VkImageBlit* pRegions, VkFilter filter) {
+    auto* src = GetImageState(srcImage);
+    auto* dst = GetImageState(dstImage);
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        ValidateImage(src, IMAGE_ATTACHMENT_USAGE::RESOURCE_READ, pRegions[i].srcSubresource);
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::RESOURCE_WRITE, pRegions[i].dstSubresource);
+    }
 }
 
 bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
