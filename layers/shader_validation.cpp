@@ -1306,6 +1306,79 @@ bool CoreChecks::ValidatePushConstantUsage(std::vector<VkPushConstantRange> cons
     return skip;
 }
 
+bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> accessible_ids,
+                                       VkShaderStageFlagBits stage) const {
+    bool skip = false;
+
+    // Currently all builtin tested are only found in fragment shaders
+    if (stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
+        return skip;
+    }
+
+    uint32_t clipDistanceLength = 0;
+    uint32_t cullDistanceLength = 0;
+    for (auto id : accessible_ids) {
+        auto insn = src->get_def(id);
+        decoration_set decroations = src->get_decorations(insn.word(2));
+
+        // Built-ins are obtained from OpVariable
+        if (((decroations.flags & decoration_set::builtin_bit) != 0) && (insn.opcode() == spv::OpVariable)) {
+            auto type_pointer = src->get_def(insn.word(1));
+            assert(type_pointer.opcode() == spv::OpTypePointer);
+
+            auto type = src->get_def(type_pointer.word(3));
+            if (type.opcode() == spv::OpTypeArray) {
+                uint32_t length = static_cast<uint32_t>(GetConstantValue(src, type.word(3)));
+
+                switch (decroations.builtin) {
+                    case spv::BuiltInClipDistance:
+                        clipDistanceLength = length;
+                        if (length > phys_dev_props.limits.maxClipDistances) {
+                            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708",
+                                             "vkCreateGraphicsPipelines(): The BuiltIns ClipDistance array sizes is %u which "
+                                             "exceeds maxClipDistances of %u in %s.",
+                                             length, phys_dev_props.limits.maxClipDistances,
+                                             report_data->FormatHandle(src->vk_shader_module).c_str());
+                        }
+                        break;
+
+                    case spv::BuiltInCullDistance:
+                        cullDistanceLength = length;
+                        if (length > phys_dev_props.limits.maxCullDistances) {
+                            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709",
+                                             "vkCreateGraphicsPipelines(): The BuiltIns CullDistance array sizes is %u which "
+                                             "exceeds maxCullDistances of %u in %s.",
+                                             length, phys_dev_props.limits.maxCullDistances,
+                                             report_data->FormatHandle(src->vk_shader_module).c_str());
+                        }
+                        break;
+
+                    case spv::BuiltInSampleMask:
+                        // Handles both the input and output sampleMask
+                        if (length > phys_dev_props.limits.maxSampleMaskWords) {
+                            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711",
+                                             "vkCreateGraphicsPipelines(): The BuiltIns SampleMask array sizes is %u which exceeds "
+                                             "maxSampleMaskWords of %u in %s.",
+                                             length, phys_dev_props.limits.maxSampleMaskWords,
+                                             report_data->FormatHandle(src->vk_shader_module).c_str());
+                        }
+                        break;
+                }
+            }
+        }
+    }
+
+    if ((clipDistanceLength + cullDistanceLength) > phys_dev_props.limits.maxCombinedClipAndCullDistances) {
+        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710",
+                         "vkCreateGraphicsPipelines(): The BuiltIns ClipDistance and CullDistance array sizes are %u and %u which "
+                         "together exceeds maxCombinedClipAndCullDistances of %u in %s.",
+                         clipDistanceLength, cullDistanceLength, phys_dev_props.limits.maxCombinedClipAndCullDistances,
+                         report_data->FormatHandle(src->vk_shader_module).c_str());
+    }
+
+    return skip;
+}
+
 // Validate that data for each specialization entry is fully contained within the buffer.
 bool CoreChecks::ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo const *info) const {
     bool skip = false;
@@ -2985,6 +3058,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(pStage);
     skip |= ValidatePushConstantUsage(pipeline->pipeline_layout->push_constant_ranges.get(), module, accessible_ids, pStage->stage);
+    skip |= ValidateBuiltinLimits(module, accessible_ids, pStage->stage);
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
