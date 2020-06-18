@@ -147,5 +147,11 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_RobustBuffer
     "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess";
 static const char DECORATE_UNUSED *kVUID_BestPractices_EndRenderPass_DepthPrePassUsage =
     "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage";
+static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_RedundantStore =
+    "UNASSIGNED-BestPractices-RenderPass-redundant-store";
+static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_RedundantClear =
+    "UNASSIGNED-BestPractices-RenderPass-redundant-clear";
+static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_InefficientClear =
+    "UNASSIGNED-BestPractices-RenderPass-inefficient-clear";
 
 #endif
