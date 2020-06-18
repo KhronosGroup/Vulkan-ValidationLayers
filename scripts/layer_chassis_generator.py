@@ -1025,7 +1025,7 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     std::string list_of_disables;
     for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
         if (context->enabled[i]) {
-            list_of_enables.append(", ");
+            if (list_of_enables.size()) list_of_enables.append(", ");
             list_of_enables.append(EnableFlagNameHelper[i]);
         }
     }
@@ -1034,7 +1034,7 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     }
     for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
         if (context->disabled[i]) {
-            list_of_disables.append(", ");
+            if (list_of_disables.size()) list_of_disables.append(", ");
             list_of_disables.append(DisableFlagNameHelper[i]);
         }
     }
