@@ -84,6 +84,25 @@ class CustomStypeList {
     std::vector<uint32_t> local_vector;
 };
 
+class DuplicateMsgLimit {
+  public:
+    DuplicateMsgLimit(const uint32_t limit) {
+        limit_value.value32 = limit;
+
+        strncpy(limit_setting_val.name, "duplicate_message_limit", sizeof(limit_setting_val.name));
+        limit_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_UINT32_EXT;
+        limit_setting_val.data = limit_value;
+        limit_setting = {static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
+                         &limit_setting_val};
+    }
+    VkLayerSettingsEXT *pnext{&limit_setting};
+
+  private:
+    VkLayerSettingValueDataEXT limit_value{};
+    VkLayerSettingValueEXT limit_setting_val;
+    VkLayerSettingsEXT limit_setting;
+};
+
 TEST_F(VkLayerTest, CustomStypeStructString) {
     TEST_DESCRIPTION("Positive Test for ability to specify custom pNext structs using a list (string)");
 
@@ -180,6 +199,46 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     m_errorMonitor->VerifyNotFound();
 
     vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
+}
+
+TEST_F(VkLayerTest, DuplicateMessageLimit) {
+    TEST_DESCRIPTION("Use the duplicate_message_id setting and verify correct operation");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    auto msg_limit = DuplicateMsgLimit(3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, msg_limit.pnext));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+
+    // Create an invalid pNext structure to trigger the stateless validation warning
+    VkBaseOutStructure bogus_struct{};
+    bogus_struct.sType = static_cast<VkStructureType>(0x33333333);
+    auto properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&bogus_struct);
+
+    // Should get the first three errors just fine
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    m_errorMonitor->VerifyFound();
+
+    // Limit should prevent the message from coming through a fourth time
+    m_errorMonitor->ExpectSuccess(kWarningBit);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, MessageIdFilterString) {
