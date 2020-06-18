@@ -94,7 +94,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-None-02697",
         "VUID-vkCmdDrawIndexedIndirect-renderPass-02684",
         "VUID-vkCmdDrawIndexedIndirect-subpass-02685",
-        "VUID-vkCmdDrawIndirect-sampleLocationsEnable-02689",
+        "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawIndexedIndirect-None-02690",
         "VUID-vkCmdDrawIndexedIndirect-None-02692"
     }},
