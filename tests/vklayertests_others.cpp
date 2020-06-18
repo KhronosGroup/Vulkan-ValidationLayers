@@ -4368,7 +4368,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         };
         CreatePipelineHelper::OneshotTest(
             *this, break_vp, kErrorBit,
-            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-pDynamicStates-02057"}));
+            vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04057"}));
     }
 
     // Create an image without the SRI bit

@@ -1877,7 +1877,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         exclusive_scissor_struct->exclusiveScissorCount > 0 &&
                         exclusive_scissor_struct->pExclusiveScissors == nullptr) {
                         skip |=
-                            LogError(device, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-pDynamicStates-02030",
+                            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04056",
                                      "vkCreateGraphicsPipelines: The exclusive scissor state is static (pCreateInfos[%" PRIu32
                                      "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV), but "
                                      "pCreateInfos[%" PRIu32 "] pExclusiveScissors (=NULL) is an invalid pointer.",
@@ -1888,7 +1888,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         shading_rate_image_struct->viewportCount > 0 &&
                         shading_rate_image_struct->pShadingRatePalettes == nullptr) {
                         skip |= LogError(
-                            device, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-pDynamicStates-02057",
+                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04057",
                             "vkCreateGraphicsPipelines: The shading rate palette state is static (pCreateInfos[%" PRIu32
                             "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV), "
                             "but pCreateInfos[%" PRIu32 "] pShadingRatePalettes (=NULL) is an invalid pointer.",
