@@ -1632,17 +1632,22 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
 }
 
 bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(const char *func_name) const {
-    return current_renderpass_context_->ValidateDrawSubpassAttachment(*sync_state_, *cb_state_.get(),
-                                                                      cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
+    bool skip = false;
+    if (!current_renderpass_context_) return skip;
+    skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(*sync_state_, *cb_state_.get(),
+                                                                       cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
+    return skip;
 }
 
 void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsageTag &tag) {
-    current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_.get(), cb_state_->activeRenderPassBeginInfo.renderArea,
-                                                             tag);
+    if (current_renderpass_context_)
+        current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_.get(), cb_state_->activeRenderPassBeginInfo.renderArea,
+                                                                 tag);
 }
 
 bool CommandBufferAccessContext::ValidateNextSubpass(const char *func_name) const {
     bool skip = false;
+    if (!current_renderpass_context_) return skip;
     skip |=
         current_renderpass_context_->ValidateNextSubpass(*sync_state_, cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
 
@@ -1653,6 +1658,7 @@ bool CommandBufferAccessContext::ValidateEndRenderpass(const char *func_name) co
     // TODO: Things to add here.
     // Validate Preserve attachments
     bool skip = false;
+    if (!current_renderpass_context_) return skip;
     skip |= current_renderpass_context_->ValidateEndRenderPass(*sync_state_, cb_state_->activeRenderPassBeginInfo.renderArea,
                                                                func_name);
 
