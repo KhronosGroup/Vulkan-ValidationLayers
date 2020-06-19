@@ -5901,15 +5901,6 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
     BarrierQueueFamilyTestHelper excl_test(&test_context);
     excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
 
-    // core_validation::barrier_queue_families::kSrcIgnoreRequiresDstIgnore
-    excl_test("VUID-VkImageMemoryBarrier-image-01201", "VUID-VkBufferMemoryBarrier-buffer-01193", VK_QUEUE_FAMILY_IGNORED,
-              submit_family);
-    excl_test("VUID-VkImageMemoryBarrier-image-01201", "VUID-VkBufferMemoryBarrier-buffer-01193", VK_QUEUE_FAMILY_IGNORED,
-              VK_QUEUE_FAMILY_EXTERNAL_KHR);
-    // true -> positive test
-    excl_test("VUID-VkImageMemoryBarrier-image-01201", "VUID-VkBufferMemoryBarrier-buffer-01193", VK_QUEUE_FAMILY_IGNORED,
-              VK_QUEUE_FAMILY_IGNORED, true);
-
     // core_validation::barrier_queue_families::kSrcAndDstValidOrSpecial
     excl_test("VUID-VkImageMemoryBarrier-image-04072", "VUID-VkBufferMemoryBarrier-buffer-04089", submit_family, invalid);
     excl_test("VUID-VkImageMemoryBarrier-image-04072", "VUID-VkBufferMemoryBarrier-buffer-04089", invalid, submit_family);
