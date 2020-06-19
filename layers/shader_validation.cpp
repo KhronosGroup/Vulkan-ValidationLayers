@@ -2771,7 +2771,27 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
     return pipelineLayout->set_layouts[slot.first]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.second);
 }
 
-static bool FindLocalSize(SHADER_MODULE_STATE const *src, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) {
+int32_t GetShaderResourceDimensionality(const SHADER_MODULE_STATE *module, const interface_var &resource) {
+    if (module == nullptr) return -1;
+
+    auto type = module->get_def(resource.type_id);
+    while (true) {
+        switch (type.opcode()) {
+            case spv::OpTypeSampledImage:
+                type = module->get_def(type.word(2));
+                break;
+            case spv::OpTypePointer:
+                type = module->get_def(type.word(3));
+                break;
+            case spv::OpTypeImage:
+                return type.word(3);
+            default:
+                return -1;
+        }
+    }
+}
+
+bool FindLocalSize(SHADER_MODULE_STATE const *src, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) {
     for (auto insn : *src) {
         if (insn.opcode() == spv::OpEntryPoint) {
             auto executionModel = insn.word(1);

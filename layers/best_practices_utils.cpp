@@ -20,10 +20,12 @@
 #include "best_practices_validation.h"
 #include "layer_chassis_dispatch.h"
 #include "best_practices_error_enums.h"
+#include "shader_validation.h"
 
 #include <string>
 #include <iomanip>
 #include <bitset>
+#include <memory>
 
 // get the API name is proper format
 std::string BestPractices::GetAPIVersionName(uint32_t version) const {
@@ -889,6 +891,81 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
             device, kVUID_BestPractices_CreatePipelines_MultiplePipelines,
             "Performance Warning: This vkCreateComputePipelines call is creating multiple pipelines but is not using a "
             "pipeline cache, which may help with performance");
+    }
+
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        for (size_t i = 0; i < createInfoCount; i++) {
+            skip |= ValidateCreateComputePipelineArm(pCreateInfos[i]);
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const {
+    bool skip = false;
+    auto* module = GetShaderModuleState(createInfo.stage.module);
+
+    uint32_t x = 1, y = 1, z = 1;
+    FindLocalSize(module, x, y, z);
+
+    uint32_t thread_count = x * y * z;
+
+    // Generate a priori warnings about work group sizes.
+    if (thread_count > kMaxEfficientWorkGroupThreadCountArm) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_CreateComputePipelines_ComputeWorkGroupSize,
+            "%s vkCreateComputePipelines(): compute shader with work group dimensions (%u, %u, "
+            "%u) (%u threads total), has more threads than advised in a single work group. It is advised to use work "
+            "groups with less than %u threads, especially when using barrier() or shared memory.",
+            VendorSpecificTag(kBPVendorArm), x, y, z, thread_count, kMaxEfficientWorkGroupThreadCountArm);
+    }
+
+    if (thread_count == 1 || ((x > 1) && (x & (kThreadGroupDispatchCountAlignmentArm - 1))) ||
+        ((y > 1) && (y & (kThreadGroupDispatchCountAlignmentArm - 1))) ||
+        ((z > 1) && (z & (kThreadGroupDispatchCountAlignmentArm - 1)))) {
+        skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreateComputePipelines_ComputeThreadGroupAlignment,
+                                      "%s vkCreateComputePipelines(): compute shader with work group dimensions (%u, "
+                                      "%u, %u) is not aligned to %u "
+                                      "threads. On Arm Mali architectures, not aligning work group sizes to %u may "
+                                      "leave threads idle on the shader "
+                                      "core.",
+                                      VendorSpecificTag(kBPVendorArm), x, y, z, kThreadGroupDispatchCountAlignmentArm,
+                                      kThreadGroupDispatchCountAlignmentArm);
+    }
+
+    // Generate warnings about work group sizes based on active resources.
+    auto entrypoint = FindEntrypoint(module, createInfo.stage.pName, createInfo.stage.stage);
+    if (entrypoint == module->end()) return false;
+
+    bool has_writeable_descriptors = false;
+    auto accessible_ids = MarkAccessibleIds(module, entrypoint);
+    auto descriptor_uses = CollectInterfaceByDescriptorSlot(module, accessible_ids, &has_writeable_descriptors);
+
+    unsigned dimensions = 0;
+    if (x > 1) dimensions++;
+    if (y > 1) dimensions++;
+    if (z > 1) dimensions++;
+    // Here the dimension will really depend on the dispatch grid, but assume it's 1D.
+    dimensions = std::max(dimensions, 1u);
+
+    // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
+    // There are some false positives here. We could simply have a shader that does this within a 1D grid,
+    // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
+    bool accesses_2d = false;
+    for (const auto& usage : descriptor_uses) {
+        auto dim = GetShaderResourceDimensionality(module, usage.second);
+        if (dim < 0) continue;
+        auto spvdim = spv::Dim(dim);
+        if (spvdim != spv::Dim1D && spvdim != spv::DimBuffer) accesses_2d = true;
+    }
+
+    if (accesses_2d && dimensions < 2) {
+        LogPerformanceWarning(device, kVUID_BestPractices_CreateComputePipelines_ComputeSpatialLocality,
+                              "%s vkCreateComputePipelines(): compute shader has work group dimensions (%u, %u, %u), which "
+                              "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
+                              "exhibiting poor spatial locality with respect to one or more shader resources.",
+                              VendorSpecificTag(kBPVendorArm), x, y, z);
     }
 
     return skip;

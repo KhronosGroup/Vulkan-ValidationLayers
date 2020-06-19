@@ -68,6 +68,12 @@ static const int kDepthPrePassNumDrawCallsArm = 20;
 // Maximum sample count for full throughput on Mali GPUs
 static const VkSampleCountFlagBits kMaxEfficientSamplesArm = VK_SAMPLE_COUNT_4_BIT;
 
+// On Arm Mali architectures, it's generally best to align work group dimensions to 4.
+static const uint32_t kThreadGroupDispatchCountAlignmentArm = 4;
+
+// Maximum number of threads which can efficiently be part of a compute workgroup when using thread group barriers.
+static const uint32_t kMaxEfficientWorkGroupThreadCountArm = 64;
+
 class BestPractices : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
@@ -140,6 +146,7 @@ class BestPractices : public ValidationStateTracker {
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                void* pipe_state) const;
+    bool ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const;
 
     bool CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) const;
