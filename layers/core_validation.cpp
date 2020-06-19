@@ -6510,8 +6510,7 @@ enum VuIndex {
     kSrcOrDstMustBeIgnore,
     kSpecialOrIgnoreOnly,
     kSrcIgnoreRequiresDstIgnore,
-    kDstValidOrSpecialIfNotIgnore,
-    kSrcValidOrSpecialIfNotIgnore,
+    kSrcAndDstValidOrSpecial,
     kSrcAndDestMustBeIgnore,
     kBothIgnoreOrBothValid,
     kSubmitQueueMustMatchSrcOrDst
@@ -6529,8 +6528,7 @@ static const std::string image_error_codes[] = {
     "VUID-VkImageMemoryBarrier-image-01381",  //   kSrcOrDstMustBeIgnore
     "VUID-VkImageMemoryBarrier-image-04071",  //   kSpecialOrIgnoreOnly
     "VUID-VkImageMemoryBarrier-image-01201",  //   kSrcIgnoreRequiresDstIgnore
-    "VUID-VkImageMemoryBarrier-image-01768",  //   kDstValidOrSpecialIfNotIgnore
-    "VUID-VkImageMemoryBarrier-image-01767",  //   kSrcValidOrSpecialIfNotIgnore
+    "VUID-VkImageMemoryBarrier-image-04072",  //   kSrcAndDstValidOrSpecial
     "VUID-VkImageMemoryBarrier-image-01199",  //   kSrcAndDestMustBeIgnore
     "VUID-VkImageMemoryBarrier-image-01200",  //   kBothIgnoreOrBothValid
     "VUID-VkImageMemoryBarrier-image-01205",  //   kSubmitQueueMustMatchSrcOrDst
@@ -6540,8 +6538,7 @@ static const std::string buffer_error_codes[] = {
     "VUID-VkBufferMemoryBarrier-buffer-01191",  //  kSrcOrDstMustBeIgnore
     "VUID-VkBufferMemoryBarrier-buffer-04088",  //  kSpecialOrIgnoreOnly
     "VUID-VkBufferMemoryBarrier-buffer-01193",  //  kSrcIgnoreRequiresDstIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01765",  //  kDstValidOrSpecialIfNotIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01764",  //  kSrcValidOrSpecialIfNotIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-04089",  //  kSrcAndDstValidOrSpecial
     "VUID-VkBufferMemoryBarrier-buffer-01190",  //  kSrcAndDestMustBeIgnore
     "VUID-VkBufferMemoryBarrier-buffer-01192",  //  kBothIgnoreOrBothValid
     "VUID-VkBufferMemoryBarrier-buffer-01196",  //  kSubmitQueueMustMatchSrcOrDst
@@ -6665,14 +6662,13 @@ bool Validate(const CoreChecks *device_data, const char *func_name, const CMD_BU
             }
         } else {
             // VK_SHARING_MODE_EXCLUSIVE
-            if (src_ignored && !dst_ignored) {
-                skip |= val.LogMsg(kSrcIgnoreRequiresDstIgnore, src_queue_family, dst_queue_family);
-            }
-            if (!dst_ignored && !val.IsValidOrSpecial(dst_queue_family)) {
-                skip |= val.LogMsg(kDstValidOrSpecialIfNotIgnore, dst_queue_family, "dstQueueFamilyIndex");
-            }
-            if (!src_ignored && !val.IsValidOrSpecial(src_queue_family)) {
-                skip |= val.LogMsg(kSrcValidOrSpecialIfNotIgnore, src_queue_family, "srcQueueFamilyIndex");
+            if (src_queue_family != dst_queue_family) {
+                if (!val.IsValidOrSpecial(dst_queue_family)) {
+                    skip |= val.LogMsg(kSrcAndDstValidOrSpecial, dst_queue_family, "dstQueueFamilyIndex");
+                }
+                if (!val.IsValidOrSpecial(src_queue_family)) {
+                    skip |= val.LogMsg(kSrcAndDstValidOrSpecial, src_queue_family, "srcQueueFamilyIndex");
+                }
             }
         }
     } else {
