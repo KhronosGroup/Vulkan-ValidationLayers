@@ -1070,6 +1070,38 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                             report_data->FormatHandle(image_view_state->image_view).c_str(),
                                             string_VkFormat(image_view_state->create_info.format));
                         }
+
+                        const IMAGE_STATE *image_state;
+                        image_state = GetImageState(image_view_state->create_info.image);
+                        if ((image_state->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
+                            (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
+                             sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
+                             sampler_state->createInfo.addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)) {
+                            std::string address_mode_letter =
+                                (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                    ? "U"
+                                    : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ? "V" : "W";
+                            VkSamplerAddressMode address_mode =
+                                (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                    ? sampler_state->createInfo.addressModeU
+                                    : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                          ? sampler_state->createInfo.addressModeV
+                                          : sampler_state->createInfo.addressModeW;
+                            auto set = descriptor_set->GetSet();
+                            LogObjectList objlist(set);
+                            objlist.add(sampler);
+                            objlist.add(image_state->image);
+                            objlist.add(image_view_state->image_view);
+                            return LogError(
+                                objlist, vuids.corner_sampled_address_mode,
+                                "image (%s) in image view (%s) in descriptor set (%s) is created with flag "
+                                "VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and can only be sampled using "
+                                "VK_SAMPLER_ADDRESS_MODE_CLAMP_EDGE, but sampler (%s) has createInfo.addressMode%s set to %s.",
+                                report_data->FormatHandle(image_state->image).c_str(),
+                                report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                report_data->FormatHandle(set).c_str(), report_data->FormatHandle(sampler).c_str(),
+                                address_mode_letter.c_str(), string_VkSamplerAddressMode(address_mode));
+                        }
                     }
                 }
             }
