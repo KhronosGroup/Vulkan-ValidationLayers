@@ -97,6 +97,12 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_SuboptimalSwapchainImageC
 // Arm-specific best practice
 static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
     "UNASSIGNED-BestPractices-vkAllocateDescriptorSets-suboptimal-reuse";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateComputePipelines_ComputeThreadGroupAlignment =
+    "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateComputePipelines_ComputeWorkGroupSize =
+    "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateComputePipelines_ComputeSpatialLocality =
+    "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-spatial-locality";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_MultisampledBlending =
     "UNASSIGNED-BestPractices-vkCreatePipelines-multisampled-blending";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_TooLargeSampleCount =
