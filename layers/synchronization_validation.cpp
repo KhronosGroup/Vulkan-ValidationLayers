@@ -2894,11 +2894,14 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &blit_region = pRegions[region];
         if (src_image) {
-            VkExtent3D extent = {static_cast<uint32_t>(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x),
-                                 static_cast<uint32_t>(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y),
-                                 static_cast<uint32_t>(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z)};
-            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, blit_region.srcSubresource,
-                                                blit_region.srcOffsets[0], extent);
+            VkOffset3D offset = {std::min(blit_region.srcOffsets[0].x, blit_region.srcOffsets[1].x),
+                                 std::min(blit_region.srcOffsets[0].y, blit_region.srcOffsets[1].y),
+                                 std::min(blit_region.srcOffsets[0].z, blit_region.srcOffsets[1].z)};
+            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
+                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
+                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
+            auto hazard =
+                context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, blit_region.srcSubresource, offset, extent);
             if (hazard.hazard) {
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdBlitImage: Hazard %s for srcImage %s, region %" PRIu32 ". Prior access %s.",
@@ -2908,11 +2911,14 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
         }
 
         if (dst_image) {
-            VkExtent3D extent = {static_cast<uint32_t>(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x),
-                                 static_cast<uint32_t>(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y),
-                                 static_cast<uint32_t>(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z)};
-            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource,
-                                                blit_region.dstOffsets[0], extent);
+            VkOffset3D offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
+                                 std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
+                                 std::min(blit_region.dstOffsets[0].z, blit_region.dstOffsets[1].z)};
+            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
+                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
+                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
+            auto hazard =
+                context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdBlitImage: Hazard %s for dstImage %s, region %" PRIu32 ". Prior access %s.",
@@ -2943,18 +2949,22 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &blit_region = pRegions[region];
         if (src_image) {
-            VkExtent3D extent = {static_cast<uint32_t>(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x),
-                                 static_cast<uint32_t>(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y),
-                                 static_cast<uint32_t>(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z)};
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, blit_region.srcSubresource,
-                                       blit_region.srcOffsets[0], extent, tag);
+            VkOffset3D offset = {std::min(blit_region.srcOffsets[0].x, blit_region.srcOffsets[1].x),
+                                 std::min(blit_region.srcOffsets[0].y, blit_region.srcOffsets[1].y),
+                                 std::min(blit_region.srcOffsets[0].z, blit_region.srcOffsets[1].z)};
+            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
+                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
+                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, blit_region.srcSubresource, offset, extent, tag);
         }
         if (dst_image) {
-            VkExtent3D extent = {static_cast<uint32_t>(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x),
-                                 static_cast<uint32_t>(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y),
-                                 static_cast<uint32_t>(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z)};
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource,
-                                       blit_region.dstOffsets[0], extent, tag);
+            VkOffset3D offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
+                                 std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
+                                 std::min(blit_region.dstOffsets[0].z, blit_region.dstOffsets[1].z)};
+            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
+                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
+                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent, tag);
         }
     }
 }
