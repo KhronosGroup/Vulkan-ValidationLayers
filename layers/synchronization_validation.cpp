@@ -474,8 +474,11 @@ static void ResolveMapToEntry(ResourceAccessRangeMap *dest, ResourceAccessRangeM
 void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRange &range, const SyncBarrier *barrier,
                                        ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                                        bool recur_to_infill) const {
+    if (!range.non_empty()) return;
+
     ResourceRangeMergeIterator current(*resolve_map, GetAccessStateMap(type), range.begin);
     while (current->range.non_empty() && range.includes(current->range.begin)) {
+        const auto current_range = current->range & range;
         if (current->pos_B->valid) {
             const auto &src_pos = current->pos_B->lower_bound;
             auto access = src_pos->second;
@@ -483,10 +486,11 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
                 access.ApplyBarrier(*barrier);
             }
             if (current->pos_A->valid) {
-                current.trim_A();
-                current->pos_A->lower_bound->second.Resolve(access);
+                const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
+                trimmed->second.Resolve(access);
+                current.invalidate_A(trimmed);
             } else {
-                auto inserted = resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current->range, access));
+                auto inserted = resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current_range, access));
                 current.invalidate_A(inserted);  // Update the parallel iterator to point at the insert segment
             }
         } else {
@@ -495,14 +499,14 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
                 if (current->pos_A->valid) {
                     // Dest is valid, so we need to accumulate along the DAG and then resolve... in an N-to-1 resolve operation
                     ResourceAccessRangeMap gap_map;
-                    ResolvePreviousAccess(type, current->range, &gap_map, infill_state);
+                    ResolvePreviousAccess(type, current_range, &gap_map, infill_state);
                     ResolveMapToEntry(resolve_map, current->pos_A->lower_bound, gap_map.begin(), gap_map.end(), barrier);
                 } else {
-                    // There isn't anything in dest in current->range, so we can accumulate directly into it.
-                    ResolvePreviousAccess(type, current->range, resolve_map, infill_state);
+                    // There isn't anything in dest in current)range, so we can accumulate directly into it.
+                    ResolvePreviousAccess(type, current_range, resolve_map, infill_state);
                     if (barrier) {
                         // Need to apply the barrier to the accesses we accumulated, noting that we haven't updated current
-                        for (auto pos = resolve_map->lower_bound(current->range); pos != current->pos_A->lower_bound; ++pos) {
+                        for (auto pos = resolve_map->lower_bound(current_range); pos != current->pos_A->lower_bound; ++pos) {
                             pos->second.ApplyBarrier(*barrier);
                         }
                     }
@@ -513,7 +517,7 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
                 // Set the parallel iterator to the end of this range s.t. ++ will move us to the next range whether or
                 // not the end of the range is a gap.  For the seek to work, first we need to warn the parallel iterator
                 // we stepped on the dest map
-                const auto seek_to = current->range.end - 1;  // The subtraction is safe as range can't be empty (loop condition)
+                const auto seek_to = current_range.end - 1;   // The subtraction is safe as range can't be empty (loop condition)
                 current.invalidate_A();                       // Changes current->range
                 current.seek(seek_to);
             } else if (!current->pos_A->valid && infill_state) {
