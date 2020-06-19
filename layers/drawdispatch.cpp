@@ -62,6 +62,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-scissorCount-03418",
         "VUID-vkCmdDraw-viewportCount-03419",
         "VUID-vkCmdDraw-primitiveTopology-03420",
+        "VUID-vkCmdDraw-flags-02696",
     }},
     {CMD_DRAWINDEXED, {
         "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
@@ -83,6 +84,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-scissorCount-03418",
         "VUID-vkCmdDrawIndexed-viewportCount-03419",
         "VUID-vkCmdDrawIndexed-primitiveTopology-03420",
+        "VUID-vkCmdDrawIndexed-flags-02696",
     }},
     {CMD_DRAWINDIRECT, {
         "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
@@ -104,6 +106,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-scissorCount-03418",
         "VUID-vkCmdDrawIndirect-viewportCount-03419",
         "VUID-vkCmdDrawIndirect-primitiveTopology-03420",
+        "VUID-vkCmdDrawIndirect-flags-02696",
     }},
     {CMD_DRAWINDEXEDINDIRECT, {
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool",
@@ -125,6 +128,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-scissorCount-03418",
         "VUID-vkCmdDrawIndexedIndirect-viewportCount-03419",
         "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-03420",
+        "VUID-vkCmdDrawIndexedIndirect-flags-02696",
     }},
     {CMD_DISPATCH, {
         "VUID-vkCmdDispatch-commandBuffer-cmdpool",
@@ -146,6 +150,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          kVUIDUndefined, // scissor_count
          kVUIDUndefined, // viewport_scissor_count
          kVUIDUndefined, // primitive_topology
+         "VUID-vkCmdDispatch-flags-02696",
     }},
     {CMD_DISPATCHINDIRECT, {
         "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
@@ -167,6 +172,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // scissor_count
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
+        "VUID-vkCmdDispatchIndirect-flags-02696",
     }},
     {CMD_DRAWINDIRECTCOUNT, {
         "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool",
@@ -188,6 +194,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-scissorCount-03418",
         "VUID-vkCmdDrawIndirectCount-viewportCount-03419",
         "VUID-vkCmdDrawIndirectCount-primitiveTopology-03420",
+        "VUID-vkCmdDrawIndirectCount-flags-02696",
     }},
     {CMD_DRAWINDEXEDINDIRECTCOUNT,{
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool",
@@ -209,6 +216,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-scissorCount-03418",
         "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03419",
         "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-03420",
+        "VUID-vkCmdDrawIndexedIndirectCount-flags-02696",
     }},
     {CMD_TRACERAYSNV, {
         "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool",
@@ -230,6 +238,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // scissor_count
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
+        "VUID-vkCmdTraceRaysNV-flags-02696",
     }},
     {CMD_TRACERAYSKHR, {
         "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
@@ -251,6 +260,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // scissor_count
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
+        "VUID-vkCmdTraceRaysKHR-flags-02696",
     }},
     {CMD_TRACERAYSINDIRECTKHR, {
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
@@ -272,6 +282,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // scissor_count
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
+        "VUID-vkCmdTraceRaysIndirectKHR-flags-02696",
     }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
@@ -293,6 +304,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-scissorCount-03418",
         "VUID-vkCmdDrawMeshTasksNV-viewportCount-03419",
         "VUID-vkCmdDrawMeshTasksNV-primitiveTopology-03420",
+        "VUID-vkCmdDrawMeshTasksNV-flags-02696",
     }},
     {CMD_DRAWMESHTASKSINDIRECTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
@@ -314,6 +326,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-scissorCount-03418",
         "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03419",
         "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveTopology-03420",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-flags-02696",
     }},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool",
@@ -335,9 +348,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-scissorCount-03418",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03419",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveTopology-03420",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-flags-02696",
     }},
     // Used if invalid cmd_type is used
     {CMD_NONE, {
+        kVUIDUndefined,
         kVUIDUndefined,
         kVUIDUndefined,
         kVUIDUndefined,

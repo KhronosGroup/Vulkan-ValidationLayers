@@ -51,6 +51,7 @@ struct DrawDispatchVuid {
     const char* scissor_count;
     const char* viewport_scissor_count;
     const char* primitive_topology;
+    const char* corner_sampled_address_mode;
 };
 
 typedef struct {
