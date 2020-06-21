@@ -1640,14 +1640,18 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+    // 1. vkGetPhysicalDeviceImageFormatProperties[2] only success code is VK_SUCCESS
+    // 2. If call returns an error, then "imageCreateImageFormatPropertiesList" is defined to be the empty list
+    // 3. All values in 02251 are undefined if "imageCreateImageFormatPropertiesList" is empty.
+    if (result != VK_SUCCESS) {
+        // External memory will always have a "imageCreateImageFormatPropertiesList" so skip
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (!lvl_find_in_chain<VkExternalFormatANDROID>(pCreateInfo->pNext))
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-            skip |= LogError(device, kVUID_Core_Image_FormatNotSupported,
+            skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251",
                              "vkCreateImage(): Format %s is not supported for this combination of parameters and "
-                             "VkGetPhysicalDeviceImageFormatProperties returned back VK_ERROR_FORMAT_NOT_SUPPORTED.",
-                             string_VkFormat(pCreateInfo->format));
+                             "VkGetPhysicalDeviceImageFormatProperties returned back %s.",
+                             string_VkFormat(pCreateInfo->format), string_VkResult(result));
     } else {
         if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
             const char *format_string = string_VkFormat(pCreateInfo->format);
