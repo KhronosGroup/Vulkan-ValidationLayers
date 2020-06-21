@@ -2965,6 +2965,42 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const char *func_na
     return false;
 }
 
+bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+                                                     VkDeviceMemory memory, VkBuffer buffer) const {
+    bool skip = false;
+    if ((handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
+        const char *vuid = (strcmp(func_name, "vkBindBufferMemory()") == 0) ? "VUID-vkBindBufferMemory-memory-02986"
+                                                                            : "VUID-VkBindBufferMemoryInfo-memory-02988";
+        LogObjectList objlist(buffer);
+        objlist.add(memory);
+        skip |= LogError(objlist, vuid,
+                         "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkBuffer (%s) "
+                         "VkExternalMemoryBufferreateInfo::handleType (%s)",
+                         func_name, report_data->FormatHandle(memory).c_str(), report_data->FormatHandle(buffer).c_str(),
+                         string_VkExternalMemoryHandleTypeFlags(handleType).c_str());
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+                                                    VkDeviceMemory memory, VkImage image) const {
+    bool skip = false;
+    if ((handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
+        const char *vuid = (strcmp(func_name, "vkBindImageMemory()") == 0) ? "VUID-vkBindImageMemory-memory-02990"
+                                                                           : "VUID-VkBindImageMemoryInfo-memory-02992";
+        LogObjectList objlist(image);
+        objlist.add(memory);
+        skip |= LogError(objlist, vuid,
+                         "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkImage (%s) "
+                         "VkExternalMemoryImageCreateInfo::handleType (%s)",
+                         func_name, report_data->FormatHandle(memory).c_str(), report_data->FormatHandle(image).c_str(),
+                         string_VkExternalMemoryHandleTypeFlags(handleType).c_str());
+    }
+    return skip;
+}
+
 #else  // !VK_USE_PLATFORM_ANDROID_KHR
 
 bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) const { return false; }
@@ -2982,6 +3018,16 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const char *func_na
 bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const { return false; }
 
 bool CoreChecks::ValidateGetBufferMemoryRequirementsANDROID(const VkBuffer buffer, const char *func_name) const { return false; }
+
+bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+                                                     VkDeviceMemory memory, VkBuffer buffer) const {
+    return false;
+}
+
+bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+                                                    VkDeviceMemory memory, VkImage image) const {
+    return false;
+}
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -3599,6 +3645,33 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
                                  report_data->FormatHandle(buffer).c_str(),
                                  string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle).c_str());
+            }
+
+            // Validate import memory handles
+            if (mem_info->is_import_ahb == true) {
+                skip |= ValidateBufferImportedHandleANDROID(api_name, buffer_state->external_memory_handle, mem, buffer);
+            } else if (mem_info->is_import == true) {
+                if ((mem_info->import_handle_type_flags & buffer_state->external_memory_handle) == 0) {
+                    const char *vuid = nullptr;
+                    if ((bind_buffer_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        vuid = "VUID-VkBindBufferMemoryInfo-memory-02987";
+                    } else if ((!bind_buffer_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        vuid = "VUID-vkBindBufferMemory-memory-02985";
+                    } else if ((bind_buffer_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        vuid = "VUID-VkBindBufferMemoryInfo-memory-02792";
+                    } else if ((!bind_buffer_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                        vuid = "VUID-vkBindBufferMemory-memory-02727";
+                    }
+                    LogObjectList objlist(buffer);
+                    objlist.add(mem);
+                    skip |= LogError(objlist, vuid,
+                                     "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s which "
+                                     "is not set in the VkBuffer (%s) VkExternalMemoryBufferCreateInfo::handleType (%s)",
+                                     api_name, report_data->FormatHandle(mem).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlags(mem_info->import_handle_type_flags).c_str(),
+                                     report_data->FormatHandle(buffer).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle).c_str());
+                }
             }
         }
     }
@@ -10208,6 +10281,34 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                      string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
                                      report_data->FormatHandle(bindInfo.image).c_str(),
                                      string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle).c_str());
+                }
+
+                // Validate import memory handles
+                if (mem_info->is_import_ahb == true) {
+                    skip |= ValidateImageImportedHandleANDROID(api_name, image_state->external_memory_handle, bindInfo.memory,
+                                                               bindInfo.image);
+                } else if (mem_info->is_import == true) {
+                    if ((mem_info->import_handle_type_flags & image_state->external_memory_handle) == 0) {
+                        const char *vuid = nullptr;
+                        if ((bind_image_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                            vuid = "VUID-VkBindImageMemoryInfo-memory-02991";
+                        } else if ((!bind_image_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                            vuid = "VUID-vkBindImageMemory-memory-02989";
+                        } else if ((bind_image_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                            vuid = "VUID-VkBindImageMemoryInfo-memory-02794";
+                        } else if ((!bind_image_mem_2) && (!device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                            vuid = "VUID-vkBindImageMemory-memory-02729";
+                        }
+                        LogObjectList objlist(bindInfo.image);
+                        objlist.add(bindInfo.memory);
+                        skip |= LogError(objlist, vuid,
+                                         "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s "
+                                         "which is not set in the VkImage (%s) VkExternalMemoryImageCreateInfo::handleType (%s)",
+                                         api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
+                                         string_VkExternalMemoryHandleTypeFlags(mem_info->import_handle_type_flags).c_str(),
+                                         report_data->FormatHandle(bindInfo.image).c_str(),
+                                         string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle).c_str());
+                    }
                 }
             }
 
