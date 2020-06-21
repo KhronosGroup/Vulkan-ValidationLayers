@@ -8264,6 +8264,23 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
 
     {
         VkImageCreateInfo image_ci = safe_image_ci;
+        image_ci.imageType = VK_IMAGE_TYPE_3D;
+
+        VkImageFormatProperties img_limits;
+        ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+
+        image_ci.extent = {img_limits.maxExtent.width + 1, 1, 1};
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02252");
+
+        image_ci.extent = {1, img_limits.maxExtent.height + 1, 1};
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02253");
+
+        image_ci.extent = {1, 1, img_limits.maxExtent.depth + 1};
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02254");
+    }
+
+    {
+        VkImageCreateInfo image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
 
         VkImageFormatProperties img_limits;
