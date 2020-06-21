@@ -5645,6 +5645,231 @@ TEST_F(VkLayerTest, AndroidHardwareBufferUnboundBuffer) {
     vk::DestroyBuffer(m_device->device(), buffer, nullptr);
 }
 
+TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
+    TEST_DESCRIPTION("Don't use proper resource handleType for import buffer");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
+                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
+    PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
+        (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR");
+
+    m_errorMonitor->ExpectSuccess();
+
+    AHardwareBuffer *ahb;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
+    ahb_desc.width = 64;
+    ahb_desc.height = 1;
+    ahb_desc.layers = 1;
+    ahb_desc.stride = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    // Create buffer without VkExternalMemoryBufferCreateInfo
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.pNext = nullptr;
+    buffer_create_info.size = 512;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = {};
+    import_ahb_Info.sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+    import_ahb_Info.pNext = nullptr;
+    import_ahb_Info.buffer = ahb;
+
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
+    ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    ahb_props.pNext = nullptr;
+    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+
+    VkMemoryAllocateInfo memory_allocate_info = {};
+    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_allocate_info.pNext = &import_ahb_Info;
+    memory_allocate_info.allocationSize = ahb_props.allocationSize;
+    // driver won't expose correct memoryType since resource was not created as an import operation
+    // so just need any valid memory type returned from GetAHBInfo
+    for (int i = 0; i < 32; i++) {
+        if (ahb_props.memoryTypeBits & (1 << i)) {
+            memory_allocate_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+
+    VkDeviceMemory memory;
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-02986");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
+    vk::BindBufferMemory(m_device->device(), buffer, memory, 0);
+    m_errorMonitor->VerifyFound();
+
+    VkBindBufferMemoryInfo bind_buffer_info = {};
+    bind_buffer_info.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
+    bind_buffer_info.pNext = nullptr;
+    bind_buffer_info.buffer = buffer;
+    bind_buffer_info.memory = memory;
+    bind_buffer_info.memoryOffset = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02988");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindBufferMemoryInfo-memory-01599");
+    vkBindBufferMemory2Function(m_device->device(), 1, &bind_buffer_info);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+    vk::FreeMemory(m_device->device(), memory, nullptr);
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
+    TEST_DESCRIPTION("Don't use proper resource handleType for import image");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
+                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
+    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
+        (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+
+    m_errorMonitor->ExpectSuccess();
+
+    AHardwareBuffer *ahb;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ahb_desc.width = 64;
+    ahb_desc.height = 64;
+    ahb_desc.layers = 1;
+    ahb_desc.stride = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    // Create buffer without VkExternalMemoryImageCreateInfo
+    VkImage image = VK_NULL_HANDLE;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
+
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = {};
+    memory_dedicated_info.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    memory_dedicated_info.pNext = nullptr;
+    memory_dedicated_info.image = image;
+    memory_dedicated_info.buffer = VK_NULL_HANDLE;
+
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = {};
+    import_ahb_Info.sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+    import_ahb_Info.pNext = &memory_dedicated_info;
+    import_ahb_Info.buffer = ahb;
+
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
+    ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    ahb_props.pNext = nullptr;
+    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+
+    VkMemoryAllocateInfo memory_allocate_info = {};
+    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_allocate_info.pNext = &import_ahb_Info;
+    memory_allocate_info.allocationSize = ahb_props.allocationSize;
+    // driver won't expose correct memoryType since resource was not created as an import operation
+    // so just need any valid memory type returned from GetAHBInfo
+    for (int i = 0; i < 32; i++) {
+        if (ahb_props.memoryTypeBits & (1 << i)) {
+            memory_allocate_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+
+    VkDeviceMemory memory;
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02990");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-size-01049");
+    vk::BindImageMemory(m_device->device(), image, memory, 0);
+    m_errorMonitor->VerifyFound();
+
+    VkBindImageMemoryInfo bind_image_info = {};
+    bind_image_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bind_image_info.pNext = nullptr;
+    bind_image_info.image = image;
+    bind_image_info.memory = memory;
+    bind_image_info.memoryOffset = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02992");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
+    vkBindImageMemory2Function(m_device->device(), 1, &bind_image_info);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyImage(m_device->device(), image, nullptr);
+    vk::FreeMemory(m_device->device(), memory, nullptr);
+}
+
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 TEST_F(VkLayerTest, ValidateStride) {
@@ -9215,4 +9440,226 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureKHR) {
         vkCmdBuildAccelerationStructureKHR(m_commandBuffer->handle(), 1, &asInfo_invalidupdate, &pBuildOffsetInfo);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
+    TEST_DESCRIPTION("Validate import memory handleType for buffers and images");
+
+#ifdef _WIN32
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+#else
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+#endif
+    const auto wrong_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+
+    // Check for external memory instance extensions
+    std::vector<const char *> reqd_instance_extensions = {
+        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}};
+    for (auto extension_name : reqd_instance_extensions) {
+        if (InstanceExtensionSupported(extension_name)) {
+            m_instance_extension_names.push_back(extension_name);
+        } else {
+            printf("%s Required instance extension %s not supported, skipping test\n", kSkipPrefix, extension_name);
+            return;
+        }
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR =
+        (PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR)vk::GetInstanceProcAddr(
+            instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+
+    // Check for import/export capability
+    // export used to feed memory to test import
+    VkPhysicalDeviceExternalBufferInfoKHR ebi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR, nullptr, 0,
+                                                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, handle_type};
+    VkExternalBufferPropertiesKHR ebp = {VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR, nullptr, {0, 0, 0}};
+    ASSERT_TRUE(vkGetPhysicalDeviceExternalBufferPropertiesKHR != nullptr);
+    vkGetPhysicalDeviceExternalBufferPropertiesKHR(gpu(), &ebi, &ebp);
+    if (!(ebp.externalMemoryProperties.compatibleHandleTypes & handle_type) ||
+        !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR)) {
+        printf("%s External buffer does not support importing and exporting, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // Always use dedicated allocation
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    } else {
+        printf("%s Dedicated allocation extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // Check for external memory device extensions
+    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
+        m_device_extension_names.push_back(ext_mem_extension_name);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    } else {
+        printf("%s External memory extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // Check for bind memory 2
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    } else {
+        printf("%s bind memory 2 extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
+        (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR");
+    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
+        (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    VkMemoryPropertyFlags mem_flags = 0;
+    const VkDeviceSize buffer_size = 1024;
+
+    // Create export and import buffers
+    VkExternalMemoryBufferCreateInfoKHR external_buffer_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR, nullptr,
+                                                                handle_type};
+    auto buffer_info = VkBufferObj::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_info.pNext = &external_buffer_info;
+    VkBufferObj buffer_export;
+    buffer_export.init_no_mem(*m_device, buffer_info);
+    external_buffer_info.handleTypes = wrong_handle_type;
+    VkBufferObj buffer_import;
+    buffer_import.init_no_mem(*m_device, buffer_info);
+
+    // Allocation info
+    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);
+
+    // Add export allocation info to pNext chain
+    VkMemoryDedicatedAllocateInfoKHR dedicated_info = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr,
+                                                       VK_NULL_HANDLE, buffer_export.handle()};
+    VkExportMemoryAllocateInfoKHR export_info = {VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR, &dedicated_info, handle_type};
+    alloc_info.pNext = &export_info;
+
+    // Allocate memory to be exported
+    vk_testing::DeviceMemory memory_buffer_export;
+    memory_buffer_export.init(*m_device, alloc_info);
+
+    // Bind exported memory
+    buffer_export.bind_memory(memory_buffer_export, 0);
+
+    VkExternalMemoryImageCreateInfoKHR external_image_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO, nullptr,
+                                                              handle_type};
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.pNext = &external_image_info;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+    VkImageObj image_export(m_device);
+    image_export.init_no_mem(*m_device, image_info);
+    external_image_info.handleTypes = wrong_handle_type;
+    VkImageObj image_import(m_device);
+    image_import.init_no_mem(*m_device, image_info);
+
+    // Allocation info
+    dedicated_info = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr, image_export.handle(), VK_NULL_HANDLE};
+    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_export.memory_requirements(), mem_flags);
+    alloc_info.pNext = &export_info;
+
+    // Allocate memory to be exported
+    vk_testing::DeviceMemory memory_image_export;
+    memory_image_export.init(*m_device, alloc_info);
+
+    // Bind exported memory
+    image_export.bind_memory(memory_image_export, 0);
+
+#ifdef _WIN32
+    // Export memory to handle
+    auto vkGetMemoryWin32HandleKHR =
+        (PFN_vkGetMemoryWin32HandleKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryWin32HandleKHR");
+    ASSERT_TRUE(vkGetMemoryWin32HandleKHR != nullptr);
+    VkMemoryGetWin32HandleInfoKHR mghi_buffer = {VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr,
+                                                 memory_buffer_export.handle(), handle_type};
+    VkMemoryGetWin32HandleInfoKHR mghi_image = {VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr,
+                                                memory_image_export.handle(), handle_type};
+    HANDLE handle_buffer;
+    HANDLE handle_image;
+    ASSERT_VK_SUCCESS(vkGetMemoryWin32HandleKHR(m_device->device(), &mghi_buffer, &handle_buffer));
+    ASSERT_VK_SUCCESS(vkGetMemoryWin32HandleKHR(m_device->device(), &mghi_image, &handle_image));
+
+    VkImportMemoryWin32HandleInfoKHR import_info_buffer = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, nullptr,
+                                                           handle_type, handle_buffer};
+    VkImportMemoryWin32HandleInfoKHR import_info_image = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, nullptr,
+                                                          handle_type, handle_image};
+#else
+    // Export memory to fd
+    auto vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR");
+    ASSERT_TRUE(vkGetMemoryFdKHR != nullptr);
+    VkMemoryGetFdInfoKHR mgfi_buffer = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_buffer_export.handle(),
+                                        handle_type};
+    VkMemoryGetFdInfoKHR mgfi_image = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_image_export.handle(),
+                                       handle_type};
+    int fd_buffer;
+    int fd_image;
+    ASSERT_VK_SUCCESS(vkGetMemoryFdKHR(m_device->device(), &mgfi_buffer, &fd_buffer));
+    ASSERT_VK_SUCCESS(vkGetMemoryFdKHR(m_device->device(), &mgfi_image, &fd_image));
+
+    VkImportMemoryFdInfoKHR import_info_buffer = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd_buffer};
+    VkImportMemoryFdInfoKHR import_info_image = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd_image};
+#endif
+
+    // Import memory
+    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import.memory_requirements(), mem_flags);
+    alloc_info.pNext = &import_info_buffer;
+    vk_testing::DeviceMemory memory_buffer_import;
+    memory_buffer_import.init(*m_device, alloc_info);
+
+    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_import.memory_requirements(), mem_flags);
+    alloc_info.pNext = &import_info_image;
+    vk_testing::DeviceMemory memory_image_import;
+    memory_image_import.init(*m_device, alloc_info);
+    m_errorMonitor->VerifyNotFound();
+
+    // Bind imported memory with different handleType
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-02727");
+    vk::BindBufferMemory(device(), buffer_import.handle(), memory_buffer_import.handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    VkBindBufferMemoryInfo bind_buffer_info = {};
+    bind_buffer_info.sType = VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO;
+    bind_buffer_info.pNext = nullptr;
+    bind_buffer_info.buffer = buffer_import.handle();
+    bind_buffer_info.memory = memory_buffer_import.handle();
+    bind_buffer_info.memoryOffset = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02792");
+    vkBindBufferMemory2Function(device(), 1, &bind_buffer_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02729");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01614");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01612");
+    vk::BindImageMemory(device(), image_import.handle(), memory_image_import.handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    VkBindImageMemoryInfo bind_image_info = {};
+    bind_image_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bind_image_info.pNext = nullptr;
+    bind_image_info.image = image_import.handle();
+    bind_image_info.memory = memory_buffer_import.handle();
+    bind_image_info.memoryOffset = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02794");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01614");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01612");
+    vkBindImageMemory2Function(device(), 1, &bind_image_info);
+    m_errorMonitor->VerifyFound();
 }
