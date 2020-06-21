@@ -1655,6 +1655,24 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              "vkCreateImage(): samples %s is not supported by format 0x%.8X.",
                              string_VkSampleCountFlagBits(pCreateInfo->samples), format_limits.sampleCounts);
         }
+
+        if (pCreateInfo->extent.width > format_limits.maxExtent.width) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02252",
+                             "vkCreateImage(): extent.width %u exceeds allowable maximum image extent width %u.",
+                             pCreateInfo->extent.width, format_limits.maxExtent.width);
+        }
+
+        if (pCreateInfo->extent.height > format_limits.maxExtent.height) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02253",
+                             "vkCreateImage(): extent.height %u exceeds allowable maximum image extent height %u.",
+                             pCreateInfo->extent.height, format_limits.maxExtent.height);
+        }
+
+        if (pCreateInfo->extent.depth > format_limits.maxExtent.depth) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02254",
+                             "vkCreateImage(): extent.depth %u exceeds allowable maximum image extent depth %u.",
+                             pCreateInfo->extent.depth, format_limits.maxExtent.depth);
+        }
     }
 
     // Tests for "Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"

@@ -8271,6 +8271,9 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
 
         if (dev_limits.maxFramebufferWidth != UINT32_MAX) {
             image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
+            if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
+            }
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00964");
         } else {
             printf("%s VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
@@ -8279,6 +8282,9 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
             image_ci.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;  // try different one too
             image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
+            if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
+            }
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00965");
         } else {
             printf("%s VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
@@ -8295,9 +8301,15 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
             image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
+            if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
+            }
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02559");
 
             image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
+            if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
+            }
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02560");
         }
     }
