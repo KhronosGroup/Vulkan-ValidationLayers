@@ -615,6 +615,35 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
         mem_info->is_export = true;
         mem_info->export_handle_type_flags = export_info->handleTypes;
     }
+
+    // Assumes validation already for only a single import operation in the pNext
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    auto win32_import = lvl_find_in_chain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
+    if (win32_import) {
+        mem_info->is_import = true;
+        mem_info->import_handle_type_flags = win32_import->handleType;
+    }
+#endif
+    auto fd_import = lvl_find_in_chain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
+    if (fd_import) {
+        mem_info->is_import = true;
+        mem_info->import_handle_type_flags = fd_import->handleType;
+    }
+    auto host_pointer_import = lvl_find_in_chain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
+    if (host_pointer_import) {
+        mem_info->is_import = true;
+        mem_info->import_handle_type_flags = host_pointer_import->handleType;
+    }
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    // AHB Import doesn't have handle in the pNext struct
+    // It should be assumed that all imported AHB can only have the same, single handleType
+    auto ahb_import = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
+    if ((ahb_import) && (ahb_import->buffer != nullptr)) {
+        mem_info->is_import_ahb = true;
+        mem_info->is_import = true;
+        mem_info->import_handle_type_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    }
+#endif
 }
 
 // Create binding link between given sampler and command buffer node

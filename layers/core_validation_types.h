@@ -206,7 +206,10 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkBuffer dedicated_buffer;
     VkImage dedicated_image;
     bool is_export;
+    bool is_import;
+    bool is_import_ahb;  // The VUID check depends on if the imported memory is for AHB
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
+    VkExternalMemoryHandleTypeFlags import_handle_type_flags;
     std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
     // Convenience vectors of handles to speed up iterating over objects independently
     std::unordered_set<VkImage> bound_images;
@@ -228,7 +231,10 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           dedicated_buffer(VK_NULL_HANDLE),
           dedicated_image(VK_NULL_HANDLE),
           is_export(false),
+          is_import(false),
+          is_import_ahb(false),
           export_handle_type_flags(0),
+          import_handle_type_flags(0),
           mapped_range{},
           shadow_copy_base(0),
           shadow_copy(0),
