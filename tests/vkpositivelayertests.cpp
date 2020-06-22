@@ -9783,8 +9783,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV)) {
+        printf("%s This test should not run on Galaxy S10 or the ShieldTV\n", kSkipPrefix);
         return;
     }
 
