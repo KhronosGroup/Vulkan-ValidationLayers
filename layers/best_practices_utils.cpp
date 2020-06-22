@@ -295,6 +295,15 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
             pCreateInfo->minImageCount);
     }
 
+    if (VendorCheckEnabled(kBPVendorArm) && (pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR)) {
+        skip |= LogWarning(device, kVUID_BestPractices_CreateSwapchain_PresentMode,
+                           "%s Warning: Swapchain is not being created with presentation mode \"VK_PRESENT_MODE_FIFO_KHR\". "
+                           "Prefer using \"VK_PRESENT_MODE_FIFO_KHR\" to avoid unnecessary CPU and GPU load and save power. "
+                           "Presentation modes which are not FIFO will present the latest available frame and discard other "
+                           "frame(s) if any.",
+                           VendorSpecificTag(kBPVendorArm));
+    }
+
     return skip;
 }
 
