@@ -1601,14 +1601,43 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                                                 pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags,
                                                                 &format_limits);
     } else {
-        auto image_format_info = lvl_init_struct<VkPhysicalDeviceImageFormatInfo2>();
-        auto image_format_properties = lvl_init_struct<VkImageFormatProperties2>();
-        image_format_info.type = pCreateInfo->imageType;
-        image_format_info.tiling = pCreateInfo->tiling;
-        image_format_info.usage = pCreateInfo->usage;
-        image_format_info.flags = pCreateInfo->flags;
-        result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
-        format_limits = image_format_properties.imageFormatProperties;
+        auto modifier_list = lvl_find_in_chain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+        auto explicit_modifier = lvl_find_in_chain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        if (modifier_list) {
+            for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
+                auto drm_format_modifier = lvl_init_struct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+                drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
+                auto image_format_info = lvl_init_struct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
+                image_format_info.type = pCreateInfo->imageType;
+                image_format_info.format = pCreateInfo->format;
+                image_format_info.tiling = pCreateInfo->tiling;
+                image_format_info.usage = pCreateInfo->usage;
+                image_format_info.flags = pCreateInfo->flags;
+                auto image_format_properties = lvl_init_struct<VkImageFormatProperties2>();
+
+                result =
+                    DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
+                format_limits = image_format_properties.imageFormatProperties;
+
+                /* The application gives a list of modifier and the driver
+                 * selects one. If one is wrong, stop there.
+                 */
+                if (result != VK_SUCCESS) break;
+            }
+        } else if (explicit_modifier) {
+            auto drm_format_modifier = lvl_init_struct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+            drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
+            auto image_format_info = lvl_init_struct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
+            image_format_info.type = pCreateInfo->imageType;
+            image_format_info.format = pCreateInfo->format;
+            image_format_info.tiling = pCreateInfo->tiling;
+            image_format_info.usage = pCreateInfo->usage;
+            image_format_info.flags = pCreateInfo->flags;
+            auto image_format_properties = lvl_init_struct<VkImageFormatProperties2>();
+
+            result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
+            format_limits = image_format_properties.imageFormatProperties;
+        }
     }
 
     if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
