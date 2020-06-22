@@ -1396,3 +1396,193 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest) {
+    TEST_DESCRIPTION(
+        "Testing for cases where compute shaders will be dispatched in an inefficient way, due to work group dispatch counts on "
+        "Arm Mali architectures.");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    VkShaderObj compute_4_1_1(m_device,
+                              "#version 320 es\n"
+                              "\n"
+                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
+                              "void main() {}\n",
+                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    VkShaderObj compute_4_1_3(m_device,
+                              "#version 320 es\n"
+                              "\n"
+                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;\n\n"
+                              "void main() {}\n",
+                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    VkShaderObj compute_16_8_1(m_device,
+                               "#version 320 es\n"
+                               "\n"
+                               "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
+                               "void main() {}\n",
+                               VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    CreateComputePipelineHelper pipe(*this);
+
+    auto makePipelineWithShader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
+        pipe.InitInfo();
+        pipe.InitState();
+        pipe.cp_ci_.stage = stage;
+        pipe.dsl_bindings_ = {};
+        pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
+
+        pipe.CreateComputePipeline(true, false);
+    };
+
+    // these two pipelines should not cause any warning
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
+    makePipelineWithShader(pipe, compute_4_1_1.GetStageCreateInfo());
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size");
+    makePipelineWithShader(pipe, compute_16_8_1.GetStageCreateInfo());
+    m_errorMonitor->VerifyNotFound();
+
+    // this pipeline should cause a warning due to bad work group alignment
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
+    makePipelineWithShader(pipe, compute_4_1_3.GetStageCreateInfo());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
+    TEST_DESCRIPTION(
+        "Testing for cases where the number of work groups spawned is greater than advised for Arm Mali architectures.");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    VkShaderObj compute_4_1_1(m_device,
+                              "#version 320 es\n"
+                              "\n"
+                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
+                              "void main() {}\n",
+                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    VkShaderObj compute_4_1_3(m_device,
+                              "#version 320 es\n"
+                              "\n"
+                              "layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;\n\n"
+                              "void main() {}\n",
+                              VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    VkShaderObj compute_16_8_1(m_device,
+                               "#version 320 es\n"
+                               "\n"
+                               "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
+                               "void main() {}\n",
+                               VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    CreateComputePipelineHelper pipe(*this);
+
+    auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
+        pipe.InitInfo();
+        pipe.InitState();
+        pipe.cp_ci_.stage = stage;
+        pipe.dsl_bindings_ = {};
+        pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
+
+        pipe.CreateComputePipeline(true, false);
+    };
+
+    // these two pipelines should not cause any warning
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size");
+    make_pipeline_with_shader(pipe, compute_4_1_1.GetStageCreateInfo());
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
+    make_pipeline_with_shader(pipe, compute_4_1_3.GetStageCreateInfo());
+    m_errorMonitor->VerifyNotFound();
+
+    // this pipeline should cause a warning due to the total workgroup count
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size");
+    make_pipeline_with_shader(pipe, compute_16_8_1.GetStageCreateInfo());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
+    TEST_DESCRIPTION(
+        "Testing for cases where a compute shader's configuration makes poor use of spatial locality, on Arm Mali architectures, "
+        "for one or more of its resources.");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    VkShaderObj compute_sampler_2d_8_8_1(m_device,
+                                         "#version 450\n"
+                                         "layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;\n\n"
+                                         "layout(set = 0, binding = 0) uniform sampler2D uSampler;\n"
+                                         "void main() {\n"
+                                         "    vec4 value = textureLod(uSampler, vec2(0.5), 0.0);\n"
+                                         "}\n",
+                                         VK_SHADER_STAGE_COMPUTE_BIT, this);
+    VkShaderObj compute_sampler_1d_64_1_1(m_device,
+                                          "#version 450\n"
+                                          "layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;\n\n"
+                                          "layout(set = 0, binding = 0) uniform sampler1D uSampler;\n"
+                                          "void main() {\n"
+                                          "    vec4 value = textureLod(uSampler, 0.5, 0.0);\n"
+                                          "}\n",
+                                          VK_SHADER_STAGE_COMPUTE_BIT, this);
+    VkShaderObj compute_sampler_2d_64_1_1(m_device,
+                                          "#version 450\n"
+                                          "layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;\n\n"
+                                          "layout(set = 0, binding = 0) uniform sampler2D uSampler;\n"
+                                          "void main() {\n"
+                                          "    vec4 value = textureLod(uSampler, vec2(0.5), 0.0);\n"
+                                          "}\n",
+                                          VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    CreateComputePipelineHelper pipe(*this);
+
+    auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
+        VkDescriptorSetLayoutBinding sampler_binding = {};
+        sampler_binding.binding = 0;
+        sampler_binding.descriptorCount = 1;
+        sampler_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        sampler_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+        pipe.InitInfo();
+        pipe.InitState();
+        auto ds_layout = std::unique_ptr<VkDescriptorSetLayoutObj>(new VkDescriptorSetLayoutObj(m_device, {sampler_binding}));
+        auto pipe_layout = std::unique_ptr<VkPipelineLayoutObj>(new VkPipelineLayoutObj(m_device, {ds_layout.get()}));
+        pipe.cp_ci_.stage = stage;
+        pipe.cp_ci_.layout = pipe_layout->handle();
+
+        pipe.CreateComputePipeline(true, false);
+    };
+
+    auto test_spatial_locality = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage,
+                                     bool positive_test, const std::vector<std::string>& allowed = {}) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-spatial-locality");
+        make_pipeline_with_shader(pipe, stage);
+        if (positive_test) {
+            m_errorMonitor->VerifyFound();
+        } else {
+            m_errorMonitor->VerifyNotFound();
+        }
+    };
+
+    test_spatial_locality(pipe, compute_sampler_2d_8_8_1.GetStageCreateInfo(), false);
+    test_spatial_locality(pipe, compute_sampler_1d_64_1_1.GetStageCreateInfo(), false);
+    test_spatial_locality(pipe, compute_sampler_2d_64_1_1.GetStageCreateInfo(), true);
+}
