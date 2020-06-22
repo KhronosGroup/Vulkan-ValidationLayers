@@ -146,6 +146,10 @@ void AddImageStateProps(IMAGE_STATE &image_state, const VkDevice device, const V
                                                                         nullptr};
             format_properties_2.pNext = (void *)&drm_properties_list;
             DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
+            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
+            drm_properties.resize(drm_properties_list.drmFormatModifierCount);
+            drm_properties_list.pDrmFormatModifierProperties = &drm_properties[0];
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
 
             for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
                 if ((drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier &
