@@ -1020,7 +1020,9 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         if ((sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
                              sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) &&
                             (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
-                            if (image_view_state->create_info.format == VK_FORMAT_B4G4R4A4_UNORM_PACK16) {
+                            if (image_view_state->create_info.format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 ||
+                                image_view_state->create_info.format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
+                                image_view_state->create_info.format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
                                 objlist.add(sampler);
@@ -1029,10 +1031,11 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                 "%s encountered the following validation error at %s time: Sampler %s in "
                                                 "binding #%" PRIu32 " index %" PRIu32
                                                 " has a custom border color with format = VK_FORMAT_UNDEFINED and is used to "
-                                                "sample an image view %" PRIu64 " with format VK_FORMAT_B4G4R4A4_UNORM_PACK16",
+                                                "sample an image view %" PRIu64 " with format %s",
                                                 report_data->FormatHandle(set).c_str(), caller,
                                                 report_data->FormatHandle(sampler).c_str(), binding, index,
-                                                report_data->FormatHandle(image_view_state->image_view).c_str());
+                                                report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                                string_VkFormat(image_view_state->create_info.format));
                             }
                         }
                         VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
