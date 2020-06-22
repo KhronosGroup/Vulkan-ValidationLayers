@@ -130,5 +130,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSwapchain_PresentMo
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_DepthBias_Zero =
     "UNASSIGNED-BestPractices-vkCreatePipelines-depthbias-zero";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_RobustBufferAccess =
+    "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess";
 
 #endif
