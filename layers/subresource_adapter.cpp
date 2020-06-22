@@ -367,8 +367,7 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
 
 void ImageRangeGenerator::SetPos() {
     VkImageSubresource subres = {static_cast<VkImageAspectFlags>(encoder_->AspectBit(aspect_index_)),
-                                 subres_range_.baseMipLevel + mip_level_index_,
-                                 subres_range_.baseArrayLayer};
+                                 subres_range_.baseMipLevel + mip_level_index_, subres_range_.baseArrayLayer};
     subres_layout_ = &(encoder_->SubresourceLayout(subres));
     const VkExtent3D& subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
     Subresource limits = encoder_->Limits();
@@ -385,8 +384,8 @@ void ImageRangeGenerator::SetPos() {
             offset_y_count_ = 1;
             if (range_arraylayer_base_ == 0 && range_layer_count_ == limits.arrayLayer) {
                 layer_count_ = 1;
+                mip_count_ = 1;
                 if (subres_range_.baseMipLevel == 0 && subres_range_.levelCount == limits.mipLevel) {
-                    mip_count_ = 1;
                     for (uint32_t aspect_index = aspect_index_; aspect_index < aspect_count_;) {
                         subres.aspectMask = static_cast<VkImageAspectFlags>(encoder_->AspectBit(aspect_index));
                         for (uint32_t mip_index = 0; mip_index < limits.mipLevel; ++mip_index) {
@@ -435,7 +434,7 @@ ImageRangeGenerator* ImageRangeGenerator::operator++() {
         } else {
             arrayLayer_index_ = 0;
             mip_level_index_++;
-            if (mip_level_index_ < subres_range_.levelCount) {
+            if (mip_level_index_ < mip_count_) {
                 SetPos();
             } else {
                 mip_level_index_ = 0;
