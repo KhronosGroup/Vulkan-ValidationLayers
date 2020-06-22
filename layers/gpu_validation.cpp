@@ -1672,18 +1672,27 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     auto iter = cb_node->lastBound.find(bind_point);  // find() allows read-only access to cb_state
     if (iter != cb_node->lastBound.end()) {
         auto pipeline_state = iter->second.pipeline_state;
-        if (pipeline_state && (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index)) {
+        if (pipeline_state && (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
+            !pipeline_state->pipeline_layout->destroyed) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
-        // Record buffer and memory info in CB state tracking
-        GetBufferInfo(cmd_buffer).emplace_back(output_block, di_input_block, bda_input_block, desc_sets[0], desc_pool, bind_point);
+        if (pipeline_state && pipeline_state->pipeline_layout->destroyed) {
+            ReportSetupProblem(device, "Pipeline layout has been destroyed, aborting GPU-AV");
+            aborted = true;
+        } else {
+            // Record buffer and memory info in CB state tracking
+            GetBufferInfo(cmd_buffer)
+                .emplace_back(output_block, di_input_block, bda_input_block, desc_sets[0], desc_pool, bind_point);
+        }
     } else {
         ReportSetupProblem(device, "Unable to find pipeline state");
+        aborted = true;
+    }
+    if (aborted) {
         vmaDestroyBuffer(vmaAllocator, di_input_block.buffer, di_input_block.allocation);
         vmaDestroyBuffer(vmaAllocator, bda_input_block.buffer, bda_input_block.allocation);
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
-        aborted = true;
         return;
     }
 }
