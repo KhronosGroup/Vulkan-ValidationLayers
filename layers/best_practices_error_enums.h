@@ -128,5 +128,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_BeginRenderPass_Attachmen
     "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSwapchain_PresentMode =
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_DepthBias_Zero =
+    "UNASSIGNED-BestPractices-vkCreatePipelines-depthbias-zero";
 
 #endif
