@@ -813,6 +813,19 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
         }
 
+        if ((pCreateInfos[i].pRasterizationState->depthBiasEnable) &&
+            (pCreateInfos[i].pRasterizationState->depthBiasConstantFactor == 0.0f) &&
+            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f)) {
+            skip |= VendorCheckEnabled(kBPVendorArm) &&
+                    LogPerformanceWarning(
+                        device, kVUID_BestPractices_CreatePipelines_DepthBias_Zero,
+                        "%s Performance Warning: This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
+                        "and both depthBiasConstantFactor and depthBiasSlopeFactor are set to 0. This can cause reduced "
+                        "efficiency during rasterization. Consider disabling depthBias or increasing either "
+                        "depthBiasConstantFactor or depthBiasSlopeFactor.",
+                        VendorSpecificTag(kBPVendorArm));
+        }
+
         skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
     }
 

@@ -126,5 +126,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_BeginCommandBuffer_OneTim
     "UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit";
 static const char DECORATE_UNUSED *kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback =
     "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_DepthBias_Zero =
+    "UNASSIGNED-BestPractices-vkCreatePipelines-depthbias-zero";
 
 #endif
