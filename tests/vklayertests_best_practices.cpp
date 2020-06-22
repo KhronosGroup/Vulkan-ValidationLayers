@@ -1248,3 +1248,41 @@ TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
+    TEST_DESCRIPTION("Test for appropriate warnings to be thrown when robustBufferAccess is enabled.");
+
+    InitBestPracticesFramework();
+
+    VkDevice local_device;
+    VkDeviceQueueCreateInfo queue_info = {};
+    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_info.pNext = nullptr;
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = nullptr;
+    VkDeviceCreateInfo dev_info = {};
+    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    dev_info.pNext = nullptr;
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = nullptr;
+    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkPhysicalDeviceFeatures supported_features;
+    vk::GetPhysicalDeviceFeatures(this->gpu(), &supported_features);
+    if (supported_features.robustBufferAccess) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess");
+        VkPhysicalDeviceFeatures device_features = {};
+        device_features.robustBufferAccess = VK_TRUE;
+        dev_info.pEnabledFeatures = &device_features;
+        vk::CreateDevice(this->gpu(), &dev_info, nullptr, &local_device);
+        m_errorMonitor->VerifyFound();
+    } else {
+        printf("%s robustBufferAccess is not available, skipping test\n", kSkipPrefix);
+        return;
+    }
+}
