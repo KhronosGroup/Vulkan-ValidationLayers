@@ -1147,3 +1147,77 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     ASSERT_VK_SUCCESS(err)
     DestroySwapchain();
 }
+
+TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
+    TEST_DESCRIPTION("Test for usage of Presentation Modes");
+
+    AddSurfaceInstanceExtension();
+    InitBestPracticesFramework();
+    AddSwapchainDeviceExtension();
+    InitState();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
+    InitSurface();
+    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    VkSurfaceCapabilitiesKHR capabilities;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), m_surface, &capabilities);
+
+    uint32_t format_count;
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, nullptr);
+    vector<VkSurfaceFormatKHR> formats;
+    if (format_count != 0) {
+        formats.resize(format_count);
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, formats.data());
+    }
+
+    uint32_t present_mode_count;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, nullptr);
+    vector<VkPresentModeKHR> present_modes;
+    if (present_mode_count != 0) {
+        present_modes.resize(present_mode_count);
+        vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, present_modes.data());
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = {};
+    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchain_create_info.pNext = 0;
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = capabilities.minImageCount;
+    swapchain_create_info.imageFormat = formats[0].format;
+    swapchain_create_info.imageColorSpace = formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+#else
+    swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+#endif
+    if (present_modes.size() <= 1) {
+        printf("TEST SKIPPED: Only %i presentation mode is available!", int(present_modes.size()));
+        return;
+    }
+
+    for (size_t i = 0; i < present_modes.size(); i++) {
+        if (present_modes[i] != VK_PRESENT_MODE_FIFO_KHR) {
+            swapchain_create_info.presentMode = present_modes[i];
+            break;
+        }
+    }
+
+    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
+    swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    m_errorMonitor->VerifyNotFound();
+    ASSERT_VK_SUCCESS(err)
+    DestroySwapchain();
+}
