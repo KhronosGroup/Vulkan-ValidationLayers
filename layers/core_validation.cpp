@@ -6524,21 +6524,21 @@ static const char *vu_summary[] = {"Source or destination queue family must be i
                                    "Source or destination queue family must match submit queue family, if not ignored."};
 
 static const std::string image_error_codes[] = {
-    "VUID-VkImageMemoryBarrier-image-01381",  //   kSrcOrDstMustBeIgnore
-    "VUID-VkImageMemoryBarrier-image-04071",  //   kSpecialOrIgnoreOnly
-    "VUID-VkImageMemoryBarrier-image-04072",  //   kSrcAndDstValidOrSpecial
-    "VUID-VkImageMemoryBarrier-image-01199",  //   kSrcAndDestMustBeIgnore
-    "VUID-VkImageMemoryBarrier-image-04069",  //   kSrcAndDstBothValid
-    "VUID-VkImageMemoryBarrier-image-01205",  //   kSubmitQueueMustMatchSrcOrDst
+    "VUID-VkImageMemoryBarrier-image-01381",                                              //   kSrcOrDstMustBeIgnore
+    "VUID-VkImageMemoryBarrier-image-04071",                                              //   kSpecialOrIgnoreOnly
+    "VUID-VkImageMemoryBarrier-image-04072",                                              //   kSrcAndDstValidOrSpecial
+    "VUID-VkImageMemoryBarrier-image-01199",                                              //   kSrcAndDestMustBeIgnore
+    "VUID-VkImageMemoryBarrier-image-04069",                                              //   kSrcAndDstBothValid
+    "UNASSIGNED-CoreValidation-vkImageMemoryBarrier-sharing-mode-exclusive-same-family",  //   kSubmitQueueMustMatchSrcOrDst
 };
 
 static const std::string buffer_error_codes[] = {
-    "VUID-VkBufferMemoryBarrier-buffer-01191",  //  kSrcOrDstMustBeIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-04088",  //  kSpecialOrIgnoreOnly
-    "VUID-VkBufferMemoryBarrier-buffer-04089",  //  kSrcAndDstValidOrSpecial
-    "VUID-VkBufferMemoryBarrier-buffer-01190",  //  kSrcAndDestMustBeIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-04086",  //  kSrcAndDstBothValid
-    "VUID-VkBufferMemoryBarrier-buffer-01196",  //  kSubmitQueueMustMatchSrcOrDst
+    "VUID-VkBufferMemoryBarrier-buffer-01191",                                             //  kSrcOrDstMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-04088",                                             //  kSpecialOrIgnoreOnly
+    "VUID-VkBufferMemoryBarrier-buffer-04089",                                             //  kSrcAndDstValidOrSpecial
+    "VUID-VkBufferMemoryBarrier-buffer-01190",                                             //  kSrcAndDestMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-04086",                                             //  kSrcAndDstBothValid
+    "UNASSIGNED-CoreValidation-vkBufferMemoryBarrier-sharing-mode-exclusive-same-family",  //  kSubmitQueueMustMatchSrcOrDst
 };
 
 class ValidatorState {
