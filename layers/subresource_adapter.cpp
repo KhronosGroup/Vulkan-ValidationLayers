@@ -272,6 +272,9 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image)
 
 ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParameters* param)
     : RangeEncoder(image.full_range, param), image_(&image) {
+    if (image_->createInfo.extent.depth > 1) {
+        limits_.arrayLayer = image_->createInfo.extent.depth;
+    }
     VkSubresourceLayout layout = {};
     VkImageSubresource subres = {};
     VkExtent2D divisors = {};
