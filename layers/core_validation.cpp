@@ -11131,9 +11131,12 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
         auto physical_device_state = GetPhysicalDeviceState();
         // TODO: this is technically wrong on many levels, but requires massive cleanup
         if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called) {
-            const uint32_t acquired_images =
-                static_cast<uint32_t>(std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
-                                                    [=](SWAPCHAIN_IMAGE image) { return GetImageState(image.image)->acquired; }));
+            const uint32_t acquired_images = static_cast<uint32_t>(
+                std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(), [=](SWAPCHAIN_IMAGE image) {
+                    auto const state = GetImageState(image.image);
+                    return (state && state->acquired);
+                }));
+
             const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
             const auto min_image_count = physical_device_state->surfaceCapabilities.minImageCount;
             const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
