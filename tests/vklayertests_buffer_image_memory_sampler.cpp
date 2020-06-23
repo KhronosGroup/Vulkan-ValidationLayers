@@ -5800,7 +5800,8 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
         excl_test.Init(nullptr);
 
         // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
-        excl_test("VUID-VkImageMemoryBarrier-image-01205", "VUID-VkBufferMemoryBarrier-buffer-01196", other_family, other_family,
+        excl_test("UNASSIGNED-CoreValidation-vkImageMemoryBarrier-sharing-mode-exclusive-same-family",
+                  "UNASSIGNED-CoreValidation-vkBufferMemoryBarrier-sharing-mode-exclusive-same-family", other_family, other_family,
                   false, submit_family);
 
         // true -> positive test (testing both the index logic and the QFO transfer tracking.
