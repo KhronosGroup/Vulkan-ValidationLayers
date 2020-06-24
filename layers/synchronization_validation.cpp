@@ -517,8 +517,8 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
                 // Set the parallel iterator to the end of this range s.t. ++ will move us to the next range whether or
                 // not the end of the range is a gap.  For the seek to work, first we need to warn the parallel iterator
                 // we stepped on the dest map
-                const auto seek_to = current_range.end - 1;   // The subtraction is safe as range can't be empty (loop condition)
-                current.invalidate_A();                       // Changes current->range
+                const auto seek_to = current_range.end - 1;  // The subtraction is safe as range can't be empty (loop condition)
+                current.invalidate_A();                      // Changes current->range
                 current.seek(seek_to);
             } else if (!current->pos_A->valid && infill_state) {
                 // If we didn't find anything in the current range, and we aren't reccuring... we infill if required
@@ -721,8 +721,9 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
                     auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
                     skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
                                                 "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                                                " aspect %s during load with loadOp %s.",
-                                                func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string);
+                                                " aspect %s during load with loadOp %s. Prior access %s.",
+                                                func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string,
+                                                string_UsageTag(hazard.tag).c_str());
                 }
             }
         }
@@ -1408,15 +1409,15 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                                        buf_state->createInfo.size));
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.hazard) {
-                            skip |=
-                                sync_state_->LogError(buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
-                                                      "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", func_name,
-                                                      string_SyncHazard(hazard.hazard),
-                                                      sync_state_->report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
-                                                      sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
-                                                      sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                                      sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
-                                                      set_binding.first.second, index);
+                            skip |= sync_state_->LogError(
+                                buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
+                                "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d. Prior access %s.", func_name,
+                                string_SyncHazard(hazard.hazard),
+                                sync_state_->report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
+                                sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
+                                sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
+                                index, string_UsageTag(hazard.tag).c_str());
                         }
                         break;
                     }
@@ -1427,14 +1428,14 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         ResourceAccessRange range = MakeRange(buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.hazard) {
-                            skip |= sync_state_->LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
-                                                          "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", func_name,
-                                                          string_SyncHazard(hazard.hazard),
-                                                          sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
-                                                          sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
-                                                          sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                                          sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
-                                                          set_binding.first.second, index);
+                            skip |= sync_state_->LogError(
+                                buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
+                                "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d. Prior access %s.", func_name,
+                                string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
+                                sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
+                                sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
+                                index, string_UsageTag(hazard.tag).c_str());
                         }
                         break;
                     }
@@ -1557,10 +1558,10 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
             ResourceAccessRange range = MakeRange(range_start, range_size);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.hazard) {
-                skip |= sync_state_->LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
-                                              "%s: Hazard %s for vertex %s in %s", func_name, string_SyncHazard(hazard.hazard),
-                                              sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
-                                              sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str());
+                skip |= sync_state_->LogError(
+                    buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for vertex %s in %s. Prior access %s.",
+                    func_name, string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
+                    sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(), string_UsageTag(hazard.tag).c_str());
             }
         }
     }
@@ -1606,10 +1607,10 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
     ResourceAccessRange range = MakeRange(range_start, range_size);
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, range);
     if (hazard.hazard) {
-        skip |= sync_state_->LogError(index_buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
-                                      "%s: Hazard %s for index %s in %s", func_name, string_SyncHazard(hazard.hazard),
-                                      sync_state_->report_data->FormatHandle(index_buf_state->buffer).c_str(),
-                                      sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str());
+        skip |= sync_state_->LogError(
+            index_buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for index %s in %s. Prior access %s.",
+            func_name, string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(index_buf_state->buffer).c_str(),
+            sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(), string_UsageTag(hazard.tag).c_str());
     }
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
@@ -1717,11 +1718,12 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
             HazardResult hazard = external_context_->DetectHazard(
                 img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kColorAttachmentRasterOrder, offset, extent);
             if (hazard.hazard) {
-                skip |= sync_state.LogError(
-                    img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                    "%s: Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d", func_name,
-                    string_SyncHazard(hazard.hazard), sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
-                    sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass, location);
+                skip |= sync_state.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                                            "%s: Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Prior access %s.",
+                                            func_name, string_SyncHazard(hazard.hazard),
+                                            sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
+                                            sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
+                                            location, string_UsageTag(hazard.tag).c_str());
             }
         }
     }
@@ -1756,11 +1758,13 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
                 external_context_->DetectHazard(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                 kDepthStencilAttachmentRasterOrder, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
             if (hazard.hazard) {
-                skip |= sync_state.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                                            "%s: Hazard %s for %s in %s, Subpass #%d, and depth part of pDepthStencilAttachment",
-                                            func_name, string_SyncHazard(hazard.hazard),
-                                            sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
-                                            sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass);
+                skip |= sync_state.LogError(
+                    img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s for %s in %s, Subpass #%d, and depth part of pDepthStencilAttachment. Prior access %s.",
+                    func_name, string_SyncHazard(hazard.hazard),
+                    sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
+                    sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
+                    string_UsageTag(hazard.tag).c_str());
             }
         }
         if (stencil_write) {
@@ -1768,11 +1772,13 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
                 external_context_->DetectHazard(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                 kDepthStencilAttachmentRasterOrder, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
             if (hazard.hazard) {
-                skip |= sync_state.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                                            "%s: Hazard %s for %s in %s, Subpass #%d, and stencil part of pDepthStencilAttachment",
-                                            func_name, string_SyncHazard(hazard.hazard),
-                                            sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
-                                            sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass);
+                skip |= sync_state.LogError(
+                    img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s for %s in %s, Subpass #%d, and stencil part of pDepthStencilAttachment. Prior access %s.",
+                    func_name, string_SyncHazard(hazard.hazard),
+                    sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
+                    sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
+                    string_UsageTag(hazard.tag).c_str());
             }
         }
     }
