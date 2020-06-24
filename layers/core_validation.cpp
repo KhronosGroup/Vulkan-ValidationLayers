@@ -11586,13 +11586,13 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
                          func_name, string_VkFormat(conversion_format));
     }
     if ((format_features & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT) == 0) {
-        if (create_info->xChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
+        if (FormatIsXChromaSubsampled(conversion_format) && create_info->xChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
             skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651",
                              "%s: Format %s does not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT so xChromaOffset can't "
                              "be VK_CHROMA_LOCATION_COSITED_EVEN",
                              func_name, string_VkFormat(conversion_format));
         }
-        if (create_info->yChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
+        if (FormatIsYChromaSubsampled(conversion_format) && create_info->yChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
             skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651",
                              "%s: Format %s does not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT so yChromaOffset can't "
                              "be VK_CHROMA_LOCATION_COSITED_EVEN",
@@ -11600,13 +11600,13 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
         }
     }
     if ((format_features & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) == 0) {
-        if (create_info->xChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
+        if (FormatIsXChromaSubsampled(conversion_format) && create_info->xChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
             skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652",
                              "%s: Format %s does not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT so xChromaOffset can't "
                              "be VK_CHROMA_LOCATION_MIDPOINT",
                              func_name, string_VkFormat(conversion_format));
         }
-        if (create_info->yChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
+        if (FormatIsYChromaSubsampled(conversion_format) && create_info->yChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
             skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652",
                              "%s: Format %s does not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT so yChromaOffset can't "
                              "be VK_CHROMA_LOCATION_MIDPOINT",
