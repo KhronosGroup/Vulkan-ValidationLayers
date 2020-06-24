@@ -163,6 +163,8 @@ VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
 VK_LAYER_EXPORT bool FormatElementIsTexel(VkFormat format);
 VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count, const VkImageCopy *regions);
 VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsXChromaSubsampled(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsYChromaSubsampled(VkFormat format);
 
 VK_LAYER_EXPORT uint32_t FormatDepthSize(VkFormat format);
 VK_LAYER_EXPORT VkFormatNumericalType FormatDepthNumericalType(VkFormat format);
