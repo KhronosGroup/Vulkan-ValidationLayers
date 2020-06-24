@@ -956,6 +956,46 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  pCreateInfo->mipLevels);
             }
         }
+
+        const auto swapchain_create_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+        if (swapchain_create_info != nullptr) {
+            if (swapchain_create_info->swapchain != VK_NULL_HANDLE) {
+                // All the following fall under the same VU that checks that the swapchain image uses parameters limited by the
+                // table in #swapchain-wsi-image-create-info. Breaking up into multiple checks allows for more useful information
+                // returned why this error occured. Check for matching Swapchain flags is done later in state tracking validation
+                const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
+                const char *base_message = "vkCreateImage(): The image used for creating a presentable swapchain image";
+
+                if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+                    // also implicitly forces the check above that extent.depth is 1
+                    skip |= LogError(device, vuid, "%s must have a imageType value VK_IMAGE_TYPE_2D instead of %s.", base_message,
+                                     string_VkImageType(pCreateInfo->imageType));
+                }
+                if (pCreateInfo->mipLevels != 1) {
+                    skip |= LogError(device, vuid, "%s must have a mipLevels value of 1 instead of %u.", base_message,
+                                     pCreateInfo->mipLevels);
+                }
+                if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
+                    skip |= LogError(device, vuid, "%s must have a samples value of VK_SAMPLE_COUNT_1_BIT instead of %s.",
+                                     base_message, string_VkSampleCountFlagBits(pCreateInfo->samples));
+                }
+                if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
+                    skip |= LogError(device, vuid, "%s must have a tiling value of VK_IMAGE_TILING_OPTIMAL instead of %s.",
+                                     base_message, string_VkImageTiling(pCreateInfo->tiling));
+                }
+                if (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+                    skip |= LogError(device, vuid, "%s must have a initialLayout value of VK_IMAGE_LAYOUT_UNDEFINED instead of %s.",
+                                     base_message, string_VkImageLayout(pCreateInfo->initialLayout));
+                }
+                const VkImageCreateFlags valid_flags =
+                    (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
+                     VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
+                if ((pCreateInfo->flags & ~valid_flags) != 0) {
+                    skip |= LogError(device, vuid, "%s flags are %" PRIu32 "and must only have valid flags set.", base_message,
+                                     pCreateInfo->flags);
+                }
+            }
+        }
     }
 
     return skip;
