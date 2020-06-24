@@ -1778,6 +1778,38 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                      string_VkFormat(pCreateInfo->format), string_VkImageCreateFlags(pCreateInfo->flags).c_str());
     }
 
+    const auto swapchain_create_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    if (swapchain_create_info != nullptr) {
+        if (swapchain_create_info->swapchain != VK_NULL_HANDLE) {
+            const SWAPCHAIN_NODE *swapchain_state = GetSwapchainState(swapchain_create_info->swapchain);
+            const VkSwapchainCreateFlagsKHR swapchain_flags = swapchain_state->createInfo.flags;
+
+            // Validate rest of Swapchain Image create check that require swapchain state
+            const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
+            if (((swapchain_flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) != 0) &&
+                ((pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) == 0)) {
+                skip |= LogError(
+                    device, vuid,
+                    "vkCreateImage(): Swapchain was created with VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR flag so "
+                    "all swapchain images must have the VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT flag set.");
+            }
+            if (((swapchain_flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) != 0) &&
+                ((pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0)) {
+                skip |= LogError(device, vuid,
+                                 "vkCreateImage(): Swapchain was created with VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR flag so all "
+                                 "swapchain images must have the VK_IMAGE_CREATE_PROTECTED_BIT flag set.");
+            }
+            const VkImageCreateFlags mutable_flags = (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
+            if (((swapchain_flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) &&
+                ((pCreateInfo->flags & mutable_flags) != mutable_flags)) {
+                skip |= LogError(device, vuid,
+                                 "vkCreateImage(): Swapchain was created with VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR flag so "
+                                 "all swapchain images must have the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and "
+                                 "VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR flags both set.");
+            }
+        }
+    }
+
     skip |= ValidateImageFormatFeatures(pCreateInfo);
 
     return skip;
