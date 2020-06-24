@@ -10198,6 +10198,105 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     DestroySwapchain();
 }
 
+TEST_F(VkLayerTest, ValidSwapchainImage) {
+    TEST_DESCRIPTION("Swapchain images with invalid parameters");
+    const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!InitSwapchain()) {
+        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkImage image;
+    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = {};
+    image_swapchain_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR;
+    image_swapchain_create_info.pNext = nullptr;
+    image_swapchain_create_info.swapchain = m_swapchain;
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = &image_swapchain_create_info;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkImageCreateInfo good_create_info = image_create_info;
+
+    // imageType
+    image_create_info = good_create_info;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    // mipLevels
+    image_create_info = good_create_info;
+    image_create_info.mipLevels = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    // samples
+    image_create_info = good_create_info;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    // tiling
+    image_create_info = good_create_info;
+    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    // initialLayout
+    image_create_info = good_create_info;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CreateImage(device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    // flags
+    if (m_device->phy().features().sparseBinding) {
+        image_create_info = good_create_info;
+        image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+        vk::CreateImage(device(), &image_create_info, NULL, &image);
+        m_errorMonitor->VerifyFound();
+    }
+
+    DestroySwapchain();
+}
+
 TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     TEST_DESCRIPTION("Transfer an image to a swapchain's image with a invalid layout between device group");
 
