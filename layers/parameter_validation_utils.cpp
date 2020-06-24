@@ -4877,8 +4877,11 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
     // Check samplerYcbcrConversion feature is set
     const auto *ycbcr_features = lvl_find_in_chain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(device_createinfo_pnext);
     if ((ycbcr_features == nullptr) || (ycbcr_features->samplerYcbcrConversion == VK_FALSE)) {
-        skip |= LogError(device, "VUID-vkCreateSamplerYcbcrConversion-None-01648",
-                         "samplerYcbcrConversion must be enabled to call %s.", apiName);
+        const auto *vulkan_11_features = lvl_find_in_chain<VkPhysicalDeviceVulkan11Features>(device_createinfo_pnext);
+        if ((vulkan_11_features == nullptr) || (vulkan_11_features->samplerYcbcrConversion == VK_FALSE)) {
+            skip |= LogError(device, "VUID-vkCreateSamplerYcbcrConversion-None-01648",
+                             "samplerYcbcrConversion must be enabled to call %s.", apiName);
+        }
     }
     return skip;
 }
