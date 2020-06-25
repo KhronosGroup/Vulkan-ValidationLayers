@@ -8561,6 +8561,85 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
     }
 }
 
+TEST_F(VkLayerTest, IllegalAddressModeWithCornerSampledNV) {
+    TEST_DESCRIPTION(
+        "Create image with VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV flag and sample it with something other than "
+        "VK_SAMPLER_ADDRESS_MODE_CLAMP_EDGE.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, "VK_NV_corner_sampled_image")) {
+        m_device_extension_names.push_back("VK_NV_corner_sampled_image");
+    } else {
+        printf("%s VK_NV_corner_sampled_image not supported.  Skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageObj test_image(m_device);
+    VkImageCreateInfo image_info = VkImageObj::create_info();
+    image_info.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    // If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV,
+    // imageType must be VK_IMAGE_TYPE_2D or VK_IMAGE_TYPE_3D
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    // If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and imageType is VK_IMAGE_TYPE_2D,
+    // extent.width and extent.height must be greater than 1.
+    image_info.extent = {2, 2, 1};
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    test_image.init(&image_info);
+    ASSERT_TRUE(test_image.initialized());
+
+    VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
+    sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    VkSampler sampler;
+    VkResult err = vk::CreateSampler(m_device->device(), &sci, nullptr, &sampler);
+    ASSERT_VK_SUCCESS(err);
+
+    VkImageView view = test_image.targetView(image_info.format);
+
+    CreatePipelineHelper pipe(*this);
+    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    pipe.InitInfo();
+
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-flags-02696");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
+}
+
 TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     TEST_DESCRIPTION(
         "Create sampler with ycbcr conversion and use with an image created without ycrcb conversion or immutable sampler");
