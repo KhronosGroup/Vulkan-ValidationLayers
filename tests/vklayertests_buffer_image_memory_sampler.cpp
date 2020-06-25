@@ -10973,6 +10973,10 @@ TEST_F(VkLayerTest, CustomBorderColor) {
         VkSampler samplers[0xFFFF];
         // Still have one custom border color sampler from above, so this should exceed max
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-None-04012");
+        if (prop2.properties.limits.maxSamplerAllocationCount <= custom_properties.maxCustomBorderColorSamplers) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "Number of currently valid sampler objects is not less than the maximum allowed");
+        }
         for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers; i++) {
             vk::CreateSampler(m_device->device(), &sampler_info, NULL, &samplers[i]);
         }
