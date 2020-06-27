@@ -10895,6 +10895,86 @@ TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-02572");
 }
 
+TEST_F(VkLayerTest, AstcDecodeMode) {
+    TEST_DESCRIPTION("Tests for VUs for VK_EXT_astc_decode_mode");
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    VkPhysicalDeviceASTCDecodeFeaturesEXT astc_decode_features = lvl_init_struct<VkPhysicalDeviceASTCDecodeFeaturesEXT>();
+    astc_decode_features.pNext = nullptr;
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&astc_decode_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (!features2.features.textureCompressionASTC_LDR) {
+        printf("%s  textureCompressionASTC_LDR feature not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    // Disable feature
+    astc_decode_features.decodeModeSharedExponent = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    const VkFormat rgba_format = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkFormat ldr_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, rgba_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+    VkImageObj astc_image(m_device);
+    astc_image.Init(128, 128, 1, ldr_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(astc_image.initialized());
+
+    VkImageViewASTCDecodeModeEXT astc_decode_mode = {};
+    astc_decode_mode.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT;
+    astc_decode_mode.pNext = nullptr;
+    astc_decode_mode.decodeMode = VK_FORMAT_R16G16B16A16_SFLOAT;
+
+    VkImageView image_view;
+    VkImageViewCreateInfo image_view_create_info = {};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.pNext = &astc_decode_mode;
+    image_view_create_info.image = image.handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = rgba_format;
+    image_view_create_info.subresourceRange.layerCount = 1;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = 1;
+    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // image view format is not ASTC
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewASTCDecodeModeEXT-format-04084");
+    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
+    m_errorMonitor->VerifyFound();
+
+    // Non-valid decodeMode
+    image_view_create_info.image = astc_image.handle();
+    image_view_create_info.format = ldr_format;
+    astc_decode_mode.decodeMode = ldr_format;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02230");
+    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
+    m_errorMonitor->VerifyFound();
+
+    // decodeModeSharedExponent not enabled
+    astc_decode_mode.decodeMode = VK_FORMAT_E5B9G9R9_UFLOAT_PACK32;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231");
+    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, CustomBorderColor) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_custom_border_color");
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
