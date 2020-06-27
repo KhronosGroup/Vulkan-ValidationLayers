@@ -1442,6 +1442,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.fragment_density_map_features = *fragment_density_map_features;
     }
 
+    const auto *astc_decode_features = lvl_find_in_chain<VkPhysicalDeviceASTCDecodeFeaturesEXT>(pCreateInfo->pNext);
+    if (astc_decode_features) {
+        state_tracker->enabled_features.astc_decode_features = *astc_decode_features;
+    }
+
     const auto *custom_border_color_features = lvl_find_in_chain<VkPhysicalDeviceCustomBorderColorFeaturesEXT>(pCreateInfo->pNext);
     if (custom_border_color_features) {
         state_tracker->enabled_features.custom_border_color_features = *custom_border_color_features;
