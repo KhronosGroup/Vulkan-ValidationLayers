@@ -2946,25 +2946,6 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     return skip;
 }
 
-bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const char *func_name,
-                                                             const VkSamplerYcbcrConversionCreateInfo *create_info) const {
-    const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
-    if ((nullptr != ext_format_android) && (0 != ext_format_android->externalFormat)) {
-        if (VK_FORMAT_UNDEFINED != create_info->format) {
-            return LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
-                            "%s: CreateInfo format is not VK_FORMAT_UNDEFINED while "
-                            "there is a chained VkExternalFormatANDROID struct with a non-zero externalFormat.",
-                            func_name);
-        }
-    } else if (VK_FORMAT_UNDEFINED == create_info->format) {
-        return LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
-                        "%s: CreateInfo format is VK_FORMAT_UNDEFINED with no chained "
-                        "VkExternalFormatANDROID struct with a non-zero externalFormat.",
-                        func_name);
-    }
-    return false;
-}
-
 bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
                                                      VkDeviceMemory memory, VkBuffer buffer) const {
     bool skip = false;
@@ -3007,11 +2988,6 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
 
 bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties) const {
-    return false;
-}
-
-bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const char *func_name,
-                                                             const VkSamplerYcbcrConversionCreateInfo *create_info) const {
     return false;
 }
 
@@ -11699,13 +11675,29 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
     bool skip = false;
     const VkFormat conversion_format = create_info->format;
 
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        skip |= ValidateCreateSamplerYcbcrConversionANDROID(func_name, create_info);
-    } else {  // Not android hardware buffer
-        if (VK_FORMAT_UNDEFINED == conversion_format) {
-            skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649",
-                             "%s: CreateInfo format type is VK_FORMAT_UNDEFINED.", func_name);
+    // Need to check for external format conversion first as it allows for non-UNORM format
+    bool external_format = false;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
+    if ((nullptr != ext_format_android) && (0 != ext_format_android->externalFormat)) {
+        external_format = true;
+        if (VK_FORMAT_UNDEFINED != create_info->format) {
+            return LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
+                            "%s: CreateInfo format is not VK_FORMAT_UNDEFINED while "
+                            "there is a chained VkExternalFormatANDROID struct with a non-zero externalFormat.",
+                            func_name);
         }
+    }
+#endif
+
+    if ((external_format == false) && (FormatIsUNorm(conversion_format) == false)) {
+        const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
+                               ? "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061"
+                               : "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060";
+        skip |=
+            LogError(device, vuid,
+                     "%s: CreateInfo format (%s) is not an UNORM format and there is no external format conversion being created.",
+                     func_name, string_VkFormat(conversion_format));
     }
 
     // Gets VkFormatFeatureFlags according to Sampler Ycbcr Conversion Format Features
@@ -11713,8 +11705,9 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
     VkFormatFeatureFlags format_features = VK_FORMAT_FEATURE_FLAG_BITS_MAX_ENUM;
     if (conversion_format == VK_FORMAT_UNDEFINED) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-        const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
-        if ((ext_format_android != nullptr) && (0 != ext_format_android->externalFormat)) {
+        // only check for external format inside VK_FORMAT_UNDEFINED check to prevent unnecessary extra errors from no format
+        // features being supported
+        if (external_format == true) {
             auto it = ahb_ext_formats_map.find(ext_format_android->externalFormat);
             if (it != ahb_ext_formats_map.end()) {
                 format_features = it->second;
