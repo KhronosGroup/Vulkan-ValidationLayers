@@ -541,7 +541,8 @@ struct alignas(alignof(AnyDescriptor)) DescriptorBackingStore {
 struct AllocateDescriptorSetsData {
     std::map<uint32_t, uint32_t> required_descriptors_by_type;
     std::vector<std::shared_ptr<DescriptorSetLayout const>> layout_nodes;
-    AllocateDescriptorSetsData(uint32_t);
+    void Init(uint32_t);
+    AllocateDescriptorSetsData(){};
 };
 // Helper functions for descriptor set functions that cross multiple sets
 // "Validate" will make sure an update is ok without actually performing it
