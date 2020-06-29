@@ -174,13 +174,13 @@ For 64-bit Linux and MacOS, continue with:
 For 64-bit Windows, continue with:
 
     ..\scripts\update_deps.py --arch x64
-    cmake -A x64 -C helper.cmake ..
+    cmake -A x64 -C build\helper.cmake ..
     cmake --build .
 
 For 32-bit Windows, continue with:
 
     ..\scripts\update_deps.py --arch Win32
-    cmake -A Win32 -C helper.cmake ..
+    cmake -A Win32 -C build\helper.cmake ..
     cmake --build .
 
 Please see the more detailed build information later in this file if you have
