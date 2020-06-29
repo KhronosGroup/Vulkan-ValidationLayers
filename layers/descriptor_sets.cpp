@@ -577,8 +577,12 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     return skip;
 }
 
-cvdescriptorset::AllocateDescriptorSetsData::AllocateDescriptorSetsData(uint32_t count)
-    : required_descriptors_by_type{}, layout_nodes(count, nullptr) {}
+void cvdescriptorset::AllocateDescriptorSetsData::Init(uint32_t count) {
+    layout_nodes.resize(count);
+    for (auto node : layout_nodes) {
+        node = nullptr;
+    }
+}
 
 cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool_state,
                                               const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
