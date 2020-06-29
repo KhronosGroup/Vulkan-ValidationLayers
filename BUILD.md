@@ -147,7 +147,8 @@ A common convention is to place the build directory in the top directory of
 the repository with a name of `build` and place the install directory as a
 child of the build directory with the name `install`. The remainder of these
 instructions follow this convention, although you can use any name for these
-directories and place them in any location.
+directories and place them in any location (see option `--dir` in the
+[notes](#notes)).
 
 ### Building Dependent Repositories with Known-Good Revisions
 
@@ -168,7 +169,7 @@ For all platforms, start with:
 For 64-bit Linux and MacOS, continue with:
 
     ../scripts/update_deps.py
-    cmake -C helper.cmake ..
+    cmake -C build/helper.cmake ..
     cmake --build .
 
 For 64-bit Windows, continue with:
