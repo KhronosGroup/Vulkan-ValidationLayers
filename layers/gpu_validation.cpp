@@ -1604,8 +1604,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         desc_count = 2;
     }
 
-    if (number_of_sets > 0 && (device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) &&
-        buffer_map.size() && shaderInt64) {
+    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && buffer_map.size() &&
+        shaderInt64) {
         // Example BDA input buffer assuming 2 buffers using BDA:
         // Word 0 | Index of start of buffer sizes (in this case 5)
         // Word 1 | 0x0000000000000000
