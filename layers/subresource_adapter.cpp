@@ -375,18 +375,18 @@ void ImageRangeGenerator::SetPos() {
     const VkExtent3D& subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
     Subresource limits = encoder_->Limits();
 
-    offset_y_count_ = static_cast<int32_t>(extent_.height);
+    offset_y_count_ = static_cast<int32_t>((extent_.height > subres_extent.height) ? subres_extent.height : extent_.height);
     layer_count_ = range_layer_count_;
     mip_count_ = subres_range_.levelCount;
     aspect_count_ = limits.aspect_index;
     pos_.begin = encoder_->Encode(subres, subres_range_.baseArrayLayer, offset_);
     pos_.end = pos_.begin;
 
-    if (offset_.x == 0 && extent_.width == subres_extent.width) {
-        if (offset_.y == 0 && extent_.height == subres_extent.height) {
-            offset_y_count_ = 1;
+    if (offset_.x == 0 && extent_.width >= subres_extent.width) {
+        offset_y_count_ = 1;
+        if (offset_.y == 0 && extent_.height >= subres_extent.height) {
+            layer_count_ = 1;
             if (range_arraylayer_base_ == 0 && range_layer_count_ == limits.arrayLayer) {
-                layer_count_ = 1;
                 mip_count_ = 1;
                 if (subres_range_.baseMipLevel == 0 && subres_range_.levelCount == limits.mipLevel) {
                     for (uint32_t aspect_index = aspect_index_; aspect_index < aspect_count_;) {
@@ -413,7 +413,8 @@ void ImageRangeGenerator::SetPos() {
             pos_.end += (subres_layout_->rowPitch * offset_y_count_);
         }
     } else {
-        pos_.end += static_cast<IndexType>(ceil(encoder_->TexelSize(aspect_index_) * extent_.width));
+        pos_.end += static_cast<IndexType>(ceil(encoder_->TexelSize(aspect_index_) *
+                                                ((extent_.width > subres_extent.width) ? subres_extent.width : extent_.width)));
     }
     offset_layer_base_ = pos_;
     offset_offset_y_base_ = pos_;
