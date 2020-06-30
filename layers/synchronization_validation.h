@@ -198,8 +198,8 @@ class AccessContext {
 
     struct TrackBack {
         SyncBarrier barrier;
-        AccessContext *context;
-        TrackBack(AccessContext *context_, VkQueueFlags queue_flags_, const VkSubpassDependency2 &subpass_barrier_)
+        const AccessContext *context;
+        TrackBack(const AccessContext *context_, VkQueueFlags queue_flags_, const VkSubpassDependency2 &subpass_barrier_)
             : barrier(queue_flags_, subpass_barrier_), context(context_) {}
         TrackBack &operator=(const TrackBack &) = default;
         TrackBack() = default;
@@ -288,7 +288,7 @@ class AccessContext {
     static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable);
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
-                  const std::vector<AccessContext> &contexts, AccessContext *external_context);
+                  const std::vector<AccessContext> &contexts, const AccessContext *external_context);
 
     AccessContext() { Reset(); }
     AccessContext(const AccessContext &copy_from) = default;
@@ -353,8 +353,7 @@ class AccessContext {
 
 class RenderPassAccessContext {
   public:
-    RenderPassAccessContext(AccessContext *external_context)
-        : external_context_(external_context), rp_state_(nullptr), current_subpass_(0) {}
+    RenderPassAccessContext() : rp_state_(nullptr), current_subpass_(0) {}
 
     bool ValidateDrawSubpassAttachment(const SyncValidator &sync_state, const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area,
                                        const char *func_name) const;
@@ -366,10 +365,10 @@ class RenderPassAccessContext {
 
     void RecordLayoutTransitions(const ResourceUsageTag &tag);
     void RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag);
-    void RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state, VkQueueFlags queue_flags,
-                               const ResourceUsageTag &tag);
+    void RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state, const AccessContext *external_context,
+                               VkQueueFlags queue_flags, const ResourceUsageTag &tag);
     void RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &tag);
-    void RecordEndRenderPass(const VkRect2D &render_area, const ResourceUsageTag &tag);
+    void RecordEndRenderPass(AccessContext *external_context, const VkRect2D &render_area, const ResourceUsageTag &tag);
 
     AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
     const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
@@ -379,7 +378,6 @@ class RenderPassAccessContext {
     AccessContext *CreateStoreResolveProxy(const VkRect2D &render_area) const;
 
   private:
-    AccessContext *external_context_;
     const RENDER_PASS_STATE *rp_state_;
     uint32_t current_subpass_;
     std::vector<AccessContext> subpass_contexts_;
