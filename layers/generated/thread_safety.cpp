@@ -596,6 +596,104 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     }
 }
 
+void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    planeIndex,
+    uint32_t*                                   pDisplayCount,
+    VkDisplayKHR*                               pDisplays) {
+    // Nothing to do for this pre-call function
+}
+
+void ThreadSafety::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    planeIndex,
+    uint32_t*                                   pDisplayCount,
+    VkDisplayKHR*                               pDisplays,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pDisplays) {
+        for (uint32_t index = 0; index < *pDisplayCount; index++) {
+            CreateObject(pDisplays[index]);
+        }
+    }
+}
+
+void ThreadSafety::PreCallRecordGetDisplayModePropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModePropertiesKHR*                 pProperties) {
+    StartReadObject(display, "vkGetDisplayModePropertiesKHR");
+}
+
+void ThreadSafety::PostCallRecordGetDisplayModePropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModePropertiesKHR*                 pProperties,
+    VkResult                                    result) {
+    FinishReadObject(display, "vkGetDisplayModePropertiesKHR");
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties != nullptr) {
+        for (uint32_t index = 0; index < *pPropertyCount; index++) {
+            CreateObject(pProperties[index].displayMode);
+        }
+    }
+}
+
+void ThreadSafety::PreCallRecordGetDisplayModeProperties2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModeProperties2KHR*                pProperties) {
+    StartReadObject(display, "vkGetDisplayModeProperties2KHR");
+}
+
+void ThreadSafety::PostCallRecordGetDisplayModeProperties2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModeProperties2KHR*                pProperties,
+    VkResult                                    result) {
+    FinishReadObject(display, "vkGetDisplayModeProperties2KHR");
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties != nullptr) {
+        for (uint32_t index = 0; index < *pPropertyCount; index++) {
+            CreateObject(pProperties[index].displayModeProperties.displayMode);
+        }
+    }
+}
+
+void ThreadSafety::PreCallRecordGetDisplayPlaneCapabilities2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities) {
+    StartWriteObject(pDisplayPlaneInfo->mode, "vkGetDisplayPlaneCapabilities2KHR");
+}
+
+void ThreadSafety::PostCallRecordGetDisplayPlaneCapabilities2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities,
+    VkResult                                    result) {
+    FinishWriteObject(pDisplayPlaneInfo->mode, "vkGetDisplayPlaneCapabilities2KHR");
+}
+
+#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    Display*                                    dpy,
+    RROutput                                    rrOutput,
+    VkDisplayKHR*                               pDisplay,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) || (pDisplay == nullptr)) return;
+    CreateObject(*pDisplay);
+}
+
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+
 
 
 void ThreadSafety::PreCallRecordCreateInstance(
@@ -3607,48 +3705,6 @@ void ThreadSafety::PostCallRecordAcquireNextImage2KHR(
     FinishReadObjectParentInstance(device, "vkAcquireNextImage2KHR");
 }
 
-void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    planeIndex,
-    uint32_t*                                   pDisplayCount,
-    VkDisplayKHR*                               pDisplays) {
-    if (pDisplays) {
-        for (uint32_t index = 0; index < *pDisplayCount; index++) {
-            StartReadObject(pDisplays[index], "vkGetDisplayPlaneSupportedDisplaysKHR");
-        }
-    }
-}
-
-void ThreadSafety::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    planeIndex,
-    uint32_t*                                   pDisplayCount,
-    VkDisplayKHR*                               pDisplays,
-    VkResult                                    result) {
-    if (pDisplays) {
-        for (uint32_t index = 0; index < *pDisplayCount; index++) {
-            FinishReadObject(pDisplays[index], "vkGetDisplayPlaneSupportedDisplaysKHR");
-        }
-    }
-}
-
-void ThreadSafety::PreCallRecordGetDisplayModePropertiesKHR(
-    VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display,
-    uint32_t*                                   pPropertyCount,
-    VkDisplayModePropertiesKHR*                 pProperties) {
-    StartReadObject(display, "vkGetDisplayModePropertiesKHR");
-}
-
-void ThreadSafety::PostCallRecordGetDisplayModePropertiesKHR(
-    VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display,
-    uint32_t*                                   pPropertyCount,
-    VkDisplayModePropertiesKHR*                 pProperties,
-    VkResult                                    result) {
-    FinishReadObject(display, "vkGetDisplayModePropertiesKHR");
-}
-
 void ThreadSafety::PreCallRecordCreateDisplayModeKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
@@ -4340,23 +4396,6 @@ void ThreadSafety::PreCallRecordReleaseProfilingLockKHR(
 void ThreadSafety::PostCallRecordReleaseProfilingLockKHR(
     VkDevice                                    device) {
     FinishReadObjectParentInstance(device, "vkReleaseProfilingLockKHR");
-}
-
-void ThreadSafety::PreCallRecordGetDisplayModeProperties2KHR(
-    VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display,
-    uint32_t*                                   pPropertyCount,
-    VkDisplayModeProperties2KHR*                pProperties) {
-    StartReadObject(display, "vkGetDisplayModeProperties2KHR");
-}
-
-void ThreadSafety::PostCallRecordGetDisplayModeProperties2KHR(
-    VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display,
-    uint32_t*                                   pPropertyCount,
-    VkDisplayModeProperties2KHR*                pProperties,
-    VkResult                                    result) {
-    FinishReadObject(display, "vkGetDisplayModeProperties2KHR");
 }
 
 void ThreadSafety::PreCallRecordGetImageMemoryRequirements2KHR(
