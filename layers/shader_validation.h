@@ -335,4 +335,6 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
 
 uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id);
 
+spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
+
 #endif  // VULKAN_SHADER_VALIDATION_H

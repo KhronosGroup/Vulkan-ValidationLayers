@@ -2910,13 +2910,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         }
 
         // Apply the specialization-constant values and revalidate the shader module.
-        spv_target_env spirv_environment;
-        if (api_version >= VK_API_VERSION_1_2)
-            spirv_environment = SPV_ENV_VULKAN_1_2;
-        else if (api_version >= VK_API_VERSION_1_1)
-            spirv_environment = SPV_ENV_VULKAN_1_1;
-        else
-            spirv_environment = SPV_ENV_VULKAN_1_0;
+        spv_target_env spirv_environment = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
         spvtools::Optimizer optimizer(spirv_environment);
         spvtools::MessageConsumer consumer = [&skip, &module, &pStage, this](spv_message_level_t level, const char *source,
                                                                              const spv_position_t &position, const char *message) {
@@ -3387,16 +3381,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
 
         // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
         // the default values will be used during validation.
-        spv_target_env spirv_environment = SPV_ENV_VULKAN_1_0;
-        if (api_version >= VK_API_VERSION_1_2) {
-            spirv_environment = SPV_ENV_VULKAN_1_2;
-        } else if (api_version >= VK_API_VERSION_1_1) {
-            if (device_extensions.vk_khr_spirv_1_4) {
-                spirv_environment = SPV_ENV_VULKAN_1_1_SPIRV_1_4;
-            } else {
-                spirv_environment = SPV_ENV_VULKAN_1_1;
-            }
-        }
+        spv_target_env spirv_environment = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
         spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
@@ -3483,4 +3468,17 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
         }
     }
     return skip;
+}
+
+spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4) {
+    if (api_version >= VK_API_VERSION_1_2) {
+        return SPV_ENV_VULKAN_1_2;
+    } else if (api_version >= VK_API_VERSION_1_1) {
+        if (spirv_1_4) {
+            return SPV_ENV_VULKAN_1_1_SPIRV_1_4;
+        } else {
+            return SPV_ENV_VULKAN_1_1;
+        }
+    }
+    return SPV_ENV_VULKAN_1_0;
 }

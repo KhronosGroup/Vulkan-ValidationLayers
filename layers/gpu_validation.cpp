@@ -1146,7 +1146,7 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     const bool descriptor_indexing = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing);
     using namespace spvtools;
-    spv_target_env target_env = SPV_ENV_VULKAN_1_1;
+    spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
     Optimizer optimizer(target_env);
     optimizer.RegisterPass(
         CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing, descriptor_indexing));
