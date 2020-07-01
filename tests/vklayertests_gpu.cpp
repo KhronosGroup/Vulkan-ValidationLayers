@@ -534,6 +534,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         printf("%s Buffer Device Address feature not supported, skipping test\n", kSkipPrefix);
         return;
     }
+
+    bool mesh_shader_supported = DeviceExtensionSupported(gpu(), nullptr, VK_NV_MESH_SHADER_EXTENSION_NAME);
+    if (mesh_shader_supported) {
+        m_device_extension_names.push_back(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    }
+
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -684,6 +690,77 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyNotFound();
+
+    if (mesh_shader_supported) {
+        const unsigned push_constant_range_count = 1;
+        VkPushConstantRange push_constant_ranges[push_constant_range_count] = {};
+        push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        push_constant_ranges[0].offset = 0;
+        push_constant_ranges[0].size = 2 * sizeof(VkDeviceAddress);
+
+        VkPipelineLayout mesh_pipeline_layout;
+        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo[1] = {};
+        pipelineLayoutCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutCreateInfo[0].pNext = NULL;
+        pipelineLayoutCreateInfo[0].pushConstantRangeCount = push_constant_range_count;
+        pipelineLayoutCreateInfo[0].pPushConstantRanges = push_constant_ranges;
+        pipelineLayoutCreateInfo[0].setLayoutCount = 0;
+        pipelineLayoutCreateInfo[0].pSetLayouts = nullptr;
+        vk::CreatePipelineLayout(m_device->handle(), pipelineLayoutCreateInfo, NULL, &mesh_pipeline_layout);
+
+        char const *mesh_shader_source =
+            "#version 460\n"
+            "#extension GL_NV_mesh_shader : require\n"
+            "#extension GL_EXT_buffer_reference : enable\n"
+            "layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;\n"
+            "layout(push_constant) uniform ufoo {\n"
+            "    bufStruct data;\n"
+            "    int nWrites;\n"
+            "} u_info;\n"
+            "layout(buffer_reference, std140) buffer bufStruct {\n"
+            "    int a[4];\n"
+            "};\n"
+
+            "layout(local_size_x = 32) in;\n"
+            "layout(max_vertices = 64, max_primitives = 126) out;\n"
+            "layout(triangles) out;\n"
+
+            "uint invocationID = gl_LocalInvocationID.x;\n"
+            "void main() {\n"
+            "    if (invocationID == 0) {\n"
+            "        for (int i=0; i < u_info.nWrites; ++i) {\n"
+            "            u_info.data.a[i] = 0xdeadca71;\n"
+            "        }\n"
+            "    }\n"
+            "}\n";
+        VkShaderObj ms(m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_NV, this, "main", true);
+        VkPipelineObj mesh_pipe(m_device);
+        mesh_pipe.AddShader(&ms);
+        mesh_pipe.AddDefaultColorAttachment();
+        err = mesh_pipe.CreateVKPipeline(mesh_pipeline_layout, renderPass());
+        ASSERT_VK_SUCCESS(err);
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.handle());
+        VkDeviceAddress pushConstants[2] = {};
+        pushConstants[0] = pBuffer;
+        pushConstants[1] = 5;
+        vk::CmdPushConstants(m_commandBuffer->handle(), mesh_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConstants),
+                             pushConstants);
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
+        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        ASSERT_VK_SUCCESS(err);
+        err = vk::QueueWaitIdle(m_device->m_queue);
+        ASSERT_VK_SUCCESS(err);
+        m_errorMonitor->VerifyFound();
+    }
+
     vk::DestroyBuffer(m_device->handle(), buffer1, NULL);
     vk::FreeMemory(m_device->handle(), buffer_mem, NULL);
 }
