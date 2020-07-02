@@ -152,10 +152,11 @@ void AddImageStateProps(IMAGE_STATE &image_state, const VkDevice device, const V
             DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
 
             for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
-                if ((drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier &
-                     drm_format_properties.drmFormatModifier) != 0) {
-                    image_state.format_features |=
+                if (drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier ==
+                    drm_format_properties.drmFormatModifier) {
+                    image_state.format_features =
                         drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                    break;
                 }
             }
         } else {
@@ -350,10 +351,10 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_view_format, &format_properties_2);
 
         for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
-            if ((drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier & drm_format_properties.drmFormatModifier) !=
-                0) {
+            if (drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
                 image_view_state->format_features |=
                     drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                break;
             }
         }
     } else {
