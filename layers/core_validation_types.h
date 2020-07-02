@@ -102,6 +102,7 @@ class BASE_NODE {
 struct COMMAND_POOL_STATE : public BASE_NODE {
     VkCommandPoolCreateFlags createFlags;
     uint32_t queueFamilyIndex;
+    bool unprotected;  // can't be used for protected memory
     // Cmd buffers allocated from this pool
     std::unordered_set<VkCommandBuffer> commandBuffers;
 };
@@ -1093,6 +1094,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     bool hasTraceRaysCmd;
     bool hasBuildAccelerationStructureCmd;
     bool hasDispatchCmd;
+    bool unprotected;  // can't be used for protected memory
 
     CB_STATE state;         // Track cmd buffer update state
     uint64_t commandCount;  // Number of commands recorded

@@ -44,6 +44,9 @@ struct DrawDispatchVuid {
     const char* sample_location;
     const char* linear_sampler;
     const char* cubic_sampler;
+    const char* indirect_protected_cb;
+    const char* indirect_contiguous_memory;
+    const char* indirect_buffer_bit;
 };
 
 typedef struct {
@@ -270,6 +273,7 @@ class CoreChecks : public ValidationStateTracker {
                                   const std::string& msgCode) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE* pCB, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE* cb_state, const CMD_TYPE cmd, const char* caller_name) const;
+    bool ValidateIndirectCmd(VkCommandBuffer command_buffer, VkBuffer buffer, CMD_TYPE cmd_type, const char* caller_name) const;
 
     template <typename T1>
     bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char* VUID) const;

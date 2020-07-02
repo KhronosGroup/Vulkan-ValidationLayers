@@ -54,7 +54,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-subpass-02685",
         "VUID-vkCmdDraw-sampleLocationsEnable-02689",
         "VUID-vkCmdDraw-None-02690",
-        "VUID-vkCmdDraw-None-02692"
+        "VUID-vkCmdDraw-None-02692",
+        kVUIDUndefined, // indirect_protected_cb
+        kVUIDUndefined, // indirect_contiguous_memory;
+        kVUIDUndefined // indirect_buffer_bit
     }},
     {CMD_DRAWINDEXED, {
         "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
@@ -68,7 +71,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-subpass-02685",
         "VUID-vkCmdDrawIndexed-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawIndexed-None-02690",
-        "VUID-vkCmdDrawIndexed-None-02692"
+        "VUID-vkCmdDrawIndexed-None-02692",
+        kVUIDUndefined, // indirect_protected_cb
+        kVUIDUndefined, // indirect_contiguous_memory;
+        kVUIDUndefined // indirect_buffer_bit
     }},
     {CMD_DRAWINDIRECT, {
         "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
@@ -82,7 +88,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-subpass-02685",
         "VUID-vkCmdDrawIndirect-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawIndirect-None-02690",
-        "VUID-vkCmdDrawIndirect-None-02692"
+        "VUID-vkCmdDrawIndirect-None-02692",
+        "VUID-vkCmdDrawIndirect-commandBuffer-02711",
+        "VUID-vkCmdDrawIndirect-buffer-02708",
+        "VUID-vkCmdDrawIndirect-buffer-02709"
     }},
     {CMD_DRAWINDEXEDINDIRECT, {
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool",
@@ -96,7 +105,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-subpass-02685",
         "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawIndexedIndirect-None-02690",
-        "VUID-vkCmdDrawIndexedIndirect-None-02692"
+        "VUID-vkCmdDrawIndexedIndirect-None-02692",
+        "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711",
+        "VUID-vkCmdDrawIndexedIndirect-buffer-02708",
+        "VUID-vkCmdDrawIndexedIndirect-buffer-02709"
     }},
     {CMD_DISPATCH, {
         "VUID-vkCmdDispatch-commandBuffer-cmdpool",
@@ -110,7 +122,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          kVUIDUndefined, // subpass_index
          kVUIDUndefined, // sample_location
          "VUID-vkCmdDispatch-None-02690",
-         "VUID-vkCmdDispatch-None-02692"
+         "VUID-vkCmdDispatch-None-02692",
+         kVUIDUndefined, // indirect_protected_cb
+         kVUIDUndefined, // indirect_contiguous_memory;
+         kVUIDUndefined // indirect_buffer_bit
     }},
     {CMD_DISPATCHINDIRECT, {
         "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
@@ -124,7 +139,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
         "VUID-vkCmdDispatchIndirect-None-02690",
-        "VUID-vkCmdDispatchIndirect-None-02692"
+        "VUID-vkCmdDispatchIndirect-None-02692",
+        "VUID-vkCmdDispatchIndirect-commandBuffer-02711",
+        "VUID-vkCmdDispatchIndirect-buffer-02708",
+        "VUID-vkCmdDispatchIndirect-buffer-02709"
     }},
     {CMD_DRAWINDIRECTCOUNT, {
         "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool",
@@ -138,7 +156,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-subpass-02685",
         "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawIndirectCount-None-02690",
-        "VUID-vkCmdDrawIndirectCount-None-02692"
+        "VUID-vkCmdDrawIndirectCount-None-02692",
+        "VUID-vkCmdDrawIndirectCount-commandBuffer-02711",
+        "VUID-vkCmdDrawIndirectCount-buffer-02708",
+        "VUID-vkCmdDrawIndirectCount-buffer-02709"
     }},
     {CMD_DRAWINDEXEDINDIRECTCOUNT,{
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool",
@@ -152,7 +173,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-subpass-02685",
         "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02690",
-        "VUID-vkCmdDrawIndexedIndirectCount-None-02692"
+        "VUID-vkCmdDrawIndexedIndirectCount-None-02692",
+        "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711",
+        "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708",
+        "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709"
     }},
     {CMD_TRACERAYSNV, {
         "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool",
@@ -166,7 +190,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
         "VUID-vkCmdTraceRaysNV-None-02690",
-        "VUID-vkCmdTraceRaysNV-None-02692"
+        "VUID-vkCmdTraceRaysNV-None-02692",
+        kVUIDUndefined, // indirect_protected_cb
+        kVUIDUndefined, // indirect_contiguous_memory;
+        kVUIDUndefined // indirect_buffer_bit
     }},
     {CMD_TRACERAYSKHR, {
         "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
@@ -180,7 +207,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
         "VUID-vkCmdTraceRaysKHR-None-02690",
-        "VUID-vkCmdTraceRaysKHR-None-02692"
+        "VUID-vkCmdTraceRaysKHR-None-02692",
+        kVUIDUndefined, // indirect_protected_cb
+        kVUIDUndefined, // indirect_contiguous_memory;
+        kVUIDUndefined // indirect_buffer_bit
     }},
     {CMD_TRACERAYSINDIRECTKHR, {
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
@@ -194,7 +224,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
         "VUID-vkCmdTraceRaysIndirectKHR-None-02690",
-        "VUID-vkCmdTraceRaysIndirectKHR-None-02692"
+        "VUID-vkCmdTraceRaysIndirectKHR-None-02692",
+        "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02711",
+        "VUID-vkCmdTraceRaysIndirectKHR-buffer-02708",
+        "VUID-vkCmdTraceRaysIndirectKHR-buffer-02709"
     }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
@@ -208,7 +241,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-subpass-02685",
         "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawMeshTasksNV-None-02690",
-        "VUID-vkCmdDrawMeshTasksNV-None-02692"
+        "VUID-vkCmdDrawMeshTasksNV-None-02692",
+        kVUIDUndefined, // indirect_protected_cb
+        kVUIDUndefined, // indirect_contiguous_memory;
+        kVUIDUndefined // indirect_buffer_bit
     }},
     {CMD_DRAWMESHTASKSINDIRECTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
@@ -222,7 +258,10 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685",
         "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02690",
-        "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692"
+        "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709"
     }},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool",
@@ -236,10 +275,13 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02690",
-        "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02692"
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02692",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709"
     }},
     // Used if invalid cmd_type is used
-    {CMD_NONE, {kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined}}
+    {CMD_NONE, {kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined}}
 };
 // clang-format on
 
@@ -307,9 +349,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
     bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()",
                                     VK_QUEUE_GRAPHICS_BIT);
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndirect()", "VUID-vkCmdDrawIndirect-buffer-02708");
-    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, "VUID-vkCmdDrawIndirect-buffer-02709",
-                                     "vkCmdDrawIndirect()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()");
     if (count > 1) {
         skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00476", stride,
                                                 "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
@@ -327,10 +367,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT,
                                     "vkCmdDrawIndexedIndirect()", VK_QUEUE_GRAPHICS_BIT);
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndexedIndirect()", "VUID-vkCmdDrawIndexedIndirect-buffer-02708");
-    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawIndexedIndirect-buffer-02709", "vkCmdDrawIndexedIndirect()",
-                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()");
     if (count > 1) {
         skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528", stride,
                                                 "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
@@ -354,11 +391,7 @@ bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint3
 bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const {
     bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT,
                                     "vkCmdDispatchIndirect()", VK_QUEUE_COMPUTE_BIT);
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDispatchIndirect()", "VUID-vkCmdDispatchIndirect-buffer-02708");
-    skip |=
-        ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, "VUID-vkCmdDispatchIndirect-buffer-02709",
-                                 "vkCmdDispatchIndirect()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()");
     return skip;
 }
 bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -381,12 +414,9 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
 
     skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT, apiName,
                                 VK_QUEUE_GRAPHICS_BIT);
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, apiName, "VUID-vkCmdDrawIndirectCount-buffer-02708");
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECTCOUNT, apiName);
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
-    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawIndirectCount-buffer-02709", apiName, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |=
         ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                  "VUID-vkCmdDrawIndirectCount-countBuffer-02715", apiName, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
@@ -427,13 +457,9 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
 
     skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName,
                                 VK_QUEUE_GRAPHICS_BIT);
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, apiName, "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
-    skip |=
-        ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                 "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709", apiName, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715", apiName,
                                      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
@@ -536,8 +562,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         const VkStridedBufferRegionKHR *pHitShaderBindingTable,
                                                         const VkStridedBufferRegionKHR *pCallableShaderBindingTable,
                                                         VkBuffer buffer, VkDeviceSize offset) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR,
+    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR,
                                     "vkCmdTraceRaysIndirectKHR()", VK_QUEUE_COMPUTE_BIT);
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_TRACERAYSINDIRECTKHR, "vkCmdTraceRaysIndirectKHR()");
     return skip;
 }
 
@@ -565,11 +592,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV,
                                     "vkCmdDrawMeshTasksIndirectNV()", VK_QUEUE_GRAPHICS_BIT);
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawMeshTasksIndirectNV()",
-                                          "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708");
-    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709", "vkCmdDrawMeshTasksIndirectNV()",
-                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWMESHTASKSINDIRECTNV, "vkCmdDrawMeshTasksIndirectNV()");
     if (drawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
                                                 "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
@@ -585,13 +608,9 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                                     "vkCmdDrawMeshTasksIndirectCountNV()", VK_QUEUE_GRAPHICS_BIT);
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
-                                          "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708");
+    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "vkCmdDrawMeshTasksIndirectCountNV()");
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714");
-    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709", "vkCmdDrawMeshTasksIndirectCountNV()",
-                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715",
                                      "vkCmdDrawMeshTasksIndirectCountNV()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");

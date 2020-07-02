@@ -1764,6 +1764,25 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
     }
 }
 
+bool CoreChecks::ValidateIndirectCmd(VkCommandBuffer command_buffer, VkBuffer buffer, CMD_TYPE cmd_type,
+                                     const char *caller_name) const {
+    bool skip = false;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(command_buffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+
+    if ((cb_state != nullptr) && (buffer_state != nullptr)) {
+        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, caller_name, vuid.indirect_contiguous_memory);
+        skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, vuid.indirect_buffer_bit,
+                                         caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+        if (cb_state->unprotected == false) {
+            skip |= LogError(cb_state->commandBuffer, vuid.indirect_protected_cb,
+                             "%s: Indirect commands can't be used in protected command buffers.", caller_name);
+        }
+    }
+    return skip;
+}
+
 template <typename T1>
 bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char *VUID) const {
     bool skip = false;

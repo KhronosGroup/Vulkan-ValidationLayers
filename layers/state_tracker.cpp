@@ -2572,6 +2572,7 @@ void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, co
     auto cmd_pool_state = std::make_shared<COMMAND_POOL_STATE>();
     cmd_pool_state->createFlags = pCreateInfo->flags;
     cmd_pool_state->queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+    cmd_pool_state->unprotected = ((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0);
     commandPoolMap[*pCommandPool] = std::move(cmd_pool_state);
 }
 
@@ -3030,6 +3031,7 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
             auto pCB = std::make_shared<CMD_BUFFER_STATE>();
             pCB->createInfo = *pCreateInfo;
             pCB->command_pool = pPool;
+            pCB->unprotected = pPool->unprotected;
             // Add command buffer to map
             commandBufferMap[pCommandBuffer[i]] = std::move(pCB);
             ResetCommandBufferState(pCommandBuffer[i]);
