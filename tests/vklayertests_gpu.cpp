@@ -1837,3 +1837,97 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
         m_errorMonitor->VerifyFound();
     }
 }
+TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
+    TEST_DESCRIPTION("Test debug printf in mesh and task shaders.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    InitDebugPrintfFramework();
+    std::vector<const char *> required_device_extensions = {VK_NV_MESH_SHADER_EXTENSION_NAME,
+                                                            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables mesh_shader
+    auto mesh_shader_features = lvl_init_struct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    static const char taskShaderText[] =
+        "#version 460\n"
+        "#extension GL_NV_mesh_shader : enable\n"
+        "#extension GL_EXT_debug_printf : enable\n"
+        "layout(local_size_x = 32) in;\n"
+        "uint invocationID = gl_LocalInvocationID.x;\n"
+        "void main() {\n"
+        "    if (invocationID == 0) {\n"
+        "        gl_TaskCountNV = 1;\n"
+        "        debugPrintfEXT(\"hello from task shader\");\n"
+        "    }\n"
+        "}\n";
+
+    static const char meshShaderText[] =
+        "#version 450\n"
+        "#extension GL_NV_mesh_shader : require\n"
+        "#extension GL_EXT_debug_printf : enable\n"
+        "layout(local_size_x = 1) in;\n"
+        "layout(max_vertices = 3) out;\n"
+        "layout(max_primitives = 1) out;\n"
+        "layout(triangles) out;\n"
+        "uint invocationID = gl_LocalInvocationID.x;\n"
+        "void main() {\n"
+        "    if (invocationID == 0) {\n"
+        "        debugPrintfEXT(\"hello from mesh shader\");\n"
+        "    }\n"
+        "}\n";
+
+    VkShaderObj ts(m_device, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV, this);
+    VkShaderObj ms(m_device, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, this);
+    VkPipelineLayoutObj pipeline_layout(m_device);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&ts);
+    pipe.AddShader(&ms);
+    pipe.AddDefaultColorAttachment();
+    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
+        (PFN_vkCmdDrawMeshTasksNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV");
+    ASSERT_TRUE(vkCmdDrawMeshTasksNV != nullptr);
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vkCmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
+    m_commandBuffer->QueueCommandBuffer();
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyFound();
+}
