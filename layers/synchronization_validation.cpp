@@ -88,18 +88,23 @@ static std::string string_UsageTag(const ResourceUsageTag &tag) {
     return out.str();
 }
 
+// NOTE: the attachement read flag is put *only* in the access scope and not in the exect scope, since the ordering
+//       rules apply only to this specific access for this stage, and not the stage as a whole. The ordering detection
+//       also reflects this special case for read hazard detection (using access instead of exec scope)
 static constexpr VkPipelineStageFlags kColorAttachmentExecScope = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 static constexpr SyncStageAccessFlags kColorAttachmentAccessScope =
     SyncStageAccessFlagBits::SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_BIT |
     SyncStageAccessFlagBits::SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
-    SyncStageAccessFlagBits::SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE_BIT;
+    SyncStageAccessFlagBits::SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE_BIT |
+    SyncStageAccessFlagBits::SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT;  // Note: this is intentionally not in the exec scope
 static constexpr VkPipelineStageFlags kDepthStencilAttachmentExecScope =
     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 static constexpr SyncStageAccessFlags kDepthStencilAttachmentAccessScope =
     SyncStageAccessFlagBits::SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
     SyncStageAccessFlagBits::SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
     SyncStageAccessFlagBits::SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-    SyncStageAccessFlagBits::SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    SyncStageAccessFlagBits::SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+    SyncStageAccessFlagBits::SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT;  // Note: this is intentionally not in the exec scope
 
 static constexpr SyncOrderingBarrier kColorAttachmentRasterOrder = {kColorAttachmentExecScope, kColorAttachmentAccessScope};
 static constexpr SyncOrderingBarrier kDepthStencilAttachmentRasterOrder = {kDepthStencilAttachmentExecScope,
@@ -2072,10 +2077,16 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
         } else {
             // Look for casus belli for WAR
             const auto usage_stage = PipelineStageBit(usage_index);
-            for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                if (IsReadHazard(usage_stage, last_reads[read_index])) {
-                    hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
-                    break;
+            // Note: kNoAttachmentRead is ~0, and thus the no attachment read hazard check doesn't need a separate path.
+            if (IsReadHazard(usage_stage, input_attachment_barriers)) {
+                hazard.Set(WRITE_AFTER_READ, input_attachment_tag);
+            }
+            if (!hazard.hazard) {
+                for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+                    if (IsReadHazard(usage_stage, last_reads[read_index])) {
+                        hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
+                        break;
+                    }
                 }
             }
         }
@@ -2109,6 +2120,16 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
                     }
                 }
             }
+
+            // This is special case code for the fragment shader input attachment, which unlike all other fragment shader operations
+            // is framebuffer local, and thus subject to raster ordering guarantees
+            if (!hazard.hazard && (input_attachment_barriers != kNoAttachmentRead)) {
+                if (0 == (ordering.access_scope & SyncStageAccessFlagBits::SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT)) {
+                    // NOTE: Currently all ordering barriers include this bit, so this code may never be reached, but it's
+                    //       here s.t. if we need to change the ordering barrier/rules we needn't change the code.
+                    hazard.Set(WRITE_AFTER_READ, input_attachment_tag);
+                }
+            }
         }
     }
     return hazard;
@@ -2127,6 +2148,8 @@ HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_i
             hazard.Set(WRITE_RACING_WRITE, write_tag);
         } else if (last_read_count > 0) {
             hazard.Set(WRITE_RACING_READ, last_reads[0].tag);
+        } else if (input_attachment_barriers != kNoAttachmentRead) {
+            hazard.Set(WRITE_RACING_READ, input_attachment_tag);
         }
     }
     return hazard;
@@ -2160,6 +2183,13 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
             }
         }
     }
+    if (!hazard.hazard) {
+        // Same logic as read acces above for the special case of input attachment read
+        // Note: kNoReadAttachment is ~0 and thus cannot cause a hazard return.
+        if ((src_exec_scope & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | input_attachment_barriers)) == 0) {
+            hazard.Set(WRITE_AFTER_READ, input_attachment_tag);
+        }
+    }
     return hazard;
 }
 
@@ -2175,7 +2205,20 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         // dependency chaining logic or any stage expansion)
         write_barriers |= other.write_barriers;
 
-        // Merge that read states
+        // Merge the read states
+        if (input_attachment_barriers == kNoAttachmentRead) {
+            // this doesn't have an input attachment read, so we'll take other, unconditionally (even if it's kNoAttachmentRead)
+            input_attachment_barriers = other.input_attachment_barriers;
+            input_attachment_tag = other.input_attachment_tag;
+        } else if (other.input_attachment_barriers != kNoAttachmentRead) {
+            // Both states have an input attachment read, pick the newest tag and merge barriers.
+            if (input_attachment_tag.IsBefore(other.input_attachment_tag)) {
+                input_attachment_tag = other.input_attachment_tag;
+            }
+            input_attachment_barriers |= other.input_attachment_barriers;
+        }
+        // The else clause is that only this has an attachment read and no merge is needed
+
         for (uint32_t other_read_index = 0; other_read_index < other.last_read_count; other_read_index++) {
             auto &other_read = other.last_reads[other_read_index];
             if (last_read_stages & other_read.stage) {
@@ -2205,7 +2248,11 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
 void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag) {
     // Move this logic in the ResourceStateTracker as methods, thereof (or we'll repeat it for every flavor of resource...
     const auto usage_bit = FlagBit(usage_index);
-    if (IsRead(usage_index)) {
+    if (usage_bit == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT) {
+        // Input attachment requires special treatment for raster/load/store ordering guarantees
+        input_attachment_barriers = 0;
+        input_attachment_tag = tag;
+    } else if (IsRead(usage_index)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
         // However, for purposes of barrier tracking, only one read per pipeline stage matters
         const auto usage_stage = PipelineStageBit(usage_index);
@@ -2230,11 +2277,14 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
     } else {
         // Assume write
         // TODO determine what to do with READ-WRITE operations if any
-        // Clobber last read and both sets of barriers... because all we have is DANGER, DANGER, WILL ROBINSON!!!
+        // Clobber last read and all barriers... because all we have is DANGER, DANGER, WILL ROBINSON!!!
         // if the last_reads/last_write were unsafe, we've reported them,
         // in either case the prior access is irrelevant, we can overwrite them as *this* write is now after them
         last_read_count = 0;
         last_read_stages = 0;
+
+        input_attachment_barriers = kNoAttachmentRead;  // Denotes no outstanding input attachment read after the last write.
+        // NOTE: we don't reset the tag, as the equality check ignores it when kNoAttachmentRead is set.
 
         write_barriers = 0;
         write_dependency_chain = 0;
@@ -2251,6 +2301,9 @@ void ResourceAccessState::ApplyExecutionBarrier(VkPipelineStageFlags srcStageMas
         if (srcStageMask & (access.stage | access.barriers)) {
             access.barriers |= dstStageMask;
         }
+    }
+    if (srcStageMask & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | input_attachment_barriers)) {
+        input_attachment_barriers |= dstStageMask;
     }
     if (write_dependency_chain & srcStageMask) write_dependency_chain |= dstStageMask;
 }
