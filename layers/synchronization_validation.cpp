@@ -81,10 +81,30 @@ static const char *string_SyncHazard(SyncHazard hazard) {
     return "INVALID HAZARD";
 }
 
-static std::string string_UsageTag(const ResourceUsageTag &tag) {
+static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAccessFlags flags) {
+    // Return the info for the first bit found
+    const SyncStageAccessInfoType *info = nullptr;
+    uint32_t index = 0;
+    while (flags) {
+        if (flags & 0x1) {
+            flags = 0;
+            info = &syncStageAccessInfoByStageAccessIndex[index];
+        } else {
+            flags = flags >> 1;
+            index++;
+        }
+    }
+    return info;
+}
+
+static std::string string_UsageTag(const HazardResult &hazard) {
+    const auto &tag = hazard.tag;
     std::stringstream out;
-    out << "(command " << CommandTypeString(tag.command) << ", seq #" << (tag.index & 0xFFFFFFFF) << ", reset #"
-        << (tag.index >> 32) << ")";
+    const auto *info = SyncStageAccessInfoFromMask(hazard.prior_access);
+    const char *stage_access_name = info ? info->name : "INVALID_STAGE_ACCESS";
+    out << "(stage/access " << stage_access_name;
+    out << ", command " << CommandTypeString(tag.command);
+    out << ", seq #" << (tag.index & 0xFFFFFFFF) << ", reset #" << (tag.index >> 32) << ")";
     return out.str();
 }
 
@@ -314,7 +334,7 @@ class ValidateResolveAction {
                                           "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32
                                           " to resolve attachment %" PRIu32 ". Prior access %s.",
                                           func_name_, string_SyncHazard(hazard.hazard), subpass_, aspect_name, attachment_name,
-                                          src_at, dst_at, string_UsageTag(hazard.tag).c_str());
+                                          src_at, dst_at, string_UsageTag(hazard).c_str());
         }
     }
     // Providing a mechanism for the constructing caller to get the result of the validation
@@ -644,7 +664,7 @@ bool AccessContext::ValidateLayoutTransitions(const SyncValidator &sync_state, c
             skip |= sync_state.LogError(
                 rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
                 "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " image layout transition. Prior access %s.",
-                func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment, string_UsageTag(hazard.tag).c_str());
+                func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment, string_UsageTag(hazard).c_str());
         }
     }
     return skip;
@@ -740,7 +760,7 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
                                                 "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s. Prior access %s.",
                                                 func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string,
-                                                string_UsageTag(hazard.tag).c_str());
+                                                string_UsageTag(hazard).c_str());
                 }
             }
         }
@@ -810,7 +830,7 @@ bool AccessContext::ValidateStoreOperation(const SyncValidator &sync_state, cons
                                             "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                             " %s aspect during store with %s %s. Prior access %s",
                                             func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, op_type_string,
-                                            store_op_string, string_UsageTag(hazard.tag).c_str());
+                                            store_op_string, string_UsageTag(hazard).c_str());
             }
         }
     }
@@ -1412,7 +1432,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
                                 sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
-                                index, string_UsageTag(hazard.tag).c_str());
+                                index, string_UsageTag(hazard).c_str());
                         }
                         break;
                     }
@@ -1434,7 +1454,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
                                 sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
-                                index, string_UsageTag(hazard.tag).c_str());
+                                index, string_UsageTag(hazard).c_str());
                         }
                         break;
                     }
@@ -1452,7 +1472,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
                                 sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
-                                index, string_UsageTag(hazard.tag).c_str());
+                                index, string_UsageTag(hazard).c_str());
                         }
                         break;
                     }
@@ -1578,7 +1598,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
                 skip |= sync_state_->LogError(
                     buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for vertex %s in %s. Prior access %s.",
                     func_name, string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
-                    sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(), string_UsageTag(hazard.tag).c_str());
+                    sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(), string_UsageTag(hazard).c_str());
             }
         }
     }
@@ -1627,7 +1647,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
         skip |= sync_state_->LogError(
             index_buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for index %s in %s. Prior access %s.",
             func_name, string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(index_buf_state->buffer).c_str(),
-            sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(), string_UsageTag(hazard.tag).c_str());
+            sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(), string_UsageTag(hazard).c_str());
     }
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
@@ -1741,7 +1761,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
                                             func_name, string_SyncHazard(hazard.hazard),
                                             sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
                                             sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
-                                            location, string_UsageTag(hazard.tag).c_str());
+                                            location, string_UsageTag(hazard).c_str());
             }
         }
     }
@@ -1782,7 +1802,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
                     func_name, string_SyncHazard(hazard.hazard),
                     sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
                     sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
-                    string_UsageTag(hazard.tag).c_str());
+                    string_UsageTag(hazard).c_str());
             }
         }
         if (stencil_write) {
@@ -1796,7 +1816,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
                     func_name, string_SyncHazard(hazard.hazard),
                     sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
                     sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
-                    string_UsageTag(hazard.tag).c_str());
+                    string_UsageTag(hazard).c_str());
             }
         }
     }
@@ -1929,7 +1949,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncVa
                                         "%s: Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
                                         " final image layout transition. Prior access %s.",
                                         func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
-                                        string_UsageTag(hazard.tag).c_str());
+                                        string_UsageTag(hazard).c_str());
         }
     }
     return skip;
@@ -2066,25 +2086,26 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
     auto usage = FlagBit(usage_index);
     if (IsRead(usage)) {
         if (last_write && IsWriteHazard(usage)) {
-            hazard.Set(READ_AFTER_WRITE, write_tag);
+            hazard.Set(READ_AFTER_WRITE, last_write, write_tag);
         }
     } else {
         // Assume write
         // TODO determine what to do with READ-WRITE usage states if any
         // Write-After-Write check -- if we have a previous write to test against
         if (last_write && IsWriteHazard(usage)) {
-            hazard.Set(WRITE_AFTER_WRITE, write_tag);
+            hazard.Set(WRITE_AFTER_WRITE, last_write, write_tag);
         } else {
             // Look for casus belli for WAR
             const auto usage_stage = PipelineStageBit(usage_index);
             // Note: kNoAttachmentRead is ~0, and thus the no attachment read hazard check doesn't need a separate path.
             if (IsReadHazard(usage_stage, input_attachment_barriers)) {
-                hazard.Set(WRITE_AFTER_READ, input_attachment_tag);
+                hazard.Set(WRITE_AFTER_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, input_attachment_tag);
             }
             if (!hazard.hazard) {
                 for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                    if (IsReadHazard(usage_stage, last_reads[read_index])) {
-                        hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
+                    const auto &read_access = last_reads[read_index];
+                    if (IsReadHazard(usage_stage, read_access)) {
+                        hazard.Set(WRITE_AFTER_READ, read_access.access, read_access.tag);
                         break;
                     }
                 }
@@ -2101,22 +2122,20 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
     const bool write_is_ordered = (last_write & ordering.access_scope) == last_write;  // Is true if no write, and that's good.
     if (IsRead(usage)) {
         if (!write_is_ordered && IsWriteHazard(usage)) {
-            hazard.Set(READ_AFTER_WRITE, write_tag);
+            hazard.Set(READ_AFTER_WRITE, last_write, write_tag);
         }
     } else {
         if (!write_is_ordered && IsWriteHazard(usage)) {
-            hazard.Set(WRITE_AFTER_WRITE, write_tag);
+            hazard.Set(WRITE_AFTER_WRITE, last_write, write_tag);
         } else {
             const auto usage_stage = PipelineStageBit(usage_index);
             const auto unordered_reads = last_read_stages & ~ordering.exec_scope;
             if (unordered_reads) {
                 // Look for any WAR hazards outside the ordered set of stages
                 for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                    if (last_reads[read_index].stage & unordered_reads) {
-                        if (IsReadHazard(usage_stage, last_reads[read_index])) {
-                            hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
-                            break;
-                        }
+                    const auto &read_access = last_reads[read_index];
+                    if ((read_access.stage & unordered_reads) && IsReadHazard(usage_stage, read_access)) {
+                        hazard.Set(WRITE_AFTER_READ, read_access.access, read_access.tag);
                     }
                 }
             }
@@ -2127,7 +2146,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
                 if (0 == (ordering.access_scope & SyncStageAccessFlagBits::SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT)) {
                     // NOTE: Currently all ordering barriers include this bit, so this code may never be reached, but it's
                     //       here s.t. if we need to change the ordering barrier/rules we needn't change the code.
-                    hazard.Set(WRITE_AFTER_READ, input_attachment_tag);
+                    hazard.Set(WRITE_AFTER_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, input_attachment_tag);
                 }
             }
         }
@@ -2141,15 +2160,15 @@ HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_i
     auto usage = FlagBit(usage_index);
     if (IsRead(usage)) {
         if (last_write != 0) {
-            hazard.Set(READ_RACING_WRITE, write_tag);
+            hazard.Set(READ_RACING_WRITE, last_write, write_tag);
         }
     } else {
         if (last_write != 0) {
-            hazard.Set(WRITE_RACING_WRITE, write_tag);
+            hazard.Set(WRITE_RACING_WRITE, last_write, write_tag);
         } else if (last_read_count > 0) {
-            hazard.Set(WRITE_RACING_READ, last_reads[0].tag);
+            hazard.Set(WRITE_RACING_READ, last_reads[0].access, last_reads[0].tag);
         } else if (input_attachment_barriers != kNoAttachmentRead) {
-            hazard.Set(WRITE_RACING_READ, input_attachment_tag);
+            hazard.Set(WRITE_RACING_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, input_attachment_tag);
         }
     }
     return hazard;
@@ -2167,7 +2186,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
         // then the barrier access is unsafe (R/W after W)
         if (((last_write & src_access_scope) == 0) && ((src_exec_scope & write_dependency_chain) == 0) && (write_barriers == 0)) {
             // TODO: Do we need a difference hazard name for this?
-            hazard.Set(WRITE_AFTER_WRITE, write_tag);
+            hazard.Set(WRITE_AFTER_WRITE, last_write, write_tag);
         }
     }
     if (!hazard.hazard) {
@@ -2178,7 +2197,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
             // *AND* not execution chained with an existing sync barrier (that's the or)
             // then the barrier access is unsafe (R/W after R)
             if ((src_exec_scope & (read_access.stage | read_access.barriers)) == 0) {
-                hazard.Set(WRITE_AFTER_READ, read_access.tag);
+                hazard.Set(WRITE_AFTER_READ, read_access.access, read_access.tag);
                 break;
             }
         }
@@ -2187,7 +2206,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
         // Same logic as read acces above for the special case of input attachment read
         // Note: kNoReadAttachment is ~0 and thus cannot cause a hazard return.
         if ((src_exec_scope & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | input_attachment_barriers)) == 0) {
-            hazard.Set(WRITE_AFTER_READ, input_attachment_tag);
+            hazard.Set(WRITE_AFTER_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT, input_attachment_tag);
         }
     }
     return hazard;
@@ -2229,6 +2248,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                     if (other_read.stage == my_read.stage) {
                         if (my_read.tag.IsBefore(other_read.tag)) {
                             my_read.tag = other_read.tag;
+                            my_read.access = other_read.access;
                         }
                         my_read.barriers |= other_read.barriers;
                         break;
@@ -2260,6 +2280,7 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
             for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
                 ReadState &access = last_reads[read_index];
                 if (access.stage == usage_stage) {
+                    access.access = usage_bit;
                     access.barriers = 0;
                     access.tag = tag;
                     break;
@@ -2270,6 +2291,7 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
             assert(last_read_count < last_reads.size());
             ReadState &access = last_reads[last_read_count++];
             access.stage = usage_stage;
+            access.access = usage_bit;
             access.barriers = 0;
             access.tag = tag;
             last_read_stages |= usage_stage;
@@ -2400,7 +2422,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
                 skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBuffer: Hazard %s for srcBuffer %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
         if (dst_buffer && !skip) {
@@ -2411,7 +2433,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
                 skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBuffer: Hazard %s for dstBuffer %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
         if (skip) break;
@@ -2467,7 +2489,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyImage: Hazard %s for srcImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
 
@@ -2480,7 +2502,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyImage: Hazard %s for dstImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
             if (skip) break;
         }
@@ -2547,7 +2569,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
             skip |= LogError(barrier.image, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdPipelineBarrier: Hazard %s for image barrier %" PRIu32 " %s. Prior access %s.",
                              string_SyncHazard(hazard.hazard), index, report_data->FormatHandle(barrier.image).c_str(),
-                             string_UsageTag(hazard.tag).c_str());
+                             string_UsageTag(hazard).c_str());
         }
     }
 
@@ -2844,7 +2866,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandB
                 skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBufferToImage: Hazard %s for srcBuffer %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
         if (dst_image) {
@@ -2854,7 +2876,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandB
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBufferToImage: Hazard %s for dstImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
             if (skip) break;
         }
@@ -2914,7 +2936,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandB
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyImageToBuffer: Hazard %s for srcImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
         if (dst_mem) {
@@ -2925,7 +2947,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandB
                 skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyImageToBuffer: Hazard %s for dstBuffer %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
         if (skip) break;
@@ -2991,7 +3013,7 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdBlitImage: Hazard %s for srcImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
 
@@ -3008,7 +3030,7 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdBlitImage: Hazard %s for dstImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
             if (skip) break;
         }
@@ -3070,7 +3092,7 @@ bool SyncValidator::ValidateIndirectBuffer(const AccessContext &context, VkComma
             skip |= LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
                              "%s: Hazard %s for indirect %s in %s. Prior access %s.", function, string_SyncHazard(hazard.hazard),
                              report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(commandBuffer).c_str(),
-                             string_UsageTag(hazard.tag).c_str());
+                             string_UsageTag(hazard).c_str());
         }
     } else {
         for (uint32_t i = 0; i < drawCount; ++i) {
@@ -3080,7 +3102,7 @@ bool SyncValidator::ValidateIndirectBuffer(const AccessContext &context, VkComma
                 skip |= LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for indirect %s in %s. Prior access %s.", function,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(buffer).c_str(),
-                                 report_data->FormatHandle(commandBuffer).c_str(), string_UsageTag(hazard.tag).c_str());
+                                 report_data->FormatHandle(commandBuffer).c_str(), string_UsageTag(hazard).c_str());
                 break;
             }
         }
@@ -3116,7 +3138,7 @@ bool SyncValidator::ValidateCountBuffer(const AccessContext &context, VkCommandB
         skip |= LogError(count_buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
                          "%s: Hazard %s for countBuffer %s in %s. Prior access %s.", function, string_SyncHazard(hazard.hazard),
                          report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(commandBuffer).c_str(),
-                         string_UsageTag(hazard.tag).c_str());
+                         string_UsageTag(hazard).c_str());
     }
     return skip;
 }
@@ -3505,7 +3527,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
                 skip |= LogError(image, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdClearColorImage: Hazard %s for %s, range index %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(image).c_str(), index,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
     }
@@ -3557,7 +3579,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                 skip |= LogError(image, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdClearDepthStencilImage: Hazard %s for %s, range index %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(image).c_str(), index,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
     }
@@ -3607,7 +3629,7 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdCopyQueryPoolResults: Hazard %s for dstBuffer %s. Prior access %s.",
                              string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(),
-                             string_UsageTag(hazard.tag).c_str());
+                             string_UsageTag(hazard).c_str());
         }
     }
 
@@ -3655,7 +3677,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
         if (hazard.hazard) {
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdFillBuffer: Hazard %s for dstBuffer %s. Prior access %s.", string_SyncHazard(hazard.hazard),
-                             report_data->FormatHandle(dstBuffer).c_str(), string_UsageTag(hazard.tag).c_str());
+                             report_data->FormatHandle(dstBuffer).c_str(), string_UsageTag(hazard).c_str());
         }
     }
     return skip;
@@ -3702,7 +3724,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdResolveImage: Hazard %s for srcImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
         }
 
@@ -3713,7 +3735,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdResolveImage: Hazard %s for dstImage %s, region %" PRIu32 ". Prior access %s.",
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
-                                 string_UsageTag(hazard.tag).c_str());
+                                 string_UsageTag(hazard).c_str());
             }
             if (skip) break;
         }
@@ -3768,7 +3790,7 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
         if (hazard.hazard) {
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdUpdateBuffer: Hazard %s for dstBuffer %s. Prior access %s.", string_SyncHazard(hazard.hazard),
-                             report_data->FormatHandle(dstBuffer).c_str(), string_UsageTag(hazard.tag).c_str());
+                             report_data->FormatHandle(dstBuffer).c_str(), string_UsageTag(hazard).c_str());
         }
     }
     return skip;
@@ -3811,7 +3833,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdWriteBufferMarkerAMD: Hazard %s for dstBuffer %s. Prior access %s.",
                              string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(),
-                             string_UsageTag(hazard.tag).c_str());
+                             string_UsageTag(hazard).c_str());
         }
     }
     return skip;
