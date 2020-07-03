@@ -143,16 +143,19 @@ class ResourceAccessState : public SyncStageAccess {
     ResourceAccessState()
         : write_barriers(~SyncStageAccessFlags(0)),
           write_dependency_chain(0),
-          last_read_count(0),
-          last_read_stages(0),
           write_tag(),
-          last_write(0) {}
+          last_write(0),
+          input_attachment_barriers(kNoAttachmentRead),
+          input_attachment_tag(),
+          last_read_count(0),
+          last_read_stages(0) {}
 
     bool HasWriteOp() const { return last_write != 0; }
     bool operator==(const ResourceAccessState &rhs) const {
         bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
                     (last_read_count == rhs.last_read_count) && (last_read_stages == rhs.last_read_stages) &&
-                    (write_tag == rhs.write_tag);
+                    (write_tag == rhs.write_tag) && (input_attachment_barriers == rhs.input_attachment_barriers) &&
+                    ((input_attachment_barriers == kNoAttachmentRead) || input_attachment_tag == rhs.input_attachment_tag);
         for (uint32_t i = 0; same && i < last_read_count; i++) {
             same |= last_reads[i] == rhs.last_reads[i];
         }
@@ -161,26 +164,44 @@ class ResourceAccessState : public SyncStageAccess {
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
 
   private:
+    static constexpr VkPipelineStageFlags kNoAttachmentRead = ~VkPipelineStageFlags(0);
     bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
+
+    static bool IsReadHazard(VkPipelineStageFlagBits stage, const VkPipelineStageFlags barriers) {
+        return 0 != (stage & ~barriers);
+    }
+    static bool IsReadHazard(VkPipelineStageFlags stage_mask, const VkPipelineStageFlags barriers) {
+        return stage_mask != (stage_mask & barriers);
+    }
+
     bool IsReadHazard(VkPipelineStageFlagBits stage, const ReadState &read_access) const {
-        return 0 != (stage & ~read_access.barriers);
+        return IsReadHazard(stage, read_access.barriers);
     }
     bool IsReadHazard(VkPipelineStageFlags stage_mask, const ReadState &read_access) const {
-        return stage_mask != (stage_mask & read_access.barriers);
+        return IsReadHazard(stage_mask, read_access.barriers);
     }
+
+    // TODO: Add a NONE (zero) enum to SyncStageAccessFlagBits for input_attachment_read and last_write
+
     // With reads, each must be "safe" relative to it's prior write, so we need only
     // save the most recent write operation (as anything *transitively* unsafe would arleady
     // be included
     SyncStageAccessFlags write_barriers;          // union of applicable barrier masks since last write
     VkPipelineStageFlags write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they chain.
-    uint32_t last_read_count;
-    VkPipelineStageFlags last_read_stages;
-
     ResourceUsageTag write_tag;
-    // TODO: Add a NONE (zero) enum to SyncStageAccessFlagBits
     SyncStageAccessFlags last_write;  // only the most recent write
 
-    std::array<ReadState, 8 * sizeof(VkPipelineStageFlags)> last_reads;
+    // This is special as it's a framebuffer-local read from a framebuffer-global pipeline stage
+    // As the only possible state for the input attachment stage/access is SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT,
+    // encode the presence with the barriers mask, ~0 denotes no pending input attachment. Zero -- is the no-barrier state,
+    // otherwise reflects the barrier/dependency chain information.
+    VkPipelineStageFlags input_attachment_barriers;
+    ResourceUsageTag input_attachment_tag;
+
+    uint32_t last_read_count;
+    VkPipelineStageFlags last_read_stages;
+    static constexpr size_t kStageCount = 32;  // TODO: The manual count was 28 real stages. Add stage count to codegen
+    std::array<ReadState, kStageCount> last_reads;
 };
 
 using ResourceAccessRangeMap = sparse_container::range_map<VkDeviceSize, ResourceAccessState>;
