@@ -83,9 +83,11 @@ struct ResourceUsageTag {
 
 struct HazardResult {
     SyncHazard hazard = NONE;
+    SyncStageAccessFlags prior_access = 0U;  // TODO -- change to a NONE enum in ...Bits
     ResourceUsageTag tag = ResourceUsageTag();
-    void Set(SyncHazard hazard_, const ResourceUsageTag &tag_) {
+    void Set(SyncHazard hazard_, SyncStageAccessFlags prior_, const ResourceUsageTag &tag_) {
         hazard = hazard_;
+        prior_access = prior_;
         tag = tag_;
     }
 };
@@ -116,10 +118,11 @@ class ResourceAccessState : public SyncStageAccess {
     // and applicable one for hazard detection
     struct ReadState {
         VkPipelineStageFlagBits stage;  // The stage of this read
+        SyncStageAccessFlags access;    // TODO: Change to FlagBits when we have a None bit enum
         VkPipelineStageFlags barriers;  // all applicable barriered stages
         ResourceUsageTag tag;
         bool operator==(const ReadState &rhs) const {
-            bool same = (stage == rhs.stage) && (barriers == rhs.barriers) && (tag == rhs.tag);
+            bool same = (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) && (tag == rhs.tag);
             return same;
         }
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
