@@ -1740,13 +1740,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!enabled_features.core.sparseResidencyAliased)) {
-        skip |=
-            LogError(device, "VUID-VkImageCreateInfo-flags-01924",
-                     "vkCreateImage(): the sparseResidencyAliased device feature is disabled: Images cannot be created with the "
-                     "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT set.");
-    }
-
     if (device_extensions.vk_khr_maintenance2) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
             if (!(FormatIsCompressed_BC(pCreateInfo->format) || FormatIsCompressed_ASTC(pCreateInfo->format) ||
@@ -4490,24 +4483,6 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     bool skip = false;
 
     // TODO: Add check for "VUID-vkCreateBuffer-flags-00911"        (sparse address space accounting)
-
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!enabled_features.core.sparseBinding)) {
-        skip |= LogError(device, "VUID-VkBufferCreateInfo-flags-00915",
-                         "vkCreateBuffer(): the sparseBinding device feature is disabled: Buffers cannot be created with the "
-                         "VK_BUFFER_CREATE_SPARSE_BINDING_BIT set.");
-    }
-
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) && (!enabled_features.core.sparseResidencyBuffer)) {
-        skip |= LogError(device, "VUID-VkBufferCreateInfo-flags-00916",
-                         "vkCreateBuffer(): the sparseResidencyBuffer device feature is disabled: Buffers cannot be created with "
-                         "the VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT set.");
-    }
-
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!enabled_features.core.sparseResidencyAliased)) {
-        skip |= LogError(device, "VUID-VkBufferCreateInfo-flags-00917",
-                         "vkCreateBuffer(): the sparseResidencyAliased device feature is disabled: Buffers cannot be created with "
-                         "the VK_BUFFER_CREATE_SPARSE_ALIASED_BIT set.");
-    }
 
     auto chained_devaddr_struct = lvl_find_in_chain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
     if (chained_devaddr_struct) {
