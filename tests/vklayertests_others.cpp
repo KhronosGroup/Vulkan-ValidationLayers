@@ -9054,6 +9054,269 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     vk::DestroyDevice(test_device, nullptr);
 }
 
+TEST_F(VkLayerTest, DisabledProtectedMemory) {
+    TEST_DESCRIPTION("Validate cases where protectedMemory feature is not enabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto protected_memory_features = lvl_init_struct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&protected_memory_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    // Set false to trigger VUs
+    protected_memory_features.protectedMemory = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkCommandPool command_pool;
+    VkCommandPoolCreateInfo pool_create_info = {};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.pNext = nullptr;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
+    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandPoolCreateInfo-flags-02860");
+    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
+    m_errorMonitor->VerifyFound();
+
+    VkBuffer buffer;
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.pNext = nullptr;
+    buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+    buffer_create_info.size = 4096;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-01887");
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    VkImage image;
+    VkImageCreateInfo image_create_info{};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.arrayLayers = 1;
+    image_create_info.mipLevels = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-01890");
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+
+    // Try to find memory with protected bit in it at all
+    VkDeviceMemory memory_protected = VK_NULL_HANDLE;
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.pNext = nullptr;
+    alloc_info.allocationSize = 4096;
+
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+    alloc_info.memoryTypeIndex = phys_mem_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+        // Check just protected bit is in type at all
+        if ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0) {
+            alloc_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+    if (alloc_info.memoryTypeIndex < phys_mem_props.memoryTypeCount) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-01872");
+        vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(VkLayerTest, InvalidProtectedMemory) {
+    TEST_DESCRIPTION("Validate cases where protectedMemory feature is enabled and usages are invalid");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto protected_memory_features = lvl_init_struct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&protected_memory_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (protected_memory_features.protectedMemory == VK_FALSE) {
+        printf("%s protectedMemory feature not supported, skipped.\n", kSkipPrefix);
+        return;
+    };
+
+    // Turns m_commandBuffer into a protected command buffer
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
+
+    bool sparse_support = (m_device->phy().features().sparseBinding == VK_TRUE);
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkBuffer buffer_protected = VK_NULL_HANDLE;
+    VkBuffer buffer_unprotected = VK_NULL_HANDLE;
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.pNext = nullptr;
+    buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.size = 1 << 20;  // 1 MB
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (sparse_support == true) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-None-01888");
+        vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_protected);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Create actual protected and unprotected buffers
+    m_errorMonitor->ExpectSuccess();
+    buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_protected);
+    buffer_create_info.flags = 0;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_unprotected);
+    m_errorMonitor->VerifyNotFound();
+
+    VkImage image_protected = VK_NULL_HANDLE;
+    VkImage image_unprotected = VK_NULL_HANDLE;
+    VkImageCreateInfo image_create_info{};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_create_info.extent = {8, 8, 1};
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.arrayLayers = 1;
+    image_create_info.mipLevels = 1;
+
+    if (sparse_support == true) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-None-01891");
+        vk::CreateImage(device(), &image_create_info, nullptr, &image_protected);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Create actual protected and unprotected images
+    m_errorMonitor->ExpectSuccess();
+    image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    vk::CreateImage(device(), &image_create_info, nullptr, &image_protected);
+    image_create_info.flags = 0;
+    vk::CreateImage(device(), &image_create_info, nullptr, &image_unprotected);
+    m_errorMonitor->VerifyNotFound();
+
+    // Create protected and unproteced memory
+    VkDeviceMemory memory_protected = VK_NULL_HANDLE;
+    VkDeviceMemory memory_unprotected = VK_NULL_HANDLE;
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.pNext = nullptr;
+    alloc_info.allocationSize = 0;
+
+    // set allocationSize to buffer as it will be larger than the image, but query image to avoid BP warning
+    VkMemoryRequirements mem_reqs_protected;
+    vk::GetImageMemoryRequirements(device(), image_protected, &mem_reqs_protected);
+    vk::GetBufferMemoryRequirements(device(), buffer_protected, &mem_reqs_protected);
+    VkMemoryRequirements mem_reqs_unprotected;
+    vk::GetImageMemoryRequirements(device(), image_unprotected, &mem_reqs_unprotected);
+    vk::GetBufferMemoryRequirements(device(), buffer_unprotected, &mem_reqs_unprotected);
+
+    // Get memory index for a protected and unprotected memory
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+    uint32_t memory_type_protected = phys_mem_props.memoryTypeCount + 1;
+    uint32_t memory_type_unprotected = phys_mem_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+        if ((mem_reqs_unprotected.memoryTypeBits & (1 << i)) &&
+            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ==
+             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+            memory_type_unprotected = i;
+        }
+        // Check just protected bit is in type at all
+        if ((mem_reqs_protected.memoryTypeBits & (1 << i)) &&
+            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)) {
+            memory_type_protected = i;
+        }
+    }
+    if ((memory_type_protected >= phys_mem_props.memoryTypeCount) || (memory_type_unprotected >= phys_mem_props.memoryTypeCount)) {
+        printf("%s No valid memory type index could be found; skipped.\n", kSkipPrefix);
+        vk::DestroyImage(device(), image_protected, nullptr);
+        vk::DestroyImage(device(), image_unprotected, nullptr);
+        vk::DestroyBuffer(device(), buffer_protected, nullptr);
+        vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
+        return;
+    }
+
+    alloc_info.memoryTypeIndex = memory_type_protected;
+    alloc_info.allocationSize = mem_reqs_protected.size;
+    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+
+    alloc_info.allocationSize = mem_reqs_unprotected.size;
+    alloc_info.memoryTypeIndex = memory_type_unprotected;
+    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_unprotected);
+
+    // Bind protected buffer with unprotected memory
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-None-01898");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
+    vk::BindBufferMemory(device(), buffer_protected, memory_unprotected, 0);
+    m_errorMonitor->VerifyFound();
+
+    // Bind unprotected buffer with protected memory
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-None-01899");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
+    vk::BindBufferMemory(device(), buffer_unprotected, memory_protected, 0);
+    m_errorMonitor->VerifyFound();
+
+    // Bind protected image with unprotected memory
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-None-01901");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
+    vk::BindImageMemory(device(), image_protected, memory_unprotected, 0);
+    m_errorMonitor->VerifyFound();
+
+    // Bind unprotected image with protected memory
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-None-01902");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
+    vk::BindImageMemory(device(), image_unprotected, memory_protected, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyImage(device(), image_protected, nullptr);
+    vk::DestroyImage(device(), image_unprotected, nullptr);
+    vk::DestroyBuffer(device(), buffer_protected, nullptr);
+    vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
+    vk::FreeMemory(device(), memory_protected, nullptr);
+    vk::FreeMemory(device(), memory_unprotected, nullptr);
+}
+
 TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysKHR.");
     if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
