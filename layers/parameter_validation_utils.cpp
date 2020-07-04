@@ -549,6 +549,26 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
             }
         }
 
+        if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!physical_device_features.sparseBinding)) {
+            skip |= LogError(device, "VUID-VkBufferCreateInfo-flags-00915",
+                             "vkCreateBuffer(): the sparseBinding device feature is disabled: Buffers cannot be created with the "
+                             "VK_BUFFER_CREATE_SPARSE_BINDING_BIT set.");
+        }
+
+        if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) && (!physical_device_features.sparseResidencyBuffer)) {
+            skip |=
+                LogError(device, "VUID-VkBufferCreateInfo-flags-00916",
+                         "vkCreateBuffer(): the sparseResidencyBuffer device feature is disabled: Buffers cannot be created with "
+                         "the VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT set.");
+        }
+
+        if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
+            skip |=
+                LogError(device, "VUID-VkBufferCreateInfo-flags-00917",
+                         "vkCreateBuffer(): the sparseResidencyAliased device feature is disabled: Buffers cannot be created with "
+                         "the VK_BUFFER_CREATE_SPARSE_ALIASED_BIT set.");
+        }
+
         // If flags contains VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT or VK_BUFFER_CREATE_SPARSE_ALIASED_BIT, it must also contain
         // VK_BUFFER_CREATE_SPARSE_BINDING_BIT
         if (((pCreateInfo->flags & (VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
@@ -692,6 +712,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             skip |= LogError(device, "VUID-VkImageCreateInfo-flags-00969",
                              "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_SPARSE_BINDING_BIT, but the "
                              "VkPhysicalDeviceFeatures::sparseBinding feature is disabled.");
+        }
+
+        if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
+            skip |= LogError(
+                device, "VUID-VkImageCreateInfo-flags-01924",
+                "vkCreateImage(): the sparseResidencyAliased device feature is disabled: Images cannot be created with the "
+                "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT set.");
         }
 
         // If flags contains VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT, it must also contain
