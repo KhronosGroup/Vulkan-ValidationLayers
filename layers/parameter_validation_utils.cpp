@@ -1070,6 +1070,24 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
                                  string_VkFormat(pCreateInfo->format));
             }
         }
+
+        auto ycbcr_conversion = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+        if (ycbcr_conversion != nullptr) {
+            if (ycbcr_conversion->conversion != VK_NULL_HANDLE) {
+                if (IsIdentitySwizzle(pCreateInfo->components) == false) {
+                    skip |= LogError(
+                        device, "VUID-VkImageViewCreateInfo-pNext-01970",
+                        "vkCreateImageView(): If there is a VkSamplerYcbcrConversion, the imageView must "
+                        "be created with the identity swizzle. Here are the actual swizzle values:\n"
+                        "r swizzle = %s\n"
+                        "g swizzle = %s\n"
+                        "b swizzle = %s\n"
+                        "a swizzle = %s\n",
+                        string_VkComponentSwizzle(pCreateInfo->components.r), string_VkComponentSwizzle(pCreateInfo->components.g),
+                        string_VkComponentSwizzle(pCreateInfo->components.b), string_VkComponentSwizzle(pCreateInfo->components.a));
+                }
+            }
+        }
     }
     return skip;
 }
@@ -4964,9 +4982,57 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
         const auto *vulkan_11_features = lvl_find_in_chain<VkPhysicalDeviceVulkan11Features>(device_createinfo_pnext);
         if ((vulkan_11_features == nullptr) || (vulkan_11_features->samplerYcbcrConversion == VK_FALSE)) {
             skip |= LogError(device, "VUID-vkCreateSamplerYcbcrConversion-None-01648",
-                             "samplerYcbcrConversion must be enabled to call %s.", apiName);
+                             "%s: samplerYcbcrConversion must be enabled.", apiName);
         }
     }
+
+    const VkComponentMapping components = pCreateInfo->components;
+    // XChroma Subsampled is same as "the format has a _422 or _420 suffix" from spec
+    if (FormatIsXChromaSubsampled(pCreateInfo->format) == true) {
+        if ((components.g != VK_COMPONENT_SWIZZLE_G) && (components.g != VK_COMPONENT_SWIZZLE_IDENTITY)) {
+            skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581",
+                             "%s: When using a XChroma subsampled format (%s) the components.g needs to be VK_COMPONENT_SWIZZLE_G "
+                             "or VK_COMPONENT_SWIZZLE_IDENTITY, but is %s.",
+                             apiName, string_VkFormat(pCreateInfo->format), string_VkComponentSwizzle(components.g));
+        }
+
+        if ((components.a != VK_COMPONENT_SWIZZLE_A) && (components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+            (components.a != VK_COMPONENT_SWIZZLE_ONE) && (components.a != VK_COMPONENT_SWIZZLE_ZERO)) {
+            skip |=
+                LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02582",
+                         "%s: When using a XChroma subsampled format (%s) the components.a needs to be VK_COMPONENT_SWIZZLE_A or "
+                         "VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_ONE or VK_COMPONENT_SWIZZLE_ZERO, but is %s.",
+                         apiName, string_VkFormat(pCreateInfo->format), string_VkComponentSwizzle(components.a));
+        }
+
+        if ((components.r != VK_COMPONENT_SWIZZLE_R) && (components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+            (components.r != VK_COMPONENT_SWIZZLE_B)) {
+            skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02583",
+                             "%s: When using a XChroma subsampled format (%s) the components.r needs to be VK_COMPONENT_SWIZZLE_R "
+                             "or VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_B, but is %s.",
+                             apiName, string_VkFormat(pCreateInfo->format), string_VkComponentSwizzle(components.r));
+        }
+
+        if ((components.b != VK_COMPONENT_SWIZZLE_B) && (components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+            (components.b != VK_COMPONENT_SWIZZLE_R)) {
+            skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02584",
+                             "%s: When using a XChroma subsampled format (%s) the components.b needs to be VK_COMPONENT_SWIZZLE_B "
+                             "or VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_R, but is %s.",
+                             apiName, string_VkFormat(pCreateInfo->format), string_VkComponentSwizzle(components.b));
+        }
+
+        // If one is identity, both need to be
+        const bool rIdentity = ((components.r == VK_COMPONENT_SWIZZLE_R) || (components.r == VK_COMPONENT_SWIZZLE_IDENTITY));
+        const bool bIdentity = ((components.b == VK_COMPONENT_SWIZZLE_B) || (components.b == VK_COMPONENT_SWIZZLE_IDENTITY));
+        if ((rIdentity != bIdentity) && ((rIdentity == true) || (bIdentity == true))) {
+            skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585",
+                             "%s: When using a XChroma subsampled format (%s) if either the components.r (%s) or components.b (%s) "
+                             "are an identity swizzle, then both need to be an identity swizzle.",
+                             apiName, string_VkFormat(pCreateInfo->format), string_VkComponentSwizzle(components.r),
+                             string_VkComponentSwizzle(components.b));
+        }
+    }
+
     return skip;
 }
 
