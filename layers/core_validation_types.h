@@ -209,6 +209,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     bool is_export;
     bool is_import;
     bool is_import_ahb;  // The VUID check depends on if the imported memory is for AHB
+    bool unprotected;    // can't be used for protected memory
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
     VkExternalMemoryHandleTypeFlags import_handle_type_flags;
     std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
@@ -234,6 +235,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           is_export(false),
           is_import(false),
           is_import_ahb(false),
+          unprotected(true),
           export_handle_type_flags(0),
           import_handle_type_flags(0),
           mapped_range{},
@@ -292,6 +294,7 @@ class BINDABLE : public BASE_NODE {
     std::unordered_set<MEM_BINDING> sparse_bindings;
     // True if memory will be imported/exported from/to an Android Hardware Buffer
     bool external_ahb;
+    bool unprotected;  // can't be used for protected memory
 
     small_unordered_set<DEVICE_MEMORY_STATE *, 1> bound_memory_set_;
 
@@ -303,6 +306,7 @@ class BINDABLE : public BASE_NODE {
           external_memory_handle(0),
           sparse_bindings{},
           external_ahb(false),
+          unprotected(true),
           bound_memory_set_{} {};
 
     // Update the cached set of memory bindings.

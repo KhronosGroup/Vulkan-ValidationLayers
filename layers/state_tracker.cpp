@@ -214,6 +214,8 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
 
     AddImageStateProps(*is_node, device, physical_device);
 
+    is_node->unprotected = ((pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0);
+
     imageMap.insert(std::make_pair(*pImage, std::move(is_node)));
 }
 
@@ -312,6 +314,8 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
     if (buffer_state->external_ahb == false) {
         DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
     }
+
+    buffer_state->unprotected = ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0);
 
     bufferMap.insert(std::make_pair(*pBuffer, std::move(buffer_state)));
 }
@@ -645,6 +649,9 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
         mem_info->import_handle_type_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     }
 #endif
+
+    const VkMemoryType memory_type = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex];
+    mem_info->unprotected = ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0);
 }
 
 // Create binding link between given sampler and command buffer node

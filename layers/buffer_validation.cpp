@@ -1803,6 +1803,22 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
+    if ((pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) != 0) {
+        if (enabled_features.core11.protectedMemory == VK_FALSE) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01890",
+                             "vkCreateImage(): the protectedMemory device feature is disabled: Images cannot be created with the "
+                             "VK_IMAGE_CREATE_PROTECTED_BIT set.");
+        }
+        const VkImageCreateFlags invalid_flags =
+            VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
+        if ((pCreateInfo->flags & invalid_flags) != 0) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-None-01891",
+                             "vkCreateImage(): VK_IMAGE_CREATE_PROTECTED_BIT is set so no sparse create flags can be used at same "
+                             "time (VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | "
+                             "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT).");
+        }
+    }
+
     skip |= ValidateImageFormatFeatures(pCreateInfo);
 
     return skip;
@@ -4532,6 +4548,22 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
                                       "pCreateInfo->pQueueFamilyIndices", "VUID-VkBufferCreateInfo-sharingMode-01419",
                                       "VUID-VkBufferCreateInfo-sharingMode-01419", false);
+    }
+
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) != 0) {
+        if (enabled_features.core11.protectedMemory == VK_FALSE) {
+            skip |= LogError(device, "VUID-VkBufferCreateInfo-flags-01887",
+                             "vkCreateBuffer(): the protectedMemory device feature is disabled: Buffers cannot be created with the "
+                             "VK_BUFFER_CREATE_PROTECTED_BIT set.");
+        }
+        const VkBufferCreateFlags invalid_flags =
+            VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT;
+        if ((pCreateInfo->flags & invalid_flags) != 0) {
+            skip |= LogError(device, "VUID-VkBufferCreateInfo-None-01888",
+                             "vkCreateBuffer(): VK_BUFFER_CREATE_PROTECTED_BIT is set so no sparse create flags can be used at "
+                             "same time (VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | "
+                             "VK_BUFFER_CREATE_SPARSE_ALIASED_BIT).");
+        }
     }
 
     return skip;

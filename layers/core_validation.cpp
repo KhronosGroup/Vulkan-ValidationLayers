@@ -3057,23 +3057,30 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                          "advertises %u memory types.",
                          pAllocateInfo->memoryTypeIndex, phys_dev_mem_props.memoryTypeCount);
     } else {
-        if (pAllocateInfo->allocationSize >
-            phys_dev_mem_props.memoryHeaps[phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex].size) {
-            skip |= LogError(
-                device, "VUID-vkAllocateMemory-pAllocateInfo-01713",
-                "vkAllocateMemory: attempting to allocate %" PRIu64
-                " bytes from heap %u,"
-                "but size of that heap is only %" PRIu64 " bytes.",
-                pAllocateInfo->allocationSize, phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex,
-                phys_dev_mem_props.memoryHeaps[phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex].size);
+        const VkMemoryType memory_type = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex];
+        if (pAllocateInfo->allocationSize > phys_dev_mem_props.memoryHeaps[memory_type.heapIndex].size) {
+            skip |= LogError(device, "VUID-vkAllocateMemory-pAllocateInfo-01713",
+                             "vkAllocateMemory: attempting to allocate %" PRIu64
+                             " bytes from heap %u,"
+                             "but size of that heap is only %" PRIu64 " bytes.",
+                             pAllocateInfo->allocationSize, memory_type.heapIndex,
+                             phys_dev_mem_props.memoryHeaps[memory_type.heapIndex].size);
         }
 
         if (!enabled_features.device_coherent_memory_features.deviceCoherentMemory &&
-            ((phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].propertyFlags &
-              VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0)) {
+            ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0)) {
             skip |= LogError(device, "VUID-vkAllocateMemory-deviceCoherentMemory-02790",
                              "vkAllocateMemory: attempting to allocate memory type %u, which includes the "
                              "VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD memory property, but the deviceCoherentMemory feature "
+                             "is not enabled.",
+                             pAllocateInfo->memoryTypeIndex);
+        }
+
+        if ((enabled_features.core11.protectedMemory == VK_FALSE) &&
+            ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)) {
+            skip |= LogError(device, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-01872",
+                             "vkAllocateMemory(): attempting to allocate memory type %u, which includes the "
+                             "VK_MEMORY_PROPERTY_PROTECTED_BIT memory property, but the protectedMemory feature "
                              "is not enabled.",
                              pAllocateInfo->memoryTypeIndex);
         }
@@ -3668,6 +3675,29 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                      string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle).c_str());
                 }
             }
+
+            // Validate mix of protected buffer and memory
+            if ((buffer_state->unprotected == false) && (mem_info->unprotected == true)) {
+                // TODO label when spec change is upstreamed
+                const char *vuid =
+                    bind_buffer_mem_2 ? "UNASSIGNED-VkBindBufferMemoryInfo-protected" : "VUID-vkBindBufferMemory-None-01898";
+                LogObjectList objlist(buffer);
+                objlist.add(mem);
+                skip |= LogError(objlist, vuid,
+                                 "%s: The VkDeviceMemory (%s) was not created with protected memory but the VkBuffer (%s) was set "
+                                 "to use protected memory.",
+                                 api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
+            } else if ((buffer_state->unprotected == true) && (mem_info->unprotected == false)) {
+                // TODO label when spec change is upstreamed
+                const char *vuid =
+                    bind_buffer_mem_2 ? "UNASSIGNED-VkBindBufferMemoryInfo-protected" : "VUID-vkBindBufferMemory-None-01899";
+                LogObjectList objlist(buffer);
+                objlist.add(mem);
+                skip |= LogError(objlist, vuid,
+                                 "%s: The VkDeviceMemory (%s) was created with protected memory but the VkBuffer (%s) was not set "
+                                 "to use protected memory.",
+                                 api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
+            }
         }
     }
     return skip;
@@ -3907,8 +3937,17 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
 
 bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) const {
-    return ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, "vkCreateCommandPool", "pCreateInfo->queueFamilyIndex",
-                                     "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
+    bool skip = false;
+    skip |= ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, "vkCreateCommandPool", "pCreateInfo->queueFamilyIndex",
+                                      "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
+    if ((enabled_features.core11.protectedMemory == VK_FALSE) &&
+        ((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) != 0)) {
+        skip |= LogError(device, "VUID-VkCommandPoolCreateInfo-flags-02860",
+                         "vkCreateCommandPool(): the protectedMemory device feature is disabled: CommandPools cannot be created "
+                         "with the VK_COMMAND_POOL_CREATE_PROTECTED_BIT set.");
+    }
+
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
@@ -10342,6 +10381,31 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          report_data->FormatHandle(bindInfo.image).c_str(),
                                          string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle).c_str());
                     }
+                }
+
+                // Validate mix of protected buffer and memory
+                if ((image_state->unprotected == false) && (mem_info->unprotected == true)) {
+                    // TODO label when spec change is upstreamed
+                    const char *vuid =
+                        bind_image_mem_2 ? "UNASSIGNED-VkBindImageMemoryInfo-protected" : "VUID-vkBindImageMemory-None-01901";
+                    LogObjectList objlist(bindInfo.image);
+                    objlist.add(bindInfo.memory);
+                    skip |= LogError(objlist, vuid,
+                                     "%s: The VkDeviceMemory (%s) was not created with protected memory but the VkImage (%s) was "
+                                     "set to use protected memory.",
+                                     api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
+                                     report_data->FormatHandle(bindInfo.image).c_str());
+                } else if ((image_state->unprotected == true) && (mem_info->unprotected == false)) {
+                    // TODO label when spec change is upstreamed
+                    const char *vuid =
+                        bind_image_mem_2 ? "UNASSIGNED-VkBindImageMemoryInfo-protected" : "VUID-vkBindImageMemory-None-01902";
+                    LogObjectList objlist(bindInfo.image);
+                    objlist.add(bindInfo.memory);
+                    skip |= LogError(objlist, vuid,
+                                     "%s: The VkDeviceMemory (%s) was created with protected memory but the VkImage (%s) was not "
+                                     "set to use protected memory.",
+                                     api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
+                                     report_data->FormatHandle(bindInfo.image).c_str());
                 }
             }
 
