@@ -70,6 +70,7 @@ struct InstanceExtensions {
     ExtEnabled vk_ext_debug_report{kNotEnabled};
     ExtEnabled vk_ext_debug_utils{kNotEnabled};
     ExtEnabled vk_ext_direct_mode_display{kNotEnabled};
+    ExtEnabled vk_ext_directfb_surface{kNotEnabled};
     ExtEnabled vk_ext_display_surface_counter{kNotEnabled};
     ExtEnabled vk_ext_headless_surface{kNotEnabled};
     ExtEnabled vk_ext_metal_surface{kNotEnabled};
@@ -122,6 +123,10 @@ struct InstanceExtensions {
             std::make_pair(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_debug_utils, {})),
             std::make_pair(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_direct_mode_display, {{
                            {&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})),
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+            std::make_pair(VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_directfb_surface, {{
+                           {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})),
+#endif
             std::make_pair(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_display_surface_counter, {{
                            {&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_headless_surface, {{
@@ -263,6 +268,9 @@ static const std::set<std::string> kInstanceExtensionNames = {
     VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
     VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME,
+#endif
     VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME,
     VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -357,6 +365,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_external_memory_host{kNotEnabled};
     ExtEnabled vk_ext_filter_cubic{kNotEnabled};
     ExtEnabled vk_ext_fragment_density_map{kNotEnabled};
+    ExtEnabled vk_ext_fragment_density_map_2{kNotEnabled};
     ExtEnabled vk_ext_fragment_shader_interlock{kNotEnabled};
     ExtEnabled vk_ext_full_screen_exclusive{kNotEnabled};
     ExtEnabled vk_ext_global_priority{kNotEnabled};
@@ -575,6 +584,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_img_filter_cubic, VK_IMG_FILTER_CUBIC_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_fragment_density_map, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_fragment_density_map_2, {{
+                           {&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_fragment_shader_interlock, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -990,6 +1001,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME,
     VK_EXT_FILTER_CUBIC_EXTENSION_NAME,
     VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,
+    VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME,
     VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,

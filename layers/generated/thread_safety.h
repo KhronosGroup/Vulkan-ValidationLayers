@@ -4829,6 +4829,22 @@ void PostCallRecordGetPrivateDataEXT(
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t*                                   pData);
 
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+
+void PreCallRecordCreateDirectFBSurfaceEXT(
+    VkInstance                                  instance,
+    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface);
+
+void PostCallRecordCreateDirectFBSurfaceEXT(
+    VkInstance                                  instance,
+    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface,
+    VkResult                                    result);
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PreCallRecordCreateAccelerationStructureKHR(

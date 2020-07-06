@@ -32335,6 +32335,234 @@ void safe_VkDeviceDiagnosticsConfigCreateInfoNV::initialize(const safe_VkDeviceD
     flags = copy_src->flags;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+
+safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    fragmentDensityMapDeferred(in_struct->fragmentDensityMapDeferred)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentDensityMapDeferred = copy_src.fragmentDensityMapDeferred;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::operator=(const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentDensityMapDeferred = copy_src.fragmentDensityMapDeferred;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::~safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::initialize(const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    fragmentDensityMapDeferred = in_struct->fragmentDensityMapDeferred;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::initialize(const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentDensityMapDeferred = copy_src->fragmentDensityMapDeferred;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    subsampledLoads(in_struct->subsampledLoads),
+    subsampledCoarseReconstructionEarlyAccess(in_struct->subsampledCoarseReconstructionEarlyAccess),
+    maxSubsampledArrayLayers(in_struct->maxSubsampledArrayLayers),
+    maxDescriptorSetSubsampledSamplers(in_struct->maxDescriptorSetSubsampledSamplers)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    subsampledLoads = copy_src.subsampledLoads;
+    subsampledCoarseReconstructionEarlyAccess = copy_src.subsampledCoarseReconstructionEarlyAccess;
+    maxSubsampledArrayLayers = copy_src.maxSubsampledArrayLayers;
+    maxDescriptorSetSubsampledSamplers = copy_src.maxDescriptorSetSubsampledSamplers;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::operator=(const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    subsampledLoads = copy_src.subsampledLoads;
+    subsampledCoarseReconstructionEarlyAccess = copy_src.subsampledCoarseReconstructionEarlyAccess;
+    maxSubsampledArrayLayers = copy_src.maxSubsampledArrayLayers;
+    maxDescriptorSetSubsampledSamplers = copy_src.maxDescriptorSetSubsampledSamplers;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::~safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::initialize(const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    subsampledLoads = in_struct->subsampledLoads;
+    subsampledCoarseReconstructionEarlyAccess = in_struct->subsampledCoarseReconstructionEarlyAccess;
+    maxSubsampledArrayLayers = in_struct->maxSubsampledArrayLayers;
+    maxDescriptorSetSubsampledSamplers = in_struct->maxDescriptorSetSubsampledSamplers;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::initialize(const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    subsampledLoads = copy_src->subsampledLoads;
+    subsampledCoarseReconstructionEarlyAccess = copy_src->subsampledCoarseReconstructionEarlyAccess;
+    maxSubsampledArrayLayers = copy_src->maxSubsampledArrayLayers;
+    maxDescriptorSetSubsampledSamplers = copy_src->maxDescriptorSetSubsampledSamplers;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+
+
+safe_VkDirectFBSurfaceCreateInfoEXT::safe_VkDirectFBSurfaceCreateInfoEXT(const VkDirectFBSurfaceCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    dfb(nullptr),
+    surface(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->dfb) {
+        dfb = new IDirectFB(*in_struct->dfb);
+    }
+    if (in_struct->surface) {
+        surface = new IDirectFBSurface(*in_struct->surface);
+    }
+}
+
+safe_VkDirectFBSurfaceCreateInfoEXT::safe_VkDirectFBSurfaceCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT),
+    pNext(nullptr),
+    dfb(nullptr),
+    surface(nullptr)
+{}
+
+safe_VkDirectFBSurfaceCreateInfoEXT::safe_VkDirectFBSurfaceCreateInfoEXT(const safe_VkDirectFBSurfaceCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    dfb = nullptr;
+    surface = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.dfb) {
+        dfb = new IDirectFB(*copy_src.dfb);
+    }
+    if (copy_src.surface) {
+        surface = new IDirectFBSurface(*copy_src.surface);
+    }
+}
+
+safe_VkDirectFBSurfaceCreateInfoEXT& safe_VkDirectFBSurfaceCreateInfoEXT::operator=(const safe_VkDirectFBSurfaceCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (dfb)
+        delete dfb;
+    if (surface)
+        delete surface;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    dfb = nullptr;
+    surface = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.dfb) {
+        dfb = new IDirectFB(*copy_src.dfb);
+    }
+    if (copy_src.surface) {
+        surface = new IDirectFBSurface(*copy_src.surface);
+    }
+
+    return *this;
+}
+
+safe_VkDirectFBSurfaceCreateInfoEXT::~safe_VkDirectFBSurfaceCreateInfoEXT()
+{
+    if (dfb)
+        delete dfb;
+    if (surface)
+        delete surface;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDirectFBSurfaceCreateInfoEXT::initialize(const VkDirectFBSurfaceCreateInfoEXT* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    dfb = nullptr;
+    surface = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->dfb) {
+        dfb = new IDirectFB(*in_struct->dfb);
+    }
+    if (in_struct->surface) {
+        surface = new IDirectFBSurface(*in_struct->surface);
+    }
+}
+
+void safe_VkDirectFBSurfaceCreateInfoEXT::initialize(const safe_VkDirectFBSurfaceCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    dfb = nullptr;
+    surface = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->dfb) {
+        dfb = new IDirectFB(*copy_src->dfb);
+    }
+    if (copy_src->surface) {
+        surface = new IDirectFBSurface(*copy_src->surface);
+    }
+}
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 
@@ -34716,6 +34944,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
             safe_pNext = new safe_VkDeviceDiagnosticsConfigCreateInfoNV(reinterpret_cast<const VkDeviceDiagnosticsConfigCreateInfoNV *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *>(pNext));
+            break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:
             safe_pNext = new safe_VkDeferredOperationInfoKHR(reinterpret_cast<const VkDeferredOperationInfoKHR *>(pNext));
@@ -35481,6 +35715,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
             delete reinterpret_cast<const safe_VkDeviceDiagnosticsConfigCreateInfoNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *>(header);
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:

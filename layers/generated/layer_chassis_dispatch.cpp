@@ -7654,6 +7654,38 @@ void DispatchGetPrivateDataEXT(
 
 }
 
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+
+VkResult DispatchCreateDirectFBSurfaceEXT(
+    VkInstance                                  instance,
+    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    if (!wrap_handles) return layer_data->instance_dispatch_table.CreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    VkResult result = layer_data->instance_dispatch_table.CreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    if (VK_SUCCESS == result) {
+        *pSurface = layer_data->WrapNew(*pSurface);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+
+VkBool32 DispatchGetPhysicalDeviceDirectFBPresentationSupportEXT(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    IDirectFB*                                  dfb)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkBool32 result = layer_data->instance_dispatch_table.GetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchCreateAccelerationStructureKHR(

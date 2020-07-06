@@ -60,6 +60,7 @@ platform_dict = {
     'xlib' : 'VK_USE_PLATFORM_XLIB_KHR',
     'xlib_xrandr' : 'VK_USE_PLATFORM_XLIB_XRANDR_EXT',
     'provisional' : 'VK_ENABLE_BETA_EXTENSIONS',
+    'directfb' : 'VK_USE_PLATFORM_DIRECTFB_EXT',
 }
 
 #
@@ -155,4 +156,3 @@ def Outdent(string_in, indent=''):
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
-
