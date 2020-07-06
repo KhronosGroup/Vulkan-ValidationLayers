@@ -10977,7 +10977,7 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
         ASSERT_TRUE(image.initialized());
 
         ivci.image = image.handle();
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-02573");
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-04116");
     }
 }
 
