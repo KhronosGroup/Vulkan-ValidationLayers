@@ -332,7 +332,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             for handle in self.object_types:
                 if self.handle_types.IsNonDispatchable(handle) and not self.is_aliased_type[handle]:
                     if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
-                        output_func += '    skip |= ReportLeaked%sObjects(%s, %s, error_code);\n' % (upper_objtype, objtype, self.GetVulkanObjType(handle))
+                        comment_prefix = ''
+                        if (handle == 'VkDisplayKHR' or handle == 'VkDisplayModeKHR'):
+                            comment_prefix = '// No destroy API -- do not report: '
+                        output_func += '    %sskip |= ReportLeaked%sObjects(%s, %s, error_code);\n' % (comment_prefix, upper_objtype, objtype, self.GetVulkanObjType(handle))
             output_func += '    return skip;\n'
             output_func += '}\n'
         return output_func
