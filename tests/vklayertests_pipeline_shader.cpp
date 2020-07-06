@@ -8456,3 +8456,203 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
                                                       (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, SampledInvalidImageViews) {
+    TEST_DESCRIPTION("Test if an VkImageView is sampled at draw/dispatch that the format has valid format features enabled");
+    VkResult err;
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Couldn't enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+
+    // Load required functions
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Required extensions are not present.\n", kSkipPrefix);
+        return;
+    }
+
+    const VkFormat sampled_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    // Remove format features want to test if missing
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), sampled_format, &formatProps);
+    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), sampled_format, formatProps);
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+    VkImageView imageView = image.targetView(sampled_format);
+
+    // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    char const *fs_source_combined =
+        "#version 450\n"
+        "\n"
+        "layout (set=0, binding=0) uniform sampler2D samplerColor;\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main() {\n"
+        "   color = texture(samplerColor, gl_FragCoord.xy);\n"
+        "   color += texture(samplerColor, gl_FragCoord.wz);\n"
+        "}\n";
+    VkShaderObj fs_combined(m_device, fs_source_combined, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    // maps to VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE and VK_DESCRIPTOR_TYPE_SAMPLER
+    char const *fs_source_seperate =
+        "#version 450\n"
+        "\n"
+        "layout (set=0, binding=0) uniform texture2D textureColor;\n"
+        "layout (set=0, binding=1) uniform sampler samplers;\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main() {\n"
+        "   color = texture(sampler2D(textureColor, samplers), gl_FragCoord.xy);\n"
+        "}\n";
+    VkShaderObj fs_seperate(m_device, fs_source_seperate, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    // maps to an unused image sampler that should not trigger validation as it is never sampled
+    char const *fs_source_unused =
+        "#version 450\n"
+        "\n"
+        "layout (set=0, binding=0) uniform sampler2D samplerColor;\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main() {\n"
+        "   color = vec4(gl_FragCoord.xyz, 1.0);\n"
+        "}\n";
+    VkShaderObj fs_unused(m_device, fs_source_unused, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER but makes sure it walks function tree to find sampling
+    char const *fs_source_function =
+        "#version 450\n"
+        "\n"
+        "layout (set=0, binding=0) uniform sampler2D samplerColor;\n"
+        "layout(location=0) out vec4 color;\n"
+        "vec4 foo() { return texture(samplerColor, gl_FragCoord.xy); }\n"
+        "vec4 bar(float x) { return (x > 0.5) ? foo() : vec4(1.0,1.0,1.0,1.0); }"
+        "void main() {\n"
+        "   color = bar(gl_FragCoord.x);\n"
+        "}\n";
+    VkShaderObj fs_function(m_device, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkRenderpassObj render_pass(m_device);
+
+    VkPipelineObj pipeline_combined(m_device);
+    pipeline_combined.AddDefaultColorAttachment();
+    pipeline_combined.SetViewport(m_viewports);
+    pipeline_combined.SetScissor(m_scissors);
+    pipeline_combined.AddShader(&vs);
+    VkPipelineObj pipeline_seperate(m_device);
+    pipeline_seperate.AddDefaultColorAttachment();
+    pipeline_seperate.SetViewport(m_viewports);
+    pipeline_seperate.SetScissor(m_scissors);
+    pipeline_seperate.AddShader(&vs);
+    VkPipelineObj pipeline_unused(m_device);
+    pipeline_unused.AddDefaultColorAttachment();
+    pipeline_unused.SetViewport(m_viewports);
+    pipeline_unused.SetScissor(m_scissors);
+    pipeline_unused.AddShader(&vs);
+    VkPipelineObj pipeline_function(m_device);
+    pipeline_function.AddDefaultColorAttachment();
+    pipeline_function.SetViewport(m_viewports);
+    pipeline_function.SetScissor(m_scissors);
+    pipeline_function.AddShader(&vs);
+
+    // 3 different pipelines for 3 different shaders
+    pipeline_combined.AddShader(&fs_combined);
+    pipeline_seperate.AddShader(&fs_seperate);
+    pipeline_unused.AddShader(&fs_unused);
+    pipeline_function.AddShader(&fs_function);
+
+    OneOffDescriptorSet::Bindings combined_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    OneOffDescriptorSet::Bindings seperate_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    OneOffDescriptorSet combined_descriptor_set(m_device, combined_bindings);
+    OneOffDescriptorSet seperate_descriptor_set(m_device, seperate_bindings);
+    const VkPipelineLayoutObj combined_pipeline_layout(m_device, {&combined_descriptor_set.layout_});
+    const VkPipelineLayoutObj seperate_pipeline_layout(m_device, {&seperate_descriptor_set.layout_});
+
+    pipeline_combined.CreateVKPipeline(combined_pipeline_layout.handle(), render_pass.handle());
+    pipeline_seperate.CreateVKPipeline(seperate_pipeline_layout.handle(), render_pass.handle());
+    pipeline_unused.CreateVKPipeline(combined_pipeline_layout.handle(), render_pass.handle());
+    pipeline_function.CreateVKPipeline(combined_pipeline_layout.handle(), render_pass.handle());
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
+    VkSampler sampler;
+    err = vk::CreateSampler(device(), &sampler_ci, NULL, &sampler);
+    ASSERT_VK_SUCCESS(err);
+    VkDescriptorImageInfo combined_sampler_info = {sampler, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkDescriptorImageInfo seperate_sampled_image_info = {VK_NULL_HANDLE, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkDescriptorImageInfo seperate_sampler_info = {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
+
+    // first item is combined, second/third item are seperate
+    VkWriteDescriptorSet descriptor_writes[3] = {};
+    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0].pNext = nullptr;
+    descriptor_writes[0].dstSet = combined_descriptor_set.set_;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_writes[0].pImageInfo = &combined_sampler_info;
+
+    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[1].pNext = nullptr;
+    descriptor_writes[1].dstSet = seperate_descriptor_set.set_;
+    descriptor_writes[1].dstBinding = 0;
+    descriptor_writes[1].descriptorCount = 1;
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_writes[1].pImageInfo = &seperate_sampled_image_info;
+
+    descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[2].pNext = nullptr;
+    descriptor_writes[2].dstSet = seperate_descriptor_set.set_;
+    descriptor_writes[2].dstBinding = 1;
+    descriptor_writes[2].descriptorCount = 1;
+    descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    descriptor_writes[2].pImageInfo = &seperate_sampler_info;
+
+    vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, nullptr);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    // Unused is a valid version of the combined pipeline/descriptors
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0, 1,
+                              &combined_descriptor_set.set_, 0, nullptr);
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    // Same descriptor set as combined test
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02690");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // Draw with invalid combined image sampler
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02690");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // Same error, but not with seperate descriptors
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0, 1,
+                              &seperate_descriptor_set.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02690");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // cleanup
+    m_commandBuffer->end();
+    vk::DestroySampler(device(), sampler, nullptr);
+}
