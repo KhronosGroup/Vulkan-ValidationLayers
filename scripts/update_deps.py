@@ -3,6 +3,7 @@
 # Copyright 2017 The Glslang Authors. All rights reserved.
 # Copyright (c) 2018 Valve Corporation
 # Copyright (c) 2018 LunarG, Inc.
+# Copyright (c) 2020 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -251,6 +252,7 @@ import multiprocessing
 import shlex
 import shutil
 import stat
+import time
 
 KNOWN_GOOD_FILE_NAME = 'known_good.json'
 
@@ -342,12 +344,46 @@ class GoodRepo(object):
         if self.build_platforms == [] or platform.system().lower() in self.build_platforms:
             self.on_build_platform = True
 
-    def Clone(self):
+    def Clone(self, retries=10, retry_seconds=60):
+        print('Cloning {n} into {d}'.format(n=self.name, d=self.repo_dir))
         distutils.dir_util.mkpath(self.repo_dir)
-        command_output(['git', 'clone', self.url, '.'], self.repo_dir)
+        for retry in range(retries):
+            try:
+                command_output(['git', 'clone', self.url, '.'], self.repo_dir)
+                # If we get here, we didn't raise an error
+                return
+            except RuntimeError as e:
+                print("Error cloning on iteration {}/{}: {}".format(retry + 1, retries, e))
+                if retry + 1 < retries:
+                    if retry_seconds > 0:
+                        print("Waiting {} seconds before trying again".format(retry_seconds))
+                        time.sleep(retry_seconds)
+                    if os.path.isdir(self.repo_dir):
+                        print("Removing old tree {}".format(self.repo_dir))
+                        shutil.rmtree(self.repo_dir, onerror=on_rm_error)
+                    continue
 
-    def Fetch(self):
-        command_output(['git', 'fetch', 'origin'], self.repo_dir)
+                # If we get here, we've exhausted our retries.
+                print("Failed to clone {} on all retries.".format(self.url))
+                raise e
+
+    def Fetch(self, retries=10, retry_seconds=60):
+        for retry in range(retries):
+            try:
+                command_output(['git', 'fetch', 'origin'], self.repo_dir)
+                # if we get here, we didn't raise an error, and we're done
+                return
+            except RuntimeError as e:
+                print("Error fetching on iteration {}/{}: {}".format(retry + 1, retries, e))
+                if retry + 1 < retries:
+                    if retry_seconds > 0:
+                        print("Waiting {} seconds before trying again".format(retry_seconds))
+                        time.sleep(retry_seconds)
+                    continue
+
+                # If we get here, we've exhausted our retries.
+                print("Failed to fetch {} on all retries.".format(self.url))
+                raise e
 
     def Checkout(self):
         print('Checking out {n} in {d}'.format(n=self.name, d=self.repo_dir))
@@ -404,7 +440,7 @@ class GoodRepo(object):
         # repo's install dir.
         for d in self.deps:
             dep_commit = [r for r in repos if r.name == d['repo_name']]
-            if len(dep_commit):
+            if len(dep_commit) and dep_commit[0].on_build_platform:
                 cmake_cmd.append('-D{var_name}={install_dir}'.format(
                     var_name=d['var_name'],
                     install_dir=dep_commit[0].install_dir))
