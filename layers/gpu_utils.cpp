@@ -255,10 +255,15 @@ void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo
     }
     if (features) {
         VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features);
-        VkBool32 *featurePtr = reinterpret_cast<VkBool32 *>(&features);
+        VkBool32 *featurePtr = reinterpret_cast<VkBool32 *>(features);
         VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features);
         for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures); i += (sizeof(VkBool32))) {
-            *featurePtr++ |= (*supported++ & *desired++);
+            if (*supported && *desired) {
+                *featurePtr = true;
+            }
+            supported++;
+            desired++;
+            featurePtr++;
         }
     } else {
         VkPhysicalDeviceFeatures new_features = {};
