@@ -1536,7 +1536,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          "maxFramebufferHeight");
     }
 
-    if (device_extensions.vk_ext_fragment_density_map) {
+    if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map_2) {
         uint32_t ceiling_width =
             (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
                            std::max((float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width, 1.0f));
@@ -5060,6 +5060,32 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                      "VK_IMAGE_CREATE_PROTECTED_BIT, VK_IMAGE_CREATE_SPARSE_BINDING_BIT, "
                                      "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT");
                 }
+            }
+        }
+
+        if (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT) {
+            if (!enabled_features.fragment_density_map2_features.fragmentDensityMapDeferred) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-03567",
+                                 "vkCreateImageView(): If the fragmentDensityMapDeferred feature is not enabled, "
+                                 "flags must not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT");
+            }
+            if (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT) {
+                skip |=
+                    LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-03568",
+                             "vkCreateImageView(): If flags contains VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT, "
+                             "flags must not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT");
+            }
+        }
+        if (device_extensions.vk_ext_fragment_density_map_2) {
+            if ((image_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) && (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) &&
+                (pCreateInfo->subresourceRange.layerCount >
+                 phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-03569",
+                                 "vkCreateImageView(): If image was created with flags containing "
+                                 "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT and usage containing VK_IMAGE_USAGE_SAMPLED_BIT "
+                                 "subresourceRange.layerCount (%d) must: be less than or equal to maxSubsampledArrayLayers (%d)",
+                                 pCreateInfo->subresourceRange.layerCount,
+                                 phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers);
             }
         }
 
