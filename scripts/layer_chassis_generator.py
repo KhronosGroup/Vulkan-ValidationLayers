@@ -1908,6 +1908,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             'PFN_vkVoidFunction': 'return nullptr;',
             'VkBool32': 'return VK_FALSE;',
             'VkDeviceAddress': 'return 0;',
+            'VkDeviceSize': 'return 0;',
             'VkResult': 'return VK_ERROR_VALIDATION_FAILED_EXT;',
             'void': 'return;',
             'uint32_t': 'return 0;',

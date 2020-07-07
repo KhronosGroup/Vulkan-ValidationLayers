@@ -903,13 +903,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         else:
             len = param.attrib.get('len')
         if len and len != 'null-terminated':
-            # For string arrays, 'len' can look like 'count,null-terminated', indicating that we have a null terminated array of
-            # strings.  We strip the null-terminated from the 'len' field and only return the parameter specifying the string count
-            if 'null-terminated' in len:
-                result = len.split(',')[0]
-            else:
-                result = len
-            result = str(result).replace('::', '->')
+            # Only first level is supported for multidimensional arrays. Conveniently, this also strips the trailing
+            # 'null-terminated' from arrays of strings
+            len = len.split(',')[0]
+            # Convert scope notation to pointer access
+            result = str(len).replace('::', '->')
         elif self.paramIsStaticArray(param):
             # For static arrays get length from inside []
             array_match = re.search(r'\[(\d+)\]', param.find('name').tail)
@@ -1021,8 +1019,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if lenValue:
             count_required_vuid = self.GetVuid(vuid_name, "%s-arraylength" % value.len)
 
+            # This is an array of struct pointers
+            if value.ispointer == 2:
+                checkExpr.append('skip |= validate_struct_pointer_type_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {});\n'.format(
+                    funcPrintName, lenValueRequired, valueRequired, stype_vuid, param_vuid, count_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
             # This is an array with a pointer to a count value
-            if lenValue.ispointer:
+            elif lenValue.ispointer:
                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
                 checkExpr.append('skip |= validate_struct_type_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {}, {});\n'.format(
                     funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, stype_vuid, param_vuid, count_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
