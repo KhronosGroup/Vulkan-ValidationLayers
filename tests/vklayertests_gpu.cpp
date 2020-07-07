@@ -1466,15 +1466,25 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
         printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
         return;
     }
-    VkPhysicalDeviceFeatures2KHR features2 = {};
-    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT =
+        (PFN_vkSetPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFeaturesEXT");
+    PFN_vkGetOriginalPhysicalDeviceFeaturesEXT fpvkGetOriginalPhysicalDeviceFeaturesEXT =
+        (PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFeaturesEXT");
 
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!(fpvkSetPhysicalDeviceFeaturesEXT) || !(fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceFeatures features = {};
+    fpvkGetOriginalPhysicalDeviceFeaturesEXT(gpu(), &features);
+
     // Disable features necessary for GPU-AV so initialization aborts
-    features2.features.vertexPipelineStoresAndAtomics = false;
-    features2.features.fragmentStoresAndAtomics = false;
+    features.vertexPipelineStoresAndAtomics = false;
+    features.fragmentStoresAndAtomics = false;
+    fpvkSetPhysicalDeviceFeaturesEXT(gpu(), features);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "GPU-Assisted Validation disabled");
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState());
     m_errorMonitor->VerifyFound();
 }
 
