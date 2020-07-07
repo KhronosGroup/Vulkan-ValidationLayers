@@ -5025,6 +5025,44 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                              phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks);
         }
     }
+
+    if (device_extensions.vk_ext_fragment_density_map_2) {
+        uint32_t sum_subsampled_samplers = 0;
+        for (auto dsl : set_layouts) {
+            // find the number of subsampled samplers across all stages
+            // NOTE: this does not use the GetDescriptorSum patter because it needs the GetSamplerState method
+            if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
+                continue;
+            }
+            for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
+                const VkDescriptorSetLayoutBinding *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
+
+                // Bindings with a descriptorCount of 0 are "reserved" and should be skipped
+                if (binding->descriptorCount > 0) {
+                    if (((binding->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
+                         (binding->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER)) &&
+                        (binding->pImmutableSamplers != nullptr)) {
+                        for (uint32_t sampler_idx = 0; sampler_idx < binding->descriptorCount; sampler_idx++) {
+                            const SAMPLER_STATE *state = GetSamplerState(binding->pImmutableSamplers[sampler_idx]);
+                            if (state->createInfo.flags & (VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT |
+                                                           VK_SAMPLER_CREATE_SUBSAMPLED_COARSE_RECONSTRUCTION_BIT_EXT)) {
+                                sum_subsampled_samplers++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (sum_subsampled_samplers > phys_dev_ext_props.fragment_density_map2_props.maxDescriptorSetSubsampledSamplers) {
+            skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566",
+                             "vkCreatePipelineLayout(): sum of sampler bindings with flags containing "
+                             "VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT or "
+                             "VK_SAMPLER_CREATE_SUBSAMPLED_COARSE_RECONSTRUCTION_BIT_EXT among all stages(% d) "
+                             "exceeds device maxDescriptorSetSubsampledSamplers limit (%d).",
+                             sum_subsampled_samplers,
+                             phys_dev_ext_props.fragment_density_map2_props.maxDescriptorSetSubsampledSamplers);
+        }
+    }
     return skip;
 }
 
@@ -6262,7 +6300,8 @@ static VkPipelineStageFlags ExpandPipelineStageFlags(const DeviceExtensions &ext
             (extensions.vk_ext_conditional_rendering ? VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT : 0) |
             (extensions.vk_ext_transform_feedback ? VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT : 0) |
             (extensions.vk_nv_shading_rate_image ? VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV : 0) |
-            (extensions.vk_ext_fragment_density_map ? VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT : 0));
+            (extensions.vk_ext_fragment_density_map ? VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT : 0) |
+            (extensions.vk_ext_fragment_density_map_2 ? VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT : 0));
 }
 
 static bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags inflags) {
@@ -7945,7 +7984,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                     pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
                             }
                         } else {
-                            if (device_extensions.vk_ext_fragment_density_map) {
+                            if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map_2) {
                                 uint32_t ceiling_width = (uint32_t)ceil(
                                     (float)pCreateInfo->width /
                                     std::max((float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width,
@@ -8043,7 +8082,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         }
                     }
 
-                    if (!device_extensions.vk_ext_fragment_density_map) {
+                    if (!device_extensions.vk_ext_fragment_density_map && !device_extensions.vk_ext_fragment_density_map_2) {
                         if (aii.width < pCreateInfo->width) {
                             skip |= LogError(
                                 device, "VUID-VkFramebufferCreateInfo-flags-03192",
