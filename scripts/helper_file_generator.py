@@ -303,7 +303,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 result = len.split(',')[0]
             else:
                 result = len
-            if 'latexmath' in len:
+            if 'altlen' in param.attrib:
                 # Elements with latexmath 'len' also contain a C equivalent 'altlen' attribute
                 # Use indexing operator instead of get() so we fail if the attribute is missing
                 result = param.attrib['altlen']

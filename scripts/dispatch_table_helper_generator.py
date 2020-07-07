@@ -198,6 +198,8 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 return_type = 'return VK_SUCCESS;'
             elif decl.startswith('typedef VkDeviceAddress'):
                 return_type = 'return 0;'
+            elif decl.startswith('typedef VkDeviceSize'):
+                return_type = 'return 0;'
             elif decl.startswith('typedef uint32_t'):
                 return_type = 'return 0;'
             elif decl.startswith('typedef uint64_t'):
