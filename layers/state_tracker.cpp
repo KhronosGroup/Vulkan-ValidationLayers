@@ -4640,8 +4640,8 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalD
                                                                      VkPhysicalDeviceFeatures *pFeatures) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     physical_device_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
-    physical_device_state->features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    physical_device_state->features2.pNext = nullptr;
+    // Reset the features2 safe struct before setting up the features field.
+    physical_device_state->features2 = safe_VkPhysicalDeviceFeatures2();
     physical_device_state->features2.features = *pFeatures;
 }
 
