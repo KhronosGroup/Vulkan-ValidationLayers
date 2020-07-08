@@ -4523,15 +4523,6 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
                format_with_uniform_texel_support_string);
         return;
     }
-    vk::GetPhysicalDeviceFormatProperties(gpu(), format_without_texel_support, &format_properties);
-    if ((format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT) ||
-        (format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
-        printf(
-            "%s Test requires %s to not support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT nor "
-            "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT\n",
-            kSkipPrefix, format_without_texel_support_string);
-        return;
-    }
 
     // Create a test buffer--buffer must have been created using VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT or
     // VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, so use a different usage value instead to cause an error
@@ -4581,7 +4572,39 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     CreateBufferViewTest(*this, &buff_view_ci,
                          {"VUID-VkBufferViewCreateInfo-range-00930", "VUID-VkBufferViewCreateInfo-offset-00931"});
 
-    // Set rage to acceptable value for buffer tests
+    // Create a new test buffer that is larger than VkPhysicalDeviceLimits::maxTexelBufferElements
+    // The spec min max is just 64K, but some implementations support a much larger value than that.
+    // Skip the test if the limit is very large to not allocate excessive amounts of memory.
+    if (dev_limits.maxTexelBufferElements > 64 * 1024 * 1024) {
+        printf("%s Test skipped if maxTexelBufferElements is very large. \n", kSkipPrefix);
+    } else {
+        const VkDeviceSize large_resource_size =
+            2 * static_cast<VkDeviceSize>(format_size) * static_cast<VkDeviceSize>(dev_limits.maxTexelBufferElements);
+        const VkBufferCreateInfo large_buffer_info =
+            VkBufferObj::create_info(large_resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+        VkBufferObj large_buffer;
+        large_buffer.init(*m_device, large_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        // Offset must be less than the size of the buffer, so set it equal to the buffer size to cause an error
+        buff_view_ci.buffer = large_buffer.handle();
+        buff_view_ci.range = VK_WHOLE_SIZE;
+
+        // For VK_WHOLE_SIZE, the buffer size - offset must be less than VkPhysicalDeviceLimits::maxTexelBufferElements
+        CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-range-04059"});
+    }
+
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format_without_texel_support, &format_properties);
+    if ((format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT) ||
+        (format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        printf(
+            "%s Test requires %s to not support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT nor "
+            "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT\n",
+            kSkipPrefix, format_without_texel_support_string);
+        return;
+    }
+
+    // Set range to acceptable value for buffer tests
+    buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = format_without_texel_support;
     buff_view_ci.range = VK_WHOLE_SIZE;
 
