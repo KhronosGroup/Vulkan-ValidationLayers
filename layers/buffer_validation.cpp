@@ -4461,6 +4461,21 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
                              ") and range must be less than or equal to the size of the buffer (%" PRIuLEAST64 ").",
                              range, pCreateInfo->offset, buffer_state->createInfo.size);
         }
+    } else {
+        const uint32_t format_size = FormatElementSize(pCreateInfo->format);
+
+        // Size of buffer - offset, divided by the element size of format must be less than or equal to
+        // VkPhysicalDeviceLimits::maxTexelBufferElements
+        if (SafeDivision(buffer_state->createInfo.size - pCreateInfo->offset, format_size) >
+            device_limits->maxTexelBufferElements) {
+            skip |= LogError(buffer_state->buffer, "VUID-VkBufferViewCreateInfo-range-04059",
+                             "vkCreateBufferView(): If VkBufferViewCreateInfo range (%" PRIuLEAST64
+                             ") equals VK_WHOLE_SIZE, the buffer's size (%" PRIuLEAST64 ") minus the offset (%" PRIuLEAST64
+                             "), divided by the element size of the format (%" PRIu32
+                             ") must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
+                             range, buffer_state->createInfo.size, pCreateInfo->offset, format_size,
+                             device_limits->maxTexelBufferElements);
+        }
     }
     return skip;
 }
