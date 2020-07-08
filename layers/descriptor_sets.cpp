@@ -1031,7 +1031,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                 "%s encountered the following validation error at %s time: Sampler %s in "
                                                 "binding #%" PRIu32 " index %" PRIu32
                                                 " has a custom border color with format = VK_FORMAT_UNDEFINED and is used to "
-                                                "sample an image view %" PRIu64 " with format %s",
+                                                "sample an image view %s with format %s",
                                                 report_data->FormatHandle(set).c_str(), caller,
                                                 report_data->FormatHandle(sampler).c_str(), binding, index,
                                                 report_data->FormatHandle(image_view_state->image_view).c_str(),
