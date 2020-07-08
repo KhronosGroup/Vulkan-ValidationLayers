@@ -758,6 +758,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
     }
 
+    // Delete unused validation objects to avoid memory leak.
+    std::vector<ValidationObject*> local_objs = {
+        thread_checker_obj, object_tracker_obj, parameter_validation_obj,
+        core_checks_obj, best_practices_obj, gpu_assisted_obj, debug_printf_obj,
+    };
+    for (auto obj : local_objs) {
+        if (std::find(local_object_dispatch.begin(), local_object_dispatch.end(), obj) == local_object_dispatch.end()) {
+            delete obj;
+        }
+    }
+
     InstanceExtensionWhitelist(framework, pCreateInfo, *pInstance);
     DeactivateInstanceDebugCallbacks(report_data);
     return result;
@@ -882,6 +893,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     auto debug_printf_obj = new DebugPrintf;
     debug_printf_obj->InitDeviceValidationObject(enables[debug_printf], instance_interceptor, device_interceptor);
+
+    // Delete unused validation objects to avoid memory leak.
+    std::vector<ValidationObject *> local_objs = {
+        thread_safety_obj, stateless_validation_obj, object_tracker_obj,
+        core_checks_obj, best_practices_obj, gpu_assisted_obj, debug_printf_obj,
+    };
+    for (auto obj : local_objs) {
+        if (std::find(device_interceptor->object_dispatch.begin(), device_interceptor->object_dispatch.end(), obj) ==
+            device_interceptor->object_dispatch.end()) {
+            delete obj;
+        }
+    }
 
     for (auto intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->write_lock();
