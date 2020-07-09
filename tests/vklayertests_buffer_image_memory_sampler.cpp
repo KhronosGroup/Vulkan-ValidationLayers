@@ -9485,6 +9485,175 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
 }
 
+TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
+    TEST_DESCRIPTION("Verify Invalid use of siwizzle components when dealing with YCbCr.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        return;
+    }
+
+    // Need to enable YCbCr feature
+    auto ycbcr_features = lvl_init_struct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&ycbcr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    ycbcr_features.samplerYcbcrConversion = VK_TRUE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction = nullptr;
+    PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionFunction = nullptr;
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vkCreateSamplerYcbcrConversionFunction = vk::CreateSamplerYcbcrConversion;
+        vkDestroySamplerYcbcrConversionFunction = vk::DestroySamplerYcbcrConversion;
+    } else {
+        vkCreateSamplerYcbcrConversionFunction =
+            (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
+        vkDestroySamplerYcbcrConversionFunction =
+            (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
+    }
+    if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
+        printf("%s Did not find required device support for YcbcrSamplerConversion; test skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    const VkComponentMapping identity = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+
+    VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
+    VkSamplerYcbcrConversionCreateInfo sycci = {};
+    sycci.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO;
+    sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    sycci.forceExplicitReconstruction = VK_FALSE;
+    sycci.chromaFilter = VK_FILTER_NEAREST;
+    sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+
+    // test components.g
+    sycci.components = identity;
+    sycci.components.g = VK_COMPONENT_SWIZZLE_R;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // test components.a
+    sycci.components = identity;
+    sycci.components.a = VK_COMPONENT_SWIZZLE_R;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02582");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // make sure zero and one are allowed for components.a
+    m_errorMonitor->ExpectSuccess();
+    sycci.components.a = VK_COMPONENT_SWIZZLE_ONE;
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+    sycci.components.a = VK_COMPONENT_SWIZZLE_ZERO;
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+    m_errorMonitor->VerifyNotFound();
+
+    // test components.r
+    sycci.components = identity;
+    sycci.components.r = VK_COMPONENT_SWIZZLE_G;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02583");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // test components.b
+    sycci.components = identity;
+    sycci.components.b = VK_COMPONENT_SWIZZLE_G;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02584");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // test components.r and components.b together
+    sycci.components = identity;
+    sycci.components.r = VK_COMPONENT_SWIZZLE_B;
+    sycci.components.b = VK_COMPONENT_SWIZZLE_B;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // make sure components.r and components.b can be swapped
+    m_errorMonitor->ExpectSuccess();
+    sycci.components = identity;
+    sycci.components.r = VK_COMPONENT_SWIZZLE_B;
+    sycci.components.b = VK_COMPONENT_SWIZZLE_R;
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+    m_errorMonitor->VerifyNotFound();
+
+    // Make sure components doesn't affect _444 formats
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, &format_props);
+    if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT) != 0) {
+        sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;
+        sycci.components = identity;
+        sycci.components.g = VK_COMPONENT_SWIZZLE_R;
+        m_errorMonitor->ExpectSuccess();
+        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+        vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+        m_errorMonitor->VerifyNotFound();
+    }
+
+    // Create a valid conversion with guaranteed support
+    sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    sycci.components = identity;
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkSamplerYcbcrConversionInfo conversion_info = {};
+    conversion_info.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO;
+    conversion_info.pNext = nullptr;
+    conversion_info.conversion = ycbcr_conv;
+
+    VkImageView image_view;
+    VkImageViewCreateInfo image_view_create_info = {};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.pNext = &conversion_info;
+    image_view_create_info.image = image.handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_view_create_info.subresourceRange.layerCount = 1;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = 1;
+    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_view_create_info.components = identity;
+    image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_B;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-01970");
+    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
+}
+
 TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
 
