@@ -3699,41 +3699,36 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
 
         const auto mem_info = GetDevMemState(mem);
 
-        // All validation using the buffer_state->requirements for external AHB is check in android only section
-        if (buffer_state->external_ahb == false) {
-            // Validate memory requirements alignment
-            if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
-                const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01600"
-                                                     : "VUID-vkBindBufferMemory-memoryOffset-01036";
-                skip |= LogError(buffer, vuid,
-                                 "%s: memoryOffset is 0x%" PRIxLEAST64
-                                 " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                 api_name, memoryOffset, buffer_state->requirements.alignment);
-            }
-
-            if (mem_info) {
-                // Validate bound memory range information
-                skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, api_name);
-
-                const char *mem_type_vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01599" : "VUID-vkBindBufferMemory-memory-01035";
-                skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
-
-                // Validate memory requirements size
-                if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
-                    const char *vuid =
-                        bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01601" : "VUID-vkBindBufferMemory-size-01037";
-                    skip |= LogError(buffer, vuid,
-                                     "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                     " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                     ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                     api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
-                }
-            }
+        // Validate memory requirements alignment
+        if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
+            const char *vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01600" : "VUID-vkBindBufferMemory-memoryOffset-01036";
+            skip |= LogError(buffer, vuid,
+                             "%s: memoryOffset is 0x%" PRIxLEAST64
+                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                             api_name, memoryOffset, buffer_state->requirements.alignment);
         }
 
         if (mem_info) {
+            // Validate bound memory range information
+            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, api_name);
+
+            const char *mem_type_vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01599" : "VUID-vkBindBufferMemory-memory-01035";
+            skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
+
+            // Validate memory requirements size
+            if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01601" : "VUID-vkBindBufferMemory-size-01037";
+                skip |= LogError(buffer, vuid,
+                                 "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                                 " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                                 api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+            }
+
             // Validate dedicated allocation
             if (mem_info->is_dedicated && ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
                 const char *vuid =

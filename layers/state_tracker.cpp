@@ -429,10 +429,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
         RecordCreateBufferANDROID(pCreateInfo, buffer_state.get());
     }
     // Get a set of requirements in the case the app does not
-    // External AHB memory can't be queried until after memory is bound
-    if (buffer_state->external_ahb == false) {
-        DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
-    }
+    DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
 
     buffer_state->unprotected = ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0);
 
