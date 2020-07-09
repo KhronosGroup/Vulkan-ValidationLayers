@@ -47,6 +47,7 @@ using split_op_keep_upper = sparse_container::split_op_keep_upper;
 // Interface for aspect specific traits objects (now isolated in the cpp file)
 class AspectParameters {
   public:
+    virtual ~AspectParameters() {}
     static const AspectParameters* Get(VkImageAspectFlags);
     typedef uint32_t (*MaskIndexFunc)(VkImageAspectFlags);
     virtual VkImageAspectFlags AspectMask() const = 0;
