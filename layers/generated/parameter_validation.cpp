@@ -11483,6 +11483,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWithCountEXT(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
     return skip;
 }
 
@@ -11503,6 +11504,7 @@ bool StatelessValidation::PreCallValidateCmdSetScissorWithCountEXT(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
     return skip;
 }
 
@@ -11521,6 +11523,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2EXT(
     skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2EXT-pOffsets-parameter");
     skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pSizes", bindingCount, &pSizes, true, false, "VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2EXT-pSizes-parameter");
     skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pStrides", bindingCount, &pStrides, true, false, "VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2EXT-pStrides-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
     return skip;
 }
 

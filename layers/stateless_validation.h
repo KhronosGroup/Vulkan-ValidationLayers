@@ -1564,5 +1564,14 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdBuildAccelerationStructureKHR(
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
         const VkAccelerationStructureBuildOffsetInfoKHR *const *ppOffsetInfos) const;
+
+    bool manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                          const VkViewport *pViewports) const;
+    bool manual_PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                         const VkRect2D *pScissors) const;
+    bool manual_PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                        const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
+                                                        const VkDeviceSize *pSizes, const VkDeviceSize *pStrides) const;
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation

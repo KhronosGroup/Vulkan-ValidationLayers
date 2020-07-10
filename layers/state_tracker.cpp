@@ -1202,7 +1202,10 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->status = 0;
         pCB->static_status = 0;
         pCB->viewportMask = 0;
+        pCB->viewportWithCountMask = 0;
         pCB->scissorMask = 0;
+        pCB->scissorWithCountMask = 0;
+        pCB->primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 
         for (auto &item : pCB->lastBound) {
             item.second.reset();
@@ -1612,6 +1615,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         lvl_find_in_chain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(pCreateInfo->pNext);
     if (pipeline_creation_cache_control_features) {
         state_tracker->enabled_features.pipeline_creation_cache_control_features = *pipeline_creation_cache_control_features;
+    }
+
+    const auto *extended_dynamic_state_features =
+        lvl_find_in_chain<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>(pCreateInfo->pNext);
+    if (extended_dynamic_state_features) {
+        state_tracker->enabled_features.extended_dynamic_state_features = *extended_dynamic_state_features;
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
@@ -3302,6 +3311,42 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
                 case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
                     flags &= ~CBSTATUS_VIEWPORT_W_SCALING_SET;
                     break;
+                case VK_DYNAMIC_STATE_CULL_MODE_EXT:
+                    flags &= ~CBSTATUS_CULL_MODE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_FRONT_FACE_EXT:
+                    flags &= ~CBSTATUS_FRONT_FACE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT:
+                    flags &= ~CBSTATUS_PRIMITIVE_TOPOLOGY_SET;
+                    break;
+                case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT:
+                    flags &= ~CBSTATUS_VIEWPORT_WITH_COUNT_SET;
+                    break;
+                case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT:
+                    flags &= ~CBSTATUS_SCISSOR_WITH_COUNT_SET;
+                    break;
+                case VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT:
+                    flags &= ~CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT:
+                    flags &= ~CBSTATUS_DEPTH_TEST_ENABLE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT:
+                    flags &= ~CBSTATUS_DEPTH_WRITE_ENABLE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT:
+                    flags &= ~CBSTATUS_DEPTH_COMPARE_OP_SET;
+                    break;
+                case VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT:
+                    flags &= ~CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT:
+                    flags &= ~CBSTATUS_STENCIL_TEST_ENABLE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_STENCIL_OP_EXT:
+                    flags &= ~CBSTATUS_STENCIL_OP_SET;
+                    break;
                 default:
                     break;
             }
@@ -3364,6 +3409,7 @@ void ValidationStateTracker::PreCallRecordCmdSetViewport(VkCommandBuffer command
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_VIEWPORT_SET;
+    cb_state->static_status &= ~CBSTATUS_VIEWPORT_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
@@ -3373,6 +3419,7 @@ void ValidationStateTracker::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuff
     // TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
     // cb_state->exclusiveScissorMask |= ((1u << exclusiveScissorCount) - 1u) << firstExclusiveScissor;
     cb_state->status |= CBSTATUS_EXCLUSIVE_SCISSOR_SET;
+    cb_state->static_status &= ~CBSTATUS_EXCLUSIVE_SCISSOR_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
@@ -3392,6 +3439,7 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportShadingRatePaletteNV(VkC
     // TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
     // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
+    cb_state->static_status &= ~CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
@@ -3581,23 +3629,27 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuff
                                                                    const VkViewportWScalingNV *pViewportWScalings) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_VIEWPORT_W_SCALING_SET;
+    cb_state->static_status &= ~CBSTATUS_VIEWPORT_W_SCALING_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_LINE_WIDTH_SET;
+    cb_state->static_status &= ~CBSTATUS_LINE_WIDTH_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                                uint16_t lineStipplePattern) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_LINE_STIPPLE_SET;
+    cb_state->static_status &= ~CBSTATUS_LINE_STIPPLE_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor,
                                                           float depthBiasClamp, float depthBiasSlopeFactor) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_DEPTH_BIAS_SET;
+    cb_state->static_status &= ~CBSTATUS_DEPTH_BIAS_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
@@ -3605,35 +3657,41 @@ void ValidationStateTracker::PreCallRecordCmdSetScissor(VkCommandBuffer commandB
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
     cb_state->status |= CBSTATUS_SCISSOR_SET;
+    cb_state->static_status &= ~CBSTATUS_SCISSOR_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET;
+    cb_state->static_status &= ~CBSTATUS_BLEND_CONSTANTS_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds,
                                                             float maxDepthBounds) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET;
+    cb_state->static_status &= ~CBSTATUS_DEPTH_BOUNDS_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                    uint32_t compareMask) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET;
+    cb_state->static_status &= ~CBSTATUS_STENCIL_READ_MASK_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                  uint32_t writeMask) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET;
+    cb_state->static_status &= ~CBSTATUS_STENCIL_WRITE_MASK_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                  uint32_t reference) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET;
+    cb_state->static_status &= ~CBSTATUS_STENCIL_REFERENCE_SET;
 }
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules.
@@ -3804,6 +3862,7 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
     auto cb_state = GetCBState(commandBuffer);
 
     cb_state->status |= CBSTATUS_INDEX_BUFFER_BOUND;
+    cb_state->static_status &= ~CBSTATUS_INDEX_BUFFER_BOUND;
     cb_state->index_buffer_binding.buffer = buffer;
     cb_state->index_buffer_binding.size = buffer_state->createInfo.size;
     cb_state->index_buffer_binding.offset = offset;
@@ -3826,6 +3885,8 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
         auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
+        vertex_buffer_binding.size = VK_WHOLE_SIZE;
+        vertex_buffer_binding.stride = 0;
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i]) {
             AddCommandBufferBindingBuffer(cb_state, GetBufferState(pBuffers[i]));
@@ -5744,4 +5805,106 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCom
             AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
         }
     }
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_CULL_MODE_SET;
+    cb_state->static_status &= ~CBSTATUS_CULL_MODE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_FRONT_FACE_SET;
+    cb_state->static_status &= ~CBSTATUS_FRONT_FACE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer,
+                                                                     VkPrimitiveTopology primitiveTopology) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->primitiveTopology = primitiveTopology;
+    cb_state->status |= CBSTATUS_PRIMITIVE_TOPOLOGY_SET;
+    cb_state->static_status &= ~CBSTATUS_PRIMITIVE_TOPOLOGY_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                                     const VkViewport *pViewports) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->viewportWithCountMask |= (1u << viewportCount) - 1u;
+    cb_state->status |= CBSTATUS_VIEWPORT_WITH_COUNT_SET;
+    cb_state->static_status &= ~CBSTATUS_VIEWPORT_WITH_COUNT_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                                    const VkRect2D *pScissors) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->scissorWithCountMask |= (1u << scissorCount) - 1u;
+    cb_state->status |= CBSTATUS_SCISSOR_WITH_COUNT_SET;
+    cb_state->static_status &= ~CBSTATUS_SCISSOR_WITH_COUNT_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                   uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                   const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                                   const VkDeviceSize *pStrides) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (pStrides) {
+        cb_state->status |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
+        cb_state->static_status &= ~CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
+    }
+
+    uint32_t end = firstBinding + bindingCount;
+    if (cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < end) {
+        cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.resize(end);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
+        vertex_buffer_binding.buffer = pBuffers[i];
+        vertex_buffer_binding.offset = pOffsets[i];
+        vertex_buffer_binding.size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
+        vertex_buffer_binding.stride = (pStrides) ? pStrides[i] : 0;
+        // Add binding for this vertex buffer to this commandbuffer
+        if (pBuffers[i]) {
+            AddCommandBufferBindingBuffer(cb_state, GetBufferState(pBuffers[i]));
+        }
+    }
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_DEPTH_TEST_ENABLE_SET;
+    cb_state->static_status &= ~CBSTATUS_DEPTH_TEST_ENABLE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_DEPTH_WRITE_ENABLE_SET;
+    cb_state->static_status &= ~CBSTATUS_DEPTH_WRITE_ENABLE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_DEPTH_COMPARE_OP_SET;
+    cb_state->static_status &= ~CBSTATUS_DEPTH_COMPARE_OP_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer,
+                                                                         VkBool32 depthBoundsTestEnable) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET;
+    cb_state->static_status &= ~CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET;
+}
+void ValidationStateTracker::PreCallRecordCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_STENCIL_TEST_ENABLE_SET;
+    cb_state->static_status &= ~CBSTATUS_STENCIL_TEST_ENABLE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
+                                                             VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp,
+                                                             VkCompareOp compareOp) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_STENCIL_OP_SET;
+    cb_state->static_status &= ~CBSTATUS_STENCIL_OP_SET;
 }

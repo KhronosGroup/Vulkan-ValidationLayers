@@ -669,7 +669,19 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
                 (vertex_binding < current_vtx_bfr_binding_info.size()) &&
                 (current_vtx_bfr_binding_info[vertex_binding].buffer != VK_NULL_HANDLE)) {
-                const auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
+                auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
+                if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
+                    vertex_buffer_stride = (uint32_t)current_vtx_bfr_binding_info[vertex_binding].stride;
+                    uint32_t attribute_binding_extent =
+                        attribute_description.offset + FormatElementSize(attribute_description.format);
+                    if (vertex_buffer_stride < attribute_binding_extent) {
+                        skip |=
+                            LogError(pCB->commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03363",
+                                     "The pStrides[%u] (%u) parameter in the last call to vkCmdBindVertexBuffers2EXT is less than "
+                                     "the extent of the binding for attribute %u (%u).",
+                                     vertex_binding, vertex_buffer_stride, i, attribute_binding_extent);
+                    }
+                }
                 const auto vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;
 
                 // Use 1 as vertex/instance index to use buffer stride as well
@@ -719,6 +731,47 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 ListBits(ss, missingScissorMask);
                 ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetScissor().";
                 skip |= LogError(device, kVUID_Core_DrawState_ViewportScissorMismatch, "%s", ss.str().c_str());
+            }
+        }
+
+        bool dynViewportCount = IsDynamic(pPipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+        bool dynScissorCount = IsDynamic(pPipeline, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
+
+        // VUID-{refpage}-viewportCount-03417
+        if (dynViewportCount && !dynScissorCount) {
+            const auto requiredViewportMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->scissorCount) - 1;
+            const auto missingViewportMask = ~pCB->viewportWithCountMask & requiredViewportMask;
+            if (missingViewportMask) {
+                std::stringstream ss;
+                ss << caller << ": Dynamic viewport with count ";
+                ListBits(ss, missingViewportMask);
+                ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetViewportWithCountEXT().";
+                skip |= LogError(device, vuid.viewport_count, "%s", ss.str().c_str());
+            }
+        }
+
+        // VUID-{refpage}-scissorCount-03418
+        if (dynScissorCount && !dynViewportCount) {
+            const auto requiredScissorMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->viewportCount) - 1;
+            const auto missingScissorMask = ~pCB->scissorWithCountMask & requiredScissorMask;
+            if (missingScissorMask) {
+                std::stringstream ss;
+                ss << caller << ": Dynamic scissor with count ";
+                ListBits(ss, missingScissorMask);
+                ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetScissorWithCountEXT().";
+                skip |= LogError(device, vuid.scissor_count, "%s", ss.str().c_str());
+            }
+        }
+
+        // VUID-{refpage}-viewportCount-03419
+        if (dynScissorCount && dynViewportCount) {
+            if (pCB->viewportWithCountMask != pCB->scissorWithCountMask) {
+                std::stringstream ss;
+                ss << caller << ": Dynamic viewport and scissor with count ";
+                ListBits(ss, pCB->viewportWithCountMask ^ pCB->scissorWithCountMask);
+                ss << " are used by pipeline state object, but were not provided via matching calls to "
+                      "vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT().";
+                skip |= LogError(device, vuid.viewport_scissor_count, "%s", ss.str().c_str());
             }
         }
     }
@@ -798,6 +851,72 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     }
                 }
             }
+        }
+    }
+
+    // VUID-{refpage}-primitiveTopology-03420
+    skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_TOPOLOGY_SET, "Dynamic primitive topology state not set for this command buffer",
+                           vuid.primitive_topology);
+    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT)) {
+        bool compatible_topology = false;
+        switch (pPipeline->graphicsPipelineCI.pInputAssemblyState->topology) {
+            case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+        if (!compatible_topology) {
+            skip |= LogError(pPipeline->pipeline, vuid.primitive_topology,
+                             "%s: the last primitive topology %s state set by vkCmdSetPrimitiveTopologyEXT is "
+                             "not compatible with the pipeline topology %s.",
+                             caller, string_VkPrimitiveTopology(pCB->primitiveTopology),
+                             string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
         }
     }
 
@@ -1528,6 +1647,23 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     skip |= ValidatePipelineCacheControlFlags(pPipeline->graphicsPipelineCI.flags, pipelineIndex, "vkCreateGraphicsPipelines",
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
+
+    // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState &&
+        (IsDynamic(pPipeline, VK_DYNAMIC_STATE_CULL_MODE_EXT) || IsDynamic(pPipeline, VK_DYNAMIC_STATE_FRONT_FACE_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT) || IsDynamic(pPipeline, VK_DYNAMIC_STATE_STENCIL_OP_EXT))) {
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378",
+                         "Extended dynamic state used by the extendedDynamicState feature is not enabled");
+    }
+
     return skip;
 }
 
@@ -12554,6 +12690,201 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                 }
             }
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetCullModeEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetCullModeEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETCULLMODEEXT, "vkCmdSetCullModeEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetCullModeEXT-None-03384",
+                         "vkCmdSetCullModeEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetFrontFaceEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetFrontFaceEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETFRONTFACEEXT, "vkCmdSetFrontFaceEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetFrontFaceEXT-None-03383",
+                         "vkCmdSetFrontFaceEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer,
+                                                           VkPrimitiveTopology primitiveTopology) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetPrimitiveTopologyEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETPRIMITIVETOPOLOGYEXT, "vkCmdSetPrimitiveTopologyEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetPrimitiveTopologyEXT-None-03347",
+                         "vkCmdSetPrimitiveTopologyEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                           const VkViewport *pViewports) const
+
+{
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetViewportWithCountEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetViewportWithCountEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETVIEWPORTWITHCOUNTEXT, "vkCmdSetViewportWithCountEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCountEXT-None-03393",
+                         "vkCmdSetViewportWithCountEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                          const VkRect2D *pScissors) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetScissorWithCountEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetScissorWithCountEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETSCISSORWITHCOUNTEXT, "vkCmdSetScissorWithCountEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-None-03396",
+                         "vkCmdSetScissorWithCountEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                         uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                         const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                         const VkDeviceSize *pStrides) const {
+    const auto cb_state = GetCBState(commandBuffer);
+    assert(cb_state);
+
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindVertexBuffers2EXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_BINDVERTEXBUFFERS2EXT, "vkCmdBindVertexBuffers2EXT()");
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        const auto buffer_state = GetBufferState(pBuffers[i]);
+        if (buffer_state) {
+            skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
+                                             "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-03359", "vkCmdBindVertexBuffers2EXT()",
+                                             "VK_BUFFER_USAGE_VERTEX_BUFFER_BIT");
+            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdBindVertexBuffers2EXT()",
+                                                  "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-03360");
+            if (pOffsets[i] >= buffer_state->createInfo.size) {
+                skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindVertexBuffers2EXT-pOffsets-03357",
+                                 "vkCmdBindVertexBuffers2EXT() offset (0x%" PRIxLEAST64 ") is beyond the end of the buffer.",
+                                 pOffsets[i]);
+            }
+            if (pSizes && pOffsets[i] + pSizes[i] > buffer_state->createInfo.size) {
+                skip |=
+                    LogError(buffer_state->buffer, "VUID-vkCmdBindVertexBuffers2EXT-pSizes-03358",
+                             "vkCmdBindVertexBuffers2EXT() size (0x%" PRIxLEAST64 ") is beyond the end of the buffer.", pSizes[i]);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthTestEnableEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETDEPTHTESTENABLEEXT, "vkCmdSetDepthTestEnableEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthTestEnableEXT-None-03352",
+                         "vkCmdSetDepthTestEnableEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthWriteEnableEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETDEPTHWRITEENABLEEXT, "vkCmdSetDepthWriteEnableEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthWriteEnableEXT-None-03354",
+                         "vkCmdSetDepthWriteEnableEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthCompareOpEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETDEPTHCOMPAREOPEXT, "vkCmdSetDepthCompareOpEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthCompareOpEXT-None-03353",
+                         "vkCmdSetDepthCompareOpEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer,
+                                                               VkBool32 depthBoundsTestEnable) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthBoundsTestEnableEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETDEPTHBOUNDSTESTENABLEEXT, "vkCmdSetDepthBoundsTestEnableEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBoundsTestEnableEXT-None-03349",
+                         "vkCmdSetDepthBoundsTestEnableEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilTestEnableEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETSTENCILTESTENABLEEXT, "vkCmdSetStencilTestEnableEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetStencilTestEnableEXT-None-03350",
+                         "vkCmdSetStencilTestEnableEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
+                                                   VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilOpEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetStencilOpEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETSTENCILOPEXT, "vkCmdSetStencilOpEXT()");
+
+    if (!enabled_features.extended_dynamic_state_features.extendedDynamicState) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetStencilOpEXT-None-03351",
+                         "vkCmdSetStencilOpEXT: extendedDynamicState feature is not enabled.");
     }
 
     return skip;

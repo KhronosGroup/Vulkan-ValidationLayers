@@ -259,6 +259,7 @@ struct BufferBinding {
     VkBuffer buffer;
     VkDeviceSize size;
     VkDeviceSize offset;
+    VkDeviceSize stride;
 };
 
 struct IndexBufferBinding : BufferBinding {
@@ -615,22 +616,34 @@ enum CB_STATE {
 typedef VkFlags CBStatusFlags;
 enum CBStatusFlagBits {
     // clang-format off
-    CBSTATUS_NONE                   = 0x00000000,   // No status is set
-    CBSTATUS_LINE_WIDTH_SET         = 0x00000001,   // Line width has been set
-    CBSTATUS_DEPTH_BIAS_SET         = 0x00000002,   // Depth bias has been set
-    CBSTATUS_BLEND_CONSTANTS_SET    = 0x00000004,   // Blend constants state has been set
-    CBSTATUS_DEPTH_BOUNDS_SET       = 0x00000008,   // Depth bounds state object has been set
-    CBSTATUS_STENCIL_READ_MASK_SET  = 0x00000010,   // Stencil read mask has been set
-    CBSTATUS_STENCIL_WRITE_MASK_SET = 0x00000020,   // Stencil write mask has been set
-    CBSTATUS_STENCIL_REFERENCE_SET  = 0x00000040,   // Stencil reference has been set
-    CBSTATUS_VIEWPORT_SET           = 0x00000080,
-    CBSTATUS_SCISSOR_SET            = 0x00000100,
-    CBSTATUS_INDEX_BUFFER_BOUND     = 0x00000200,   // Index buffer has been set
-    CBSTATUS_EXCLUSIVE_SCISSOR_SET  = 0x00000400,
-    CBSTATUS_SHADING_RATE_PALETTE_SET = 0x00000800,
-    CBSTATUS_LINE_STIPPLE_SET       = 0x00001000,
-    CBSTATUS_VIEWPORT_W_SCALING_SET = 0x00002000,
-    CBSTATUS_ALL_STATE_SET          = 0x00003DFF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_NONE                            = 0x00000000,   // No status is set
+    CBSTATUS_LINE_WIDTH_SET                  = 0x00000001,   // Line width has been set
+    CBSTATUS_DEPTH_BIAS_SET                  = 0x00000002,   // Depth bias has been set
+    CBSTATUS_BLEND_CONSTANTS_SET             = 0x00000004,   // Blend constants state has been set
+    CBSTATUS_DEPTH_BOUNDS_SET                = 0x00000008,   // Depth bounds state object has been set
+    CBSTATUS_STENCIL_READ_MASK_SET           = 0x00000010,   // Stencil read mask has been set
+    CBSTATUS_STENCIL_WRITE_MASK_SET          = 0x00000020,   // Stencil write mask has been set
+    CBSTATUS_STENCIL_REFERENCE_SET           = 0x00000040,   // Stencil reference has been set
+    CBSTATUS_VIEWPORT_SET                    = 0x00000080,
+    CBSTATUS_SCISSOR_SET                     = 0x00000100,
+    CBSTATUS_INDEX_BUFFER_BOUND              = 0x00000200,   // Index buffer has been set
+    CBSTATUS_EXCLUSIVE_SCISSOR_SET           = 0x00000400,
+    CBSTATUS_SHADING_RATE_PALETTE_SET        = 0x00000800,
+    CBSTATUS_LINE_STIPPLE_SET                = 0x00001000,
+    CBSTATUS_VIEWPORT_W_SCALING_SET          = 0x00002000,
+    CBSTATUS_CULL_MODE_SET                   = 0x00004000,
+    CBSTATUS_FRONT_FACE_SET                  = 0x00008000,
+    CBSTATUS_PRIMITIVE_TOPOLOGY_SET          = 0x00010000,
+    CBSTATUS_VIEWPORT_WITH_COUNT_SET         = 0x00020000,
+    CBSTATUS_SCISSOR_WITH_COUNT_SET          = 0x00040000,
+    CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET = 0x00080000,
+    CBSTATUS_DEPTH_TEST_ENABLE_SET           = 0x00100000,
+    CBSTATUS_DEPTH_WRITE_ENABLE_SET          = 0x00200000,
+    CBSTATUS_DEPTH_COMPARE_OP_SET            = 0x00400000,
+    CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET    = 0x00800000,
+    CBSTATUS_STENCIL_TEST_ENABLE_SET         = 0x01000000,
+    CBSTATUS_STENCIL_OP_SET                  = 0x02000000,
+    CBSTATUS_ALL_STATE_SET                   = 0x03FFFDFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 
@@ -1169,8 +1182,11 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_map<VkDescriptorSet, Pipelines_Bindings> validate_descriptorsets_in_queuesubmit;
 
     uint32_t viewportMask;
+    uint32_t viewportWithCountMask;
     uint32_t scissorMask;
+    uint32_t scissorWithCountMask;
     uint32_t initial_device_mask;
+    VkPrimitiveTopology primitiveTopology;
 
     safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
     std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
@@ -1327,6 +1343,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceASTCDecodeFeaturesEXT astc_decode_features;
     VkPhysicalDeviceCustomBorderColorFeaturesEXT custom_border_color_features;
     VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipeline_creation_cache_control_features;
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
