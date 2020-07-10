@@ -27,6 +27,8 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 class MessageIdFilter {
   public:
     MessageIdFilter(const char *filter_string) {
@@ -9664,4 +9666,437 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01612");
     vkBindImageMemory2Function(device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
+    TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+        return;
+    }
+
+    auto extended_dynamic_state_features = lvl_init_struct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    // First test attempted uses of VK_EXT_extended_dynamic_state without it being enabled.
+    extended_dynamic_state_features.extendedDynamicState = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkCmdSetCullModeEXT = (PFN_vkCmdSetCullModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCullModeEXT");
+    auto vkCmdSetFrontFaceEXT = (PFN_vkCmdSetFrontFaceEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFrontFaceEXT");
+    auto vkCmdSetPrimitiveTopologyEXT =
+        (PFN_vkCmdSetPrimitiveTopologyEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT");
+    auto vkCmdSetViewportWithCountEXT =
+        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
+    auto vkCmdSetScissorWithCountEXT =
+        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
+    auto vkCmdSetDepthTestEnableEXT =
+        (PFN_vkCmdSetDepthTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthTestEnableEXT");
+    auto vkCmdSetDepthWriteEnableEXT =
+        (PFN_vkCmdSetDepthWriteEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthWriteEnableEXT");
+    auto vkCmdSetDepthCompareOpEXT =
+        (PFN_vkCmdSetDepthCompareOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthCompareOpEXT");
+    auto vkCmdSetDepthBoundsTestEnableEXT =
+        (PFN_vkCmdSetDepthBoundsTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBoundsTestEnableEXT");
+    auto vkCmdSetStencilTestEnableEXT =
+        (PFN_vkCmdSetStencilTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilTestEnableEXT");
+    auto vkCmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilOpEXT");
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    const VkDynamicState dyn_states[] = {
+        VK_DYNAMIC_STATE_CULL_MODE_EXT,           VK_DYNAMIC_STATE_FRONT_FACE_EXT,
+        VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,  VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
+        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,  VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT,
+        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT,   VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT,
+        VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,    VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT,
+        VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_STENCIL_OP_EXT,
+    };
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.vp_state_ci_.scissorCount = 0;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+    commandBuffer.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetCullModeEXT-None-03384");
+    vkCmdSetCullModeEXT(commandBuffer.handle(), VK_CULL_MODE_NONE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBoundsTestEnableEXT-None-03349");
+    vkCmdSetDepthBoundsTestEnableEXT(commandBuffer.handle(), VK_FALSE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthCompareOpEXT-None-03353");
+    vkCmdSetDepthCompareOpEXT(commandBuffer.handle(), VK_COMPARE_OP_NEVER);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthTestEnableEXT-None-03352");
+    vkCmdSetDepthTestEnableEXT(commandBuffer.handle(), VK_FALSE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthWriteEnableEXT-None-03354");
+    vkCmdSetDepthWriteEnableEXT(commandBuffer.handle(), VK_FALSE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetFrontFaceEXT-None-03383");
+    vkCmdSetFrontFaceEXT(commandBuffer.handle(), VK_FRONT_FACE_CLOCKWISE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveTopologyEXT-None-03347");
+    vkCmdSetPrimitiveTopologyEXT(commandBuffer.handle(), VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-None-03396");
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOpEXT-None-03351");
+    vkCmdSetStencilOpEXT(commandBuffer.handle(), VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
+                         VK_STENCIL_OP_ZERO, VK_COMPARE_OP_NEVER);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilTestEnableEXT-None-03350");
+    vkCmdSetStencilTestEnableEXT(commandBuffer.handle(), VK_FALSE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCountEXT-None-03393");
+    VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
+    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    commandBuffer.end();
+}
+
+TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
+    TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+        return;
+    }
+
+    auto extended_dynamic_state_features = lvl_init_struct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkCmdSetPrimitiveTopologyEXT =
+        (PFN_vkCmdSetPrimitiveTopologyEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT");
+    auto vkCmdSetViewportWithCountEXT =
+        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
+    auto vkCmdSetScissorWithCountEXT =
+        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
+    auto vkCmdBindVertexBuffers2EXT =
+        (PFN_vkCmdBindVertexBuffers2EXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindVertexBuffers2EXT");
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Verify viewportCount and scissorCount are specified as zero.
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        const VkDynamicState dyn_states[] = {
+            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
+            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,
+        };
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+        dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dyn_state_ci.dynamicStateCount = size(dyn_states);
+        dyn_state_ci.pDynamicStates = dyn_states;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03379");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    const VkDynamicState dyn_states[] = {
+        VK_DYNAMIC_STATE_CULL_MODE_EXT,           VK_DYNAMIC_STATE_FRONT_FACE_EXT,
+        VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,  VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
+        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,  VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT,
+        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT,   VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT,
+        VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,    VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT,
+        VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_STENCIL_OP_EXT,
+    };
+
+    // Verify dupes of every state.
+    for (size_t i = 0; i < size(dyn_states); ++i) {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+        dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dyn_state_ci.dynamicStateCount = 2;
+        VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
+        dyn_state_ci.pDynamicStates = dyn_state_dupes;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        if (dyn_states[i] == VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) {
+            pipe.vp_state_ci_.viewportCount = 0;
+        }
+        if (dyn_states[i] == VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) {
+            pipe.vp_state_ci_.scissorCount = 0;
+        }
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Verify each vkCmdSet command
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.vp_state_ci_.scissorCount = 0;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    VkVertexInputBindingDescription inputBinding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    pipe.vi_ci_.pVertexBindingDescriptions = &inputBinding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 16, 0, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    std::vector<VkBuffer> buffers(m_device->props.limits.maxVertexInputBindings + 1ull, buffer.handle());
+    std::vector<VkDeviceSize> offsets(buffers.size(), 0);
+
+    VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+    commandBuffer.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03355");
+    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), m_device->props.limits.maxVertexInputBindings, 1, buffers.data(),
+                               offsets.data(), 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03356");
+    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, m_device->props.limits.maxVertexInputBindings + 1, buffers.data(),
+                               offsets.data(), 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    {
+        VkBufferObj bufferWrongUsage;
+        bufferWrongUsage.init(*m_device, 16, 0, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-03359");
+        VkBuffer buffers2[1] = {bufferWrongUsage.handle()};
+        VkDeviceSize offsets2[1] = {};
+        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04111");
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-GeneralParameterError-RequiredParameter");
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindVertexBuffers2EXT-pBuffers-parameter");
+        VkBuffer buffers2[1] = {VK_NULL_HANDLE};
+        VkDeviceSize offsets2[1] = {16};
+        VkDeviceSize strides[1] = {m_device->props.limits.maxVertexInputBindingStride + 1ull};
+        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        buffers2[0] = buffers[0];
+        VkDeviceSize sizes[1] = {16};
+        // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04112");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pOffsets-03357");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pSizes-03358");
+        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, sizes, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03362");
+        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, strides);
+        m_errorMonitor->VerifyFound();
+    }
+
+    commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitInfo();
+    VkPipelineDynamicStateCreateInfo dyn_state_ci2 = {};
+    dyn_state_ci2.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci2.dynamicStateCount = 1;
+    VkDynamicState dynamic_state2 = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT;
+    dyn_state_ci2.pDynamicStates = &dynamic_state2;
+    pipe2.dyn_state_ci_ = dyn_state_ci2;
+    pipe2.vp_state_ci_.viewportCount = 0;
+    pipe2.InitState();
+    pipe2.CreateGraphicsPipeline();
+    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewportCount-03417");
+    vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    CreatePipelineHelper pipe3(*this);
+    pipe3.InitInfo();
+    VkPipelineDynamicStateCreateInfo dyn_state_ci3 = {};
+    dyn_state_ci3.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci3.dynamicStateCount = 1;
+    VkDynamicState dynamic_state3 = VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT;
+    dyn_state_ci3.pDynamicStates = &dynamic_state3;
+    pipe3.dyn_state_ci_ = dyn_state_ci3;
+    pipe3.vp_state_ci_.scissorCount = 0;
+    pipe3.InitState();
+    pipe3.CreateGraphicsPipeline();
+    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe3.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-scissorCount-03418");
+    vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize strides[1] = {0};
+    vkCmdSetPrimitiveTopologyEXT(commandBuffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03363");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewportCount-03419");
+    vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
+    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
+    strides[0] = 4;
+    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
+
+    vkCmdSetPrimitiveTopologyEXT(commandBuffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitiveTopology-03420");
+    vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdEndRenderPass(commandBuffer.handle());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCountEXT-viewportCount-03394");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetViewportWithCountEXT-viewportCount-arraylength");
+    VkViewport viewport2 = {
+        0, 0, 1, 1, 0.0f, 0.0f,
+    };
+    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 0, &viewport2);
+    m_errorMonitor->VerifyFound();
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-offset-03400");
+        VkRect2D scissor2 = {{1, 0}, {INT32_MAX, 16}};
+        vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-offset-03401");
+        VkRect2D scissor2 = {{0, 1}, {16, INT32_MAX}};
+        vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03397");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCountEXT-scissorCount-arraylength");
+    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-x-03399");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-x-03399");
+    VkRect2D scissor3 = {{-1, -1}, {0, 0}};
+    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor3);
+    m_errorMonitor->VerifyFound();
+
+    commandBuffer.end();
+}
+
+TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
+    TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+        return;
+    }
+
+    auto extended_dynamic_state_features = lvl_init_struct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    features2.features.multiViewport = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkCmdSetViewportWithCountEXT =
+        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
+    auto vkCmdSetScissorWithCountEXT =
+        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+    commandBuffer.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCountEXT-viewportCount-03395");
+    VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
+    VkViewport viewports[] = {viewport, viewport};
+    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), size(viewports), viewports);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03398");
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    VkRect2D scissors[] = {scissor, scissor};
+    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), size(scissors), scissors);
+    m_errorMonitor->VerifyFound();
+
+    commandBuffer.end();
 }

@@ -231,7 +231,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdBuildAccelerationStructureIndirectKHR',
             'vkGetDeviceAccelerationStructureCompatibilityKHR',
             'vkBuildAccelerationStructureKHR',
-            'vkCmdBuildAccelerationStructureKHR'
+            'vkCmdBuildAccelerationStructureKHR',
+            'vkCmdSetViewportWithCountEXT',
+            'vkCmdSetScissorWithCountEXT',
+            'vkCmdBindVertexBuffers2EXT',
             ]
 
         # Commands to ignore

@@ -57,7 +57,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
-        kVUIDUndefined // indirect_buffer_bit
+        kVUIDUndefined, // indirect_buffer_bit
+        "VUID-vkCmdDraw-viewportCount-03417",
+        "VUID-vkCmdDraw-scissorCount-03418",
+        "VUID-vkCmdDraw-viewportCount-03419",
+        "VUID-vkCmdDraw-primitiveTopology-03420",
     }},
     {CMD_DRAWINDEXED, {
         "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
@@ -74,7 +78,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
-        kVUIDUndefined // indirect_buffer_bit
+        kVUIDUndefined, // indirect_buffer_bit
+        "VUID-vkCmdDrawIndexed-viewportCount-03417",
+        "VUID-vkCmdDrawIndexed-scissorCount-03418",
+        "VUID-vkCmdDrawIndexed-viewportCount-03419",
+        "VUID-vkCmdDrawIndexed-primitiveTopology-03420",
     }},
     {CMD_DRAWINDIRECT, {
         "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
@@ -91,7 +99,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-None-02692",
         "VUID-vkCmdDrawIndirect-commandBuffer-02711",
         "VUID-vkCmdDrawIndirect-buffer-02708",
-        "VUID-vkCmdDrawIndirect-buffer-02709"
+        "VUID-vkCmdDrawIndirect-buffer-02709",
+        "VUID-vkCmdDrawIndirect-viewportCount-03417",
+        "VUID-vkCmdDrawIndirect-scissorCount-03418",
+        "VUID-vkCmdDrawIndirect-viewportCount-03419",
+        "VUID-vkCmdDrawIndirect-primitiveTopology-03420",
     }},
     {CMD_DRAWINDEXEDINDIRECT, {
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool",
@@ -108,7 +120,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-None-02692",
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711",
         "VUID-vkCmdDrawIndexedIndirect-buffer-02708",
-        "VUID-vkCmdDrawIndexedIndirect-buffer-02709"
+        "VUID-vkCmdDrawIndexedIndirect-buffer-02709",
+        "VUID-vkCmdDrawIndexedIndirect-viewportCount-03417",
+        "VUID-vkCmdDrawIndexedIndirect-scissorCount-03418",
+        "VUID-vkCmdDrawIndexedIndirect-viewportCount-03419",
+        "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-03420",
     }},
     {CMD_DISPATCH, {
         "VUID-vkCmdDispatch-commandBuffer-cmdpool",
@@ -125,7 +141,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          "VUID-vkCmdDispatch-None-02692",
          kVUIDUndefined, // indirect_protected_cb
          kVUIDUndefined, // indirect_contiguous_memory;
-         kVUIDUndefined // indirect_buffer_bit
+         kVUIDUndefined, // indirect_buffer_bit
+         kVUIDUndefined, // viewport_count
+         kVUIDUndefined, // scissor_count
+         kVUIDUndefined, // viewport_scissor_count
+         kVUIDUndefined, // primitive_topology
     }},
     {CMD_DISPATCHINDIRECT, {
         "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
@@ -142,7 +162,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatchIndirect-None-02692",
         "VUID-vkCmdDispatchIndirect-commandBuffer-02711",
         "VUID-vkCmdDispatchIndirect-buffer-02708",
-        "VUID-vkCmdDispatchIndirect-buffer-02709"
+        "VUID-vkCmdDispatchIndirect-buffer-02709",
+        kVUIDUndefined, // viewport_count
+        kVUIDUndefined, // scissor_count
+        kVUIDUndefined, // viewport_scissor_count
+        kVUIDUndefined, // primitive_topology
     }},
     {CMD_DRAWINDIRECTCOUNT, {
         "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool",
@@ -159,7 +183,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-None-02692",
         "VUID-vkCmdDrawIndirectCount-commandBuffer-02711",
         "VUID-vkCmdDrawIndirectCount-buffer-02708",
-        "VUID-vkCmdDrawIndirectCount-buffer-02709"
+        "VUID-vkCmdDrawIndirectCount-buffer-02709",
+        "VUID-vkCmdDrawIndirectCount-viewportCount-03417",
+        "VUID-vkCmdDrawIndirectCount-scissorCount-03418",
+        "VUID-vkCmdDrawIndirectCount-viewportCount-03419",
+        "VUID-vkCmdDrawIndirectCount-primitiveTopology-03420",
     }},
     {CMD_DRAWINDEXEDINDIRECTCOUNT,{
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool",
@@ -176,7 +204,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-None-02692",
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711",
         "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708",
-        "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709"
+        "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709",
+        "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03417",
+        "VUID-vkCmdDrawIndexedIndirectCount-scissorCount-03418",
+        "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03419",
+        "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-03420",
     }},
     {CMD_TRACERAYSNV, {
         "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool",
@@ -193,7 +225,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysNV-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
-        kVUIDUndefined // indirect_buffer_bit
+        kVUIDUndefined, // indirect_buffer_bit
+        kVUIDUndefined, // viewport_count
+        kVUIDUndefined, // scissor_count
+        kVUIDUndefined, // viewport_scissor_count
+        kVUIDUndefined, // primitive_topology
     }},
     {CMD_TRACERAYSKHR, {
         "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
@@ -210,7 +246,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysKHR-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
-        kVUIDUndefined // indirect_buffer_bit
+        kVUIDUndefined, // indirect_buffer_bit
+        kVUIDUndefined, // viewport_count
+        kVUIDUndefined, // scissor_count
+        kVUIDUndefined, // viewport_scissor_count
+        kVUIDUndefined, // primitive_topology
     }},
     {CMD_TRACERAYSINDIRECTKHR, {
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
@@ -227,7 +267,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysIndirectKHR-None-02692",
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02711",
         "VUID-vkCmdTraceRaysIndirectKHR-buffer-02708",
-        "VUID-vkCmdTraceRaysIndirectKHR-buffer-02709"
+        "VUID-vkCmdTraceRaysIndirectKHR-buffer-02709",
+        kVUIDUndefined, // viewport_count
+        kVUIDUndefined, // scissor_count
+        kVUIDUndefined, // viewport_scissor_count
+        kVUIDUndefined, // primitive_topology
     }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
@@ -244,7 +288,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
-        kVUIDUndefined // indirect_buffer_bit
+        kVUIDUndefined, // indirect_buffer_bit
+        "VUID-vkCmdDrawMeshTasksNV-viewportCount-03417",
+        "VUID-vkCmdDrawMeshTasksNV-scissorCount-03418",
+        "VUID-vkCmdDrawMeshTasksNV-viewportCount-03419",
+        "VUID-vkCmdDrawMeshTasksNV-primitiveTopology-03420",
     }},
     {CMD_DRAWMESHTASKSINDIRECTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
@@ -261,7 +309,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692",
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711",
         "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708",
-        "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709"
+        "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03417",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-scissorCount-03418",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03419",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveTopology-03420",
     }},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool",
@@ -278,10 +330,34 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02692",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708",
-        "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709"
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03417",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-scissorCount-03418",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03419",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveTopology-03420",
     }},
     // Used if invalid cmd_type is used
-    {CMD_NONE, {kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined}}
+    {CMD_NONE, {
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+    }}
 };
 // clang-format on
 

@@ -1353,6 +1353,18 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             bool has_dynamic_shading_rate_palette_nv = false;
             bool has_dynamic_viewport_course_sample_order_nv = false;
             bool has_dynamic_line_stipple = false;
+            bool has_dynamic_cull_mode = false;
+            bool has_dynamic_front_face = false;
+            bool has_dynamic_primitive_topology = false;
+            bool has_dynamic_viewport_with_count = false;
+            bool has_dynamic_scissor_with_count = false;
+            bool has_dynamic_vertex_input_binding_stride = false;
+            bool has_dynamic_depth_test_enable = false;
+            bool has_dynamic_depth_write_enable = false;
+            bool has_dynamic_depth_compare_op = false;
+            bool has_dynamic_depth_bounds_test_enable = false;
+            bool has_dynamic_stencil_test_enable = false;
+            bool has_dynamic_stencil_op = false;
             if (pCreateInfos[i].pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
@@ -1500,6 +1512,123 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              i);
                         }
                         has_dynamic_line_stipple = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_CULL_MODE_EXT) {
+                        if (has_dynamic_cull_mode) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_CULL_MODE_EXT was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_cull_mode = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_FRONT_FACE_EXT) {
+                        if (has_dynamic_front_face) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_FRONT_FACE_EXT was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_front_face = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) {
+                        if (has_dynamic_primitive_topology) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_primitive_topology = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) {
+                        if (has_dynamic_viewport_with_count) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_viewport_with_count = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) {
+                        if (has_dynamic_scissor_with_count) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_scissor_with_count = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) {
+                        if (has_dynamic_vertex_input_binding_stride) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT was "
+                                             "listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_vertex_input_binding_stride = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT) {
+                        if (has_dynamic_depth_test_enable) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_depth_test_enable = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT) {
+                        if (has_dynamic_depth_write_enable) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_depth_write_enable = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT) {
+                        if (has_dynamic_depth_compare_op) {
+                            skip |=
+                                LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                         "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT was listed twice in the "
+                                         "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                         i);
+                        }
+                        has_dynamic_depth_compare_op = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT) {
+                        if (has_dynamic_depth_bounds_test_enable) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_depth_bounds_test_enable = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT) {
+                        if (has_dynamic_stencil_test_enable) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_stencil_test_enable = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_OP_EXT) {
+                        if (has_dynamic_stencil_op) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_OP_EXT was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_stencil_op = true;
                     }
                 }
             }
@@ -1870,27 +1999,43 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                     } else {  // multiViewport enabled
                         if (viewport_state.viewportCount == 0) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->viewportCount is 0.", i);
+                            if (!has_dynamic_viewport_with_count) {
+                                skip |= LogError(
+                                    device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->viewportCount is 0.", i);
+                            }
                         } else if (viewport_state.viewportCount > device_limits.maxViewports) {
                             skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
                                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                              "].pViewportState->viewportCount (=%" PRIu32
                                              ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
                                              i, viewport_state.viewportCount, device_limits.maxViewports);
+                        } else if (has_dynamic_viewport_with_count) {
+                            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03379",
+                                             "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                             "].pViewportState->viewportCount (=%" PRIu32
+                                             ") must be zero when VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT is used.",
+                                             i, viewport_state.viewportCount);
                         }
 
                         if (viewport_state.scissorCount == 0) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount is 0.", i);
+                            if (!has_dynamic_scissor_with_count) {
+                                skip |= LogError(
+                                    device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount is 0.", i);
+                            }
                         } else if (viewport_state.scissorCount > device_limits.maxViewports) {
                             skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
                                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                              "].pViewportState->scissorCount (=%" PRIu32
                                              ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
                                              i, viewport_state.scissorCount, device_limits.maxViewports);
+                        } else if (has_dynamic_scissor_with_count) {
+                            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380",
+                                             "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                             "].pViewportState->scissorCount (=%" PRIu32
+                                             ") must be zero when VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT is used.",
+                                             i, viewport_state.viewportCount);
                         }
                     }
 
@@ -1910,7 +2055,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i, shading_rate_image_struct->viewportCount, device_limits.maxViewports);
                     }
 
-                    if (viewport_state.scissorCount != viewport_state.viewportCount) {
+                    if (viewport_state.scissorCount != viewport_state.viewportCount &&
+                        !(has_dynamic_viewport_with_count || has_dynamic_scissor_with_count)) {
                         skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220",
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                          "].pViewportState->scissorCount (=%" PRIu32 ") is not identical to pCreateInfos[%" PRIu32
@@ -5460,5 +5606,146 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureKHR
                          "pNext chain of any of the provided VkAccelerationStructureBuildGeometryInfoKHR structures.");
         }
     }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                                           const VkViewport *pViewports) const {
+    bool skip = false;
+
+    if (!physical_device_features.multiViewport) {
+        if (viewportCount != 1) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCountEXT-viewportCount-03395",
+                             "vkCmdSetViewportWithCountEXT: The multiViewport feature is disabled, but viewportCount (=%" PRIu32
+                             ") is not 1.",
+                             viewportCount);
+        }
+    } else {  // multiViewport enabled
+        if (viewportCount < 1 || viewportCount > device_limits.maxViewports) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCountEXT-viewportCount-03394",
+                             "vkCmdSetViewportWithCountEXT:  viewportCount (=%" PRIu32
+                             ") must "
+                             "not be greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                             viewportCount, device_limits.maxViewports);
+        }
+    }
+
+    if (pViewports) {
+        for (uint32_t viewport_i = 0; viewport_i < viewportCount; ++viewport_i) {
+            const auto &viewport = pViewports[viewport_i];  // will crash on invalid ptr
+            const char *fn_name = "vkCmdSetViewportWithCountEXT";
+            skip |= manual_PreCallValidateViewport(
+                viewport, fn_name, ParameterName("pViewports[%i]", ParameterName::IndexVector{viewport_i}), commandBuffer);
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                                          const VkRect2D *pScissors) const {
+    bool skip = false;
+
+    if (!physical_device_features.multiViewport) {
+        if (scissorCount != 1) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03398",
+                             "vkCmdSetScissorWithCountEXT: scissorCount (=%" PRIu32
+                             ") must "
+                             "be 1 when the multiViewport feature is disabled.",
+                             scissorCount);
+        }
+    } else {  // multiViewport enabled
+        if (scissorCount == 0) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03397",
+                             "vkCmdSetScissorWithCountEXT: scissorCount (=%" PRIu32
+                             ") must "
+                             "be great than zero.",
+                             scissorCount);
+        } else if (scissorCount > device_limits.maxViewports) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-scissorCount-03397",
+                             "vkCmdSetScissorWithCountEXT: scissorCount (=%" PRIu32
+                             ") must "
+                             "not be greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                             scissorCount, device_limits.maxViewports);
+        }
+    }
+
+    if (pScissors) {
+        for (uint32_t scissor_i = 0; scissor_i < scissorCount; ++scissor_i) {
+            const auto &scissor = pScissors[scissor_i];  // will crash on invalid ptr
+
+            if (scissor.offset.x < 0) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-x-03399",
+                                 "vkCmdSetScissor: pScissors[%" PRIu32 "].offset.x (=%" PRIi32 ") is negative.", scissor_i,
+                                 scissor.offset.x);
+            }
+
+            if (scissor.offset.y < 0) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-x-03399",
+                                 "vkCmdSetScissor: pScissors[%" PRIu32 "].offset.y (=%" PRIi32 ") is negative.", scissor_i,
+                                 scissor.offset.y);
+            }
+
+            const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
+            if (x_sum > INT32_MAX) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-offset-03400",
+                                 "vkCmdSetScissor: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                 ") of pScissors[%" PRIu32 "] will overflow int32_t.",
+                                 scissor.offset.x, scissor.extent.width, x_sum, scissor_i);
+            }
+
+            const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
+            if (y_sum > INT32_MAX) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-offset-03401",
+                                 "vkCmdSetScissor: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                 ") of pScissors[%" PRIu32 "] will overflow int32_t.",
+                                 scissor.offset.y, scissor.extent.height, y_sum, scissor_i);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                         uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                         const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                                         const VkDeviceSize *pStrides) const {
+    bool skip = false;
+    if (firstBinding >= device_limits.maxVertexInputBindings) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03355",
+                         "vkCmdBindVertexBuffers2EXT() firstBinding (%u) must be less than maxVertexInputBindings (%u)",
+                         firstBinding, device_limits.maxVertexInputBindings);
+    } else if ((firstBinding + bindingCount) > device_limits.maxVertexInputBindings) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-firstBinding-03356",
+                         "vkCmdBindVertexBuffers2EXT() sum of firstBinding (%u) and bindingCount (%u) must be less than "
+                         "maxVertexInputBindings (%u)",
+                         firstBinding, bindingCount, device_limits.maxVertexInputBindings);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        if (pBuffers[i] == VK_NULL_HANDLE) {
+            const auto *robustness2_features = lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+            if (!(robustness2_features && robustness2_features->nullDescriptor)) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04111",
+                                 "vkCmdBindVertexBuffers2EXT() required parameter pBuffers[%d] specified as VK_NULL_HANDLE", i);
+            } else {
+                if (pOffsets[i] != 0) {
+                    skip |=
+                        LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pBuffers-04112",
+                                 "vkCmdBindVertexBuffers2EXT() pBuffers[%d] is VK_NULL_HANDLE, but pOffsets[%d] is not 0", i, i);
+                }
+            }
+        }
+        if (pStrides) {
+            if (pStrides[i] > device_limits.maxVertexInputBindingStride) {
+                skip |=
+                    LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03362",
+                             "vkCmdBindVertexBuffers2EXT() pStrides[%d] (%u) must be less than maxVertexInputBindingStride (%u)", i,
+                             pStrides[i], device_limits.maxVertexInputBindingStride);
+            }
+        }
+    }
+
     return skip;
 }

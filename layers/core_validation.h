@@ -47,6 +47,10 @@ struct DrawDispatchVuid {
     const char* indirect_protected_cb;
     const char* indirect_contiguous_memory;
     const char* indirect_buffer_bit;
+    const char* viewport_count;
+    const char* scissor_count;
+    const char* viewport_scissor_count;
+    const char* primitive_topology;
 };
 
 typedef struct {
@@ -1220,6 +1224,25 @@ class CoreChecks : public ValidationStateTracker {
                                                                 const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const;
     bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                 const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const;
+
+    bool PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) const;
+    bool PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) const;
+    bool PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) const;
+    bool PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                   const VkViewport* pViewports) const;
+    bool PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                  const VkRect2D* pScissors) const;
+    bool PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                 const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
+                                                 const VkDeviceSize* pStrides) const;
+    bool PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) const;
+    bool PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) const;
+    bool PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) const;
+    bool PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) const;
+    bool PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) const;
+    bool PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
+                                           VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) const;
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                   VkAndroidHardwareBufferPropertiesANDROID* pProperties) const;
