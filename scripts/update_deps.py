@@ -2,8 +2,7 @@
 
 # Copyright 2017 The Glslang Authors. All rights reserved.
 # Copyright (c) 2018 Valve Corporation
-# Copyright (c) 2018 LunarG, Inc.
-# Copyright (c) 2020 LunarG, Inc.
+# Copyright (c) 2018-2020 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
