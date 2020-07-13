@@ -13495,8 +13495,8 @@ TEST_F(VkSyncValTest, SyncRenderPassWithWrongInitialLayout) {
         // Result attachment
         {(VkAttachmentDescriptionFlags)0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR,
          VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_IMAGE_LAYOUT_UNDEFINED,  // Fail
-         // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,  // Pass
+         VK_IMAGE_LAYOUT_UNDEFINED,  // Here causes DesiredError that SYNC-HAZARD-NONE in BeginRenderPass.
+                                     // It should be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
         // Input attachment
         {(VkAttachmentDescriptionFlags)0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD,
@@ -13589,8 +13589,8 @@ TEST_F(VkSyncValTest, SyncRenderPassWithWrongDepthStencilInitialLayout) {
     const VkAttachmentDescription depthStencilAttachmentDescription = {
         (VkAttachmentDescriptionFlags)0, ds_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR,
         VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
-        VK_IMAGE_LAYOUT_UNDEFINED,  //  Fail
-        // VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  //  Pass
+        VK_IMAGE_LAYOUT_UNDEFINED,  // Here causes DesiredError that SYNC-HAZARD-WRITE_AFTER_WRITE in BeginRenderPass.
+                                    // It should be VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
     std::vector<VkAttachmentDescription> attachmentDescriptions;
@@ -13830,7 +13830,9 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
         VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         0,
         VK_ACCESS_TRANSFER_WRITE_BIT,
-        VK_ACCESS_SHADER_READ_BIT,
+        VK_ACCESS_SHADER_READ_BIT,  // Here causes DesiredError that SYNC-HAZARD-READ_AFTER_WRITE in CmdDraw.
+                                    // It should be VK_ACCESS_INPUT_ATTACHMENT_READ_BIT
+                                    // because image_input is used in CmdDraw as VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT.
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         0,
