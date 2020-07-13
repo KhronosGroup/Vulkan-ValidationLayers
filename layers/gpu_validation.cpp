@@ -1160,6 +1160,20 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     if (aborted) return false;
     if (pCreateInfo->pCode[0] != spv::MagicNumber) return false;
 
+    const spvtools::MessageConsumer GpuConsoleMessageConsumer =
+        [this](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
+        switch (level) {
+            case SPV_MSG_FATAL:
+            case SPV_MSG_INTERNAL_ERROR:
+            case SPV_MSG_ERROR:
+                this->LogError(this->device, "UNASSIGNED-GPU-Assisted", "Error during shader instrumentation: line %zu: %s",
+                               position.index, message);
+                break;
+            default:
+                break;
+        }
+    };
+
     // Load original shader SPIR-V
     uint32_t num_words = static_cast<uint32_t>(pCreateInfo->codeSize / 4);
     new_pgm.clear();
@@ -1172,6 +1186,7 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
     Optimizer optimizer(target_env);
+    optimizer.SetMessageConsumer(GpuConsoleMessageConsumer);
     optimizer.RegisterPass(
         CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing, descriptor_indexing));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
