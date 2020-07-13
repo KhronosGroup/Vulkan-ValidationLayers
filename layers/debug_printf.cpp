@@ -264,6 +264,20 @@ bool DebugPrintf::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
     Optimizer optimizer(target_env);
+    const spvtools::MessageConsumer DebugPrintfConsoleMessageConsumer =
+        [this](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
+        switch (level) {
+            case SPV_MSG_FATAL:
+            case SPV_MSG_INTERNAL_ERROR:
+            case SPV_MSG_ERROR:
+                this->LogError(this->device, "UNASSIGNED-Debug-Printf", "Error during shader instrumentation: line %zu: %s",
+                               position.index, message);
+                break;
+            default:
+                break;
+        }
+    };
+    optimizer.SetMessageConsumer(DebugPrintfConsoleMessageConsumer);
     optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_module_id));
     bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm);
     if (!pass) {
