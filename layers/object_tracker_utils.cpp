@@ -887,8 +887,10 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhy
                                                                            uint32_t *pPropertyCount,
                                                                            VkDisplayProperties2KHR *pProperties, VkResult result) {
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
-    for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-        CreateObject(pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
+    if (pProperties) {
+        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+            CreateObject(pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
+        }
     }
 }
 
@@ -908,8 +910,10 @@ void ObjectLifetimes::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevic
                                                                  uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties,
                                                                  VkResult result) {
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
-    for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-        CreateObject(pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
+    if (pProperties) {
+        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+            CreateObject(pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
+        }
     }
 }
 
