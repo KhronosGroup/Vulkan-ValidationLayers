@@ -483,7 +483,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     InitBestPracticesFramework();
     InitState();
 
-    if (IsPlatform(kPixel2XL) || IsPlatform(kPixel3) || IsPlatform(kPixel3aXL) || IsPlatform(kShieldTV) ||
+    if (IsPlatform(kPixel2XL) || IsPlatform(kPixel3) || IsPlatform(kPixel3aXL) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb) ||
         IsPlatform(kNexusPlayer)) {
         printf("%s This test seems super-picky on Android platforms\n", kSkipPrefix);
         return;
@@ -808,7 +808,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     InitBestPracticesFramework();
     InitState();
 
-    if (IsPlatform(kNexusPlayer) || IsPlatform(kShieldTV)) {
+    if (IsPlatform(kNexusPlayer) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
         return;
     }
 
