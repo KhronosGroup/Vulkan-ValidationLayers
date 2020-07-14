@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.146 */
+/* Vulkan specification version: 1.2.147 */
 /*
  * Vulkan
  *
@@ -268,6 +268,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBindBufferMemoryInfo-buffer-01602", "If buffer requires a dedicated allocation(as reported by vkGetBufferMemoryRequirements2 in VkMemoryDedicatedRequirements::requiresDedicatedAllocation for buffer), memory must have been created with VkMemoryDedicatedAllocateInfo::buffer equal to buffer and memoryOffset must be zero", "1.2-extensions"},
     {"VUID-VkBindBufferMemoryInfo-buffer-01603", "If buffer was created with VkDedicatedAllocationBufferCreateInfoNV::dedicatedAllocation equal to VK_TRUE, memory must have been created with VkDedicatedAllocationMemoryAllocateInfoNV::buffer equal to buffer and memoryOffset must be zero", "1.2-extensions"},
     {"VUID-VkBindBufferMemoryInfo-buffer-01604", "If buffer was not created with VkDedicatedAllocationBufferCreateInfoNV::dedicatedAllocation equal to VK_TRUE, memory must not have been allocated dedicated for a specific buffer or image", "default"},
+    {"VUID-VkBindBufferMemoryInfo-buffer-04122", "If buffer was created with the VK_BUFFER_CREATE_PROTECTED_BIT bit set, the buffer must be bound to a memory object allocated with a memory type that reports VK_MEMORY_PROPERTY_PROTECTED_BIT", "1.2-extensions"},
+    {"VUID-VkBindBufferMemoryInfo-buffer-04123", "If buffer was created with the VK_BUFFER_CREATE_PROTECTED_BIT bit not set, the buffer must not be bound to a memory object created with a memory type that reports VK_MEMORY_PROPERTY_PROTECTED_BIT", "1.2-extensions"},
     {"VUID-VkBindBufferMemoryInfo-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-VkBindBufferMemoryInfo-bufferDeviceAddress-02838", "If the VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::bufferDeviceAddress feature is enabled and buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR bit set, memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR bit set", "1.2-extensions"},
     {"VUID-VkBindBufferMemoryInfo-commonparent", "Both of buffer, and memory must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
@@ -297,6 +299,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBindImageMemoryDeviceGroupInfo-pSplitInstanceBindRegions-parameter", "If splitInstanceBindRegionCount is not 0, pSplitInstanceBindRegions must be a valid pointer to an array of splitInstanceBindRegionCount VkRect2D structures", "1.2-extensions"},
     {"VUID-VkBindImageMemoryDeviceGroupInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO", "1.2-extensions"},
     {"VUID-VkBindImageMemoryDeviceGroupInfo-splitInstanceBindRegionCount-01636", "splitInstanceBindRegionCount must either be zero or equal to the number of physical devices in the logical device squared", "1.2-extensions"},
+    {"VUID-VkBindImageMemoryInfo-None-04124", "If image was created with the VK_IMAGE_CREATE_PROTECTED_BIT bit set, the image must be bound to a memory object allocated with a memory type that reports VK_MEMORY_PROPERTY_PROTECTED_BIT", "1.2-extensions"},
+    {"VUID-VkBindImageMemoryInfo-None-04125", "If image was created with the VK_IMAGE_CREATE_PROTECTED_BIT bit not set, the image must not be bound to a memory object created with a memory type that reports VK_MEMORY_PROPERTY_PROTECTED_BIT", "1.2-extensions"},
     {"VUID-VkBindImageMemoryInfo-commonparent", "Both of image, and memory that are valid handles of non-ignored parameters must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
     {"VUID-VkBindImageMemoryInfo-handleTypes-02793", "If the value of VkExportMemoryAllocateInfo::handleTypes used to allocate memory is not 0, it must include at least one of the handles set in VkExternalMemoryImageCreateInfo::handleTypes when image was created", "1.2-extensions"},
     {"VUID-VkBindImageMemoryInfo-image-01609", "image must not already be backed by a memory object", "1.2-extensions"},
@@ -436,7 +440,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBufferMemoryBarrier-size-01188", "If size is not equal to VK_WHOLE_SIZE, size must be greater than 0", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-size-01189", "If size is not equal to VK_WHOLE_SIZE, size must be less than or equal to than the size of buffer minus offset", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-04087", "If srcQueueFamilyIndex is not equal to dstQueueFamilyIndex, at least one must not be a special queue family reserved for external memory ownership transfers, as described in Queue Family Ownership Transfer", "1.2-extensions"},
-    {"VUID-VkBufferMemoryRequirementsInfo2-buffer-04005", "If buffer was created with the VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID external memory handle type, then buffer must be bound to memory", "1.2-extensions"},
     {"VUID-VkBufferMemoryRequirementsInfo2-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-VkBufferMemoryRequirementsInfo2-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkBufferMemoryRequirementsInfo2-sType-sType", "sType must be VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2", "1.2-extensions"},
@@ -1398,6 +1401,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageCreateInfo-tiling-02084", "If usage includes VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, tiling must be VK_IMAGE_TILING_OPTIMAL", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-tiling-02261", "If tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, then the pNext chain must include exactly one of VkImageDrmFormatModifierListCreateInfoEXT or VkImageDrmFormatModifierExplicitCreateInfoEXT structures", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-tiling-02353", "If tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and flags contains VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, then the pNext chain must include a VkImageFormatListCreateInfo structure with non-zero viewFormatCount", "1.2-extensions"},
+    {"VUID-VkImageCreateInfo-tiling-04121", "If tiling is VK_IMAGE_TILING_LINEAR, flags must not contain VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-tiling-parameter", "tiling must be a valid VkImageTiling value", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-usage-00963", "If usage includes VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, then bits other than VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, and VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT must not be set", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-usage-00964", "If usage includes VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, extent.width must be less than or equal to VkPhysicalDeviceLimits::maxFramebufferWidth", "1.2-extensions"},
@@ -2361,10 +2365,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPrivateDataSlotCreateInfoEXT-flags-zerobitmask", "flags must be 0", "1.2-extensions"},
     {"VUID-VkPrivateDataSlotCreateInfoEXT-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkPrivateDataSlotCreateInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT", "1.2-extensions"},
-    {"VUID-VkProtectedSubmitInfo-pNext-01819", "If the VkSubmitInfo::pNext chain does not include a VkProtectedSubmitInfo structure, then each element of the command buffer of the pCommandBuffers array must be an unprotected command buffer", "1.2-extensions"},
     {"VUID-VkProtectedSubmitInfo-protectedSubmit-01816", "If the protected memory feature is not enabled, protectedSubmit must not be VK_TRUE", "1.2-extensions"},
     {"VUID-VkProtectedSubmitInfo-protectedSubmit-01817", "If protectedSubmit is VK_TRUE, then each element of the pCommandBuffers array must be a protected command buffer", "1.2-extensions"},
-    {"VUID-VkProtectedSubmitInfo-protectedSubmit-01818", "If protectedSubmit is VK_FALSE, then each element of the pCommandBuffers array must be an unprotected command buffer", "1.2-extensions"},
     {"VUID-VkProtectedSubmitInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO", "1.2-extensions"},
     {"VUID-VkPushConstantRange-offset-00294", "offset must be less than VkPhysicalDeviceLimits::maxPushConstantsSize", "1.2-extensions"},
     {"VUID-VkPushConstantRange-offset-00295", "offset must be a multiple of 4", "1.2-extensions"},
@@ -2661,8 +2663,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSamplerYcbcrConversionCreateInfo-pNext-pNext", "pNext must be NULL or a pointer to a valid instance of VkExternalFormatANDROID", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_COSITED_EVEN", "1.2-extensions"},
-    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_MIDPOINT", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_COSITED_EVEN if the corresponding channels are downsampled", "1.2-extensions"},
+    {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652", "If the potential format features of the sampler {YCbCr} conversion do not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT, xChromaOffset and yChromaOffset must not be VK_CHROMA_LOCATION_MIDPOINT if the corresponding channels are downsampled", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-parameter", "xChromaOffset must be a valid VkChromaLocation value", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-yChromaOffset-parameter", "yChromaOffset must be a valid VkChromaLocation value", "1.2-extensions"},
     {"VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655", "If ycbcrModel is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY, then components.r, components.g, and components.b must correspond to channels of the format; that is, components.r, components.g, and components.b must not be VK_COMPONENT_SWIZZLE_ZERO or VK_COMPONENT_SWIZZLE_ONE, and must not correspond to a channel which contains zero or one as a consequence of conversion to RGBA", "1.2-extensions"},
@@ -2800,6 +2802,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSubmitInfo-pCommandBuffers-parameter", "If commandBufferCount is not 0, pCommandBuffers must be a valid pointer to an array of commandBufferCount valid VkCommandBuffer handles", "1.2-extensions"},
     {"VUID-VkSubmitInfo-pNext-03240", "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure and any element of pWaitSemaphores was created with a VkSemaphoreType of VK_SEMAPHORE_TYPE_TIMELINE, then its waitSemaphoreValueCount member must equal waitSemaphoreCount", "1.2-extensions"},
     {"VUID-VkSubmitInfo-pNext-03241", "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure and any element of pSignalSemaphores was created with a VkSemaphoreType of VK_SEMAPHORE_TYPE_TIMELINE, then its signalSemaphoreValueCount member must equal signalSemaphoreCount", "1.2-extensions"},
+    {"VUID-VkSubmitInfo-pNext-04120", "If the pNext chain of this structure does not include a VkProtectedSubmitInfo structure with protectedSubmit set to VK_TRUE, then each element of the command buffer of the pCommandBuffers array must be an unprotected command buffer", "1.2-extensions"},
     {"VUID-VkSubmitInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkD3D12FenceSubmitInfoKHR, VkDeviceGroupSubmitInfo, VkPerformanceQuerySubmitInfoKHR, VkProtectedSubmitInfo, VkTimelineSemaphoreSubmitInfo, VkWin32KeyedMutexAcquireReleaseInfoKHR, or VkWin32KeyedMutexAcquireReleaseInfoNV", "1.2-extensions"},
     {"VUID-VkSubmitInfo-pSignalSemaphores-03242", "For each element of pSignalSemaphores created with a VkSemaphoreType of VK_SEMAPHORE_TYPE_TIMELINE the corresponding element of VkTimelineSemaphoreSubmitInfo::pSignalSemaphoreValues must have a value greater than the current value of the semaphore when the semaphore signal operation is executed", "1.2-extensions"},
     {"VUID-VkSubmitInfo-pSignalSemaphores-03244", "For each element of pSignalSemaphores created with a VkSemaphoreType of VK_SEMAPHORE_TYPE_TIMELINE the corresponding element of VkTimelineSemaphoreSubmitInfo::pSignalSemaphoreValues must have a value which does not differ from the current value of the semaphore or the value of any outstanding semaphore wait or signal operation on that semaphore by more than maxTimelineSemaphoreValueDifference", "1.2-extensions"},
@@ -5820,7 +5823,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetBufferDeviceAddress-device-03325", "If device was created with multiple physical devices, then the bufferDeviceAddressMultiDevice or VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::bufferDeviceAddressMultiDevice feature must be enabled", "1.2-extensions"},
     {"VUID-vkGetBufferDeviceAddress-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
     {"VUID-vkGetBufferDeviceAddress-pInfo-parameter", "pInfo must be a valid pointer to a valid VkBufferDeviceAddressInfo structure", "1.2-extensions"},
-    {"VUID-vkGetBufferMemoryRequirements-buffer-04003", "If buffer was created with the VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID external memory handle type, then buffer must be bound to memory", "1.2-extensions"},
     {"VUID-vkGetBufferMemoryRequirements-buffer-parameter", "buffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-vkGetBufferMemoryRequirements-buffer-parent", "buffer must have been created, allocated, or retrieved from device", "1.2-extensions"},
     {"VUID-vkGetBufferMemoryRequirements-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
