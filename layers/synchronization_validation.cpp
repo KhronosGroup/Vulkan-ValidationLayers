@@ -2061,7 +2061,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     for (const auto &transition : final_transitions) {
         const auto &attachment = attachment_views_[transition.attachment];
         const auto &last_trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
-        assert(external_context == last_trackback.context);
+        assert(&subpass_contexts_[transition.prev_pass] == last_trackback.context);
         external_context->ApplyImageBarrier(*attachment->image_state, last_trackback.barrier,
                                             attachment->normalized_subresource_range, true, tag);
     }
