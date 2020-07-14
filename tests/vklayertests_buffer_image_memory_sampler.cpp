@@ -13666,7 +13666,7 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
         VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         VK_ATTACHMENT_STORE_OP_DONT_CARE,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
     };
     attachmentDescs.push_back(inputAttachment);
 
@@ -13801,5 +13801,14 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
     m_commandBuffer->EndRenderPass();
+    m_errorMonitor->VerifyFound();
+
+    // Since there isn't an Desired failure, end renderpass can complete.
+    m_commandBuffer->EndRenderPass();
+
+    // Catch a conflict with the input attachment final layout transition
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image_input.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1,
+                           &full_subresource_range);
     m_errorMonitor->VerifyFound();
 }
