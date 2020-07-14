@@ -170,8 +170,8 @@ VkPipelineStageFlags RelatedPipelineStages(VkPipelineStageFlags stage_mask,
                                            std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> &map) {
     VkPipelineStageFlags unscanned = stage_mask;
     VkPipelineStageFlags related = 0;
-    for (const auto entry : map) {
-        const auto stage = entry.first;
+    for (const auto &entry : map) {
+        const auto &stage = entry.first;
         if (stage & unscanned) {
             related = related | entry.second;
             unscanned = unscanned & ~stage;
