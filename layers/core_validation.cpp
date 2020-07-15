@@ -737,7 +737,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         bool dynViewportCount = IsDynamic(pPipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
         bool dynScissorCount = IsDynamic(pPipeline, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
 
-        // VUID-{refpage}-viewportCount-03417
+        // VUID {refpage}-viewportCount-03417
         if (dynViewportCount && !dynScissorCount) {
             const auto requiredViewportMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->scissorCount) - 1;
             const auto missingViewportMask = ~pCB->viewportWithCountMask & requiredViewportMask;
@@ -750,7 +750,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             }
         }
 
-        // VUID-{refpage}-scissorCount-03418
+        // VUID {refpage}-scissorCount-03418
         if (dynScissorCount && !dynViewportCount) {
             const auto requiredScissorMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->viewportCount) - 1;
             const auto missingScissorMask = ~pCB->scissorWithCountMask & requiredScissorMask;
@@ -763,7 +763,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             }
         }
 
-        // VUID-{refpage}-viewportCount-03419
+        // VUID {refpage}-viewportCount-03419
         if (dynScissorCount && dynViewportCount) {
             if (pCB->viewportWithCountMask != pCB->scissorWithCountMask) {
                 std::stringstream ss;
@@ -854,7 +854,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    // VUID-{refpage}-primitiveTopology-03420
+    // VUID {refpage}-primitiveTopology-03420
     skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_TOPOLOGY_SET, "Dynamic primitive topology state not set for this command buffer",
                            vuid.primitive_topology);
     if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT)) {
@@ -3059,26 +3059,6 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
     return skip;
 }
 
-bool CoreChecks::ValidateGetBufferMemoryRequirementsANDROID(const VkBuffer buffer, const char *func_name) const {
-    bool skip = false;
-
-    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    if (buffer_state != nullptr) {
-        if (buffer_state->external_ahb && (0 == buffer_state->GetBoundMemory().size())) {
-            const char *vuid = strcmp(func_name, "vkGetBufferMemoryRequirements()") == 0
-                                   ? "VUID-vkGetBufferMemoryRequirements-buffer-04003"
-                                   : "VUID-VkBufferMemoryRequirementsInfo2-buffer-04005";
-            skip |=
-                LogError(buffer, vuid,
-                         "%s: Attempt get buffer memory requirements for a buffer created with a "
-                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType, which has not yet been "
-                         "bound to memory.",
-                         func_name);
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties) const {
     bool skip = false;
@@ -3144,8 +3124,6 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
 }
 
 bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const { return false; }
-
-bool CoreChecks::ValidateGetBufferMemoryRequirementsANDROID(const VkBuffer buffer, const char *func_name) const { return false; }
 
 bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
                                                      VkDeviceMemory memory, VkBuffer buffer) const {
@@ -3955,33 +3933,6 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                VkMemoryRequirements2 *pMemoryRequirements) const {
     return ValidateGetImageMemoryRequirements2(pInfo, "vkGetImageMemoryRequirements2KHR()");
-}
-
-bool CoreChecks::PreCallValidateGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
-                                                            VkMemoryRequirements *pMemoryRequirements) const {
-    bool skip = false;
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        skip |= ValidateGetBufferMemoryRequirementsANDROID(buffer, "vkGetBufferMemoryRequirements()");
-    }
-    return skip;
-}
-
-bool CoreChecks::ValidateGetBufferMemoryRequirements2(const VkBufferMemoryRequirementsInfo2 *pInfo, const char *func_name) const {
-    bool skip = false;
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        skip |= ValidateGetBufferMemoryRequirementsANDROID(pInfo->buffer, func_name);
-    }
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2 *pInfo,
-                                                             VkMemoryRequirements2 *pMemoryRequirements) const {
-    return ValidateGetBufferMemoryRequirements2(pInfo, "vkGetBufferMemoryRequirements2()");
-}
-
-bool CoreChecks::PreCallValidateGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2 *pInfo,
-                                                                VkMemoryRequirements2 *pMemoryRequirements) const {
-    return ValidateGetBufferMemoryRequirements2(pInfo, "vkGetBufferMemoryRequirements2KHR()");
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,

@@ -5584,69 +5584,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     vk::DestroyImage(dev, img, NULL);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferUnboundBuffer) {
-    TEST_DESCRIPTION("Verify AndroidHardwareBuffer can't be queried for mem requirements while unbound.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        return;
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    VkExternalMemoryBufferCreateInfo ext_buf_info = {};
-    ext_buf_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR;
-    ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_create_info.pNext = &ext_buf_info;
-    buffer_create_info.size = 512;
-    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-    VkBuffer buffer = VK_NULL_HANDLE;
-    vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
-
-    // Try to get memory requirements prior to binding memory
-    VkMemoryRequirements mem_reqs;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferMemoryRequirements-buffer-04003");
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
-    m_errorMonitor->VerifyFound();
-
-    // Tests consecutive calls
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferMemoryRequirements-buffer-04003");
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
-    m_errorMonitor->VerifyFound();
-
-    // Test bind memory 2 extension
-    VkBufferMemoryRequirementsInfo2 buffer_mem_reqs2 = {};
-    buffer_mem_reqs2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2;
-    buffer_mem_reqs2.pNext = nullptr;
-    buffer_mem_reqs2.buffer = buffer;
-    VkMemoryRequirements2 mem_reqs2;
-    mem_reqs2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-    mem_reqs2.pNext = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferMemoryRequirementsInfo2-buffer-04005");
-    vk::GetBufferMemoryRequirements2(m_device->device(), &buffer_mem_reqs2, &mem_reqs2);
-    m_errorMonitor->VerifyFound();
-
-    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
-}
-
 TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
     TEST_DESCRIPTION("Don't use proper resource handleType for import buffer");
 

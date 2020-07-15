@@ -85,7 +85,6 @@ class CoreChecks : public ValidationStateTracker {
                                    bool optional) const;
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name) const;
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo, const char* func_name) const;
-    bool ValidateGetBufferMemoryRequirements2(const VkBufferMemoryRequirementsInfo2* pInfo, const char* func_name) const;
     bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
     bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_node, const char* action, const char* error_code) const;
     bool VerifyQueueStateToFence(VkFence fence) const;
@@ -704,7 +703,6 @@ class CoreChecks : public ValidationStateTracker {
                                bool optional) const;
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* alloc_info) const;
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char* func_name) const;
-    bool ValidateGetBufferMemoryRequirementsANDROID(const VkBuffer buffer, const char* func_name) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties) const;
     bool ValidateBufferImportedHandleANDROID(const char* func_name, VkExternalMemoryHandleTypeFlags handleType,
@@ -832,12 +830,6 @@ class CoreChecks : public ValidationStateTracker {
                                                     VkMemoryRequirements2* pMemoryRequirements) const;
     bool PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                        VkMemoryRequirements2* pMemoryRequirements) const;
-    bool PreCallValidateGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
-                                                    VkMemoryRequirements* pMemoryRequirements) const;
-    bool PreCallValidateGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
-                                                     VkMemoryRequirements2* pMemoryRequirements) const;
-    bool PreCallValidateGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
-                                                        VkMemoryRequirements2* pMemoryRequirements) const;
     bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                 const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 VkImageFormatProperties2* pImageFormatProperties) const;
