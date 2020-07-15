@@ -278,8 +278,8 @@ class BestPractices : public ValidationStateTracker {
     };
 
     struct GraphicsPipelineCIs {
-        const VkPipelineDepthStencilStateCreateInfo* depthStencilStateCI;
-        const VkPipelineColorBlendStateCreateInfo* colorBlendStateCI;
+        const safe_VkPipelineDepthStencilStateCreateInfo* depthStencilStateCI;
+        const safe_VkPipelineColorBlendStateCreateInfo* colorBlendStateCI;
     };
 
     // used to track CreateInfos for graphics pipelines
