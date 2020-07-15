@@ -872,8 +872,14 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
             gp_cis = result.first;
         }
 
-        gp_cis->second.colorBlendStateCI = cgpl_state->pCreateInfos[i].pColorBlendState;
-        gp_cis->second.depthStencilStateCI = cgpl_state->pCreateInfos[i].pDepthStencilState;
+        gp_cis->second.colorBlendStateCI =
+            cgpl_state->pCreateInfos[i].pColorBlendState
+                ? new safe_VkPipelineColorBlendStateCreateInfo(cgpl_state->pCreateInfos[i].pColorBlendState)
+                : nullptr;
+        gp_cis->second.depthStencilStateCI =
+            cgpl_state->pCreateInfos[i].pDepthStencilState
+                ? new safe_VkPipelineDepthStencilStateCreateInfo(cgpl_state->pCreateInfos[i].pDepthStencilState)
+                : nullptr;
     }
 }
 
