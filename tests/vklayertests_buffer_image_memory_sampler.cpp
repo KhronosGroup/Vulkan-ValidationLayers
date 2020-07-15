@@ -11017,15 +11017,24 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
 
 TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     TEST_DESCRIPTION("Validation must check several conditions that apply only when Fragment Density Maps are used.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
     bool fdmSupported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    bool fdm2Supported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
 
     // Check extension support
-    if (!fdmSupported) {
-        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    if (!(fdmSupported || fdm2Supported)) {
+        printf("%s test requires %s or %s extensions. Skipping.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,
+               VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
         return;
     }
 
@@ -11033,7 +11042,27 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
         m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (fdm2Supported) {
+        m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFragmentDensityMap2FeaturesEXT density_map2_features =
+        lvl_init_struct<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&density_map2_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceFragmentDensityMap2PropertiesEXT density_map2_properties =
+        lvl_init_struct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
+    VkPhysicalDeviceProperties2KHR properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&density_map2_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     // Test sampler parameters
 
@@ -11041,7 +11070,6 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     sampler_info_ref.maxLod = 0.0;
     sampler_info_ref.flags |= VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT;
     VkSamplerCreateInfo sampler_info = sampler_info_ref;
-    ASSERT_NO_FATAL_FAILURE(InitState());
 
     // min max filters must match
     sampler_info.minFilter = VK_FILTER_LINEAR;
@@ -11072,7 +11100,7 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     sampler_info.addressModeV = sampler_info_ref.addressModeV;
 
     // some features cannot be enabled for subsampled samplers
-    if (device_features.samplerAnisotropy == VK_TRUE) {
+    if (features2.features.samplerAnisotropy == VK_TRUE) {
         sampler_info.anisotropyEnable = VK_TRUE;
         CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02578");
         sampler_info.anisotropyEnable = sampler_info_ref.anisotropyEnable;
@@ -11171,6 +11199,31 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
         ivci.image = image.handle();
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-04116");
     }
+
+    if (fdm2Supported) {
+        if (!density_map2_features.fragmentDensityMapDeferred) {
+            ivci.flags = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT;
+            ivci.image = densityImage.handle();
+            CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-03567");
+        } else {
+            ivci.flags = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT;
+            ivci.flags |= VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT;
+            ivci.image = densityImage.handle();
+            CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-03568");
+        }
+        if (density_map2_properties.maxSubsampledArrayLayers < properties2.properties.limits.maxImageArrayLayers) {
+            image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+            image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+            image_create_info.arrayLayers = density_map2_properties.maxSubsampledArrayLayers + 1;
+            VkImageObj image(m_device);
+            image.init(&image_create_info);
+            ASSERT_TRUE(image.initialized());
+            ivci.image = image.handle();
+            ivci.flags = 0;
+            ivci.subresourceRange.layerCount = density_map2_properties.maxSubsampledArrayLayers + 1;
+            CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-03569");
+        }
+    }
 }
 
 TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
@@ -11178,10 +11231,12 @@ TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool fdmSupported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    bool fdm2Supported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
 
     // Check extension support
-    if (!fdmSupported) {
-        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    if (!(fdmSupported || fdm2Supported)) {
+        printf("%s test requires %s or %s extensions. Skipping.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,
+               VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
         return;
     }
 
