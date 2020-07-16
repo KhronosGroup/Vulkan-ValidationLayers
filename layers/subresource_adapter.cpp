@@ -277,7 +277,6 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
     }
     VkSubresourceLayout layout = {};
     VkImageSubresource subres = {};
-    VkExtent2D divisors = {};
     VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
     linear_image = false;
 
@@ -292,11 +291,14 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
 
     for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
         subres_layers.mipLevel = mip_index;
-        auto subres_extent = GetImageSubresourceExtent(image_, &subres_layers);
-        subres_extents_.push_back(subres_extent);
         subres.mipLevel = mip_index;
         for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
             subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
+            subres_layers.aspectMask = subres.aspectMask;
+
+            auto subres_extent = GetImageSubresourceExtent(image_, &subres_layers);
+            subres_extents_.push_back(subres_extent);
+
             if (mip_index == 0) {
                 texel_sizes_.push_back(FormatTexelSize(image.createInfo.format, subres.aspectMask));
             }
@@ -304,11 +306,9 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
                 DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
                 subres_layouts_.push_back(layout);
             } else {
-                divisors = FindMultiplaneExtentDivisors(image.createInfo.format, subres.aspectMask);
                 layout.offset += layout.size;
-                layout.rowPitch =
-                    static_cast<VkDeviceSize>(ceil(subres_extent.width * texel_sizes_[aspect_index] / divisors.width));
-                layout.arrayPitch = layout.rowPitch * subres_extent.height / divisors.height;
+                layout.rowPitch = static_cast<VkDeviceSize>(floor(subres_extent.width * texel_sizes_[aspect_index]));
+                layout.arrayPitch = layout.rowPitch * subres_extent.height;
                 layout.depthPitch = layout.arrayPitch;
                 layout.size = layout.arrayPitch * limits_.arrayLayer;
                 subres_layouts_.push_back(layout);
@@ -372,7 +372,7 @@ void ImageRangeGenerator::SetPos() {
     VkImageSubresource subres = {static_cast<VkImageAspectFlags>(encoder_->AspectBit(aspect_index_)),
                                  subres_range_.baseMipLevel + mip_level_index_, subres_range_.baseArrayLayer};
     subres_layout_ = &(encoder_->SubresourceLayout(subres));
-    const VkExtent3D& subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
+    const VkExtent3D& subres_extent = encoder_->SubresourceExtent(subres.mipLevel, aspect_index_);
     Subresource limits = encoder_->Limits();
 
     offset_y_count_ = static_cast<int32_t>((extent_.height > subres_extent.height) ? subres_extent.height : extent_.height);
