@@ -343,7 +343,9 @@ class ImageRangeEncoder : public RangeEncoder {
     void Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const;
 
     const VkSubresourceLayout& SubresourceLayout(const VkImageSubresource& subres) const;
-    inline const VkExtent3D& SubresourceExtent(int mip_level) const { return subres_extents_[mip_level]; }
+    inline const VkExtent3D& SubresourceExtent(int mip_level, int aspect_index_) const {
+        return subres_extents_[mip_level * limits_.aspect_index + aspect_index_];
+    }
     inline const double& TexelSize(int aspect_index) const { return texel_sizes_[aspect_index]; }
     inline bool IsLinearImage() const { return linear_image; }
 
