@@ -1728,9 +1728,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateImage",
-                                      "pCreateInfo->pQueueFamilyIndices", "VUID-VkImageCreateInfo-sharingMode-01420",
-                                      "VUID-VkImageCreateInfo-sharingMode-01420", false);
+        skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
+                                                    "vkCreateImage", "pCreateInfo->pQueueFamilyIndices",
+                                                    "VUID-VkImageCreateInfo-sharingMode-01420");
     }
 
     if (!FormatIsMultiplane(pCreateInfo->format) && !(pCreateInfo->flags & VK_IMAGE_CREATE_ALIAS_BIT) &&
@@ -4434,9 +4434,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
-                                      "pCreateInfo->pQueueFamilyIndices", "VUID-VkBufferCreateInfo-sharingMode-01419",
-                                      "VUID-VkBufferCreateInfo-sharingMode-01419", false);
+        skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
+                                                    "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
+                                                    "VUID-VkBufferCreateInfo-sharingMode-01419");
     }
 
     if ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) != 0) {

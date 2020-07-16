@@ -386,9 +386,10 @@ bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const char *cm
     return skip;
 }
 
-bool CoreChecks::ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t *queue_families, const char *cmd_name,
-                                       const char *array_parameter_name, const char *unique_error_code,
-                                       const char *valid_error_code, bool optional = false) const {
+// Validate the specified queue families against the families supported by the physical device that owns this device
+bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t *queue_families,
+                                                     const char *cmd_name, const char *array_parameter_name,
+                                                     const char *vuid) const {
     bool skip = false;
     if (queue_families) {
         std::unordered_set<uint32_t> set;
@@ -396,11 +397,25 @@ bool CoreChecks::ValidateQueueFamilies(uint32_t queue_family_count, const uint32
             std::string parameter_name = std::string(array_parameter_name) + "[" + std::to_string(i) + "]";
 
             if (set.count(queue_families[i])) {
-                skip |= LogError(device, unique_error_code, "%s: %s (=%" PRIu32 ") is not unique within %s array.", cmd_name,
+                skip |= LogError(device, vuid, "%s: %s (=%" PRIu32 ") is not unique within %s array.", cmd_name,
                                  parameter_name.c_str(), queue_families[i], array_parameter_name);
             } else {
                 set.insert(queue_families[i]);
-                skip |= ValidateDeviceQueueFamily(queue_families[i], cmd_name, parameter_name.c_str(), valid_error_code, optional);
+                if (queue_families[i] == VK_QUEUE_FAMILY_IGNORED) {
+                    skip |= LogError(
+                        device, vuid,
+                        "%s: %s is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.",
+                        cmd_name, parameter_name.c_str());
+                } else if (queue_families[i] >= physical_device_state->queue_family_known_count) {
+                    LogObjectList obj_list(physical_device);
+                    obj_list.add(device);
+                    skip |=
+                        LogError(obj_list, vuid,
+                                 "%s: %s (= %" PRIu32
+                                 ") is not one of the queue families supported by the parent PhysicalDevice %s of this device %s.",
+                                 cmd_name, parameter_name.c_str(), queue_families[i],
+                                 report_data->FormatHandle(physical_device).c_str(), report_data->FormatHandle(device).c_str());
+                }
             }
         }
     }
@@ -11147,10 +11162,9 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     if ((pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && pCreateInfo->pQueueFamilyIndices) {
-        bool skip1 =
-            ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
-                                  "pCreateInfo->pQueueFamilyIndices", "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428",
-                                  "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428", false);
+        bool skip1 = ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
+                                                         "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
+                                                         "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428");
         if (skip1) return true;
     }
 

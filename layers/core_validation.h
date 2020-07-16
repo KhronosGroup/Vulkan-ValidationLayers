@@ -698,9 +698,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCreateImageANDROID(const debug_report_data* report_data, const VkImageCreateInfo* create_info) const;
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info) const;
     bool ValidateGetImageSubresourceLayoutANDROID(const VkImage image) const;
-    bool ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
-                               const char* array_parameter_name, const char* unique_error_code, const char* valid_error_code,
-                               bool optional) const;
+    bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
+                                             const char* array_parameter_name, const char* vuid) const;
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* alloc_info) const;
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char* func_name) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
