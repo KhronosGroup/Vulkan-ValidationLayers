@@ -347,6 +347,7 @@ void BestPractices::PostCallRecordCreateEvent(
     VkEvent*                                    pEvent,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, result);
+    ManualPostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {};
@@ -371,6 +372,7 @@ void BestPractices::PostCallRecordSetEvent(
     VkEvent                                     event,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetEvent(device, event, result);
+    ManualPostCallRecordSetEvent(device, event, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {};
@@ -383,6 +385,7 @@ void BestPractices::PostCallRecordResetEvent(
     VkEvent                                     event,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordResetEvent(device, event, result);
+    ManualPostCallRecordResetEvent(device, event, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {};

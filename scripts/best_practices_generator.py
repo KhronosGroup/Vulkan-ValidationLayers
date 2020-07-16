@@ -110,6 +110,10 @@ class BestPracticesOutputGenerator(OutputGenerator):
             'vkQueuePresentKHR',
             'vkQueueBindSparse',
             'vkCreateGraphicsPipelines',
+            'vkCreateEvent',
+            'vkDestroyEvent',
+            'vkSetEvent',
+            'vkResetEvent',
             ]
 
         self.extension_info = dict()
