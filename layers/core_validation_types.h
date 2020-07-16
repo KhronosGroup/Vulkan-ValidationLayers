@@ -515,6 +515,8 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
           is_khr(false),
           create_infoNV(ci),
           memory_requirements{},
+          build_scratch_memory_requirements{},
+          update_scratch_memory_requirements{},
           build_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements_checked{} {}
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci)
@@ -522,6 +524,8 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
           is_khr(true),
           create_infoKHR(ci),
           memory_requirements{},
+          build_scratch_memory_requirements{},
+          update_scratch_memory_requirements{},
           build_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements_checked{} {}
     ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
