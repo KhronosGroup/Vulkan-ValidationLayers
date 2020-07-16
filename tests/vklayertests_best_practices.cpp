@@ -1587,35 +1587,232 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
     test_spatial_locality(pipe, compute_sampler_2d_64_1_1.GetStageCreateInfo(), true);
 }
 
-TEST_F(VkArmBestPracticesLayerTest, PipelineBubble) {
+TEST_F(VkArmBestPracticesLayerTest, PipelineBubbleFromPipelineBarriers) {
     InitBestPracticesFramework();
     InitState();
-
-    // Expect two pipeline bubble warnings
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
-
-    // This test may also trigger other warnings
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_commandBuffer->begin();
+    // We have fragment -> vertex barrier at the start, but no work has been queued up for fragment work, so there should be no
+    // bubble reported.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        vk::CmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 0,
+                               nullptr, 0, nullptr);
+        vk::CmdBeginRenderPass(buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyNotFound();
 
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->EndRenderPass();
-
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0,
-                                     nullptr, 0, nullptr, 0, nullptr);
-
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->EndRenderPass();
-
-    m_commandBuffer->end();
-
-    m_commandBuffer->QueueCommandBuffer(false);
-
+    // This time there was some fragment work queued up, so we should get a bubble in the GEOMETRY and FRAGMENT stages now (hence 2
+    // warnings).
+    m_errorMonitor->Reset();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        vk::CmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 0,
+                               nullptr, 0, nullptr);
+        vk::CmdBeginRenderPass(buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
     m_errorMonitor->VerifyFound();
+
+    // Here we make a self-dependency between the FRAGMENT and TRANSFER stages. Because we don't submit any work to the TRANSFER
+    // stage, this is not a bubble.
+    m_errorMonitor->Reset();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        vk::CmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                               nullptr, 0, nullptr);
+        vk::CmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
+                               nullptr, 0, nullptr);
+        vk::CmdBeginRenderPass(buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyNotFound();
+
+    // We make a self-dependency between the FRAGMENT and TRANSFER stages again. Because we submit work to the TRANSFER stage, this
+    // is a bubble.
+    m_errorMonitor->Reset();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        vk::CmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                               nullptr, 0, nullptr);
+        VkClearColorValue color = {};
+        VkImageSubresourceRange range = {};
+        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        range.layerCount = 1;
+        range.levelCount = 1;
+
+        ASSERT_GE(m_renderTargets.size(), static_cast<size_t>(1));
+        vk::CmdClearColorImage(buffer, m_renderTargets[0]->handle(), VK_IMAGE_LAYOUT_GENERAL, &color, 1, &range);
+        vk::CmdPipelineBarrier(buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
+                               nullptr, 0, nullptr);
+        vk::CmdBeginRenderPass(buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkArmBestPracticesLayerTest, PipelineBubbleFromEvents) {
+    InitBestPracticesFramework();
+    InitState();
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkEventCreateInfo event_info = {VK_STRUCTURE_TYPE_EVENT_CREATE_INFO};
+    VkEvent event0, event1;
+    vk::CreateEvent(m_device->handle(), &event_info, nullptr, &event0);
+    vk::CreateEvent(m_device->handle(), &event_info, nullptr, &event1);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    // A self-dependency is generated between FRAGMENT and TRANSFER stages, however no work is pushed so this is not a bubble.
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        vk::CmdSetEvent(buffer, event0, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        vk::CmdWaitEvents(buffer, 1, &event0, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
+                          nullptr, 0, nullptr);
+        vk::CmdSetEvent(buffer, event1, VK_PIPELINE_STAGE_TRANSFER_BIT);
+        vk::CmdWaitEvents(buffer, 1, &event1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, nullptr, 0,
+                          nullptr, 0, nullptr);
+
+        vk::CmdBeginRenderPass(buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyNotFound();
+
+    vk::ResetEvent(m_device->handle(), event0);
+    vk::ResetEvent(m_device->handle(), event1);
+
+    m_errorMonitor->Reset();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    // A self-dependency is generated like before, except this time we do push work to the TRANSFER stage, this causes a bubble.
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        vk::CmdSetEvent(buffer, event0, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        vk::CmdWaitEvents(buffer, 1, &event0, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
+                          nullptr, 0, nullptr);
+
+        VkClearColorValue color = {};
+        VkImageSubresourceRange range = {};
+        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        range.layerCount = 1;
+        range.levelCount = 1;
+
+        ASSERT_GE(m_renderTargets.size(), static_cast<size_t>(1));
+        vk::CmdClearColorImage(buffer, m_renderTargets[0]->handle(), VK_IMAGE_LAYOUT_GENERAL, &color, 1, &range);
+        vk::CmdSetEvent(buffer, event1, VK_PIPELINE_STAGE_TRANSFER_BIT);
+        vk::CmdWaitEvents(buffer, 1, &event1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, nullptr, 0,
+                          nullptr, 0, nullptr);
+
+        vk::CmdBeginRenderPass(buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyEvent(m_device->handle(), event0, nullptr);
+    vk::DestroyEvent(m_device->handle(), event1, nullptr);
+}
+
+TEST_F(VkArmBestPracticesLayerTest, PipelineBubbleFromSubpassDependencies) {
+    InitBestPracticesFramework();
+    InitState();
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkFramebuffer fb_bubble, fb_no_bubble;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+
+    VkAttachmentDescription att_desc = {};
+    ASSERT_GE(m_renderTargets.size(), static_cast<size_t>(1));
+    att_desc.format = m_renderTargets[0]->format();
+    att_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    att_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    att_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    att_desc.finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    att_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference att_ref = {};
+    att_ref.attachment = 0;
+    att_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &att_ref;
+
+    VkRenderPassCreateInfo rp_ci = {};
+    rp_ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &att_desc;
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass;
+    rp_ci.dependencyCount = 1;
+    rp_ci.pDependencies = &dependency;
+
+    VkRenderPass fb_bubble_rp, fb_no_bubble_rp;
+    vk::CreateRenderPass(m_device->handle(), &rp_ci, nullptr, &fb_bubble_rp);
+
+    VkImageView att_view = m_renderTargets[0]->targetView(att_desc.format);
+
+    VkFramebufferCreateInfo fb_ci = {};
+    fb_ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb_ci.renderPass = fb_bubble_rp;
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = &att_view;
+    fb_ci.width = m_renderTargets[0]->width();
+    fb_ci.height = m_renderTargets[0]->height();
+    fb_ci.layers = 1;
+
+    // create a framebuffer using a renderpass with subpass dependencies which will generate a warning
+    vk::CreateFramebuffer(m_device->handle(), &fb_ci, nullptr, &fb_bubble);
+
+    // create a framebuffer using a renderpass with subpass dependencies which will not generate a warning
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    vk::CreateRenderPass(m_device->handle(), &rp_ci, nullptr, &fb_no_bubble_rp);
+    fb_ci.renderPass = fb_no_bubble_rp;
+    vk::CreateFramebuffer(m_device->handle(), &fb_ci, nullptr, &fb_no_bubble);
+
+    // One subpass with GRAPHICS_ALL -> GRAPHICS_ALL dependency. Since no work has been queued up to the FRAGMENT stage, there is no
+    // bubble yet.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        auto rp_bi = m_renderPassBeginInfo;
+        rp_bi.renderPass = fb_bubble_rp;
+        rp_bi.framebuffer = fb_bubble;
+        vk::CmdBeginRenderPass(buffer, &rp_bi, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->Reset();
+    // one subpass with GRAPHICS_ALL -> GRAPHICS_ALL dependency, with some work previously queued in the FRAGMENT stage. This
+    // situation will generate two bubble warnings.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        auto rp_bi = m_renderPassBeginInfo;
+        rp_bi.renderPass = fb_bubble_rp;
+        rp_bi.framebuffer = fb_bubble;
+        vk::CmdBeginRenderPass(buffer, &rp_bi, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->Reset();
+    // one subpass with GRAPHICS_ALL -> COLOR_ATTACHMENT_OUTPUT dependency. Shouldn't get a warning here.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    SubmitPipelineBubbleTestWork([&](VkCommandBuffer buffer) {
+        auto rp_bi = m_renderPassBeginInfo;
+        rp_bi.renderPass = fb_no_bubble_rp;
+        rp_bi.framebuffer = fb_no_bubble;
+        vk::CmdBeginRenderPass(buffer, &rp_bi, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdEndRenderPass(buffer);
+    });
+    m_errorMonitor->VerifyNotFound();
 }

@@ -1096,6 +1096,34 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     return true;
 }
 
+void VkArmBestPracticesLayerTest::SubmitPipelineBubbleTestWork(const std::function<void(VkCommandBuffer)> &work) {
+    VkCommandBufferAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.commandBufferCount = 1;
+    alloc_info.commandPool = m_commandPool->handle();
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+    VkCommandBuffer cb;
+    vk::AllocateCommandBuffers(m_device->handle(), &alloc_info, &cb);
+
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vk::BeginCommandBuffer(cb, &begin_info);
+    work(cb);
+    vk::EndCommandBuffer(cb);
+    VkSubmitInfo submit = {};
+
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cb;
+
+    auto queue = m_device->GetDefaultQueue()->handle();
+    vk::QueueSubmit(queue, 1, &submit, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(queue);
+}
+
 bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
     if (eInvalidDeviceOffset != aTestFlag && eInvalidMemoryOffset != aTestFlag) {
         return true;

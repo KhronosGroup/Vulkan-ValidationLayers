@@ -279,7 +279,11 @@ class VkBestPracticesLayerTest : public VkLayerTest {
     VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 4, disables_};
 };
 
-class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {};
+class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
+  protected:
+    // Allocates and submits a command buffer, defined by the lambda parameter, suitably for testing pipeline bubbles.
+    void SubmitPipelineBubbleTestWork(const std::function<void(VkCommandBuffer)> &work);
+};
 
 class VkWsiEnabledLayerTest : public VkLayerTest {
   public:
