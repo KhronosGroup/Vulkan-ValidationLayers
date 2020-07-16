@@ -2487,6 +2487,44 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
         m_commandBuffer->QueueCommandBuffer(false);
         m_errorMonitor->VerifyFound();
     }
+
+    // If there is more than one queue family, create a device with a single queue family, then create a buffer
+    // with SHARING_MODE_CONCURRENT that uses a non-device PDEV queue family.
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+
+    if (queue_count < 3) {
+        printf("%s Multiple queue families are required to run this test.\n", kSkipPrefix);
+        return;
+    }
+    float priorities = {1.0f};
+    VkDeviceQueueCreateInfo queue_info = {};
+    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = queue_props->queueCount;
+    queue_info.pQueuePriorities = &priorities;
+    VkDeviceCreateInfo dev_info{};
+    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    // Create a device with a single queue family
+    VkDevice second_device;
+    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &dev_info, nullptr, &second_device));
+
+    // Select Queue family for CONCURRENT buffer that is not owned by device
+    buffCI.queueFamilyIndexCount = 2;
+    qfi[1] = 2;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateBuffer(second_device, &buffCI, NULL, &buffer);
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroyDevice(second_device, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidQueryPoolCreate) {
