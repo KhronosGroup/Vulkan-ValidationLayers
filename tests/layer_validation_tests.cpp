@@ -3342,9 +3342,13 @@ void android_main(struct android_app *app) {
 int main(int argc, char **argv) {
     int result;
 
-#if defined(_WIN32) && !defined(NDEBUG)
+#if defined(_WIN32)
+#if !defined(NDEBUG)
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+#endif
+    // Avoid "Abort, Retry, Ignore" dialog boxes
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
 
     ::testing::InitGoogleTest(&argc, argv);
