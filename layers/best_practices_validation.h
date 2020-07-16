@@ -158,6 +158,13 @@ class BestPractices : public ValidationStateTracker {
                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                       uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                       uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const;
+    void PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+    void PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+    void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                     VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                     uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                     uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                            VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                            uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -352,10 +359,16 @@ class BestPractices : public ValidationStateTracker {
     // used to track depth pre-pass heuristic data per command buffer
     std::unordered_map<VkCommandBuffer, DepthPrePassState> cbDepthPrePassStates = {};
 
+    enum PipelineStageArm { STAGE_COMPUTE = 0, STAGE_GEOMETRY = 1, STAGE_FRAGMENT = 2, STAGE_TRANSFER = 3, STAGE_COUNT };
+
+    struct EventTracker {
+      public:
+        bool signal_status = false;
+        uint64_t waitList[PipelineStageArm::STAGE_COUNT] = {};
+    };
+
     class QueueTracker {
       public:
-        enum Stage { STAGE_COMPUTE = 0, STAGE_GEOMETRY = 1, STAGE_FRAGMENT = 2, STAGE_TRANSFER = 3, STAGE_COUNT };
-
         enum StageFlagBits {
             STAGE_COMPUTE_BIT = 1 << 0,
             STAGE_GEOMETRY_BIT = 1 << 1,
@@ -365,10 +378,12 @@ class BestPractices : public ValidationStateTracker {
         };
         using StageFlags = uint32_t;
 
-        bool pushWork(BestPractices& tracker, Stage stage);
-        bool pushWorkArm(BestPractices& tracker, Stage stage);
+        bool pushWork(BestPractices& tracker, PipelineStageArm stage);
+        bool pushWorkArm(BestPractices& tracker, PipelineStageArm stage);
         void pipelineBarrier(StageFlags srcStages, StageFlags dstStages);
         static StageFlags vkStagesToTracker(VkPipelineStageFlags stages);
+        void signalEvent(EventTracker& event, StageFlags srcStages);
+        void waitEvent(EventTracker& event, StageFlags dstStages);
 
       private:
         struct StageStatus {
@@ -383,7 +398,9 @@ class BestPractices : public ValidationStateTracker {
         };
         StageStatus stages[STAGE_COUNT];
     };
+
     std::unordered_map<VkQueue, QueueTracker> queue_tracker_map;
+    std::unordered_map<VkEvent, EventTracker> event_tracker_map;
 
     using EnqueuedFunctions = std::vector<std::function<bool(VkQueue)>>;
     std::unordered_map<VkCommandBuffer, EnqueuedFunctions> enqueued_fn_map;

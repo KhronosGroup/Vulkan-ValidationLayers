@@ -1354,9 +1354,9 @@ void BestPractices::RecordCmdBeginRenderPassArmBarriers(VkCommandBuffer commandB
 
         auto& tracker = queue_tracker_map[queue];
         tracker.pipelineBarrier(src, dst);
-        skip |= tracker.pushWork(*this, QueueTracker::STAGE_GEOMETRY);
+        skip |= tracker.pushWork(*this, PipelineStageArm::STAGE_GEOMETRY);
         tracker.pipelineBarrier(QueueTracker::STAGE_GEOMETRY_BIT, QueueTracker::STAGE_FRAGMENT_BIT);
-        skip |= tracker.pushWork(*this, QueueTracker::STAGE_FRAGMENT);
+        skip |= tracker.pushWork(*this, PipelineStageArm::STAGE_FRAGMENT);
 
         return skip;
     });
@@ -2233,7 +2233,7 @@ bool BestPractices::PostTransformLRUCacheModel::query_cache(uint32_t value) {
     return false;
 }
 
-bool BestPractices::QueueTracker::pushWork(BestPractices& tracker, Stage dstStage) {
+bool BestPractices::QueueTracker::pushWork(BestPractices& tracker, PipelineStageArm dstStage) {
     bool skip = false;
 
     if (tracker.VendorCheckEnabled(kBPVendorArm)) {
@@ -2245,7 +2245,7 @@ bool BestPractices::QueueTracker::pushWork(BestPractices& tracker, Stage dstStag
     return skip;
 }
 
-bool BestPractices::QueueTracker::pushWorkArm(BestPractices& tracker, Stage dstStage) {
+bool BestPractices::QueueTracker::pushWorkArm(BestPractices& tracker, PipelineStageArm dstStage) {
     bool skip = false;
 
     static const char* stageNames[STAGE_COUNT] = {
@@ -2355,86 +2355,200 @@ BestPractices::QueueTracker::StageFlags BestPractices::QueueTracker::vkStagesToT
     return flags;
 }
 
+void BestPractices::QueueTracker::signalEvent(BestPractices::EventTracker& event,
+                                              BestPractices::QueueTracker::StageFlags srcStages) {
+    if (event.signal_status) return;
+
+    std::fill(event.waitList, event.waitList + STAGE_COUNT, static_cast<uint64_t>(0));
+    for (unsigned srcStage = 0; srcStage < STAGE_COUNT; srcStage++) {
+        if (!(srcStages & (1u << srcStage))) continue;
+
+        event.waitList[srcStage] = std::max(stages[srcStage].index, event.waitList[srcStage]);
+
+        for (unsigned stage = 0; stage < STAGE_COUNT; stage++) {
+            event.waitList[srcStage] = std::max(stages[srcStage].waitList[stage], event.waitList[srcStage]);
+        }
+    }
+
+    event.signal_status = true;
+}
+
+void BestPractices::QueueTracker::waitEvent(BestPractices::EventTracker& event, BestPractices::QueueTracker::StageFlags dstStages) {
+    if (!event.signal_status) return;
+
+    for (unsigned dstStage = 0; dstStage < STAGE_COUNT; dstStage++) {
+        if (!(dstStages & (1u << dstStage))) continue;
+
+        for (unsigned stage = 0; stage < STAGE_COUNT; stage++) {
+            if (event.waitList[stage] > stages[dstStage].waitList[stage]) {
+                stages[dstStage].waitList[stage] = event.waitList[stage];
+                stages[dstStage].lastDstStageIndex[stage] = stages[dstStage].index;
+            }
+        }
+    }
+}
+
 void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                  VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                  const VkImageResolve* pRegions) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                                uint32_t regionCount, const VkBufferCopy* pRegions) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageCopy* pRegions) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                       VkImageLayout dstImageLayout, uint32_t regionCount,
                                                       const VkBufferImageCopy* pRegions) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                       VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageBlit* pRegions, VkFilter filter) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                VkDeviceSize size, uint32_t data) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                  VkDeviceSize dataSize, const void* pData) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                     const VkClearColorValue* pColor, uint32_t rangeCount,
                                                     const VkImageSubresourceRange* pRanges) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                            const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                            const VkImageSubresourceRange* pRanges) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                          uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                          VkDeviceSize stride, VkQueryResultFlags flags) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_TRANSFER); });
 }
 
 void BestPractices::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                              uint32_t groupCountZ) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_COMPUTE); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_COMPUTE); });
 }
 
 void BestPractices::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     enqueued_fn_map[commandBuffer].push_back(
-        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_COMPUTE); });
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, PipelineStageArm::STAGE_COMPUTE); });
+}
+
+void BestPractices::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    enqueued_fn_map[commandBuffer].push_back([=](VkQueue queue) {
+        auto kv = event_tracker_map.find(event);
+        if (kv == event_tracker_map.end()) return false;
+        auto& event_state = kv->second;
+
+        VkPipelineStageFlags src = stageMask;
+        if (src & VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT) src |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        queue_tracker_map[queue].signalEvent(event_state, QueueTracker::vkStagesToTracker(src));
+        return false;
+    });
+}
+void BestPractices::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    enqueued_fn_map[commandBuffer].push_back([=](VkQueue) {
+        auto kv = event_tracker_map.find(event);
+        if (kv == event_tracker_map.end()) return false;
+        auto& event_state = kv->second;
+
+        event_state.signal_status = false;
+        return false;
+    });
+}
+
+void BestPractices::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                                uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                                uint32_t bufferMemoryBarrierCount,
+                                                const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                                uint32_t imageMemoryBarrierCount,
+                                                const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    for (uint32_t i = 0; i < eventCount; i++) {
+        VkEvent event = pEvents[i];
+
+        enqueued_fn_map[commandBuffer].push_back([=](VkQueue queue) {
+            auto kv = event_tracker_map.find(event);
+            if (kv == event_tracker_map.end()) return false;
+            auto& event_state = kv->second;
+
+            VkPipelineStageFlags dst = dstStageMask;
+            if (dst & VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT) dst |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            queue_tracker_map[queue].waitEvent(event_state, QueueTracker::vkStagesToTracker(dst));
+            return false;
+        });
+    }
+}
+
+void BestPractices::ManualPostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkEvent* pEvent, VkResult result) {
+    ValidationStateTracker::PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, result);
+    if (result == VK_SUCCESS && pEvent != nullptr) {
+        event_tracker_map.emplace(std::make_pair(*pEvent, EventTracker{}));
+    }
+}
+
+void BestPractices::ManualPostCalldRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
+    ValidationStateTracker::PostCallRecordDestroyEvent(device, event, pAllocator);
+    event_tracker_map.erase(event);
+}
+
+void BestPractices::ManualPostCallRecordResetEvent(VkDevice device, VkEvent event, VkResult result) {
+    ValidationStateTracker::PostCallRecordResetEvent(device, event, result);
+    if (result == VK_SUCCESS) {
+        auto kv = event_tracker_map.find(event);
+
+        if (kv == event_tracker_map.end()) return;
+
+        kv->second.signal_status = false;
+    }
+}
+
+void BestPractices::ManualPostCallRecordSetEvent(VkDevice device, VkEvent event, VkResult result) {
+    ValidationStateTracker::PostCallRecordSetEvent(device, event, result);
+    if (result == VK_SUCCESS) {
+        auto kv = event_tracker_map.find(event);
+
+        if (kv == event_tracker_map.end()) return;
+
+        kv->second.signal_status = true;
+    }
 }
