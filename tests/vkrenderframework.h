@@ -341,7 +341,7 @@ class VkPipelineObj;
 typedef vk_testing::Fence VkFenceObj;
 typedef vk_testing::Buffer VkBufferObj;
 typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
-
+typedef vk_testing::AccelerationStructureKHR VkAccelerationStructurekhrObj;
 class VkCommandPoolObj : public vk_testing::CommandPool {
   public:
     VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);

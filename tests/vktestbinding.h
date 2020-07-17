@@ -559,19 +559,13 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
   public:
     explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
         init(dev, info, init_memory);
-        isKHR = false;
-    }
-    explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory = true) {
-        initKHR(dev, info, init_memory);
-        isKHR = true;
     }
     ~AccelerationStructure();
 
     // vkCreateAccelerationStructureNV
     void init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true);
-    void initKHR(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory = true);
     // vkGetAccelerationStructureMemoryRequirementsNV()
-    VkMemoryRequirements2 memory_requirements(bool isKHR = false) const;
+    VkMemoryRequirements2 memory_requirements() const;
     VkMemoryRequirements2 build_scratch_memory_requirements() const;
 
     uint64_t opaque_handle() const { return opaque_handle_; }
@@ -586,7 +580,29 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
     VkAccelerationStructureInfoNV info_;
     DeviceMemory memory_;
     uint64_t opaque_handle_;
-    bool isKHR;
+};
+
+class AccelerationStructureKHR : public internal::NonDispHandle<VkAccelerationStructureKHR> {
+  public:
+    explicit AccelerationStructureKHR(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info,
+                                      bool init_memory = true) {
+        init(dev, info, init_memory);
+    }
+    ~AccelerationStructureKHR();
+    // vkCreateAccelerationStructureNV
+    void init(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory = true);
+    uint64_t opaque_handle() const { return opaque_handle_; }
+
+    const VkAccelerationStructureCreateInfoKHR &info() const { return info_; }
+
+    const VkDevice &dev() const { return device(); }
+
+    void create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo = NULL);
+
+  private:
+    VkAccelerationStructureCreateInfoKHR info_;
+    DeviceMemory memory_;
+    uint64_t opaque_handle_;
 };
 
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {

@@ -1864,7 +1864,7 @@ void CreateNVRayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
 
 void CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo() {
     rp_ci_KHR_.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
-    rp_ci_KHR_.maxRecursionDepth = 0;
+    rp_ci_KHR_.maxPipelineRayRecursionDepth = 0;
     rp_ci_KHR_.stageCount = shader_stages_.size();
     rp_ci_KHR_.pStages = shader_stages_.data();
     rp_ci_KHR_.groupCount = groups_KHR_.size();
@@ -1939,7 +1939,7 @@ VkResult CreateNVRayTracingPipelineHelper::CreateKHRRayTracingPipeline(bool impl
     }
     PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
         (PFN_vkCreateRayTracingPipelinesKHR)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesKHR");
-    err = vkCreateRayTracingPipelinesKHR(layer_test_.device(), pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
+    err = vkCreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
     return err;
 }
 
@@ -2096,10 +2096,13 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
     std::vector<const char *> required_device_extensions;
     required_device_extensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (isKHR) {
-        required_device_extensions.push_back(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
         required_device_extensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         required_device_extensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
         required_device_extensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
         required_device_extensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
         required_device_extensions.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
     } else {

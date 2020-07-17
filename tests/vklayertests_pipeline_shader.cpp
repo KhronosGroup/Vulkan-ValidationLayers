@@ -7584,6 +7584,10 @@ TEST_F(VkLayerTest, ValidateRayTracingPipelineNV) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03463");
         vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
+        pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03588");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
     }
     // test for vkCreateRayTracingPipelinesNV
     {
@@ -7612,24 +7616,27 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_TRACING_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_RAY_TRACING_EXTENSION_NAME);
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         return;
     }
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-    auto ray_tracing_features = lvl_init_struct<VkPhysicalDeviceRayTracingFeaturesKHR>();
+    auto ray_tracing_features = lvl_init_struct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    if (!ray_tracing_features.rayTracing) {
+    if (!ray_tracing_features.rayTracingPipeline) {
         printf("%s Feature rayTracing is not supported.\n", kSkipPrefix);
         return;
     }
@@ -7662,49 +7669,49 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+    VkPipelineLibraryCreateInfoKHR library_count_zero = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
+    VkPipelineLibraryCreateInfoKHR library_count_one = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 1};
     {
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
         pipeline_ci.pGroups = &group_create_info;
         pipeline_ci.layout = empty_pipeline_layout.handle();
-        pipeline_ci.libraries.libraryCount = 0;
         pipeline_ci.stageCount = 0;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkRayTracingPipelineCreateInfoKHR-libraries-02958");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03600");
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.stageCount = 1;
         pipeline_ci.groupCount = 0;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkRayTracingPipelineCreateInfoKHR-libraries-02959");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03601");
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.groupCount = 1;
     }
     {
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_count_one;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
         pipeline_ci.pGroups = &group_create_info;
         pipeline_ci.layout = empty_pipeline_layout.handle();
-        pipeline_ci.libraries.libraryCount = 1;
         pipeline_ci.pLibraryInterface = NULL;
         m_errorMonitor->SetUnexpectedError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkRayTracingPipelineCreateInfoKHR-libraryCount-03466");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03590");
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -7712,13 +7719,13 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
         pipeline_ci.flags = VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -7730,19 +7737,19 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         VkPipeline fake_pipeline_handle = reinterpret_cast<VkPipeline &>(fake_pipeline_id);
         pipeline_ci.basePipelineHandle = fake_pipeline_handle;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03421");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.basePipelineHandle = VK_NULL_HANDLE;
         pipeline_ci.basePipelineIndex = 10;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCreateRayTracingPipelinesKHR-flags-03415");
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03422");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -7751,14 +7758,14 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
         pipeline_ci.pLibraryInterface = NULL;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03465");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_count_zero;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -7766,14 +7773,18 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03470");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03471");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        pipeline_ci.flags = VK_PIPELINE_CREATE_DISPATCH_BASE;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCreateRayTracingPipelinesKHR-flags-03816");
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
     }
 }
 
@@ -7788,15 +7799,17 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RAY_TRACING_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_RAY_TRACING_EXTENSION_NAME);
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         return;
     }
 
@@ -7804,11 +7817,11 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-    auto ray_tracing_features = lvl_init_struct<VkPhysicalDeviceRayTracingFeaturesKHR>();
+    auto ray_tracing_features = lvl_init_struct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
-    if (!ray_tracing_features.rayTracing) {
+    if (!ray_tracing_features.rayTracingPipeline) {
         printf("%s Feature rayTracing is not supported.\n", kSkipPrefix);
         return;
     }
@@ -7836,6 +7849,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLibraryCreateInfoKHR library_info = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
 
     // No raygen stage
     {
@@ -7855,7 +7869,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -7863,50 +7877,8 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
-    }
-
-    // Two raygen stages
-    {
-        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        stage_create_infos[0].module = rgen_shader.handle();
-        stage_create_infos[0].pName = "main";
-
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[1].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        stage_create_infos[1].module = rgen_shader.handle();
-        stage_create_infos[1].pName = "main";
-
-        VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-        group_create_infos[0].generalShader = 0;
-        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
-
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-        group_create_infos[1].generalShader = 1;
-        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
-
-        VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
-        pipeline_ci.stageCount = 2;
-        pipeline_ci.pStages = stage_create_infos;
-        pipeline_ci.groupCount = 2;
-        pipeline_ci.pGroups = group_create_infos;
-        pipeline_ci.layout = empty_pipeline_layout.handle();
-
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
-        m_errorMonitor->VerifyNotFound();
-        vk::DestroyPipeline(m_device->device(), pipeline, NULL);
     }
 
     // General shader index doesn't exist
@@ -7927,7 +7899,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 1;
         pipeline_ci.pStages = &stage_create_info;
         pipeline_ci.groupCount = 1;
@@ -7935,7 +7907,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -7969,7 +7941,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -7977,7 +7949,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8011,7 +7983,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8019,7 +7991,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03475");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8053,7 +8025,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8061,7 +8033,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8095,7 +8067,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8103,7 +8075,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8137,7 +8109,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8145,7 +8117,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03477");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8179,7 +8151,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8188,7 +8160,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8222,7 +8194,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8231,7 +8203,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8265,7 +8237,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8274,7 +8246,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8308,7 +8280,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = {};
         pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        pipeline_ci.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+        pipeline_ci.pLibraryInfo = &library_info;
         pipeline_ci.stageCount = 2;
         pipeline_ci.pStages = stage_create_infos;
         pipeline_ci.groupCount = 2;
@@ -8317,7 +8289,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478");
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -8732,12 +8704,12 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
                                         false)) {
         return;
     }
-    auto ray_tracing_features = lvl_init_struct<VkPhysicalDeviceRayTracingFeaturesKHR>();
+    auto ray_tracing_features = lvl_init_struct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    if (ray_tracing_features.rayTracingShaderGroupHandleCaptureReplay == VK_FALSE) {
+    if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
         printf("%s rayTracingShaderGroupHandleCaptureReplay not enabled.\n", kSkipPrefix);
         return;
     }
@@ -8775,7 +8747,7 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    auto ray_tracing_properties = lvl_init_struct<VkPhysicalDeviceRayTracingPropertiesKHR>();
+    auto ray_tracing_properties = lvl_init_struct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     // Check only when the reported size is
