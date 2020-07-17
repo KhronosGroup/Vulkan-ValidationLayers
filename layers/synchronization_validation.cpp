@@ -1475,10 +1475,15 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                     case DescriptorClass::ImageSampler:
                     case DescriptorClass::Image: {
                         const IMAGE_VIEW_STATE *img_view_state = nullptr;
+                        VkImageLayout image_layout;
                         if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
-                            img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
+                            const auto image_sampler_descriptor = static_cast<const ImageSamplerDescriptor *>(descriptor);
+                            img_view_state = image_sampler_descriptor->GetImageViewState();
+                            image_layout = image_sampler_descriptor->GetImageLayout();
                         } else {
-                            img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
+                            const auto image_descriptor = static_cast<const ImageDescriptor *>(descriptor);
+                            img_view_state = image_descriptor->GetImageViewState();
+                            image_layout = image_descriptor->GetImageLayout();
                         }
                         if (!img_view_state) continue;
                         const IMAGE_STATE *img_state = img_view_state->image_state.get();
@@ -1495,13 +1500,15 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
                                 img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s in %s, %s, and %s binding #%" PRIu32 " index %" PRIu32 ". Access info %s.",
+                                "%s: Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32
+                                ", index %" PRIu32 ". Access info %s.",
                                 func_name, string_SyncHazard(hazard.hazard),
                                 sync_state_->report_data->FormatHandle(img_view_state->image_view).c_str(),
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
                                 sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
-                                index, string_UsageTag(hazard).c_str());
+                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
+                                set_binding.first.second, index, string_UsageTag(hazard).c_str());
                         }
                         break;
                     }
@@ -1517,13 +1524,14 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
                                 buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d. Access info %s.", func_name,
-                                string_SyncHazard(hazard.hazard),
+                                "%s: Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
+                                func_name, string_SyncHazard(hazard.hazard),
                                 sync_state_->report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
                                 sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
-                                index, string_UsageTag(hazard).c_str());
+                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                string_VkDescriptorType(descriptor_type), set_binding.first.second, index,
+                                string_UsageTag(hazard).c_str());
                         }
                         break;
                     }
@@ -1536,12 +1544,14 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (hazard.hazard) {
                             skip |= sync_state_->LogError(
                                 buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d. Access info %s.", func_name,
-                                string_SyncHazard(hazard.hazard), sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
+                                "%s: Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
+                                func_name, string_SyncHazard(hazard.hazard),
+                                sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
                                 sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
-                                index, string_UsageTag(hazard).c_str());
+                                sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                string_VkDescriptorType(descriptor_type), set_binding.first.second, index,
+                                string_UsageTag(hazard).c_str());
                         }
                         break;
                     }
