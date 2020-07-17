@@ -111,11 +111,27 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall
                         -Wextra
-                        -Wno-unused-parameter
                         -Wno-missing-field-initializers
+                        -Wno-unused-parameter
                         -fno-strict-aliasing
                         -fno-builtin-memcmp
                         -fvisibility=hidden)
+
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        add_compile_options(-Wconditional-uninitialized
+                        -Wfloat-conversion
+                        -Winconsistent-missing-destructor-override
+                        -Wnewline-eof
+                        -Wnon-virtual-dtor
+                        -Wrange-loop-analysis
+                        -Wredundant-parens
+                        -Wshadow-field
+                        -Wshorten-64-to-32
+                        -Wstrict-prototypes
+                        -Wtautological-type-limit-compare
+                        -Wunneeded-internal-declaration
+                        -Wunreachable-code)
+    endif()
 
     # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
     if((CMAKE_COMPILER_IS_GNUCXX AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.3.0)) OR
