@@ -29,6 +29,7 @@
 #include "state_tracker.h"
 
 class SyncValidator;
+class ResourceAccessState;
 
 enum SyncHazard {
     NONE = 0,
@@ -82,14 +83,13 @@ struct ResourceUsageTag {
 };
 
 struct HazardResult {
+    std::unique_ptr<const ResourceAccessState> access_state;
+    SyncStageAccessIndex usage_index = std::numeric_limits<SyncStageAccessIndex>::max();
     SyncHazard hazard = NONE;
     SyncStageAccessFlags prior_access = 0U;  // TODO -- change to a NONE enum in ...Bits
     ResourceUsageTag tag = ResourceUsageTag();
-    void Set(SyncHazard hazard_, SyncStageAccessFlags prior_, const ResourceUsageTag &tag_) {
-        hazard = hazard_;
-        prior_access = prior_;
-        tag = tag_;
-    }
+    void Set(const ResourceAccessState *access_state_, SyncStageAccessIndex usage_index_, SyncHazard hazard_,
+             SyncStageAccessFlags prior_, const ResourceUsageTag &tag_);
 };
 
 struct SyncBarrier {
@@ -165,6 +165,8 @@ class ResourceAccessState : public SyncStageAccess {
         return same;
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
+    VkPipelineStageFlags GetReadBarriers(SyncStageAccessFlags usage) const;
+    SyncStageAccessFlags GetWriteBarriers() const { return write_barriers; }
 
   private:
     static constexpr VkPipelineStageFlags kNoAttachmentRead = ~VkPipelineStageFlags(0);
