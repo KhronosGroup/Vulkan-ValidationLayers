@@ -534,6 +534,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                               const VkSubpassBeginInfo *pSubpassBeginInfo, const VkSubpassEndInfo *pSubpassEndInfo,
                               CMD_TYPE command);
     void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE command);
+    bool SupressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result);
