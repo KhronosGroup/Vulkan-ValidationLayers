@@ -1492,7 +1492,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         }
                         auto hazard = current_context_->DetectHazard(*img_state, sync_index,
                                                                      img_view_state->normalized_subresource_range, offset, extent);
-                        if (hazard.hazard) {
+                        if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
                                 img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
                                 "%s: Hazard %s for %s in %s, %s, and %s binding #%" PRIu32 " index %" PRIu32 ". Access info %s.",
@@ -1514,7 +1514,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                       GetRealWholeSize(buf_view_state->create_info.offset, buf_view_state->create_info.range,
                                                        buf_state->createInfo.size));
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.hazard) {
+                        if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
                                 buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
                                 "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d. Access info %s.", func_name,
@@ -2910,6 +2910,14 @@ void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const 
     if (!rp_state) return;
 
     cb_context->RecordEndRenderPass(*rp_state, cb_context->NextCommandTag(command));
+}
+
+// Simple heuristic rule to detect WAW operations representing algorithmically safe or increment
+// updates to a resource which do not conflict at the byte level.
+// TODO: Revisit this rule to see if it needs to be tighter or looser
+// TODO: Add programatic control over suppression heuristics
+bool SyncValidator::SupressedBoundDescriptorWAW(const HazardResult &hazard) const {
+    return (hazard.hazard == WRITE_AFTER_WRITE) && (FlagBit(hazard.usage_index) == hazard.prior_access);
 }
 
 void SyncValidator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
