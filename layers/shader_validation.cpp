@@ -1949,7 +1949,8 @@ bool CoreChecks::ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo c
 }
 
 // TODO (jbolz): Can this return a const reference?
-static std::set<uint32_t> TypeToDescriptorTypeSet(SHADER_MODULE_STATE const *module, uint32_t type_id, unsigned &descriptor_count) {
+static std::set<uint32_t> TypeToDescriptorTypeSet(SHADER_MODULE_STATE const *module, uint32_t type_id, unsigned &descriptor_count,
+                                                  bool is_khr) {
     auto type = module->get_def(type_id);
     bool is_storage_buffer = false;
     descriptor_count = 1;
@@ -2044,7 +2045,8 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(SHADER_MODULE_STATE const *mod
             }
         }
         case spv::OpTypeAccelerationStructureNV:
-            ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+            is_khr ? ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
+                   : ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
             return ret;
 
             // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
@@ -2130,8 +2132,13 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
             : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shader_interlock_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.demote_to_helper_invocation_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingFeaturesKHR::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceRayQueryFeaturesKHR::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.ray_query_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingPipelineFeaturesKHR::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_pipeline_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceAccelerationStructureFeaturesKHR::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_acceleration_structure_features.*ptr; }) {
+        }
     };
 
     struct CapabilityInfo {
@@ -2240,9 +2247,9 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
         // Should be non-EXT token, but Android SPIRV-Headers are out of date, and the token value is the same anyway
         {spv::CapabilityPhysicalStorageBufferAddressesEXT, {"VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::bufferDeviceAddress", &VkPhysicalDeviceVulkan12Features::bufferDeviceAddress, &DeviceExtensions::vk_khr_buffer_device_address}},
 
-        {spv::CapabilityRayTracingProvisionalKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayTracing", &VkPhysicalDeviceRayTracingFeaturesKHR::rayTracing, &DeviceExtensions::vk_khr_ray_tracing}},
-        {spv::CapabilityRayQueryProvisionalKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayQuery", &VkPhysicalDeviceRayTracingFeaturesKHR::rayQuery, &DeviceExtensions::vk_khr_ray_tracing}},
-        {spv::CapabilityRayTraversalPrimitiveCullingProvisionalKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingPrimitiveCulling", &VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingPrimitiveCulling, &DeviceExtensions::vk_khr_ray_tracing}},
+        {spv::CapabilityRayTracingKHR, {"VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipeline", &VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipeline, &DeviceExtensions::vk_khr_ray_tracing_pipeline }},
+        {spv::CapabilityRayQueryKHR, {"VkPhysicalDeviceRayQueryFeaturesKHR::rayQuery", &VkPhysicalDeviceRayQueryFeaturesKHR::rayQuery, &DeviceExtensions::vk_khr_ray_query }},
+        {spv::CapabilityRayTraversalPrimitiveCullingKHR, {"VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPrimitiveCulling", &VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTraversalPrimitiveCulling, &DeviceExtensions::vk_khr_ray_tracing_pipeline }},
     };
     // clang-format on
 
@@ -3625,7 +3632,9 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         // Verify given pipelineLayout has requested setLayout with requested binding
         const auto &binding = GetDescriptorBinding(pipeline->pipeline_layout.get(), use.first);
         unsigned required_descriptor_count;
-        std::set<uint32_t> descriptor_types = TypeToDescriptorTypeSet(module, use.second.type_id, required_descriptor_count);
+        bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        std::set<uint32_t> descriptor_types =
+            TypeToDescriptorTypeSet(module, use.second.type_id, required_descriptor_count, is_khr);
 
         if (!binding) {
             skip |= LogError(device, vuid_layout_mismatch,
@@ -3860,42 +3869,57 @@ bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) co
     return ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[0], module, entrypoint, false);
 }
 
-bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, bool isKHR) const {
+bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipelineCreateFlags flags, bool isKHR) const {
     bool skip = false;
 
     if (isKHR) {
-        if (pipeline->raytracingPipelineCI.maxRecursionDepth > phys_dev_ext_props.ray_tracing_propsKHR.maxRecursionDepth) {
-            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-maxRecursionDepth-03464", ": %d > %d",
-                             pipeline->raytracingPipelineCI.maxRecursionDepth,
-                             phys_dev_ext_props.ray_tracing_propsKHR.maxRecursionDepth);
+        if (pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth >
+            phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth) {
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-maxPipelineRayRecursionDepth-03589",
+                             "vkCreateRayTracingPipelinesKHR: maxPipelineRayRecursionDepth (%d ) must be less than or equal to "
+                             "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayRecursionDepth %d",
+                             pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth,
+                             phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth);
         }
-        for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.libraries.libraryCount; ++i) {
-            const PIPELINE_STATE *pLibrary_pipelinestate = GetPipelineState(pipeline->raytracingPipelineCI.libraries.pLibraries[i]);
-            if (pLibrary_pipelinestate->raytracingPipelineCI.maxRecursionDepth !=
-                pipeline->raytracingPipelineCI.maxRecursionDepth) {
-                skip |= LogError(
-                    device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03467",
-                    "vkCreateRayTracingPipelinesKHR: Each element  (%d) of the pLibraries member of libraries must have been"
-                    "created with the value of maxRecursionDepth (%d) equal to that in this pipeline (%d) .",
-                    i, pLibrary_pipelinestate->raytracingPipelineCI.maxRecursionDepth,
-                    pipeline->raytracingPipelineCI.maxRecursionDepth);
-            }
-            if (pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxAttributeSize !=
-                    pipeline->raytracingPipelineCI.pLibraryInterface->maxAttributeSize ||
-                pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPayloadSize !=
-                    pipeline->raytracingPipelineCI.pLibraryInterface->maxPayloadSize ||
-                pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxCallableSize !=
-                    pipeline->raytracingPipelineCI.pLibraryInterface->maxCallableSize) {
-                skip |=
-                    LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03469",
-                             "vkCreateRayTracingPipelinesKHR: Each element of the pLibraries member of libraries must have been "
-                             "created with values of the maxPayloadSize,"
-                             "maxAttributeSize, and maxCallableSize members of pLibraryInterface equal to those in this pipeline.");
+        if (pipeline->raytracingPipelineCI.pLibraryInfo) {
+            for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
+                const PIPELINE_STATE *pLibrary_pipelinestate =
+                    GetPipelineState(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
+                if (pLibrary_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth !=
+                    pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth) {
+                    skip |= LogError(
+                        device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03591",
+                        "vkCreateRayTracingPipelinesKHR: Each element  (%d) of the pLibraries member of libraries must have been"
+                        "created with the value of maxPipelineRayRecursionDepth (%d) equal to that in this pipeline (%d) .",
+                        i, pLibrary_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth,
+                        pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth);
+                }
+                if (pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInfo &&
+                    (pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayHitAttributeSize !=
+                         pipeline->raytracingPipelineCI.pLibraryInterface->maxPipelineRayHitAttributeSize ||
+                     pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayPayloadSize !=
+                         pipeline->raytracingPipelineCI.pLibraryInterface->maxPipelineRayPayloadSize)) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03593",
+                                     "vkCreateRayTracingPipelinesKHR: If pLibraryInfo is not NULL, each element of its pLibraries "
+                                     "member must have been created with values of the maxPipelineRayPayloadSize and "
+                                     "maxPipelineRayHitAttributeSize members of pLibraryInterface equal to those in this pipeline");
+                }
+                if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR) &&
+                    !(pLibrary_pipelinestate->raytracingPipelineCI.flags &
+                      VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03594",
+                                     "vkCreateRayTracingPipelinesKHR: If flags includes "
+                                     "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR, each element of "
+                                     "the pLibraries member of libraries must have been created with the "
+                                     "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR bit set");
+                }
             }
         }
     } else {
         if (pipeline->raytracingPipelineCI.maxRecursionDepth > phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth) {
-            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-03457", ": %d > %d",
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-03457",
+                             "vkCreateRayTracingPipelinesNV: maxRecursionDepth (%d) must be less than or equal to "
+                             "VkPhysicalDeviceRayTracingPropertiesNV::maxRecursionDepth (%d)",
                              pipeline->raytracingPipelineCI.maxRecursionDepth,
                              phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth);
         }
@@ -3920,7 +3944,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, bool isKHR
         skip |= LogError(
             device,
             isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425" : "VUID-VkRayTracingPipelineCreateInfoNV-stage-03425",
-            " : zero raygen stages specified");
+            " : The stage member of at least one element of pStages must be VK_SHADER_STAGE_RAYGEN_BIT_KHR.");
     }
 
     for (uint32_t group_index = 0; group_index < pipeline->raytracingPipelineCI.groupCount; group_index++) {

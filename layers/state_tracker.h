@@ -405,6 +405,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphoreMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, samplerYcbcrConversionMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, accelerationStructureMap_khr)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
 
     void AddAliasingImage(IMAGE_STATE* image_state);
@@ -586,11 +587,17 @@ class ValidationStateTracker : public ValidationObject {
     SAMPLER_YCBCR_CONVERSION_STATE* GetSamplerYcbcrConversionState(VkSamplerYcbcrConversion samplerYcbcrConversion) {
         return Get<SAMPLER_YCBCR_CONVERSION_STATE>(samplerYcbcrConversion);
     }
-    const ACCELERATION_STRUCTURE_STATE* GetAccelerationStructureState(VkAccelerationStructureNV as) const {
+    const ACCELERATION_STRUCTURE_STATE* GetAccelerationStructureStateNV(VkAccelerationStructureNV as) const {
         return Get<ACCELERATION_STRUCTURE_STATE>(as);
     }
-    ACCELERATION_STRUCTURE_STATE* GetAccelerationStructureState(VkAccelerationStructureNV as) {
+    const ACCELERATION_STRUCTURE_STATE_KHR* GetAccelerationStructureStateKHR(VkAccelerationStructureKHR as) const {
+        return Get<ACCELERATION_STRUCTURE_STATE_KHR>(as);
+    }
+    ACCELERATION_STRUCTURE_STATE* GetAccelerationStructureStateNV(VkAccelerationStructureNV as) {
         return Get<ACCELERATION_STRUCTURE_STATE>(as);
+    }
+    ACCELERATION_STRUCTURE_STATE_KHR* GetAccelerationStructureStateKHR(VkAccelerationStructureKHR as) {
+        return Get<ACCELERATION_STRUCTURE_STATE_KHR>(as);
     }
     const SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) const { return Get<SURFACE_STATE>(surface); }
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) { return Get<SURFACE_STATE>(surface); }
@@ -758,15 +765,9 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR* pSignalInfo, VkResult result);
 
     // Create/Destroy/Bind
-    void PostCallRecordBindAccelerationStructureMemoryCommon(VkDevice device, uint32_t bindInfoCount,
-                                                             const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
-                                                             VkResult result, bool isNV);
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                          VkResult result);
-    void PostCallRecordBindAccelerationStructureMemoryKHR(VkDevice device, uint32_t bindInfoCount,
-                                                          const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
-                                                          VkResult result);
     void PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                         VkResult result);
     void PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
@@ -793,6 +794,15 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureKHR* pAccelerationStructure, VkResult result);
+    void PostCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                         const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
+
+    void PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                 const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                                 const VkDeviceAddress* pIndirectDeviceAddresses,
+                                                                 const uint32_t* pIndirectStrides,
+                                                                 const uint32_t* const* ppMaxPrimitiveCounts);
     void PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                       const VkAllocationCallbacks* pAllocator);
 
@@ -888,11 +898,13 @@ class ValidationStateTracker : public ValidationObject {
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
                                                    void* pipe_state);
-    bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      void* pipe_state) const;
-    void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                    VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     VkResult result, void* pipe_state);
@@ -1185,6 +1197,7 @@ class ValidationStateTracker : public ValidationObject {
     bool AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, const VulkanTypedHandle& obj,
                                  CMD_BUFFER_STATE* cb_node);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
+    void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE_KHR*);
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
@@ -1267,7 +1280,6 @@ class ValidationStateTracker : public ValidationObject {
     void RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo,
                              RENDER_PASS_STATE* render_pass);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
-    void RemoveAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info);
     void RemoveCommandBufferBinding(const VulkanTypedHandle& object, CMD_BUFFER_STATE* cb_node);
     void RemoveBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info);
     void RemoveImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info);
@@ -1300,9 +1312,6 @@ class ValidationStateTracker : public ValidationObject {
                                 const char* function);
     void UpdateDrawState(CMD_BUFFER_STATE* cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point, const char* function);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*) const;
-    void PostCallRecordCmdBuildAccelerationStructureKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-                                                        const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
 
     void PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                        const VkCopyAccelerationStructureInfoKHR* pInfo);
@@ -1350,7 +1359,8 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsNV;
-        VkPhysicalDeviceRayTracingPropertiesKHR ray_tracing_propsKHR;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_propsKHR;
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
         VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
         VkPhysicalDeviceFragmentDensityMap2PropertiesEXT fragment_density_map2_props;

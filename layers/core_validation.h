@@ -301,6 +301,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE*, const char*, const char*) const;
+    bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE_KHR*, const char*, const char*) const;
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code) const;
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
@@ -330,7 +331,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Properties& core12_props,
                                      const VkRenderPassCreateInfo2* pCreateInfo, const char* function_name) const;
 
-    bool ValidateBindAccelerationStructureMemory(VkDevice device, const VkBindAccelerationStructureMemoryInfoKHR& info) const;
+    bool ValidateBindAccelerationStructureMemory(VkDevice device, const VkBindAccelerationStructureMemoryInfoNV& info) const;
     // Prototypes for CoreChecks accessor functions
     VkFormatProperties GetPDFormatProperties(const VkFormat format) const;
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
@@ -421,8 +422,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSampler(VkSampler) const;
     bool ValidateBufferUpdate(VkDescriptorBufferInfo const* buffer_info, VkDescriptorType type, const char* func_name,
                               std::string* error_code, std::string* error_msg) const;
-    bool ValidateAccelerationStructureUpdate(VkAccelerationStructureKHR acc, const char* func_name, std::string* error_code,
-                                             std::string* error_msg) const;
+    template <typename T>
+    bool ValidateAccelerationStructureUpdate(T acc, const char* func_name, std::string* error_code, std::string* error_msg) const;
     bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                      const void* pData) const;
     bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*,
@@ -433,7 +434,7 @@ class CoreChecks : public ValidationStateTracker {
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
-    bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, bool isKHR) const;
+    bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, VkPipelineCreateFlags flags, bool isKHR) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const;
     bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
@@ -851,7 +852,8 @@ class CoreChecks : public ValidationStateTracker {
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     void* pipe_state) const;
-    bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      void* pipe_state) const;
@@ -869,27 +871,29 @@ class CoreChecks : public ValidationStateTracker {
                                       VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                       VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                       uint32_t width, uint32_t height, uint32_t depth);
-    bool PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                        const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                        const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                        const VkStridedBufferRegionKHR* pCallableShaderBindingTable, uint32_t width,
+    bool PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                        const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                        const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                        const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                        const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
                                         uint32_t height, uint32_t depth) const;
-    void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                       const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                       const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                       const VkStridedBufferRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height,
-                                       uint32_t depth);
+    void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                       const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                       const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                       const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                       const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
+                                       uint32_t height, uint32_t depth);
     bool PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                                const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                                const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                                const VkStridedBufferRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
-                                                VkDeviceSize offset) const;
+                                                const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
+                                                VkDeviceAddress indirectDeviceAddress) const;
     void PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                               const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                               const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                               const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                               const VkStridedBufferRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
+                                               const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
                                                VkDeviceSize offset);
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const;
@@ -1006,13 +1010,16 @@ class CoreChecks : public ValidationStateTracker {
                                                        VkAccelerationStructureKHR* pAccelerationStructure) const;
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const;
-    bool PreCallValidateBindAccelerationStructureMemoryKHR(VkDevice device, uint32_t bindInfoCount,
-                                                           const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) const;
     bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                          size_t dataSize, void* pData) const;
-    bool PreCallValidateCmdBuildAccelerationStructureKHR(
+    bool PreCallValidateCmdBuildAccelerationStructuresKHR(
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-        const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) const;
+        const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const;
+
+    bool PreCallValidateBuildAccelerationStructuresKHR(
+        VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+        const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const;
     bool PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                         VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                         VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
@@ -1313,6 +1320,9 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                    uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
                                                    const VkDeviceSize* pCounterBufferOffsets) const;
+    bool PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize) const;
+    bool PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,
+                                                             VkShaderGroupShaderKHR groupShader) const;
 
     bool PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
                                                                  const VkAccelerationStructureKHR* pAccelerationStructures,
@@ -1331,10 +1341,11 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                                         uint32_t groupCount, size_t dataSize, void* pData) const;
 
-    bool PreCallValidateCmdBuildAccelerationStructureIndirectKHR(VkCommandBuffer commandBuffer,
-                                                                 const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
-                                                                 VkBuffer indirectBuffer, VkDeviceSize indirectOffset,
-                                                                 uint32_t indirectStride) const;
+    bool PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                  const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                                  const VkDeviceAddress* pIndirectDeviceAddresses,
+                                                                  const uint32_t* pIndirectStrides,
+                                                                  const uint32_t* const* ppMaxPrimitiveCounts) const;
     bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR* pInfo, const char* api_name) const;
     bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyAccelerationStructureInfoKHR* pInfo) const;

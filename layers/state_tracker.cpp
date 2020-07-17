@@ -904,7 +904,7 @@ static Result GetObjectMemBindingImpl(State state, const VulkanTypedHandle &type
         case kVulkanObjectTypeBuffer:
             return state->GetBufferState(typed_handle.Cast<VkBuffer>());
         case kVulkanObjectTypeAccelerationStructureNV:
-            return state->GetAccelerationStructureState(typed_handle.Cast<VkAccelerationStructureNV>());
+            return state->GetAccelerationStructureStateNV(typed_handle.Cast<VkAccelerationStructureNV>());
         default:
             break;
     }
@@ -1070,6 +1070,24 @@ void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BU
     if (AddCommandBufferBinding(
             as_state->cb_bindings,
             VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureNV, as_state), cb_node)) {
+        // Now update CB binding in MemObj mini CB list
+        for (auto mem_binding : as_state->GetBoundMemory()) {
+            // Now update CBInfo's Mem reference list
+            AddCommandBufferBinding(mem_binding->cb_bindings,
+                                    VulkanTypedHandle(mem_binding->mem, kVulkanObjectTypeDeviceMemory, mem_binding), cb_node);
+        }
+    }
+}
+
+// Create binding link between given acceleration structure and command buffer node
+void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE *cb_node,
+                                                                          ACCELERATION_STRUCTURE_STATE_KHR *as_state) {
+    if (disabled[command_buffer_state]) {
+        return;
+    }
+    if (AddCommandBufferBinding(
+            as_state->cb_bindings,
+            VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureKHR, as_state), cb_node)) {
         // Now update CB binding in MemObj mini CB list
         for (auto mem_binding : as_state->GetBoundMemory()) {
             // Now update CBInfo's Mem reference list
@@ -1325,7 +1343,11 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
             break;
         }
         case kVulkanObjectTypeAccelerationStructureNV: {
-            base_ptr = GetAccelerationStructureState(object_struct.Cast<VkAccelerationStructureNV>());
+            base_ptr = GetAccelerationStructureStateNV(object_struct.Cast<VkAccelerationStructureNV>());
+            break;
+        }
+        case kVulkanObjectTypeAccelerationStructureKHR: {
+            base_ptr = GetAccelerationStructureStateKHR(object_struct.Cast<VkAccelerationStructureKHR>());
             break;
         }
         case kVulkanObjectTypeUnknown:
@@ -1802,9 +1824,21 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.ycbcr_image_array_features = *ycbcr_image_array_features;
     }
 
-    const auto *ray_tracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(pCreateInfo->pNext);
-    if (ray_tracing_features) {
-        state_tracker->enabled_features.ray_tracing_features = *ray_tracing_features;
+    const auto *ray_query_features = lvl_find_in_chain<VkPhysicalDeviceRayQueryFeaturesKHR>(pCreateInfo->pNext);
+    if (ray_query_features) {
+        state_tracker->enabled_features.ray_query_features = *ray_query_features;
+    }
+
+    const auto *ray_tracing_pipeline_features =
+        lvl_find_in_chain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
+    if (ray_tracing_pipeline_features) {
+        state_tracker->enabled_features.ray_tracing_pipeline_features = *ray_tracing_pipeline_features;
+    }
+
+    const auto *ray_tracing_acceleration_structure_features =
+        lvl_find_in_chain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(pCreateInfo->pNext);
+    if (ray_tracing_acceleration_structure_features) {
+        state_tracker->enabled_features.ray_tracing_acceleration_structure_features = *ray_tracing_acceleration_structure_features;
     }
 
     const auto *robustness2_features = lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
@@ -1941,7 +1975,8 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_propsNV);
-    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_ray_tracing, &phys_dev_props->ray_tracing_propsKHR);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_ray_tracing_pipeline, &phys_dev_props->ray_tracing_propsKHR);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_acceleration_structure, &phys_dev_props->acc_structure_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_texel_buffer_alignment, &phys_dev_props->texel_buffer_alignment_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map_2, &phys_dev_props->fragment_density_map2_props);
@@ -2331,7 +2366,7 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
                 bindable_state = GetBufferState(obj.Cast<VkBuffer>());
                 break;
             case kVulkanObjectTypeAccelerationStructureNV:
-                bindable_state = GetAccelerationStructureState(obj.Cast<VkAccelerationStructureNV>());
+                bindable_state = GetAccelerationStructureStateNV(obj.Cast<VkAccelerationStructureNV>());
                 break;
 
             default:
@@ -2720,10 +2755,6 @@ void ValidationStateTracker::RemoveBufferMemoryRange(VkBuffer buffer, DEVICE_MEM
 
 void ValidationStateTracker::RemoveImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info) {
     RemoveMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info);
-}
-
-void ValidationStateTracker::RemoveAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE *mem_info) {
-    RemoveMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info);
 }
 
 void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
@@ -3230,8 +3261,8 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
     crtpl_state->pipe_state.clear();
 }
 
-bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache,
-                                                                         uint32_t count,
+bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                         VkPipelineCache pipelineCache, uint32_t count,
                                                                          const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                                          const VkAllocationCallbacks *pAllocator,
                                                                          VkPipeline *pPipelines, void *crtpl_state_data) const {
@@ -3246,9 +3277,12 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
     return false;
 }
 
-void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result, void *crtpl_state_data) {
+void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                        VkPipelineCache pipelineCache, uint32_t count,
+                                                                        const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkPipeline *pPipelines, VkResult result,
+                                                                        void *crtpl_state_data) {
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
@@ -3764,38 +3798,58 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
                                                                           VkAccelerationStructureKHR *pAccelerationStructure,
                                                                           VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE>(*pAccelerationStructure, pCreateInfo);
-
-    // Query the requirements in case the application doesn't (to avoid bind/validation time query)
-    VkAccelerationStructureMemoryRequirementsInfoKHR as_memory_requirements_info = {};
-    as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-    as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR;
-    as_memory_requirements_info.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-    as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure;
-    DispatchGetAccelerationStructureMemoryRequirementsKHR(device, &as_memory_requirements_info, &as_state->memory_requirements);
-
-    VkAccelerationStructureMemoryRequirementsInfoKHR scratch_memory_req_info = {};
-    scratch_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-    scratch_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR;
-    scratch_memory_req_info.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-    scratch_memory_req_info.accelerationStructure = as_state->acceleration_structure;
-    DispatchGetAccelerationStructureMemoryRequirementsKHR(device, &scratch_memory_req_info,
-                                                          &as_state->build_scratch_memory_requirements);
-
-    VkAccelerationStructureMemoryRequirementsInfoKHR update_memory_req_info = {};
-    update_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-    update_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_KHR;
-    update_memory_req_info.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-    update_memory_req_info.accelerationStructure = as_state->acceleration_structure;
-    DispatchGetAccelerationStructureMemoryRequirementsKHR(device, &update_memory_req_info,
-                                                          &as_state->update_scratch_memory_requirements);
+    auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(*pAccelerationStructure, pCreateInfo);
     as_state->allocator = pAllocator;
-    accelerationStructureMap[*pAccelerationStructure] = std::move(as_state);
+    accelerationStructureMap_khr[*pAccelerationStructure] = std::move(as_state);
 }
 
+void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state == nullptr) {
+        return;
+    }
+    for (uint32_t i = 0; i < infoCount; ++i) {
+        ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
+        ACCELERATION_STRUCTURE_STATE_KHR *src_as_state = GetAccelerationStructureStateKHR(pInfos[i].srcAccelerationStructure);
+        if (dst_as_state != nullptr) {
+            dst_as_state->built = true;
+            dst_as_state->build_info_khr.initialize(&pInfos[i]);
+            AddCommandBufferBindingAccelerationStructure(cb_state, dst_as_state);
+        }
+        if (src_as_state != nullptr) {
+            AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
+        }
+    }
+    cb_state->hasBuildAccelerationStructureCmd = true;
+}
+
+void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkDeviceAddress *pIndirectDeviceAddresses, const uint32_t *pIndirectStrides,
+    const uint32_t *const *ppMaxPrimitiveCounts) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state == nullptr) {
+        return;
+    }
+    for (uint32_t i = 0; i < infoCount; ++i) {
+        ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
+        ACCELERATION_STRUCTURE_STATE_KHR *src_as_state = GetAccelerationStructureStateKHR(pInfos[i].srcAccelerationStructure);
+        if (dst_as_state != nullptr) {
+            dst_as_state->built = true;
+            dst_as_state->build_info_khr.initialize(&pInfos[i]);
+            AddCommandBufferBindingAccelerationStructure(cb_state, dst_as_state);
+        }
+        if (src_as_state != nullptr) {
+            AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
+        }
+    }
+    cb_state->hasBuildAccelerationStructureCmd = true;
+}
 void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2KHR *pMemoryRequirements) {
-    ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(pInfo->accelerationStructure);
+    ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(pInfo->accelerationStructure);
     if (as_state != nullptr) {
         if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV) {
             as_state->memory_requirements = *pMemoryRequirements;
@@ -3810,14 +3864,13 @@ void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequire
     }
 }
 
-void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryCommon(
-    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoKHR *pBindInfos, VkResult result,
-    bool isNV) {
+void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
+    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        const VkBindAccelerationStructureMemoryInfoKHR &info = pBindInfos[i];
+        const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
 
-        ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(info.accelerationStructure);
+        ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(info.accelerationStructure);
         if (as_state) {
             // Track bound memory range information
             auto mem_info = GetDevMemState(info.memory);
@@ -3826,25 +3879,15 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryCommon
             }
             // Track objects tied to memory
             SetMemBinding(info.memory, as_state, info.memoryOffset,
-                          VulkanTypedHandle(info.accelerationStructure, kVulkanObjectTypeAccelerationStructureKHR));
+                          VulkanTypedHandle(info.accelerationStructure, kVulkanObjectTypeAccelerationStructureNV));
 
             // GPU validation of top level acceleration structure building needs acceleration structure handles.
             // XXX TODO: Query device address for KHR extension
-            if (enabled[gpu_validation] && isNV) {
+            if (enabled[gpu_validation]) {
                 DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
             }
         }
     }
-}
-
-void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
-    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV *pBindInfos, VkResult result) {
-    PostCallRecordBindAccelerationStructureMemoryCommon(device, bindInfoCount, pBindInfos, result, true);
-}
-
-void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryKHR(
-    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoKHR *pBindInfos, VkResult result) {
-    PostCallRecordBindAccelerationStructureMemoryCommon(device, bindInfoCount, pBindInfos, result, false);
 }
 
 void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
@@ -3855,8 +3898,8 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
         return;
     }
 
-    ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
-    ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
+    ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureStateNV(dst);
+    ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureStateNV(src);
     if (dst_as_state != nullptr) {
         dst_as_state->built = true;
         dst_as_state->build_info.initialize(pInfo);
@@ -3874,8 +3917,8 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkComm
                                                                           VkCopyAccelerationStructureModeNV mode) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (cb_state) {
-        ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
-        ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
+        ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureStateNV(src);
+        ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureStateNV(dst);
         if (dst_as_state != nullptr && src_as_state != nullptr) {
             dst_as_state->built = true;
             dst_as_state->build_info = src_as_state->build_info;
@@ -3889,23 +3932,34 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureKHR(VkDevi
                                                                           VkAccelerationStructureKHR accelerationStructure,
                                                                           const VkAllocationCallbacks *pAllocator) {
     if (!accelerationStructure) return;
-    auto *as_state = GetAccelerationStructureState(accelerationStructure);
+    auto *as_state = GetAccelerationStructureStateKHR(accelerationStructure);
     if (as_state) {
         const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureKHR);
         InvalidateCommandBuffers(as_state->cb_bindings, obj_struct);
         for (auto mem_binding : as_state->GetBoundMemory()) {
-            RemoveAccelerationStructureMemoryRange(accelerationStructure, mem_binding);
+            RemoveMemoryRange(obj_struct, mem_binding);
         }
         ClearMemoryObjectBindings(obj_struct);
         as_state->destroyed = true;
-        accelerationStructureMap.erase(accelerationStructure);
+        accelerationStructureMap_khr.erase(accelerationStructure);
     }
 }
 
 void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevice device,
                                                                          VkAccelerationStructureNV accelerationStructure,
                                                                          const VkAllocationCallbacks *pAllocator) {
-    PreCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
+    if (!accelerationStructure) return;
+    auto *as_state = GetAccelerationStructureStateNV(accelerationStructure);
+    if (as_state) {
+        const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
+        InvalidateCommandBuffers(as_state->cb_bindings, obj_struct);
+        for (auto mem_binding : as_state->GetBoundMemory()) {
+            RemoveMemoryRange(obj_struct, mem_binding);
+        }
+        ClearMemoryObjectBindings(obj_struct);
+        as_state->destroyed = true;
+        accelerationStructureMap.erase(accelerationStructure);
+    }
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
@@ -6117,34 +6171,12 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
     }
 }
 
-void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR *const *ppOffsetInfos) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    if (cb_state == nullptr) {
-        return;
-    }
-    for (uint32_t i = 0; i < infoCount; ++i) {
-        ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(pInfos[i].dstAccelerationStructure);
-        ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(pInfos[i].srcAccelerationStructure);
-        if (dst_as_state != nullptr) {
-            dst_as_state->built = true;
-            dst_as_state->build_info_khr.initialize(pInfos);
-            AddCommandBufferBindingAccelerationStructure(cb_state, dst_as_state);
-        }
-        if (src_as_state != nullptr) {
-            AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
-        }
-    }
-    cb_state->hasBuildAccelerationStructureCmd = true;
-}
-
 void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                            const VkCopyAccelerationStructureInfoKHR *pInfo) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (cb_state) {
-        ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(pInfo->src);
-        ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(pInfo->dst);
+        ACCELERATION_STRUCTURE_STATE_KHR *src_as_state = GetAccelerationStructureStateKHR(pInfo->src);
+        ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state = GetAccelerationStructureStateKHR(pInfo->dst);
         if (dst_as_state != nullptr && src_as_state != nullptr) {
             dst_as_state->built = true;
             dst_as_state->build_info_khr = src_as_state->build_info_khr;

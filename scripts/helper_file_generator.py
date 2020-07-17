@@ -1307,18 +1307,17 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '            pImmutableSamplers[i] = in_struct->pImmutableSamplers[i];\n'
                     '        }\n'
                     '    }\n',
-                #VkAccelerationStructureBuildGeometryInfoKHR is a special case because geometryArrayOfPointers changes the interpretation of ppGeometries
                 'VkAccelerationStructureBuildGeometryInfoKHR':
-                    '    if (geometryCount && in_struct->ppGeometries) {\n'
-                    '        if (geometryArrayOfPointers) {\n'
+                    '    if (geometryCount) {\n'
+                    '        if ( in_struct->ppGeometries) {\n'
                     '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];\n'
                     '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
                     '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i]);\n'
                     '            }\n'
                     '        } else {\n'
-                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *(new safe_VkAccelerationStructureGeometryKHR[geometryCount]);\n'
+                    '            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];\n'
                     '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                (*ppGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(*in_struct->ppGeometries)[i]);\n'
+                    '                (pGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(in_struct->pGeometries)[i]);\n'
                     '            }\n'
                     '        }\n'
                     '    }\n',
@@ -1391,18 +1390,17 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '    }\n'
                     '    else\n'
                     '        pScissors = NULL;\n',
-                #VkAccelerationStructureBuildGeometryInfoKHR is a special case because geometryArrayOfPointers changes the interpretation of ppGeometries
                 'VkAccelerationStructureBuildGeometryInfoKHR':
-                    '    if (geometryCount && copy_src.ppGeometries) {\n'
-                    '        if (geometryArrayOfPointers) {\n'
+                    '    if (geometryCount) {\n'
+                    '        if ( copy_src.ppGeometries) {\n'
                     '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];\n'
                     '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
                     '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(*copy_src.ppGeometries[i]);\n'
                     '            }\n'
                     '        } else {\n'
-                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *(new safe_VkAccelerationStructureGeometryKHR[geometryCount]);\n'
+                    '            pGeometries = new safe_VkAccelerationStructureGeometryKHR[geometryCount];\n'
                     '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                (*ppGeometries)[i] = safe_VkAccelerationStructureGeometryKHR((*copy_src.ppGeometries)[i]);\n'
+                    '                pGeometries[i] = safe_VkAccelerationStructureGeometryKHR(copy_src.pGeometries[i]);\n'
                     '            }\n'
                     '        }\n'
                     '    }\n',
@@ -1414,17 +1412,14 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        delete[] reinterpret_cast<const uint8_t *>(pCode);\n',
                 'VkAccelerationStructureBuildGeometryInfoKHR' :
                     '    if (ppGeometries) {\n'
-                    '        if (geometryArrayOfPointers) {\n'
-                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
-                    '                delete ppGeometries[i];\n'
-                    '            }\n'
-                    '            delete[] ppGeometries;\n'
-                    '        } else {\n'
-                    '            delete[] *ppGeometries;\n'
-                    '            delete ppGeometries;\n'
+                    '        for (uint32_t i = 0; i < geometryCount; ++i) {\n'
+                    '             delete ppGeometries[i];\n'
                     '        }\n'
-                    '    }\n',
-            }
+                    '        delete[] ppGeometries;\n'
+                    '    } else {\n'
+                    '        delete[] pGeometries;\n'
+                    '    }\n'
+           }
             copy_pnext = ''
             copy_strings = ''
             for member in item.members:

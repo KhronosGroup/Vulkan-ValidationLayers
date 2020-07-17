@@ -502,14 +502,20 @@ class AccelerationStructureDescriptor : public Descriptor {
     AccelerationStructureDescriptor(const VkDescriptorType);
     void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
     VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
-    const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureState() const { return acc_state_.get(); }
-    ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureState() { return acc_state_.get(); }
+    const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
+    ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
+    VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
+    const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
+    ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
 
   private:
+    bool is_khr_;
     VkAccelerationStructureKHR acc_;
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_;
+    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
+    VkAccelerationStructureNV acc_nv_;
+    std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
 };
 
 union AnyDescriptor {

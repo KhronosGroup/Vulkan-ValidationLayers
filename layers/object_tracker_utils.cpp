@@ -213,7 +213,7 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
     if (desc->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext);
         for (uint32_t idx5 = 0; idx5 < desc->descriptorCount; ++idx5) {
-            skip |= ValidateObject(accInfo->pAccelerationStructures[idx5], kVulkanObjectTypeAccelerationStructureKHR, false,
+            skip |= ValidateObject(accInfo->pAccelerationStructures[idx5], kVulkanObjectTypeAccelerationStructureKHR, true,
                                    "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter",
                                    kVUIDUndefined);
         }
