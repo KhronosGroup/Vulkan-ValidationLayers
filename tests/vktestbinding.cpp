@@ -602,46 +602,33 @@ void ImageView::init(const Device &dev, const VkImageViewCreateInfo &info) {
 
 AccelerationStructure::~AccelerationStructure() {
     if (initialized()) {
-        if (isKHR) {
-            PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR =
-                (PFN_vkDestroyAccelerationStructureKHR)vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR");
-            assert(vkDestroyAccelerationStructureKHR != nullptr);
-            vkDestroyAccelerationStructureKHR(device(), handle(), nullptr);
-        } else {
-            PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructureNV =
-                (PFN_vkDestroyAccelerationStructureNV)vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureNV");
-            assert(vkDestroyAccelerationStructureNV != nullptr);
+        PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructureNV =
+            (PFN_vkDestroyAccelerationStructureNV)vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureNV");
+        assert(vkDestroyAccelerationStructureNV != nullptr);
 
-            vkDestroyAccelerationStructureNV(device(), handle(), nullptr);
-        }
+        vkDestroyAccelerationStructureNV(device(), handle(), nullptr);
     }
 }
 
-VkMemoryRequirements2 AccelerationStructure::memory_requirements(bool isKHR) const {
+AccelerationStructureKHR::~AccelerationStructureKHR() {
+    if (initialized()) {
+        PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR =
+            (PFN_vkDestroyAccelerationStructureKHR)vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR");
+        assert(vkDestroyAccelerationStructureKHR != nullptr);
+        vkDestroyAccelerationStructureKHR(device(), handle(), nullptr);
+    }
+}
+VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
     PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
         (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
-    assert(!(!isKHR && vkGetAccelerationStructureMemoryRequirementsNV == nullptr));
-
-    PFN_vkGetAccelerationStructureMemoryRequirementsKHR vkGetAccelerationStructureMemoryRequirementsKHR =
-        (PFN_vkGetAccelerationStructureMemoryRequirementsKHR)vk::GetDeviceProcAddr(
-            device(), "vkGetAccelerationStructureMemoryRequirementsKHR");
-    assert(!(isKHR && vkGetAccelerationStructureMemoryRequirementsKHR == nullptr));
+    assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
     VkMemoryRequirements2 memoryRequirements = {};
-    if (isKHR) {
-        VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo = {};
-        memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-        memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR;
-        memoryRequirementsInfo.accelerationStructure = handle();
-        memoryRequirementsInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-        vkGetAccelerationStructureMemoryRequirementsKHR(device(), &memoryRequirementsInfo, &memoryRequirements);
-    } else {
-        VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
-        memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-        memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-        memoryRequirementsInfo.accelerationStructure = handle();
-        vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
-    }
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
+    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
+    memoryRequirementsInfo.accelerationStructure = handle();
+    vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
     return memoryRequirements;
 }
 
@@ -690,33 +677,34 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
         EXPECT(vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_) == VK_SUCCESS);
     }
 }
-
-void AccelerationStructure::initKHR(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory) {
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR =
-        (PFN_vkCreateAccelerationStructureKHR)vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureKHR");
-    assert(vkCreateAccelerationStructureKHR != nullptr);
-    NON_DISPATCHABLE_HANDLE_INIT(vkCreateAccelerationStructureKHR, dev, &info);
-    if (init_memory) {
-        memory_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(true).memoryRequirements,
-                                                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        PFN_vkBindAccelerationStructureMemoryKHR vkBindAccelerationStructureMemoryKHR =
-            (PFN_vkBindAccelerationStructureMemoryKHR)vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryKHR");
-        assert(vkBindAccelerationStructureMemoryKHR != nullptr);
-        VkBindAccelerationStructureMemoryInfoKHR bind_info = {};
-        bind_info.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
-        bind_info.accelerationStructure = handle();
-        bind_info.memory = memory_.handle();
-        EXPECT(vkBindAccelerationStructureMemoryKHR(dev.handle(), 1, &bind_info) == VK_SUCCESS);
-    }
-}
 void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo) {
     VkMemoryRequirements scratch_buffer_memory_requirements = build_scratch_memory_requirements().memoryRequirements;
-
     VkBufferCreateInfo create_info = {};
     create_info.size = scratch_buffer_memory_requirements.size;
     if (pCreateInfo) {
         create_info.sType = pCreateInfo->sType;
         create_info.usage = pCreateInfo->usage;
+    } else {
+        create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+    }
+    buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
+void AccelerationStructureKHR::init(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory) {
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR =
+        (PFN_vkCreateAccelerationStructureKHR)vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureKHR");
+    assert(vkCreateAccelerationStructureKHR != nullptr);
+    NON_DISPATCHABLE_HANDLE_INIT(vkCreateAccelerationStructureKHR, dev, &info);
+    info_ = info;
+}
+void AccelerationStructureKHR::create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo) {
+    VkBufferCreateInfo create_info = {};
+    create_info.size = 0;
+    if (pCreateInfo) {
+        create_info.sType = pCreateInfo->sType;
+        create_info.usage = pCreateInfo->usage;
+        create_info.size = pCreateInfo->size;
     } else {
         create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
