@@ -873,6 +873,20 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                          " must be less than the size of raygenShaderBindingTableBuffer %" PRIu64 " .",
                          raygenShaderBindingOffset, raygen_shader_buffer_state->createInfo.size);
     }
+
+    for (const auto &object : cb_state->object_bindings) {
+        if (object.type == kVulkanObjectTypePipeline) {
+            auto pipeline_state = object.node ? (PIPELINE_STATE *)object.node : GetPipelineState(object.Cast<VkPipeline>());
+            const auto &pipeline_state_bind_point =
+                pipeline_state ? pipeline_state->getPipelineType() : VK_PIPELINE_BIND_POINT_MAX_ENUM;
+            if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline) ||
+                pipeline_state_bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+                skip |=
+                    LogError(device, "VUID-vkCmdTraceRaysNV-None-02700",
+                             "vkCmdTraceRaysNV: A valid pipeline must be bound to the pipeline bind point used by this command.");
+            }
+        }
+    }
     return skip;
 }
 
@@ -889,21 +903,77 @@ void CoreChecks::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkB
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                                const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) const {
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR,
                                     "vkCmdTraceRaysKHR()", VK_QUEUE_COMPUTE_BIT);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const auto last_bound_it = cb_state->lastBound.find(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    const PIPELINE_STATE *pipeline_state = nullptr;
+    if (last_bound_it != cb_state->lastBound.cend()) {
+        pipeline_state = last_bound_it->second.pipeline_state;
+    }
+    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-None-02700",
+                         "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
+    } else {  // bound to valid RT pipeline
+        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
+            if (!pHitShaderBindingTable->deviceAddress) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03697",
+                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with flags "
+                                 "that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, the "
+                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
+            }
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03514",
+                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, "
+                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
+                                 "execute an intersection shader must not be set to zero.");
+            }
+        }
+        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
+            if (!pHitShaderBindingTable->deviceAddress) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03696",
+                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with flags "
+                                 "that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, the "
+                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
+            }
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03513",
+                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, "
+                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
+                                 "execute a closest hit shader must not be set to zero.");
+            }
+        }
+        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
+            if (!pHitShaderBindingTable->deviceAddress) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03695",
+                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with flags "
+                                 "that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, the "
+                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
+            }
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03512",
+                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, "
+                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
+                                 "execute an any hit shader must not be set to zero.");
+            }
+        }
+    }
     return skip;
 }
 
 void CoreChecks::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                               const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                               const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                uint32_t height, uint32_t depth) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawDispatchType(cb_state, CMD_TRACERAYSKHR, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, "vkCmdTraceRaysKHR()");
@@ -911,23 +981,79 @@ void CoreChecks::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                        const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pCallableShaderBindingTable,
-                                                        VkBuffer buffer, VkDeviceSize offset) const {
+                                                        const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                        VkDeviceAddress indirectDeviceAddress) const {
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR,
                                     "vkCmdTraceRaysIndirectKHR()", VK_QUEUE_COMPUTE_BIT);
-    skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_TRACERAYSINDIRECTKHR, "vkCmdTraceRaysIndirectKHR()");
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const auto last_bound_it = cb_state->lastBound.find(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    const PIPELINE_STATE *pipeline_state = nullptr;
+    if (last_bound_it != cb_state->lastBound.cend()) {
+        pipeline_state = last_bound_it->second.pipeline_state;
+    }
+    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
+        skip |=
+            LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-None-02700",
+                     "vkCmdTraceRaysIndirectKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
+    } else {  // valid bind point
+        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->deviceAddress == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03697",
+                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, the "
+                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
+            }
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03514",
+                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR, "
+                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
+                                 "execute an intersection shader must not be set to zero.");
+            }
+        }
+        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->deviceAddress == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03696",
+                                 "vkCmdTraceRaysIndirectKHR:If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, "
+                                 "the deviceAddress member of pHitShaderBindingTable must not be zero.");
+            }
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03513",
+                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, "
+                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
+                                 "execute a closest hit shader must not be set to zero.");
+            }
+        }
+        if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->deviceAddress == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03695",
+                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, the "
+                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
+            }
+            if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03512",
+                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
+                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, "
+                                 "entries in pHitShaderBindingTable accessed as a result of this command in order to "
+                                 "execute an any hit shader must not be set to zero.");
+            }
+        }
+    }
     return skip;
 }
 
 void CoreChecks::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                       const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pCallableShaderBindingTable, VkBuffer buffer,
-                                                       VkDeviceSize offset) {
+                                                       const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                       VkBuffer buffer, VkDeviceSize offset) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawDispatchType(cb_state, CMD_TRACERAYSINDIRECTKHR, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,

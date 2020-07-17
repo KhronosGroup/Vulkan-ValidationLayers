@@ -532,9 +532,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
   public:
     VkAccelerationStructureNV acceleration_structure;
-    bool is_khr;
     safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
-    safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
+    safe_VkAccelerationStructureInfoNV build_info;
     bool memory_requirements_checked = false;
     VkMemoryRequirements2KHR memory_requirements;
     bool build_scratch_memory_requirements_checked = false;
@@ -542,29 +541,42 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     bool update_scratch_memory_requirements_checked = false;
     VkMemoryRequirements2KHR update_scratch_memory_requirements;
     bool built = false;
-    safe_VkAccelerationStructureInfoNV build_info;
-    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
     uint64_t opaque_handle = 0;
     const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
         : acceleration_structure(as),
-          is_khr(false),
           create_infoNV(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},
           build_scratch_memory_requirements{},
           update_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements{} {}
-    ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci)
+    ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
+};
+
+class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
+  public:
+    VkAccelerationStructureKHR acceleration_structure;
+    safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
+    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
+    bool memory_requirements_checked = false;
+    VkMemoryRequirements2KHR memory_requirements;
+    bool build_scratch_memory_requirements_checked = false;
+    VkMemoryRequirements2KHR build_scratch_memory_requirements;
+    bool update_scratch_memory_requirements_checked = false;
+    VkMemoryRequirements2KHR update_scratch_memory_requirements;
+    bool built = false;
+    uint64_t opaque_handle = 0;
+    const VkAllocationCallbacks *allocator = NULL;
+    ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci)
         : acceleration_structure(as),
-          is_khr(true),
           create_infoKHR(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},
           build_scratch_memory_requirements{},
           update_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements{} {}
-    ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
+    ACCELERATION_STRUCTURE_STATE_KHR(const ACCELERATION_STRUCTURE_STATE_KHR &rh_obj) = delete;
 };
 
 struct SWAPCHAIN_IMAGE {
@@ -913,6 +925,7 @@ class safe_VkRayTracingPipelineCreateInfoCommon : public safe_VkRayTracingPipeli
     void initialize(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo) {
         safe_VkRayTracingPipelineCreateInfoKHR::initialize(pCreateInfo);
     }
+    uint32_t maxRecursionDepth;  // NV specific
 };
 
 struct SHADER_MODULE_STATE;
@@ -1454,7 +1467,9 @@ struct DeviceFeatures {
     VkPhysicalDevicePerformanceQueryFeaturesKHR performance_query_features;
     VkPhysicalDeviceCoherentMemoryFeaturesAMD device_coherent_memory_features;
     VkPhysicalDeviceYcbcrImageArraysFeaturesEXT ycbcr_image_array_features;
-    VkPhysicalDeviceRayTracingFeaturesKHR ray_tracing_features;
+    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features;
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features;
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR ray_tracing_acceleration_structure_features;
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fragment_density_map_features;
     VkPhysicalDeviceFragmentDensityMap2FeaturesEXT fragment_density_map2_features;

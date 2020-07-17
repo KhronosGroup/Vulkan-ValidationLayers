@@ -650,6 +650,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                     descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) InlineUniformDescriptor(type));
                 break;
             case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                 for (uint32_t di = 0; di < p_layout_->GetDescriptorCountFromIndex(i); ++di)
                     descriptors_.emplace_back(new ((free_descriptor++)->AccelerationStructure())
                                                   AccelerationStructureDescriptor(type));
@@ -1305,7 +1306,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     // Verify that acceleration structures are valid
                     auto acc = static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructure();
                     auto acc_node =
-                        static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureState();
+                        static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureStateKHR();
                     if (!acc_node || acc_node->destroyed) {
                         auto set = descriptor_set->GetSet();
                         return LogError(
@@ -2232,30 +2233,48 @@ void cvdescriptorset::TexelDescriptor::UpdateDrawState(ValidationStateTracker *d
 }
 
 cvdescriptorset::AccelerationStructureDescriptor::AccelerationStructureDescriptor(const VkDescriptorType type)
-    : acc_(VK_NULL_HANDLE) {
+    : acc_(VK_NULL_HANDLE), acc_nv_(VK_NULL_HANDLE) {
     updated = false;
+    is_khr_ = false;
     descriptor_class = AccelerationStructure;
 }
 void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
                                                                    const VkWriteDescriptorSet *update, const uint32_t index) {
     const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(update->pNext);
-
+    const auto *accInfo_nv = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
+    assert(accInfo || accInfo_nv);
+    is_khr_ = (accInfo != NULL);
     updated = true;
-    acc_ = accInfo->pAccelerationStructures[index];
-    acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_);
+    if (is_khr_) {
+        acc_ = accInfo->pAccelerationStructures[index];
+        acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_);
+    } else {
+        acc_nv_ = accInfo_nv->pAccelerationStructures[index];
+        acc_state_nv_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_);
+    }
 }
 
 void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     auto acc_desc = static_cast<const AccelerationStructureDescriptor *>(src);
     updated = true;
-    acc_ = acc_desc->acc_;
-    acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_);
+    if (is_khr_) {
+        acc_ = acc_desc->acc_;
+        acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_);
+    } else {
+        acc_nv_ = acc_desc->acc_nv_;
+        acc_state_nv_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_);
+    }
 }
 
 void cvdescriptorset::AccelerationStructureDescriptor::UpdateDrawState(ValidationStateTracker *dev_data,
                                                                        CMD_BUFFER_STATE *cb_node) {
-    auto acc_node = GetAccelerationStructureState();
-    if (acc_node) dev_data->AddCommandBufferBindingAccelerationStructure(cb_node, acc_node);
+    if (is_khr_) {
+        auto acc_node = GetAccelerationStructureStateKHR();
+        if (acc_node) dev_data->AddCommandBufferBindingAccelerationStructure(cb_node, acc_node);
+    } else {
+        auto acc_node = GetAccelerationStructureStateNV();
+        if (acc_node) dev_data->AddCommandBufferBindingAccelerationStructure(cb_node, acc_node);
+    }
 }
 
 // This is a helper function that iterates over a set of Write and Copy updates, pulls the DescriptorSet* for updated
@@ -2286,16 +2305,32 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
             const auto *pnext_struct = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(p_wds[i].pNext);
             if (pnext_struct) {
                 for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-                    const ACCELERATION_STRUCTURE_STATE *as_state =
-                        GetAccelerationStructureState(pnext_struct->pAccelerationStructures[j]);
-                    if (as_state && as_state->is_khr &&
-                        (as_state->create_infoKHR.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR &&
-                         as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)) {
+                    const ACCELERATION_STRUCTURE_STATE_KHR *as_state =
+                        GetAccelerationStructureStateKHR(pnext_struct->pAccelerationStructures[j]);
+                    if (as_state && (as_state->create_infoKHR.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR &&
+                                     (as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ||
+                                      as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) &&
+                                     as_state->build_info_khr.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)) {
                         skip |=
-                            LogError(dest_set, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-02764",
-                                     "%s: Each acceleration structure in pAccelerationStructures must have been"
-                                     "created with VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR.",
+                            LogError(dest_set, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579",
+                                     "%s: Each acceleration structure in pAccelerationStructures must have been created with "
+                                     "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR or VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR "
+                                     "and built with VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR.",
                                      func_name);
+                    }
+                }
+            }
+            const auto *pnext_struct_nv = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(p_wds[i].pNext);
+            if (pnext_struct_nv) {
+                for (uint32_t j = 0; j < pnext_struct_nv->accelerationStructureCount; ++j) {
+                    const ACCELERATION_STRUCTURE_STATE *as_state =
+                        GetAccelerationStructureStateNV(pnext_struct_nv->pAccelerationStructures[j]);
+                    if (as_state && (as_state->create_infoNV.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV &&
+                                     as_state->create_infoNV.info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV)) {
+                        skip |= LogError(dest_set, "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03748",
+                                         "%s: Each acceleration structure in pAccelerationStructures must have been created with"
+                                         " VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV.",
+                                         func_name);
                     }
                 }
             }
@@ -2618,11 +2653,9 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
     }
     return true;
 }
-
-bool CoreChecks::ValidateAccelerationStructureUpdate(VkAccelerationStructureKHR acc, const char *func_name, std::string *error_code,
+template <typename T>
+bool CoreChecks::ValidateAccelerationStructureUpdate(T acc_node, const char *func_name, std::string *error_code,
                                                      std::string *error_msg) const {
-    // First make sure that acceleration structure is valid
-    auto acc_node = GetAccelerationStructureState(acc);
     // Any invalid acc struct should already be caught by object_tracker
     assert(acc_node);
     if (ValidateMemoryIsBoundToAccelerationStructure(acc_node, func_name, kVUIDUndefined)) {
@@ -3294,9 +3327,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
             break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
-            const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(update->pNext);
+            const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                if (!ValidateAccelerationStructureUpdate(accInfo->pAccelerationStructures[di], func_name, error_code, error_msg)) {
+                if (!ValidateAccelerationStructureUpdate(GetAccelerationStructureStateNV(accInfo->pAccelerationStructures[di]), func_name, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted write update to acceleration structure descriptor failed due to: "
                               << error_msg->c_str();
@@ -3306,6 +3339,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
             }
 
         } break;
+        // KHR acceleration structures don't require memory to be bound manually to them.
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            break;
         default:
             assert(0);  // We've already verified update type so should never get here
             break;

@@ -169,7 +169,8 @@ class GpuAssisted : public ValidationStateTracker {
                                                   const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                   void* crtpl_state_data);
-    void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                   VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                    void* crtpl_state_data);
@@ -185,7 +186,8 @@ class GpuAssisted : public ValidationStateTracker {
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
                                                    void* crtpl_state_data);
-    void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                    VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     VkResult result, void* crtpl_state_data);
@@ -247,27 +249,29 @@ class GpuAssisted : public ValidationStateTracker {
                                       VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                       VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                       uint32_t width, uint32_t height, uint32_t depth);
-    void PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                      const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                      const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                      const VkStridedBufferRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height,
-                                      uint32_t depth);
-    void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                       const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                       const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                       const VkStridedBufferRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height,
-                                       uint32_t depth);
+    void PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                      const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                      const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                      const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                      const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
+                                      uint32_t height, uint32_t depth);
+    void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                       const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                       const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                       const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                       const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
+                                       uint32_t height, uint32_t depth);
     void PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                              const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                              const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                              const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                              const VkStridedBufferRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
+                                              const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                              const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                              const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                              const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
                                               VkDeviceSize offset);
     void PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                               const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
-                                               const VkStridedBufferRegionKHR* pMissShaderBindingTable,
-                                               const VkStridedBufferRegionKHR* pHitShaderBindingTable,
-                                               const VkStridedBufferRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
+                                               const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
                                                VkDeviceSize offset);
     void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,

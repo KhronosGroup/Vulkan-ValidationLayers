@@ -205,7 +205,8 @@ void DebugPrintf::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPi
     crtpl_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(crtpl_state->printf_create_infos.data());
 }
 
-void DebugPrintf::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+void DebugPrintf::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             void *crtpl_state_data) {
@@ -733,38 +734,38 @@ void DebugPrintf::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
 }
 
 void DebugPrintf::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                               const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                               const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                uint32_t height, uint32_t depth) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 }
 
 void DebugPrintf::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                                const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
 void DebugPrintf::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                       const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pCallableShaderBindingTable, VkBuffer buffer,
-                                                       VkDeviceSize offset) {
+                                                       const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                       VkBuffer buffer, VkDeviceSize offset) {
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 }
 
 void DebugPrintf::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                        const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pCallableShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                         VkBuffer buffer, VkDeviceSize offset) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->hasTraceRaysCmd = true;

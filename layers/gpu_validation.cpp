@@ -952,7 +952,7 @@ void GpuAssisted::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice devic
     ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, result);
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
-        ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(info.accelerationStructure);
+        ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(info.accelerationStructure);
         if (as_state) {
             DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
         }
@@ -1103,7 +1103,8 @@ void GpuAssisted::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPi
     crtpl_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(crtpl_state->gpu_create_infos.data());
 }
 
-void GpuAssisted::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+void GpuAssisted::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             void *crtpl_state_data) {
@@ -1148,13 +1149,14 @@ void GpuAssisted::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, this);
 }
 
-void GpuAssisted::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+void GpuAssisted::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                             VkPipelineCache pipelineCache, uint32_t count,
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                              VkResult result, void *crtpl_state_data) {
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
-    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                       pPipelines, result, crtpl_state_data);
+    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
+        device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result, crtpl_state_data);
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->gpu_create_infos.data());
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
 }
@@ -1500,38 +1502,38 @@ void GpuAssisted::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
 }
 
 void GpuAssisted::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                               const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                               const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                               const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                uint32_t height, uint32_t depth) {
     AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 }
 
 void GpuAssisted::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                                const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
 }
 
 void GpuAssisted::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                       const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                       const VkStridedBufferRegionKHR *pCallableShaderBindingTable, VkBuffer buffer,
-                                                       VkDeviceSize offset) {
+                                                       const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                       const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                       VkBuffer buffer, VkDeviceSize offset) {
     AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 }
 
 void GpuAssisted::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                        const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pMissShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pHitShaderBindingTable,
-                                                        const VkStridedBufferRegionKHR *pCallableShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                        const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                         VkBuffer buffer, VkDeviceSize offset) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->hasTraceRaysCmd = true;
