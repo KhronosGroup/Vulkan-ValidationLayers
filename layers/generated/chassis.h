@@ -2501,6 +2501,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(
     uint16_t                                    lineStipplePattern);
 
 
+
 VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
@@ -2631,6 +2632,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t*                                   pData);
+
 
 
 

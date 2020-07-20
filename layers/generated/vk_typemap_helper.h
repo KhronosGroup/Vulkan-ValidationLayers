@@ -3625,6 +3625,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STA
     typedef VkPipelineRasterizationLineStateCreateInfoEXT Type;
 };
 
+// Map type VkPhysicalDeviceShaderAtomicFloatFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT> {
+    typedef VkPhysicalDeviceShaderAtomicFloatFeaturesEXT Type;
+};
+
 // Map type VkPhysicalDeviceIndexTypeUint8FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceIndexTypeUint8FeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT;
@@ -3875,6 +3884,15 @@ template <> struct LvlTypeMap<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT> 
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT> {
     typedef VkPhysicalDeviceFragmentDensityMap2PropertiesEXT Type;
+};
+
+// Map type VkPhysicalDeviceImageRobustnessFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceImageRobustnessFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT> {
+    typedef VkPhysicalDeviceImageRobustnessFeaturesEXT Type;
 };
 
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT

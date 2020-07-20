@@ -372,6 +372,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_hdr_metadata{kNotEnabled};
     ExtEnabled vk_ext_host_query_reset{kNotEnabled};
     ExtEnabled vk_ext_image_drm_format_modifier{kNotEnabled};
+    ExtEnabled vk_ext_image_robustness{kNotEnabled};
     ExtEnabled vk_ext_index_type_uint8{kNotEnabled};
     ExtEnabled vk_ext_inline_uniform_block{kNotEnabled};
     ExtEnabled vk_ext_line_rasterization{kNotEnabled};
@@ -388,6 +389,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_sampler_filter_minmax{kNotEnabled};
     ExtEnabled vk_ext_scalar_block_layout{kNotEnabled};
     ExtEnabled vk_ext_separate_stencil_usage{kNotEnabled};
+    ExtEnabled vk_ext_shader_atomic_float{kNotEnabled};
     ExtEnabled vk_ext_shader_demote_to_helper_invocation{kNotEnabled};
     ExtEnabled vk_ext_shader_stencil_export{kNotEnabled};
     ExtEnabled vk_ext_shader_subgroup_ballot{kNotEnabled};
@@ -580,8 +582,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_external_memory_fd, VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_external_memory_host, {{
                            {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})),
-            std::make_pair(VK_EXT_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_filter_cubic, {{
-                           {&DeviceExtensions::vk_img_filter_cubic, VK_IMG_FILTER_CUBIC_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_filter_cubic, {})),
             std::make_pair(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_fragment_density_map, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_fragment_density_map_2, {{
@@ -605,6 +606,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_image_robustness, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_index_type_uint8, {})),
             std::make_pair(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_inline_uniform_block, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
@@ -631,6 +634,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_scalar_block_layout, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_separate_stencil_usage, {})),
+            std::make_pair(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_demote_to_helper_invocation, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_stencil_export, {})),
@@ -1010,6 +1015,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_HDR_METADATA_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
     VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
+    VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
     VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
     VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
     VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME,
@@ -1026,6 +1032,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
     VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
     VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
+    VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
     VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
     VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,

@@ -10099,6 +10099,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(
 }
 
 
+
 VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
@@ -10623,6 +10624,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
         intercept->PostCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
     }
 }
+
 
 
 

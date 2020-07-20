@@ -30403,6 +30403,114 @@ void safe_VkPipelineRasterizationLineStateCreateInfoEXT::initialize(const safe_V
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT(const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    shaderBufferFloat32Atomics(in_struct->shaderBufferFloat32Atomics),
+    shaderBufferFloat32AtomicAdd(in_struct->shaderBufferFloat32AtomicAdd),
+    shaderBufferFloat64Atomics(in_struct->shaderBufferFloat64Atomics),
+    shaderBufferFloat64AtomicAdd(in_struct->shaderBufferFloat64AtomicAdd),
+    shaderSharedFloat32Atomics(in_struct->shaderSharedFloat32Atomics),
+    shaderSharedFloat32AtomicAdd(in_struct->shaderSharedFloat32AtomicAdd),
+    shaderSharedFloat64Atomics(in_struct->shaderSharedFloat64Atomics),
+    shaderSharedFloat64AtomicAdd(in_struct->shaderSharedFloat64AtomicAdd),
+    shaderImageFloat32Atomics(in_struct->shaderImageFloat32Atomics),
+    shaderImageFloat32AtomicAdd(in_struct->shaderImageFloat32AtomicAdd),
+    sparseImageFloat32Atomics(in_struct->sparseImageFloat32Atomics),
+    sparseImageFloat32AtomicAdd(in_struct->sparseImageFloat32AtomicAdd)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT(const safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    shaderBufferFloat32Atomics = copy_src.shaderBufferFloat32Atomics;
+    shaderBufferFloat32AtomicAdd = copy_src.shaderBufferFloat32AtomicAdd;
+    shaderBufferFloat64Atomics = copy_src.shaderBufferFloat64Atomics;
+    shaderBufferFloat64AtomicAdd = copy_src.shaderBufferFloat64AtomicAdd;
+    shaderSharedFloat32Atomics = copy_src.shaderSharedFloat32Atomics;
+    shaderSharedFloat32AtomicAdd = copy_src.shaderSharedFloat32AtomicAdd;
+    shaderSharedFloat64Atomics = copy_src.shaderSharedFloat64Atomics;
+    shaderSharedFloat64AtomicAdd = copy_src.shaderSharedFloat64AtomicAdd;
+    shaderImageFloat32Atomics = copy_src.shaderImageFloat32Atomics;
+    shaderImageFloat32AtomicAdd = copy_src.shaderImageFloat32AtomicAdd;
+    sparseImageFloat32Atomics = copy_src.sparseImageFloat32Atomics;
+    sparseImageFloat32AtomicAdd = copy_src.sparseImageFloat32AtomicAdd;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::operator=(const safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderBufferFloat32Atomics = copy_src.shaderBufferFloat32Atomics;
+    shaderBufferFloat32AtomicAdd = copy_src.shaderBufferFloat32AtomicAdd;
+    shaderBufferFloat64Atomics = copy_src.shaderBufferFloat64Atomics;
+    shaderBufferFloat64AtomicAdd = copy_src.shaderBufferFloat64AtomicAdd;
+    shaderSharedFloat32Atomics = copy_src.shaderSharedFloat32Atomics;
+    shaderSharedFloat32AtomicAdd = copy_src.shaderSharedFloat32AtomicAdd;
+    shaderSharedFloat64Atomics = copy_src.shaderSharedFloat64Atomics;
+    shaderSharedFloat64AtomicAdd = copy_src.shaderSharedFloat64AtomicAdd;
+    shaderImageFloat32Atomics = copy_src.shaderImageFloat32Atomics;
+    shaderImageFloat32AtomicAdd = copy_src.shaderImageFloat32AtomicAdd;
+    sparseImageFloat32Atomics = copy_src.sparseImageFloat32Atomics;
+    sparseImageFloat32AtomicAdd = copy_src.sparseImageFloat32AtomicAdd;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::~safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::initialize(const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    shaderBufferFloat32Atomics = in_struct->shaderBufferFloat32Atomics;
+    shaderBufferFloat32AtomicAdd = in_struct->shaderBufferFloat32AtomicAdd;
+    shaderBufferFloat64Atomics = in_struct->shaderBufferFloat64Atomics;
+    shaderBufferFloat64AtomicAdd = in_struct->shaderBufferFloat64AtomicAdd;
+    shaderSharedFloat32Atomics = in_struct->shaderSharedFloat32Atomics;
+    shaderSharedFloat32AtomicAdd = in_struct->shaderSharedFloat32AtomicAdd;
+    shaderSharedFloat64Atomics = in_struct->shaderSharedFloat64Atomics;
+    shaderSharedFloat64AtomicAdd = in_struct->shaderSharedFloat64AtomicAdd;
+    shaderImageFloat32Atomics = in_struct->shaderImageFloat32Atomics;
+    shaderImageFloat32AtomicAdd = in_struct->shaderImageFloat32AtomicAdd;
+    sparseImageFloat32Atomics = in_struct->sparseImageFloat32Atomics;
+    sparseImageFloat32AtomicAdd = in_struct->sparseImageFloat32AtomicAdd;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT::initialize(const safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    shaderBufferFloat32Atomics = copy_src->shaderBufferFloat32Atomics;
+    shaderBufferFloat32AtomicAdd = copy_src->shaderBufferFloat32AtomicAdd;
+    shaderBufferFloat64Atomics = copy_src->shaderBufferFloat64Atomics;
+    shaderBufferFloat64AtomicAdd = copy_src->shaderBufferFloat64AtomicAdd;
+    shaderSharedFloat32Atomics = copy_src->shaderSharedFloat32Atomics;
+    shaderSharedFloat32AtomicAdd = copy_src->shaderSharedFloat32AtomicAdd;
+    shaderSharedFloat64Atomics = copy_src->shaderSharedFloat64Atomics;
+    shaderSharedFloat64AtomicAdd = copy_src->shaderSharedFloat64AtomicAdd;
+    shaderImageFloat32Atomics = copy_src->shaderImageFloat32Atomics;
+    shaderImageFloat32AtomicAdd = copy_src->shaderImageFloat32AtomicAdd;
+    sparseImageFloat32Atomics = copy_src->sparseImageFloat32Atomics;
+    sparseImageFloat32AtomicAdd = copy_src->sparseImageFloat32AtomicAdd;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT::safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT(const VkPhysicalDeviceIndexTypeUint8FeaturesEXT* in_struct) :
     sType(in_struct->sType),
     indexTypeUint8(in_struct->indexTypeUint8)
@@ -32454,6 +32562,59 @@ void safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::initialize(const saf
     subsampledCoarseReconstructionEarlyAccess = copy_src->subsampledCoarseReconstructionEarlyAccess;
     maxSubsampledArrayLayers = copy_src->maxSubsampledArrayLayers;
     maxDescriptorSetSubsampledSamplers = copy_src->maxDescriptorSetSubsampledSamplers;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::safe_VkPhysicalDeviceImageRobustnessFeaturesEXT(const VkPhysicalDeviceImageRobustnessFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    robustImageAccess(in_struct->robustImageAccess)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::safe_VkPhysicalDeviceImageRobustnessFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::safe_VkPhysicalDeviceImageRobustnessFeaturesEXT(const safe_VkPhysicalDeviceImageRobustnessFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    robustImageAccess = copy_src.robustImageAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceImageRobustnessFeaturesEXT& safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::operator=(const safe_VkPhysicalDeviceImageRobustnessFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    robustImageAccess = copy_src.robustImageAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::~safe_VkPhysicalDeviceImageRobustnessFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::initialize(const VkPhysicalDeviceImageRobustnessFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    robustImageAccess = in_struct->robustImageAccess;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::initialize(const safe_VkPhysicalDeviceImageRobustnessFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    robustImageAccess = copy_src->robustImageAccess;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
@@ -34884,6 +35045,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT:
             safe_pNext = new safe_VkPipelineRasterizationLineStateCreateInfoEXT(reinterpret_cast<const VkPipelineRasterizationLineStateCreateInfoEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceIndexTypeUint8FeaturesEXT *>(pNext));
             break;
@@ -34949,6 +35113,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceImageRobustnessFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceImageRobustnessFeaturesEXT *>(pNext));
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:
@@ -35656,6 +35823,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkPipelineRasterizationLineStateCreateInfoEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderAtomicFloatFeaturesEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceIndexTypeUint8FeaturesEXT *>(header);
             break;
@@ -35721,6 +35891,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceImageRobustnessFeaturesEXT *>(header);
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:
