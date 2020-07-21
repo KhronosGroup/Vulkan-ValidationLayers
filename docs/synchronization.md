@@ -1,5 +1,3 @@
-<!-- Copy and paste the converted output. -->
-
 
 Vulkan Synchronization Validation
 
@@ -14,13 +12,12 @@ Toward a unified model of Vulkan Synchronization
 
 ### Overview {#overview}
 
-	The Vulkan API feature a number of unique synchronization primitives to express execution and memory dependencies and currently validation only has limited support for tracking fence and semaphore primitives.  \
+The Vulkan API features a number of unique synchronization primitives to express execution and memory dependencies and currently validation only has limited support for tracking fence and semaphore primitives.  
 
 
 
-    Execution and memory dependencies are used to solve data hazards, i.e. to ensure that read and write operations occur in a well-defined order. Write-after-read hazards can be solved with just an execution dependency, but read-after-write and write-after-write hazards need appropriate memory dependencies to be included between them. If an application does not include dependencies to solve these hazards, the results and execution orders of memory accesses are undefined.
+Execution and memory dependencies are used to solve data hazards, i.e. to ensure that read and write operations occur in a well-defined order. Write-after-read hazards can be solved with just an execution dependency, but read-after-write and write-after-write hazards need appropriate memory dependencies to be included between them. If an application does not include dependencies to solve these hazards, the results and execution orders of memory accesses are undefined.
 
- \
 This document is intended to outline a design that will unify the tracking of all Vulkan memory accesses and synchronization primitives within Vulkan Validation. Such a model will enable flagging error cases where synchronization primitives are missing, but also allow for visualization of such primitives and provide for recommendations on optimal use of synchronization for any given combination of Vulkan commands and resources.
 
 The pipelined and multi-threaded nature of Vulkan makes it particularly important for applications to correctly insert needed synchronization primitives, and for validation to diagnose unprotected hazards.  These hazards are:
@@ -75,14 +72,11 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 
 In order to validate synchronization the effect of action and synchronization commands must be tracked.  The full validation can *only* be done at queue submission time, when the full context of the command batches is known. However, partial validation of hazards knowable within the context of a single recorded command buffer can be done at record time at. This partial validation includes record time detection of internally present hazards during sub-pass and can be extended to include secondary command buffer execution. To support this usage, the validation and update components must be designed to operate at record, secondary command buffer execute record, and queue submit time.
 
- \
-Synchronization validation centers around examining the previous access and synchronization operations for a range of memory address against a current access or operation against that same set. The _state_ (Resource Access State) tracks the most recent read, write, and synchronization operations for a given range of memory addresses. These are captured in _contexts _(Access Context) which reflect the Queue, Command Buffer, or Subpass instance in which the memory accesses were made. This first approach is sufficient for single command buffer validation. Note that only the most recent state (relative to *write* operations)  is retained. This reflects an assumption that given a sequence of writes _W(j)_, any “transitive hazard” write _W(i-2)_ conflicts with write _W(i)_, would also result in either a hazard being detected between _W(i-2) _and _W(i-1)_ or between _W(i-1)_ and _W(i)_ s.t. for purposes of detection, only the most recent state is required.  Additionally, the “dependency chain” logic can be represented by a cumulative state reflecting the impact of all synchronization operations on the most recent read/write state. Between the _state _and _context_, enough information is present to do record time validation of single command buffers. \
- \
-For multiple command buffer/secondary buffers, a partial recording of memory accesses and synchronization operations is require.  Current design targets the use of storing the “first” access information (first reads, first write), along with the either a recording of all synchronization operations *or* some “barrier state* that can be stored with each “first access”.  This approach should be familiar to those that have seen the “image layout” queue-submit, and execute-command validation, which validates against a similar “first” record. \
- \
+ Synchronization validation centers around examining the previous access and synchronization operations for a range of memory address against a current access or operation against that same set. The _state_ (Resource Access State) tracks the most recent read, write, and synchronization operations for a given range of memory addresses. These are captured in contexts (Access Context) which reflect the Queue, Command Buffer, or Subpass instance in which the memory accesses were made. This first approach is sufficient for single command buffer validation. Note that only the most recent state (relative to *write* operations)  is retained. This reflects an assumption that given a sequence of writes _W(j), any “transitive hazard” write _W(i-2)_ conflicts with write _W(i)_, would also result in either a hazard being detected between _W(i-2) _and _W(i-1)_ or between _W(i-1)_ and _W(i)_ s.t. for purposes of detection, only the most recent state is required.  Additionally, the “dependency chain” logic can be represented by a cumulative state reflecting the impact of all synchronization operations on the most recent read/write state. Between the _state _and _context_, enough information is present to do record time validation of single command buffers.
+
+For multiple command buffer/secondary buffers, a partial recording of memory accesses and synchronization operations is require.  Current design targets the use of storing the “first” access information (first reads, first write), along with the either a recording of all synchronization operations *or* some “barrier state* that can be stored with each “first access”.  This approach should be familiar to those that have seen the “image layout” queue-submit, and execute-command validation, which validates against a similar “first” record.
+
 Overall the operations to perform include
-
-
 
 *   Access/operation validation against current state.  This involves lookup of the affected state, potentially traversing a context tree or barrier record, and then comparing the access relative to the state -- i.e. the previous read and/or write operations in light of the synchronization operations recorded in the state
 *   Reporting detected hazard
@@ -90,17 +84,13 @@ Overall the operations to perform include
 
 Additionally
 
-
-
 *   Traversal of context trees/barrier replay (or reconstruction)
 *   Initialization (import) or Resolution (export) of access contexts to parent or subsequent contexts
 
 
 ### Memory Access Storage {#memory-access-storage}
 
-Memory access is characterized by the _memory extent_ and _memory usage_.  Memory extent described the memory affected including the `VkMemory` handle, offset, size, and (for images) subresource range. The memory usage describe the pipeline stage (`VkPipelineStageFlagBits`) and memory access (`VkAccessFlagBits`) -- for example “vertex shader stage / shader read”.  A memory access only describes a single usage for a given
-
-extent.
+Memory access is characterized by the _memory extent_ and _memory usage_.  Memory extent described the memory affected including the `VkMemory` handle, offset, size, and (for images) subresource range. The memory usage describe the pipeline stage (`VkPipelineStageFlagBits`) and memory access (`VkAccessFlagBits`) -- for example “vertex shader stage / shader read”.  A memory access only describes a single usage for a given extent.
 
 
 #### Memory Address Space {#memory-address-space}
@@ -195,16 +185,14 @@ For incompatible memory extent types any overlap of the bound range must be assu
 
 #### Algorithmic Aside: Interval Trees {#algorithmic-aside-interval-trees}
 
-Several of the lookups below require tracking and comparing non-unique collections of intervals (memory binding range, mip level or slices in a subresource).  Current support for this in VVL has been a hierarchy of sparse vectors (specifically for image layout) implemented as unordered maps with an entry for every member of the range.  This has proven to be very expensive from both performance and memory. (c.f. Performance Improvement work in early 2018.)
+Several of the lookups below require tracking and comparing non-unique collections of intervals (memory binding range, mip levels or slices in a subresource).  To compress storage improve traversal of the access state these intervals are stored in non-overlapping interval trees -- effectively a run-length compression for ranges of memory addresses over which the state is constant.
 
-The implementation used is a wrapper to std::map (which is typically implemented as a red-black tree), that implements a non-overlapping 1 dimensional range map.  Conversion to and from subresource address space is performed by a “encoder”/”generator” classes the create a set of single-dimensional ranges from subresource range definitions.  For buffer and linear images, the index for the interval tree represents actual device memory.  For tiled/opaque images, the index represents an idealized memory range, not corresponding to device memory in any way.
+The implementation used is a wrapper to std::map (which is typically implemented as a red-black tree), that implements a non-overlapping 1 dimensional range map.  Conversion to and from subresource address space is performed by a “encoder”/”generator” classes the create a set of single-dimensional ranges from subresource range definitions.  For buffer and linear images, the index for the interval tree represents  device memory in an idealized/simplified memory allocation scheme for VkDeviceMemory allocations.  For tiled/opaque images, the index represents an idealized memory range, not corresponding to device memory in any way.
 
 
 #### Memory Usage Specification {#memory-usage-specification}
 
-Vulkan classifies memory access by pipeline stage and access. However for purposes of tracking specific access, availability, and visibility state changes the two masks would allow for aliasing that could hide hazards.   In order to avoid that aliasing, the valid combinations of Stage and Access flags can be combined into memory usages-- with each represented by a unique index (currently 55 valid combinations) )and tracked with single bit within a mask(list in roughly pipeline order). \
-
-
+Vulkan classifies memory access by pipeline stage and access. However for purposes of tracking specific access, availability, and visibility state changes the two masks would allow for aliasing that could hide hazards.   In order to avoid that aliasing, the valid combinations of Stage and Access flags can be combined into memory usages-- with each represented by a unique index (currently 55 valid combinations) )and tracked with single bit within a mask(list in roughly pipeline order). 
 
 <table>
   <tr>
@@ -390,8 +378,6 @@ QUEUE_FAMILY_OWNERSHIP_TRANSFER
    </td>
   </tr>
 </table>
-
-
 Note that of interest is also the “pipeline type” (compute, graphics, or transfer) of the action causing this memory access. It is needed when determining logically “earlier” and “later” stages of the pipeline for apply synchronization scope updates. This information is code-generated from parsing of the Vulkan specification, with appropriate snippets *manually* update within the code generation scripts.
 
 
@@ -407,15 +393,15 @@ The scope of memory access is instead _restricted_ to the set of accesses both l
 
 #### Data Structures {#data-structures}
 
-ResourceUsageTag: A marker representing a specific access for error reporting or sequence specific operations.
+##### ResourceUsageTag
 
- \
-ResourceAccessState: The specific access/barrier state for a given extent of memory (or idealized memory) addresses. The ResourceAccessState reflects the common state of a single contiguous range of memory addresses.
+A marker representing a specific access for error reporting or sequence specific operations.
 
- \
+##### ResourceAccessState
+
+The specific access/barrier state for a given extent of memory (or idealized memory) addresses. The ResourceAccessState reflects the common state of a single contiguous range of memory addresses.
+
 Stores:
-
-
 
 *   Write usage -- information about most recent write usage for the memory range
     *   State/Access of usage. Updated on write
@@ -424,33 +410,30 @@ Stores:
     *   Usage tag. Updated on write
     *   None cleared by read operations
 *   read usage  -- Per stage, All cleared on write operations.
-    *   Stage/Acces of usage.  Updated on stage read
+    *   Stage/Access of usage.  Updated on stage read
     *   Execution (read) barriers -- the union of destination execution scopes for synchronization operations affecting this read at this stage
     *   Usage Tag. Updated on on stage read.
 
 Implements:
 
-
-
 *   Hazard detection functions
 *   State update/resolution operations
 
-ResourceAccessRangeMap: Interval tree of ResourceAccessState for a given address space.
+##### ResourceAccessRangeMap 
 
- \
-AccessContext : map of AccessState in a given “context” (for example within a given command buffer, but outside a renderpass, or within a given subpass of a renderpass instance)
+Interval tree of ResourceAccessState for a given address space
+
+##### AccessContext
+
+ResourceAccessState and dependency information for a given “context” (for example within a given command buffer, but outside a renderpass, or within a given subpass of a renderpass instance)
 
 Stores:
-
-
 
 *   Idealized address space ResourceAccessRangeMap
 *   Linear address space ResourceAccessRangeMap
 *   Subpass dependency and barrier information (for traversal within renderpass instances) if needed.
 
 Implements:
-
-
 
 *   Hazard detection traversal over (potentially discontiguous) ranges for images and buffers
 *   Resource addressing (linear/idealized) type resolution
@@ -459,10 +442,11 @@ Implements:
 *   Subpass dependency graph traversal for state lookup and resolution operations (including support  for RenderPass specific and Hazard detection operations)
 *   Range map operations to split (and potentially combine) ResourceAccessState records, to ensure state changes only impact the correct portion of the address space.
 
-CommandBufferAccessContext: container for all access contexts for a specific command buffer, and state reflecting the current context.   \
+##### CommandBufferAccessContext
+
+container for all access contexts for a specific command buffer, and state reflecting the current context.  
+
 Stores:
-
-
 
 *   Command buffer state pointer (saves StateTracker lookup)
 *   AccessContext for all outside-renderpass-instance operations
@@ -470,15 +454,13 @@ Stores:
 
 Implements:
 
-
-
 *   RenderPass instance operations top level begin/next/end operations (calling RenderPassAccessContext operations)
 
-RenderPassAccessContext: Manages the current access context and context transitions for render pass instance begin/next/end operations.
+##### RenderPassAccessContext
+
+Manages the current access context and context transitions for render pass instance begin/next/end operations.
 
 Stores:
-
-
 
 *   Render pass state pointer (saves StateTracker lookup)
 *   Per subpass AccessContext’s
@@ -486,8 +468,6 @@ Stores:
 *   Parent (command buffer) access context pointer
 
 Implements:
-
-
 
 *   Begin/next/end operations
 *   RenderPass specific hazard check and state update operations
@@ -511,8 +491,6 @@ The ResourceAccessState is the leaf level structure at which the synchronization
 
 ##### State Update {#state-update}
 
-
-
 *   Update: Record the state change based an “ordinary” memory access
     *   Read usages: add or update the current usage to the read usage list, clearing the stage barriers and updating the stage read tag
     *   Write usages: erase read usages, update write usage and clear write barriers and update the write tag
@@ -532,8 +510,6 @@ The ResourceAccessState is the leaf level structure at which the synchronization
 
 
 ##### Validation / Hazard Checking  {#validation-hazard-checking}
-
-
 
 *   Memory stage/access hazard check
 
@@ -578,9 +554,8 @@ Attachment Type
 </table>
 
 
+> Note: this special case is handled in validation to avoid the potential of polluting the “barrier chain” information by storing the effect of an implicit barrier in the access state. (Unclear to the designer what all the side-effects might be.)
 
-
-        *   Note: this special case is done in validation to avoid the potential of polluting the “barrier chain” information by storing the effect of an implicit barrier in the access state. (Unclear to the designer what all the side-effects might be.)
 *   Layout transition hazard check
 
     The layout transition is treated as a subresource range read/write operation. Given the implied source barrier this check is distinct from a normal Memory stage/access hazard check described above.
@@ -601,9 +576,7 @@ Attachment Type
     *   If input access is read, report ‘no hazard’
 
 
-###  \
-Vulkan Commands and Synchronization {#vulkan-commands-and-synchronization}
-
+###  Vulkan Commands and Synchronization {#vulkan-commands-and-synchronization}
 Vulkan commands of interest to synchronization are:
 
 
@@ -614,9 +587,8 @@ Vulkan commands of interest to synchronization are:
 *   Queue submission commands -- vkQueueSubmit, vkQueueBindSparse which specify work to be done on the device as well as synchronization operations before and after the submitted work
 *   Host synchronization commands -- commands that set, query, or wait for device-side synchronization operations
 
- \
-Several of the validation and update operations combine one of more of the above Resource Access actions above to implement the complex behaviors of the Vulkan synchronization system. \
- \
+ Several of the validation and update operations combine one of more of the above Resource Access actions above to implement the complex behaviors of the Vulkan synchronization system.
+
 Command buffer state commands also affect the execution of the action commands, but validation and recording of the effects of these commands is generally deferred until an action command affected is either recorded or enqueued.
 
 
@@ -634,19 +606,17 @@ As within a renderpass instance subpasses may execute dependently or independent
 
 When a resource is accessed and must be tested for hazard, has a barrier applied, or has some state update, these operations must be performed against the current state of the resource. Within a render pass instance Access Contexts for subpasses are lazily populated, and thus the state not be known within the subpass Access Context. If so, the Access Context supports graph traversal of earlier Access Contexts.  Resource access resolution traverses the graph through previous subpasses (including the Access Context for the command buffer prior to BeginRenderPass), until it finds non-empty state (or the end-of-graph), and returns a copy of that state, applying inter-subpass barrier to that copy as it is returned.  If at any point in the graph traversal no state is found and more than one previous subpass exists, results from all previous subpass Access Contexts are resolved as described in Resource Access State Update “Resolve” operation above. For purposes of access state resolution, subpasses outside of the “previous” subpasses within the DAG are ignored.
 
- \
 Note:  there is a bit of a complication arising from the following:
 
-
-    _For non-attachment resources, the memory dependency expressed by subpass dependency is nearly identical to that of a <code>VkMemoryBarrier </code>(with matching <code>srcAccessMask/dstAccessMask</code> parameters) submitted as a part of a vkCmdPipelineBarrier (with matching srcStageMask/dstStageMask parameters). The only difference being that its scopes are limited to the identified subpasses rather than potentially affecting everything before and after.</em>
+> For non-attachment resources, the memory dependency expressed by subpass dependency is nearly identical to that of a <code>VkMemoryBarrier </code>(with matching <code>srcAccessMask/dstAccessMask</code> parameters) submitted as a part of a vkCmdPipelineBarrier (with matching srcStageMask/dstStageMask parameters). The only difference being that its scopes are limited to the identified subpasses rather than potentially affecting everything before and after.
 
 **TODO/KNOWN LIMITATION**: Ensure that Access State Resolution checks against tag sequencing vs. the previous NextSubpass to ensure barrier application is correctly restricted
 
 
 ##### Resource Stage/Access Validation and Update {#resource-stage-access-validation-and-update}
 
-For simple stage/access references, hazard detection operates on the state found in the Access Context, or failing that on the state returned by state resolution above. The detail is encapsulated within the Access Context, and for any given stage/access and address range, may be divided between state stored currently within Access Context and state resolved. \
- \
+For simple stage/access references, hazard detection operates on the state found in the Access Context, or failing that on the state returned by state resolution above. The detail is encapsulated within the Access Context, and for any given stage/access and address range, may be divided between state stored currently within Access Context and state resolved. 
+
 State update likewise operates on state either from the Access Context of the subpass, or resolved from the DAG, with the updated state stored into the subpass Access Context. This detail is also encapsulated in the Access Context, and Access Context objects _outside_ of a renderpass instance simply have an empty “previous” context graph.
 
 
@@ -654,9 +624,9 @@ State update likewise operates on state either from the Access Context of the su
 
 For renderpass begin/next entry points, two types of accesses occur -- image layout transitions and load operations. As these operations and tests occur on the boundary between subpasses (or between “external” and a subpass) they are handled within the Begin/Next validate and record functions. If no implicit accesses (layout transition or load operation), no state update occurs, leaving the subpass barrier application to the lazy resolve operations described above.
 
-**TODO/KNOWN LIMITATION: **First phase does not include implementation of multi-view renderpass support. \
- \
-Image Layout Transitions
+**TODO/KNOWN LIMITATION: **First phase does not include implementation of multi-view renderpass support. 
+
+##### Subpass Image Layout Transitions
 
 Image layout transitions are validated _independently_ as the equivalent barrier for each source subpass without resolution across multiple previous subpasess. State update for image layout transition, updates the state to reflect the layout transition, and applies the destination scopes for a source subpass entries in the same image layout transition.
 
@@ -667,7 +637,7 @@ As layout transitions affect entire image subresource ranges, the validation and
 
 Load operations are also validated and applied at Begin/Next time, and must be validated/updated relative to current state with any image layout transition effects applied.  The validation and update operations are restricted to the `VkRenderPassBeginInfo::renderArea`, as is the load operation. As load operations occur _only_ in the first use of an attachment, the only previous context that needs to be considered is the external (command buffer) access context.  Validation is then performed on the external Resource Access state (copied and modified by the image layout transition as needed). Additionally the load operation must be validated against any image layout transition if present.  This can be done by comparing the destination access scope of the barrier from external with the usage(s) implied in the loadOp and/or stencilLoadOp.  If those usages lie within the destination access scope, then no hazard with the layout transition occurs.  If there is a layout transition no check versus the external context is needed as the transition is the “most recent access” (though at validation time not yet recorded).
 
-The stage/acces pair used for validation is based on the format of the attachment (color or depth/stencil) and the load operation specified.
+The stage/access pair used for validation is based on the format of the attachment (color or depth/stencil) and the load operation specified.
 
 
 <table>
@@ -708,8 +678,7 @@ ACCESS_DEPTH_STENCIL_ATTACHMENT
 
 Load operations have guarantees memory access order guarantees:
 
-
-    _The load operation for each sample in an attachment happens-before any recorded command which accesses the sample_
+> The load operation for each sample in an attachment happens-before any recorded command which accesses the sample
 
 To support these guarantees, load operations update resource access state to reflect the effective stage/access of the load operation, and then apply an effective barrier with the source execution and access scopes reflecting the load operation stage/access and the destination execution and access scopes based on the the valid stages and accesses listed. _(Note: some consideration was given to simply zeroing out the access state  s.t. no hazard relative to the access could occur, however, given the presence of asynchronous access hazards, conserving the record of the operation, while providing a correct effective barrier was preferred, here and elsewhere in the design.)_
 
@@ -724,12 +693,12 @@ VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
 VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
 
-    VK_ACCESS_INPUT_ATTACHMENT_READ_BIT
-    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
-    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
-    VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT
+VK_ACCESS_INPUT_ATTACHMENT_READ_BIT
+VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT
 ```
 
 
@@ -745,10 +714,7 @@ Automated of resolve attachment occurs at the end of each subpass with valid res
 
 As renderpass end completes a renderpass instance several pieces of cleanup work are required. Primarily these are attachment store and resolve operations.
 
-Store operations also have implicit ordering guarantees that it “happens-after any recorded command which accesses the sample in the last subpass where the attachment is used”.  Similar to the load operation there is an implicit barrier, but as validation precedes state update, the implicit barrier is applied to a copy of the resource access state during validation.  The state update reflects the store op  \
- \
-
-
+Store operations also have implicit ordering guarantees that it “happens-after any recorded command which accesses the sample in the last subpass where the attachment is used”.  Similar to the load operation there is an implicit barrier, but as validation precedes state update, the implicit barrier is applied to a copy of the resource access state during validation.  The state update reflects the store op:
 
 <table>
   <tr>
@@ -776,8 +742,6 @@ Store operations also have implicit ordering guarantees that it “happens-after
    </td>
   </tr>
 </table>
-
-
 Resolve operations export the state of the subpass access contexts to the access context for the command buffer. For each subpass, the linear and idealized ResourceAccessRangeMap’s are traversed.  For each access state, the dstSubpass=VK_SUBPASS_EXTERNAL barrier is applied, and the result is merged with the command buffer access context. The resulting state is the resolve of all subpass access with their final barrier applied.  The resolve is performed after the store operation state update has completed.
 
 
@@ -786,8 +750,8 @@ Resolve operations export the state of the subpass access contexts to the access
 
 ##### CmdPipelineBarrier {#cmdpipelinebarrier}
 
-For each memory, buffer, and image barrier defined use the range traversal functions to update all accesses in source scope. For images, prior to update (i.e. in PreValidate…) test for image layout transition hazards as described above. \
- \
+For each memory, buffer, and image barrier defined use the range traversal functions to update all accesses in source scope. For images, prior to update (i.e. in PreValidate…) test for image layout transition hazards as described above. 
+
 Apply global execution barriers from the src/dstStageMask.
 
 
@@ -807,12 +771,9 @@ CmdWaitEvent uses both the source execution scope map and the usage tag to deter
 
 #### Command Buffer Action Commands {#command-buffer-action-commands}
 
-Recorded action command describe compute, graphics, or transfer actions to be executed on a device when the containing command buffer is submitted to a queue of the appropriate capabilities. Validation of these consists (in the first phase of implementation) of hazard detection for all known &lt;range, stage/access> pairs against the current access context. The access context is then updated for the same set of &lt;range, stage/access> pair.  Each update is tagged with the Usage Tag as described above \
-
-
+Recorded action command describe compute, graphics, or transfer actions to be executed on a device when the containing command buffer is submitted to a queue of the appropriate capabilities. Validation of these consists (in the first phase of implementation) of hazard detection for all known &lt;range, stage/access> pairs against the current access context. The access context is then updated for the same set of &lt;range, stage/access> pair.  Each update is tagged with the Usage Tag as described above 
 
 ##### Commands {#commands}
-
 
 <table>
   <tr>
@@ -916,9 +877,8 @@ Recorded action command describe compute, graphics, or transfer actions to be ex
    </td>
    <td><code>vkCmdBlitImage</code>
    </td>
-   <td> \
-
-   </td>
+   <td>
+       </td>
   </tr>
   <tr>
    <td>transfer
@@ -1026,23 +986,25 @@ Recorded action command describe compute, graphics, or transfer actions to be ex
   </tr>
 </table>
 
+   
 
 **TODO/KNOWN LIMITATION:** ExecuteCommands and QueueSubmit not supported in phase 1
 
- \
- \
 Recording and validating `vkCmdExecuteCommands `which is more similar in scope to the various `vkQueue… `commands.  The “first” access state of the executed command buffers must be added to the access context of the calling parent buffer. Record time validation of `vkCmdExecuteCommands `may require a replay of the secondary command buffer synchronization operations up to the point of the first access within the secondary command buffer. TODO: Finish in phase 2 design, with as much code reuse w.r.t. queue submit as possible.
 
 
 ##### Command Buffer State Bindings {#command-buffer-state-bindings}
 
+###### Vertex Input Fixed-function bindings
+
 These are read only, but as the actual indices and vertices referenced are only known at shader execution time, the entire bound resource is treated as being read by draw commands that reference these bound resources
 
 	Vertex
-
+	
 	Index
 
-Bound Descriptor Set Access \
+###### Bound Descriptor Set Access
+
 The stage/access for each bound descriptor referenced by a draw or dispatch call is determined by the shader stage, access control decoration and descriptor type.  For those descriptors that _can_ be stored to, access of read vs. write is determined by the “GLSL readonly” or Spir-V NonWritable decoration.  An binding not marked as readonly, and legal for store or atomic operations will be treated as a write access.
 
 
@@ -1208,21 +1170,20 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
 
 ** Attachment read, based on image format VK_ACCESS_COLOR_ATTACHMENT_READ_BIT for Color format attachment and VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT for depth/stencil formats.
 
+##### Attachments -- Framebuffer local images
 
-#####  \
-Color Attachments {#color-attachments}
+###### Color Attachments {#color-attachments}
 
-Color attachment use is controlled by the fragment shader output declarations and `VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable`. Fragment shader output variables with Location decorations correspond to the pColorAttachments index for the current subpass. The renderArea portion of these attachments is treated as stage/access SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, unless `rasterizerDiscardEnable `is true -- in which case a operations on color attachments result in no memory accesses. \
- \
+Color attachment use is controlled by the fragment shader output declarations and `VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable`. Fragment shader output variables with Location decorations correspond to the pColorAttachments index for the current subpass. The renderArea portion of these attachments is treated as stage/access SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, unless `rasterizerDiscardEnable `is true -- in which case a operations on color attachments result in no memory accesses.
+
 **TODO/KNOWN LIMITATION:** Memory access checks not suppressed for  VK_CULL_MODE_FRONT_AND_BACK -- would need to ensure we have sufficient information to know TOPOLOGY being emitted to rasterization fixed function state. \
 
+**TODO/KNOWN LIMITATION: **First phase does not include component granularity access tracking.
 
-**TODO/KNOWN LIMITATION: **First phase does not include component granularity access tracking.   \
- \
-_Designer’s note.  Given the “inmost loop” nature of component read/write enable, it is likely the performance and memory use will be unacceptable unless the “Idealized” encoding changes the apparent memory organization of components to be at least just above the x, y, and z dimensions, s.t. the effective “run-length-compression” of the range maps is not lost. Storing access state byte-by-byte is likely not going to be acceptable.  Whether this encoding should be adaptive (only present for images with component level information) or globally present in the idealized encoding is a design detail TBD.) For broadest application this may mean that non-aliased linear tiling images should also be given an idealized encoding w.r.t. component granularity information. _
+> Designer’s note.  Given the “inmost loop” nature of component read/write enable, it is likely the performance and memory use will be unacceptable unless the “Idealized” encoding changes the apparent memory organization of components to be at least just above the x, y, and z dimensions, s.t. the effective “run-length-compression” of the range maps is not lost. Storing access state byte-by-byte is likely not going to be acceptable.  Whether this encoding should be adaptive (only present for images with component level information) or globally present in the idealized encoding) is a design detail TBD. For broadest application this may mean that non-aliased linear tiling images should also be given an idealized encoding w.r.t. component granularity information. 
 
 
-##### Depth/Stencil Attachments {#depth-stencil-attachments}
+###### Depth/Stencil Attachments {#depth-stencil-attachments}
 
 Depth/Stencil Attachment usage is controlled by `VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable `and various parameter of `VkPipelineDepthStencilStateCreateInfo`. If `rasterizerDiscardEnable` is set,  Depth/Stencil attachments are ignored for hazard detection and state update.  Depth aspect detection and update are controlled by depthTestEnable and depthWriteEnable and the ExecutionMode EarlyFragmentTests. If depthTestEnable is false, depth attachments aspects are ignored. Otherwise the following stage/access are used for the renderArea portion of the depth aspect. \
 
@@ -1325,8 +1286,8 @@ Stencil attachments are controlled by `stencilTestEnable`, with additional state
 </table>
 
 
-* If depthTestEnable is TRUE, otherwise, any, since with depth testing disabled the depth test cannot fail. \
- \
- Host Synchronization commands
+If depthTestEnable is TRUE, otherwise, any, since with depth testing disabled the depth test cannot fail.
+
+#### Host Synchronization commands
 
 **TODO/KNOWN LIMITATION:** Host synchronization not supported in phases 1 and 2.
