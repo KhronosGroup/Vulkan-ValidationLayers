@@ -430,8 +430,23 @@ uint32_t SetMessageDuplicateLimit(std::string &config_message_limit, std::string
     return limit;
 }
 
+const VkLayerSettingsEXT *FindSettingsInChain(const void *next) {
+    const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
+    const VkLayerSettingsEXT *found = nullptr;
+    while (current) {
+        if (static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT) == current->sType) {
+            found = reinterpret_cast<const VkLayerSettingsEXT*>(current);
+            current = nullptr;
+        } else {
+            current = current->pNext;
+        }
+    }
+    return found;
+}
+
 typedef struct {
     const char* layer_description;
+    const void *pnext_chain;
     CHECK_ENABLED &enables;
     CHECK_DISABLED &disables;
     std::vector<uint32_t> &message_filter_list;
@@ -441,6 +456,54 @@ typedef struct {
 
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
+
+    const auto layer_settings_ext = FindSettingsInChain(settings_data->pnext_chain);
+    if (layer_settings_ext) {
+        for (uint32_t i = 0; i < layer_settings_ext->settingCount; i++) {
+            auto cur_setting = layer_settings_ext->pSettings[i];
+            std::string name(cur_setting.name);
+            if (name == "enables") {
+                std::string data(cur_setting.data.arrayString.pCharArray);
+                SetLocalEnableSetting(data, ",", settings_data->enables);
+            } else if (name == "disables") {
+                std::string data(cur_setting.data.arrayString.pCharArray);
+                SetLocalDisableSetting(data, ",", settings_data->disables);
+            } else if (name == "message_id_filter") {
+                std::string data(cur_setting.data.arrayString.pCharArray);
+                CreateFilterMessageIdList(data, ",", settings_data->message_filter_list);
+            } else if (name == "duplicate_message_limit") {
+                *settings_data->duplicate_message_limit = cur_setting.data.value32;
+            } else if (name == "custom_stype_list") {
+                if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT) {
+                    std::string data(cur_setting.data.arrayString.pCharArray);
+                    SetCustomStypeInfo(data, ",");
+                } else if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_UINT32_ARRAY_EXT) {
+                    for (uint32_t j = 0; j < cur_setting.data.arrayInt32.count/2; j++) {
+                        auto stype_id = cur_setting.data.arrayInt32.pInt32Array[j*2];
+                        auto struct_size = cur_setting.data.arrayInt32.pInt32Array[(j*2)+1];
+                        bool found = false;
+                        // Prevent duplicate entries
+                        for (auto item : custom_stype_info) {
+                            if (item.first == stype_id) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) custom_stype_info.push_back(std::make_pair(stype_id, struct_size));
+                    }
+                }
+            }
+        }
+    }
+    const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(settings_data->pnext_chain);
+    if (validation_features_ext) {
+        SetValidationFeatures(settings_data->disables, settings_data->enables, validation_features_ext);
+    }
+    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(settings_data->pnext_chain);
+    if (validation_flags_ext) {
+        SetValidationFlags(settings_data->disables, validation_flags_ext);
+    }
+
     std::string enable_key(settings_data->layer_description);
     std::string disable_key(settings_data->layer_description);
     std::string stypes_key(settings_data->layer_description);
@@ -483,20 +546,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (config_limit_setting != 0) {
         *settings_data->duplicate_message_limit = config_limit_setting;
     }
-}
-
-const VkLayerSettingsEXT *FindSettingsInChain(const void *next) {
-    const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
-    const VkLayerSettingsEXT *found = nullptr;
-    while (current) {
-        if (static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT) == current->sType) {
-            found = reinterpret_cast<const VkLayerSettingsEXT*>(current);
-            current = nullptr;
-        } else {
-            current = current->pNext;
-        }
-    }
-    return found;
 }
 
 void OutputLayerStatusInfo(ValidationObject *context) {
@@ -652,54 +701,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     // Set up enable and disable features flags
     CHECK_ENABLED local_enables {};
     CHECK_DISABLED local_disables {};
-
-    const auto layer_settings_ext = FindSettingsInChain(pCreateInfo->pNext);
-    if (layer_settings_ext) {
-        for (uint32_t i = 0; i < layer_settings_ext->settingCount; i++) {
-            auto cur_setting = layer_settings_ext->pSettings[i];
-            std::string name(cur_setting.name);
-            if (name == "enables") {
-                std::string data(cur_setting.data.arrayString.pCharArray);
-                SetLocalEnableSetting(data, ",", local_enables);
-            } else if (name == "disables") {
-                std::string data(cur_setting.data.arrayString.pCharArray);
-                SetLocalDisableSetting(data, ",", local_disables);
-            } else if (name == "message_id_filter") {
-                std::string data(cur_setting.data.arrayString.pCharArray);
-                CreateFilterMessageIdList(data, ",", report_data->filter_message_ids);
-            } else if (name == "duplicate_message_limit") {
-                report_data->duplicate_message_limit = cur_setting.data.value32;
-            } else if (name == "custom_stype_list") {
-                if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT) {
-                    std::string data(cur_setting.data.arrayString.pCharArray);
-                    SetCustomStypeInfo(data, ",");
-                } else if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_UINT32_ARRAY_EXT) {
-                    for (uint32_t j = 0; j < cur_setting.data.arrayInt32.count/2; j++) {
-                        auto stype_id = cur_setting.data.arrayInt32.pInt32Array[j*2];
-                        auto struct_size = cur_setting.data.arrayInt32.pInt32Array[(j*2)+1];
-                        bool found = false;
-                        // Prevent duplicate entries
-                        for (auto item : custom_stype_info) {
-                            if (item.first == stype_id) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) custom_stype_info.push_back(std::make_pair(stype_id, struct_size));
-                    }
-                }
-            }
-        }
-    }
-    const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
-    if (validation_features_ext) {
-        SetValidationFeatures(local_disables, local_enables, validation_features_ext);
-    }
-    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
-    if (validation_flags_ext) {
-        SetValidationFlags(local_disables, validation_flags_ext);
-    }
-    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, local_enables, local_disables,
+    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
         report_data->filter_message_ids, &report_data->duplicate_message_limit};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
     layer_debug_messenger_actions(report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
