@@ -50,6 +50,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/synchronization_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_options.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp

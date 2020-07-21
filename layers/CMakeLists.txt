@@ -171,6 +171,7 @@ set(CHASSIS_LIBRARY_FILES
     generated/command_counter_helper.cpp
     generated/vk_safe_struct.cpp
     generated/vk_safe_struct.h
+    layer_options.cpp
     state_tracker.cpp
     state_tracker.h
     image_layout_map.cpp
