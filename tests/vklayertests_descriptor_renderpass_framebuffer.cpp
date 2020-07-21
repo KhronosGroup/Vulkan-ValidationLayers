@@ -7030,6 +7030,11 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
 
     uint32_t maxBlocks = std::max(inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks,
                                   inline_uniform_props.maxDescriptorSetInlineUniformBlocks);
+    if (maxBlocks > 4096) {
+        printf("Too large of a maximum number of inline uniform blocks, skipping tests\n");
+        return;
+    }
+
     for (uint32_t i = 0; i < 1 + maxBlocks; ++i) {
         dslb.binding = i;
         dslb_vec.push_back(dslb);
