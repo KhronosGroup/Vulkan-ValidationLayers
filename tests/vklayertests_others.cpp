@@ -5230,6 +5230,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
         (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
@@ -5696,8 +5701,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
         return;
     }
 
-    VkDeviceMemory memory;
-    vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkResult result = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    if ((memory == VK_NULL_HANDLE) || (result != VK_SUCCESS)) {
+        printf("%s This test failed to allocate memory for importing\n", kSkipPrefix);
+        return;
+    }
 
     if (mem_reqs.alignment > 1) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
