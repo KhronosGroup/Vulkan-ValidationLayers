@@ -2948,6 +2948,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties(
     {
         // No xml-driven validation
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags, pImageFormatProperties);
     return skip;
 }
 
