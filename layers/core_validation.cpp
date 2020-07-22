@@ -10408,7 +10408,11 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
             if (mem_info) {
                 // Validate bound memory range information
-                skip |= ValidateInsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, error_prefix);
+                // if memory is exported to an AHB then the mem_info->allocationSize must be zero and this check is not needed
+                if ((mem_info->is_export == false) || ((mem_info->export_handle_type_flags &
+                                                        VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0)) {
+                    skip |= ValidateInsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, error_prefix);
+                }
 
                 // Validate dedicated allocation
                 if (mem_info->is_dedicated) {
