@@ -13909,9 +13909,7 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
         VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         0,
         VK_ACCESS_TRANSFER_WRITE_BIT,
-        VK_ACCESS_SHADER_READ_BIT,  // Here causes DesiredError that SYNC-HAZARD-READ_AFTER_WRITE in CmdDraw.
-                                    // It should be VK_ACCESS_INPUT_ATTACHMENT_READ_BIT
-                                    // because image_input is used in CmdDraw as VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT.
+        VK_ACCESS_SHADER_READ_BIT,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         0,
@@ -13931,16 +13929,13 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    // Positive test for ordering rules between load and input attachment usage
+    m_errorMonitor->ExpectSuccess();
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    // Positive test for store ordering vs. input attachment and dependency *to* external for layout transition
     m_commandBuffer->EndRenderPass();
-    m_errorMonitor->VerifyFound();
-
-    // Since there isn't an Desired failure, end renderpass can complete.
-    m_commandBuffer->EndRenderPass();
+    m_errorMonitor->VerifyNotFound();
 
     // Catch a conflict with the input attachment final layout transition
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
