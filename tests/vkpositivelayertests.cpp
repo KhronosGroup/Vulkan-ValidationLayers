@@ -8902,7 +8902,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineOverlappingPushConstantRange) {
         "#version 450\n"
         "\n"
         "layout(push_constant, std430) uniform foo { float x[4]; } constants;\n"
+        "layout(location=0) out vec4 o;\n"
         "void main(){\n"
+        "   o = vec4(constants.x[0]);\n"
         "}\n";
 
     VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
