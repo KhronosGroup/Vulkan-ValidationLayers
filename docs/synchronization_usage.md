@@ -18,7 +18,17 @@ Synchronization Validation is implemented in the `VK_LAYER_KHRONOS_validation la
 
 Synchronization will ideally be run periodically after resolving any outstanding validation checks from all other validation objects, so that issues may be addressed in early stages of development.
 
-The pipelined and multi-threaded nature of Vulkan makes it particularly important for applications to correctly insert needed synchronization primitives, and for validation to diagnose unprotected memory access hazards. These hazards are:
+
+
+The specific areas covered by this layer are currently tracked in
+[Github Issue #72: Validate synchronization correctness: Sync Tracking](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/72)
+Requests for additional checks can be posted through the same issue, or by creating a new Github issue.
+
+## Synchronization Validation Functionality
+
+### Overview
+
+The pipelined and multi-threaded nature of Vulkan makes it particularly important for applications to correctly insert needed synchronization primitives, and for validation to diagnose unprotected memory access hazards. Synchronization reports the presence of access hazards including information to identify the Vulkan operations which are in conflict. The reported hazards are:
 
 
 <table>
@@ -66,9 +76,22 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 
 
 
-The specific areas covered by this layer are currently tracked in
-[Github Issue #72: Validate synchronization correctness: Sync Tracking](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/72)
-Requests for additional checks can be posted through the same issue, or by creating a new Github issue.
+### Current Feature set
+
+- Hazard detection for memory usage for commands within the *same* command buffer
+- Synchronization operations vkCmdPipelineBarrier and renderpass/subpass barriers
+- Image layout transition hazard and access tracking
+- Load/Store/Resolve operations within Subpasses.
+
+### Known Limitations
+
+- Does not include implementation of multi-view renderpass support.
+- Does not include vkCmd(Set|Wait)Event support.
+- Host set event not supported
+- ExecuteCommands and QueueSubmit hazards from are not tracked or reported
+- Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK
+- Does not include component granularity access tracking.
+- Host synchronization not supported
 
 ## Enabling Synchronization Validation
 
@@ -106,22 +129,3 @@ features.pEnabledValidationFeatures = enables;
 VkInstanceCreateInfo info = {};
 info.pNext = &features;
 ```
-
-## Synchronization Validation Functionality
-
-### Feature set
-
-- Hazard detection for memory usage for commands within the *same* command buffer
-- Synchronization operations vkCmdPipelineBarrier and renderpass/subpass barriers
-- Image layout transition hazard and access tracking
-- Load/Store/Resolve operations within Subpasses.
-
-### Know Limitations
-
-- Does not include implementation of multi-view renderpass support.
-- Does not include vkCmd(Set|Wait)Event support.
-- Host set event not supported
-- ExecuteCommands and QueueSubmit not supported
-- Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK
-- Does not include component granularity access tracking.
-- Host synchronization not supported
