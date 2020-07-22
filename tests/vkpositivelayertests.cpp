@@ -9916,4 +9916,106 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
 
+TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer Buffers can be queried for mem requirements while unbound.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
+                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+
+    // Allocate an AHardwareBuffer
+    AHardwareBuffer *ahb;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
+    ahb_desc.width = 64;
+    ahb_desc.height = 1;
+    ahb_desc.layers = 1;
+    ahb_desc.stride = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    VkExternalMemoryBufferCreateInfo ext_buf_info = {};
+    ext_buf_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR;
+    ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.pNext = &ext_buf_info;
+    buffer_create_info.size = 8192;  // greater than the 4k AHB usually are
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+
+    m_errorMonitor->ExpectSuccess();
+    // Try to get memory requirements prior to binding memory
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+
+    // Test bind memory 2 extension
+    VkBufferMemoryRequirementsInfo2 buffer_mem_reqs2 = {};
+    buffer_mem_reqs2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2;
+    buffer_mem_reqs2.pNext = nullptr;
+    buffer_mem_reqs2.buffer = buffer;
+    VkMemoryRequirements2 mem_reqs2;
+    mem_reqs2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+    mem_reqs2.pNext = nullptr;
+    vk::GetBufferMemoryRequirements2(m_device->device(), &buffer_mem_reqs2, &mem_reqs2);
+
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = {};
+    import_ahb_Info.sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+    import_ahb_Info.pNext = nullptr;
+    import_ahb_Info.buffer = ahb;
+
+    VkMemoryAllocateInfo memory_info = {};
+    memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_info.pNext = &import_ahb_Info;
+    memory_info.allocationSize = mem_reqs.size + mem_reqs.alignment;  // save room for offset
+    bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (!has_memtype) {
+        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
+        AHardwareBuffer_release(ahb);
+        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+        return;
+    }
+
+    // Some drivers don't return exact size in getBufferMemory as getAHB
+    m_errorMonitor->SetUnexpectedError("VUID-VkMemoryAllocateInfo-allocationSize-02383");
+    VkDeviceMemory memory;
+    vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    vk::BindBufferMemory(m_device->device(), buffer, memory, mem_reqs.alignment);
+
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
+    vk::FreeMemory(m_device->device(), memory, nullptr);
+}
+
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
