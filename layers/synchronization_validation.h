@@ -151,14 +151,16 @@ class ResourceAccessState : public SyncStageAccess {
           input_attachment_barriers(kNoAttachmentRead),
           input_attachment_tag(),
           last_read_count(0),
-          last_read_stages(0) {}
+          last_read_stages(0),
+          read_execution_barriers(0) {}
 
     bool HasWriteOp() const { return last_write != 0; }
     bool operator==(const ResourceAccessState &rhs) const {
         bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
                     (last_read_count == rhs.last_read_count) && (last_read_stages == rhs.last_read_stages) &&
                     (write_tag == rhs.write_tag) && (input_attachment_barriers == rhs.input_attachment_barriers) &&
-                    ((input_attachment_barriers == kNoAttachmentRead) || input_attachment_tag == rhs.input_attachment_tag);
+                    ((input_attachment_barriers == kNoAttachmentRead) || input_attachment_tag == rhs.input_attachment_tag) &&
+                    (read_execution_barriers == rhs.read_execution_barriers);
         for (uint32_t i = 0; same && i < last_read_count; i++) {
             same |= last_reads[i] == rhs.last_reads[i];
         }
@@ -205,6 +207,7 @@ class ResourceAccessState : public SyncStageAccess {
 
     uint32_t last_read_count;
     VkPipelineStageFlags last_read_stages;
+    VkPipelineStageFlags read_execution_barriers;
     static constexpr size_t kStageCount = 32;  // TODO: The manual count was 28 real stages. Add stage count to codegen
     std::array<ReadState, kStageCount> last_reads;
 };
