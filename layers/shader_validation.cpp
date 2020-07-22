@@ -1406,8 +1406,9 @@ bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushCons
     for (auto insn : *src) {
         if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
             if (insn.word(3) == spv::DecorationOffset) {
-                unsigned offset = insn.word(4);
-                auto size = 4;  // Bytes; TODO: calculate this based on the type
+                auto const member = insn.word(2);
+                auto const offset = insn.word(4);
+                auto const size = 4;  // Bytes; TODO: calculate this based on the type
 
                 bool found_range = false;
                 for (auto const &range : *push_constant_ranges) {
@@ -1421,7 +1422,8 @@ bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushCons
 
                 if (!found_range) {
                     skip |= LogError(device, kVUID_Core_Shader_PushConstantOutOfRange,
-                                     "Push constant range covering variable starting at offset %u not declared in layout", offset);
+                                     "Shader push-constant buffer member %u at offset %u is not declared in pipeline layout",
+                                     member, offset);
                 }
             }
         }
