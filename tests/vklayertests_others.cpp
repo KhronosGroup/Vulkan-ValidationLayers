@@ -9268,6 +9268,14 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     image_format_info.pNext = (void *)&drm_format_mod_info;
     vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &image_format_info, &image_format_prop);
 
+    {
+        VkImageFormatProperties dummy_props;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248");
+        vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_info.format, image_info.imageType,
+                                                   image_info.tiling, image_info.usage, image_info.flags, &dummy_props);
+        m_errorMonitor->VerifyFound();
+    }
+
     VkSubresourceLayout dummyPlaneLayout = {0, 0, 0, 0, 0};
 
     VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = {};
