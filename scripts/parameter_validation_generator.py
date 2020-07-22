@@ -190,6 +190,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateAccelerationStructureNV',
             'vkCreateAccelerationStructureKHR',
             'vkGetAccelerationStructureHandleNV',
+            'vkGetPhysicalDeviceImageFormatProperties',
             'vkGetPhysicalDeviceImageFormatProperties2',
             'vkGetPhysicalDeviceImageFormatProperties2KHR',
             'vkCmdBuildAccelerationStructureNV',

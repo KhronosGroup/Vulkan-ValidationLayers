@@ -3590,6 +3590,19 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                                                            "vkGetPhysicalDeviceImageFormatProperties2KHR");
 }
 
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(
+    VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
+    VkImageCreateFlags flags, VkImageFormatProperties *pImageFormatProperties) const {
+    bool skip = false;
+
+    if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248",
+                         "vkGetPhysicalDeviceImageFormatProperties(): tiling must not be VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.");
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                                               uint32_t regionCount, const VkBufferCopy *pRegions) const {
     bool skip = false;

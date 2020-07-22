@@ -1357,6 +1357,10 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                           const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                           VkImageFormatProperties2 *pImageFormatProperties) const;
+    bool manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                      VkImageType type, VkImageTiling tiling,
+                                                                      VkImageUsageFlags usage, VkImageCreateFlags flags,
+                                                                      VkImageFormatProperties *pImageFormatProperties) const;
 
     bool manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                              uint32_t regionCount, const VkBufferCopy *pRegions) const;
