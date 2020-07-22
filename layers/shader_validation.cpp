@@ -1397,17 +1397,53 @@ bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushCons
                                                           VkShaderStageFlagBits stage) const {
     bool skip = false;
 
+    std::function<uint32_t(uint32_t const)> TypeSizeInBytes = [src, &TypeSizeInBytes](uint32_t const member_id) {
+        uint32_t size = 0;
+
+        auto type = src->get_def(member_id);
+        switch (type.opcode()) {
+            case spv::OpTypeInt:
+            case spv::OpTypeFloat:
+                assert(type.word(2) % 8 == 0);
+                size = type.word(2) / 8;
+                break;
+            case spv::OpTypeVector: {
+                auto const component_count = type.word(3);
+                size = TypeSizeInBytes(type.word(2)) * component_count;
+                break;
+            }
+            case spv::OpTypeMatrix: {
+                // TODO: Stride.
+                auto const column_count = type.word(3);
+                size = TypeSizeInBytes(type.word(2)) * column_count;
+                break;
+            }
+            case spv::OpTypeArray: {
+                // TODO: Assumes element type is scalar.
+                auto const length = src->get_def(type.word(3)).word(3);
+                size = TypeSizeInBytes(type.word(2)) * length;
+                break;
+            }
+            default:
+                // TODO: What am I still missing?
+                size = 4;
+                break;
+        }
+
+        return size;
+    };
+
     // Strip off ptrs etc
     type = GetStructType(src, type, false);
     assert(type != src->end());
 
     // Validate directly off the offsets. this isn't quite correct for arrays and matrices, but is a good first step.
-    // TODO: arrays, matrices, weird sizes
     for (auto insn : *src) {
         if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
             if (insn.word(3) == spv::DecorationOffset) {
-                unsigned offset = insn.word(4);
-                auto size = 4;  // Bytes; TODO: calculate this based on the type
+                auto const member = insn.word(2);
+                auto const offset = insn.word(4);
+                auto const size = TypeSizeInBytes(type.word(2 + member));
 
                 bool found_range = false;
                 for (auto const &range : *push_constant_ranges) {
