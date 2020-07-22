@@ -3581,7 +3581,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotDeclared) {
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "Push constant range covering variable starting at offset 0 not declared in layout");
+                                         "Shader push-constant buffer member 0 at offset 0 is not declared in pipeline layout");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -5039,7 +5039,7 @@ TEST_F(VkLayerTest, CreatePipelinePushConstantsNotInLayout) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     /* should have generated an error -- no push constant ranges provided! */
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "not declared in layout");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "not declared in pipeline layout");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
