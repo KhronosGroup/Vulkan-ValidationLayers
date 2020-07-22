@@ -2646,16 +2646,20 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(submit->pNext);
         if (info) {
-            for (uint32_t i = 0; i < info->waitSemaphoreValueCount; ++i) {
-                VkSemaphore semaphore = submit->pWaitSemaphores[i];
-                skip |= ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pWaitSemaphoreValues[i], "VkQueueSubmit",
-                                                                    "VUID-VkSubmitInfo-pWaitSemaphores-03243");
-            }
-            for (uint32_t i = 0; i < info->signalSemaphoreValueCount; ++i) {
-                VkSemaphore semaphore = submit->pSignalSemaphores[i];
-                skip |= ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pSignalSemaphoreValues[i], "VkQueueSubmit",
-                                                                    "VUID-VkSubmitInfo-pSignalSemaphores-03244");
-            }
+            // If there are any timeline semaphores, this condition gets checked before the early return above
+            if (info->waitSemaphoreValueCount)
+                for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
+                    VkSemaphore semaphore = submit->pWaitSemaphores[i];
+                    skip |= ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pWaitSemaphoreValues[i], "VkQueueSubmit",
+                                                                        "VUID-VkSubmitInfo-pWaitSemaphores-03243");
+                }
+            // If there are any timeline semaphores, this condition gets checked before the early return above
+            if (info->signalSemaphoreValueCount)
+                for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
+                    VkSemaphore semaphore = submit->pSignalSemaphores[i];
+                    skip |= ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pSignalSemaphoreValues[i], "VkQueueSubmit",
+                                                                        "VUID-VkSubmitInfo-pSignalSemaphores-03244");
+                }
         }
     }
 
@@ -10783,16 +10787,22 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         const VkBindSparseInfo *bindInfo = &pBindInfo[bindIdx];
         auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(bindInfo->pNext);
         if (info) {
-            for (uint32_t i = 0; i < info->waitSemaphoreValueCount; ++i) {
-                VkSemaphore semaphore = bindInfo->pWaitSemaphores[i];
-                skip |= ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pWaitSemaphoreValues[i], "VkQueueBindSparse",
+            // If there are any timeline semaphores, this condition gets checked before the early return above
+            if (info->waitSemaphoreValueCount)
+                for (uint32_t i = 0; i < bindInfo->waitSemaphoreCount; ++i) {
+                    VkSemaphore semaphore = bindInfo->pWaitSemaphores[i];
+                    skip |=
+                        ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pWaitSemaphoreValues[i], "VkQueueBindSparse",
                                                                     "VUID-VkBindSparseInfo-pWaitSemaphores-03250");
-            }
-            for (uint32_t i = 0; i < info->signalSemaphoreValueCount; ++i) {
-                VkSemaphore semaphore = bindInfo->pSignalSemaphores[i];
-                skip |= ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pSignalSemaphoreValues[i], "VkQueueBindSparse",
+                }
+            // If there are any timeline semaphores, this condition gets checked before the early return above
+            if (info->signalSemaphoreValueCount)
+                for (uint32_t i = 0; i < bindInfo->signalSemaphoreCount; ++i) {
+                    VkSemaphore semaphore = bindInfo->pSignalSemaphores[i];
+                    skip |=
+                        ValidateMaxTimelineSemaphoreValueDifference(semaphore, info->pSignalSemaphoreValues[i], "VkQueueBindSparse",
                                                                     "VUID-VkBindSparseInfo-pSignalSemaphores-03251");
-            }
+                }
         }
     }
 
