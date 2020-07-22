@@ -14,16 +14,21 @@
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 The `VK_LAYER_KHRONOS_validation` layer supports the following validation coverage areas:
 
-- Thread safety validation 
-- Stateless parameter validation 
-- Object lifetime validation 
-- Core validation checks
-- GPU-Assisted validation
-- Best practices validation
-- Debug Printf functionality
-- Handle wrapping functionality
+- [Core validation](./core_checks.md)
+- [Stateless parameter validation](./stateless_validation.md)
+- [Object lifetime validation](./object_lifetimes.md)
+- [GPU-Assisted validation](./gpu_validation.md)
+- [Thread safety validation](./thread_safety.md)
+- [Synchronization validation](./synchronization_usage.md)
+- [Best practices validation](./best_practices.md)
+- [Debug Printf functionality](./debug_printf.md)
+- [Handle wrapping functionality](./handle_wrapping.md)
 
+**Note:**
 
+* Most *Khronos Validation layer* features can be used simultaneously. However, this could result in noticeable performance degradation. The best practice is to run *Core validation*, *GPU-Assisted validation*, *Synchronization Validation* and *Best practices validation* features individually.
+
+* *Debug Printf functionality* and *GPU-Assisted validation* cannot be run at the same time.
 
 ## Layer Controls
 Layer behavior is controlled through either a layer settings file or an extension.
