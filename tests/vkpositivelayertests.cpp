@@ -10018,4 +10018,191 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
 
+TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
+    TEST_DESCRIPTION("Verify VkBuffers can export to an AHB.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetMemoryAndroidHardwareBufferANDROID vkGetMemoryAndroidHardwareBufferANDROID =
+        (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(device(), "vkGetMemoryAndroidHardwareBufferANDROID");
+    ASSERT_TRUE(vkGetMemoryAndroidHardwareBufferANDROID != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+
+    // Create VkBuffer to be exported to an AHB
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkExternalMemoryBufferCreateInfo ext_buf_info = {};
+    ext_buf_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR;
+    ext_buf_info.pNext = nullptr;
+    ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.pNext = &ext_buf_info;
+    buffer_create_info.size = 4096;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+
+    VkExportMemoryAllocateInfo export_memory_info = {};
+    export_memory_info.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    export_memory_info.pNext = nullptr;
+    export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkMemoryAllocateInfo memory_info = {};
+    memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_info.pNext = &export_memory_info;
+    memory_info.allocationSize = mem_reqs.size;
+
+    bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (!has_memtype) {
+        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
+        vk::DestroyBuffer(device(), buffer, nullptr);
+        return;
+    }
+
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    ;
+    vk::AllocateMemory(device(), &memory_info, NULL, &memory);
+    vk::BindBufferMemory(device(), buffer, memory, 0);
+
+    // Export memory to AHB
+    AHardwareBuffer *ahb = nullptr;
+
+    VkMemoryGetAndroidHardwareBufferInfoANDROID get_ahb_info = {};
+    get_ahb_info.sType = VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+    get_ahb_info.pNext = nullptr;
+    get_ahb_info.memory = memory;
+    vkGetMemoryAndroidHardwareBufferANDROID(device(), &get_ahb_info, &ahb);
+
+    m_errorMonitor->VerifyNotFound();
+
+    // App in charge of releasing after exporting
+    AHardwareBuffer_release(ahb);
+    vk::FreeMemory(device(), memory, NULL);
+    vk::DestroyBuffer(device(), buffer, nullptr);
+}
+
+TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
+    TEST_DESCRIPTION("Verify VkImages can export to an AHB.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetMemoryAndroidHardwareBufferANDROID vkGetMemoryAndroidHardwareBufferANDROID =
+        (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(device(), "vkGetMemoryAndroidHardwareBufferANDROID");
+    ASSERT_TRUE(vkGetMemoryAndroidHardwareBufferANDROID != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+
+    // Create VkImage to be exported to an AHB
+    VkExternalMemoryImageCreateInfo ext_image_info = {};
+    ext_image_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    ext_image_info.pNext = nullptr;
+    ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkImage image = VK_NULL_HANDLE;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = &ext_image_info;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {64, 1, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vk::CreateImage(device(), &image_create_info, nullptr, &image);
+
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = {};
+    memory_dedicated_info.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    memory_dedicated_info.pNext = nullptr;
+    memory_dedicated_info.image = image;
+    memory_dedicated_info.buffer = VK_NULL_HANDLE;
+
+    VkExportMemoryAllocateInfo export_memory_info = {};
+    export_memory_info.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    export_memory_info.pNext = &memory_dedicated_info;
+    export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkMemoryAllocateInfo memory_info = {};
+    memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_info.pNext = &export_memory_info;
+
+    // "When allocating new memory for an image that can be exported to an Android hardware buffer, the memory’s allocationSize must
+    // be zero":
+    memory_info.allocationSize = 0;
+
+    // Use any DEVICE_LOCAL memory found
+    bool has_memtype = m_device->phy().set_memory_type(0xFFFFFFFF, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (!has_memtype) {
+        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
+        vk::DestroyImage(device(), image, nullptr);
+        return;
+    }
+
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    vk::AllocateMemory(device(), &memory_info, NULL, &memory);
+    vk::BindImageMemory(device(), image, memory, 0);
+
+    // Export memory to AHB
+    AHardwareBuffer *ahb = nullptr;
+
+    VkMemoryGetAndroidHardwareBufferInfoANDROID get_ahb_info = {};
+    get_ahb_info.sType = VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+    get_ahb_info.pNext = nullptr;
+    get_ahb_info.memory = memory;
+    vkGetMemoryAndroidHardwareBufferANDROID(device(), &get_ahb_info, &ahb);
+
+    m_errorMonitor->VerifyNotFound();
+
+    // App in charge of releasing after exporting
+    AHardwareBuffer_release(ahb);
+    vk::FreeMemory(device(), memory, NULL);
+    vk::DestroyImage(device(), image, nullptr);
+}
+
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
