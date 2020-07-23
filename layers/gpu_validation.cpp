@@ -1187,6 +1187,8 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
+    spvtools::ValidatorOptions options;
+    AdjustValidatorOptions(device_extensions, enabled_features, options);
     Optimizer optimizer(target_env);
     optimizer.SetMessageConsumer(GpuConsoleMessageConsumer);
     optimizer.RegisterPass(
@@ -1195,7 +1197,7 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64 &&
         enabled_features.core12.bufferDeviceAddress)
         optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
-    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm);
+    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, options, false);
     if (!pass) {
         ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
     }
