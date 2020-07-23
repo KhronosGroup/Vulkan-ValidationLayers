@@ -3071,17 +3071,8 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
             spv_context ctx = spvContextCreate(spirv_environment);
             spv_const_binary_t binary{specialized_spirv.data(), specialized_spirv.size()};
             spv_diagnostic diag = nullptr;
-            spv_validator_options options = spvValidatorOptionsCreate();
-            if (device_extensions.vk_khr_relaxed_block_layout) {
-                spvValidatorOptionsSetRelaxBlockLayout(options, true);
-            }
-            if (device_extensions.vk_khr_uniform_buffer_standard_layout &&
-                enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
-                spvValidatorOptionsSetUniformBufferStandardLayout(options, true);
-            }
-            if (device_extensions.vk_ext_scalar_block_layout && enabled_features.core12.scalarBlockLayout == VK_TRUE) {
-                spvValidatorOptionsSetScalarBlockLayout(options, true);
-            }
+            spvtools::ValidatorOptions options;
+            AdjustValidatorOptions(device_extensions, enabled_features, options);
             auto const spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
                 skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
@@ -3090,7 +3081,6 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
                                  string_VkShaderStageFlagBits(pStage->stage));
             }
 
-            spvValidatorOptionsDestroy(options);
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
         }
@@ -3526,17 +3516,8 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
-        spv_validator_options options = spvValidatorOptionsCreate();
-        if (device_extensions.vk_khr_relaxed_block_layout) {
-            spvValidatorOptionsSetRelaxBlockLayout(options, true);
-        }
-        if (device_extensions.vk_khr_uniform_buffer_standard_layout &&
-            enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
-            spvValidatorOptionsSetUniformBufferStandardLayout(options, true);
-        }
-        if (device_extensions.vk_ext_scalar_block_layout && enabled_features.core12.scalarBlockLayout == VK_TRUE) {
-            spvValidatorOptionsSetScalarBlockLayout(options, true);
-        }
+        spvtools::ValidatorOptions options;
+        AdjustValidatorOptions(device_extensions, enabled_features, options);
         spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
@@ -3554,7 +3535,6 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
             }
         }
 
-        spvValidatorOptionsDestroy(options);
         spvDiagnosticDestroy(diag);
         spvContextDestroy(ctx);
     }
@@ -3622,4 +3602,17 @@ spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4) {
         }
     }
     return SPV_ENV_VULKAN_1_0;
+}
+
+void AdjustValidatorOptions(const DeviceExtensions device_extensions, const DeviceFeatures enabled_features,
+                            spvtools::ValidatorOptions &options) {
+    if (device_extensions.vk_khr_relaxed_block_layout) {
+        options.SetRelaxBlockLayout(true);
+    }
+    if (device_extensions.vk_khr_uniform_buffer_standard_layout && enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
+        options.SetUniformBufferStandardLayout(true);
+    }
+    if (device_extensions.vk_ext_scalar_block_layout && enabled_features.core12.scalarBlockLayout == VK_TRUE) {
+        options.SetScalarBlockLayout(true);
+    }
 }
