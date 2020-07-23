@@ -954,6 +954,17 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         nonsparse_indices[i] = i;
     }
 
+    // another example of non-sparsity where the number of indices is also very small
+    std::vector<uint16_t> nonsparse_indices_2 = {0, 1, 2, 3, 4, 5, 6, 7};
+
+    // smallest possible meaningful index buffer
+    std::vector<uint16_t> nonsparse_indices_3 = {0};
+
+    // another example of non-sparsity, all the indices are the same value (42)
+    std::vector<uint16_t> nonsparse_indices_4 = {};
+    nonsparse_indices_4.resize(128);
+    std::fill(nonsparse_indices_4.begin(), nonsparse_indices_4.end(), 42);
+
     std::vector<uint16_t> sparse_indices = nonsparse_indices;
     // The buffer (0, 1, 2, ..., n) is completely un-sparse. However, if n < 0xFFFF, by adding 0xFFFF at the end, we
     // should trigger a warning due to loading all the indices in the range 0 to 0xFFFF, despite indices in the range
@@ -962,54 +973,75 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
 
     VkConstantBufferObj nonsparse_ibo(m_device, nonsparse_indices.size() * sizeof(uint16_t), nonsparse_indices.data(),
                                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkConstantBufferObj nonsparse_ibo_2(m_device, nonsparse_indices_2.size() * sizeof(uint16_t), nonsparse_indices_2.data(),
+                                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkConstantBufferObj nonsparse_ibo_3(m_device, nonsparse_indices_3.size() * sizeof(uint16_t), nonsparse_indices_3.data(),
+                                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkConstantBufferObj nonsparse_ibo_4(m_device, nonsparse_indices_4.size() * sizeof(uint16_t), nonsparse_indices_4.data(),
+                                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     VkConstantBufferObj sparse_ibo(m_device, sparse_indices.size() * sizeof(uint16_t), sparse_indices.data(),
                                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.InitState();
-    pipe.ia_ci_.primitiveRestartEnable = VK_FALSE;
-    pipe.CreateGraphicsPipeline();
-
-    // pipeline with primitive restarts enabled
-    CreatePipelineHelper pr_pipe(*this);
-    pr_pipe.InitInfo();
-    pr_pipe.InitState();
-    pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
-    pr_pipe.CreateGraphicsPipeline();
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-
     auto test_pipelines = [&](VkConstantBufferObj& ibo, size_t index_count, bool expect_error) -> void {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.InitState();
+        pipe.ia_ci_.primitiveRestartEnable = VK_FALSE;
+        pipe.CreateGraphicsPipeline();
+
+        // pipeline with primitive restarts enabled
+        CreatePipelineHelper pr_pipe(*this);
+        pr_pipe.InitInfo();
+        pr_pipe.InitState();
+        pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
+        pr_pipe.CreateGraphicsPipeline();
+
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
         m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
         m_errorMonitor->VerifyNotFound();
 
         // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
         ibo.memory().map();
-        if (expect_error)
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                                 "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
         m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
+        if (expect_error) {
+            m_errorMonitor->VerifyFound();
+        } else {
+            m_errorMonitor->VerifyNotFound();
+        }
         ibo.memory().unmap();
 
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pr_pipe.pipeline_);
         m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
         m_errorMonitor->VerifyNotFound();
 
         ibo.memory().map();
-        if (expect_error)
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                                 "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
         m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
+        if (expect_error) {
+            m_errorMonitor->VerifyFound();
+        } else {
+            m_errorMonitor->VerifyNotFound();
+        }
         ibo.memory().unmap();
+
+        m_errorMonitor->Reset();
     };
 
-    // our non-sparse indices should not trigger a warning for both pipelines in this case
+    // our non-sparse indices should not trigger a warning for either pipeline in this case
     test_pipelines(nonsparse_ibo, nonsparse_indices.size(), false);
+    test_pipelines(nonsparse_ibo_2, nonsparse_indices_2.size(), false);
+    test_pipelines(nonsparse_ibo_3, nonsparse_indices_3.size(), false);
+    test_pipelines(nonsparse_ibo_4, nonsparse_indices_4.size(), false);
+
     // our sparse indices should trigger warnings for both pipelines in this case
     test_pipelines(sparse_ibo, sparse_indices.size(), true);
 }
