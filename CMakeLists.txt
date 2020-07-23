@@ -192,70 +192,29 @@ if(BUILD_TESTS OR BUILD_LAYERS)
         set(GLSLANG_SPIRV_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include/glslang" CACHE PATH "Path to glslang spirv headers")
         set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include" CACHE PATH "Path to spirv-headers")
 
-        find_library(GLSLANG_LIB NAMES glslang HINTS ${GLSLANG_SEARCH_PATH})
-        find_library(OGLCompiler_LIB NAMES OGLCompiler HINTS ${GLSLANG_SEARCH_PATH})
-        find_library(OSDependent_LIB NAMES OSDependent HINTS ${GLSLANG_SEARCH_PATH})
-        find_library(HLSL_LIB NAMES HLSL HINTS ${GLSLANG_SEARCH_PATH})
-        find_library(SPIRV_LIB NAMES SPIRV HINTS ${GLSLANG_SEARCH_PATH})
-        find_library(SPIRV_REMAPPER_LIB NAMES SPVRemapper HINTS ${GLSLANG_SEARCH_PATH})
+        set(GLSLANG_LIBRARIES glslang OGLCompiler OSDependent MachineIndependent GenericCodeGen HLSL SPIRV SPVRemapper)
 
-        if(WIN32)
-            add_library(glslang STATIC IMPORTED)
-            add_library(OGLCompiler STATIC IMPORTED)
-            add_library(OSDependent STATIC IMPORTED)
-            add_library(HLSL STATIC IMPORTED)
-            add_library(SPIRV STATIC IMPORTED)
-            add_library(SPVRemapper STATIC IMPORTED)
+        # Add glslang static libraries as imported targets
+        foreach(GLSLANG_LIBRARY ${GLSLANG_LIBRARIES})
+            add_library(${GLSLANG_LIBRARY} STATIC IMPORTED)
+            find_library("${GLSLANG_LIBRARY}_PATH" NAMES "${GLSLANG_LIBRARY}" HINTS ${GLSLANG_SEARCH_PATH})
+            set_target_properties(${GLSLANG_LIBRARY}
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${${GLSLANG_LIBRARY}_PATH}")
+            if (WIN32)
+                find_library("${GLSLANG_LIBRARY}_DEBUG_PATH" NAMES "${GLSLANG_LIBRARY}d" HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
+                set_target_properties(${GLSLANG_LIBRARY}
+                                      PROPERTIES IMPORTED_LOCATION_DEBUG
+                                                 "${${GLSLANG_LIBRARY}_DEBUG_PATH}")
+            endif()
+        endforeach()
 
-            find_library(GLSLANG_DLIB NAMES glslangd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-            find_library(OGLCompiler_DLIB NAMES OGLCompilerd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-            find_library(OSDependent_DLIB NAMES OSDependentd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-            find_library(HLSL_DLIB NAMES HLSLd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-            find_library(SPIRV_DLIB NAMES SPIRVd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-            find_library(SPIRV_REMAPPER_DLIB NAMES SPVRemapperd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-
-            set_target_properties(glslang
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${GLSLANG_LIB}"
-                                             IMPORTED_LOCATION_DEBUG
-                                             "${GLSLANG_DLIB}")
-            set_target_properties(OGLCompiler
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${OGLCompiler_LIB}"
-                                             IMPORTED_LOCATION_DEBUG
-                                             "${OGLCompiler_DLIB}")
-            set_target_properties(OSDependent
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${OSDependent_LIB}"
-                                             IMPORTED_LOCATION_DEBUG
-                                             "${OSDependent_DLIB}")
-            set_target_properties(HLSL
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${HLSL_LIB}"
-                                             IMPORTED_LOCATION_DEBUG
-                                             "${HLSL_DLIB}")
-            set_target_properties(SPIRV
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${SPIRV_LIB}"
-                                             IMPORTED_LOCATION_DEBUG
-                                             "${SPIRV_DLIB}")
-            set_target_properties(SPVRemapper
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${SPIRV_REMAPPER_LIB}"
-                                             IMPORTED_LOCATION_DEBUG
-                                             "${SPIRV_REMAPPER_DLIB}")
-
-            set(GLSLANG_LIBRARIES glslang OGLCompiler OSDependent HLSL SPIRV SPVRemapper ${SPIRV_TOOLS_LIBRARIES})
-        else()
-            set(GLSLANG_LIBRARIES
-                ${GLSLANG_LIB}
-                ${OGLCompiler_LIB}
-                ${OSDependent_LIB}
-                ${HLSL_LIB}
-                ${SPIRV_LIB}
-                ${SPIRV_REMAPPER_LIB}
-                ${SPIRV_TOOLS_LIBRARIES})
-        endif()
+        # Circular dependencies exist between glslang static libs, add them all as link dependencies for each other
+        foreach(GLSLANG_LIBRARY ${GLSLANG_LIBRARIES})
+            set_target_properties(${GLSLANG_LIBRARY}
+                                  PROPERTIES INTERFACE_LINK_LIBRARIES
+                                             "${GLSLANG_LIBRARIES}")
+        endforeach()
     else()
         set(GLSLANG_SPIRV_INCLUDE_DIR "${glslang_SOURCE_DIR}" CACHE PATH "Path to glslang spirv headers")
         set(GLSLANG_LIBRARIES glslang SPIRV SPVRemapper)
