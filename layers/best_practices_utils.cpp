@@ -1481,7 +1481,8 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
         }
 
         // if the max and min values were not set, then we either have no indices, or all primitive restarts, exit...
-        if (max_index < min_index) return skip;
+        // if the max and min are the same, then it implies all the indices are the same, then we don't need to do anything
+        if (max_index < min_index || max_index == min_index) return skip;
 
         if (max_index - min_index >= indexCount) {
             skip |= LogPerformanceWarning(
@@ -1496,9 +1497,15 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
 
         // use a dynamic vector of bitsets as a memory-compact representation of which indices are included in the draw call
         // each bit of the n-th bucket contains the inclusion information for indices (n*n_buckets) to ((n+1)*n_buckets)
-        const size_t n_buckets = 64;
-        std::vector<std::bitset<n_buckets>> vertex_reference_buckets;
-        vertex_reference_buckets.resize((max_index - min_index + 1) / n_buckets);
+        const size_t refs_per_bucket = 64;
+        std::vector<std::bitset<refs_per_bucket>> vertex_reference_buckets;
+
+        const uint32_t n_indices = max_index - min_index + 1;
+        const uint32_t n_buckets = (n_indices / static_cast<uint32_t>(refs_per_bucket)) +
+                                   ((n_indices % static_cast<uint32_t>(refs_per_bucket)) != 0 ? 1 : 0);
+
+        // there needs to be at least one bitset to store a set of indices smaller than n_buckets
+        vertex_reference_buckets.resize(std::max(1u, n_buckets));
 
         // To avoid using too much memory, we run over the indices again.
         // Knowing the size from the last scan allows us to record index usage with bitsets
@@ -1513,8 +1520,8 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
             }
             // keep track of the set of all indices used to reference vertices in the draw call
             size_t index_offset = scan_index - min_index;
-            size_t bitset_bucket_index = index_offset / n_buckets;
-            uint64_t used_indices = 1ull << ((index_offset % n_buckets) & 0xFFFFFFFFu);
+            size_t bitset_bucket_index = index_offset / refs_per_bucket;
+            uint64_t used_indices = 1ull << ((index_offset % refs_per_bucket) & 0xFFFFFFFFu);
             vertex_reference_buckets[bitset_bucket_index] |= used_indices;
         }
 
