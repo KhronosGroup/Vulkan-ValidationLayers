@@ -3439,7 +3439,7 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     auto *sem_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfoKHR>(pCreateInfo->pNext);
 
     if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE_KHR &&
-        !enabled_features.core12.timelineSemaphore) {
+        !enabled_features.core12.timelineSemaphore && !device_extensions.vk_khr_timeline_semaphore) {
         skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252",
                          "VkCreateSemaphore: timelineSemaphore feature is not enabled, can not create timeline semaphores");
     }
