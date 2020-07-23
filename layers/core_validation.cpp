@@ -7429,6 +7429,11 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
                          query_pool_ci.queryCount, report_data->FormatHandle(query_obj.pool).c_str());
     }
 
+    if (cb_state->unprotected == false) {
+        skip |= LogError(cb_state->commandBuffer, vuids->vuid_protected_cb,
+                         "%s: command can't be used in protected command buffers.", cmd_name);
+    }
+
     skip |= ValidateCmd(cb_state, cmd, cmd_name);
     return skip;
 }
@@ -7443,7 +7448,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
                                      "VUID-vkCmdBeginQuery-queryType-00803",       "VUID-vkCmdBeginQuery-queryType-00800",
                                      "VUID-vkCmdBeginQuery-query-00802",           "VUID-vkCmdBeginQuery-queryPool-03223",
                                      "VUID-vkCmdBeginQuery-queryPool-03224",       "VUID-vkCmdBeginQuery-queryPool-03225",
-                                     "VUID-vkCmdBeginQuery-queryPool-01922"};
+                                     "VUID-vkCmdBeginQuery-queryPool-01922",       "VUID-vkCmdBeginQuery-commandBuffer-01885"};
     return ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERY, "vkCmdBeginQuery()", &vuids);
 }
 
@@ -7564,11 +7569,12 @@ void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQue
 }
 
 bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, CMD_TYPE cmd,
-                                     const char *cmd_name, const char *vuid_queue_flags, const char *vuid_active_queries) const {
+                                     const char *cmd_name, const ValidateEndQueryVuids *vuids) const {
     bool skip = false;
     if (!cb_state->activeQueries.count(query_obj)) {
-        skip |= LogError(cb_state->commandBuffer, vuid_active_queries, "%s: Ending a query before it was started: %s, index %d.",
-                         cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
+        skip |=
+            LogError(cb_state->commandBuffer, vuids->vuid_active_queries, "%s: Ending a query before it was started: %s, index %d.",
+                     cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
     }
     const auto *query_pool_state = GetQueryPoolState(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->createInfo;
@@ -7580,8 +7586,13 @@ bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE *cb_state, const Que
                              cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), cmd_name);
         }
     }
-    skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid_queue_flags);
+    skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuids->vuid_queue_flags);
     skip |= ValidateCmd(cb_state, cmd, cmd_name);
+
+    if (cb_state->unprotected == false) {
+        skip |= LogError(cb_state->commandBuffer, vuids->vuid_protected_cb,
+                         "%s: command can't be used in protected command buffers.", cmd_name);
+    }
     return skip;
 }
 
@@ -7592,6 +7603,9 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
+    ValidateEndQueryVuids vuids = {"VUID-vkCmdEndQuery-commandBuffer-cmdpool", "VUID-vkCmdEndQuery-None-01923",
+                                   "VUID-vkCmdEndQuery-commandBuffer-01886"};
+
     const QUERY_POOL_STATE *query_pool_state = GetQueryPoolState(queryPool);
     if (query_pool_state) {
         const uint32_t available_query_count = query_pool_state->createInfo.queryCount;
@@ -7601,8 +7615,7 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
                              "vkCmdEndQuery(): query index (%u) is greater or equal to the queryPool size (%u).", slot,
                              available_query_count);
         } else {
-            skip |= ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERY, "vkCmdEndQuery()",
-                                        "VUID-vkCmdEndQuery-commandBuffer-cmdpool", "VUID-vkCmdEndQuery-None-01923");
+            skip |= ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERY, "vkCmdEndQuery()", &vuids);
         }
     }
     return skip;
@@ -11808,7 +11821,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
         "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803",       "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800",
         "VUID-vkCmdBeginQueryIndexedEXT-query-00802",           "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03223",
         "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224",       "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-01922"};
+        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-01922",       "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-01885"};
 
     bool skip = ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERYINDEXEDEXT, cmd_name, &vuids);
 
@@ -11845,8 +11858,10 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
     QueryObject query_obj = {queryPool, query, index};
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
-    return ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERYINDEXEDEXT, "vkCmdEndQueryIndexedEXT()",
-                               "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-cmdpool", "VUID-vkCmdEndQueryIndexedEXT-None-02342");
+    ValidateEndQueryVuids vuids = {"VUID-vkCmdEndQueryIndexedEXT-commandBuffer-cmdpool", "VUID-vkCmdEndQueryIndexedEXT-None-02342",
+                                   "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-02344"};
+
+    return ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERYINDEXEDEXT, "vkCmdEndQueryIndexedEXT()", &vuids);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
