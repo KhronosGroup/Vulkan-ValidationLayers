@@ -64,7 +64,14 @@ typedef struct {
     const char* vuid_scope_not_first;
     const char* vuid_scope_in_rp;
     const char* vuid_dup_query_type;
+    const char* vuid_protected_cb;
 } ValidateBeginQueryVuids;
+
+typedef struct {
+    const char* vuid_queue_flags;
+    const char* vuid_active_queries;
+    const char* vuid_protected_cb;
+} ValidateEndQueryVuids;
 
 class CoreChecks : public ValidationStateTracker {
   public:
@@ -218,7 +225,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
                             const char* cmd_name, const ValidateBeginQueryVuids* vuids) const;
     bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, CMD_TYPE cmd, const char* cmd_name,
-                             const char* vuid_queue_flags, const char* vuid_active_queries) const;
+                             const ValidateEndQueryVuids* vuids) const;
     bool ValidateCmdResetQuery(const CMD_BUFFER_STATE* cb_state, VkQueryPool queryPool, uint32_t firstQuery,
                                uint32_t queryCount) const;
 
