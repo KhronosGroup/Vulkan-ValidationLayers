@@ -14,15 +14,15 @@
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 The `VK_LAYER_KHRONOS_validation` layer supports the following validation coverage areas:
 
-- [Core validation](./core_checks.md)
-- [Stateless parameter validation](./stateless_validation.md)
-- [Object lifetime validation](./object_lifetimes.md)
-- [GPU-Assisted validation](./gpu_validation.md)
-- [Thread safety validation](./thread_safety.md)
-- [Synchronization validation](./synchronization_usage.md)
-- [Best practices validation](./best_practices.md)
-- [Debug Printf functionality](./debug_printf.md)
-- [Handle wrapping functionality](./handle_wrapping.md)
+- [Core validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/core_checks.md)
+- [Stateless parameter validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/stateless_validation.md)
+- [Object lifetime validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/object_lifetimes.md)
+- [GPU-Assisted validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/gpu_validation.md)
+- [Thread safety validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/thread_safety.md)
+- [Synchronization validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/synchronization_usage.md)
+- [Best practices validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/best_practices.md)
+- [Debug Printf functionality](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/debug_printf.md)
+- [Handle wrapping functionality](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/handle_wrapping.md)
 
 **Note:**
 
