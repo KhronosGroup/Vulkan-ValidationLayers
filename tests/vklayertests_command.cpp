@@ -6499,8 +6499,8 @@ TEST_F(VkLayerTest, TransformFeedbackCmdEndTransformFeedbackEXT) {
     }
 }
 
-TEST_F(VkLayerTest, UnprotectedIndirectCommands) {
-    TEST_DESCRIPTION("Test making indirect commands in unprotected command buffers");
+TEST_F(VkLayerTest, InvalidUnprotectedCommands) {
+    TEST_DESCRIPTION("Test making commands in unprotected command buffers that can't be used");
 
     // protect memory added in VK 1.1
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -6552,6 +6552,13 @@ TEST_F(VkLayerTest, UnprotectedIndirectCommands) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_create_info{};
+    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_create_info.queryCount = 1;
+    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
@@ -6569,5 +6576,20 @@ TEST_F(VkLayerTest, UnprotectedIndirectCommands) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
+
+    // Query should be outside renderpass
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-commandBuffer-01885");
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQuery-commandBuffer-01886");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndQuery-None-01923");
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->end();
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
