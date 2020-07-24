@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2019 LunarG, Inc. -->
+<!-- Copyright 2015-2020 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -76,14 +76,53 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 </table>
 
 
-
 ## Algorithmic Overview
+
+### Approach
 
 In order to validate synchronization the effect of action and synchronization commands must be tracked.  The full validation can *only* be done at queue submission time, when the full context of the command batches is known. However, partial validation of hazards knowable within the context of a single recorded command buffer can be done at record time at. This partial validation includes record time detection of internally present hazards during sub-pass and can be extended to include secondary command buffer execution. To support this usage, the validation and update components must be designed to operate at record, secondary command buffer execute record, and queue submit time.
 
- Synchronization validation centers around examining the previous access and synchronization operations for a range of memory address against a current access or operation against that same set. The _state_ (Resource Access State) tracks the most recent read, write, and synchronization operations for a given range of memory addresses. These are captured in contexts (Access Context) which reflect the Queue, Command Buffer, or Subpass instance in which the memory accesses were made. This first approach is sufficient for single command buffer validation. Note that only the most recent state (relative to *write* operations)  is retained. This reflects an assumption that given a sequence of writes _W(j), any “transitive hazard” write _W(i-2)_ conflicts with write _W(i)_, would also result in either a hazard being detected between _W(i-2) _and _W(i-1)_ or between _W(i-1)_ and _W(i)_ s.t. for purposes of detection, only the most recent state is required.  Additionally, the “dependency chain” logic can be represented by a cumulative state reflecting the impact of all synchronization operations on the most recent read/write state. Between the _state _and _context_, enough information is present to do record time validation of single command buffers.
+ Synchronization validation centers around examining the previous access and synchronization operations for a range of memory addresses against a current access or operation against that same range. The _state_ (Resource Access State) tracks the most recent read, write, and synchronization operations for a given range of memory addresses. These are captured in contexts (Access Context) which reflect the Queue, Command Buffer, or Subpass instance in which the memory accesses were made. This first approach is sufficient for single command buffer validation. Note that only the most recent state (relative to *write* operations)  is retained. Additionally, the “dependency chain” logic can be represented by a cumulative state reflecting the impact of all synchronization operations on the most recent read/write state. Between the _state_ and _context_, enough information is present to do record time validation of single command buffers.
 
-For multiple command buffer/secondary buffers, a partial recording of memory accesses and synchronization operations is require.  Current design targets the use of storing the “first” access information (first reads, first write), along with the either a recording of all synchronization operations *or* some “barrier state* that can be stored with each “first access”.  This approach should be familiar to those that have seen the “image layout” queue-submit, and execute-command validation, which validates against a similar “first” record.
+### Most Recent Access
+
+When detecting memory access hazards, synchronization validation considers only the most recent access for comparison. All prior hazards are assumed to have been reported. 
+
+For read operations the most recent access rules apply to prior reads with execution barriers (or ordering) relative to the current read. The prior write access is only considered the most recent access if no intervening prior read has occurred that *happens-before* the current read. Consider the following sequence of access and barriers (listed in submission order) acting on the same memory address:
+
+
+
+| Operation | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| W         | write operation                                              |
+| M         | memory barrier guarding access at R0                         |
+| R0        | first read operation                                         |
+| R1        | second read operation                                        |
+| E         | execution barrier s.t. R2 *happens-after R1*                 |
+| R2        | third read operation                                         |
+| R3        | fourth read operation with stage not in second execution scope of E |
+
+![sync_wrr](images/sync_wrr.png)
+
+For write hazard checks in a given range of memory addresses, if there are intervening read operations between the current write and the most recent previous write, these intervening read operations are considered the most recent access. In that case, write-after-write checks are not done. 
+
+Consider the following sequence of operations one the same memory address:
+
+| Operation | Description                             |
+| --------- | --------------------------------------- |
+| W0        | first write operation                   |
+| M         | memory barrier guarding access at R     |
+| R         | read access                             |
+| E         | execution barrier guarding access at W1 |
+| W1        | second write operation                  |
+
+![sync_wrw](images/sync_wrw.png)
+
+In this case, a read-after-write check is done for R based on W0 and M, and a write-after-read check is performed on W1 based on R and E. W1 is not checked against W0 for write-after-write. If W0, M, R **is** not a hazard, this guarantees W0 is available and visible to R, and thus to any operations that *happen-after*. As such, the correctness of R, E, W1 depends solely on those operations. The correctness of the entire sequence can be assured by pairwise hazard checks.
+
+### Tracking Across Command Buffers
+
+For multiple command buffers/secondary buffers, a partial recording of memory accesses and synchronization operations is required.  Current design targets the use of storing the “first” access information (first reads, first write), along with the either a recording of all synchronization operations *or* some "barrier state" that can be stored with each “first access”.  This approach should be familiar to those that have seen the “image layout” queue-submit, and execute-command validation, which validates against a similar “first” record.
 
 Overall the operations to perform include
 
