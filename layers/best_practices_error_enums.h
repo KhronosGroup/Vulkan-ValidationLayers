@@ -153,5 +153,6 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_RedundantClear
     "UNASSIGNED-BestPractices-RenderPass-redundant-clear";
 static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_InefficientClear =
     "UNASSIGNED-BestPractices-RenderPass-inefficient-clear";
-
+static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_BlitImage_LoadOpLoad =
+    "UNASSIGNED-BestPractices-RenderPass-blitimage-loadopload";
 #endif
