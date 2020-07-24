@@ -1642,6 +1642,8 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
         cmd_state->small_indexed_draw_call_count++;
     }
+
+    ValidateBoundDescriptorSets(commandBuffer);
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -1748,19 +1750,6 @@ void BestPractices::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t
 
 void BestPractices::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  uint32_t drawCount, uint32_t stride) {
-    ValidateBoundDescriptorSets(commandBuffer);
-}
-
-void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
-    ValidationStateTracker::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset,
-                                                        firstInstance);
-
-    CMD_BUFFER_STATE* cmd_state = GetCBState(commandBuffer);
-    if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
-        cmd_state->small_indexed_draw_call_count++;
-    }
-
     ValidateBoundDescriptorSets(commandBuffer);
 }
 
