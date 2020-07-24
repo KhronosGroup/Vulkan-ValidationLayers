@@ -6571,3 +6571,275 @@ TEST_F(VkLayerTest, UnprotectedIndirectCommands) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
+    TEST_DESCRIPTION("Test where there is mixing of protectedMemory backed resource in command buffers");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto protected_memory_features = lvl_init_struct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&protected_memory_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (protected_memory_features.protectedMemory == VK_FALSE) {
+        printf("%s protectedMemory feature not supported, skipped.\n", kSkipPrefix);
+        return;
+    };
+
+    // Turns m_commandBuffer into a unprotected command buffer
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkCommandPoolObj protectedCommandPool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // Create actual protected and unprotected buffers
+    VkBuffer buffer_protected = VK_NULL_HANDLE;
+    VkBuffer buffer_unprotected = VK_NULL_HANDLE;
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.pNext = nullptr;
+    buffer_create_info.size = 1 << 20;  // 1 MB
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_protected);
+    buffer_create_info.flags = 0;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_unprotected);
+
+    // Create actual protected and unprotected images
+    VkImageObj image_protected(m_device);
+    VkImageObj image_unprotected(m_device);
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage =
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.arrayLayers = 1;
+    image_create_info.mipLevels = 1;
+
+    image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    image_protected.init_no_mem(*m_device, image_create_info);
+    image_protected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    image_create_info.flags = 0;
+    image_unprotected.init_no_mem(*m_device, image_create_info);
+    image_unprotected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    // Create protected and unproteced memory
+    VkDeviceMemory memory_protected = VK_NULL_HANDLE;
+    VkDeviceMemory memory_unprotected = VK_NULL_HANDLE;
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.pNext = nullptr;
+    alloc_info.allocationSize = 0;
+
+    // set allocationSize to buffer as it will be larger than the image, but query image to avoid BP warning
+    VkMemoryRequirements mem_reqs_protected;
+    vk::GetImageMemoryRequirements(device(), image_protected.handle(), &mem_reqs_protected);
+    vk::GetBufferMemoryRequirements(device(), buffer_protected, &mem_reqs_protected);
+    VkMemoryRequirements mem_reqs_unprotected;
+    vk::GetImageMemoryRequirements(device(), image_unprotected.handle(), &mem_reqs_unprotected);
+    vk::GetBufferMemoryRequirements(device(), buffer_unprotected, &mem_reqs_unprotected);
+
+    // Get memory index for a protected and unprotected memory
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+    uint32_t memory_type_protected = phys_mem_props.memoryTypeCount + 1;
+    uint32_t memory_type_unprotected = phys_mem_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+        if ((mem_reqs_unprotected.memoryTypeBits & (1 << i)) &&
+            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ==
+             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+            memory_type_unprotected = i;
+        }
+        // Check just protected bit is in type at all
+        if ((mem_reqs_protected.memoryTypeBits & (1 << i)) &&
+            ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)) {
+            memory_type_protected = i;
+        }
+    }
+    if ((memory_type_protected >= phys_mem_props.memoryTypeCount) || (memory_type_unprotected >= phys_mem_props.memoryTypeCount)) {
+        printf("%s No valid memory type index could be found; skipped.\n", kSkipPrefix);
+        vk::DestroyBuffer(device(), buffer_protected, nullptr);
+        vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
+        return;
+    }
+
+    alloc_info.memoryTypeIndex = memory_type_protected;
+    alloc_info.allocationSize = mem_reqs_protected.size;
+    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+
+    alloc_info.allocationSize = mem_reqs_unprotected.size;
+    alloc_info.memoryTypeIndex = memory_type_unprotected;
+    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_unprotected);
+
+    vk::BindBufferMemory(device(), buffer_protected, memory_protected, 0);
+    vk::BindBufferMemory(device(), buffer_unprotected, memory_unprotected, 0);
+    vk::BindImageMemory(device(), image_protected.handle(), memory_protected, 0);
+    vk::BindImageMemory(device(), image_unprotected.handle(), memory_unprotected, 0);
+
+    // Various structs used for commands
+    VkImageSubresourceLayers image_subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = image_subresource;
+    blit_region.dstSubresource = image_subresource;
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {8, 8, 1};
+    blit_region.dstOffsets[0] = {0, 8, 0};
+    blit_region.dstOffsets[1] = {8, 8, 1};
+    VkClearColorValue clear_color = {{0, 0, 0, 0}};
+    VkImageSubresourceRange subresource_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkBufferCopy buffer_copy = {0, 0, 64};
+    VkBufferImageCopy buffer_image_copy = {};
+    buffer_image_copy.bufferRowLength = 0;
+    buffer_image_copy.bufferImageHeight = 0;
+    buffer_image_copy.imageSubresource = image_subresource;
+    buffer_image_copy.imageOffset = {0, 0, 0};
+    buffer_image_copy.imageExtent = {1, 1, 1};
+    buffer_image_copy.bufferOffset = 0;
+    VkImageCopy image_copy = {};
+    image_copy.srcSubresource = image_subresource;
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = image_subresource;
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {1, 1, 1};
+    uint32_t update_data[4] = {0, 0, 0, 0};
+
+    // Use protected resources in unprotected command buffer
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01834");
+    vk::CmdBlitImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01835");
+    vk::CmdBlitImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-commandBuffer-01805");
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
+                           &subresource_range);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01822");
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01823");
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_unprotected, buffer_protected, 1, &buffer_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01828");
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_protected, image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01829");
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_unprotected, image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01825");
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01826");
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831");
+    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_unprotected, 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832");
+    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_protected, 1,
+                             &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01811");
+    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, (void *)update_data);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    // Use unprotected resources in protected command buffer
+    protectedCommandBuffer.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-commandBuffer-01836");
+    vk::CmdBlitImage(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-commandBuffer-01806");
+    vk::CmdClearColorImage(protectedCommandBuffer.handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
+                           &subresource_range);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-commandBuffer-01824");
+    vk::CmdCopyBuffer(protectedCommandBuffer.handle(), buffer_protected, buffer_unprotected, 1, &buffer_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-01830");
+    vk::CmdCopyBufferToImage(protectedCommandBuffer.handle(), buffer_protected, image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                             1, &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-01827");
+    vk::CmdCopyImage(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833");
+    vk::CmdCopyImageToBuffer(protectedCommandBuffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_unprotected,
+                             1, &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-01812");
+    vk::CmdFillBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
+    vk::CmdUpdateBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, (void *)update_data);
+    m_errorMonitor->VerifyFound();
+
+    protectedCommandBuffer.end();
+
+    vk::DestroyBuffer(device(), buffer_protected, nullptr);
+    vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
+    vk::FreeMemory(device(), memory_protected, nullptr);
+    vk::FreeMemory(device(), memory_unprotected, nullptr);
+}
