@@ -1424,7 +1424,6 @@ void BestPractices::ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USA
                 "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
                 "architectures.",
                 VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
-
     } else if (usage == IMAGE_ATTACHMENT_USAGE::RENDER_PASS_CLEARED && last_usage == IMAGE_ATTACHMENT_USAGE::CLEARED) {
         VendorCheckEnabled(kBPVendorArm) &&
             LogPerformanceWarning(
@@ -1444,6 +1443,15 @@ void BestPractices::ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USA
                 "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
                 "tile-based architectures. "
                 "Use LOAD_OP_CLEAR instead to clear the image for free.",
+                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+    } else if (usage == IMAGE_ATTACHMENT_USAGE::RENDER_PASS_READ_TO_TILE && last_usage == IMAGE_ATTACHMENT_USAGE::BLIT_WRITE) {
+        VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(device, kVUID_BestPractices_RenderPass_BlitImage_LoadOpLoad,
+                 "%s Subresource (arraylayer: %u, mipLevel: %u) of was loaded to tile as part of LOAD_OP_LOAD, "
+                "but last time image was used, it was written to with vkCmdBlitImage. "
+                "The blit is probably redundant in this case, and wastes bandwidth on tile-based architectures. "
+                "Rather than blitting, just render the source image in a fragment shader in this render pass, "
+                "which avoids the memory roundtrip.",
                 VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
     }
 
@@ -2500,8 +2508,8 @@ void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     auto* dst = GetImageState(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        ValidateImage(src, IMAGE_ATTACHMENT_USAGE::RESOURCE_READ, pRegions[i].srcSubresource);
-        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::RESOURCE_WRITE, pRegions[i].dstSubresource);
+        ValidateImage(src, IMAGE_ATTACHMENT_USAGE::BLIT_READ, pRegions[i].srcSubresource);
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::BLIT_WRITE, pRegions[i].dstSubresource);
     }
 }
 
