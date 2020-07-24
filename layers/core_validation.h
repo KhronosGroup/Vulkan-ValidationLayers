@@ -138,6 +138,15 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t info_count,
                                         const VkDeviceQueueCreateInfo* infos) const;
 
+    bool ValidateProtectedImage(const CMD_BUFFER_STATE* cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
+                                const char* vuid) const;
+    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE* cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
+                                  const char* vuid) const;
+    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE* cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
+                                 const char* vuid) const;
+    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE* cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
+                                   const char* vuid) const;
+
     bool ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipe_state_vec, const uint32_t count,
                                         const VkGraphicsPipelineCreateInfo* pipe_cis) const;
     bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, uint32_t index, const char* caller_name,

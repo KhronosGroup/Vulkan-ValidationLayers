@@ -6321,6 +6321,10 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
                               "VUID-vkCmdUpdateBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_UPDATEBUFFER, "vkCmdUpdateBuffer()");
     skip |= InsideRenderPass(cb_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-renderpass");
+    skip |=
+        ValidateProtectedBuffer(cb_state, dst_buffer_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
+    skip |=
+        ValidateUnprotectedBuffer(cb_state, dst_buffer_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
     return skip;
 }
 
@@ -10095,6 +10099,25 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      string_VkImageLayout(cb_layout));
                 }
             }
+        }
+
+        // All commands buffers involved must be protected or unprotected
+        if ((cb_state->unprotected == false) && (sub_cb_state->unprotected == true)) {
+            LogObjectList objlist(cb_state->commandBuffer);
+            objlist.add(sub_cb_state->commandBuffer);
+            skip |= LogError(
+                objlist, "VUID-vkCmdExecuteCommands-commandBuffer-01820",
+                "vkCmdExecuteCommands(): command buffer %s is protected while secondary command buffer %s is a unprotected",
+                report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                report_data->FormatHandle(sub_cb_state->commandBuffer).c_str());
+        } else if ((cb_state->unprotected == true) && (sub_cb_state->unprotected == false)) {
+            LogObjectList objlist(cb_state->commandBuffer);
+            objlist.add(sub_cb_state->commandBuffer);
+            skip |= LogError(
+                objlist, "VUID-vkCmdExecuteCommands-commandBuffer-01821",
+                "vkCmdExecuteCommands(): command buffer %s is unprotected while secondary command buffer %s is a protected",
+                report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                report_data->FormatHandle(sub_cb_state->commandBuffer).c_str());
         }
     }
 

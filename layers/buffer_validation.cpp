@@ -1926,6 +1926,10 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
                                                     "VUID-vkCmdClearColorImage-image-01993");
         }
         skip |= InsideRenderPass(cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
+        skip |=
+            ValidateProtectedImage(cb_node, image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-commandBuffer-01805");
+        skip |= ValidateUnprotectedImage(cb_node, image_state, "vkCmdClearColorImage()",
+                                         "VUID-vkCmdClearColorImage-commandBuffer-01806");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearColorSubresourceRange(image_state, pRanges[i], param_name.c_str());
@@ -1976,6 +1980,10 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                                                     "VUID-vkCmdClearDepthStencilImage-image-01994");
         }
         skip |= InsideRenderPass(cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
+        skip |= ValidateProtectedImage(cb_node, image_state, "vkCmdClearDepthStencilImage()",
+                                       "VUID-vkCmdClearDepthStencilImage-commandBuffer-01807");
+        skip |= ValidateUnprotectedImage(cb_node, image_state, "vkCmdClearDepthStencilImage()",
+                                         "VUID-vkCmdClearDepthStencilImage-commandBuffer-01808");
 
         bool any_include_aspect_depth_bit = false;
         bool any_include_aspect_stencil_bit = false;
@@ -2862,6 +2870,9 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
                                     "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
     skip |= ValidateImageUsageFlags(dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdCopyImage-dstImage-00131",
                                     "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+    skip |= ValidateProtectedImage(cb_node, src_image_state, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-commandBuffer-01825");
+    skip |= ValidateProtectedImage(cb_node, dst_image_state, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-commandBuffer-01826");
+    skip |= ValidateUnprotectedImage(cb_node, dst_image_state, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-commandBuffer-01827");
 
     // Validation for VK_EXT_fragment_density_map
     if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
@@ -3105,6 +3116,12 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
         skip |= InsideRenderPass(cb_node, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(dst_image_state, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, "vkCmdResolveImage()",
                                                 "VUID-vkCmdResolveImage-dstImage-02003");
+        skip |=
+            ValidateProtectedImage(cb_node, src_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-commandBuffer-01837");
+        skip |=
+            ValidateProtectedImage(cb_node, dst_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-commandBuffer-01838");
+        skip |=
+            ValidateUnprotectedImage(cb_node, dst_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-commandBuffer-01839");
 
         // Validation for VK_EXT_fragment_density_map
         if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
@@ -3288,6 +3305,10 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
                                                 "VUID-vkCmdBlitImage-srcImage-01999");
         skip |= ValidateImageFormatFeatureFlags(dst_image_state, VK_FORMAT_FEATURE_BLIT_DST_BIT, "vkCmdBlitImage()",
                                                 "VUID-vkCmdBlitImage-dstImage-02000");
+
+        skip |= ValidateProtectedImage(cb_node, src_image_state, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-commandBuffer-01834");
+        skip |= ValidateProtectedImage(cb_node, dst_image_state, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-commandBuffer-01835");
+        skip |= ValidateUnprotectedImage(cb_node, dst_image_state, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-commandBuffer-01836");
 
         // Validation for VK_EXT_fragment_density_map
         if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
@@ -5187,6 +5208,9 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     skip |= ValidateCmd(cb_node, CMD_COPYBUFFER, "vkCmdCopyBuffer()");
     skip |= InsideRenderPass(cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
     skip |= ValidateCmdCopyBufferBounds(src_buffer_state, dst_buffer_state, regionCount, pRegions);
+    skip |= ValidateProtectedBuffer(cb_node, src_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-commandBuffer-01822");
+    skip |= ValidateProtectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-commandBuffer-01823");
+    skip |= ValidateUnprotectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-commandBuffer-01824");
     return skip;
 }
 
@@ -5254,6 +5278,9 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdFillBuffer-dstBuffer-00029",
                                      "vkCmdFillBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
     skip |= InsideRenderPass(cb_node, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-renderpass");
+
+    skip |= ValidateProtectedBuffer(cb_node, buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-commandBuffer-01811");
+    skip |= ValidateUnprotectedBuffer(cb_node, buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-commandBuffer-01812");
 
     if (dstOffset >= buffer_state->createInfo.size) {
         skip |= LogError(dstBuffer, "VUID-vkCmdFillBuffer-dstOffset-00024",
@@ -5614,6 +5641,12 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     skip |= ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191", "vkCmdCopyImageToBuffer()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
+    skip |= ValidateProtectedImage(cb_node, src_image_state, "vkCmdCopyImageToBuffer()",
+                                   "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831");
+    skip |= ValidateProtectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyImageToBuffer()",
+                                    "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832");
+    skip |= ValidateUnprotectedBuffer(cb_node, dst_buffer_state, "vkCmdCopyImageToBuffer()",
+                                      "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833");
 
     // Validation for VK_EXT_fragment_density_map
     if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
@@ -5697,6 +5730,12 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     skip |= ValidateImageUsageFlags(dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true,
                                     "VUID-vkCmdCopyBufferToImage-dstImage-00177", "vkCmdCopyBufferToImage()",
                                     "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+    skip |= ValidateProtectedBuffer(cb_node, src_buffer_state, "vkCmdCopyBufferToImage()",
+                                    "VUID-vkCmdCopyBufferToImage-commandBuffer-01828");
+    skip |= ValidateProtectedImage(cb_node, dst_image_state, "vkCmdCopyBufferToImage()",
+                                   "VUID-vkCmdCopyBufferToImage-commandBuffer-01829");
+    skip |= ValidateUnprotectedImage(cb_node, dst_image_state, "vkCmdCopyBufferToImage()",
+                                     "VUID-vkCmdCopyBufferToImage-commandBuffer-01830");
 
     // Validation for VK_EXT_fragment_density_map
     if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
@@ -5832,5 +5871,61 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
         skip |= ValidateGetImageSubresourceLayoutANDROID(image);
     }
 
+    return skip;
+}
+
+// Validates the image is allowed to be protected
+bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state, const char *cmd_name,
+                                        const char *vuid) const {
+    bool skip = false;
+    if ((cb_state->unprotected == true) && (image_state->unprotected == false)) {
+        LogObjectList objlist(cb_state->commandBuffer);
+        objlist.add(image_state->image);
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while image %s is a protected image", cmd_name,
+                         report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                         report_data->FormatHandle(image_state->image).c_str());
+    }
+    return skip;
+}
+
+// Validates the image is allowed to be unprotected
+bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state, const char *cmd_name,
+                                          const char *vuid) const {
+    bool skip = false;
+    if ((cb_state->unprotected == false) && (image_state->unprotected == true)) {
+        LogObjectList objlist(cb_state->commandBuffer);
+        objlist.add(image_state->image);
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while image %s is an unprotected image", cmd_name,
+                         report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                         report_data->FormatHandle(image_state->image).c_str());
+    }
+    return skip;
+}
+
+// Validates the buffer is allowed to be protected
+bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE *cb_state, const BUFFER_STATE *buffer_state, const char *cmd_name,
+                                         const char *vuid) const {
+    bool skip = false;
+    if ((cb_state->unprotected == true) && (buffer_state->unprotected == false)) {
+        LogObjectList objlist(cb_state->commandBuffer);
+        objlist.add(buffer_state->buffer);
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer", cmd_name,
+                         report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                         report_data->FormatHandle(buffer_state->buffer).c_str());
+    }
+    return skip;
+}
+
+// Validates the buffer is allowed to be unprotected
+bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE *cb_state, const BUFFER_STATE *buffer_state, const char *cmd_name,
+                                           const char *vuid) const {
+    bool skip = false;
+    if ((cb_state->unprotected == false) && (buffer_state->unprotected == true)) {
+        LogObjectList objlist(cb_state->commandBuffer);
+        objlist.add(buffer_state->buffer);
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer", cmd_name,
+                         report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                         report_data->FormatHandle(buffer_state->buffer).c_str());
+    }
     return skip;
 }
