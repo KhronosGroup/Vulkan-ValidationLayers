@@ -2269,7 +2269,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.pNext = &alloc_flags_info;
     alloc_info.memoryTypeIndex = 0;
-    alloc_info.allocationSize = 32;
+    alloc_info.allocationSize = 1024;
 
     VkDeviceMemory mem;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
@@ -2280,6 +2280,35 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
     vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
     m_errorMonitor->VerifyFound();
+
+    uint32_t pdev_group_count = 0;
+    std::vector<VkPhysicalDeviceGroupProperties> group_props;
+    VkResult err = vk::EnumeratePhysicalDeviceGroups(instance(), &pdev_group_count, nullptr);
+    group_props.resize(pdev_group_count);
+    err = vk::EnumeratePhysicalDeviceGroups(instance(), &pdev_group_count, &group_props[0]);
+
+    auto tgt = gpu();
+    bool test_run = false;
+    for (uint32_t i = 0; i < pdev_group_count; i++) {
+        if ((group_props[i].physicalDeviceCount > 1) && !test_run) {
+            for (uint32_t j = 0; j < group_props[i].physicalDeviceCount; j++) {
+                if (tgt == group_props[i].physicalDevices[j]) {
+                    void *data;
+                    VkDeviceMemory mi_mem;
+                    alloc_flags_info.deviceMask = 3;
+                    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mi_mem);
+                    if (VK_SUCCESS == err) {
+                        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00683");
+                        vk::MapMemory(m_device->device(), mi_mem, 0, 1024, 0, &data);
+                        m_errorMonitor->VerifyFound();
+                        vk::FreeMemory(m_device->device(), mi_mem, nullptr);
+                    }
+                    test_run = true;
+                    break;
+                }
+            }
+        }
+    }
 
     // Test VkDeviceGroupCommandBufferBeginInfo
     VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = {};
