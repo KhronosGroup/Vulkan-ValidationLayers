@@ -10203,6 +10203,14 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
                             "Mapping Memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set: %s.",
                             report_data->FormatHandle(mem).c_str());
         }
+
+        if (mem_info->multi_instance) {
+            skip = LogError(mem, "VUID-vkMapMemory-memory-00683",
+                            "Memory (%s) must not have been allocated with multiple instances -- either by supplying a deviceMask "
+                            "with more than one bit set, or by allocation from a heap with the MULTI_INSTANCE heap flag set.",
+                            report_data->FormatHandle(mem).c_str());
+        }
+
         skip |= ValidateMapMemRange(mem_info, offset, size);
     }
     return skip;

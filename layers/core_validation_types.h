@@ -208,8 +208,9 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkImage dedicated_image;
     bool is_export;
     bool is_import;
-    bool is_import_ahb;  // The VUID check depends on if the imported memory is for AHB
-    bool unprotected;    // can't be used for protected memory
+    bool is_import_ahb;   // The VUID check depends on if the imported memory is for AHB
+    bool unprotected;     // can't be used for protected memory
+    bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
     VkExternalMemoryHandleTypeFlags import_handle_type_flags;
     std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
@@ -238,6 +239,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           is_import(false),
           is_import_ahb(false),
           unprotected(true),
+          multi_instance(false),
           export_handle_type_flags(0),
           import_handle_type_flags(0),
           mapped_range{},

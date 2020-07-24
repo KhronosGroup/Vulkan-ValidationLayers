@@ -738,6 +738,16 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
         mem_info->export_handle_type_flags = export_info->handleTypes;
     }
 
+    auto alloc_flags = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
+    if (alloc_flags) {
+        auto dev_mask = alloc_flags->deviceMask;
+        if ((dev_mask != 0) && (dev_mask & (dev_mask - 1))) {
+            mem_info->multi_instance = true;
+        }
+    }
+    auto heap_index = phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].heapIndex;
+    mem_info->multi_instance |= ((phys_dev_mem_props.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) != 0);
+
     // Assumes validation already for only a single import operation in the pNext
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     auto win32_import = lvl_find_in_chain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
