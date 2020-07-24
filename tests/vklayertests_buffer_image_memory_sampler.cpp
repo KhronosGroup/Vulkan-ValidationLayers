@@ -718,6 +718,7 @@ TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
     bool pass;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00682");
+    m_errorMonitor->SetUnexpectedError("VUID-vkMapMemory-memory-00683");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkMemoryAllocateInfo mem_alloc = {};
