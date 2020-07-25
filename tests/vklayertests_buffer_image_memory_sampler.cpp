@@ -9638,13 +9638,24 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         return;
     }
 
+    const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+
+    // Make sure components doesn't affect _444 formats
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), mp_format, &format_props);
+    if ((format_props.optimalTilingFeatures &
+         (VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT | VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT)) == 0) {
+        printf("%s Device does not support chroma sampling of 3plane 420 format; test skipped.\n", kSkipPrefix);
+        return;
+    }
+
     const VkComponentMapping identity = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                          VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
 
     VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
     VkSamplerYcbcrConversionCreateInfo sycci = {};
     sycci.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO;
-    sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    sycci.format = mp_format;
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
     sycci.forceExplicitReconstruction = VK_FALSE;
@@ -9710,7 +9721,6 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     m_errorMonitor->VerifyNotFound();
 
     // Make sure components doesn't affect _444 formats
-    VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, &format_props);
     if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT) != 0) {
         sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;
@@ -9723,7 +9733,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     }
 
     // Create a valid conversion with guaranteed support
-    sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    sycci.format = mp_format;
     sycci.components = identity;
     vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
 
