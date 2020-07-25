@@ -5015,6 +5015,21 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadAspect) {
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
     m_errorMonitor->VerifyFound();
 
+    // Using stencil aspect when format only have depth
+    const VkFormat depth_only_format = FindSupportedDepthOnlyFormat(gpu());
+    if (depth_only_format != VK_FORMAT_UNDEFINED) {
+        VkImageObj depth_image(m_device);
+        image_create_info.format = depth_only_format;
+        image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        depth_image.init(&image_create_info);
+        ASSERT_TRUE(depth_image.initialized());
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-image-02825");
+        vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), depth_image.handle(), depth_image.Layout(), &clear_value, 1,
+                                      &range);
+        m_errorMonitor->VerifyFound();
+    }
+
     m_commandBuffer->end();
 }
 
