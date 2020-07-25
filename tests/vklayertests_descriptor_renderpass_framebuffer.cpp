@@ -349,8 +349,14 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
         maintenance2Supported = true;
     }
 
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    if (ds_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
     VkAttachmentDescription description = {0,
-                                           VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                           ds_format,
                                            VK_SAMPLE_COUNT_1_BIT,
                                            VK_ATTACHMENT_LOAD_OP_DONT_CARE,  // loadOp
                                            VK_ATTACHMENT_STORE_OP_DONT_CARE,
