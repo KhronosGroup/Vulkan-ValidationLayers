@@ -1970,6 +1970,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     const auto *cb_node = GetCBState(commandBuffer);
     const auto *image_state = GetImageState(image);
     if (cb_node && image_state) {
+        const VkFormat image_format = image_state->createInfo.format;
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
         skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
@@ -2002,9 +2003,21 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             }
             if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
                 any_include_aspect_depth_bit = true;
+                if (FormatHasDepth(image_format) == false) {
+                    skip |= LogError(commandBuffer, "VUID-vkCmdClearDepthStencilImage-image-02826",
+                                     "vkCmdClearDepthStencilImage(): pRanges[%u].aspectMask has a VK_IMAGE_ASPECT_DEPTH_BIT but %s "
+                                     "doesn't have a depth component.",
+                                     i, string_VkFormat(image_format));
+                }
             }
             if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
                 any_include_aspect_stencil_bit = true;
+                if (FormatHasStencil(image_format) == false) {
+                    skip |= LogError(commandBuffer, "VUID-vkCmdClearDepthStencilImage-image-02825",
+                                     "vkCmdClearDepthStencilImage(): pRanges[%u].aspectMask has a VK_IMAGE_ASPECT_STENCIL_BIT but "
+                                     "%s doesn't have a stencil component.",
+                                     i, string_VkFormat(image_format));
+                }
             }
         }
         if (any_include_aspect_stencil_bit) {
@@ -2032,10 +2045,10 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                              "vkCmdClearDepthStencilImage(): an element of pRanges.aspect includes VK_IMAGE_ASPECT_DEPTH_BIT, "
                              "VK_IMAGE_USAGE_TRANSFER_DST_BIT must be included in VkImageCreateInfo::usage used to create image");
         }
-        if (image_state && !FormatIsDepthOrStencil(image_state->createInfo.format)) {
+        if (image_state && !FormatIsDepthOrStencil(image_format)) {
             skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00014",
                              "vkCmdClearDepthStencilImage(): called with image %s which doesn't have a depth/stencil format (%s).",
-                             report_data->FormatHandle(image).c_str(), string_VkFormat(image_state->createInfo.format));
+                             report_data->FormatHandle(image).c_str(), string_VkFormat(image_format));
         }
         if (VK_IMAGE_USAGE_TRANSFER_DST_BIT != (VK_IMAGE_USAGE_TRANSFER_DST_BIT & image_state->createInfo.usage)) {
             skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00009",
