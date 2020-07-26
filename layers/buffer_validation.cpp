@@ -3160,8 +3160,9 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
         // For each region, the number of layers in the image subresource should not be zero
         // For each region, src and dest image aspect must be color only
         for (uint32_t i = 0; i < regionCount; i++) {
-            const VkImageSubresourceLayers src_subresource = pRegions[i].srcSubresource;
-            const VkImageSubresourceLayers dst_subresource = pRegions[i].dstSubresource;
+            const VkImageResolve region = pRegions[i];
+            const VkImageSubresourceLayers src_subresource = region.srcSubresource;
+            const VkImageSubresourceLayers dst_subresource = region.dstSubresource;
             skip |= ValidateImageSubresourceLayers(cb_node, &src_subresource, "vkCmdResolveImage()", "srcSubresource", i);
             skip |= ValidateImageSubresourceLayers(cb_node, &dst_subresource, "vkCmdResolveImage()", "dstSubresource", i);
             skip |= VerifyImageLayout(cb_node, src_image_state, src_subresource, srcImageLayout,
@@ -3255,6 +3256,80 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
                                      "extent.depth (%u) is not 1.",
                                      report_data->FormatHandle(dst_image_state->image).c_str(), i, pRegions[i].dstOffset.z,
                                      pRegions[i].extent.depth);
+                }
+            }
+
+            // Each srcImage dimension offset + extent limits must fall with image subresource extent
+            VkExtent3D subresource_extent = GetImageSubresourceExtent(src_image_state, &src_subresource);
+            // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing to
+            // developer
+            if (src_subresource.mipLevel < src_image_state->createInfo.mipLevels) {
+                uint32_t extent_check = ExceedsBounds(&(region.srcOffset), &(region.extent), &subresource_extent);
+                if ((extent_check & x_bit) != 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(src_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-srcOffset-00269",
+                                     "vkCmdResolveImage(): srcImage (%s) pRegions[%u] x-dimension offset [%1d] + extent [%u] "
+                                     "exceeds subResource width [%u].",
+                                     report_data->FormatHandle(src_image_state->image).c_str(), i, region.srcOffset.x,
+                                     region.extent.width, subresource_extent.width);
+                }
+
+                if ((extent_check & y_bit) != 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(src_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-srcOffset-00270",
+                                     "vkCmdResolveImage(): srcImage (%s) pRegions[%u] y-dimension offset [%1d] + extent [%u] "
+                                     "exceeds subResource height [%u].",
+                                     report_data->FormatHandle(src_image_state->image).c_str(), i, region.srcOffset.y,
+                                     region.extent.height, subresource_extent.height);
+                }
+
+                if ((extent_check & z_bit) != 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(src_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-srcOffset-00272",
+                                     "vkCmdResolveImage(): srcImage (%s) pRegions[%u] z-dimension offset [%1d] + extent [%u] "
+                                     "exceeds subResource depth [%u].",
+                                     report_data->FormatHandle(src_image_state->image).c_str(), i, region.srcOffset.z,
+                                     region.extent.depth, subresource_extent.depth);
+                }
+            }
+
+            // Each dstImage dimension offset + extent limits must fall with image subresource extent
+            subresource_extent = GetImageSubresourceExtent(dst_image_state, &dst_subresource);
+            // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing to
+            // developer
+            if (dst_subresource.mipLevel < dst_image_state->createInfo.mipLevels) {
+                uint32_t extent_check = ExceedsBounds(&(region.dstOffset), &(region.extent), &subresource_extent);
+                if ((extent_check & x_bit) != 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(dst_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-dstOffset-00274",
+                                     "vkCmdResolveImage(): dstImage (%s) pRegions[%u] x-dimension offset [%1d] + extent [%u] "
+                                     "exceeds subResource width [%u].",
+                                     report_data->FormatHandle(dst_image_state->image).c_str(), i, region.srcOffset.x,
+                                     region.extent.width, subresource_extent.width);
+                }
+
+                if ((extent_check & y_bit) != 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(dst_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-dstOffset-00275",
+                                     "vkCmdResolveImage(): dstImage (%s) pRegions[%u] y-dimension offset [%1d] + extent [%u] "
+                                     "exceeds subResource height [%u].",
+                                     report_data->FormatHandle(dst_image_state->image).c_str(), i, region.srcOffset.y,
+                                     region.extent.height, subresource_extent.height);
+                }
+
+                if ((extent_check & z_bit) != 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(dst_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-dstOffset-00277",
+                                     "vkCmdResolveImage(): dstImage (%s) pRegions[%u] z-dimension offset [%1d] + extent [%u] "
+                                     "exceeds subResource depth [%u].",
+                                     report_data->FormatHandle(dst_image_state->image).c_str(), i, region.srcOffset.z,
+                                     region.extent.depth, subresource_extent.depth);
                 }
             }
         }
