@@ -4352,6 +4352,117 @@ TEST_F(VkLayerTest, ResolveImageImageType) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
+    TEST_DESCRIPTION("Resolve Image with subresource region greater than size of src/dst image");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageObj srcImage2D(m_device);
+    VkImageObj dstImage2D(m_device);
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 6;  // full chain from 32x32 to 1x1
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage =
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    // Note: Some implementations expect color attachment usage for any
+    // multisample surface
+    image_create_info.flags = 0;
+
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    srcImage2D.init(&image_create_info);
+    ASSERT_TRUE(srcImage2D.initialized());
+
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    dstImage2D.init(&image_create_info);
+    ASSERT_TRUE(dstImage2D.initialized());
+
+    m_commandBuffer->begin();
+
+    VkImageResolve resolveRegion = {};
+    resolveRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.srcSubresource.mipLevel = 0;
+    resolveRegion.srcSubresource.baseArrayLayer = 0;
+    resolveRegion.srcSubresource.layerCount = 1;
+    resolveRegion.srcOffset.x = 0;
+    resolveRegion.srcOffset.y = 0;
+    resolveRegion.srcOffset.z = 0;
+    resolveRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.dstSubresource.mipLevel = 0;
+    resolveRegion.dstSubresource.baseArrayLayer = 0;
+    resolveRegion.dstSubresource.layerCount = 1;
+    resolveRegion.dstOffset.x = 0;
+    resolveRegion.dstOffset.y = 0;
+    resolveRegion.dstOffset.z = 0;
+    resolveRegion.extent.width = 32;
+    resolveRegion.extent.height = 32;
+    resolveRegion.extent.depth = 1;
+
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyNotFound();
+
+    // srcImage exceeded in x-dim
+    resolveRegion.srcOffset.x = 4;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-srcOffset-00269");
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.srcOffset.x = 0;
+
+    // dstImage exceeded in x-dim
+    resolveRegion.dstOffset.x = 4;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-dstOffset-00274");
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.dstOffset.x = 0;
+
+    // both image exceeded in y-dim because mipLevel 3 is a 4x4 size image
+    resolveRegion.extent = {4, 8, 1};
+    resolveRegion.srcSubresource.mipLevel = 3;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-srcOffset-00270");
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.srcSubresource.mipLevel = 0;
+
+    resolveRegion.dstSubresource.mipLevel = 3;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-dstOffset-00275");
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.dstSubresource.mipLevel = 0;
+
+    // srcImage exceeded in z-dim
+    resolveRegion.srcOffset.z = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-srcOffset-00272");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-srcImage-00273");  // because it's a 2d image
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.srcOffset.z = 0;
+
+    // dstImage exceeded in z-dim
+    resolveRegion.dstOffset.z = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-dstOffset-00277");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-dstImage-00278");  // because it's a 2d image
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.dstOffset.z = 0;
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, ClearImageErrors) {
     TEST_DESCRIPTION("Call ClearColorImage w/ a depth|stencil image and ClearDepthStencilImage with a color image.");
 
