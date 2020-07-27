@@ -319,9 +319,9 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
 
 IndexType ImageRangeEncoder::Encode(const VkImageSubresource& subres, uint32_t layer, VkOffset3D offset) const {
     const auto& subres_layout = SubresourceLayout(subres);
-    return static_cast<IndexType>(ceil(layer * subres_layout.arrayPitch + offset.z * subres_layout.depthPitch +
-                                       offset.y * subres_layout.rowPitch +
-                                       offset.x * texel_sizes_[LowerBoundFromMask(subres.aspectMask)] + subres_layout.offset));
+    return static_cast<IndexType>(floor(layer * subres_layout.arrayPitch + offset.z * subres_layout.depthPitch +
+                                        offset.y * subres_layout.rowPitch +
+                                        offset.x * texel_sizes_[LowerBoundFromMask(subres.aspectMask)] + subres_layout.offset));
 }
 
 void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer,
@@ -413,8 +413,8 @@ void ImageRangeGenerator::SetPos() {
             pos_.end += (subres_layout_->rowPitch * offset_y_count_);
         }
     } else {
-        pos_.end += static_cast<IndexType>(ceil(encoder_->TexelSize(aspect_index_) *
-                                                ((extent_.width > subres_extent.width) ? subres_extent.width : extent_.width)));
+        pos_.end += static_cast<IndexType>(floor(encoder_->TexelSize(aspect_index_) *
+                                                 ((extent_.width > subres_extent.width) ? subres_extent.width : extent_.width)));
     }
     offset_layer_base_ = pos_;
     offset_offset_y_base_ = pos_;
