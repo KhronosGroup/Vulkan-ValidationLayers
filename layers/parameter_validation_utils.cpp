@@ -4654,7 +4654,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
                 }
             }
             if (pCreateInfos[i].basePipelineHandle == VK_NULL_HANDLE) {
-                if (static_cast<const uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                if (static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
                     skip |=
                         LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03422",
                                  "vkCreateRayTracingPipelinesNV if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
@@ -4803,7 +4803,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkD
                 }
             }
             if (pCreateInfos[i].basePipelineHandle == VK_NULL_HANDLE) {
-                if (static_cast<const uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                if (static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03422",
                                      "vkCreateRayTracingPipelinesKHR if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
                                      "basePipelineHandle is VK_NULL_HANDLE, basePipelineIndex (%d) must be a valid into the calling"
