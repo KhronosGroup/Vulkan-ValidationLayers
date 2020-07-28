@@ -129,6 +129,9 @@ static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAcces
 static std::string string_SyncStageAccessFlags(SyncStageAccessFlags flags, const char *sep = "|") {
     std::string out_str;
     uint32_t index = 0;
+    if (0 == flags) {
+        out_str = "0";
+    }
     while (flags) {
         const auto &info = syncStageAccessInfoByStageAccessIndex[index];
         if (flags & info.stage_access_bit) {
@@ -730,10 +733,12 @@ bool AccessContext::ValidateLayoutTransitions(const SyncValidator &sync_state, c
         }
         auto hazard = DetectSubpassTransitionHazard(*track_back, attachment_views[transition.attachment]);
         if (hazard.hazard) {
-            skip |= sync_state.LogError(
-                rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
-                "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " image layout transition. Access info %s.",
-                func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment, string_UsageTag(hazard).c_str());
+            skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                                        "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
+                                        " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
+                                        func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
+                                        string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
+                                        string_UsageTag(hazard).c_str());
         }
     }
     return skip;
@@ -2033,8 +2038,9 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncVa
         if (hazard.hazard) {
             skip |= sync_state.LogError(rp_state_->renderPass, string_SyncHazardVUID(hazard.hazard),
                                         "%s: Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
-                                        " final image layout transition. Access info %s.",
+                                        " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                                         func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
+                                        string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
                                         string_UsageTag(hazard).c_str());
         }
     }
