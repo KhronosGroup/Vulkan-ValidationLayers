@@ -14,7 +14,8 @@
 
 Debug Printf is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 It allows developers to debug their shader code by "printing" any values of interest to the debug callback or stdout.
-This document covers the operation of the layer portion of the implementation.
+
+Debug Printf can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. Or you can manually enable and configure the layer by following the directions below.
 
 ## Limitations
 
@@ -67,7 +68,7 @@ Debug Printf is an object in the KHRONOS_validation layer, so the VK_LAYER_KHRON
 See the LAYER_CONFIGURATION document for information on enabling the VK_LAYER_KHRONOS_validation layer.
 Validation itself is not necessary for Debug Printf and can be disabled without affecting Debug Printf functionality.
 
-Debug Printf can be enabled either through a vk_layer_settings.txt file that must be in the program's working directory, or by setting an environment variable  Within a settings file, specify:
+Debug Printf can be enabled either through a vk_layer_settings.txt file that must be in the program's working directory, or by setting an environment variable Â Within a settings file, specify:
 khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT or set VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT as an environment variable.
 
 Debug Printf has been implemented as a state tracker validation object, as a peer to GPU Assisted Validation.
@@ -110,11 +111,11 @@ The format string for this implementation of debug printf is more restricted tha
 
 Format for specifier is "%"*precision* <d, i, o, u, x, X, a, A, e, E, f, F, g, G, or ul>
 
-Format for vector specifier is "%"*precision*"v" [2, 3, or 4] [specifiers list above]   
+Format for vector specifier is "%"*precision*"v" [2, 3, or 4] [specifiers list above] Â  
 
 - The vector value separator is ", "
 - "%%" will print as "%"
-- No length modifiers.  Everything except ul is 32 bits, and ul values are printed only in hex
+- No length modifiers. Â Everything except ul is 32 bits, and ul values are printed only in hex
 - No strings or characters allowed
 - No flags or width specifications allowed
 - No error checking for invalid format strings is done.
