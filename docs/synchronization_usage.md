@@ -18,6 +18,8 @@ Synchronization Validation is implemented in the `VK_LAYER_KHRONOS_validation la
 
 Synchronization will ideally be run periodically after resolving any outstanding validation checks from all other validation objects, so that issues may be addressed in early stages of development.
 
+Synchronization can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. You can also manually enable Synchronization following instructions below.
+
 
 
 The specific areas covered by this layer are currently tracked in

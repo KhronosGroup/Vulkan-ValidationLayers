@@ -15,6 +15,8 @@
 GPU-Assisted Validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 This document covers the design of the layer portion of the implementation.
 
+GPU-Assisted Validation can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. Or you can manually enable and configure by following the directions below.
+
 ## Basic Operation
 
 The basic operation of GPU-Assisted Validation is comprised of instrumenting shader code to perform run-time checking of shaders and
