@@ -104,6 +104,9 @@ class CoreChecks : public ValidationStateTracker {
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
+    bool LogInvalidPnextMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
+                                const RENDER_PASS_STATE* rp2_state, const char* msg, const char* caller,
+                                const char* error_code) const;
     bool ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, const char* caller, const char* geo_error_id,
                                       const char* tess_error_id, const char* mesh_error_id, const char* task_error_id) const;
     bool ValidateStageMaskHost(VkPipelineStageFlags stageMask, const char* caller, const char* vuid) const;
