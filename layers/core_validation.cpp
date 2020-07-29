@@ -598,6 +598,16 @@ bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RE
     return skip;
 }
 
+bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
+                                        const RENDER_PASS_STATE *rp2_state, const char *msg, const char *caller,
+                                        const char *error_code) const {
+    LogObjectList objlist(rp1_state->renderPass);
+    objlist.add(rp2_state->renderPass);
+    return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
+                    report_data->FormatHandle(rp1_state->renderPass).c_str(), type2_string,
+                    report_data->FormatHandle(rp2_state->renderPass).c_str(), msg);
+}
+
 // Verify that given renderPass CreateInfo for primary and secondary command buffers are compatible.
 //  This function deals directly with the CreateInfo, there are overloaded versions below that can take the renderPass handle and
 //  will then feed into this function
@@ -620,6 +630,59 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
             skip |= ValidateSubpassCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
         }
     }
+
+    // Find an entry of the Fragment Density Map type in the pNext chain, if it exists
+    const auto fdm1 = lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp1_state->createInfo.pNext);
+    const auto fdm2 = lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp2_state->createInfo.pNext);
+
+    // Both renderpasses must agree on usage of a Fragment Density Map type
+    if (fdm1 && fdm2) {
+        uint32_t primary_input_attach = fdm1->fragmentDensityMapAttachment.attachment;
+        uint32_t secondary_input_attach = fdm2->fragmentDensityMapAttachment.attachment;
+        skip |= ValidateAttachmentCompatibility(type1_string, rp1_state, type2_string, rp2_state, primary_input_attach,
+                                                secondary_input_attach, caller, error_code);
+    } else if (fdm1) {
+        skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state,
+                                       "The first uses a Fragment Density Map while the second one does not.", caller, error_code);
+    } else if (fdm2) {
+        skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state,
+                                       "The second uses a Fragment Density Map while the first one does not.", caller, error_code);
+    }
+
+    // Find an entry of the Multiview type in the pNext chain, if it exists
+    const auto mv1 = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(rp1_state->createInfo.pNext);
+    const auto mv2 = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(rp2_state->createInfo.pNext);
+
+    // Both renderpasses must agree on usage of a Multiview type
+    if (mv1 && mv2) {
+        if (mv1->subpassCount && mv2->subpassCount) {
+            assert(mv1->subpassCount == mv2->subpassCount);
+            for (uint32_t i = 0; i < mv1->subpassCount; i++) {
+                if (mv1->pViewMasks[i] != mv2->pViewMasks[i]) {
+                    std::stringstream ss;
+                    ss << "For subpass " << i << ", they have different pViewMasks. The first has view mask " << mv1->pViewMasks[i]
+                       << " while the second has view mask " << mv2->pViewMasks[i] << ".";
+                    skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller,
+                                                   error_code);
+                }
+            }
+        } else if (mv1->subpassCount) {
+            skip |= LogInvalidPnextMessage(
+                type1_string, rp1_state, type2_string, rp2_state,
+                "The first has Multiview enabled (has non-zero viewMasks) while the second one does not.", caller, error_code);
+        } else if (mv2->subpassCount) {
+            skip |= LogInvalidPnextMessage(
+                type1_string, rp1_state, type2_string, rp2_state,
+                "The second has Multiview enabled (has non-zero viewMasks) while the first one does not.", caller, error_code);
+        }
+    } else if (mv1) {
+        skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state,
+                                       "The first uses Multiview while the second one does not.", caller, error_code);
+    } else if (mv2) {
+        skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state,
+                                       "The second uses Multiview while the first one does not.", caller, error_code);
+    }
+
     return skip;
 }
 

@@ -126,7 +126,7 @@ void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struc
 
     out_struct->~safe_VkRenderPassCreateInfo2();
     out_struct->sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
-    out_struct->pNext = nullptr;
+    out_struct->pNext = SafePnextCopy(in_struct.pNext);
     out_struct->flags = in_struct.flags;
     out_struct->attachmentCount = in_struct.attachmentCount;
     out_struct->pAttachments = nullptr;  // to be filled
