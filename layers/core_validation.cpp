@@ -1557,6 +1557,57 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             }
         }
 
+        if (device_extensions.vk_nv_coverage_reduction_mode) {
+            uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
+            uint32_t subpass_color_samples = 0;
+            uint32_t subpass_depth_samples = 0;
+
+            accumColorSamples(subpass_color_samples);
+
+            if (subpass_desc->pDepthStencilAttachment &&
+                subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
+                subpass_depth_samples = static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
+            }
+
+            if (multisample_state && IsPowerOfTwo(subpass_color_samples) &&
+                (subpass_depth_samples == 0 || IsPowerOfTwo(subpass_depth_samples))) {
+                const auto *coverage_reduction_state =
+                    lvl_find_in_chain<VkPipelineCoverageReductionStateCreateInfoNV>(multisample_state->pNext);
+
+                if (coverage_reduction_state) {
+                    const VkCoverageReductionModeNV coverage_reduction_mode = coverage_reduction_state->coverageReductionMode;
+                    uint32_t combination_count = 0;
+                    std::vector<VkFramebufferMixedSamplesCombinationNV> combinations;
+                    DispatchGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physical_device, &combination_count,
+                                                                                            nullptr);
+                    combinations.resize(combination_count);
+                    DispatchGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physical_device, &combination_count,
+                                                                                            &combinations[0]);
+
+                    bool combination_found = false;
+                    for (const auto &combination : combinations) {
+                        if (coverage_reduction_mode == combination.coverageReductionMode &&
+                            raster_samples == combination.rasterizationSamples &&
+                            subpass_depth_samples == combination.depthStencilSamples &&
+                            subpass_color_samples == combination.colorSamples) {
+                            combination_found = true;
+                            break;
+                        }
+                    }
+
+                    if (!combination_found) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-coverageReductionMode-02722",
+                                         "vkCreateGraphicsPipelines: pCreateInfos[%d] the specified combination of coverage "
+                                         "reduction mode (%s), pMultisampleState->rasterizationSamples (%u), sample counts for "
+                                         "the subpass color and depth/stencil attachments is not a valid combination returned by "
+                                         "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV.",
+                                         pipelineIndex, string_VkCoverageReductionModeNV(coverage_reduction_mode));
+                    }
+                }
+            }
+        }
+
         if (device_extensions.vk_nv_fragment_coverage_to_color) {
             const auto coverage_to_color_state = lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(multisample_state);
 
