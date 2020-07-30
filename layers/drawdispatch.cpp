@@ -63,6 +63,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-viewportCount-03419",
         "VUID-vkCmdDraw-primitiveTopology-03420",
         "VUID-vkCmdDraw-flags-02696",
+        "VUID-vkCmdDraw-None-02686",
     }},
     {CMD_DRAWINDEXED, {
         "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
@@ -85,6 +86,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-viewportCount-03419",
         "VUID-vkCmdDrawIndexed-primitiveTopology-03420",
         "VUID-vkCmdDrawIndexed-flags-02696",
+        "VUID-vkCmdDrawIndexed-None-02686",
     }},
     {CMD_DRAWINDIRECT, {
         "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
@@ -107,6 +109,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-viewportCount-03419",
         "VUID-vkCmdDrawIndirect-primitiveTopology-03420",
         "VUID-vkCmdDrawIndirect-flags-02696",
+        "VUID-vkCmdDrawIndirect-None-02686",
     }},
     {CMD_DRAWINDEXEDINDIRECT, {
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool",
@@ -129,6 +132,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-viewportCount-03419",
         "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-03420",
         "VUID-vkCmdDrawIndexedIndirect-flags-02696",
+        "VUID-vkCmdDrawIndexedIndirect-None-02686",
     }},
     {CMD_DISPATCH, {
         "VUID-vkCmdDispatch-commandBuffer-cmdpool",
@@ -151,6 +155,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          kVUIDUndefined, // viewport_scissor_count
          kVUIDUndefined, // primitive_topology
          "VUID-vkCmdDispatch-flags-02696",
+         kVUIDUndefined, // subpass_input
     }},
     {CMD_DISPATCHINDIRECT, {
         "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
@@ -173,6 +178,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
         "VUID-vkCmdDispatchIndirect-flags-02696",
+        kVUIDUndefined, // subpass_input
     }},
     {CMD_DRAWINDIRECTCOUNT, {
         "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool",
@@ -195,6 +201,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-viewportCount-03419",
         "VUID-vkCmdDrawIndirectCount-primitiveTopology-03420",
         "VUID-vkCmdDrawIndirectCount-flags-02696",
+        "VUID-vkCmdDrawIndirectCount-None-02686",
     }},
     {CMD_DRAWINDEXEDINDIRECTCOUNT,{
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool",
@@ -217,6 +224,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03419",
         "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-03420",
         "VUID-vkCmdDrawIndexedIndirectCount-flags-02696",
+        "VUID-vkCmdDrawIndexedIndirectCount-None-02686",
     }},
     {CMD_TRACERAYSNV, {
         "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool",
@@ -239,6 +247,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
         "VUID-vkCmdTraceRaysNV-flags-02696",
+        kVUIDUndefined, // subpass_input
     }},
     {CMD_TRACERAYSKHR, {
         "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
@@ -261,6 +270,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
         "VUID-vkCmdTraceRaysKHR-flags-02696",
+        kVUIDUndefined, // subpass_input
     }},
     {CMD_TRACERAYSINDIRECTKHR, {
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
@@ -283,6 +293,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // viewport_scissor_count
         kVUIDUndefined, // primitive_topology
         "VUID-vkCmdTraceRaysIndirectKHR-flags-02696",
+        kVUIDUndefined, // subpass_input
     }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
@@ -305,6 +316,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-viewportCount-03419",
         "VUID-vkCmdDrawMeshTasksNV-primitiveTopology-03420",
         "VUID-vkCmdDrawMeshTasksNV-flags-02696",
+        "VUID-vkCmdDrawMeshTasksNV-None-02686",
     }},
     {CMD_DRAWMESHTASKSINDIRECTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
@@ -327,6 +339,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03419",
         "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveTopology-03420",
         "VUID-vkCmdDrawMeshTasksIndirectNV-flags-02696",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-None-02686",
     }},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool",
@@ -349,6 +362,30 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03419",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveTopology-03420",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-flags-02696",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02686",
+    }},
+    {CMD_DRAWINDIRECTBYTECOUNTEXT, {
+        "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-cmdpool",
+        "VUID-vkCmdDrawIndirectByteCountEXT-renderpass",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-02700",
+        "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02701",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-04007",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-04008",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-02697",
+        "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-02684",
+        "VUID-vkCmdDrawIndirectByteCountEXT-subpass-02685",
+        "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-02689",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-02690",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-02692",
+        "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02711",
+        "VUID-vkCmdDrawIndirectByteCountEXT-buffer-02708",
+        "VUID-vkCmdDrawIndirectByteCountEXT-buffer-02709",
+        "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03417",
+        "VUID-vkCmdDrawIndirectByteCountEXT-scissorCount-03418",
+        "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419",
+        "VUID-vkCmdDrawIndirectByteCountEXT-primitiveTopology-03420",
+        "VUID-vkCmdDrawIndirectByteCountEXT-flags-02696",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-02686",
     }},
     // Used if invalid cmd_type is used
     {CMD_NONE, {
@@ -569,6 +606,14 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                                                             uint32_t maxDrawCount, uint32_t stride) const {
     return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                "vkCmdDrawIndexedIndirectCount");
+}
+
+bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                            uint32_t firstInstance, VkBuffer counterBuffer,
+                                                            VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                            uint32_t vertexStride) const {
+    return ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTBYTECOUNTEXT,
+                               "vkCmdDrawIndirectByteCountEXT()", VK_QUEUE_GRAPHICS_BIT);
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
