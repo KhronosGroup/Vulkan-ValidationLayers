@@ -2670,6 +2670,11 @@ TEST_F(VkLayerTest, InvalidQuerySizes) {
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), buffer_size + 4, 0, 0);
     m_errorMonitor->VerifyFound();
 
+    // buffer does not have enough storage from offset to contain result of each query
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824");
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 2, buffer.handle(), buffer_size - 4, 4, 0);
+    m_errorMonitor->VerifyFound();
+
     // Query is not a timestamp type
     if (timestampValidBits == 0) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-timestampValidBits-00829");
