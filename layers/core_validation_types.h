@@ -796,6 +796,7 @@ struct interface_var {
     uint32_t id;
     uint32_t type_id;
     uint32_t offset;
+    int32_t input_index;
     bool is_patch;
     bool is_block_member;
     bool is_relaxed_precision;

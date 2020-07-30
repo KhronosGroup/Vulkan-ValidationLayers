@@ -1041,10 +1041,46 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     bool result = false;
     auto const &state = last_bound_it->second;
 
-    // First check flag states
-    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)
+    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
+        // First check flag states
         result |= ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
 
+        // We only check if input attachments mismatch between subpass and fs.
+        // Mismatch between fs and descriptor set is checked in createGraphicsPipeline
+        const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
+        if (subpass.inputAttachmentCount) {
+            for (const auto &stage : pPipe->stage_state) {
+                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                    std::vector<bool> subpass_input_in_fs(subpass.inputAttachmentCount, false);
+                    for (const auto &descriptor : stage.descriptor_uses) {
+                        if (descriptor.second.input_index >= 0) {
+                            if (descriptor.second.input_index < static_cast<int32_t>(subpass.inputAttachmentCount)) {
+                                subpass_input_in_fs[descriptor.second.input_index] = true;
+                            } else {
+                                result |= LogError(cb_node->commandBuffer, vuid.subpass_input,
+                                                   "%s: Fragment Shader's input attachment index #%d doesn't exist in %s, subpass "
+                                                   "#%d.",
+                                                   function, descriptor.second.input_index,
+                                                   report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
+                                                   cb_node->activeSubpass);
+                            }
+                        }
+                    }
+                    uint32_t index = 0;
+                    for (const auto input : subpass_input_in_fs) {
+                        if (!input && subpass.pInputAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
+                            result |= LogError(cb_node->commandBuffer, vuid.subpass_input,
+                                               "%s: %s, subpass #%d, input attachment #%d is not used in fragment shader.",
+                                               function, report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
+                                               cb_node->activeSubpass, index);
+                        }
+                        ++index;
+                    }
+                    break;
+                }
+            }
+        }
+    }
     // Now complete other state checks
     string errorString;
     auto const &pipeline_layout = pPipe->pipeline_layout.get();

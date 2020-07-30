@@ -814,8 +814,7 @@ static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAt
                 if (accessible_ids.count(id)) {
                     auto def = src->get_def(id);
                     assert(def != src->end());
-
-                    if (def.opcode() == spv::OpVariable && insn.word(3) == spv::StorageClassUniformConstant) {
+                    if (def.opcode() == spv::OpVariable && def.word(3) == spv::StorageClassUniformConstant) {
                         auto num_locations = GetLocationsConsumedByType(src, def.word(1), false);
                         for (unsigned int offset = 0; offset < num_locations; offset++) {
                             interface_var v = {};
@@ -973,11 +972,15 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
             v.id = insn.word(2);
             v.type_id = insn.word(1);
             v.is_writable = false;
+            v.input_index = -1;
 
             if (!(d.flags & decoration_set::nonwritable_bit) &&
                 IsWritableDescriptorType(src, insn, insn.word(3) == spv::StorageClassStorageBuffer)) {
                 *has_writable_descriptor = true;
                 v.is_writable = true;
+            }
+            if (d.flags & decoration_set::input_attachment_index_bit) {
+                v.input_index = d.input_attachment_index;
             }
             out.emplace_back(std::make_pair(set, binding), v);
         }
@@ -3135,6 +3138,17 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     }
     skip |= ValidateCooperativeMatrix(module, pStage, pipeline);
 
+    std::string vuid_layout_mismatch;
+    if (pipeline->graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO) {
+        vuid_layout_mismatch = "VUID-VkGraphicsPipelineCreateInfo-layout-00756";
+    } else if (pipeline->computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO) {
+        vuid_layout_mismatch = "VUID-VkComputePipelineCreateInfo-layout-00703";
+    } else if (pipeline->raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR) {
+        vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-03427";
+    } else if (pipeline->raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) {
+        vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoNV-layout-03427";
+    }
+
     // Validate descriptor use
     for (auto use : descriptor_uses) {
         // Verify given pipelineLayout has requested setLayout with requested binding
@@ -3143,20 +3157,20 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         std::set<uint32_t> descriptor_types = TypeToDescriptorTypeSet(module, use.second.type_id, required_descriptor_count);
 
         if (!binding) {
-            skip |= LogError(device, kVUID_Core_Shader_MissingDescriptor,
+            skip |= LogError(device, vuid_layout_mismatch,
                              "Shader uses descriptor slot %u.%u (expected `%s`) but not declared in pipeline layout",
                              use.first.first, use.first.second, string_descriptorTypes(descriptor_types).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
-            skip |= LogError(device, kVUID_Core_Shader_DescriptorNotAccessibleFromStage,
+            skip |= LogError(device, vuid_layout_mismatch,
                              "Shader uses descriptor slot %u.%u but descriptor not accessible from stage %s", use.first.first,
                              use.first.second, string_VkShaderStageFlagBits(pStage->stage));
         } else if (descriptor_types.find(binding->descriptorType) == descriptor_types.end()) {
-            skip |= LogError(device, kVUID_Core_Shader_DescriptorTypeMismatch,
+            skip |= LogError(device, vuid_layout_mismatch,
                              "Type mismatch on descriptor slot %u.%u (expected `%s`) but descriptor of type %s", use.first.first,
                              use.first.second, string_descriptorTypes(descriptor_types).c_str(),
                              string_VkDescriptorType(binding->descriptorType));
         } else if (binding->descriptorCount < required_descriptor_count) {
-            skip |= LogError(device, kVUID_Core_Shader_DescriptorTypeMismatch,
+            skip |= LogError(device, vuid_layout_mismatch,
                              "Shader expects at least %u descriptors for binding %u.%u but only %u provided",
                              required_descriptor_count, use.first.first, use.first.second, binding->descriptorCount);
         }
