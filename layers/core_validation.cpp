@@ -7850,6 +7850,13 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                          "vkCmdCopyQueryPoolResults() dstOffset (0x%" PRIxLEAST64 ") is not less than the size (0x%" PRIxLEAST64
                          ") of buffer (%s).",
                          dstOffset, dst_buff_state->requirements.size, report_data->FormatHandle(dst_buff_state->buffer).c_str());
+    } else if (dstOffset + (queryCount * stride) > dst_buff_state->requirements.size) {
+        skip |=
+            LogError(commandBuffer, "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824",
+                     "vkCmdCopyQueryPoolResults() storage required (0x%" PRIxLEAST64
+                     ") equal to dstOffset + (queryCount * stride) is greater than the size (0x%" PRIxLEAST64 ") of buffer (%s).",
+                     dstOffset + (queryCount * stride), dst_buff_state->requirements.size,
+                     report_data->FormatHandle(dst_buff_state->buffer).c_str());
     }
 
     auto query_pool_state_iter = queryPoolMap.find(queryPool);
