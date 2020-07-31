@@ -1548,6 +1548,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     pPipeline->rp_state->createInfo.pAttachments[subpass_desc->pDepthStencilAttachment->attachment].samples);
             }
             if ((pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE) &&
+                (max_sample_count != static_cast<VkSampleCountFlagBits>(0)) &&
                 (multisample_state->rasterizationSamples != max_sample_count)) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-subpass-01505",
                                  "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%s) != max "
