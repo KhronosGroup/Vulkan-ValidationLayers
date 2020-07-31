@@ -9664,8 +9664,10 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
 
     // test components.g
+    // This test is also serves as positive form of VU 01655 since SWIZZLE_A is considered only valid with this format because
+    // ycbcrModel RGB_IDENTITY
     sycci.components = identity;
-    sycci.components.g = VK_COMPONENT_SWIZZLE_R;
+    sycci.components.g = VK_COMPONENT_SWIZZLE_A;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
     vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
@@ -9719,6 +9721,35 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
     vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
     m_errorMonitor->VerifyNotFound();
+
+    // Non RGB Identity model
+    sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY;
+    {
+        // Non RGB Identity can't have a explicit zero swizzle
+        sycci.components = identity;
+        sycci.components.g = VK_COMPONENT_SWIZZLE_ZERO;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+        m_errorMonitor->VerifyFound();
+
+        // Non RGB Identity can't have a explicit one swizzle
+        sycci.components = identity;
+        sycci.components.g = VK_COMPONENT_SWIZZLE_ONE;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+        m_errorMonitor->VerifyFound();
+
+        // VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM has 3 component so RGBA conversion has implicit A as one
+        sycci.components = identity;
+        sycci.components.g = VK_COMPONENT_SWIZZLE_A;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581");
+        vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+        m_errorMonitor->VerifyFound();
+    }
+    sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;  // reset
 
     // Make sure components doesn't affect _444 formats
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, &format_props);
