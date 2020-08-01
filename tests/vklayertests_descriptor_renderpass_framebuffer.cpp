@@ -7828,3 +7828,145 @@ TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
         }
     }
 }
+
+TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
+    TEST_DESCRIPTION("Validate subpass input isn't bound to fragment shader or descriptor set");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (IsPlatform(kNexusPlayer)) {
+        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageUsageFlags usage_input =
+        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image_input(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, format, usage_input, VK_IMAGE_TILING_OPTIMAL);
+    image_input.Init(image_ci);
+    VkImageView view_input = image_input.targetView(format);
+    VkImageView attachments[] = {view_input, view_input};
+
+    const VkAttachmentDescription inputAttachment = {
+        0u,
+        format,
+        VK_SAMPLE_COUNT_1_BIT,
+        VK_ATTACHMENT_LOAD_OP_LOAD,
+        VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
+    };
+    std::vector<VkAttachmentDescription> attachmentDescs;
+    attachmentDescs.push_back(inputAttachment);
+    attachmentDescs.push_back(inputAttachment);
+
+    VkAttachmentReference inputRef = {
+        0,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+    std::vector<VkAttachmentReference> inputAttachments;
+    inputAttachments.push_back(inputRef);
+    // index 1 is not used in fragment shader, it causes a desired failure.
+    inputRef.attachment = 1;
+    inputAttachments.push_back(inputRef);
+
+    const VkSubpassDescription subpass = {
+        0u,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        static_cast<uint32_t>(inputAttachments.size()),
+        inputAttachments.data(),
+        0,
+        nullptr,
+        0u,
+        nullptr,
+        0u,
+        nullptr,
+    };
+    const std::vector<VkSubpassDescription> subpasses(1u, subpass);
+
+    const VkRenderPassCreateInfo renderPassInfo = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        nullptr,
+        0u,
+        static_cast<uint32_t>(attachmentDescs.size()),
+        attachmentDescs.data(),
+        static_cast<uint32_t>(subpasses.size()),
+        subpasses.data(),
+        0u,
+        nullptr,
+    };
+    VkRenderPass rp;
+    ASSERT_VK_SUCCESS(vk::CreateRenderPass(device(), &renderPassInfo, nullptr, &rp));
+
+    const VkFramebufferCreateInfo fbci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0u, rp, 2u, attachments, 64, 64, 1u,
+    };
+    VkFramebuffer fb;
+    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &fbci, nullptr, &fb));
+
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+
+    // input index is wrong, it doesn't exist in supbass input attachments and the set and binding is undefined
+    // It causes desired failures.
+    char const *fsSource_fail =
+        "#version 450\n"
+        "layout(input_attachment_index=2, set=0, binding=1) uniform subpassInput x;\n"
+        "void main() {\n"
+        "   vec4 color = subpassLoad(x);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs_fail(m_device, fsSource_fail, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs_fail.GetStageCreateInfo()};
+    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.gp_ci_.renderPass = rp;
+    g_pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-MissingInputAttachment");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
+    g_pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    char const *fsSource =
+        "#version 450\n"
+        "layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;\n"
+        "layout(input_attachment_index=2, set=0, binding=0) uniform subpassInput x2;\n"
+        "void main() {\n"
+        "   vec4 color = subpassLoad(x);\n"
+        "   color = subpassLoad(x2);\n"
+        "}\n";
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    g_pipe.InitState();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+    g_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
+    m_renderPassBeginInfo.renderPass = rp;
+    m_renderPassBeginInfo.framebuffer = fb;
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02686");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02686");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
