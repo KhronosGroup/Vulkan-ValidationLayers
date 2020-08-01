@@ -13821,7 +13821,8 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkImageUsageFlags usage_color = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    VkImageUsageFlags usage_input = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageUsageFlags usage_input =
+        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_color(m_device), image_input(m_device);
     auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, format, usage_input, VK_IMAGE_TILING_OPTIMAL);
@@ -13925,27 +13926,13 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL_GRAPHICS, nullptr}};
+    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.gp_ci_.renderPass = rp;
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
-    VkDescriptorImageInfo image_info[1];
-    image_info[0].imageView = view_input;
-    image_info[0].sampler = sampler;
-    image_info[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    VkWriteDescriptorSet descriptor_write[1];
-    descriptor_write[0] = {};
-    descriptor_write[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write[0].dstSet = g_pipe.descriptor_set_->set_;
-    descriptor_write[0].dstBinding = 0;
-    descriptor_write[0].descriptorCount = 1;
-    descriptor_write[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    descriptor_write[0].pImageInfo = image_info;
-    descriptor_write[0].pBufferInfo = nullptr;
-    descriptor_write[0].pTexelBufferView = nullptr;
-
-    vk::UpdateDescriptorSets(device(), 1, descriptor_write, 0, NULL);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+    g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
     auto cb = m_commandBuffer->handle();
