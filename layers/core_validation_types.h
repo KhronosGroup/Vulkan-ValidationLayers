@@ -496,6 +496,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     std::shared_ptr<IMAGE_STATE> image_state;
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
+
+    bool OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const;
 };
 
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
@@ -1185,12 +1187,19 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::map<uint32_t, LAST_BOUND_STATE> lastBound;
 
     struct BindingInfo {
+        uint32_t binding;
         descriptor_req requirements;
-        CMD_TYPE cmd_type;
     };
-    using Bindings = std::map<uint32_t, BindingInfo>;
-    using Pipelines_Bindings = std::map<VkPipeline, Bindings>;
-    std::unordered_map<VkDescriptorSet, Pipelines_Bindings> validate_descriptorsets_in_queuesubmit;
+
+    struct CmdDrawDispatchInfo {
+        CMD_TYPE cmd_type;
+        std::string function;
+        std::vector<BindingInfo> binding_infos;
+        VkFramebuffer framebuffer;
+        std::vector<VkImageView> attachment_views;  // vector index is attachment index. If the value is VK_NULL_HANDLE(0),
+                                                    // it means the attachment isn't used in this command.
+    };
+    std::unordered_map<VkDescriptorSet, std::vector<CmdDrawDispatchInfo>> validate_descriptorsets_in_queuesubmit;
 
     uint32_t viewportMask;
     uint32_t viewportWithCountMask;
@@ -1323,6 +1332,9 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
+
+    // vector index is attachment index. If the value is VK_NULL_HANDLE(0), it means the attachment isn't used in this command.
+    std::vector<VkImageView> GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses);
 };
 
 struct SHADER_MODULE_STATE;
