@@ -1039,6 +1039,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     bool result = false;
     auto const &state = last_bound_it->second;
+    std::vector<VkImageView> attachment_views;
 
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
         // First check flag states
@@ -1085,6 +1086,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 }
             }
         }
+        attachment_views = cb_node->activeFramebuffer->GetUsedAttachments(subpass);
     }
     // Now complete other state checks
     string errorString;
@@ -1161,10 +1163,10 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                         state.per_set[setIndex].validated_set_binding_req_map.end(),
                                         std::inserter(delta_reqs, delta_reqs.begin()));
                     result |= ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                setIndex, function, vuid);
+                                                attachment_views, function, vuid);
                 } else {
                     result |= ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                setIndex, function, vuid);
+                                                attachment_views, function, vuid);
                 }
             }
         }
@@ -2766,14 +2768,16 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
             for (auto descriptorSet : cb_node->validate_descriptorsets_in_queuesubmit) {
                 const cvdescriptorset::DescriptorSet *set_node = GetSetNode(descriptorSet.first);
                 if (set_node) {
-                    for (auto pipe : descriptorSet.second) {
-                        for (auto binding : pipe.second) {
+                    for (auto cmd_info : descriptorSet.second) {
+                        std::string function = "vkQueueSubmit(), ";
+                        function += cmd_info.function;
+                        for (auto binding : cmd_info.binding_infos) {
                             std::string error;
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding.first,
-                                                                     binding.second.requirements, "vkQueueSubmit()",
-                                                                     GetDrawDispatchVuid(binding.second.cmd_type));
+                            skip |= ValidateDescriptorSetBindingData(
+                                cb_node, set_node, dynamicOffsets, binding.binding, binding.requirements, cmd_info.framebuffer,
+                                cmd_info.attachment_views, function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }
                 }

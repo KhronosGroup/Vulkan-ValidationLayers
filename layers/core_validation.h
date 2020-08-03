@@ -55,6 +55,7 @@ struct DrawDispatchVuid {
     const char* subpass_input;
     const char* imageview_atomic;
     const char* push_constants_set;
+    const char* image_subresources;
 };
 
 typedef struct {
@@ -372,10 +373,12 @@ class CoreChecks : public ValidationStateTracker {
                                                 void* pData);
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const std::map<uint32_t, descriptor_req>& bindings,
-                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node, uint32_t setIndex,
-                           const char* caller, const DrawDispatchVuid& vuids) const;
+                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node,
+                           const std::vector<VkImageView>& attachment_views, const char* caller,
+                           const DrawDispatchVuid& vuids) const;
     bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets, uint32_t binding, descriptor_req reqs,
+                                          VkFramebuffer framebuffer, const std::vector<VkImageView>& attachment_views,
                                           const char* caller, const DrawDispatchVuid& vuids) const;
 
     // Validate contents of a CopyUpdate

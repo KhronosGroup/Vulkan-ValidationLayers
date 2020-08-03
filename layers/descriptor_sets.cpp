@@ -698,9 +698,11 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
 bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const std::map<uint32_t, descriptor_req> &bindings,
-                                   const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node, uint32_t setIndex,
-                                   const char *caller, const DrawDispatchVuid &vuids) const {
+                                   const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
+                                   const std::vector<VkImageView> &attachment_views, const char *caller,
+                                   const DrawDispatchVuid &vuids) const {
     bool result = false;
+    VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer : VK_NULL_HANDLE;
     for (auto binding_pair : bindings) {
         auto binding = binding_pair.first;
         DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
@@ -719,15 +721,17 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
             // or the view could have been destroyed
             continue;
         }
-        result |=
-            ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding, binding_pair.second, caller, vuids);
+        result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding, binding_pair.second,
+                                                   framebuffer, attachment_views, caller, vuids);
     }
     return result;
 }
 
 bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
                                                   const std::vector<uint32_t> &dynamic_offsets, uint32_t binding,
-                                                  descriptor_req reqs, const char *caller, const DrawDispatchVuid &vuids) const {
+                                                  descriptor_req reqs, VkFramebuffer framebuffer,
+                                                  const std::vector<VkImageView> &attachment_views, const char *caller,
+                                                  const DrawDispatchVuid &vuids) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -915,9 +919,11 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                 report_data->FormatHandle(set).c_str(), caller, binding, index);
                         }
 
+                        const VkDescriptorType descriptor_type = descriptor_set->GetTypeFromIndex(binding);
+
                         // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
                         if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
-                            (descriptor_set->GetTypeFromIndex(binding) == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
+                            (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
                             !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
                             auto set = descriptor_set->GetSet();
                             LogObjectList objlist(set);
@@ -930,6 +936,45 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                 "contain VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.",
                                 report_data->FormatHandle(set).c_str(), caller, binding, index,
                                 report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+                        }
+
+                        // Verify if attachments are used in DescriptorSet
+                        if (attachment_views.size() > 0 && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+                            uint32_t view_index = 0;
+                            for (const auto &view : attachment_views) {
+                                if (view == image_view) {
+                                    auto set = descriptor_set->GetSet();
+                                    LogObjectList objlist(set);
+                                    objlist.add(image_view);
+                                    objlist.add(framebuffer);
+                                    return LogError(objlist, vuids.image_subresources,
+                                                    "%s encountered the following validation error at %s time: %s is used in "
+                                                    "Descriptor in binding #%" PRIu32 " index %" PRIu32
+                                                    " and %s attachment # %" PRIu32 ".",
+                                                    report_data->FormatHandle(set).c_str(), caller,
+                                                    report_data->FormatHandle(image_view).c_str(), binding, index,
+                                                    report_data->FormatHandle(framebuffer).c_str(), view_index);
+                                } else if (view != VK_NULL_HANDLE) {
+                                    const auto *view_state = Get<IMAGE_VIEW_STATE>(view);
+                                    if (image_view_state->OverlapSubresource(*view_state)) {
+                                        auto set = descriptor_set->GetSet();
+                                        LogObjectList objlist(set);
+                                        objlist.add(image_view);
+                                        objlist.add(framebuffer);
+                                        objlist.add(view);
+                                        return LogError(
+                                            objlist, vuids.image_subresources,
+                                            "%s encountered the following validation error at %s time: Image subresources of %s in "
+                                            "Descriptor in binding #%" PRIu32 " index %" PRIu32
+                                            " and %s in %s attachment # %" PRIu32 " overlap.",
+                                            report_data->FormatHandle(set).c_str(), caller,
+                                            report_data->FormatHandle(image_view).c_str(), binding, index,
+                                            report_data->FormatHandle(view).c_str(), report_data->FormatHandle(framebuffer).c_str(),
+                                            view_index);
+                                    }
+                                }
+                                ++view_index;
+                            }
                         }
                     }
                 } else if (descriptor_class == DescriptorClass::TexelBuffer) {
@@ -1448,7 +1493,8 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 //   to be used in a draw by the given cb_node
 void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
-                                                     const std::map<uint32_t, descriptor_req> &binding_req_map) {
+                                                     const std::map<uint32_t, descriptor_req> &binding_req_map,
+                                                     const char *function) {
     if (!device_data->disabled[command_buffer_state] && !IsPushDescriptor()) {
         // bind cb to this descriptor set
         // Add bindings for descriptor set, the set's pool, and individual objects in the set
@@ -1468,6 +1514,8 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
 
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
+    CMD_BUFFER_STATE::CmdDrawDispatchInfo cmd_info = {};
+
     for (auto binding_req_pair : binding_req_map) {
         auto binding = binding_req_pair.first;
         auto index = p_layout_->GetIndexFromBinding(binding_req_pair.first);
@@ -1476,8 +1524,10 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         auto flags = p_layout_->GetDescriptorBindingFlagsFromIndex(index);
         if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
             if (!(flags & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)) {
-                cb_node->validate_descriptorsets_in_queuesubmit[set_][pipe->pipeline].insert(
-                    {binding, {binding_req_pair.second, cmd_type}});
+                CMD_BUFFER_STATE::BindingInfo binding_info;
+                binding_info.binding = binding;
+                binding_info.requirements = binding_req_pair.second;
+                cmd_info.binding_infos.emplace_back(binding_info);
             }
             continue;
         }
@@ -1485,6 +1535,17 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         for (uint32_t i = range.start; i < range.end; ++i) {
             descriptors_[i]->UpdateDrawState(device_data, cb_node);
         }
+    }
+
+    if (cmd_info.binding_infos.size() > 0) {
+        cmd_info.cmd_type = cmd_type;
+        cmd_info.function = function;
+        if (cb_node->activeFramebuffer) {
+            cmd_info.framebuffer = cb_node->activeFramebuffer->framebuffer;
+            cmd_info.attachment_views =
+                cb_node->activeFramebuffer->GetUsedAttachments(*cb_node->activeRenderPass->createInfo.pSubpasses);
+        }
+        cb_node->validate_descriptorsets_in_queuesubmit[set_].emplace_back(cmd_info);
     }
 }
 

@@ -61,6 +61,32 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     return NormalizeSubresourceRange(create_info, init_range);
 }
 
+std::vector<VkImageView> FRAMEBUFFER_STATE::GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses) {
+    std::vector<VkImageView> attachment_views(createInfo.attachmentCount, VK_NULL_HANDLE);
+
+    for (uint32_t index = 0; index < subpasses.inputAttachmentCount; ++index) {
+        if (subpasses.pInputAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
+            attachment_views[subpasses.pInputAttachments[index].attachment] =
+                createInfo.pAttachments[subpasses.pInputAttachments[index].attachment];
+        }
+    }
+    for (uint32_t index = 0; index < subpasses.colorAttachmentCount; ++index) {
+        if (subpasses.pColorAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
+            attachment_views[subpasses.pColorAttachments[index].attachment] =
+                createInfo.pAttachments[subpasses.pColorAttachments[index].attachment];
+        }
+        if (subpasses.pResolveAttachments && subpasses.pResolveAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
+            attachment_views[subpasses.pResolveAttachments[index].attachment] =
+                createInfo.pAttachments[subpasses.pResolveAttachments[index].attachment];
+        }
+    }
+    if (subpasses.pDepthStencilAttachment && subpasses.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+        attachment_views[subpasses.pDepthStencilAttachment->attachment] =
+            createInfo.pAttachments[subpasses.pDepthStencilAttachment->attachment];
+    }
+    return attachment_views;
+}
+
 IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo)
     : image(img),
       safe_create_info(pCreateInfo),
@@ -170,6 +196,53 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
         samples = image_state->createInfo.samples;
         descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
     }
+}
+
+bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const {
+    if (image_state->image != compare_view.image_state->image) {
+        return false;
+    }
+    if (image_view == compare_view.image_view) {
+        return true;
+    }
+    if (normalized_subresource_range.aspectMask != compare_view.normalized_subresource_range.aspectMask) {
+        return false;
+    }
+
+    // compare if overlap mip level
+    if (normalized_subresource_range.baseMipLevel == compare_view.normalized_subresource_range.baseMipLevel) {
+        return true;
+    }
+
+    if ((normalized_subresource_range.baseMipLevel < compare_view.normalized_subresource_range.baseMipLevel) &&
+        ((normalized_subresource_range.baseMipLevel + normalized_subresource_range.levelCount) >=
+         compare_view.normalized_subresource_range.baseMipLevel)) {
+        return true;
+    }
+
+    if ((normalized_subresource_range.baseMipLevel > compare_view.normalized_subresource_range.baseMipLevel) &&
+        (normalized_subresource_range.baseMipLevel <=
+         (compare_view.normalized_subresource_range.baseMipLevel + compare_view.normalized_subresource_range.levelCount))) {
+        return true;
+    }
+
+    // compare if overlap array layer
+    if (normalized_subresource_range.baseArrayLayer == compare_view.normalized_subresource_range.baseArrayLayer) {
+        return true;
+    }
+
+    if ((normalized_subresource_range.baseArrayLayer < compare_view.normalized_subresource_range.baseArrayLayer) &&
+        ((normalized_subresource_range.baseArrayLayer + normalized_subresource_range.layerCount) >=
+         compare_view.normalized_subresource_range.baseArrayLayer)) {
+        return true;
+    }
+
+    if ((normalized_subresource_range.baseArrayLayer > compare_view.normalized_subresource_range.baseArrayLayer) &&
+        (normalized_subresource_range.baseArrayLayer <=
+         (compare_view.normalized_subresource_range.baseArrayLayer + compare_view.normalized_subresource_range.layerCount))) {
+        return true;
+    }
+    return false;
 }
 
 uint32_t FullMipChainLevels(uint32_t height, uint32_t width, uint32_t depth) {
