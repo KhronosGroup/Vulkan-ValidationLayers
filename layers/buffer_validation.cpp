@@ -3066,6 +3066,19 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 skip |= ValidateClearAttachmentExtent(commandBuffer, attachment_index, framebuffer, fb_attachment, render_area,
                                                       rectCount, pRects);
             }
+
+            // Once the framebuffer attachment is found, can get the image view state
+            if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) &&
+                (fb_attachment < framebuffer->createInfo.attachmentCount)) {
+                const IMAGE_VIEW_STATE *image_view_state =
+                    GetAttachmentImageViewState(GetCBState(commandBuffer), framebuffer, fb_attachment);
+                if (image_view_state != nullptr) {
+                    skip |= ValidateProtectedImage(cb_node, image_view_state->image_state.get(), "vkCmdClearAttachments()",
+                                                   "VUID-vkCmdClearAttachments-commandBuffer-02504");
+                    skip |= ValidateUnprotectedImage(cb_node, image_view_state->image_state.get(), "vkCmdClearAttachments()",
+                                                     "VUID-vkCmdClearAttachments-commandBuffer-02505");
+                }
+            }
         }
     }
     return skip;
