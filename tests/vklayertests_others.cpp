@@ -103,6 +103,81 @@ class DuplicateMsgLimit {
     VkLayerSettingsEXT limit_setting;
 };
 
+TEST_F(VkLayerTest, PrivateDataExtTest) {
+    TEST_DESCRIPTION("Test private data extension use.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%s Test not supported by MockICD, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PRIVATE_DATA_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkDestroyPrivateDataSlotEXT pfn_vkDestroyPrivateDataSlotEXT =
+        (PFN_vkDestroyPrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyPrivateDataSlotEXT");
+    PFN_vkCreatePrivateDataSlotEXT pfn_vkCreatePrivateDataSlotEXT =
+        (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
+    PFN_vkGetPrivateDataEXT pfn_vkGetPrivateDataEXT =
+        (PFN_vkGetPrivateDataEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkGetPrivateDataEXT");
+    PFN_vkSetPrivateDataEXT pfn_vkSetPrivateDataEXT =
+        (PFN_vkSetPrivateDataEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkSetPrivateDataEXT");
+
+    VkPrivateDataSlotEXT data_slot;
+    VkPrivateDataSlotCreateInfoEXT data_create_info;
+    data_create_info.sType = VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT;
+    data_create_info.pNext = NULL;
+    data_create_info.flags = 0;
+    VkResult err = pfn_vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
+    if (err != VK_SUCCESS) {
+        printf("%s Failed to create private data slot, VkResult %d.\n", kSkipPrefix, err);
+    }
+
+    VkSampler sampler;
+    VkSamplerCreateInfo sampler_info;
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.pNext = NULL;
+    sampler_info.flags = 0;
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.anisotropyEnable = VK_FALSE;
+    sampler_info.maxAnisotropy = 16;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = 0.0f;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    vk::CreateSampler(m_device->handle(), &sampler_info, NULL, &sampler);
+
+    static const uint64_t data_value = 0x70AD;
+    err = pfn_vkSetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, data_slot, data_value);
+    if (err != VK_SUCCESS) {
+        printf("%s Failed to set private data. VkResult = %d", kSkipPrefix, err);
+    }
+    m_errorMonitor->ExpectSuccess();
+    uint64_t data;
+    pfn_vkGetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, data_slot, &data);
+    if (data != data_value) {
+        m_errorMonitor->SetError("Got unexpected private data, %s.\n");
+    }
+    pfn_vkDestroyPrivateDataSlotEXT(m_device->handle(), data_slot, NULL);
+    vk::DestroySampler(m_device->handle(), sampler, NULL);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, CustomStypeStructString) {
     TEST_DESCRIPTION("Positive Test for ability to specify custom pNext structs using a list (string)");
 
