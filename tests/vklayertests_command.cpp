@@ -6765,6 +6765,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     // Create actual protected and unprotected images
     VkImageObj image_protected(m_device);
     VkImageObj image_unprotected(m_device);
+    VkImageView image_views[2];
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.pNext = nullptr;
@@ -6781,10 +6782,12 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
     image_protected.init_no_mem(*m_device, image_create_info);
     image_protected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_views[0] = image_protected.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     image_create_info.flags = 0;
     image_unprotected.init_no_mem(*m_device, image_create_info);
     image_unprotected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_views[1] = image_unprotected.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create protected and unproteced memory
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
@@ -6840,6 +6843,34 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::BindImageMemory(device(), image_protected.handle(), memory_protected, 0);
     vk::BindImageMemory(device(), image_unprotected.handle(), memory_unprotected, 0);
 
+    // A renderpass and framebuffer that contains a protected and unprotected image view
+    VkAttachmentDescription attachments[2] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkAttachmentReference references[2] = {{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+                                           {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 2, references, nullptr, nullptr, 0, nullptr};
+    VkSubpassDependency dependency = {0,
+                                      0,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                      VK_ACCESS_SHADER_WRITE_BIT,
+                                      VK_ACCESS_SHADER_WRITE_BIT,
+                                      VK_DEPENDENCY_BY_REGION_BIT};
+    VkRenderPassCreateInfo render_pass_create_info = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 1, &dependency};
+    VkRenderPass render_pass;
+    ASSERT_VK_SUCCESS(vk::CreateRenderPass(device(), &render_pass_create_info, nullptr, &render_pass));
+    VkFramebufferCreateInfo framebuffer_create_info = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass, 2, image_views, 8, 8, 1};
+    VkFramebuffer framebuffer;
+    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &framebuffer_create_info, nullptr, &framebuffer));
+
     // Various structs used for commands
     VkImageSubresourceLayers image_subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkImageBlit blit_region = {};
@@ -6866,6 +6897,12 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     image_copy.dstOffset = {0, 0, 0};
     image_copy.extent = {1, 1, 1};
     uint32_t update_data[4] = {0, 0, 0, 0};
+    VkRect2D render_area = {{0, 0}, {8, 8}};
+    VkRenderPassBeginInfo render_pass_begin = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, render_pass, framebuffer, render_area, 0, nullptr};
+    VkClearAttachment clear_attachments[2] = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, {m_clear_color}},
+                                              {VK_IMAGE_ASPECT_COLOR_BIT, 1, {m_clear_color}}};
+    VkClearRect clear_rect[2] = {{render_area, 0, 1}, {render_area, 0, 1}};
 
     // Use protected resources in unprotected command buffer
     m_commandBuffer->begin();
@@ -6931,6 +6968,13 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer_protected, 0, 4, (void *)update_data);
     m_errorMonitor->VerifyFound();
 
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-commandBuffer-02504");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 2, clear_attachments, 2, clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 
     // Use unprotected resources in protected command buffer
@@ -6973,10 +7017,19 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::CmdUpdateBuffer(protectedCommandBuffer.handle(), buffer_unprotected, 0, 4, (void *)update_data);
     m_errorMonitor->VerifyFound();
 
+    vk::CmdBeginRenderPass(protectedCommandBuffer.handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-commandBuffer-02505");
+    vk::CmdClearAttachments(protectedCommandBuffer.handle(), 2, clear_attachments, 2, clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdEndRenderPass(protectedCommandBuffer.handle());
     protectedCommandBuffer.end();
 
     vk::DestroyBuffer(device(), buffer_protected, nullptr);
     vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
     vk::FreeMemory(device(), memory_protected, nullptr);
     vk::FreeMemory(device(), memory_unprotected, nullptr);
+    vk::DestroyFramebuffer(device(), framebuffer, nullptr);
+    vk::DestroyRenderPass(device(), render_pass, nullptr);
 }
