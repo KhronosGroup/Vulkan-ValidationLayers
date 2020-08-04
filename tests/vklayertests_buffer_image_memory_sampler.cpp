@@ -11902,6 +11902,113 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     vk::DestroyBuffer(device(), buffer_export, nullptr);
 }
 
+TEST_F(VkLayerTest, ValidSwapchainImageParams) {
+    TEST_DESCRIPTION("Swapchain with invalid implied image creation parameters");
+    const char *vuid = "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778";
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!InitSurface()) {
+        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkSurfaceCapabilitiesKHR capabilities;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), m_surface, &capabilities);
+
+    uint32_t format_count;
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, nullptr);
+    vector<VkSurfaceFormatKHR> formats;
+    if (format_count != 0) {
+        formats.resize(format_count);
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, formats.data());
+    }
+
+    uint32_t present_mode_count;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, nullptr);
+    vector<VkPresentModeKHR> present_modes;
+    if (present_mode_count != 0) {
+        present_modes.resize(present_mode_count);
+        vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, present_modes.data());
+    }
+
+    VkSwapchainCreateInfoKHR good_create_info = {};
+    good_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    good_create_info.pNext = 0;
+    good_create_info.surface = m_surface;
+    good_create_info.minImageCount = capabilities.minImageCount;
+    good_create_info.imageFormat = formats[0].format;
+    good_create_info.imageColorSpace = formats[0].colorSpace;
+    good_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
+    good_create_info.imageArrayLayers = 1;
+    good_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    good_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    good_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    good_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+#else
+    good_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+#endif
+    good_create_info.presentMode = present_modes[0];
+    good_create_info.clipped = VK_FALSE;
+    good_create_info.oldSwapchain = 0;
+
+    VkSwapchainCreateInfoKHR create_info_bad_usage = good_create_info;
+    bool found_bad_usage = false;
+    // Trying to find format+usage combination supported by surface, but not supported by image.
+    const std::array<VkImageUsageFlags, 5> kImageUsageFlags = {{
+        VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_IMAGE_USAGE_STORAGE_BIT,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+    }};
+
+    for (uint32_t i = 0; i < kImageUsageFlags.size() && !found_bad_usage; ++i) {
+        if ((capabilities.supportedUsageFlags & kImageUsageFlags[i]) != 0) {
+            for (uint32_t j = 0; j < format_count; ++j) {
+                VkImageFormatProperties image_format_properties = {};
+                VkResult image_format_properties_result = vk::GetPhysicalDeviceImageFormatProperties(
+                    m_device->phy().handle(), formats[j].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL, kImageUsageFlags[i], 0,
+                    &image_format_properties);
+
+                if (image_format_properties_result != VK_SUCCESS) {
+                    create_info_bad_usage.imageFormat = formats[j].format;
+                    create_info_bad_usage.imageUsage = kImageUsageFlags[i];
+                    found_bad_usage = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (found_bad_usage) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-surface-01270");
+        vk::CreateSwapchainKHR(device(), &create_info_bad_usage, nullptr, &m_swapchain);
+        m_errorMonitor->VerifyFound();
+    } else {
+        printf(
+            "%s could not find imageFormat and imageUsage values, supported by "
+            "surface but unsupported by image, skipping test\n",
+            kSkipPrefix);
+    }
+
+    DestroySwapchain();
+}
+
 TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_BUFFER_MARKER_EXTENSION_NAME)) {
