@@ -6723,6 +6723,11 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        printf("%s CreateImageView calls crash ShieldTV, skipped for this platform.\n", kSkipPrefix);
+        return;
+    }
+
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
