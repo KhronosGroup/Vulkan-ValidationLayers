@@ -13790,7 +13790,7 @@ TEST_F(VkSyncValTest, SyncRenderPassWithWrongInitialLayout) {
     m_renderPassBeginInfo.renderPass = rp;
     m_renderPassBeginInfo.framebuffer = fb;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-NONE");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 }
