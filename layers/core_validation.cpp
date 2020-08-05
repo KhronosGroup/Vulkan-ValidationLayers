@@ -11069,35 +11069,6 @@ bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImport
     return ValidateImportFence(pImportFenceFdInfo->fence, "vkImportFenceFdKHR");
 }
 
-static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {
-    VkImageCreateInfo result = {};
-    result.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    result.pNext = nullptr;
-
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR)
-        result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) result.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR)
-        result.flags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
-
-    result.imageType = VK_IMAGE_TYPE_2D;
-    result.format = pCreateInfo->imageFormat;
-    result.extent.width = pCreateInfo->imageExtent.width;
-    result.extent.height = pCreateInfo->imageExtent.height;
-    result.extent.depth = 1;
-    result.mipLevels = 1;
-    result.arrayLayers = pCreateInfo->imageArrayLayers;
-    result.samples = VK_SAMPLE_COUNT_1_BIT;
-    result.tiling = VK_IMAGE_TILING_OPTIMAL;
-    result.usage = pCreateInfo->imageUsage;
-    result.sharingMode = pCreateInfo->imageSharingMode;
-    result.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
-    result.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
-    result.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    return result;
-}
-
 bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo,
                                          const SURFACE_STATE *surface_state, const SWAPCHAIN_NODE *old_swapchain_state) const {
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
@@ -11412,93 +11383,6 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                                                          "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
                                                          "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428");
         if (skip1) return true;
-    }
-
-    // Validate pCreateInfo->imageUsage against GetPhysicalDeviceFormatProperties
-    const VkFormatProperties format_properties = GetPDFormatProperties(pCreateInfo->imageFormat);
-    const VkFormatFeatureFlags tiling_features = format_properties.optimalTilingFeatures;
-
-    if (tiling_features == 0) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s: pCreateInfo->imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL has no supported format features on this "
-                     "physical device.",
-                     func_name, string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
-    } else if ((pCreateInfo->imageUsage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s: pCreateInfo->imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
-                     "VK_IMAGE_USAGE_SAMPLED_BIT.",
-                     func_name, string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
-    } else if ((pCreateInfo->imageUsage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s: pCreateInfo->imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
-                     "VK_IMAGE_USAGE_STORAGE_BIT.",
-                     func_name, string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
-    } else if ((pCreateInfo->imageUsage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
-               !(tiling_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s: pCreateInfo->imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
-                     "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
-                     func_name, string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
-    } else if ((pCreateInfo->imageUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
-               !(tiling_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s: pCreateInfo->imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
-                     "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                     func_name, string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
-    } else if ((pCreateInfo->imageUsage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
-               !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s: pCreateInfo->imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
-                     "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                     func_name, string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
-    }
-
-    const VkImageCreateInfo image_create_info = GetSwapchainImpliedImageCreateInfo(pCreateInfo);
-    VkImageFormatProperties image_properties = {};
-    const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-        physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
-        image_create_info.flags, &image_properties);
-
-    if (!image_properties_result) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
-                     "when called for %s validation with following params: "
-                     "format: %s, imageType: %s, "
-                     "tiling: %s, usage: %s, "
-                     "flags: %s.",
-                     func_name, string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
-                     string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                     string_VkImageCreateFlags(image_create_info.flags).c_str()))
-            return true;
-    }
-
-    // Validate pCreateInfo->imageArrayLayers against VkImageFormatProperties::maxArrayLayers
-    if (pCreateInfo->imageArrayLayers > image_properties.maxArrayLayers) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s called with a non-supported imageArrayLayers (i.e. %d). "
-                     "Maximum value returned by vkGetPhysicalDeviceImageFormatProperties() is %d "
-                     "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL",
-                     func_name, pCreateInfo->imageArrayLayers, image_properties.maxArrayLayers,
-                     string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
-    }
-
-    // Validate pCreateInfo->imageExtent against VkImageFormatProperties::maxExtent
-    if ((pCreateInfo->imageExtent.width > image_properties.maxExtent.width) ||
-        (pCreateInfo->imageExtent.height > image_properties.maxExtent.height)) {
-        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
-                     "%s called with imageExtent = (%d,%d), which is bigger than max extent (%d,%d)"
-                     "returned by vkGetPhysicalDeviceImageFormatProperties(): "
-                     "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL",
-                     func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, image_properties.maxExtent.width,
-                     image_properties.maxExtent.height, string_VkFormat(pCreateInfo->imageFormat)))
-            return true;
     }
 
     return skip;
