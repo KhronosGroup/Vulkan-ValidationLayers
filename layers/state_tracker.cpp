@@ -746,7 +746,8 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
         }
     }
     auto heap_index = phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].heapIndex;
-    mem_info->multi_instance |= ((phys_dev_mem_props.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) != 0);
+    mem_info->multi_instance |= (((phys_dev_mem_props.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) != 0) &&
+                                 physical_device_count > 1);
 
     // Assumes validation already for only a single import operation in the pNext
 #ifdef VK_USE_PLATFORM_WIN32_KHR
