@@ -441,7 +441,13 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
                                                             VkResult result) {
     if (result != VK_SUCCESS) return;
     auto buffer_state = GetBufferShared(pCreateInfo->buffer);
-    bufferViewMap[*pView] = std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo);
+    auto buffer_view_state = std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo);
+
+    VkFormatProperties format_properties;
+    DispatchGetPhysicalDeviceFormatProperties(physical_device, pCreateInfo->format, &format_properties);
+    buffer_view_state->format_features = format_properties.bufferFeatures;
+
+    bufferViewMap.insert(std::make_pair(*pView, std::move(buffer_view_state)));
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
@@ -5690,6 +5696,7 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
         const uint32_t slot = use.first.first;
         auto &reqs = pipeline->active_slots[slot][use.first.second];
         reqs = descriptor_req(reqs | DescriptorTypeToReqs(module, use.second.type_id));
+        if (use.second.is_atomic_operation) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION);
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
     }
 

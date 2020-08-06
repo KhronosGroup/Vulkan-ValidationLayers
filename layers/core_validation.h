@@ -53,6 +53,7 @@ struct DrawDispatchVuid {
     const char* primitive_topology;
     const char* corner_sampled_address_mode;
     const char* subpass_input;
+    const char* imageview_atomic;
 };
 
 typedef struct {
@@ -973,6 +974,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const;
     bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                         uint32_t stride) const;
+    bool PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                        uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                        uint32_t groupCountZ) const;
+    bool PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                           uint32_t groupCountZ) const;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
     bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,

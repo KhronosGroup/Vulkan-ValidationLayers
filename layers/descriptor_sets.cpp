@@ -914,6 +914,23 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                 " index %" PRIu32 " requires bound image to have multiple samples, but got VK_SAMPLE_COUNT_1_BIT.",
                                 report_data->FormatHandle(set).c_str(), caller, binding, index);
                         }
+
+                        // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
+                        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
+                            (descriptor_set->GetTypeFromIndex(binding) == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
+                            !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
+                            auto set = descriptor_set->GetSet();
+                            LogObjectList objlist(set);
+                            objlist.add(image_view);
+                            return LogError(
+                                objlist, vuids.imageview_atomic,
+                                "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
+                                " index %" PRIu32
+                                ", %s, format %s, doesn't "
+                                "contain VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.",
+                                report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                report_data->FormatHandle(image_view).c_str(), string_VkFormat(image_view_ci.format));
+                        }
                     }
                 } else if (descriptor_class == DescriptorClass::TexelBuffer) {
                     auto texel_buffer = static_cast<const TexelDescriptor *>(descriptor);
@@ -952,6 +969,24 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                             report_data->FormatHandle(set).c_str(), caller, binding, index,
                                             StringDescriptorReqComponentType(reqs),
                                             string_VkFormat(buffer_view_state->create_info.format));
+                        }
+
+                        // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
+                        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
+                            (descriptor_set->GetTypeFromIndex(binding) == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
+                            !(buffer_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
+                            auto set = descriptor_set->GetSet();
+                            LogObjectList objlist(set);
+                            objlist.add(buffer_view);
+                            return LogError(
+                                objlist, "UNASSIGNED-None-MismatchAtomicBufferFeature",
+                                "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
+                                " index %" PRIu32
+                                ", %s, format %s, doesn't "
+                                "contain VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.",
+                                report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                report_data->FormatHandle(buffer_view).c_str(),
+                                string_VkFormat(buffer_view_state->create_info.format));
                         }
                     }
                 } else if (descriptor_class == DescriptorClass::AccelerationStructure) {

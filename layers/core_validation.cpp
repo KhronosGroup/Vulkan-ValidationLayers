@@ -1057,9 +1057,12 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                             if (descriptor.second.input_index < static_cast<int32_t>(subpass.inputAttachmentCount)) {
                                 subpass_input_in_fs[descriptor.second.input_index] = true;
                             } else {
-                                result |= LogError(cb_node->commandBuffer, vuid.subpass_input,
-                                                   "%s: Fragment Shader's input attachment index #%d doesn't exist in %s, subpass "
-                                                   "#%d.",
+                                LogObjectList objlist(cb_node->commandBuffer);
+                                objlist.add(cb_node->activeRenderPass->renderPass);
+                                result |= LogError(objlist, vuid.subpass_input,
+                                                   "%s: Fragment Shader's input attachment index #%" PRIu32
+                                                   " doesn't exist in %s, subpass "
+                                                   "#%" PRIu32 ".",
                                                    function, descriptor.second.input_index,
                                                    report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
                                                    cb_node->activeSubpass);
@@ -1069,8 +1072,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     uint32_t index = 0;
                     for (const auto input : subpass_input_in_fs) {
                         if (!input && subpass.pInputAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
-                            result |= LogError(cb_node->commandBuffer, vuid.subpass_input,
-                                               "%s: %s, subpass #%d, input attachment #%d is not used in fragment shader.",
+                            LogObjectList objlist(cb_node->commandBuffer);
+                            objlist.add(cb_node->activeRenderPass->renderPass);
+                            result |= LogError(objlist, vuid.subpass_input,
+                                               "%s: %s, subpass #%" PRIu32 ", input attachment #%" PRIu32
+                                               " is not used in fragment shader.",
                                                function, report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
                                                cb_node->activeSubpass, index);
                         }

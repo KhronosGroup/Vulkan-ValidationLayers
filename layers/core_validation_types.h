@@ -160,6 +160,8 @@ enum descriptor_req {
     DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT = DESCRIPTOR_REQ_MULTI_SAMPLE << 1,
     DESCRIPTOR_REQ_COMPONENT_TYPE_SINT = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT << 1,
     DESCRIPTOR_REQ_COMPONENT_TYPE_UINT = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT << 1,
+
+    DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT << 1,
 };
 
 extern unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt);
@@ -372,6 +374,7 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
     VkBufferView buffer_view;
     VkBufferViewCreateInfo create_info;
     std::shared_ptr<BUFFER_STATE> buffer_state;
+    VkFormatFeatureFlags format_features;
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci)
         : buffer_view(bv), create_info(*ci), buffer_state(bf){};
     BUFFER_VIEW_STATE(const BUFFER_VIEW_STATE &rh_obj) = delete;
@@ -801,6 +804,7 @@ struct interface_var {
     bool is_block_member;
     bool is_relaxed_precision;
     bool is_writable;
+    bool is_atomic_operation;
     // TODO: collect the name, too? Isn't required to be present.
 };
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
