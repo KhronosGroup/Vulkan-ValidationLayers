@@ -16,11 +16,13 @@
 #
 #   DEBUG_ACTION:
 #   =============
-#   <LayerIdentifier>.debug_action : This is an enum value indicating what
-#    action is to be taken when a layer wants to report information.
+#   <LayerIdentifier>.debug_action : This is a comma-delited list of options
+#    indicating what actions are to be taken when a layer wants to report
+#    information.
 #    Possible settings values are defined in the vk_layer.h header file.
 #    These settings are:
-#    VK_DBG_LAYER_ACTION_IGNORE - Take no action.
+#    VK_DBG_LAYER_ACTION_IGNORE - Take no action -- has no effect if specified with
+#       other options.
 #    VK_DBG_LAYER_ACTION_LOG_MSG - Log a txt message to stdout or to a log filename
 #       specified via the <LayerIdentifier>.log_filename setting (see below).
 #    VK_DBG_LAYER_ACTION_CALLBACK - Call user defined callback function(s) that
@@ -29,7 +31,7 @@
 #    VK_DBG_LAYER_ACTION_DEBUG_OUTPUT [Windows only] - Log a txt message using the
 #       Windows OutputDebugString function -- messages will show up in the
 #       Visual Studio output window, for instance.
-#    VK_DBG_LAYER_ACTION_BREAK - Trigger a breakpoint.
+#    VK_DBG_LAYER_ACTION_BREAK - Trigger a breakpoint if a debugger is in use.
 #
 #   REPORT_FLAGS:
 #   =============
@@ -107,7 +109,7 @@
 #
 #   CUSTOM_STYPE_LIST:
 #   ==================
-#   <LayerIdentifier>.custom_stype_list: This is a comma-delineated list of uin32_t
+#   <LayerIdentifier>.custom_stype_list: This is a comma-delimited list of uin32_t
 #    value-pairs describing custom structure types. Unrecognized structures encountered
 #    in wrapped pNext chains are typically removed. Specifying the sType value and size
 #    in bytes in this list will allow the layers to properly preserve the containing
