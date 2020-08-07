@@ -188,6 +188,9 @@ bool ImageFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkIm
 bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
                                      const VkFormatFeatureFlags features);
 
+// Returns true if format and *all* requested features are available.
+bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkFormatFeatureFlags features);
+
 // Simple sane SamplerCreateInfo boilerplate
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo();
 
@@ -377,20 +380,21 @@ struct OneOffDescriptorSet {
     typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
     std::vector<VkDescriptorBufferInfo> buffer_infos;
     std::vector<VkDescriptorImageInfo> image_infos;
+    std::vector<VkBufferView> buffer_views;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
     OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
                         void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL,
-                        int buffer_info_size = 10, int image_info_size = 10);
+                        int buffer_info_size = 10, int image_info_size = 10, int buffer_view_size = 10);
     ~OneOffDescriptorSet();
     bool Initialized();
     void WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize size,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uint32_t count = 1);
     void WriteDescriptorBufferView(int binding, VkBufferView &buffer_view,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, uint32_t count = 1);
     void WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                  VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                  VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, uint32_t count = 1);
     void UpdateDescriptorSets();
 };
 
