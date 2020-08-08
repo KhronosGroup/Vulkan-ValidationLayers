@@ -3878,6 +3878,8 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
         auto &push_constant_data = cb_state->push_constant_data;
         assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
         std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
+        std::memset(cb_state->push_constant_data_set.data() + offset, 0, static_cast<std::size_t>(size));
+        cb_state->push_constant_pipeline_layout_set = layout;
     }
 }
 
@@ -5727,6 +5729,12 @@ void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CM
             size_needed = std::max(size_needed, (push_constant_range.offset + push_constant_range.size));
         }
         cb_state->push_constant_data.resize(size_needed, 0);
+        cb_state->push_constant_data_set.resize(size_needed, 0);
+
+        for (auto push_constant_range : *cb_state->push_constant_data_ranges) {
+            std::memset(cb_state->push_constant_data_set.data() + push_constant_range.offset, 1,
+                        static_cast<std::size_t>(push_constant_range.size));
+        }
     }
 }
 

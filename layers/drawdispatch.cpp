@@ -65,6 +65,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-flags-02696",
         "VUID-vkCmdDraw-None-02686",
         "VUID-vkCmdDraw-None-02691",
+        "VUID-vkCmdDraw-None-02698",
     }},
     {CMD_DRAWINDEXED, {
         "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
@@ -89,6 +90,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-flags-02696",
         "VUID-vkCmdDrawIndexed-None-02686",
         "VUID-vkCmdDrawIndexed-None-02691",
+        "VUID-vkCmdDrawIndexed-None-02698",
     }},
     {CMD_DRAWINDIRECT, {
         "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
@@ -113,6 +115,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-flags-02696",
         "VUID-vkCmdDrawIndirect-None-02686",
         "VUID-vkCmdDrawIndirect-None-02691",
+        "VUID-vkCmdDrawIndirect-None-02698",
     }},
     {CMD_DRAWINDEXEDINDIRECT, {
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool",
@@ -137,6 +140,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-flags-02696",
         "VUID-vkCmdDrawIndexedIndirect-None-02686",
         "VUID-vkCmdDrawIndexedIndirect-None-02691",
+        "VUID-vkCmdDrawIndexedIndirect-None-02698",
     }},
     {CMD_DISPATCH, {
         "VUID-vkCmdDispatch-commandBuffer-cmdpool",
@@ -161,6 +165,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          "VUID-vkCmdDispatch-flags-02696",
          kVUIDUndefined, // subpass_input
          "VUID-vkCmdDispatch-None-02691",
+         "VUID-vkCmdDispatch-None-02698",
     }},
     {CMD_DISPATCHINDIRECT, {
         "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
@@ -185,6 +190,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatchIndirect-flags-02696",
         kVUIDUndefined, // subpass_input
         "VUID-vkCmdDispatchIndirect-None-02691",
+        "VUID-vkCmdDispatchIndirect-None-02698",
     }},
     {CMD_DRAWINDIRECTCOUNT, {
         "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool",
@@ -209,6 +215,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-flags-02696",
         "VUID-vkCmdDrawIndirectCount-None-02686",
         "VUID-vkCmdDrawIndirectCount-None-02691",
+        "VUID-vkCmdDrawIndirectCount-None-02698",
     }},
     {CMD_DRAWINDEXEDINDIRECTCOUNT,{
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool",
@@ -233,6 +240,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-flags-02696",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02686",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02691",
+        "VUID-vkCmdDrawIndexedIndirectCount-None-02698",
     }},
     {CMD_TRACERAYSNV, {
         "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool",
@@ -257,6 +265,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysNV-flags-02696",
         kVUIDUndefined, // subpass_input
         "VUID-vkCmdTraceRaysNV-None-02691",
+        "VUID-vkCmdTraceRaysNV-None-02698",
     }},
     {CMD_TRACERAYSKHR, {
         "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
@@ -281,6 +290,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysKHR-flags-02696",
         kVUIDUndefined, // subpass_input
         "VUID-vkCmdTraceRaysKHR-None-02691",
+        "VUID-vkCmdTraceRaysKHR-None-02698",
     }},
     {CMD_TRACERAYSINDIRECTKHR, {
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
@@ -305,6 +315,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysIndirectKHR-flags-02696",
         kVUIDUndefined, // subpass_input
         "VUID-vkCmdTraceRaysIndirectKHR-None-02691",
+        "VUID-vkCmdTraceRaysIndirectKHR-None-02698",
     }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
@@ -329,6 +340,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-flags-02696",
         "VUID-vkCmdDrawMeshTasksNV-None-02686",
         "VUID-vkCmdDrawMeshTasksNV-None-02691",
+        "VUID-vkCmdDrawMeshTasksNV-None-02698",
     }},
     {CMD_DRAWMESHTASKSINDIRECTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
@@ -353,6 +365,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-flags-02696",
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02686",
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02691",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-None-02698",
     }},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool",
@@ -377,6 +390,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-flags-02696",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02686",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02691",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02698",
     }},
     {CMD_DRAWINDIRECTBYTECOUNTEXT, {
         "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-cmdpool",
@@ -401,6 +415,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectByteCountEXT-flags-02696",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02686",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02691",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-02698",
     }},
     {CMD_DISPATCHBASE, {
         "VUID-vkCmdDispatchBase-commandBuffer-cmdpool",
@@ -425,9 +440,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          "VUID-vkCmdDispatchBase-flags-02696",
          kVUIDUndefined, // subpass_input
          "VUID-vkCmdDispatchBase-None-02691",
+         "VUID-vkCmdDispatchBase-None-02698",
     }},
     // Used if invalid cmd_type is used
     {CMD_NONE, {
+        kVUIDUndefined,
         kVUIDUndefined,
         kVUIDUndefined,
         kVUIDUndefined,
