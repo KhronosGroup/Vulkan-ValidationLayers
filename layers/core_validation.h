@@ -54,6 +54,7 @@ struct DrawDispatchVuid {
     const char* corner_sampled_address_mode;
     const char* subpass_input;
     const char* imageview_atomic;
+    const char* push_constants_set;
 };
 
 typedef struct {

@@ -1250,6 +1250,10 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<uint8_t> push_constant_data;
     PushConstantRangesId push_constant_data_ranges;
 
+    std::vector<uint8_t> push_constant_data_set;  // If a byte is set or a byte is not used in push_constant_rage, the value of byte
+                                                  // is 0, so if the whole is set, the whole value is 0.
+    VkPipelineLayout push_constant_pipeline_layout_set;
+
     // Used for Best Practices tracking
     uint32_t small_indexed_draw_call_count;
 
