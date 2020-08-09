@@ -26,6 +26,13 @@
 #include "vulkan/vk_layer.h"
 #include "vulkan/vulkan.h"
 
+#if defined(WIN32)
+#define DEFAULT_VK_REGISTRY_HIVE HKEY_LOCAL_MACHINE
+#define DEFAULT_VK_REGISTRY_HIVE_STR "HKEY_LOCAL_MACHINE"
+#define SECONDARY_VK_REGISTRY_HIVE HKEY_CURRENT_USER
+#define SECONDARY_VK_REGISTRY_HIVE_STR "HKEY_CURRENT_USER"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
