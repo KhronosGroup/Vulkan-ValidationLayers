@@ -192,37 +192,69 @@ void ConfigFile::SetOption(const string &option, const string &val) {
     value_map_[option] = val;
 }
 
+#if defined(WIN32)
+// Check for admin rights
+static inline bool IsHighIntegrity() {
+    HANDLE process_token;
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_QUERY_SOURCE, &process_token)) {
+        // Maximum possible size of SID_AND_ATTRIBUTES is maximum size of a SID + size of attributes DWORD.
+        uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(DWORD)];
+        DWORD buffer_size;
+        if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
+                                &buffer_size) != 0) {
+            const TOKEN_MANDATORY_LABEL *mandatory_label = (const TOKEN_MANDATORY_LABEL *)mandatory_label_buffer;
+            const DWORD sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
+            const DWORD integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
+
+            CloseHandle(process_token);
+            return integrity_level > SECURITY_MANDATORY_MEDIUM_RID;
+        }
+
+        CloseHandle(process_token);
+    }
+
+    return false;
+}
+#endif
+
 string ConfigFile::FindSettings() {
     struct stat info;
 
 #if defined(WIN32)
     // Look for VkConfig-specific settings location specified in the windows registry
-    HKEY hive;
-    LSTATUS err = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Khronos\\Vulkan\\Settings", 0, KEY_READ, &hive);
-    if (err == ERROR_SUCCESS) {
-        char name[2048];
-        DWORD i = 0, name_size, type, value, value_size;
-        while (ERROR_SUCCESS == RegEnumValue(hive, i++, name, &(name_size = sizeof(name)), nullptr, &type,
-                                             reinterpret_cast<LPBYTE>(&value), &(value_size = sizeof(value)))) {
-            // Check if the registry entry is a dword with a value of zero
-            if (type != REG_DWORD || value != 0) {
-                continue;
+    HKEY key;
+
+    const std::array<HKEY, 2> hives = {DEFAULT_VK_REGISTRY_HIVE, SECONDARY_VK_REGISTRY_HIVE};
+    const size_t hives_to_check_count = IsHighIntegrity() ? 1 : hives.size();  // Admin checks only the default hive
+
+    for (size_t hive_index = 0; hive_index < hives_to_check_count; ++hive_index) {
+        LSTATUS err = RegOpenKeyEx(hives[hive_index], "Software\\Khronos\\Vulkan\\Settings", 0, KEY_READ, &key);
+        if (err == ERROR_SUCCESS) {
+            char name[2048];
+            DWORD i = 0, name_size, type, value, value_size;
+            while (ERROR_SUCCESS == RegEnumValue(key, i++, name, &(name_size = sizeof(name)), nullptr, &type,
+                                                 reinterpret_cast<LPBYTE>(&value), &(value_size = sizeof(value)))) {
+                // Check if the registry entry is a dword with a value of zero
+                if (type != REG_DWORD || value != 0) {
+                    continue;
+                }
+
+                // Check if this actually points to a file
+                if ((stat(name, &info) != 0) || !(info.st_mode & S_IFREG)) {
+                    continue;
+                }
+
+                // Use this file
+                RegCloseKey(key);
+                settings_info.source = kVkConfig;
+                settings_info.location = name;
+                return name;
             }
 
-            // Check if this actually points to a file
-            if ((stat(name, &info) != 0) || !(info.st_mode & S_IFREG)) {
-                continue;
-            }
-
-            // Use this file
-            RegCloseKey(hive);
-            settings_info.source = kVkConfig;
-            settings_info.location = name;
-            return name;
+            RegCloseKey(key);
         }
-
-        RegCloseKey(hive);
     }
+
 #else
     // Look for VkConfig-specific settings location specified in a specific spot in the linux settings store
     string search_path = GetEnvironment("XDG_DATA_HOME");
