@@ -232,6 +232,32 @@ const std::vector<VkAccelerationStructureBuildTypeKHR> AllVkAccelerationStructur
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 
+bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const {
+    bool skip = false;
+    if (api_version < promoted_version) {
+        skip = LogError(instance,
+                        kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %d"
+                        "but this API was not promoted until version %d.", api_name, api_version, promoted_version);
+    }
+    return skip;
+}
+
+bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const {
+    bool skip = false;
+    const auto &target_pdev = physical_device_properties_map.find(pdev);
+    if (target_pdev != physical_device_properties_map.end()) {
+        auto effective_api_version = std::min(target_pdev->second->apiVersion, api_version);
+        if (effective_api_version < promoted_version) {
+            skip = LogError(instance,
+                            kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %d, "
+                            "which is the minimum of version requested in pApplicationInfo (%d) and supported by this physical device (%d), "
+                            "but this API was not promoted until version %d.", api_name, api_version, target_pdev->second->apiVersion,
+                            effective_api_version, promoted_version);
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) const {
     bool skip = false;
     switch(header->sType) {
@@ -5471,6 +5497,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
     uint32_t*                                   pPhysicalDeviceGroupCount,
     VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(instance, "vkEnumeratePhysicalDeviceGroups", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type_array("vkEnumeratePhysicalDeviceGroups", "pPhysicalDeviceGroupCount", "pPhysicalDeviceGroupProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES", pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES, true, false, false, "VUID-VkPhysicalDeviceGroupProperties-sType-sType", "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter", kVUIDUndefined);
     if (pPhysicalDeviceGroupProperties != NULL)
     {
@@ -5556,6 +5583,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceFeatures2*                  pFeatures) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceFeatures2", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceFeatures2", "pFeatures", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2", pFeatures, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, true, "VUID-vkGetPhysicalDeviceFeatures2-pFeatures-parameter", "VUID-VkPhysicalDeviceFeatures2-sType-sType");
     return skip;
 }
@@ -5564,6 +5592,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceProperties2*                pProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceProperties2", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceProperties2", "pProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2", pProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceProperties2-pProperties-parameter", "VUID-VkPhysicalDeviceProperties2-sType-sType");
     if (pProperties != NULL)
     {
@@ -5579,6 +5608,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2(
     VkFormat                                    format,
     VkFormatProperties2*                        pFormatProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceFormatProperties2", VK_API_VERSION_1_1)) return true;
     skip |= validate_ranged_enum("vkGetPhysicalDeviceFormatProperties2", "format", "VkFormat", AllVkFormatEnums, format, "VUID-vkGetPhysicalDeviceFormatProperties2-format-parameter");
     skip |= validate_struct_type("vkGetPhysicalDeviceFormatProperties2", "pFormatProperties", "VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2", pFormatProperties, VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceFormatProperties2-pFormatProperties-parameter", "VUID-VkFormatProperties2-sType-sType");
     if (pFormatProperties != NULL)
@@ -5595,6 +5625,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
     VkImageFormatProperties2*                   pImageFormatProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceImageFormatProperties2", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceImageFormatProperties2", "pImageFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2", pImageFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceImageFormatProperties2-pImageFormatInfo-parameter", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-sType");
     if (pImageFormatInfo != NULL)
     {
@@ -5628,6 +5659,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
     uint32_t*                                   pQueueFamilyPropertyCount,
     VkQueueFamilyProperties2*                   pQueueFamilyProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceQueueFamilyProperties2", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type_array("vkGetPhysicalDeviceQueueFamilyProperties2", "pQueueFamilyPropertyCount", "pQueueFamilyProperties", "VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2", pQueueFamilyPropertyCount, pQueueFamilyProperties, VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, true, false, false, "VUID-VkQueueFamilyProperties2-sType-sType", "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyProperties-parameter", kVUIDUndefined);
     if (pQueueFamilyProperties != NULL)
     {
@@ -5645,6 +5677,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceMemoryProperties2", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceMemoryProperties2", "pMemoryProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2", pMemoryProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceMemoryProperties2-pMemoryProperties-parameter", "VUID-VkPhysicalDeviceMemoryProperties2-sType-sType");
     if (pMemoryProperties != NULL)
     {
@@ -5661,6 +5694,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     uint32_t*                                   pPropertyCount,
     VkSparseImageFormatProperties2*             pProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceSparseImageFormatProperties2", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceSparseImageFormatProperties2", "pFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2", pFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pFormatInfo-parameter", "VUID-VkPhysicalDeviceSparseImageFormatInfo2-sType-sType");
     if (pFormatInfo != NULL)
     {
@@ -5894,6 +5928,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
     VkExternalBufferProperties*                 pExternalBufferProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceExternalBufferProperties", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO", pExternalBufferInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO, true, "VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferInfo-parameter", "VUID-VkPhysicalDeviceExternalBufferInfo-sType-sType");
     if (pExternalBufferInfo != NULL)
     {
@@ -5918,6 +5953,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
     VkExternalFenceProperties*                  pExternalFenceProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceExternalFenceProperties", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO", pExternalFenceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO, true, "VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceInfo-parameter", "VUID-VkPhysicalDeviceExternalFenceInfo-sType-sType");
     if (pExternalFenceInfo != NULL)
     {
@@ -5938,6 +5974,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) const {
     bool skip = false;
+     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, "vkGetPhysicalDeviceExternalSemaphoreProperties", VK_API_VERSION_1_1)) return true;
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO", pExternalSemaphoreInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO, true, "VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-pExternalSemaphoreInfo-parameter", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-sType-sType");
     if (pExternalSemaphoreInfo != NULL)
     {

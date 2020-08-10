@@ -42,6 +42,7 @@ static const char DECORATE_UNUSED *kVUID_PVError_DeviceLimit = "UNASSIGNED-Gener
 static const char DECORATE_UNUSED *kVUID_PVError_DeviceFeature = "UNASSIGNED-GeneralParameterError-DeviceFeature";
 static const char DECORATE_UNUSED *kVUID_PVError_FailureCode = "UNASSIGNED-GeneralParameterError-FailureCode";
 static const char DECORATE_UNUSED *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
+static const char DECORATE_UNUSED *kVUID_PVError_ApiVersionViolation = "UNASSIGNED-API-Version-Violation";
 
 extern const uint32_t GeneratedVulkanHeaderVersion;
 
@@ -87,6 +88,7 @@ class StatelessValidation : public ValidationObject {
     safe_VkPhysicalDeviceFeatures2 physical_device_features2;
     void *device_createinfo_pnext;
     const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
+    std::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
@@ -468,7 +470,10 @@ class StatelessValidation : public ValidationObject {
         return skip_call;
     }
 
-    // Forward declaration for pNext validation
+    // Forward declarations
+    bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const;
+    bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const;
+
     bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
                                      const VkBaseOutStructure *header) const;
 
@@ -1243,6 +1248,8 @@ class StatelessValidation : public ValidationObject {
 
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                       VkInstance *pInstance, VkResult result);
+
+    void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator);
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) const;

@@ -138,6 +138,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.INDENT_SPACES = 4
         self.declarations = []
 
+
         inline_custom_source_preamble = """
 """
 
@@ -283,7 +284,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
                                                         'isconst', 'isoptional', 'iscount', 'noautovalidity',
                                                         'len', 'extstructs', 'condition', 'cdecl'])
-        self.CommandData = namedtuple('CommandData', ['name', 'params', 'cdecl', 'extension_type', 'result'])
+        self.CommandData = namedtuple('CommandData', ['name', 'params', 'cdecl', 'extension_type', 'result', 'promotion_info'])
         self.StructMemberData = namedtuple('StructMemberData', ['name', 'members'])
 
     #
@@ -395,6 +396,32 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             self.newline()
             write(self.enumValueLists, file=self.outFile)
             self.newline()
+
+            api_func  = 'bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const {\n'
+            api_func += '    bool skip = false;\n'
+            api_func += '    if (api_version < promoted_version) {\n'
+            api_func += '        skip = LogError(instance,\n'
+            api_func += '                        kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %d"\n'
+            api_func += '                        "but this API was not promoted until version %d.", api_name, api_version, promoted_version);\n'
+            api_func += '    }\n'
+            api_func += '    return skip;\n'
+            api_func += '}\n\n'
+            api_func += 'bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const {\n'
+            api_func += '    bool skip = false;\n'
+            api_func += '    const auto &target_pdev = physical_device_properties_map.find(pdev);\n'
+            api_func += '    if (target_pdev != physical_device_properties_map.end()) {\n'
+            api_func += '        auto effective_api_version = std::min(target_pdev->second->apiVersion, api_version);\n'
+            api_func += '        if (effective_api_version < promoted_version) {\n'
+            api_func += '            skip = LogError(instance,\n'
+            api_func += '                            kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %d, "\n'
+            api_func += '                            "which is the minimum of version requested in pApplicationInfo (%d) and supported by this physical device (%d), "\n'
+            api_func += '                            "but this API was not promoted until version %d.", api_name, api_version, target_pdev->second->apiVersion,\n'
+            api_func += '                            effective_api_version, promoted_version);\n'
+            api_func += '        }\n'
+            api_func += '    }\n'
+            api_func += '    return skip;\n'
+            api_func += '}\n'
+            write(api_func, file=self.outFile)
 
             pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) const {\n'
             pnext_handler += '    bool skip = false;\n'
@@ -722,10 +749,14 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                                                         cdecl=cdecl))
                 # Save return value information, if any
                 result_type = ''
+                promotion_info = ''
                 resultinfo = cmdinfo.elem.find('proto/type')
                 if (resultinfo is not None and resultinfo.text != 'void'):
                     result_type = resultinfo.text
-                self.commands.append(self.CommandData(name=name, params=paramsInfo, cdecl=self.makeCDecls(cmdinfo.elem)[0], extension_type=self.extension_type, result=result_type))
+                if "VK_VERSION" in self.featureName and "VK_VERSION_1_0" != self.featureName:
+                    if ('VkInstance' == paramsInfo[0].type or 'VkPhysicalDevice' == paramsInfo[0].type):
+                        promotion_info = [paramsInfo[0].name, self.featureName]
+                self.commands.append(self.CommandData(name=name, params=paramsInfo, cdecl=self.makeCDecls(cmdinfo.elem)[0], extension_type=self.extension_type, result=result_type, promotion_info=promotion_info))
     #
     # Check if the parameter passed in is a pointer
     def paramIsPointer(self, param):
@@ -1331,6 +1362,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 func_sig = func_sig.split('VKAPI_CALL vk')[1]
                 cmdDef = 'bool StatelessValidation::PreCallValidate' + func_sig
                 cmdDef += '%sbool skip = false;\n' % indent
+                if isinstance(command.promotion_info, list):
+                    stop = 'here'
+                    version_flag = command.promotion_info[1]
+                    version_id = version_flag.replace('VK_VERSION', 'VK_API_VERSION')
+                    cmdDef += '%s if (CheckPromotedApiAgainstVulkanVersion(%s, "%s", %s)) return true;\n' % (indent, command.promotion_info[0], command.name, version_id)
                 for line in lines:
                     if type(line) is list:
                         for sub in line:
