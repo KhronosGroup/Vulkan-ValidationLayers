@@ -157,7 +157,27 @@ void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInf
     // Copy extension data into local object
     if (result != VK_SUCCESS) return;
     this->instance_extensions = instance_data->instance_extensions;
+
+    uint32_t pdev_count = 0;
+    DispatchEnumeratePhysicalDevices(*pInstance, &pdev_count, nullptr);
+    std::vector<VkPhysicalDevice> physical_devices;
+    physical_devices.resize(pdev_count);
+    DispatchEnumeratePhysicalDevices(*pInstance, &pdev_count, physical_devices.data());
+
+    // Need to get instance and do a getlayerdata call...
+    for (uint32_t i = 0; i < physical_devices.size(); i++) {
+        auto phys_dev_props = new VkPhysicalDeviceProperties;
+        DispatchGetPhysicalDeviceProperties(physical_devices[i], phys_dev_props);
+        physical_device_properties_map[physical_devices[i]] = phys_dev_props;
+    }
 }
+
+void StatelessValidation::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+    for (auto it = physical_device_properties_map.begin(); it != physical_device_properties_map.end();) {
+        delete (it->second);
+        it = physical_device_properties_map.erase(it);
+    }
+};
 
 void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
