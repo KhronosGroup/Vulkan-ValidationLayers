@@ -1485,8 +1485,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     }
 
     const auto *device_group_ci = lvl_find_in_chain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
-    state_tracker->physical_device_count =
-        device_group_ci && device_group_ci->physicalDeviceCount > 0 ? device_group_ci->physicalDeviceCount : 1;
+    if (device_group_ci) {
+        state_tracker->physical_device_count = device_group_ci->physicalDeviceCount;
+        state_tracker->device_group_create_info = *device_group_ci;
+    } else {
+        state_tracker->physical_device_count = 1;
+    }
 
     const auto *exclusive_scissor_features = lvl_find_in_chain<VkPhysicalDeviceExclusiveScissorFeaturesNV>(pCreateInfo->pNext);
     if (exclusive_scissor_features) {
