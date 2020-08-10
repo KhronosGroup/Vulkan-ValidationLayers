@@ -198,13 +198,13 @@ static inline bool IsHighIntegrity() {
     HANDLE process_token;
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_QUERY_SOURCE, &process_token)) {
         // Maximum possible size of SID_AND_ATTRIBUTES is maximum size of a SID + size of attributes DWORD.
-        uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(DWORD)];
-        DWORD buffer_size;
+        uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(uint32_t)];
+        uint32_t buffer_size;
         if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
                                 &buffer_size) != 0) {
             const TOKEN_MANDATORY_LABEL *mandatory_label = (const TOKEN_MANDATORY_LABEL *)mandatory_label_buffer;
-            const DWORD sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
-            const DWORD integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
+            const uint32_t sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
+            const uint32_t integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
 
             CloseHandle(process_token);
             return integrity_level > SECURITY_MANDATORY_MEDIUM_RID;
@@ -231,7 +231,7 @@ string ConfigFile::FindSettings() {
         LSTATUS err = RegOpenKeyEx(hives[hive_index], "Software\\Khronos\\Vulkan\\Settings", 0, KEY_READ, &key);
         if (err == ERROR_SUCCESS) {
             char name[2048];
-            DWORD i = 0, name_size, type, value, value_size;
+            uint32_t i = 0, name_size, type, value, value_size;
             while (ERROR_SUCCESS == RegEnumValue(key, i++, name, &(name_size = sizeof(name)), nullptr, &type,
                                                  reinterpret_cast<LPBYTE>(&value), &(value_size = sizeof(value)))) {
                 // Check if the registry entry is a dword with a value of zero
