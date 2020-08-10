@@ -2309,6 +2309,11 @@ bool PreCallValidateAcquirePerformanceConfigurationINTEL(
     VkDevice                                    device,
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
     VkPerformanceConfigurationINTEL*            pConfiguration) const;
+void PostCallRecordAcquirePerformanceConfigurationINTEL(
+    VkDevice                                    device,
+    const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
+    VkPerformanceConfigurationINTEL*            pConfiguration,
+    VkResult                                    result);
 bool PreCallValidateReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
     VkPerformanceConfigurationINTEL             configuration) const;

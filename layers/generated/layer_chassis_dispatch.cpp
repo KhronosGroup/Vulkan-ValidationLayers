@@ -7062,11 +7062,10 @@ VkResult DispatchAcquirePerformanceConfigurationINTEL(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
-    {
-        pConfiguration = layer_data->Unwrap(pConfiguration);
-    }
     VkResult result = layer_data->device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
-
+    if (VK_SUCCESS == result) {
+        *pConfiguration = layer_data->WrapNew(*pConfiguration);
+    }
     return result;
 }
 

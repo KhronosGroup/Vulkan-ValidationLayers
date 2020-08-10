@@ -910,10 +910,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         struct_member_dict = dict(self.structMembers)
 
         # Set command invariant information needed at a per member level in validate...
-        is_create_command = any(filter(lambda pat: pat in cmdname, ('Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent')))
+        is_create_command = any(filter(lambda pat: pat in cmdname, ('Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL')))
         last_member_is_pointer = len(members) and self.paramIsPointer(members[-1])
         iscreate = is_create_command or ('vkGet' in cmdname and last_member_is_pointer)
-        isdestroy = any([destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free']])
+        isdestroy = any([destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL']])
 
         # Generate member info
         membersInfo = []
