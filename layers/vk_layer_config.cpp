@@ -201,7 +201,7 @@ static inline bool IsHighIntegrity() {
         uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(uint32_t)];
         uint32_t buffer_size;
         if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
-                                &buffer_size) != 0) {
+                                reinterpret_cast<PDWORD>(&buffer_size)) != 0) {
             const TOKEN_MANDATORY_LABEL *mandatory_label = (const TOKEN_MANDATORY_LABEL *)mandatory_label_buffer;
             const uint32_t sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
             const uint32_t integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
@@ -232,8 +232,9 @@ string ConfigFile::FindSettings() {
         if (err == ERROR_SUCCESS) {
             char name[2048];
             uint32_t i = 0, name_size, type, value, value_size;
-            while (ERROR_SUCCESS == RegEnumValue(key, i++, name, &(name_size = sizeof(name)), nullptr, &type,
-                                                 reinterpret_cast<LPBYTE>(&value), &(value_size = sizeof(value)))) {
+            while (ERROR_SUCCESS == RegEnumValue(key, i++, name, reinterpret_cast<LPDWORD>(&(name_size = sizeof(name))), nullptr,
+                                                 reinterpret_cast<LPDWORD>(&type), reinterpret_cast<LPBYTE>(&value),
+                                                 reinterpret_cast<LPDWORD>(&(value_size = sizeof(value))))) {
                 // Check if the registry entry is a dword with a value of zero
                 if (type != REG_DWORD || value != 0) {
                     continue;
