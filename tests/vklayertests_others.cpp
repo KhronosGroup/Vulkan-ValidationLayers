@@ -103,6 +103,23 @@ class DuplicateMsgLimit {
     VkLayerSettingsEXT limit_setting;
 };
 
+TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
+    TEST_DESCRIPTION("Validate that promoted APIs are not valid in old versions.");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 =
+        (PFN_vkGetPhysicalDeviceProperties2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2");
+    assert(vkGetPhysicalDeviceProperties2);
+
+    VkPhysicalDeviceProperties2 phys_dev_props_2{};
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-API-Version-Violation");
+    vkGetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, PrivateDataExtTest) {
     TEST_DESCRIPTION("Test private data extension use.");
 
