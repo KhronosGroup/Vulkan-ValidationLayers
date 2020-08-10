@@ -927,6 +927,13 @@ bool ObjectLifetimes::PreCallValidateAcquirePerformanceConfigurationINTEL(
     return skip;
 }
 
+void ObjectLifetimes::PostCallRecordAcquirePerformanceConfigurationINTEL(
+    VkDevice device, const VkPerformanceConfigurationAcquireInfoINTEL *pAcquireInfo,
+    VkPerformanceConfigurationINTEL *pConfiguration, VkResult result) {
+    if (result != VK_SUCCESS) return;
+    CreateObject(*pConfiguration, kVulkanObjectTypePerformanceConfigurationINTEL, nullptr);
+}
+
 bool ObjectLifetimes::PreCallValidateReleasePerformanceConfigurationINTEL(VkDevice device,
                                                                           VkPerformanceConfigurationINTEL configuration) const {
     bool skip = false;
