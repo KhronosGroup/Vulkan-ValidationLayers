@@ -11918,7 +11918,12 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDeviceGroupDeviceCreateInfo device_group_ci = {};
+    device_group_ci.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+    device_group_ci.physicalDeviceCount = 1;
+    VkPhysicalDevice pdev = gpu();
+    device_group_ci.pPhysicalDevices = &pdev;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &device_group_ci));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (!InitSurface()) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
@@ -11993,10 +11998,15 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
             }
         }
     }
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
+        return;
+    }
 
     if (found_bad_usage) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-surface-01270");
         vk::CreateSwapchainKHR(device(), &create_info_bad_usage, nullptr, &m_swapchain);
         m_errorMonitor->VerifyFound();
     } else {
@@ -12005,7 +12015,22 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
             "surface but unsupported by image, skipping test\n",
             kSkipPrefix);
     }
+    vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
 
+    VkImageFormatProperties props;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(gpu(), good_create_info.imageFormat, VK_IMAGE_TYPE_2D,
+                                                              VK_IMAGE_TILING_OPTIMAL, good_create_info.imageUsage,
+                                                              VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT, &props);
+    if (res != VK_SUCCESS) {
+        printf("%s Swapchain image format does not support SPLIT_INSTANCE_BIND_REGIONS, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkSwapchainCreateInfoKHR create_info_bad_flags = good_create_info;
+    create_info_bad_flags.flags = VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429");
+    vk::CreateSwapchainKHR(device(), &create_info_bad_flags, nullptr, &m_swapchain);
+    m_errorMonitor->VerifyFound();
     DestroySwapchain();
 }
 
