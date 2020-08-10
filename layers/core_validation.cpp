@@ -11536,6 +11536,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                      image_properties.maxExtent.height, string_VkFormat(pCreateInfo->imageFormat)))
             return true;
     }
+
     if ((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) &&
         device_group_create_info.physicalDeviceCount == 1) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429",
