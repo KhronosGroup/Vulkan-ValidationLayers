@@ -54,7 +54,6 @@
 #include <valarray>
 
 #include "vk_loader_platform.h"
-#include "vk_dispatch_table_helper.h"
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
 #include "convert_to_renderpass2.h"

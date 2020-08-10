@@ -23,7 +23,6 @@
 #include "shader_validation.h"
 
 #include <string>
-#include <iomanip>
 #include <bitset>
 #include <memory>
 
