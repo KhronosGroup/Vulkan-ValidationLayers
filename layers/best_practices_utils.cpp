@@ -27,19 +27,6 @@
 #include <bitset>
 #include <memory>
 
-// get the API name is proper format
-std::string BestPractices::GetAPIVersionName(uint32_t version) const {
-    std::stringstream version_name;
-    uint32_t major = VK_VERSION_MAJOR(version);
-    uint32_t minor = VK_VERSION_MINOR(version);
-    uint32_t patch = VK_VERSION_PATCH(version);
-
-    version_name << major << "." << minor << "." << patch << " (0x" << std::setfill('0') << std::setw(8) << std::hex << version
-                 << ")";
-
-    return version_name.str();
-}
-
 struct VendorSpecificInfo {
     EnableFlags vendor_id;
     std::string name;
@@ -171,8 +158,8 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 
     // check api versions and warn if instance api Version is higher than version on device.
     if (instance_api_version > device_api_version) {
-        std::string inst_api_name = GetAPIVersionName(instance_api_version);
-        std::string dev_api_name = GetAPIVersionName(device_api_version);
+        std::string inst_api_name = StringAPIVersion(instance_api_version);
+        std::string dev_api_name = StringAPIVersion(device_api_version);
 
         skip |= LogWarning(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
                            "vkCreateDevice(): API Version of current instance, %s is higher than API Version on device, %s",
