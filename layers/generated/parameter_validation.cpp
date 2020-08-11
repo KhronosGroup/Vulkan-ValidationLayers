@@ -236,8 +236,9 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instan
     bool skip = false;
     if (api_version < promoted_version) {
         skip = LogError(instance,
-                        kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %d"
-                        "but this API was not promoted until version %d.", api_name, api_version, promoted_version);
+                        kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %s"
+                        "but this API was not promoted until version %s.", api_name, StringAPIVersion(api_version).c_str(),
+                        StringAPIVersion(promoted_version).c_str());
     }
     return skip;
 }
@@ -249,10 +250,11 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
         auto effective_api_version = std::min(target_pdev->second->apiVersion, api_version);
         if (effective_api_version < promoted_version) {
             skip = LogError(instance,
-                            kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %d, "
-                            "which is the minimum of version requested in pApplicationInfo (%d) and supported by this physical device (%d), "
-                            "but this API was not promoted until version %d.", api_name, api_version, target_pdev->second->apiVersion,
-                            effective_api_version, promoted_version);
+                            kVUID_PVError_ApiVersionViolation, "Attemped to call %s() with an effective API version of %s, "
+                            "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "
+                            "but this API was not promoted until version %s.", api_name, StringAPIVersion(api_version).c_str(),
+                            StringAPIVersion(target_pdev->second->apiVersion).c_str(), StringAPIVersion(effective_api_version).c_str(),
+                            StringAPIVersion(promoted_version).c_str());
         }
     }
     return skip;
