@@ -120,6 +120,26 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
+    TEST_DESCRIPTION("Validate that newer pnext structs are not valid for old Vulkan versions.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (IsPlatform(kNexusPlayer)) {
+        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
+        return;
+    }
+
+    auto phys_dev_props_2 = lvl_init_struct<VkPhysicalDeviceProperties2>();
+    auto bad_version_1_1_struct = lvl_init_struct<VkPhysicalDeviceVulkan12Properties>();
+    phys_dev_props_2.pNext = &bad_version_1_1_struct;
+
+    // VkPhysDevVulkan12Props was introduced in 1.2, so try adding it to a 1.1 pNext chain
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, PrivateDataExtTest) {
     TEST_DESCRIPTION("Test private data extension use.");
 
