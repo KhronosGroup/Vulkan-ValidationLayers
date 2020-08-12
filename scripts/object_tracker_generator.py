@@ -174,9 +174,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkGetPhysicalDeviceDisplayProperties2KHR',
             'vkGetDisplayModePropertiesKHR',
             'vkGetDisplayModeProperties2KHR',
-            'vkAcquirePerformanceConfigurationINTEL',
-            'vkReleasePerformanceConfigurationINTEL',
-            'vkQueueSetPerformanceConfigurationINTEL',
             'vkCreateFramebuffer',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
@@ -743,11 +740,15 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         validate_code = ''
         record_code = ''
         object_array = False
-        if True in [destroy_txt in proto.text for destroy_txt in ['Destroy', 'Free']]:
+        allocator = 'pAllocator'
+        if True in [destroy_txt in proto.text for destroy_txt in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL']]:
             # Check for special case where multiple handles are returned
             if cmd_info[-1].len is not None:
                 object_array = True;
                 param = -1
+            elif 'ReleasePerformanceConfigurationINTEL' in proto.text:
+                param = -1
+                allocator = 'nullptr'
             else:
                 param = -2
             compatalloc_vuid_string = '%s-compatalloc' % cmd_info[param].name
@@ -761,7 +762,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 else:
                     dispobj = cmd_info[0].type
                     # Call Destroy a single time
-                    validate_code += '%sskip |= ValidateDestroyObject(%s, %s, pAllocator, %s, %s);\n' % (indent, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
+                    validate_code += '%sskip |= ValidateDestroyObject(%s, %s, %s, %s, %s);\n' % (indent, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), allocator, compatalloc_vuid, nullalloc_vuid)
                     record_code += '%sRecordDestroyObject(%s, %s);\n' % (indent, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
         return object_array, validate_code, record_code
     #

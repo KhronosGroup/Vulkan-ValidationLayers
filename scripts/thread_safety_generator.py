@@ -1356,7 +1356,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
                         paramdecl += '}\n'
                     else:
                         paramdecl += functionprefix + 'WriteObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ', "' + name + '");\n'
-                        if ('Destroy' in name or 'Free' in name) and functionprefix == 'Finish':
+                        if ('Destroy' in name or 'Free' in name or 'ReleasePerformanceConfigurationINTEL' in name) and functionprefix == 'Finish':
                             paramdecl += 'DestroyObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ');\n'
                 elif (param.attrib.get('externsync')):
                     if self.paramIsArray(param):
@@ -1404,7 +1404,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
                             if 'surface' in member:
                                 suffix = 'ParentInstance'
                             paramdecl += '    ' + functionprefix + 'WriteObject' + suffix + '(' + member + ', "' + name + '");\n'
-                elif self.paramIsPointer(param) and ('Create' in name or 'Allocate' in name) and functionprefix == 'Finish':
+                elif self.paramIsPointer(param) and ('Create' in name or 'Allocate' in name or 'AcquirePerformanceConfigurationINTEL' in name) and functionprefix == 'Finish':
                     paramtype = param.find('type')
                     if paramtype is not None:
                         paramtype = paramtype.text

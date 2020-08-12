@@ -5141,6 +5141,54 @@ bool ObjectLifetimes::PreCallValidateCmdSetPerformanceOverrideINTEL(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateAcquirePerformanceConfigurationINTEL(
+    VkDevice                                    device,
+    const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
+    VkPerformanceConfigurationINTEL*            pConfiguration) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkAcquirePerformanceConfigurationINTEL-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordAcquirePerformanceConfigurationINTEL(
+    VkDevice                                    device,
+    const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
+    VkPerformanceConfigurationINTEL*            pConfiguration,
+    VkResult                                    result) {
+    if (result != VK_SUCCESS) return;
+    CreateObject(*pConfiguration, kVulkanObjectTypePerformanceConfigurationINTEL, nullptr);
+
+}
+
+bool ObjectLifetimes::PreCallValidateReleasePerformanceConfigurationINTEL(
+    VkDevice                                    device,
+    VkPerformanceConfigurationINTEL             configuration) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkReleasePerformanceConfigurationINTEL-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(configuration, kVulkanObjectTypePerformanceConfigurationINTEL, true, "VUID-vkReleasePerformanceConfigurationINTEL-configuration-parameter", "VUID-vkReleasePerformanceConfigurationINTEL-configuration-parent");
+    skip |= ValidateDestroyObject(configuration, kVulkanObjectTypePerformanceConfigurationINTEL, nullptr, kVUIDUndefined, kVUIDUndefined);
+
+    return skip;
+}
+
+void ObjectLifetimes::PreCallRecordReleasePerformanceConfigurationINTEL(
+    VkDevice                                    device,
+    VkPerformanceConfigurationINTEL             configuration) {
+    RecordDestroyObject(configuration, kVulkanObjectTypePerformanceConfigurationINTEL);
+
+}
+
+bool ObjectLifetimes::PreCallValidateQueueSetPerformanceConfigurationINTEL(
+    VkQueue                                     queue,
+    VkPerformanceConfigurationINTEL             configuration) const {
+    bool skip = false;
+    skip |= ValidateObject(queue, kVulkanObjectTypeQueue, false, "VUID-vkQueueSetPerformanceConfigurationINTEL-queue-parameter", "VUID-vkQueueSetPerformanceConfigurationINTEL-commonparent");
+    skip |= ValidateObject(configuration, kVulkanObjectTypePerformanceConfigurationINTEL, false, "VUID-vkQueueSetPerformanceConfigurationINTEL-configuration-parameter", "VUID-vkQueueSetPerformanceConfigurationINTEL-commonparent");
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateGetPerformanceParameterINTEL(
     VkDevice                                    device,
     VkPerformanceParameterTypeINTEL             parameter,
