@@ -2317,6 +2317,9 @@ void PostCallRecordAcquirePerformanceConfigurationINTEL(
 bool PreCallValidateReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
     VkPerformanceConfigurationINTEL             configuration) const;
+void PreCallRecordReleasePerformanceConfigurationINTEL(
+    VkDevice                                    device,
+    VkPerformanceConfigurationINTEL             configuration);
 bool PreCallValidateQueueSetPerformanceConfigurationINTEL(
     VkQueue                                     queue,
     VkPerformanceConfigurationINTEL             configuration) const;

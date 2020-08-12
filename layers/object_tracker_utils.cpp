@@ -917,41 +917,6 @@ void ObjectLifetimes::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevic
     }
 }
 
-bool ObjectLifetimes::PreCallValidateAcquirePerformanceConfigurationINTEL(
-    VkDevice device, const VkPerformanceConfigurationAcquireInfoINTEL *pAcquireInfo,
-    VkPerformanceConfigurationINTEL *pConfiguration) const {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkAcquirePerformanceConfigurationINTEL-device-parameter",
-                           kVUIDUndefined);
-
-    return skip;
-}
-
-void ObjectLifetimes::PostCallRecordAcquirePerformanceConfigurationINTEL(
-    VkDevice device, const VkPerformanceConfigurationAcquireInfoINTEL *pAcquireInfo,
-    VkPerformanceConfigurationINTEL *pConfiguration, VkResult result) {
-    if (result != VK_SUCCESS) return;
-    CreateObject(*pConfiguration, kVulkanObjectTypePerformanceConfigurationINTEL, nullptr);
-}
-
-bool ObjectLifetimes::PreCallValidateReleasePerformanceConfigurationINTEL(VkDevice device,
-                                                                          VkPerformanceConfigurationINTEL configuration) const {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkReleasePerformanceConfigurationINTEL-device-parameter",
-                           kVUIDUndefined);
-
-    return skip;
-}
-
-bool ObjectLifetimes::PreCallValidateQueueSetPerformanceConfigurationINTEL(VkQueue queue,
-                                                                           VkPerformanceConfigurationINTEL configuration) const {
-    bool skip = false;
-    skip |= ValidateObject(queue, kVulkanObjectTypeQueue, false, "VUID-vkQueueSetPerformanceConfigurationINTEL-queue-parameter",
-                           "VUID-vkQueueSetPerformanceConfigurationINTEL-commonparent");
-
-    return skip;
-}
-
 bool ObjectLifetimes::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) const {
     bool skip = false;
