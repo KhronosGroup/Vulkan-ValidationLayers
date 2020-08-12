@@ -1697,11 +1697,9 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
         "Test unenabled VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME & "
         "VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME.");
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
-    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
     VkPhysicalDeviceFeatures2 pd_features2 = {};
     pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    pd_features2.pNext = &vadf;
+    pd_features2.pNext = nullptr;
 
     ASSERT_NO_FATAL_FAILURE(Init());
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
@@ -1711,9 +1709,15 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     VkDevice testDevice;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-pNext");
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain");
+    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VK_KHR_get_physical_device_properties2 must be enabled when it creates an instance");
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
+    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
+    vadf.pNext = nullptr;
+    device_create_info.pNext = &vadf;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VK_EXT_vertex_attribute_divisor must be enabled when it creates a device");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
     vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);

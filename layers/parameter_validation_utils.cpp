@@ -303,14 +303,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     auto features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
-    if (features2) {
-        if (!instance_extensions.vk_khr_get_physical_device_properties_2) {
-            skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
-                             "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceFeatures2 struct, "
-                             "VK_KHR_get_physical_device_properties2 must be enabled when it creates an instance.");
-        }
-    }
-
     const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
     const auto *robustness2_features = lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
     if (features && robustness2_features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
@@ -326,20 +318,10 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
     auto vertex_attribute_divisor_features =
         lvl_find_in_chain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
-    if (vertex_attribute_divisor_features) {
-        bool extension_found = false;
-        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
-            if (0 == strncmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
-                             VK_MAX_EXTENSION_NAME_SIZE)) {
-                extension_found = true;
-                break;
-            }
-        }
-        if (!extension_found) {
-            skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
-                             "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT "
-                             "struct, VK_EXT_vertex_attribute_divisor must be enabled when it creates a device.");
-        }
+    if (vertex_attribute_divisor_features && (!device_extensions.vk_ext_vertex_attribute_divisor)) {
+        skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
+                         "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT "
+                         "struct, VK_EXT_vertex_attribute_divisor must be enabled when it creates a device.");
     }
 
     const auto *vulkan_11_features = lvl_find_in_chain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);

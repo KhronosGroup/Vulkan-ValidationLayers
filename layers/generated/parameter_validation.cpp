@@ -232,6 +232,7 @@ const std::vector<VkAccelerationStructureBuildTypeKHR> AllVkAccelerationStructur
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 
+
 bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const {
     bool skip = false;
     if (api_version < promoted_version) {
@@ -260,15 +261,33 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
     return skip;
 }
 
-bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) const {
+bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header,
+                                                      const char *pnext_vuid) const {
     bool skip = false;
     switch(header->sType) {
 
-        // No Validation code for VkPhysicalDeviceSubgroupProperties structure members  -- Covers VUID-VkPhysicalDeviceSubgroupProperties-sType-sType
+        // Validation code for VkPhysicalDeviceSubgroupProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES: { // Covers VUID-VkPhysicalDeviceSubgroupProperties-sType-sType
+            if (api_version < VK_API_VERSION_1_1) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES) which was added in VK_API_VERSION_1_1 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
+        } break;
 
         // Validation code for VkPhysicalDevice16BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES: { // Covers VUID-VkPhysicalDevice16BitStorageFeatures-sType-sType
             VkPhysicalDevice16BitStorageFeatures *structure = (VkPhysicalDevice16BitStorageFeatures *) header;
+            if (!device_extensions.vk_khr_16bit_storage) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES), but its parent extension "
+                           "VK_KHR_16bit_storage has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storageBuffer16BitAccess", structure->storageBuffer16BitAccess);
 
             skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "uniformAndStorageBuffer16BitAccess", structure->uniformAndStorageBuffer16BitAccess);
@@ -278,19 +297,55 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDevice16BitStorageFeatures", "storageInputOutput16", structure->storageInputOutput16);
         } break;
 
-        // No Validation code for VkMemoryDedicatedRequirements structure members  -- Covers VUID-VkMemoryDedicatedRequirements-sType-sType
+        // Validation code for VkMemoryDedicatedRequirements structure members
+        case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: { // Covers VUID-VkMemoryDedicatedRequirements-sType-sType
+            if (!device_extensions.vk_khr_dedicated_allocation) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS), but its parent extension "
+                           "VK_KHR_dedicated_allocation has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
 
-        // No Validation code for VkMemoryDedicatedAllocateInfo structure members  -- Covers VUID-VkMemoryDedicatedAllocateInfo-sType-sType
+        } break;
+
+        // Validation code for VkMemoryDedicatedAllocateInfo structure members
+        case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO: { // Covers VUID-VkMemoryDedicatedAllocateInfo-sType-sType
+            if (!device_extensions.vk_khr_dedicated_allocation) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO), but its parent extension "
+                           "VK_KHR_dedicated_allocation has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkMemoryAllocateFlagsInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO: { // Covers VUID-VkMemoryAllocateFlagsInfo-sType-sType
             VkMemoryAllocateFlagsInfo *structure = (VkMemoryAllocateFlagsInfo *) header;
+            if (!device_extensions.vk_khr_device_group) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO), but its parent extension "
+                           "VK_KHR_device_group has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkMemoryAllocateFlagsInfo", "flags", "VkMemoryAllocateFlagBits", AllVkMemoryAllocateFlagBits, structure->flags, kOptionalFlags, "VUID-VkMemoryAllocateFlagsInfo-flags-parameter");
         } break;
 
         // Validation code for VkDeviceGroupRenderPassBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO: { // Covers VUID-VkDeviceGroupRenderPassBeginInfo-sType-sType
             VkDeviceGroupRenderPassBeginInfo *structure = (VkDeviceGroupRenderPassBeginInfo *) header;
+            if (!device_extensions.vk_khr_device_group) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO), but its parent extension "
+                           "VK_KHR_device_group has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkDeviceGroupRenderPassBeginInfo", "deviceRenderAreaCount", "pDeviceRenderAreas", structure->deviceRenderAreaCount, &structure->pDeviceRenderAreas, false, true, kVUIDUndefined, "VUID-VkDeviceGroupRenderPassBeginInfo-pDeviceRenderAreas-parameter");
 
             if (structure->pDeviceRenderAreas != NULL)
@@ -301,11 +356,29 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             }
         } break;
 
-        // No Validation code for VkDeviceGroupCommandBufferBeginInfo structure members  -- Covers VUID-VkDeviceGroupCommandBufferBeginInfo-sType-sType
+        // Validation code for VkDeviceGroupCommandBufferBeginInfo structure members
+        case VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO: { // Covers VUID-VkDeviceGroupCommandBufferBeginInfo-sType-sType
+            if (!device_extensions.vk_khr_device_group) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO), but its parent extension "
+                           "VK_KHR_device_group has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkDeviceGroupSubmitInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO: { // Covers VUID-VkDeviceGroupSubmitInfo-sType-sType
             VkDeviceGroupSubmitInfo *structure = (VkDeviceGroupSubmitInfo *) header;
+            if (!device_extensions.vk_khr_device_group) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO), but its parent extension "
+                           "VK_KHR_device_group has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkDeviceGroupSubmitInfo", "waitSemaphoreCount", "pWaitSemaphoreDeviceIndices", structure->waitSemaphoreCount, &structure->pWaitSemaphoreDeviceIndices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pWaitSemaphoreDeviceIndices-parameter");
 
             skip |= validate_array("VkDeviceGroupSubmitInfo", "commandBufferCount", "pCommandBufferDeviceMasks", structure->commandBufferCount, &structure->pCommandBufferDeviceMasks, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-parameter");
@@ -313,17 +386,43 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_array("VkDeviceGroupSubmitInfo", "signalSemaphoreCount", "pSignalSemaphoreDeviceIndices", structure->signalSemaphoreCount, &structure->pSignalSemaphoreDeviceIndices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pSignalSemaphoreDeviceIndices-parameter");
         } break;
 
-        // No Validation code for VkDeviceGroupBindSparseInfo structure members  -- Covers VUID-VkDeviceGroupBindSparseInfo-sType-sType
+        // Validation code for VkDeviceGroupBindSparseInfo structure members
+        case VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO: { // Covers VUID-VkDeviceGroupBindSparseInfo-sType-sType
+            if (!device_extensions.vk_khr_device_group) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO), but its parent extension "
+                           "VK_KHR_device_group has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkBindBufferMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO: { // Covers VUID-VkBindBufferMemoryDeviceGroupInfo-sType-sType
             VkBindBufferMemoryDeviceGroupInfo *structure = (VkBindBufferMemoryDeviceGroupInfo *) header;
+            if (!device_extensions.vk_khr_device_group) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
+                           "VK_KHR_device_group has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkBindBufferMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-parameter");
         } break;
 
         // Validation code for VkBindImageMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO: { // Covers VUID-VkBindImageMemoryDeviceGroupInfo-sType-sType
             VkBindImageMemoryDeviceGroupInfo *structure = (VkBindImageMemoryDeviceGroupInfo *) header;
+            if (!device_extensions.vk_khr_device_group) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
+                           "VK_KHR_device_group has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkBindImageMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindImageMemoryDeviceGroupInfo-pDeviceIndices-parameter");
 
             skip |= validate_array("VkBindImageMemoryDeviceGroupInfo", "splitInstanceBindRegionCount", "pSplitInstanceBindRegions", structure->splitInstanceBindRegionCount, &structure->pSplitInstanceBindRegions, false, true, kVUIDUndefined, "VUID-VkBindImageMemoryDeviceGroupInfo-pSplitInstanceBindRegions-parameter");
@@ -339,12 +438,28 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkDeviceGroupDeviceCreateInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO: { // Covers VUID-VkDeviceGroupDeviceCreateInfo-sType-sType
             VkDeviceGroupDeviceCreateInfo *structure = (VkDeviceGroupDeviceCreateInfo *) header;
+            if (!instance_extensions.vk_khr_device_group_creation) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO), but its parent extension "
+                           "VK_KHR_device_group_creation has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkDeviceGroupDeviceCreateInfo", "physicalDeviceCount", "pPhysicalDevices", structure->physicalDeviceCount, &structure->pPhysicalDevices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-parameter");
         } break;
 
         // Validation code for VkPhysicalDeviceFeatures2 structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2: { // Covers VUID-VkPhysicalDeviceFeatures2-sType-sType
             VkPhysicalDeviceFeatures2 *structure = (VkPhysicalDeviceFeatures2 *) header;
+            if (!instance_extensions.vk_khr_get_physical_device_properties_2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2), but its parent extension "
+                           "VK_KHR_get_physical_device_properties2 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.robustBufferAccess", structure->features.robustBufferAccess);
 
             skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.fullDrawIndexUint32", structure->features.fullDrawIndexUint32);
@@ -456,11 +571,29 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceFeatures2", "features.inheritedQueries", structure->features.inheritedQueries);
         } break;
 
-        // No Validation code for VkPhysicalDevicePointClippingProperties structure members  -- Covers VUID-VkPhysicalDevicePointClippingProperties-sType-sType
+        // Validation code for VkPhysicalDevicePointClippingProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES: { // Covers VUID-VkPhysicalDevicePointClippingProperties-sType-sType
+            if (!device_extensions.vk_khr_maintenance2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES), but its parent extension "
+                           "VK_KHR_maintenance2 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkRenderPassInputAttachmentAspectCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO: { // Covers VUID-VkRenderPassInputAttachmentAspectCreateInfo-sType-sType
             VkRenderPassInputAttachmentAspectCreateInfo *structure = (VkRenderPassInputAttachmentAspectCreateInfo *) header;
+            if (!device_extensions.vk_khr_maintenance2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO), but its parent extension "
+                           "VK_KHR_maintenance2 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkRenderPassInputAttachmentAspectCreateInfo", "aspectReferenceCount", "pAspectReferences", structure->aspectReferenceCount, &structure->pAspectReferences, true, true, "VUID-VkRenderPassInputAttachmentAspectCreateInfo-aspectReferenceCount-arraylength", "VUID-VkRenderPassInputAttachmentAspectCreateInfo-pAspectReferences-parameter");
 
             if (structure->pAspectReferences != NULL)
@@ -475,18 +608,42 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkImageViewUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO: { // Covers VUID-VkImageViewUsageCreateInfo-sType-sType
             VkImageViewUsageCreateInfo *structure = (VkImageViewUsageCreateInfo *) header;
+            if (!device_extensions.vk_khr_maintenance2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO), but its parent extension "
+                           "VK_KHR_maintenance2 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkImageViewUsageCreateInfo", "usage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->usage, kRequiredFlags, "VUID-VkImageViewUsageCreateInfo-usage-parameter", "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
         } break;
 
         // Validation code for VkPipelineTessellationDomainOriginStateCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO: { // Covers VUID-VkPipelineTessellationDomainOriginStateCreateInfo-sType-sType
             VkPipelineTessellationDomainOriginStateCreateInfo *structure = (VkPipelineTessellationDomainOriginStateCreateInfo *) header;
+            if (!device_extensions.vk_khr_maintenance2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO), but its parent extension "
+                           "VK_KHR_maintenance2 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_ranged_enum("VkPipelineTessellationDomainOriginStateCreateInfo", "domainOrigin", "VkTessellationDomainOrigin", AllVkTessellationDomainOriginEnums, structure->domainOrigin, "VUID-VkPipelineTessellationDomainOriginStateCreateInfo-domainOrigin-parameter");
         } break;
 
         // Validation code for VkRenderPassMultiviewCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO: { // Covers VUID-VkRenderPassMultiviewCreateInfo-sType-sType
             VkRenderPassMultiviewCreateInfo *structure = (VkRenderPassMultiviewCreateInfo *) header;
+            if (!device_extensions.vk_khr_multiview) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO), but its parent extension "
+                           "VK_KHR_multiview has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkRenderPassMultiviewCreateInfo", "subpassCount", "pViewMasks", structure->subpassCount, &structure->pViewMasks, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-parameter");
 
             skip |= validate_array("VkRenderPassMultiviewCreateInfo", "dependencyCount", "pViewOffsets", structure->dependencyCount, &structure->pViewOffsets, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pViewOffsets-parameter");
@@ -497,6 +654,14 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceMultiviewFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: { // Covers VUID-VkPhysicalDeviceMultiviewFeatures-sType-sType
             VkPhysicalDeviceMultiviewFeatures *structure = (VkPhysicalDeviceMultiviewFeatures *) header;
+            if (!device_extensions.vk_khr_multiview) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES), but its parent extension "
+                           "VK_KHR_multiview has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiview", structure->multiview);
 
             skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiviewGeometryShader", structure->multiviewGeometryShader);
@@ -504,11 +669,29 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceMultiviewFeatures", "multiviewTessellationShader", structure->multiviewTessellationShader);
         } break;
 
-        // No Validation code for VkPhysicalDeviceMultiviewProperties structure members  -- Covers VUID-VkPhysicalDeviceMultiviewProperties-sType-sType
+        // Validation code for VkPhysicalDeviceMultiviewProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES: { // Covers VUID-VkPhysicalDeviceMultiviewProperties-sType-sType
+            if (!device_extensions.vk_khr_multiview) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES), but its parent extension "
+                           "VK_KHR_multiview has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceVariablePointersFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES: { // Covers VUID-VkPhysicalDeviceVariablePointersFeatures-sType-sType
             VkPhysicalDeviceVariablePointersFeatures *structure = (VkPhysicalDeviceVariablePointersFeatures *) header;
+            if (!device_extensions.vk_khr_variable_pointers) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES), but its parent extension "
+                           "VK_KHR_variable_pointers has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceVariablePointersFeatures", "variablePointersStorageBuffer", structure->variablePointersStorageBuffer);
 
             skip |= validate_bool32("VkPhysicalDeviceVariablePointersFeatures", "variablePointers", structure->variablePointers);
@@ -517,94 +700,251 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceProtectedMemoryFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES: { // Covers VUID-VkPhysicalDeviceProtectedMemoryFeatures-sType-sType
             VkPhysicalDeviceProtectedMemoryFeatures *structure = (VkPhysicalDeviceProtectedMemoryFeatures *) header;
+            if (api_version < VK_API_VERSION_1_1) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES) which was added in VK_API_VERSION_1_1 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
             skip |= validate_bool32("VkPhysicalDeviceProtectedMemoryFeatures", "protectedMemory", structure->protectedMemory);
         } break;
 
-        // No Validation code for VkPhysicalDeviceProtectedMemoryProperties structure members  -- Covers VUID-VkPhysicalDeviceProtectedMemoryProperties-sType-sType
+        // Validation code for VkPhysicalDeviceProtectedMemoryProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES: { // Covers VUID-VkPhysicalDeviceProtectedMemoryProperties-sType-sType
+            if (api_version < VK_API_VERSION_1_1) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES) which was added in VK_API_VERSION_1_1 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
+        } break;
 
         // Validation code for VkProtectedSubmitInfo structure members
         case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO: { // Covers VUID-VkProtectedSubmitInfo-sType-sType
             VkProtectedSubmitInfo *structure = (VkProtectedSubmitInfo *) header;
+            if (api_version < VK_API_VERSION_1_1) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO) which was added in VK_API_VERSION_1_1 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
             skip |= validate_bool32("VkProtectedSubmitInfo", "protectedSubmit", structure->protectedSubmit);
         } break;
 
         // Validation code for VkSamplerYcbcrConversionInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO: { // Covers VUID-VkSamplerYcbcrConversionInfo-sType-sType
             VkSamplerYcbcrConversionInfo *structure = (VkSamplerYcbcrConversionInfo *) header;
+            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO), but its parent extension "
+                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_required_handle("VkSamplerYcbcrConversionInfo", "conversion", structure->conversion);
         } break;
 
         // Validation code for VkBindImagePlaneMemoryInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO: { // Covers VUID-VkBindImagePlaneMemoryInfo-sType-sType
             VkBindImagePlaneMemoryInfo *structure = (VkBindImagePlaneMemoryInfo *) header;
+            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO), but its parent extension "
+                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkBindImagePlaneMemoryInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter", "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter");
         } break;
 
         // Validation code for VkImagePlaneMemoryRequirementsInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO: { // Covers VUID-VkImagePlaneMemoryRequirementsInfo-sType-sType
             VkImagePlaneMemoryRequirementsInfo *structure = (VkImagePlaneMemoryRequirementsInfo *) header;
+            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO), but its parent extension "
+                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkImagePlaneMemoryRequirementsInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter", "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter");
         } break;
 
         // Validation code for VkPhysicalDeviceSamplerYcbcrConversionFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES: { // Covers VUID-VkPhysicalDeviceSamplerYcbcrConversionFeatures-sType-sType
             VkPhysicalDeviceSamplerYcbcrConversionFeatures *structure = (VkPhysicalDeviceSamplerYcbcrConversionFeatures *) header;
+            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES), but its parent extension "
+                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceSamplerYcbcrConversionFeatures", "samplerYcbcrConversion", structure->samplerYcbcrConversion);
         } break;
 
-        // No Validation code for VkSamplerYcbcrConversionImageFormatProperties structure members  -- Covers VUID-VkSamplerYcbcrConversionImageFormatProperties-sType-sType
+        // Validation code for VkSamplerYcbcrConversionImageFormatProperties structure members
+        case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: { // Covers VUID-VkSamplerYcbcrConversionImageFormatProperties-sType-sType
+            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES), but its parent extension "
+                           "VK_KHR_sampler_ycbcr_conversion has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceExternalImageFormatInfo structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO: { // Covers VUID-VkPhysicalDeviceExternalImageFormatInfo-sType-sType
             VkPhysicalDeviceExternalImageFormatInfo *structure = (VkPhysicalDeviceExternalImageFormatInfo *) header;
+            if (!instance_extensions.vk_khr_external_memory_capabilities) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO), but its parent extension "
+                           "VK_KHR_external_memory_capabilities has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkPhysicalDeviceExternalImageFormatInfo", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkPhysicalDeviceExternalImageFormatInfo-handleType-parameter");
         } break;
 
-        // No Validation code for VkExternalImageFormatProperties structure members  -- Covers VUID-VkExternalImageFormatProperties-sType-sType
+        // Validation code for VkExternalImageFormatProperties structure members
+        case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES: { // Covers VUID-VkExternalImageFormatProperties-sType-sType
+            if (!instance_extensions.vk_khr_external_memory_capabilities) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES), but its parent extension "
+                           "VK_KHR_external_memory_capabilities has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
 
-        // No Validation code for VkPhysicalDeviceIDProperties structure members  -- Covers VUID-VkPhysicalDeviceIDProperties-sType-sType
+        } break;
+
+        // Validation code for VkPhysicalDeviceIDProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES: { // Covers VUID-VkPhysicalDeviceIDProperties-sType-sType
+            if (!instance_extensions.vk_khr_external_fence_capabilities) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES), but its parent extension "
+                           "VK_KHR_external_fence_capabilities has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkExternalMemoryImageCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO: { // Covers VUID-VkExternalMemoryImageCreateInfo-sType-sType
             VkExternalMemoryImageCreateInfo *structure = (VkExternalMemoryImageCreateInfo *) header;
+            if (!device_extensions.vk_khr_external_memory) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO), but its parent extension "
+                           "VK_KHR_external_memory has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkExternalMemoryImageCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kRequiredFlags, "VUID-VkExternalMemoryImageCreateInfo-handleTypes-parameter", "VUID-VkExternalMemoryImageCreateInfo-handleTypes-requiredbitmask");
         } break;
 
         // Validation code for VkExternalMemoryBufferCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO: { // Covers VUID-VkExternalMemoryBufferCreateInfo-sType-sType
             VkExternalMemoryBufferCreateInfo *structure = (VkExternalMemoryBufferCreateInfo *) header;
+            if (!device_extensions.vk_khr_external_memory) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO), but its parent extension "
+                           "VK_KHR_external_memory has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkExternalMemoryBufferCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryBufferCreateInfo-handleTypes-parameter");
         } break;
 
         // Validation code for VkExportMemoryAllocateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO: { // Covers VUID-VkExportMemoryAllocateInfo-sType-sType
             VkExportMemoryAllocateInfo *structure = (VkExportMemoryAllocateInfo *) header;
+            if (!device_extensions.vk_khr_external_memory) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO), but its parent extension "
+                           "VK_KHR_external_memory has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkExportMemoryAllocateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportMemoryAllocateInfo-handleTypes-parameter");
         } break;
 
         // Validation code for VkExportFenceCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO: { // Covers VUID-VkExportFenceCreateInfo-sType-sType
             VkExportFenceCreateInfo *structure = (VkExportFenceCreateInfo *) header;
+            if (!device_extensions.vk_khr_external_fence) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO), but its parent extension "
+                           "VK_KHR_external_fence has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkExportFenceCreateInfo", "handleTypes", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportFenceCreateInfo-handleTypes-parameter");
         } break;
 
         // Validation code for VkExportSemaphoreCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO: { // Covers VUID-VkExportSemaphoreCreateInfo-sType-sType
             VkExportSemaphoreCreateInfo *structure = (VkExportSemaphoreCreateInfo *) header;
+            if (!device_extensions.vk_khr_external_semaphore) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO), but its parent extension "
+                           "VK_KHR_external_semaphore has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkExportSemaphoreCreateInfo", "handleTypes", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportSemaphoreCreateInfo-handleTypes-parameter");
         } break;
 
-        // No Validation code for VkPhysicalDeviceMaintenance3Properties structure members  -- Covers VUID-VkPhysicalDeviceMaintenance3Properties-sType-sType
+        // Validation code for VkPhysicalDeviceMaintenance3Properties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES: { // Covers VUID-VkPhysicalDeviceMaintenance3Properties-sType-sType
+            if (!device_extensions.vk_khr_maintenance3) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES), but its parent extension "
+                           "VK_KHR_maintenance3 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceShaderDrawParametersFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderDrawParametersFeatures-sType-sType
             VkPhysicalDeviceShaderDrawParametersFeatures *structure = (VkPhysicalDeviceShaderDrawParametersFeatures *) header;
+            if (api_version < VK_API_VERSION_1_1) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES) which was added in VK_API_VERSION_1_1 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
             skip |= validate_bool32("VkPhysicalDeviceShaderDrawParametersFeatures", "shaderDrawParameters", structure->shaderDrawParameters);
         } break;
 
         // Validation code for VkPhysicalDeviceVulkan11Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES: { // Covers VUID-VkPhysicalDeviceVulkan11Features-sType-sType
             VkPhysicalDeviceVulkan11Features *structure = (VkPhysicalDeviceVulkan11Features *) header;
+            if (api_version < VK_API_VERSION_1_2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES) which was added in VK_API_VERSION_1_2 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
             skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "storageBuffer16BitAccess", structure->storageBuffer16BitAccess);
 
             skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "uniformAndStorageBuffer16BitAccess", structure->uniformAndStorageBuffer16BitAccess);
@@ -630,11 +970,27 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "shaderDrawParameters", structure->shaderDrawParameters);
         } break;
 
-        // No Validation code for VkPhysicalDeviceVulkan11Properties structure members  -- Covers VUID-VkPhysicalDeviceVulkan11Properties-sType-sType
+        // Validation code for VkPhysicalDeviceVulkan11Properties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES: { // Covers VUID-VkPhysicalDeviceVulkan11Properties-sType-sType
+            if (api_version < VK_API_VERSION_1_2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES) which was added in VK_API_VERSION_1_2 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
+        } break;
 
         // Validation code for VkPhysicalDeviceVulkan12Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES: { // Covers VUID-VkPhysicalDeviceVulkan12Features-sType-sType
             VkPhysicalDeviceVulkan12Features *structure = (VkPhysicalDeviceVulkan12Features *) header;
+            if (api_version < VK_API_VERSION_1_2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) which was added in VK_API_VERSION_1_2 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
             skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "samplerMirrorClampToEdge", structure->samplerMirrorClampToEdge);
 
             skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "drawIndirectCount", structure->drawIndirectCount);
@@ -730,17 +1086,42 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "subgroupBroadcastDynamicId", structure->subgroupBroadcastDynamicId);
         } break;
 
-        // No Validation code for VkPhysicalDeviceVulkan12Properties structure members  -- Covers VUID-VkPhysicalDeviceVulkan12Properties-sType-sType
+        // Validation code for VkPhysicalDeviceVulkan12Properties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES: { // Covers VUID-VkPhysicalDeviceVulkan12Properties-sType-sType
+            if (api_version < VK_API_VERSION_1_2) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES) which was added in VK_API_VERSION_1_2 but the "
+                           "current effective API version is %s.",
+                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+            }
+        } break;
 
         // Validation code for VkImageFormatListCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO: { // Covers VUID-VkImageFormatListCreateInfo-sType-sType
             VkImageFormatListCreateInfo *structure = (VkImageFormatListCreateInfo *) header;
+            if (!device_extensions.vk_khr_image_format_list) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO), but its parent extension "
+                           "VK_KHR_image_format_list has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_ranged_enum_array("VkImageFormatListCreateInfo", "viewFormatCount", "pViewFormats", "VkFormat", AllVkFormatEnums, structure->viewFormatCount, structure->pViewFormats, false, true);
         } break;
 
         // Validation code for VkPhysicalDevice8BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES: { // Covers VUID-VkPhysicalDevice8BitStorageFeatures-sType-sType
             VkPhysicalDevice8BitStorageFeatures *structure = (VkPhysicalDevice8BitStorageFeatures *) header;
+            if (!device_extensions.vk_khr_8bit_storage) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES), but its parent extension "
+                           "VK_KHR_8bit_storage has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "storageBuffer8BitAccess", structure->storageBuffer8BitAccess);
 
             skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "uniformAndStorageBuffer8BitAccess", structure->uniformAndStorageBuffer8BitAccess);
@@ -748,11 +1129,29 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDevice8BitStorageFeatures", "storagePushConstant8", structure->storagePushConstant8);
         } break;
 
-        // No Validation code for VkPhysicalDeviceDriverProperties structure members  -- Covers VUID-VkPhysicalDeviceDriverProperties-sType-sType
+        // Validation code for VkPhysicalDeviceDriverProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDriverProperties-sType-sType
+            if (!device_extensions.vk_khr_driver_properties) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES), but its parent extension "
+                           "VK_KHR_driver_properties has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceShaderAtomicInt64Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderAtomicInt64Features-sType-sType
             VkPhysicalDeviceShaderAtomicInt64Features *structure = (VkPhysicalDeviceShaderAtomicInt64Features *) header;
+            if (!device_extensions.vk_khr_shader_atomic_int64) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES), but its parent extension "
+                           "VK_KHR_shader_atomic_int64 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceShaderAtomicInt64Features", "shaderBufferInt64Atomics", structure->shaderBufferInt64Atomics);
 
             skip |= validate_bool32("VkPhysicalDeviceShaderAtomicInt64Features", "shaderSharedInt64Atomics", structure->shaderSharedInt64Atomics);
@@ -761,22 +1160,56 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceShaderFloat16Int8Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderFloat16Int8Features-sType-sType
             VkPhysicalDeviceShaderFloat16Int8Features *structure = (VkPhysicalDeviceShaderFloat16Int8Features *) header;
+            if (!device_extensions.vk_khr_shader_float16_int8) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES), but its parent extension "
+                           "VK_KHR_shader_float16_int8 has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceShaderFloat16Int8Features", "shaderFloat16", structure->shaderFloat16);
 
             skip |= validate_bool32("VkPhysicalDeviceShaderFloat16Int8Features", "shaderInt8", structure->shaderInt8);
         } break;
 
-        // No Validation code for VkPhysicalDeviceFloatControlsProperties structure members  -- Covers VUID-VkPhysicalDeviceFloatControlsProperties-sType-sType
+        // Validation code for VkPhysicalDeviceFloatControlsProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES: { // Covers VUID-VkPhysicalDeviceFloatControlsProperties-sType-sType
+            if (!device_extensions.vk_khr_shader_float_controls) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES), but its parent extension "
+                           "VK_KHR_shader_float_controls has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkDescriptorSetLayoutBindingFlagsCreateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO: { // Covers VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-sType-sType
             VkDescriptorSetLayoutBindingFlagsCreateInfo *structure = (VkDescriptorSetLayoutBindingFlagsCreateInfo *) header;
+            if (!device_extensions.vk_ext_descriptor_indexing) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO), but its parent extension "
+                           "VK_EXT_descriptor_indexing has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags_array("VkDescriptorSetLayoutBindingFlagsCreateInfo", "bindingCount", "pBindingFlags", "VkDescriptorBindingFlagBits", AllVkDescriptorBindingFlagBits, structure->bindingCount, structure->pBindingFlags, false, false);
         } break;
 
         // Validation code for VkPhysicalDeviceDescriptorIndexingFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES: { // Covers VUID-VkPhysicalDeviceDescriptorIndexingFeatures-sType-sType
             VkPhysicalDeviceDescriptorIndexingFeatures *structure = (VkPhysicalDeviceDescriptorIndexingFeatures *) header;
+            if (!device_extensions.vk_ext_descriptor_indexing) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES), but its parent extension "
+                           "VK_EXT_descriptor_indexing has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderInputAttachmentArrayDynamicIndexing", structure->shaderInputAttachmentArrayDynamicIndexing);
 
             skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderUniformTexelBufferArrayDynamicIndexing", structure->shaderUniformTexelBufferArrayDynamicIndexing);
@@ -818,19 +1251,55 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceDescriptorIndexingFeatures", "runtimeDescriptorArray", structure->runtimeDescriptorArray);
         } break;
 
-        // No Validation code for VkPhysicalDeviceDescriptorIndexingProperties structure members  -- Covers VUID-VkPhysicalDeviceDescriptorIndexingProperties-sType-sType
+        // Validation code for VkPhysicalDeviceDescriptorIndexingProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDescriptorIndexingProperties-sType-sType
+            if (!device_extensions.vk_ext_descriptor_indexing) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES), but its parent extension "
+                           "VK_EXT_descriptor_indexing has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkDescriptorSetVariableDescriptorCountAllocateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO: { // Covers VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-sType-sType
             VkDescriptorSetVariableDescriptorCountAllocateInfo *structure = (VkDescriptorSetVariableDescriptorCountAllocateInfo *) header;
+            if (!device_extensions.vk_ext_descriptor_indexing) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO), but its parent extension "
+                           "VK_EXT_descriptor_indexing has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkDescriptorSetVariableDescriptorCountAllocateInfo", "descriptorSetCount", "pDescriptorCounts", structure->descriptorSetCount, &structure->pDescriptorCounts, false, true, kVUIDUndefined, "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-pDescriptorCounts-parameter");
         } break;
 
-        // No Validation code for VkDescriptorSetVariableDescriptorCountLayoutSupport structure members  -- Covers VUID-VkDescriptorSetVariableDescriptorCountLayoutSupport-sType-sType
+        // Validation code for VkDescriptorSetVariableDescriptorCountLayoutSupport structure members
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT: { // Covers VUID-VkDescriptorSetVariableDescriptorCountLayoutSupport-sType-sType
+            if (!device_extensions.vk_ext_descriptor_indexing) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT), but its parent extension "
+                           "VK_EXT_descriptor_indexing has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkSubpassDescriptionDepthStencilResolve structure members
         case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE: { // Covers VUID-VkSubpassDescriptionDepthStencilResolve-sType-sType
             VkSubpassDescriptionDepthStencilResolve *structure = (VkSubpassDescriptionDepthStencilResolve *) header;
+            if (!device_extensions.vk_khr_depth_stencil_resolve) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE), but its parent extension "
+                           "VK_KHR_depth_stencil_resolve has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkSubpassDescriptionDepthStencilResolve", "depthResolveMode", "VkResolveModeFlagBits", AllVkResolveModeFlagBits, structure->depthResolveMode, kRequiredSingleBit, "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-parameter", "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-parameter");
 
             skip |= validate_flags("VkSubpassDescriptionDepthStencilResolve", "stencilResolveMode", "VkResolveModeFlagBits", AllVkResolveModeFlagBits, structure->stencilResolveMode, kRequiredSingleBit, "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-parameter", "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-parameter");
@@ -843,31 +1312,83 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             }
         } break;
 
-        // No Validation code for VkPhysicalDeviceDepthStencilResolveProperties structure members  -- Covers VUID-VkPhysicalDeviceDepthStencilResolveProperties-sType-sType
+        // Validation code for VkPhysicalDeviceDepthStencilResolveProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDepthStencilResolveProperties-sType-sType
+            if (!device_extensions.vk_khr_depth_stencil_resolve) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES), but its parent extension "
+                           "VK_KHR_depth_stencil_resolve has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceScalarBlockLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES: { // Covers VUID-VkPhysicalDeviceScalarBlockLayoutFeatures-sType-sType
             VkPhysicalDeviceScalarBlockLayoutFeatures *structure = (VkPhysicalDeviceScalarBlockLayoutFeatures *) header;
+            if (!device_extensions.vk_ext_scalar_block_layout) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES), but its parent extension "
+                           "VK_EXT_scalar_block_layout has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceScalarBlockLayoutFeatures", "scalarBlockLayout", structure->scalarBlockLayout);
         } break;
 
         // Validation code for VkImageStencilUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO: { // Covers VUID-VkImageStencilUsageCreateInfo-sType-sType
             VkImageStencilUsageCreateInfo *structure = (VkImageStencilUsageCreateInfo *) header;
+            if (!device_extensions.vk_ext_separate_stencil_usage) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO), but its parent extension "
+                           "VK_EXT_separate_stencil_usage has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_flags("VkImageStencilUsageCreateInfo", "stencilUsage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->stencilUsage, kRequiredFlags, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-parameter", "VUID-VkImageStencilUsageCreateInfo-stencilUsage-requiredbitmask");
         } break;
 
         // Validation code for VkSamplerReductionModeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO: { // Covers VUID-VkSamplerReductionModeCreateInfo-sType-sType
             VkSamplerReductionModeCreateInfo *structure = (VkSamplerReductionModeCreateInfo *) header;
+            if (!device_extensions.vk_ext_sampler_filter_minmax) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO), but its parent extension "
+                           "VK_EXT_sampler_filter_minmax has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_ranged_enum("VkSamplerReductionModeCreateInfo", "reductionMode", "VkSamplerReductionMode", AllVkSamplerReductionModeEnums, structure->reductionMode, "VUID-VkSamplerReductionModeCreateInfo-reductionMode-parameter");
         } break;
 
-        // No Validation code for VkPhysicalDeviceSamplerFilterMinmaxProperties structure members  -- Covers VUID-VkPhysicalDeviceSamplerFilterMinmaxProperties-sType-sType
+        // Validation code for VkPhysicalDeviceSamplerFilterMinmaxProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES: { // Covers VUID-VkPhysicalDeviceSamplerFilterMinmaxProperties-sType-sType
+            if (!device_extensions.vk_ext_sampler_filter_minmax) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES), but its parent extension "
+                           "VK_EXT_sampler_filter_minmax has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceVulkanMemoryModelFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES: { // Covers VUID-VkPhysicalDeviceVulkanMemoryModelFeatures-sType-sType
             VkPhysicalDeviceVulkanMemoryModelFeatures *structure = (VkPhysicalDeviceVulkanMemoryModelFeatures *) header;
+            if (!device_extensions.vk_khr_vulkan_memory_model) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES), but its parent extension "
+                           "VK_KHR_vulkan_memory_model has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModel", structure->vulkanMemoryModel);
 
             skip |= validate_bool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModelDeviceScope", structure->vulkanMemoryModelDeviceScope);
@@ -878,12 +1399,28 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceImagelessFramebufferFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES: { // Covers VUID-VkPhysicalDeviceImagelessFramebufferFeatures-sType-sType
             VkPhysicalDeviceImagelessFramebufferFeatures *structure = (VkPhysicalDeviceImagelessFramebufferFeatures *) header;
+            if (!device_extensions.vk_khr_imageless_framebuffer) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES), but its parent extension "
+                           "VK_KHR_imageless_framebuffer has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceImagelessFramebufferFeatures", "imagelessFramebuffer", structure->imagelessFramebuffer);
         } break;
 
         // Validation code for VkFramebufferAttachmentsCreateInfo structure members
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO: { // Covers VUID-VkFramebufferAttachmentsCreateInfo-sType-sType
             VkFramebufferAttachmentsCreateInfo *structure = (VkFramebufferAttachmentsCreateInfo *) header;
+            if (!device_extensions.vk_khr_imageless_framebuffer) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO), but its parent extension "
+                           "VK_KHR_imageless_framebuffer has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_struct_type_array("VkFramebufferAttachmentsCreateInfo", "attachmentImageInfoCount", "pAttachmentImageInfos", "VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO", structure->attachmentImageInfoCount, structure->pAttachmentImageInfos, VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO, false, true, "VUID-VkFramebufferAttachmentImageInfo-sType-sType", "VUID-VkFramebufferAttachmentsCreateInfo-pAttachmentImageInfos-parameter", kVUIDUndefined);
 
             if (structure->pAttachmentImageInfos != NULL)
@@ -902,32 +1439,82 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkRenderPassAttachmentBeginInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: { // Covers VUID-VkRenderPassAttachmentBeginInfo-sType-sType
             VkRenderPassAttachmentBeginInfo *structure = (VkRenderPassAttachmentBeginInfo *) header;
+            if (!device_extensions.vk_khr_imageless_framebuffer) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO), but its parent extension "
+                           "VK_KHR_imageless_framebuffer has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_array("VkRenderPassAttachmentBeginInfo", "attachmentCount", "pAttachments", structure->attachmentCount, &structure->pAttachments, false, true, kVUIDUndefined, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter");
         } break;
 
         // Validation code for VkPhysicalDeviceUniformBufferStandardLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES: { // Covers VUID-VkPhysicalDeviceUniformBufferStandardLayoutFeatures-sType-sType
             VkPhysicalDeviceUniformBufferStandardLayoutFeatures *structure = (VkPhysicalDeviceUniformBufferStandardLayoutFeatures *) header;
+            if (!device_extensions.vk_khr_uniform_buffer_standard_layout) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES), but its parent extension "
+                           "VK_KHR_uniform_buffer_standard_layout has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceUniformBufferStandardLayoutFeatures", "uniformBufferStandardLayout", structure->uniformBufferStandardLayout);
         } break;
 
-        // No Validation code for VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures structure members  -- Covers VUID-VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures-sType-sType
+        // Validation code for VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures-sType-sType
+            if (!device_extensions.vk_khr_shader_subgroup_extended_types) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES), but its parent extension "
+                           "VK_KHR_shader_subgroup_extended_types has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES: { // Covers VUID-VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures-sType-sType
             VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *structure = (VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *) header;
+            if (!device_extensions.vk_khr_separate_depth_stencil_layouts) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES), but its parent extension "
+                           "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures", "separateDepthStencilLayouts", structure->separateDepthStencilLayouts);
         } break;
 
         // Validation code for VkAttachmentReferenceStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT: { // Covers VUID-VkAttachmentReferenceStencilLayout-sType-sType
             VkAttachmentReferenceStencilLayout *structure = (VkAttachmentReferenceStencilLayout *) header;
+            if (!device_extensions.vk_khr_separate_depth_stencil_layouts) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT), but its parent extension "
+                           "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_ranged_enum("VkAttachmentReferenceStencilLayout", "stencilLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilLayout, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-parameter");
         } break;
 
         // Validation code for VkAttachmentDescriptionStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT: { // Covers VUID-VkAttachmentDescriptionStencilLayout-sType-sType
             VkAttachmentDescriptionStencilLayout *structure = (VkAttachmentDescriptionStencilLayout *) header;
+            if (!device_extensions.vk_khr_separate_depth_stencil_layouts) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT), but its parent extension "
+                           "VK_KHR_separate_depth_stencil_layouts has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_ranged_enum("VkAttachmentDescriptionStencilLayout", "stencilInitialLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilInitialLayout, "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-parameter");
 
             skip |= validate_ranged_enum("VkAttachmentDescriptionStencilLayout", "stencilFinalLayout", "VkImageLayout", AllVkImageLayoutEnums, structure->stencilFinalLayout, "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-parameter");
@@ -936,28 +1523,80 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceHostQueryResetFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES: { // Covers VUID-VkPhysicalDeviceHostQueryResetFeatures-sType-sType
             VkPhysicalDeviceHostQueryResetFeatures *structure = (VkPhysicalDeviceHostQueryResetFeatures *) header;
+            if (!device_extensions.vk_ext_host_query_reset) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES), but its parent extension "
+                           "VK_EXT_host_query_reset has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceHostQueryResetFeatures", "hostQueryReset", structure->hostQueryReset);
         } break;
 
         // Validation code for VkPhysicalDeviceTimelineSemaphoreFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: { // Covers VUID-VkPhysicalDeviceTimelineSemaphoreFeatures-sType-sType
             VkPhysicalDeviceTimelineSemaphoreFeatures *structure = (VkPhysicalDeviceTimelineSemaphoreFeatures *) header;
+            if (!device_extensions.vk_khr_timeline_semaphore) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES), but its parent extension "
+                           "VK_KHR_timeline_semaphore has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceTimelineSemaphoreFeatures", "timelineSemaphore", structure->timelineSemaphore);
         } break;
 
-        // No Validation code for VkPhysicalDeviceTimelineSemaphoreProperties structure members  -- Covers VUID-VkPhysicalDeviceTimelineSemaphoreProperties-sType-sType
+        // Validation code for VkPhysicalDeviceTimelineSemaphoreProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES: { // Covers VUID-VkPhysicalDeviceTimelineSemaphoreProperties-sType-sType
+            if (!device_extensions.vk_khr_timeline_semaphore) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES), but its parent extension "
+                           "VK_KHR_timeline_semaphore has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkSemaphoreTypeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO: { // Covers VUID-VkSemaphoreTypeCreateInfo-sType-sType
             VkSemaphoreTypeCreateInfo *structure = (VkSemaphoreTypeCreateInfo *) header;
+            if (!device_extensions.vk_khr_timeline_semaphore) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO), but its parent extension "
+                           "VK_KHR_timeline_semaphore has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_ranged_enum("VkSemaphoreTypeCreateInfo", "semaphoreType", "VkSemaphoreType", AllVkSemaphoreTypeEnums, structure->semaphoreType, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-parameter");
         } break;
 
-        // No Validation code for VkTimelineSemaphoreSubmitInfo structure members  -- Covers VUID-VkTimelineSemaphoreSubmitInfo-sType-sType
+        // Validation code for VkTimelineSemaphoreSubmitInfo structure members
+        case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO: { // Covers VUID-VkTimelineSemaphoreSubmitInfo-sType-sType
+            if (!device_extensions.vk_khr_timeline_semaphore) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO), but its parent extension "
+                           "VK_KHR_timeline_semaphore has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: { // Covers VUID-VkPhysicalDeviceBufferDeviceAddressFeatures-sType-sType
             VkPhysicalDeviceBufferDeviceAddressFeatures *structure = (VkPhysicalDeviceBufferDeviceAddressFeatures *) header;
+            if (!device_extensions.vk_khr_buffer_device_address) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES), but its parent extension "
+                           "VK_KHR_buffer_device_address has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddress", structure->bufferDeviceAddress);
 
             skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);
@@ -965,9 +1604,29 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddressMultiDevice", structure->bufferDeviceAddressMultiDevice);
         } break;
 
-        // No Validation code for VkBufferOpaqueCaptureAddressCreateInfo structure members  -- Covers VUID-VkBufferOpaqueCaptureAddressCreateInfo-sType-sType
+        // Validation code for VkBufferOpaqueCaptureAddressCreateInfo structure members
+        case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO: { // Covers VUID-VkBufferOpaqueCaptureAddressCreateInfo-sType-sType
+            if (!device_extensions.vk_khr_buffer_device_address) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO), but its parent extension "
+                           "VK_KHR_buffer_device_address has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
 
-        // No Validation code for VkMemoryOpaqueCaptureAddressAllocateInfo structure members  -- Covers VUID-VkMemoryOpaqueCaptureAddressAllocateInfo-sType-sType
+        } break;
+
+        // Validation code for VkMemoryOpaqueCaptureAddressAllocateInfo structure members
+        case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO: { // Covers VUID-VkMemoryOpaqueCaptureAddressAllocateInfo-sType-sType
+            if (!device_extensions.vk_khr_buffer_device_address) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO), but its parent extension "
+                           "VK_KHR_buffer_device_address has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
+        } break;
 
         // No Validation code for VkImageSwapchainCreateInfoKHR structure members  -- Covers VUID-VkImageSwapchainCreateInfoKHR-sType-sType
 
@@ -1556,6 +2215,14 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: { // Covers VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
             VkWriteDescriptorSetAccelerationStructureKHR *structure = (VkWriteDescriptorSetAccelerationStructureKHR *) header;
+            if (!device_extensions.vk_nv_ray_tracing) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR), but its parent extension "
+                           "VK_NV_ray_tracing has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_handle_array("VkWriteDescriptorSetAccelerationStructureKHR", "accelerationStructureCount", "pAccelerationStructures", structure->accelerationStructureCount, structure->pAccelerationStructures, true, true);
         } break;
 
@@ -1704,6 +2371,14 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkQueryPoolPerformanceQueryCreateInfoINTEL structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL: { // Covers VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-sType-sType
             VkQueryPoolPerformanceQueryCreateInfoINTEL *structure = (VkQueryPoolPerformanceQueryCreateInfoINTEL *) header;
+            if (!device_extensions.vk_intel_performance_query) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL), but its parent extension "
+                           "VK_INTEL_performance_query has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_ranged_enum("VkQueryPoolPerformanceQueryCreateInfoINTEL", "performanceCountersSampling", "VkQueryPoolSamplingModeINTEL", AllVkQueryPoolSamplingModeINTELEnums, structure->performanceCountersSampling, "VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-performanceCountersSampling-parameter");
         } break;
 
@@ -1774,6 +2449,14 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceBufferDeviceAddressFeaturesEXT-sType-sType
             VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *structure = (VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *) header;
+            if (!device_extensions.vk_ext_buffer_device_address) {
+                skip |= LogError(
+                           instance, pnext_vuid,
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT), but its parent extension "
+                           "VK_EXT_buffer_device_address has not been enabled.",
+                           api_name, parameter_name.get_name().c_str());
+            }
+
             skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddress", structure->bufferDeviceAddress);
 
             skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddressCaptureReplay", structure->bufferDeviceAddressCaptureReplay);

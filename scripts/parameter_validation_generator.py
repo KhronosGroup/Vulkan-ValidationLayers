@@ -266,6 +266,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.validatedStructs = dict()                    # Map of structs type names to generated validation code for that struct type
         self.enumRanges = set()                           # Set of enum names
         self.enumValueLists = ''                          # String containing enumerated type map definitions
+        self.stype_version_dict = dict()                  # String containing structtype to version map data
         self.flags = set()                                # Map of flags typenames
         self.flagBits = dict()                            # Map of flag bits typename to list of values
         self.newFlags = set()                             # Map of flags typenames /defined in the current feature/
@@ -279,6 +280,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.alias_dict = dict()                          # Dict of cmd|struct aliases
         self.header_file = False                          # Header file generation flag
         self.source_file = False                          # Source file generation flag
+        self.instance_extension_list = ''                 # List of instance extension name defines
+        self.device_extension_list = ''                   # List of device extension name defines
         self.returnedonly_structs = []
         # Named tuples to store struct and command data
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
@@ -360,6 +363,24 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if self.header_file:
             return
 
+        stype_map = ''
+        stype_version_dict = dict()
+        # Create contents of Structs->API version unordered map
+        root = self.registry.reg
+        for node in root.findall('feature'):
+            version_name = node.get('name')
+            version_name = version_name.replace('VK_', 'VK_API_')
+            for enum_item in node.iter('enum'):
+                if enum_item.get('extends') == "VkStructureType":
+                    struct_type_id = enum_item.get('name')
+                    self.stype_version_dict[struct_type_id] = version_name
+        for extensions in root.findall('extensions'):
+            for extension in extensions.findall('extension'):
+                for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
+                    alias = entry.get('alias')
+                    if alias is not None and (entry.get('comment') is None or 'typo' not in entry.get('comment')):
+                        self.stype_version_dict[alias] = extension.get('name')
+
         # Build map of structure type names to VkStructureType enum values
         # Find all types of category "struct"
         for struct in self.registry.tree.iterfind('types/type[@category="struct"]'):
@@ -396,6 +417,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             self.newline()
             write(self.enumValueLists, file=self.outFile)
             self.newline()
+            self.newline()
 
             api_func  = 'bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const {\n'
             api_func += '    bool skip = false;\n'
@@ -425,7 +447,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             api_func += '}\n'
             write(api_func, file=self.outFile)
 
-            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) const {\n'
+            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header,\n'
+            pnext_handler += '                                                      const char *pnext_vuid) const {\n'
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
 
@@ -437,6 +460,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 postProcSpec['ppi'] = '' if not item else '{postProcInsert}'
 
                 pnext_case = '\n'
+                pnext_check = ''
                 protect = ''
                 # Guard struct cases with feature ifdefs, if necessary
                 if item in self.struct_feature_protect.keys():
@@ -444,15 +468,57 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     pnext_case += '#ifdef %s\n' % protect
                 pnext_case += '        // Validation code for %s structure members\n' % item
                 pnext_case += '        case %s: { // Covers VUID-%s-sType-sType\n' % (self.structTypes[item], item)
-                pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
+                # pNext version/extension-enabled checks
+                ver_info = ''
+                struct_type = self.structTypes[item]
+                if struct_type in self.stype_version_dict.keys():
+                    ver_info = self.stype_version_dict[struct_type]
+                else:
+                    struct_type[:-4]
+                    if struct_type[:-4] in self.stype_version_dict.values():
+                        ver_info = self.stype_version_dict[struct_type[:-4]]
+                    else:
+                        ver_info = None
+                if ver_info is not None:
+                    if 'VK_API_VERSION_' in ver_info:
+                        api_version = ver_info;
+                        pnext_check += '            if (api_version < %s) {\n' % ver_info
+                        pnext_check += '                skip |= LogError(\n'
+                        pnext_check += '                           instance, pnext_vuid,\n'
+                        pnext_check += '                           "%%s: Includes a pNext pointer (%%s) to a VkStructureType (%s) which was added in %s but the "\n' % (struct_type, ver_info)
+                        pnext_check += '                           "current effective API version is %s.",\n'
+                        pnext_check += '                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());\n'
+                        pnext_check += '            }\n'
+                    else:
+                        # Dependent on enabled extension
+                        ext_name = ver_info
+                        ext_name_define = self.extension_names[ver_info]
+                        table_type = ''
+                        if ext_name_define in self.instance_extension_list:
+                            table_type = 'instance'
+                        elif ext_name_define in self.device_extension_list:
+                            table_type = 'device'
+                        else:
+                            print("Error in parameter_validation_generator.py CodeGen.")
+                        norm_ext_name = ext_name_define[:-15].lower()
+                        pnext_check += '            if (!%s_extensions.%s) {\n' % (table_type, norm_ext_name.lower())
+                        pnext_check += '                skip |= LogError(\n'
+                        pnext_check += '                           instance, pnext_vuid,\n'
+                        pnext_check += '                           "%%s: Includes a pNext pointer (%%s) to a VkStructureType (%s), but its parent extension "\n' % struct_type
+                        pnext_check += '                           "%s has not been enabled.",\n' % ext_name
+                        pnext_check += '                           api_name, parameter_name.get_name().c_str());\n'
+                        pnext_check += '            }\n'
+                        pnext_check += '\n'
                 expr = self.expandStructCode(item, item, 'structure->', '', '            ', [], postProcSpec)
                 struct_validation_source = self.ScrubStructCode(expr)
-                pnext_case += '%s' % struct_validation_source
+                if struct_validation_source != '':
+                    pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
+                pnext_case += '%s%s' % (pnext_check, struct_validation_source)
                 pnext_case += '        } break;\n'
                 if protect:
                     pnext_case += '#endif // %s\n' % protect
                 # Skip functions containing no validation
-                if struct_validation_source:
+                if struct_validation_source or pnext_check != '':
                     pnext_handler += pnext_case;
                 else:
                     pnext_handler += '\n        // No Validation code for %s structure members  -- Covers VUID-%s-sType-sType\n' % (item, item)
@@ -496,9 +562,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Get base list of extension dependencies for all items in this extension
         base_required_extensions = []
         if "VK_VERSION_1" not in self.featureName:
-            # Save Name Define to get correct enable name later
             nameElem = interface[0][1]
             name = nameElem.get('name')
+            # Save Name Define to get correct enable name later
             self.extension_names[self.featureName] = name
             # This extension is the first dependency for this command
             base_required_extensions.append(self.featureName)
@@ -521,6 +587,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
 
         # And note if this is an Instance or Device extension
         self.extension_type = interface.get('type')
+        if interface.tag == 'extension':
+            name_elem = interface[0][1]
+            name_definition = name_elem.get('name')
+            if 'EXTENSION_NAME' not in name_definition:
+                print("Error in vk.xml file -- extension name is not available")
+            if interface.get('type') == 'instance':
+                self.instance_extension_list += '%s, ' % name_definition
+            else:
+                self.device_extension_list += '%s, ' % name_definition
+
     #
     # Called at the end of each extension (feature)
     def endFeature(self):
@@ -590,6 +666,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             return
         # alias has already been recorded in genType, above
         OutputGenerator.genStruct(self, typeinfo, typeName, alias)
+
         conditions = self.structMemberValidationConditions[typeName] if typeName in self.structMemberValidationConditions else None
         members = typeinfo.elem.findall('.//member')
         if self.featureExtraProtect is not None:
@@ -1365,7 +1442,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 cmdDef = 'bool StatelessValidation::PreCallValidate' + func_sig
                 cmdDef += '%sbool skip = false;\n' % indent
                 if isinstance(command.promotion_info, list):
-                    stop = 'here'
                     version_flag = command.promotion_info[1]
                     version_id = version_flag.replace('VK_VERSION', 'VK_API_VERSION')
                     cmdDef += '%s if (CheckPromotedApiAgainstVulkanVersion(%s, "%s", %s)) return true;\n' % (indent, command.promotion_info[0], command.name, version_id)
