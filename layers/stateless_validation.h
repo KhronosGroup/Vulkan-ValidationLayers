@@ -68,6 +68,8 @@ extern const std::vector<VkVertexInputRate> AllVkVertexInputRateEnums;
 extern const std::vector<VkPrimitiveTopology> AllVkPrimitiveTopologyEnums;
 extern const std::vector<VkIndexType> AllVkIndexTypeEnums;
 
+extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
+
 // String returned by string_VkStructureType for an unrecognized type.
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
 
@@ -474,8 +476,8 @@ class StatelessValidation : public ValidationObject {
     bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const;
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const;
 
-    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
-                                     const VkBaseOutStructure *header) const;
+    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header,
+                                     const char *pnext_vuid) const;
 
     /**
      * Validate a structure's pNext member.
@@ -498,26 +500,20 @@ class StatelessValidation : public ValidationObject {
                                uint32_t header_version, const char *pnext_vuid, const char *stype_vuid) const {
         bool skip_call = false;
 
-        // TODO: The valid pNext structure types are not recursive. Each structure has its own list of valid sTypes for pNext.
-        // Codegen a map of vectors containing the allowable pNext types for each struct and use that here -- also simplifies parms.
         if (next != NULL) {
             std::unordered_set<const void *> cycle_check;
             std::unordered_set<VkStructureType, std::hash<int>> unique_stype_check;
 
             const char *disclaimer =
-                "This warning is based on the Valid Usage documentation for version %d of the Vulkan header.  It is possible that "
-                "you "
-                "are "
-                "using a struct from a private extension or an extension that was added to a later version of the Vulkan header, "
-                "in "
-                "which "
-                "case your use of %s is perfectly valid but is not guaranteed to work correctly with validation enabled";
+                "This error is based on the Valid Usage documentation for version %d of the Vulkan header.  It is possible that "
+                "you are using a struct from a private extension or an extension that was added to a later version of the Vulkan "
+                "header, in which case the use of %s is undefined and may not work correctly with validation enabled";
 
-            if (allowed_type_count == 0) {
+            if ((allowed_type_count == 0) && (custom_stype_info.size() == 0)) {
                 std::string message = "%s: value of %s must be NULL. ";
                 message += disclaimer;
-                skip_call |= LogWarning(device, pnext_vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                        header_version, parameter_name.get_name().c_str());
+                skip_call |= LogError(device, pnext_vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                      header_version, parameter_name.get_name().c_str());
             } else {
                 const VkStructureType *start = allowed_types;
                 const VkStructureType *end = allowed_types + allowed_type_count;
@@ -549,26 +545,36 @@ class StatelessValidation : public ValidationObject {
                             unique_stype_check.insert(current->sType);
                         }
 
-                        if (std::find(start, end, current->sType) == end) {
-                            if (type_name.compare(UnsupportedStructureTypeString) == 0) {
-                                std::string message =
-                                    "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are "
-                                    "[%s]. ";
-                                message += disclaimer;
-                                skip_call |= LogWarning(device, pnext_vuid, message.c_str(), api_name,
-                                                        parameter_name.get_name().c_str(), current->sType, allowed_struct_names,
-                                                        header_version, parameter_name.get_name().c_str());
-                            } else {
-                                std::string message =
-                                    "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are "
-                                    "[%s]. ";
-                                message += disclaimer;
-                                skip_call |= LogWarning(device, pnext_vuid, message.c_str(), api_name,
-                                                        parameter_name.get_name().c_str(), type_name.c_str(), allowed_struct_names,
-                                                        header_version, parameter_name.get_name().c_str());
+                        // Search custom stype list -- if sType found, skip this entirely
+                        bool custom = false;
+                        for (auto item : custom_stype_info) {
+                            if (item.first == current->sType) {
+                                custom = true;
+                                break;
                             }
                         }
-                        skip_call |= ValidatePnextStructContents(api_name, parameter_name, current);
+                        if (!custom) {
+                            if (std::find(start, end, current->sType) == end) {
+                                if (type_name.compare(UnsupportedStructureTypeString) == 0) {
+                                    std::string message =
+                                        "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures "
+                                        "are [%s]. ";
+                                    message += disclaimer;
+                                    skip_call |= LogError(device, pnext_vuid, message.c_str(), api_name,
+                                                          parameter_name.get_name().c_str(), current->sType, allowed_struct_names,
+                                                          header_version, parameter_name.get_name().c_str());
+                                } else {
+                                    std::string message =
+                                        "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures "
+                                        "are [%s]. ";
+                                    message += disclaimer;
+                                    skip_call |= LogError(device, pnext_vuid, message.c_str(), api_name,
+                                                          parameter_name.get_name().c_str(), type_name.c_str(),
+                                                          allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                                }
+                            }
+                            skip_call |= ValidatePnextStructContents(api_name, parameter_name, current, pnext_vuid);
+                        }
                     }
                     current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
                 }
