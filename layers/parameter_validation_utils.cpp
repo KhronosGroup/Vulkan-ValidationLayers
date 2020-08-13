@@ -2262,6 +2262,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      i, i);
                 } else {
                     const VkStructureType valid_next_stypes[] = {LvlTypeMap<VkPipelineCoverageModulationStateCreateInfoNV>::kSType,
+                                                                 LvlTypeMap<VkPipelineCoverageReductionStateCreateInfoNV>::kSType,
                                                                  LvlTypeMap<VkPipelineCoverageToColorStateCreateInfoNV>::kSType,
                                                                  LvlTypeMap<VkPipelineSampleLocationsStateCreateInfoEXT>::kSType};
                     const char *valid_struct_names =
@@ -2270,7 +2271,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     skip |= validate_struct_pnext(
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pMultisampleState->pNext", ParameterName::IndexVector{i}),
-                        valid_struct_names, pCreateInfos[i].pMultisampleState->pNext, 3, valid_next_stypes,
+                        valid_struct_names, pCreateInfos[i].pMultisampleState->pNext, 4, valid_next_stypes,
                         GeneratedVulkanHeaderVersion, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext",
                         "VUID-VkPipelineMultisampleStateCreateInfo-sType-unique");
 
