@@ -1069,8 +1069,7 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
 
             IsSpecificDescriptorType(src, insn, insn.word(3) == spv::StorageClassStorageBuffer,
                                      !(d.flags & decoration_set::nonwritable_bit), v);
-
-            *has_writable_descriptor = v.is_writable;
+            if (v.is_writable) *has_writable_descriptor = v.is_writable;
             if (d.flags & decoration_set::input_attachment_index_bit) {
                 v.input_index = d.input_attachment_index;
             }
