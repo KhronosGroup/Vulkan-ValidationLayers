@@ -18,6 +18,8 @@
  * Author: Tony Barbour <tony@lunarg.com>
  */
 
+#include <climits>
+
 #include "gpu_validation.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
@@ -239,6 +241,13 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
     GpuAssisted *device_gpu_assisted = static_cast<GpuAssisted *>(validation_data);
+
+    const char *bufferoob_string = getLayerOption("khronos_validation.gpuav_buffer_oob");
+    if (device_gpu_assisted->enabled_features.core.robustBufferAccess ||
+        device_gpu_assisted->enabled_features.robustness2_features.robustBufferAccess2)
+        device_gpu_assisted->buffer_oob_enabled = false;
+    else
+        device_gpu_assisted->buffer_oob_enabled = *bufferoob_string ? !strcmp(bufferoob_string, "true") : true;
 
     if (device_gpu_assisted->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
@@ -1208,8 +1217,8 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     AdjustValidatorOptions(device_extensions, enabled_features, options);
     Optimizer optimizer(target_env);
     optimizer.SetMessageConsumer(GpuConsoleMessageConsumer);
-    optimizer.RegisterPass(
-        CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing, descriptor_indexing));
+    optimizer.RegisterPass(CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing,
+                                                       descriptor_indexing, buffer_oob_enabled));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
     if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64 &&
         enabled_features.core12.bufferDeviceAddress)
@@ -1244,13 +1253,25 @@ static void GenerateValidationMessage(const uint32_t *debug_record, std::string 
             vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
         } break;
         case kInstErrorBindlessUninit: {
-            strm << "Descriptor index " << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized. ";
+            strm << "Descriptor index " << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized.";
             vuid_msg = "UNASSIGNED-Descriptor uninitialized";
         } break;
         case kInstErrorBuffAddrUnallocRef: {
             uint64_t *ptr = (uint64_t *)&debug_record[kInstBuffAddrUnallocOutDescPtrLo];
             strm << "Device address 0x" << std::hex << *ptr << " access out of bounds. ";
             vuid_msg = "UNASSIGNED-Device address out of bounds";
+        } break;
+        case kInstErrorBindlessBuffOOB: {
+            auto size = debug_record[kInstBindlessBuffOOBOutBuffSize];
+            if (size == 0) {
+                strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
+                vuid_msg = "UNASSIGNED-Descriptor uninitialized";
+            } else {
+                strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
+                     << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
+                     << " and highest byte accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
+                vuid_msg = "UNASSIGNED-Descriptor access out of bounds";
+            }
         } break;
         default: {
             strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";
@@ -1318,6 +1339,28 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     memset(debug_output_buffer, 0, sizeof(uint32_t) * words_to_clear);
 }
 
+void GpuAssisted::SetDescriptorInitialized(uint32_t *pData, uint32_t index, const cvdescriptorset::Descriptor *descriptor) {
+    if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
+        auto buffer = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor)->GetBuffer();
+        if (buffer == VK_NULL_HANDLE)
+            pData[index] = UINT_MAX;
+        else {
+            auto buffer_state = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor)->GetBufferState();
+            pData[index] = static_cast<uint32_t>(buffer_state->createInfo.size);
+        }
+    } else if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::TexelBuffer) {
+        auto buffer_view = static_cast<const cvdescriptorset::TexelDescriptor *>(descriptor)->GetBufferView();
+        if (buffer_view == VK_NULL_HANDLE)
+            pData[index] = UINT_MAX;
+        else {
+            auto buffer_view_state = static_cast<const cvdescriptorset::TexelDescriptor *>(descriptor)->GetBufferViewState();
+            pData[index] = static_cast<uint32_t>(buffer_view_state->buffer_state->createInfo.size);
+        }
+    } else {
+        pData[index] = 1;
+    }
+}
+
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
 void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
     auto gpu_buffer_list = GetBufferInfo(cb_node->commandBuffer);
@@ -1327,7 +1370,9 @@ void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
             VkResult result = vmaMapMemory(vmaAllocator, buffer_info.di_input_mem_block.allocation, (void **)&pData);
             if (result == VK_SUCCESS) {
                 for (auto update : buffer_info.di_input_mem_block.update_at_submit) {
-                    if (update.second->updated) pData[update.first] = 1;
+                    if (update.second->updated) {
+                        SetDescriptorInitialized(pData, update.first, update.second);
+                    }
                 }
                 vmaUnmapMemory(vmaAllocator, buffer_info.di_input_mem_block.allocation);
             }
@@ -1583,10 +1628,10 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     }
 
     // Clear the output block to zeros so that only error information from the gpu will be present
-    uint32_t *pData;
-    result = vmaMapMemory(vmaAllocator, output_block.allocation, (void **)&pData);
+    uint32_t *data_ptr;
+    result = vmaMapMemory(vmaAllocator, output_block.allocation, (void **)&data_ptr);
     if (result == VK_SUCCESS) {
-        memset(pData, 0, output_buffer_size);
+        memset(data_ptr, 0, output_buffer_size);
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
 
@@ -1601,7 +1646,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
-    if (number_of_sets > 0 && descriptor_indexing) {
+    if (number_of_sets > 0 && (descriptor_indexing || buffer_oob_enabled)) {
         uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
         uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
         for (auto s : state.per_set) {
@@ -1631,7 +1676,12 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         // code is going to dereference Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] to
         // see if descriptors have been written. In gpu_validation.md, we note this and advise
         // using densely packed bindings as a best practice when using gpu-av with descriptor indexing
-        uint32_t words_needed = 1 + (number_of_sets * 2) + (binding_count * 2) + descriptor_count;
+        uint32_t words_needed;
+        if (descriptor_indexing) {
+            words_needed = 1 + (number_of_sets * 2) + (binding_count * 2) + descriptor_count;
+        } else {
+            words_needed = 1 + number_of_sets + binding_count + descriptor_count;
+        }
         allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         bufferInfo.size = words_needed * 4;
         result =
@@ -1645,72 +1695,129 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         // Populate input buffer first with the sizes of every descriptor in every set, then with whether
         // each element of each descriptor has been written or not.  See gpu_validation.md for a more thourough
         // outline of the input buffer format
-        result = vmaMapMemory(vmaAllocator, di_input_block.allocation, (void **)&pData);
-        memset(pData, 0, static_cast<size_t>(bufferInfo.size));
-        // Pointer to a sets array that points into the sizes array
-        uint32_t *sets_to_sizes = pData + 1;
-        // Pointer to the sizes array that contains the array size of the descriptor at each binding
-        uint32_t *sizes = sets_to_sizes + number_of_sets;
-        // Pointer to another sets array that points into the bindings array that points into the written array
-        uint32_t *sets_to_bindings = sizes + binding_count;
-        // Pointer to the bindings array that points at the start of the writes in the writes array for each binding
-        uint32_t *bindings_to_written = sets_to_bindings + number_of_sets;
-        // Index of the next entry in the written array to be updated
-        uint32_t written_index = 1 + (number_of_sets * 2) + (binding_count * 2);
-        uint32_t bindCounter = number_of_sets + 1;
-        // Index of the start of the sets_to_bindings array
-        pData[0] = number_of_sets + binding_count + 1;
+        result = vmaMapMemory(vmaAllocator, di_input_block.allocation, (void **)&data_ptr);
+        memset(data_ptr, 0, static_cast<size_t>(bufferInfo.size));
 
-        for (auto s : state.per_set) {
-            auto desc = s.bound_descriptor_set;
-            if (desc && (desc->GetBindingCount() > 0)) {
-                auto layout = desc->GetLayout();
-                auto bindings = layout->GetSortedBindingSet();
-                // For each set, fill in index of its bindings sizes in the sizes array
-                *sets_to_sizes++ = bindCounter;
-                // For each set, fill in the index of its bindings in the bindings_to_written array
-                *sets_to_bindings++ = bindCounter + number_of_sets + binding_count;
-                for (auto binding : bindings) {
-                    // For each binding, fill in its size in the sizes array
-                    // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
-                    // blocks
-                    if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
-                        sizes[binding] = 1;
-                    } else if (binding == layout->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
-                        sizes[binding] = desc->GetVariableDescriptorCount();
-                    } else {
-                        sizes[binding] = desc->GetDescriptorCountFromBinding(binding);
-                    }
-                    // Fill in the starting index for this binding in the written array in the bindings_to_written array
-                    bindings_to_written[binding] = written_index;
+        // Descriptor indexing needs the number of descriptors at each binding.
+        if (descriptor_indexing) {
+            // Pointer to a sets array that points into the sizes array
+            uint32_t *sets_to_sizes = data_ptr + 1;
+            // Pointer to the sizes array that contains the array size of the descriptor at each binding
+            uint32_t *sizes = sets_to_sizes + number_of_sets;
+            // Pointer to another sets array that points into the bindings array that points into the written array
+            uint32_t *sets_to_bindings = sizes + binding_count;
+            // Pointer to the bindings array that points at the start of the writes in the writes array for each binding
+            uint32_t *bindings_to_written = sets_to_bindings + number_of_sets;
+            // Index of the next entry in the written array to be updated
+            uint32_t written_index = 1 + (number_of_sets * 2) + (binding_count * 2);
+            uint32_t bind_counter = number_of_sets + 1;
+            // Index of the start of the sets_to_bindings array
+            data_ptr[0] = number_of_sets + binding_count + 1;
 
-                    // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
-                    // blocks
-                    if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
-                        pData[written_index++] = 1;
-                        continue;
-                    }
-
-                    auto index_range = desc->GetGlobalIndexRangeFromBinding(binding, true);
-                    // For each array element in the binding, update the written array with whether it has been written
-                    for (uint32_t i = index_range.start; i < index_range.end; ++i) {
-                        auto *descriptor = desc->GetDescriptorFromGlobalIndex(i);
-                        if (descriptor->updated) {
-                            pData[written_index] = 1;
-                        } else if (desc->IsUpdateAfterBind(binding)) {
-                            // If it hasn't been written now and it's update after bind, put it in a list to check at QueueSubmit
-                            di_input_block.update_at_submit[written_index] = descriptor;
+            for (auto s : state.per_set) {
+                auto desc = s.bound_descriptor_set;
+                if (desc && (desc->GetBindingCount() > 0)) {
+                    auto layout = desc->GetLayout();
+                    auto bindings = layout->GetSortedBindingSet();
+                    // For each set, fill in index of its bindings sizes in the sizes array
+                    *sets_to_sizes++ = bind_counter;
+                    // For each set, fill in the index of its bindings in the bindings_to_written array
+                    *sets_to_bindings++ = bind_counter + number_of_sets + binding_count;
+                    for (auto binding : bindings) {
+                        // For each binding, fill in its size in the sizes array
+                        // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
+                        // blocks
+                        if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
+                            sizes[binding] = 1;
+                        } else if (binding == layout->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
+                            sizes[binding] = desc->GetVariableDescriptorCount();
+                        } else {
+                            sizes[binding] = desc->GetDescriptorCountFromBinding(binding);
                         }
-                        written_index++;
+                        // Fill in the starting index for this binding in the written array in the bindings_to_written array
+                        bindings_to_written[binding] = written_index;
+
+                        // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
+                        // blocks
+                        if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
+                            data_ptr[written_index++] = UINT_MAX;
+                            continue;
+                        }
+
+                        auto index_range = desc->GetGlobalIndexRangeFromBinding(binding, true);
+                        // For each array element in the binding, update the written array with whether it has been written
+                        for (uint32_t i = index_range.start; i < index_range.end; ++i) {
+                            auto *descriptor = desc->GetDescriptorFromGlobalIndex(i);
+                            if (descriptor->updated) {
+                                SetDescriptorInitialized(data_ptr, written_index, descriptor);
+                            } else if (desc->IsUpdateAfterBind(binding)) {
+                                // If it hasn't been written now and it's update after bind, put it in a list to check at
+                                // QueueSubmit
+                                di_input_block.update_at_submit[written_index] = descriptor;
+                            }
+                            written_index++;
+                        }
                     }
+                    auto last = desc->GetLayout()->GetMaxBinding();
+                    bindings_to_written += last + 1;
+                    bind_counter += last + 1;
+                    sizes += last + 1;
+                } else {
+                    *sets_to_sizes++ = 0;
+                    *sets_to_bindings++ = 0;
                 }
-                auto last = desc->GetLayout()->GetMaxBinding();
-                bindings_to_written += last + 1;
-                bindCounter += last + 1;
-                sizes += last + 1;
-            } else {
-                *sets_to_sizes++ = 0;
-                *sets_to_bindings++ = 0;
+            }
+        } else {
+            // If no descriptor indexing, we don't need number of descriptors at each binding, so
+            // no sets_to_sizes or sizes arrays, just sets_to_bindings, bindings_to_written and written_index
+
+            // Pointer to sets array that points into the bindings array that points into the written array
+            uint32_t *sets_to_bindings = data_ptr + 1;
+            // Pointer to the bindings array that points at the start of the writes in the writes array for each binding
+            uint32_t *bindings_to_written = sets_to_bindings + number_of_sets;
+            // Index of the next entry in the written array to be updated
+            uint32_t written_index = 1 + number_of_sets + binding_count;
+            uint32_t bind_counter = number_of_sets + 1;
+            data_ptr[0] = 1;
+
+            for (auto s : state.per_set) {
+                auto desc = s.bound_descriptor_set;
+                if (desc && (desc->GetBindingCount() > 0)) {
+                    auto layout = desc->GetLayout();
+                    auto bindings = layout->GetSortedBindingSet();
+                    *sets_to_bindings++ = bind_counter;
+                    for (auto binding : bindings) {
+                        // Fill in the starting index for this binding in the written array in the bindings_to_written array
+                        bindings_to_written[binding] = written_index;
+
+                        // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
+                        // blocks
+                        if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
+                            data_ptr[written_index++] = UINT_MAX;
+                            continue;
+                        }
+
+                        auto index_range = desc->GetGlobalIndexRangeFromBinding(binding, true);
+
+                        // For each array element in the binding, update the written array with whether it has been written
+                        for (uint32_t i = index_range.start; i < index_range.end; ++i) {
+                            auto *descriptor = desc->GetDescriptorFromGlobalIndex(i);
+                            if (descriptor->updated) {
+                                SetDescriptorInitialized(data_ptr, written_index, descriptor);
+                            } else if (desc->IsUpdateAfterBind(binding)) {
+                                // If it hasn't been written now and it's update after bind, put it in a list to check at
+                                // QueueSubmit
+                                di_input_block.update_at_submit[written_index] = descriptor;
+                            }
+                            written_index++;
+                        }
+                    }
+                    auto last = desc->GetLayout()->GetMaxBinding();
+                    bindings_to_written += last + 1;
+                    bind_counter += last + 1;
+                } else {
+                    *sets_to_bindings++ = 0;
+                }
             }
         }
         vmaUnmapMemory(vmaAllocator, di_input_block.allocation);
