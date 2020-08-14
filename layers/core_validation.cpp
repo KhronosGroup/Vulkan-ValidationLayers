@@ -12917,16 +12917,15 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                              cmd_name, i, pBuffers[i]);
         }
 
-        // pSizes is optional and may be nullptr.
-        if (pSizes != nullptr) {
+        // pSizes is optional and may be nullptr. Also might be VK_WHOLE_SIZE which VU don't apply
+        if ((pSizes != nullptr) && (pSizes[i] != VK_WHOLE_SIZE)) {
+            // only report one to prevent redundant error if the size is larger since adding offset will be as well
             if (pSizes[i] > buffer_state->createInfo.size) {
                 skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pSizes-02362",
                                  "%s: pSizes[%" PRIu32 "](0x%" PRIxLEAST64 ") is greater than the size of pBuffers[%" PRIu32
                                  "](0x%" PRIxLEAST64 ").",
                                  cmd_name, i, pSizes[i], i, buffer_state->createInfo.size);
-            }
-
-            if (pSizes[i] != VK_WHOLE_SIZE && pOffsets[i] + pSizes[i] > buffer_state->createInfo.size) {
+            } else if (pOffsets[i] + pSizes[i] > buffer_state->createInfo.size) {
                 skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02363",
                                  "%s: The sum of pOffsets[%" PRIu32 "](Ox%" PRIxLEAST64 ") and pSizes[%" PRIu32 "](0x%" PRIxLEAST64
                                  ") is greater than the size of pBuffers[%" PRIu32 "](0x%" PRIxLEAST64 ").",
