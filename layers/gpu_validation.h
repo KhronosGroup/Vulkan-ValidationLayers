@@ -89,6 +89,7 @@ class GpuAssisted : public ValidationStateTracker {
     uint32_t unique_shader_module_id = 0;
     std::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
+    bool buffer_oob_enabled;
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
 
@@ -199,6 +200,7 @@ class GpuAssisted : public ValidationStateTracker {
                                          void* csm_state_data);
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, VkPipelineBindPoint pipeline_bind_point,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
+    void SetDescriptorInitialized(uint32_t* pData, uint32_t index, const cvdescriptorset::Descriptor* descriptor);
     void UpdateInstrumentationBuffer(CMD_BUFFER_STATE* cb_node);
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
