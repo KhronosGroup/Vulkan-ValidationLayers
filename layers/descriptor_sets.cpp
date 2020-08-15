@@ -1732,30 +1732,19 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             if (!(usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_STORAGE_BIT";
                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00339";
-            } else if (VK_IMAGE_LAYOUT_GENERAL != image_layout) {
+            } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) || ((VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout) &&
+                                                                     (device_extensions.vk_khr_shared_presentable_image))) {
+                *error_code = "UNASSIGNED-VkWriteDescriptorSet-descriptorType";
                 std::stringstream error_str;
-                // TODO : Need to create custom enum error codes for these cases
-                if (image_node->shared_presentable) {
-                    if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout) {
-                        error_str << "ImageView (" << report_data->FormatHandle(image_view)
-                                  << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type with a front-buffered image is being updated with "
-                                     "layout "
-                                  << string_VkImageLayout(image_layout)
-                                  << " but according to spec section 13.1 Descriptor Types, 'Front-buffered images that report "
-                                     "support for VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT must be in the "
-                                     "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR layout.'";
-                        *error_msg = error_str.str();
-                        return false;
-                    }
-                } else if (VK_IMAGE_LAYOUT_GENERAL != image_layout) {
-                    error_str << "ImageView (" << report_data->FormatHandle(image_view)
-                              << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
-                              << string_VkImageLayout(image_layout)
-                              << " but according to spec section 13.1 Descriptor Types, 'Load and store operations on storage "
-                                 "images can only be done on images in VK_IMAGE_LAYOUT_GENERAL layout.'";
-                    *error_msg = error_str.str();
-                    return false;
+                error_str << "Descriptor update with descriptorType VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"
+                          << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
+                          << report_data->FormatHandle(image) << " in imageView " << report_data->FormatHandle(image_view)
+                          << ". Allowed layouts are: VK_IMAGE_LAYOUT_GENERAL";
+                if (device_extensions.vk_khr_shared_presentable_image) {
+                    error_str << " or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR";
                 }
+                *error_msg = error_str.str();
+                return false;
             }
             break;
         }
@@ -1778,7 +1767,10 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         return false;
     }
 
-    if ((type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) {
+    // All the following types share the same image layouts
+    // checkf or Storage Images above
+    if ((type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
+        (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
         // Test that the layout is compatible with the descriptorType for the two sampled image types
         const static std::array<VkImageLayout, 3> valid_layouts = {
             {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL}};
@@ -1801,7 +1793,19 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                             std::any_of(extended_layouts.cbegin(), extended_layouts.cend(), is_layout);
 
         if (!valid_layout) {
-            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01403";
+            switch (type) {
+                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01403";
+                    break;
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01403";
+                    break;
+                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                    *error_code = "UNASSIGNED-VkWriteDescriptorSet-descriptorType";
+                    break;
+                default:
+                    break;
+            }
             std::stringstream error_str;
             error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
                       << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
