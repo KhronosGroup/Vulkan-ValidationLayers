@@ -6640,9 +6640,7 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
 
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         " of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
-                                         "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL but according to spec ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkWriteDescriptorSet-descriptorType");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
