@@ -1848,10 +1848,7 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func
     if (disabled[idle_descriptor_set]) return false;
     bool skip = false;
     auto set_node = setMap.find(set);
-    if (set_node == setMap.end()) {
-        skip |= LogError(set, kVUID_Core_DrawState_DoubleDestroy, "Cannot call %s() on %s that has not been allocated.", func_str,
-                         report_data->FormatHandle(set).c_str());
-    } else {
+    if (set_node != setMap.end()) {
         // TODO : This covers various error cases so should pass error enum into this function and use passed in enum here
         if (set_node->second->in_use.load()) {
             skip |= LogError(set, "VUID-vkFreeDescriptorSets-pDescriptorSets-00309",
