@@ -668,6 +668,43 @@ TEST_F(VkLayerTest, SpecLinks) {
     CreateImageViewTest(*this, &imgViewInfo, "Vulkan-Docs/search");
 }
 
+TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
+    TEST_DESCRIPTION(
+        "Validate that using VkPipelineTessellationDomainOriginStateCreateInfo in VkPipelineTessellationStateCreateInfo.pNext "
+        "in a 1.0 context will generate an error message.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!m_device->phy().features().tessellationShader) {
+        printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
+        return;
+    }
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj tcs(m_device, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tes(m_device, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+    VkPipelineTessellationDomainOriginStateCreateInfo tessellationDomainOriginStateInfo = {
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO, VK_NULL_HANDLE,
+        VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT};
+    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
+                                               &tessellationDomainOriginStateInfo, 0, 3};
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pTessellationState = &tsci;
+    pipe.gp_ci_.pInputAssemblyState = &iasci;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     TEST_DESCRIPTION("See if checks occur on structs ONLY used in pnext chains.");
 
