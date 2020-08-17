@@ -8500,6 +8500,104 @@ TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
     }
 }
 
+TEST_F(VkLayerTest, vertexStoresAndAtomicsFeatureDisable) {
+    TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if vertexPipelineStoresAndAtomics disable.");
+
+    VkPhysicalDeviceFeatures features{};
+    features.vertexPipelineStoresAndAtomics = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Test StoreOp
+    {
+        char const *vsSource =
+            "#version 450\n"
+            "layout(set=0, binding=0, rgba8) uniform image2D si0;\n "
+            "void main() {\n"
+            "      imageStore(si0, ivec2(0), vec4(0));\n"
+            "}\n";
+
+        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {vs.GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
+            info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device");
+    }
+
+    // Test AtomicOp
+    {
+        char const *vsSource =
+            "#version 450\n"
+            "layout(set=0, binding=0, rgba8) uniform image2D si0;\n "
+            "void main() {\n"
+            "      imageAtomicExchange(si0, ivec2(0), 1);\n"
+            "}\n";
+
+        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {vs.GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
+            info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "Shader requires vertexPipelineStoresAndAtomics but is not enabled on the device");
+    }
+}
+
+TEST_F(VkLayerTest, fragmentStoresAndAtomicsFeatureDisable) {
+    TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if fragmentStoresAndAtomics disable.");
+
+    VkPhysicalDeviceFeatures features{};
+    features.fragmentStoresAndAtomics = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Test StoreOp
+    {
+        char const *fsSource =
+            "#version 450\n"
+            "layout(set=0, binding=0, rgba8) uniform image2D si0;\n "
+            "void main() {\n"
+            "      imageStore(si0, ivec2(0), vec4(0));\n"
+            "}\n";
+
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "Shader requires fragmentStoresAndAtomics but is not enabled on the device");
+    }
+
+    // Test AtomicOp
+    {
+        char const *fsSource =
+            "#version 450\n"
+            "layout(set=0, binding=0, rgba8) uniform image2D si0;\n "
+            "void main() {\n"
+            "      imageAtomicExchange(si0, ivec2(0), 1);\n"
+            "}\n";
+
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "Shader requires fragmentStoresAndAtomics but is not enabled on the device");
+    }
+}
+
 TEST_F(VkLayerTest, DuplicateDynamicStates) {
     TEST_DESCRIPTION("Create a pipeline with duplicate dynamic states set.");
 
