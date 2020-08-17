@@ -5318,10 +5318,7 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
 bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) const {
     bool skip = false;
     auto buffer_state = GetBufferState(buffer);
-    if (!buffer_state) {
-        skip |= LogError(buffer, kVUID_Core_DrawState_DoubleDestroy, "Cannot free %s that has not been allocated.",
-                         report_data->FormatHandle(buffer).c_str());
-    } else {
+    if (buffer_state) {
         if (buffer_state->in_use.load()) {
             skip |= LogError(buffer, "VUID-vkDestroyBuffer-buffer-00922", "Cannot free %s that is in use by a command buffer.",
                              report_data->FormatHandle(buffer).c_str());
