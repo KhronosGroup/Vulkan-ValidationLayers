@@ -843,13 +843,24 @@ struct interface_var {
     uint32_t id;
     uint32_t type_id;
     uint32_t offset;
-    int32_t input_index;
+    int32_t input_index;  // index = -1 means that it's not input attachment.
     bool is_patch;
     bool is_block_member;
     bool is_relaxed_precision;
     bool is_writable;
     bool is_atomic_operation;
     // TODO: collect the name, too? Isn't required to be present.
+
+    interface_var()
+        : id(0),
+          type_id(0),
+          offset(0),
+          input_index(-1),
+          is_patch(false),
+          is_block_member(false),
+          is_relaxed_precision(false),
+          is_writable(false),
+          is_atomic_operation(false) {}
 };
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 
@@ -912,6 +923,7 @@ class PIPELINE_STATE : public BASE_NODE {
         std::unordered_set<uint32_t> accessible_ids;
         std::vector<std::pair<descriptor_slot_t, interface_var>> descriptor_uses;
         bool has_writable_descriptor;
+        bool has_atomic_descriptor;
         VkShaderStageFlagBits stage_flag;
     };
 

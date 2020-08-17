@@ -931,8 +931,10 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     if (entrypoint == module->end()) return false;
 
     bool has_writeable_descriptors = false;
+    bool has_atomic_descriptors = false;
     auto accessible_ids = MarkAccessibleIds(module, entrypoint);
-    auto descriptor_uses = CollectInterfaceByDescriptorSlot(module, accessible_ids, &has_writeable_descriptors);
+    auto descriptor_uses =
+        CollectInterfaceByDescriptorSlot(module, accessible_ids, &has_writeable_descriptors, &has_atomic_descriptors);
 
     unsigned dimensions = 0;
     if (x > 1) dimensions++;

@@ -5704,8 +5704,8 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
     stage_state->accessible_ids = MarkAccessibleIds(module, entrypoint);
     ProcessExecutionModes(module, entrypoint, pipeline);
 
-    stage_state->descriptor_uses =
-        CollectInterfaceByDescriptorSlot(module, stage_state->accessible_ids, &stage_state->has_writable_descriptor);
+    stage_state->descriptor_uses = CollectInterfaceByDescriptorSlot(
+        module, stage_state->accessible_ids, &stage_state->has_writable_descriptor, &stage_state->has_atomic_descriptor);
     // Capture descriptor uses for the pipeline
     for (auto use : stage_state->descriptor_uses) {
         // While validating shaders capture which slots are used by the pipeline
