@@ -648,36 +648,32 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
                                        "The second uses a Fragment Density Map while the first one does not.", caller, error_code);
     }
 
-    // Find an entry of the Multiview type in the pNext chain, if it exists
-    const auto mv1 = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(rp1_state->createInfo.pNext);
-    const auto mv2 = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(rp2_state->createInfo.pNext);
-
     // Both renderpasses must agree on usage of a Multiview type
-    if (mv1 && mv2) {
-        if (mv1->subpassCount && mv2->subpassCount) {
-            assert(mv1->subpassCount == mv2->subpassCount);
-            for (uint32_t i = 0; i < mv1->subpassCount; i++) {
-                if (mv1->pViewMasks[i] != mv2->pViewMasks[i]) {
+    if (rp1_state->multiview_supported && rp2_state->multiview_supported) {
+        if (rp1_state->mv_view_masks.size() == rp2_state->mv_view_masks.size()) {
+            for (uint32_t i = 0; i < rp1_state->mv_view_masks.size(); i++) {
+                if (rp1_state->mv_view_masks[i] != rp2_state->mv_view_masks[i]) {
                     std::stringstream ss;
-                    ss << "For subpass " << i << ", they have different pViewMasks. The first has view mask " << mv1->pViewMasks[i]
-                       << " while the second has view mask " << mv2->pViewMasks[i] << ".";
+                    ss << "For subpass " << i << ", they have different pViewMasks. The first has view mask "
+                       << rp1_state->mv_view_masks[i] << " while the second has view mask " << rp2_state->mv_view_masks[i] << ".";
                     skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller,
                                                    error_code);
                 }
             }
-        } else if (mv1->subpassCount) {
-            skip |= LogInvalidPnextMessage(
-                type1_string, rp1_state, type2_string, rp2_state,
-                "The first has Multiview enabled (has non-zero viewMasks) while the second one does not.", caller, error_code);
-        } else if (mv2->subpassCount) {
-            skip |= LogInvalidPnextMessage(
-                type1_string, rp1_state, type2_string, rp2_state,
-                "The second has Multiview enabled (has non-zero viewMasks) while the first one does not.", caller, error_code);
+        } else {
+            LogObjectList objlist(rp1_state->renderPass);
+            objlist.add(rp2_state->renderPass);
+            skip |= LogError(objlist, error_code,
+                             "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: Both renderpasses use Multiview but "
+                             "have a differing number of viewmasks (%d and %d, respectively).",
+                             caller, type1_string, report_data->FormatHandle(rp1_state->renderPass).c_str(), type2_string,
+                             report_data->FormatHandle(rp2_state->renderPass).c_str(), rp1_state->mv_view_masks.size(),
+                             rp2_state->mv_view_masks.size());
         }
-    } else if (mv1) {
+    } else if (rp1_state->multiview_supported) {
         skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state,
                                        "The first uses Multiview while the second one does not.", caller, error_code);
-    } else if (mv2) {
+    } else if (rp2_state->multiview_supported) {
         skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state,
                                        "The second uses Multiview while the first one does not.", caller, error_code);
     }
