@@ -550,7 +550,7 @@ class StatelessValidation : public ValidationObject {
                         }
 
                         if (std::find(start, end, current->sType) == end) {
-                            if (type_name == UnsupportedStructureTypeString) {
+                            if (type_name.compare(UnsupportedStructureTypeString) == 0) {
                                 std::string message =
                                     "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are "
                                     "[%s]. ";
