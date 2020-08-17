@@ -1046,7 +1046,8 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
 }
 
 std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
-    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor) {
+    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
+    bool *has_atomic_descriptor) {
     std::vector<std::pair<descriptor_slot_t, interface_var>> out;
 
     for (auto id : accessible_ids) {
@@ -1063,13 +1064,11 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
             interface_var v = {};
             v.id = insn.word(2);
             v.type_id = insn.word(1);
-            v.is_writable = false;
-            v.is_atomic_operation = false;
-            v.input_index = -1;
 
             IsSpecificDescriptorType(src, insn, insn.word(3) == spv::StorageClassStorageBuffer,
                                      !(d.flags & decoration_set::nonwritable_bit), v);
-            if (v.is_writable) *has_writable_descriptor = v.is_writable;
+            if (v.is_writable) *has_writable_descriptor = true;
+            if (v.is_atomic_operation) *has_atomic_descriptor = true;
             if (d.flags & decoration_set::input_attachment_index_bit) {
                 v.input_index = d.input_attachment_index;
             }
@@ -1987,10 +1986,11 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor) const {
+bool CoreChecks::ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
+                                                               bool has_atomic_descriptor) const {
     bool skip = false;
 
-    if (has_writable_descriptor) {
+    if (has_writable_descriptor || has_atomic_descriptor) {
         switch (stage) {
             case VK_SHADER_STAGE_COMPUTE_BIT:
             case VK_SHADER_STAGE_RAYGEN_BIT_NV:
@@ -3212,7 +3212,8 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
 
     // Validate shader capabilities against enabled device features
     skip |= ValidateShaderCapabilities(module, pStage->stage);
-    skip |= ValidateShaderStageWritableDescriptor(pStage->stage, has_writable_descriptor);
+    skip |=
+        ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, has_writable_descriptor, stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage);
