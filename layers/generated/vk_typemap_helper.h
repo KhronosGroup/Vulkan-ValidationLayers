@@ -3895,6 +3895,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNES
     typedef VkPhysicalDeviceImageRobustnessFeaturesEXT Type;
 };
 
+// Map type VkPhysicalDevice4444FormatsFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDevice4444FormatsFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT> {
+    typedef VkPhysicalDevice4444FormatsFeaturesEXT Type;
+};
+
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 // Map type VkDirectFBSurfaceCreateInfoEXT to id VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkDirectFBSurfaceCreateInfoEXT> {

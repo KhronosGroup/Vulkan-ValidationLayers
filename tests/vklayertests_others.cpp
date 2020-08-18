@@ -5946,8 +5946,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
     bind_buffer_info.memory = memory;
     bind_buffer_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02988");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBindBufferMemoryInfo-memory-01599");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02986");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBindBufferMemoryInfo-memory-01035");
     vkBindBufferMemory2Function(m_device->device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
 
@@ -6066,7 +6066,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
     bind_image_info.memory = memory;
     bind_image_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02992");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02990");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
     vkBindImageMemory2Function(m_device->device(), 1, &bind_image_info);
@@ -10157,7 +10157,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     bind_buffer_info.memory = memory_buffer_import.handle();
     bind_buffer_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02792");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02727");
     vkBindBufferMemory2Function(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
 
@@ -10174,7 +10174,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     bind_image_info.memory = memory_buffer_import.handle();
     bind_image_info.memoryOffset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02794");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02729");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01614");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01612");
     vkBindImageMemory2Function(device(), 1, &bind_image_info);

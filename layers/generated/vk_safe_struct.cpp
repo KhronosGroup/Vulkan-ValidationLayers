@@ -32617,6 +32617,64 @@ void safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::initialize(const safe_VkPh
     robustImageAccess = copy_src->robustImageAccess;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+
+safe_VkPhysicalDevice4444FormatsFeaturesEXT::safe_VkPhysicalDevice4444FormatsFeaturesEXT(const VkPhysicalDevice4444FormatsFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    formatA4R4G4B4(in_struct->formatA4R4G4B4),
+    formatA4B4G4R4(in_struct->formatA4B4G4R4)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevice4444FormatsFeaturesEXT::safe_VkPhysicalDevice4444FormatsFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDevice4444FormatsFeaturesEXT::safe_VkPhysicalDevice4444FormatsFeaturesEXT(const safe_VkPhysicalDevice4444FormatsFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    formatA4R4G4B4 = copy_src.formatA4R4G4B4;
+    formatA4B4G4R4 = copy_src.formatA4B4G4R4;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevice4444FormatsFeaturesEXT& safe_VkPhysicalDevice4444FormatsFeaturesEXT::operator=(const safe_VkPhysicalDevice4444FormatsFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    formatA4R4G4B4 = copy_src.formatA4R4G4B4;
+    formatA4B4G4R4 = copy_src.formatA4B4G4R4;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevice4444FormatsFeaturesEXT::~safe_VkPhysicalDevice4444FormatsFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevice4444FormatsFeaturesEXT::initialize(const VkPhysicalDevice4444FormatsFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    formatA4R4G4B4 = in_struct->formatA4R4G4B4;
+    formatA4B4G4R4 = in_struct->formatA4B4G4R4;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevice4444FormatsFeaturesEXT::initialize(const safe_VkPhysicalDevice4444FormatsFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    formatA4R4G4B4 = copy_src->formatA4R4G4B4;
+    formatA4B4G4R4 = copy_src->formatA4B4G4R4;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 
@@ -35117,6 +35175,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceImageRobustnessFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceImageRobustnessFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDevice4444FormatsFeaturesEXT(reinterpret_cast<const VkPhysicalDevice4444FormatsFeaturesEXT *>(pNext));
+            break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:
             safe_pNext = new safe_VkDeferredOperationInfoKHR(reinterpret_cast<const VkDeferredOperationInfoKHR *>(pNext));
@@ -35894,6 +35955,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceImageRobustnessFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDevice4444FormatsFeaturesEXT *>(header);
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:

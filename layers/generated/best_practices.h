@@ -1239,6 +1239,13 @@ void PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
+void PostCallRecordGetImageDrmFormatModifierPropertiesEXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    VkImageDrmFormatModifierPropertiesEXT*      pProperties,
+    VkResult                                    result);
+
+
 void PostCallRecordCreateAccelerationStructureNV(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoNV*  pCreateInfo,
@@ -1684,6 +1691,8 @@ const std::unordered_map<std::string, DeprecationData>  deprecated_extensions = 
     {"VK_KHR_uniform_buffer_standard_layout", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_variable_pointers", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_vulkan_memory_model", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_MVK_ios_surface", {kExtDeprecated, "VK_EXT_metal_surface"}},
+    {"VK_MVK_macos_surface", {kExtDeprecated, "VK_EXT_metal_surface"}},
     {"VK_NV_dedicated_allocation", {kExtDeprecated, "VK_KHR_dedicated_allocation"}},
     {"VK_NV_external_memory", {kExtDeprecated, "VK_KHR_external_memory"}},
     {"VK_NV_external_memory_capabilities", {kExtDeprecated, "VK_KHR_external_memory_capabilities"}},

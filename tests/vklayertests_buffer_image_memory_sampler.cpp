@@ -11789,7 +11789,7 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
         bind_image_info.memory = memory;
         bind_image_info.memoryOffset = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-handleTypes-02793");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02728");
         vkBindImageMemory2Function(device(), 1, &bind_image_info);
         m_errorMonitor->VerifyFound();
     }
@@ -11893,7 +11893,7 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
         bind_buffer_info.memory = memory;
         bind_buffer_info.memoryOffset = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-handleTypes-02791");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02726");
         vkBindBufferMemory2Function(device(), 1, &bind_buffer_info);
         m_errorMonitor->VerifyFound();
     }

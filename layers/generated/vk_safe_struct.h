@@ -7609,6 +7609,22 @@ struct safe_VkPhysicalDeviceImageRobustnessFeaturesEXT {
     VkPhysicalDeviceImageRobustnessFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceImageRobustnessFeaturesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDevice4444FormatsFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 formatA4R4G4B4;
+    VkBool32 formatA4B4G4R4;
+    safe_VkPhysicalDevice4444FormatsFeaturesEXT(const VkPhysicalDevice4444FormatsFeaturesEXT* in_struct);
+    safe_VkPhysicalDevice4444FormatsFeaturesEXT(const safe_VkPhysicalDevice4444FormatsFeaturesEXT& copy_src);
+    safe_VkPhysicalDevice4444FormatsFeaturesEXT& operator=(const safe_VkPhysicalDevice4444FormatsFeaturesEXT& copy_src);
+    safe_VkPhysicalDevice4444FormatsFeaturesEXT();
+    ~safe_VkPhysicalDevice4444FormatsFeaturesEXT();
+    void initialize(const VkPhysicalDevice4444FormatsFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDevice4444FormatsFeaturesEXT* copy_src);
+    VkPhysicalDevice4444FormatsFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevice4444FormatsFeaturesEXT *>(this); }
+    VkPhysicalDevice4444FormatsFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevice4444FormatsFeaturesEXT const *>(this); }
+};
+
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 struct safe_VkDirectFBSurfaceCreateInfoEXT {
     VkStructureType sType;
