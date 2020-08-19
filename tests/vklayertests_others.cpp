@@ -1062,7 +1062,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "value of pCreateInfo->pNext must be NULL");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "value of pCreateInfo->pNext must be NULL");
     // Set VkMemoryAllocateInfo::pNext to a non-NULL value, when pNext must be NULL.
     // Need to pick a function that has no allowed pNext structure types.
     // Expected to trigger an error with parameter_validation::validate_struct_pnext
@@ -1075,7 +1075,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     vk::CreateEvent(device(), &event_alloc_info, NULL, &event);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, " chain includes a structure with unexpected VkStructureType ");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");
     // Set VkMemoryAllocateInfo::pNext to a non-NULL value, but use
     // a function that has allowed pNext structure types and specify
     // a structure type that is not allowed.
@@ -1087,7 +1087,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     vk::AllocateMemory(device(), &memory_alloc_info, NULL, &memory);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, " chain includes a structure with unexpected VkStructureType ");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");
     // Same concept as above, but unlike vkAllocateMemory where VkMemoryAllocateInfo is a const
     // in vkGetPhysicalDeviceProperties2, VkPhysicalDeviceProperties2 is not a const
     VkPhysicalDeviceProperties2 physical_device_properties2 = {};
