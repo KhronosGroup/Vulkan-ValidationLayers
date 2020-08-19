@@ -9203,6 +9203,7 @@ TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
 
 TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     TEST_DESCRIPTION("General testing of vkGetDeviceQueue and general Device creation cases");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
