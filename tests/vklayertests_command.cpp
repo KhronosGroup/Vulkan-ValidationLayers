@@ -4564,6 +4564,58 @@ TEST_F(VkLayerTest, CommandQueueFlags) {
     }
 }
 
+TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
+    TEST_DESCRIPTION(
+        "Allocate a command buffer on a queue that does not support graphics and try to issue a depth/stencil image copy to "
+        "buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (queueFamilyIndex == UINT32_MAX) {
+        printf("%s Non-graphics queue family not found; skipped.\n", kSkipPrefix);
+        return;
+    } else {
+        // Create Depth image
+        const VkFormat ds_format = FindSupportedDepthOnlyFormat(gpu());
+        if (ds_format == VK_FORMAT_UNDEFINED) {
+            printf("%s No only Depth format found. Skipped.\n", kSkipPrefix);
+            return;
+        }
+
+        VkImageObj ds_image(m_device);
+        ds_image.Init(64, 64, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                      VK_IMAGE_TILING_OPTIMAL, 0);
+        ASSERT_TRUE(ds_image.initialized());
+
+        // Allocate buffers
+        VkBufferObj buffer;
+        VkMemoryPropertyFlags reqs = 0;
+        buffer.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k to have more then enough to copy
+
+        VkBufferImageCopy region = {};
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {64, 64, 1};
+        region.bufferOffset = 0;
+
+        // Create command pool on a non-graphics queue
+        VkCommandPoolObj command_pool(m_device, queueFamilyIndex);
+
+        // Setup command buffer on pool
+        VkCommandBufferObj command_buffer(m_device, &command_pool);
+        command_buffer.begin();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkBufferImageCopy-aspectMask");
+        vk::CmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), ds_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 1, &region);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(VkLayerTest, ExecuteUnrecordedSecondaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a CB in the initial state");
     ASSERT_NO_FATAL_FAILURE(Init());
