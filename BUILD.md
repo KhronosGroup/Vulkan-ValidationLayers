@@ -244,7 +244,7 @@ on/off options currently supported by this repository:
 | Option | Platform | Default | Description |
 | ------ | -------- | ------- | ----------- |
 | BUILD_LAYERS | All | `ON` | Controls whether or not the validation layers are built. |
-| BUILD_LAYER_SUPPORT_FILES | All | `OFF` | Controls whether or not layer support files are built if the layers are not built. |
+| BUILD_LAYER_SUPPORT_FILES | All | `OFF` | Controls whether or not layer support files are installed. |
 | BUILD_TESTS | All | `???` | Controls whether or not the validation layer tests are built. The default is `ON` when the Google Test repository is cloned into the `external` directory.  Otherwise, the default is `OFF`. |
 | INSTALL_TESTS | All | `OFF` | Controls whether or not the validation layer tests are installed. This option is only available when a copy of Google Test is available
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the components with XCB support. |
