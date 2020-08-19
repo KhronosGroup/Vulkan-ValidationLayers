@@ -5397,8 +5397,9 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     return skip;
 }
 
-bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBufferImageCopy *pRegions,
-                                             const IMAGE_STATE *image_state, const char *function) const {
+bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, uint32_t regionCount,
+                                             const VkBufferImageCopy *pRegions, const IMAGE_STATE *image_state,
+                                             const char *function) const {
     bool skip = false;
     assert(image_state != nullptr);
     const VkFormat image_format = image_state->createInfo.format;
@@ -5635,6 +5636,29 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
                 }
             }
         }
+
+        // Checks depth or stencil aspect are used in graphics queue
+        if ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+            assert(cb_node != nullptr);
+            const COMMAND_POOL_STATE *command_pool = cb_node->command_pool.get();
+            if (command_pool != nullptr) {
+                const uint32_t queueFamilyIndex = command_pool->queueFamilyIndex;
+                const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queueFamilyIndex].queueFlags;
+
+                if ((queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(command_pool->commandPool);
+                    // TODO - Label when future headers get merged in from internral MR 4077 fix
+                    skip |=
+                        LogError(image_state->image, "UNASSIGNED-VkBufferImageCopy-aspectMask",
+                                 "%s(): pRegion[%d] subresource aspectMask 0x%x specifies VK_IMAGE_ASPECT_DEPTH_BIT or "
+                                 "VK_IMAGE_ASPECT_STENCIL_BIT but the command buffer %s was allocated from the command pool %s "
+                                 "which was create with queueFamilyIndex %u which doesn't contain the VK_QUEUE_GRAPHICS_BIT flag.",
+                                 function, i, region_aspect_mask, report_data->FormatHandle(cb_node->commandBuffer).c_str(),
+                                 report_data->FormatHandle(command_pool->commandPool).c_str(), queueFamilyIndex);
+                }
+            }
+        }
     }
 
     return skip;
@@ -5705,7 +5729,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     const auto src_image_state = GetImageState(srcImage);
     const auto dst_buffer_state = GetBufferState(dstBuffer);
 
-    bool skip = ValidateBufferImageCopyData(regionCount, pRegions, src_image_state, "vkCmdCopyImageToBuffer");
+    bool skip = ValidateBufferImageCopyData(cb_node, regionCount, pRegions, src_image_state, "vkCmdCopyImageToBuffer");
 
     // Validate command buffer state
     skip |= ValidateCmd(cb_node, CMD_COPYIMAGETOBUFFER, "vkCmdCopyImageToBuffer()");
@@ -5799,7 +5823,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     const auto src_buffer_state = GetBufferState(srcBuffer);
     const auto dst_image_state = GetImageState(dstImage);
 
-    bool skip = ValidateBufferImageCopyData(regionCount, pRegions, dst_image_state, "vkCmdCopyBufferToImage");
+    bool skip = ValidateBufferImageCopyData(cb_node, regionCount, pRegions, dst_image_state, "vkCmdCopyBufferToImage");
 
     // Validate command buffer state
     skip |= ValidateCmd(cb_node, CMD_COPYBUFFERTOIMAGE, "vkCmdCopyBufferToImage()");

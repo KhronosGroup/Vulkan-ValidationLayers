@@ -477,8 +477,8 @@ class CoreChecks : public ValidationStateTracker {
                                                               VkImage image, VkImageView image_view, VkFramebuffer framebuffer,
                                                               VkRenderPass renderpass, uint32_t attachment_index,
                                                               const char* variable_name) const;
-    bool ValidateBufferImageCopyData(uint32_t regionCount, const VkBufferImageCopy* pRegions, const IMAGE_STATE* image_state,
-                                     const char* function) const;
+    bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE* cb_node, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                     const IMAGE_STATE* image_state, const char* function) const;
     bool ValidateBufferViewRange(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
                                  const VkPhysicalDeviceLimits* device_limits) const;
     bool ValidateBufferViewBuffer(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo) const;
