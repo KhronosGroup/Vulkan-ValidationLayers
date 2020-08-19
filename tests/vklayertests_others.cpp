@@ -317,18 +317,18 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     auto properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&bogus_struct);
 
     // Should get the first three errors just fine
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
 
     // Limit should prevent the message from coming through a fourth time
-    m_errorMonitor->ExpectSuccess(kWarningBit);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyNotFound();
 }
