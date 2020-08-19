@@ -100,6 +100,7 @@ class BASE_NODE {
 
 // Track command pools and their command buffers
 struct COMMAND_POOL_STATE : public BASE_NODE {
+    VkCommandPool commandPool;
     VkCommandPoolCreateFlags createFlags;
     uint32_t queueFamilyIndex;
     bool unprotected;  // can't be used for protected memory

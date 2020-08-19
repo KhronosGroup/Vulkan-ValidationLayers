@@ -2736,11 +2736,13 @@ void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, co
                                                              const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                              VkResult result) {
     if (VK_SUCCESS != result) return;
+    VkCommandPool command_pool = *pCommandPool;
     auto cmd_pool_state = std::make_shared<COMMAND_POOL_STATE>();
+    cmd_pool_state->commandPool = command_pool;
     cmd_pool_state->createFlags = pCreateInfo->flags;
     cmd_pool_state->queueFamilyIndex = pCreateInfo->queueFamilyIndex;
     cmd_pool_state->unprotected = ((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0);
-    commandPoolMap[*pCommandPool] = std::move(cmd_pool_state);
+    commandPoolMap[command_pool] = std::move(cmd_pool_state);
 }
 
 void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
