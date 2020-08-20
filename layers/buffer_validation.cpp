@@ -276,6 +276,33 @@ bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) 
     return true;
 }
 
+const cvdescriptorset::Descriptor *CMD_BUFFER_STATE::GetDescriptor(VkShaderStageFlagBits shader_stage, uint32_t set,
+                                                                   uint32_t binding, uint32_t index) const {
+    VkPipelineBindPoint bind_point;
+
+    if (shader_stage & VK_SHADER_STAGE_ALL_GRAPHICS) {
+        bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    } else if (shader_stage & VK_SHADER_STAGE_COMPUTE_BIT) {
+        bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+    } else {
+        bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+    }
+
+    return GetDescriptor(bind_point, set, binding, index);
+}
+
+const cvdescriptorset::Descriptor *CMD_BUFFER_STATE::GetDescriptor(VkPipelineBindPoint bind_point, uint32_t set, uint32_t binding,
+                                                                   uint32_t index) const {
+    const auto last_bound_it = lastBound.find(bind_point);
+    if (last_bound_it == lastBound.cend()) {
+        return nullptr;
+    }
+    if (set >= last_bound_it->second.per_set.size()) {
+        return nullptr;
+    }
+    return last_bound_it->second.per_set[set].bound_descriptor_set->GetDescriptorFromBinding(binding, index);
+}
+
 uint32_t FullMipChainLevels(uint32_t height, uint32_t width, uint32_t depth) {
     // uint cast applies floor()
     return 1u + (uint32_t)log2(std::max({height, width, depth}));

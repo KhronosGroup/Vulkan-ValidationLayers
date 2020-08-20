@@ -629,7 +629,7 @@ class DescriptorSet : public BASE_NODE {
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, CMD_TYPE cmd_type, const PIPELINE_STATE *,
-                         const std::map<uint32_t, descriptor_req> &, const char *function);
+                         const std::map<uint32_t, DescriptorReqirement> &, const char *function);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present
@@ -667,6 +667,13 @@ class DescriptorSet : public BASE_NODE {
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
+    const Descriptor *GetDescriptorFromBinding(const uint32_t binding, const uint32_t index = 0) const {
+        const auto range = GetGlobalIndexRangeFromBinding(binding);
+        if ((range.start + index) > range.end) {
+            return nullptr;
+        }
+        return descriptors_[range.start + index].get();
+    }
     uint64_t GetChangeCount() const { return change_count_; }
 
     const std::vector<safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }

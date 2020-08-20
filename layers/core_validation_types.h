@@ -61,6 +61,8 @@ namespace cvdescriptorset {
 class DescriptorSetLayoutDef;
 class DescriptorSetLayout;
 class DescriptorSet;
+class Descriptor;
+
 }  // namespace cvdescriptorset
 
 // Only CoreChecks uses this, but the state tracker stores it.
@@ -161,7 +163,26 @@ enum descriptor_req {
 
 extern unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt);
 
-typedef std::map<uint32_t, descriptor_req> BindingReqMap;
+typedef std::pair<unsigned, unsigned> descriptor_slot_t;
+
+struct SamplerUsedByImage {
+    uint32_t image_index;
+    descriptor_slot_t sampler_slot;
+    uint32_t sampler_index;
+};
+
+struct DescriptorReqirement {
+    descriptor_req reqs;
+    std::map<VkShaderStageFlagBits, const std::vector<SamplerUsedByImage> *>
+        samplers_used_by_image;  // Refer from StageState.interface_var
+    DescriptorReqirement() : reqs(descriptor_req(0)) {}
+};
+
+inline bool operator==(const DescriptorReqirement &a, const DescriptorReqirement &b) NOEXCEPT { return a.reqs == b.reqs; }
+
+inline bool operator<(const DescriptorReqirement &a, const DescriptorReqirement &b) NOEXCEPT { return a.reqs < b.reqs; }
+
+typedef std::map<uint32_t, DescriptorReqirement> BindingReqMap;
 
 struct DESCRIPTOR_POOL_STATE : BASE_NODE {
     VkDescriptorPool pool;
@@ -790,12 +811,16 @@ struct PIPELINE_LAYOUT_STATE : public BASE_NODE {
         compat_for_set.clear();
     }
 };
+
 // Shader typedefs needed to store StageStage below
 struct interface_var {
     uint32_t id;
     uint32_t type_id;
     uint32_t offset;
     int32_t input_index;  // index = -1 means that it's not input attachment.
+
+    std::vector<SamplerUsedByImage> samplers_used_by_image;  // List of samplers that sample a given image
+
     bool is_patch;
     bool is_block_member;
     bool is_relaxed_precision;
@@ -814,7 +839,6 @@ struct interface_var {
           is_writable(false),
           is_atomic_operation(false) {}
 };
-typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 
 // Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
 // It is a safe_VkRayTracingPipelineCreateInfoKHR and supports construction from
@@ -1192,15 +1216,10 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     // Store last bound state for Gfx & Compute pipeline bind points
     std::map<uint32_t, LAST_BOUND_STATE> lastBound;
 
-    struct BindingInfo {
-        uint32_t binding;
-        descriptor_req requirements;
-    };
-
     struct CmdDrawDispatchInfo {
         CMD_TYPE cmd_type;
         std::string function;
-        std::vector<BindingInfo> binding_infos;
+        std::vector<std::pair<uint32_t, DescriptorReqirement>> binding_infos;
         VkFramebuffer framebuffer;
         std::vector<VkImageView> attachment_views;  // vector index is attachment index. If the value is VK_NULL_HANDLE(0),
                                                     // it means the attachment isn't used in this command.
@@ -1271,6 +1290,12 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<IMAGE_VIEW_STATE *> imagelessFramebufferAttachments;
 
     bool transform_feedback_active{false};
+
+    const cvdescriptorset::Descriptor *GetDescriptor(VkShaderStageFlagBits shader_stage, uint32_t set, uint32_t binding,
+                                                     uint32_t index) const;
+
+    const cvdescriptorset::Descriptor *GetDescriptor(VkPipelineBindPoint bind_point, uint32_t set, uint32_t binding,
+                                                     uint32_t index) const;
 };
 
 static inline const QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(

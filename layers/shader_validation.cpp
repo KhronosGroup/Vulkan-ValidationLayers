@@ -862,6 +862,8 @@ static bool AtomicOperation(uint32_t opcode) {
 static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const spirv_inst_iter &id_it, bool is_storage_buffer,
                                      bool is_check_writable, interface_var &out_interface_var) {
     uint32_t type_id = id_it.word(1);
+    unsigned int id = id_it.word(2);
+
     auto type = module->get_def(type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
@@ -869,26 +871,31 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
         if (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypeRuntimeArray) {
             type = module->get_def(type.word(2));  // Element type
         } else {
-            type = module->get_def(type.word(3));  // Pointee type
+            type = module->get_def(type.word(3));  // Pointer type
         }
     }
     switch (type.opcode()) {
         case spv::OpTypeImage: {
             auto dim = type.word(3);
-            auto sampled = type.word(7);
-            if (sampled == 2 && dim != spv::DimSubpassData) {
+            if (dim != spv::DimSubpassData) {
                 std::vector<unsigned> imagwrite_members;
                 std::vector<unsigned> atomic_members;
+                std::vector<std::pair<unsigned, unsigned>> sampledImage_members;
                 std::unordered_map<unsigned, unsigned> load_members;
-                std::unordered_map<unsigned, unsigned> accesschain_members;
+                std::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
                 std::unordered_map<unsigned, unsigned> image_texel_pointer_members;
 
-                unsigned int id = id_it.word(2);
+                // unsigned int id = id_it.word(2);
 
                 for (auto insn : *module) {
                     switch (insn.opcode()) {
                         case spv::OpImageWrite: {
                             if (is_check_writable) imagwrite_members.emplace_back(insn.word(1));  // Load id
+                            break;
+                        }
+                        case spv::OpSampledImage: {
+                            // 3: image load id, 4: sampler load id
+                            sampledImage_members.emplace_back(std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
                             break;
                         }
                         case spv::OpLoad: {
@@ -897,10 +904,9 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                             break;
                         }
                         case spv::OpAccessChain: {
-                            // 2: AccessChain id, 3: object id
-                            if (insn.word(3) == id) {
-                                accesschain_members.insert(std::make_pair(insn.word(2), insn.word(3)));
-                            }
+                            // 2: AccessChain id, 3: object id, 4: object id of array index
+                            accesschain_members.insert(
+                                std::make_pair(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), insn.word(4))));
                             break;
                         }
                         case spv::OpImageTexelPointer: {
@@ -942,7 +948,44 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                     break;
                 }
 
-                for (auto itp_id : atomic_members) {
+                for (auto &itp_id : sampledImage_members) {
+                    // Find if image id match.
+                    uint32_t image_index = 0;
+                    auto load_it = load_members.find(itp_id.first);
+                    if (load_it == load_members.end()) {
+                        continue;
+                    } else {
+                        if (load_it->second != id) {
+                            auto accesschain_it = accesschain_members.find(load_it->second);
+                            if (accesschain_it == accesschain_members.end()) {
+                                continue;
+                            } else {
+                                if (accesschain_it->second.first != id) {
+                                    continue;
+                                }
+                                image_index = GetConstantValue(module, accesschain_it->second.second);
+                            }
+                        }
+                    }
+                    // Find sampler's set binding.
+                    load_it = load_members.find(itp_id.second);
+                    if (load_it == load_members.end()) {
+                        continue;
+                    } else {
+                        uint32_t sampler_id = load_it->second;
+                        uint32_t sampler_index = 0;
+                        auto accesschain_it = accesschain_members.find(load_it->second);
+                        if (accesschain_it != accesschain_members.end()) {
+                            sampler_id = accesschain_it->second.first;
+                            sampler_index = GetConstantValue(module, accesschain_it->second.second);
+                        }
+                        auto sampler_dec = module->get_decorations(sampler_id);
+                        out_interface_var.samplers_used_by_image.emplace_back(SamplerUsedByImage{
+                            image_index, descriptor_slot_t{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
+                    }
+                }
+
+                for (auto &itp_id : atomic_members) {
                     auto ltp_it = image_texel_pointer_members.find(itp_id);
                     if (ltp_it == image_texel_pointer_members.end()) {
                         continue;
@@ -980,7 +1023,7 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                 std::unordered_map<unsigned, unsigned> accesschain_members;
                 std::vector<unsigned> atomic_store_members;
                 std::unordered_map<unsigned, unsigned> image_texel_pointer_members;
-                unsigned int id = id_it.word(2);
+                // unsigned int id = id_it.word(2);
 
                 for (auto insn : *module) {
                     switch (insn.opcode()) {
