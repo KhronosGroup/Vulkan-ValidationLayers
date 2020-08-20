@@ -4329,8 +4329,7 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
         kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
     };
     std::array<TestType, 2> test_list = {{kInternal, kExternal}};
-    const std::vector<std::string> internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344",
-                                                      "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated"};
+    const std::vector<std::string> internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344", "VUID-vkCmdDraw-None-02699"};
     const std::vector<std::string> external_errors = {"UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout"};
 
     // Common steps to create the two classes of errors (or two classes of positives)
@@ -7218,7 +7217,7 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
             // expect no errors
             m_commandBuffer->end();
             m_errorMonitor->VerifyNotFound();
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02699");
             vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
             vk::QueueWaitIdle(m_device->m_queue);
