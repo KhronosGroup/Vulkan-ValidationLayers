@@ -708,7 +708,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
         DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
         if (binding_it.AtEnd()) {  //  End at construction is the condition for an invalid binding.
             auto set = descriptor_set->GetSet();
-            result |= LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+            result |= LogError(set, vuids.descriptor_valid,
                                "%s encountered the following validation error at %s time: Attempting to "
                                "validate DrawState for binding #%u  which is an invalid binding for this descriptor set.",
                                report_data->FormatHandle(set).c_str(), caller, binding);
@@ -759,7 +759,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                 continue;
             } else if (!descriptor->updated) {
                 auto set = descriptor_set->GetSet();
-                return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                return LogError(set, vuids.descriptor_valid,
                                 "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
                                 " index %" PRIu32
                                 " is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.",
@@ -773,7 +773,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     if (buffer) {
                         if (!buffer_node || buffer_node->destroyed) {
                             auto set = descriptor_set->GetSet();
-                            return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            return LogError(set, vuids.descriptor_valid,
                                             "%s encountered the following validation error at %s time: Descriptor in "
                                             "binding #%" PRIu32 " index %" PRIu32
                                             " is using buffer %s that is invalid or has been destroyed.",
@@ -783,7 +783,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             for (auto mem_binding : buffer_node->GetBoundMemory()) {
                                 if (mem_binding->destroyed) {
                                     auto set = descriptor_set->GetSet();
-                                    return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                    return LogError(set, vuids.descriptor_valid,
                                                     "%s encountered the following validation error at %s time: Descriptor in "
                                                     "binding #%" PRIu32 " index %" PRIu32
                                                     " is uses buffer %s that references invalid memory %s.",
@@ -802,7 +802,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             if (VK_WHOLE_SIZE == range) {
                                 if ((dyn_offset + desc_offset) > buffer_size) {
                                     auto set = descriptor_set->GetSet();
-                                    return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                    return LogError(set, vuids.descriptor_valid,
                                                     "%s encountered the following validation error at %s time: Descriptor in "
                                                     "binding #%" PRIu32 " index %" PRIu32
                                                     " is using buffer %s with update range of VK_WHOLE_SIZE has dynamic offset "
@@ -816,7 +816,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                 if ((dyn_offset + desc_offset + range) > buffer_size) {
                                     auto set = descriptor_set->GetSet();
                                     return LogError(
-                                        set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                        set, vuids.descriptor_valid,
                                         "%s encountered the following validation error at %s time: "
                                         "Descriptor in binding #%" PRIu32 " index %" PRIu32
                                         " is uses buffer %s with dynamic offset %" PRIu32 " combined with offset %" PRIu64
@@ -847,7 +847,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
 
                             auto set = descriptor_set->GetSet();
-                            return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            return LogError(set, vuids.descriptor_valid,
                                             "%s encountered the following validation error at %s time: Descriptor in "
                                             "binding #%" PRIu32 " index %" PRIu32
                                             " is using imageView %s that is invalid or has been destroyed.",
@@ -860,7 +860,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             if (~reqs & (1 << image_view_ci.viewType)) {
                                 auto set = descriptor_set->GetSet();
                                 return LogError(
-                                    set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                    set, vuids.descriptor_valid,
                                     "%s encountered the following validation error at %s time: Descriptor "
                                     "in binding #%" PRIu32 " index %" PRIu32 " requires an image view of type %s but got %s.",
                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
@@ -870,7 +870,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             if (!(reqs & image_view_state->descriptor_format_bits)) {
                                 // bad component type
                                 auto set = descriptor_set->GetSet();
-                                return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                return LogError(set, vuids.descriptor_valid,
                                                 "%s encountered the following validation error at %s time: Descriptor in binding "
                                                 "#%" PRIu32 " index %" PRIu32
                                                 " requires %s component type, but bound descriptor format is %s.",
@@ -891,7 +891,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             if (hit_error) {
                                 auto set = descriptor_set->GetSet();
                                 return LogError(
-                                    set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                    set, vuids.descriptor_valid,
                                     "%s encountered the following validation error at %s time: Image layout specified "
                                     "at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
                                     "doesn't match actual image layout at time descriptor is used. See previous error callback for "
@@ -903,7 +903,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         // Verify Sample counts
                         if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
                             auto set = descriptor_set->GetSet();
-                            return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            return LogError(set, vuids.descriptor_valid,
                                             "%s encountered the following validation error at %s time: Descriptor in "
                                             "binding #%" PRIu32 " index %" PRIu32
                                             " requires bound image to have VK_SAMPLE_COUNT_1_BIT but got %s.",
@@ -913,7 +913,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         if ((reqs & DESCRIPTOR_REQ_MULTI_SAMPLE) && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
                             auto set = descriptor_set->GetSet();
                             return LogError(
-                                set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                set, vuids.descriptor_valid,
                                 "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
                                 " index %" PRIu32 " requires bound image to have multiple samples, but got VK_SAMPLE_COUNT_1_BIT.",
                                 report_data->FormatHandle(set).c_str(), caller, binding, index);
@@ -985,7 +985,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     if (buffer_view) {
                         if (!buffer_view_state || buffer_view_state->destroyed) {
                             auto set = descriptor_set->GetSet();
-                            return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            return LogError(set, vuids.descriptor_valid,
                                             "%s encountered the following validation error at %s time: Descriptor in "
                                             "binding #%" PRIu32 " index %" PRIu32
                                             " is using bufferView %s that is invalid or has been destroyed.",
@@ -996,7 +996,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         auto buffer_state = buffer_view_state->buffer_state.get();
                         if (buffer_state->destroyed) {
                             auto set = descriptor_set->GetSet();
-                            return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            return LogError(set, vuids.descriptor_valid,
                                             "%s encountered the following validation error at %s time: Descriptor in "
                                             "binding #%" PRIu32 " index %" PRIu32 " is using buffer %s that has been destroyed.",
                                             report_data->FormatHandle(set).c_str(), caller, binding, index,
@@ -1007,7 +1007,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         if (!(reqs & format_bits)) {
                             // bad component type
                             auto set = descriptor_set->GetSet();
-                            return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            return LogError(set, vuids.descriptor_valid,
                                             "%s encountered the following validation error at %s time: Descriptor in "
                                             "binding #%" PRIu32 " index %" PRIu32
                                             " requires %s component type, but bound descriptor format is %s.",
@@ -1042,7 +1042,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     if (!acc_node || acc_node->destroyed) {
                         auto set = descriptor_set->GetSet();
                         return LogError(
-                            set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            set, vuids.descriptor_valid,
                             "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
                             " index %" PRIu32 " is using acceleration structure %s that is invalid or has been destroyed.",
                             report_data->FormatHandle(set).c_str(), caller, binding, index, report_data->FormatHandle(acc).c_str());
@@ -1050,7 +1050,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         for (auto mem_binding : acc_node->GetBoundMemory()) {
                             if (mem_binding->destroyed) {
                                 auto set = descriptor_set->GetSet();
-                                return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                return LogError(set, vuids.descriptor_valid,
                                                 "%s encountered the following validation error at %s time: Descriptor in "
                                                 "binding #%" PRIu32 " index %" PRIu32
                                                 " is using acceleration structure %s that references invalid memory %s.",
@@ -1074,7 +1074,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     }
                     if (!sampler_state || sampler_state->destroyed) {
                         auto set = descriptor_set->GetSet();
-                        return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                        return LogError(set, vuids.descriptor_valid,
                                         "%s encountered the following validation error at %s time: Descriptor in "
                                         "binding #%" PRIu32 " index %" PRIu32
                                         " is using sampler %s that is invalid or has been destroyed.",
@@ -1083,7 +1083,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     } else {
                         if (sampler_state->samplerConversion && !descriptor->IsImmutableSampler()) {
                             auto set = descriptor_set->GetSet();
-                            return LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                            return LogError(set, vuids.descriptor_valid,
                                             "%s encountered the following validation error at %s time: sampler (%s) "
                                             "in the descriptor set (%s) caontains a YCBCR conversion (%s), then the sampler MUST "
                                             "also exist as an immutable sampler.",
