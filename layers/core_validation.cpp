@@ -2751,13 +2751,13 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                     for (auto cmd_info : descriptorSet.second) {
                         std::string function = "vkQueueSubmit(), ";
                         function += cmd_info.function;
-                        for (auto binding : cmd_info.binding_infos) {
+                        for (auto binding_info : cmd_info.binding_infos) {
                             std::string error;
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            skip |= ValidateDescriptorSetBindingData(
-                                cb_node, set_node, dynamicOffsets, binding.binding, binding.requirements, cmd_info.framebuffer,
-                                cmd_info.attachment_views, function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
+                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding_info,
+                                                                     cmd_info.framebuffer, cmd_info.attachment_views,
+                                                                     function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }
                 }
