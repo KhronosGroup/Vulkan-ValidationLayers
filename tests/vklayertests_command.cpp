@@ -7092,15 +7092,17 @@ TEST_F(VkLayerTest, InvailStorageAtomicOperation) {
 
     char const *fsSource =
         "#version 450\n"
-        "layout(set=0, binding=0, rgba8) uniform image2D si0;\n "
-        "layout(set=0, binding=1, rgba8) uniform image2D si1[2];\n "
-        "layout(set = 0, binding = 2, r8) uniform imageBuffer stb2;\n"
-        "layout(set = 0, binding = 3, r8) uniform imageBuffer stb3[2];\n"
+        "layout(set=0, binding=3, rgba8) uniform image2D si0;\n "
+        "layout(set=0, binding=2, rgba8) uniform image2D si1[2];\n "
+        "layout(set = 0, binding = 1, r8) uniform imageBuffer stb2;\n"
+        "layout(set = 0, binding = 0, r8) uniform imageBuffer stb3[2];\n"
         "void main() {\n"
         "      imageAtomicExchange(si0, ivec2(0), 1);\n"
         "      imageAtomicExchange(si1[0], ivec2(0), 1);\n "
+        "      imageAtomicExchange(si1[1], ivec2(0), 1);\n "
         "      imageAtomicExchange(stb2, 0, 1);\n"
         "      imageAtomicExchange(stb3[0], 0, 1);\n "
+        "      imageAtomicExchange(stb3[1], 0, 1);\n "
         "}\n";
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
@@ -7109,19 +7111,19 @@ TEST_F(VkLayerTest, InvailStorageAtomicOperation) {
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                            {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                            {2, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                            {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.dsl_bindings_ = {{3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                            {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                            {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                            {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(3, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                      VK_IMAGE_LAYOUT_GENERAL);
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(2, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                      VK_IMAGE_LAYOUT_GENERAL, 2);
-    g_pipe.descriptor_set_->WriteDescriptorBufferView(2, buffer_view);
-    g_pipe.descriptor_set_->WriteDescriptorBufferView(3, buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2);
+    g_pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view);
+    g_pipe.descriptor_set_->WriteDescriptorBufferView(0, buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
