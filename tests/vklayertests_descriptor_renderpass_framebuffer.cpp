@@ -2650,8 +2650,12 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool push_fragment_density_support = false;
+    bool imageless_framebuffer_support = DeviceExtensionSupported(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    if (imageless_framebuffer_support) {
+        m_device_extension_names.push_back(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    }
 
+    bool push_fragment_density_support = false;
     if (push_physical_device_properties_2_support) {
         push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
         if (push_fragment_density_support) {
@@ -2859,8 +2863,9 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     }
 
     {
-        if (!push_fragment_density_support) {
-            printf("%s VK_EXT_fragment_density_map Extension not supported, skipping tests\n", kSkipPrefix);
+        if (!push_fragment_density_support || !imageless_framebuffer_support) {
+            printf("%s VK_EXT_fragment_density_map or VK_KHR_imageless_framebuffer extension not supported, skipping tests\n",
+                   kSkipPrefix);
         } else {
             uint32_t attachment_width = 512;
             uint32_t attachment_height = 512;
