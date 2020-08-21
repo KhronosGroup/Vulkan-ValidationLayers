@@ -919,7 +919,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                 report_data->FormatHandle(set).c_str(), caller, binding, index);
                         }
 
-                        const VkDescriptorType descriptor_type = descriptor_set->GetTypeFromIndex(binding);
+                        const VkDescriptorType descriptor_type = descriptor_set->GetTypeFromBinding(binding);
 
                         // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
                         if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
@@ -1018,7 +1018,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
 
                         // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
                         if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
-                            (descriptor_set->GetTypeFromIndex(binding) == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
+                            (descriptor_set->GetTypeFromBinding(binding) == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
                             !(buffer_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
                             auto set = descriptor_set->GetSet();
                             LogObjectList objlist(set);
