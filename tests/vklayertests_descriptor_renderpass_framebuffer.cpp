@@ -7991,7 +7991,8 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     VkImageObj image(m_device);
     auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
-    VkImageView view_input = image.targetView(format);
+    VkImageView view_input = image.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1);
+    VkImageView attachments[] = {view_input};
 
     VkImageViewCreateInfo createView = {};
     createView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -8004,10 +8005,12 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     createView.components.a = VK_COMPONENT_SWIZZLE_A;
     createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
     createView.flags = 0;
-    VkImageView view_sampler;
-    vk::CreateImageView(m_device->device(), &createView, NULL, &view_sampler);
+    VkImageView view_sampler_overlap;
+    vk::CreateImageView(m_device->device(), &createView, NULL, &view_sampler_overlap);
 
-    VkImageView attachments[] = {view_input};
+    createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageView view_sampler_not_overlap;
+    vk::CreateImageView(m_device->device(), &createView, NULL, &view_sampler_not_overlap);
 
     const VkAttachmentDescription inputAttachment = {
         0u,
@@ -8073,10 +8076,12 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
         "layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput ia0;\n"
         "layout(set=0, binding=1) uniform sampler2D ci1;\n"
         "layout(set=0, binding=2) uniform sampler2D ci2;\n"
+        "layout(set=0, binding=3) uniform sampler2D ci3;\n"
         "void main() {\n"
         "   vec4 color = subpassLoad(ia0);\n"
         "   color = texture(ci1, vec2(0));\n"
         "   color = texture(ci2, vec2(0));\n"
+        "   color = texture(ci3, vec2(0));\n"
         "}\n";
 
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -8086,7 +8091,8 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                            {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+                            {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                            {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.gp_ci_.renderPass = rp;
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
@@ -8095,7 +8101,10 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     // input attachment and combined image sampler use the same view to cause DesiredFailure.
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, view_input, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     // image subresource of input attachment and combined image sampler overlap to cause DesiredFailure.
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(2, view_sampler, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(2, view_sampler_overlap, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    // image subresource of input attachment and combined image sampler don't overlap. It should not cause failure.
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(3, view_sampler_not_overlap, sampler,
+                                                     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
