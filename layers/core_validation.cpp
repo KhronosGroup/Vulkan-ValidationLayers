@@ -11111,12 +11111,12 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device,
     return ValidateImportSemaphore(pImportSemaphoreFdInfo->semaphore, "vkImportSemaphoreFdKHR");
 }
 
-bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) const {
+bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const char *caller_name) const {
     const FENCE_STATE *fence_node = GetFenceState(fence);
     bool skip = false;
     if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
-        skip |= LogError(fence, kVUIDUndefined, "Cannot call %s on %s that is currently in use.", caller_name,
-                         report_data->FormatHandle(fence).c_str());
+        skip |=
+            LogError(fence, vuid, "%s: Fence %s that is currently in use.", caller_name, report_data->FormatHandle(fence).c_str());
     }
     return skip;
 }
@@ -11124,12 +11124,12 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) con
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(
     VkDevice device, const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) const {
-    return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "vkImportFenceWin32HandleKHR");
+    return ValidateImportFence(pImportFenceWin32HandleInfo->fence, kVUIDUndefined, "vkImportFenceWin32HandleKHR()");
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo) const {
-    return ValidateImportFence(pImportFenceFdInfo->fence, "vkImportFenceFdKHR");
+    return ValidateImportFence(pImportFenceFdInfo->fence, "VUID-vkImportFenceFdKHR-fence-01463", "vkImportFenceFdKHR()");
 }
 
 static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {

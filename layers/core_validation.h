@@ -206,7 +206,7 @@ class CoreChecks : public ValidationStateTracker {
                              const CMD_BUFFER_STATE* pSubCB, const char* caller) const;
     bool ValidateDescriptorUpdateTemplate(const char* func_name, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo) const;
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info) const;
-    bool ValidateImportFence(VkFence fence, const char* caller_name) const;
+    bool ValidateImportFence(VkFence fence, const char* vuid, const char* caller_name) const;
     bool ValidateAcquireNextImage(VkDevice device, CommandVersion cmd_version, VkSwapchainKHR swapchain, uint64_t timeout,
                                   VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name,
                                   const char* semaphore_type_vuid) const;
