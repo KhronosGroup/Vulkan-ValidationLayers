@@ -754,7 +754,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0) {
             // Linear tiling is unsupported
             if (VK_IMAGE_TILING_LINEAR == pCreateInfo->tiling) {
-                skip |= LogError(device, kVUID_PVError_InvalidUsage,
+                skip |= LogError(device, "VUID-VkImageCreateInfo-tiling-04121",
                                  "vkCreateImage: if pCreateInfo->flags contains VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT then image "
                                  "tiling of VK_IMAGE_TILING_LINEAR is not supported");
             }
