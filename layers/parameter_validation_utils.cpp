@@ -2696,7 +2696,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "if the extension VK_NV_fill_rectangle is not enabled.");
                     } else if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
                                (physical_device_features.fillModeNonSolid == false)) {
-                        skip |= LogError(device, kVUID_PVError_DeviceFeature,
+                        skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413",
                                          "vkCreateGraphicsPipelines parameter, VkPolygonMode "
                                          "pCreateInfos[%u]->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_POINT or "
                                          "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.",
