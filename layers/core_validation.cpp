@@ -2828,6 +2828,44 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                                                 "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
             }
         }
+
+        auto protected_submit_info = lvl_find_in_chain<VkProtectedSubmitInfo>(submit->pNext);
+        if (protected_submit_info) {
+            const bool protectedSubmit = protected_submit_info->protectedSubmit == VK_TRUE;
+            // Only check feature once for submit
+            if ((protectedSubmit == true) && (enabled_features.core11.protectedMemory == VK_FALSE)) {
+                skip |= LogError(queue, "VUID-VkProtectedSubmitInfo-protectedSubmit-01816",
+                                 "vkQueueSubmit(): The protectedMemory device feature is disabled, can't submit a protected queue "
+                                 "to %s pSubmits[%u]",
+                                 report_data->FormatHandle(queue).c_str(), submit_idx);
+            }
+
+            // Make sure command buffers are all protected or unprotected
+            for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+                const CMD_BUFFER_STATE *cb_state = GetCBState(submit->pCommandBuffers[i]);
+                if (cb_state != nullptr) {
+                    if ((cb_state->unprotected == true) && (protectedSubmit == true)) {
+                        LogObjectList objlist(cb_state->commandBuffer);
+                        objlist.add(queue);
+                        // TODO - This VUID will be relabeled VUID-VkSubmitInfo in future
+                        skip |= LogError(objlist, "VUID-VkProtectedSubmitInfo-protectedSubmit-01817",
+                                         "vkQueueSubmit(): command buffer %s is unprotected while queue %s pSubmits[%u] has "
+                                         "VkProtectedSubmitInfo:protectedSubmit set to VK_TRUE",
+                                         report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                                         report_data->FormatHandle(queue).c_str(), submit_idx);
+                    }
+                    if ((cb_state->unprotected == false) && (protectedSubmit == false)) {
+                        LogObjectList objlist(cb_state->commandBuffer);
+                        objlist.add(queue);
+                        skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04120",
+                                         "vkQueueSubmit(): command buffer %s is protected while queue %s pSubmits[%u] has "
+                                         "VkProtectedSubmitInfo:protectedSubmit set to VK_FALSE",
+                                         report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                                         report_data->FormatHandle(queue).c_str(), submit_idx);
+                    }
+                }
+            }
+        }
     }
 
     if (skip) return skip;
