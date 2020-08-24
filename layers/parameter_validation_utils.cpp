@@ -2308,7 +2308,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         pCreateInfos[i].pMultisampleState->alphaToOneEnable);
 
                     if (pCreateInfos[i].pMultisampleState->sType != VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO) {
-                        skip |= LogError(device, kVUID_PVError_InvalidStructSType,
+                        skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-sType-sType",
                                          "vkCreateGraphicsPipelines: parameter pCreateInfos[%d].pMultisampleState->sType must be "
                                          "VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO",
                                          i);
@@ -2537,7 +2537,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "VUID-VkPipelineDepthStencilStateCreateInfo-depthCompareOp-parameter");
 
                     if (pCreateInfos[i].pDepthStencilState->sType != VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO) {
-                        skip |= LogError(device, kVUID_PVError_InvalidStructSType,
+                        skip |= LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-sType-sType",
                                          "vkCreateGraphicsPipelines: parameter pCreateInfos[%d].pDepthStencilState->sType must be "
                                          "VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO",
                                          i);
@@ -2648,7 +2648,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
 
                     if (pCreateInfos[i].pColorBlendState->sType != VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO) {
-                        skip |= LogError(device, kVUID_PVError_InvalidStructSType,
+                        skip |= LogError(device, "VUID-VkPipelineColorBlendStateCreateInfo-sType-sType",
                                          "vkCreateGraphicsPipelines: parameter pCreateInfos[%d].pColorBlendState->sType must be "
                                          "VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO",
                                          i);
