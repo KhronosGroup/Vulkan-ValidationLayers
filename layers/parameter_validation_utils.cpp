@@ -3772,7 +3772,7 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
             skip |= require_device_extension(IsExtEnabled(device_extensions.vk_khr_incremental_present), "vkQueuePresentKHR",
                                              VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
             if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
-                skip |= LogError(device, kVUID_PVError_InvalidUsage,
+                skip |= LogError(device, "VUID-VkPresentRegionsKHR-swapchainCount-01260",
                                  "QueuePresentKHR(): pPresentInfo->swapchainCount has a value of %i but VkPresentRegionsKHR "
                                  "extension swapchainCount is %i. These values must be equal.",
                                  pPresentInfo->swapchainCount, present_regions->swapchainCount);
