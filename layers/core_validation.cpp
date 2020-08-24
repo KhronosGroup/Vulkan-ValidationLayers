@@ -3982,9 +3982,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
 
             // Validate mix of protected buffer and memory
             if ((buffer_state->unprotected == false) && (mem_info->unprotected == true)) {
-                // TODO label when spec change is upstreamed
                 const char *vuid =
-                    bind_buffer_mem_2 ? "UNASSIGNED-VkBindBufferMemoryInfo-protected" : "VUID-vkBindBufferMemory-None-01898";
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01898" : "VUID-vkBindBufferMemory-None-01898";
                 LogObjectList objlist(buffer);
                 objlist.add(mem);
                 skip |= LogError(objlist, vuid,
@@ -3992,9 +3991,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  "to use protected memory.",
                                  api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
             } else if ((buffer_state->unprotected == true) && (mem_info->unprotected == false)) {
-                // TODO label when spec change is upstreamed
                 const char *vuid =
-                    bind_buffer_mem_2 ? "UNASSIGNED-VkBindBufferMemoryInfo-protected" : "VUID-vkBindBufferMemory-None-01899";
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01899" : "VUID-vkBindBufferMemory-None-01899";
                 LogObjectList objlist(buffer);
                 objlist.add(mem);
                 skip |= LogError(objlist, vuid,
@@ -10743,9 +10741,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 // Validate mix of protected buffer and memory
                 if ((image_state->unprotected == false) && (mem_info->unprotected == true)) {
-                    // TODO label when spec change is upstreamed
                     const char *vuid =
-                        bind_image_mem_2 ? "UNASSIGNED-VkBindImageMemoryInfo-protected" : "VUID-vkBindImageMemory-None-01901";
+                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-None-01901" : "VUID-vkBindImageMemory-None-01901";
                     LogObjectList objlist(bindInfo.image);
                     objlist.add(bindInfo.memory);
                     skip |= LogError(objlist, vuid,
@@ -10754,9 +10751,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                      api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
                                      report_data->FormatHandle(bindInfo.image).c_str());
                 } else if ((image_state->unprotected == true) && (mem_info->unprotected == false)) {
-                    // TODO label when spec change is upstreamed
                     const char *vuid =
-                        bind_image_mem_2 ? "UNASSIGNED-VkBindImageMemoryInfo-protected" : "VUID-vkBindImageMemory-None-01902";
+                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-None-01902" : "VUID-vkBindImageMemory-None-01902";
                     LogObjectList objlist(bindInfo.image);
                     objlist.add(bindInfo.memory);
                     skip |= LogError(objlist, vuid,
