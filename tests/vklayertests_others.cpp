@@ -9456,6 +9456,25 @@ TEST_F(VkLayerTest, DisabledProtectedMemory) {
         vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
         m_errorMonitor->VerifyFound();
     }
+
+    VkProtectedSubmitInfo protected_submit_info = {};
+    protected_submit_info.sType = VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO;
+    protected_submit_info.pNext = nullptr;
+    protected_submit_info.protectedSubmit = VK_TRUE;
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = &protected_submit_info;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkProtectedSubmitInfo-protectedSubmit-01816");
+    m_errorMonitor->SetUnexpectedError("VUID-VkProtectedSubmitInfo-protectedSubmit-01817");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, InvalidProtectedMemory) {
