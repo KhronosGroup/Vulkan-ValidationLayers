@@ -2538,22 +2538,19 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(const CMD_BUFFER_STATE *pCB, 
     return skip;
 }
 
-bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *pFence) const {
+bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *pFence, const char *inflight_vuid, const char *retired_vuid,
+                                        const char *func_name) const {
     bool skip = false;
 
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->state == FENCE_INFLIGHT) {
-            // TODO: opportunities for "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueBindSparse-fence-01114",
-            // TODO:  "VUID-vkAcquireNextImageKHR-fence-01287"
-            skip |= LogError(pFence->fence, kVUID_Core_DrawState_InvalidFence, "%s is already in use by another submission.",
+            skip |= LogError(pFence->fence, inflight_vuid, "%s: %s is already in use by another submission.", func_name,
                              report_data->FormatHandle(pFence->fence).c_str());
         }
 
         else if (pFence->state == FENCE_RETIRED) {
-            // TODO: opportunities for "VUID-vkQueueSubmit-fence-00063", "VUID-vkQueueBindSparse-fence-01113",
-            // TODO: "VUID-vkAcquireNextImageKHR-fence-01287"
-            skip |= LogError(pFence->fence, kVUID_Core_MemTrack_FenceState,
-                             "%s submitted in SIGNALED state.  Fences must be reset before being submitted",
+            skip |= LogError(pFence->fence, retired_vuid,
+                             "%s: %s submitted in SIGNALED state.  Fences must be reset before being submitted", func_name,
                              report_data->FormatHandle(pFence->fence).c_str());
         }
     }
@@ -2805,7 +2802,8 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                             VkFence fence) const {
     const auto *pFence = GetFenceState(fence);
-    bool skip = ValidateFenceForSubmit(pFence);
+    bool skip =
+        ValidateFenceForSubmit(pFence, "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063", "vkQueueSubmit()");
     if (skip) {
         return true;
     }
@@ -10910,7 +10908,8 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                                                 VkFence fence) const {
     const auto queue_data = GetQueueState(queue);
     const auto pFence = GetFenceState(fence);
-    bool skip = ValidateFenceForSubmit(pFence);
+    bool skip = ValidateFenceForSubmit(pFence, "VUID-vkQueueBindSparse-fence-01114", "VUID-vkQueueBindSparse-fence-01113",
+                                       "VkQueueBindSparse()");
     if (skip) {
         return true;
     }
@@ -11802,7 +11801,8 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
 
     auto pFence = GetFenceState(fence);
     if (pFence) {
-        skip |= ValidateFenceForSubmit(pFence);
+        skip |= ValidateFenceForSubmit(pFence, "VUID-vkAcquireNextImageKHR-fence-01287", "VUID-vkAcquireNextImageKHR-fence-01287",
+                                       "vkAcquireNextImageKHR()");
     }
 
     const auto swapchain_data = GetSwapchainState(swapchain);
