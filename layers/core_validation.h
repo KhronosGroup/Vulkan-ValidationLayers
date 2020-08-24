@@ -108,7 +108,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePipelineUnlocked(const PIPELINE_STATE* pPipeline, uint32_t pipelineIndex) const;
     bool ValidImageBufferQueue(const CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices) const;
-    bool ValidateFenceForSubmit(const FENCE_STATE* pFence) const;
+    bool ValidateFenceForSubmit(const FENCE_STATE* pFence, const char* inflight_vuid, const char* retired_vuid,
+                                const char* func_name) const;
     bool ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo* submit,
                                      std::unordered_set<VkSemaphore>* unsignaled_sema_arg,
                                      std::unordered_set<VkSemaphore>* signaled_sema_arg,
