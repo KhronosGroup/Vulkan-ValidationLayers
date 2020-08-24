@@ -7030,6 +7030,29 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::CmdEndRenderPass(protectedCommandBuffer.handle());
     protectedCommandBuffer.end();
 
+    // Try submitting together to test only 1 error occurs for the corresponding command buffer
+    VkCommandBuffer comman_buffers[2] = {m_commandBuffer->handle(), protectedCommandBuffer.handle()};
+
+    VkProtectedSubmitInfo protected_submit_info = {};
+    protected_submit_info.sType = VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO;
+    protected_submit_info.pNext = nullptr;
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = &protected_submit_info;
+    submit_info.commandBufferCount = 2;
+    submit_info.pCommandBuffers = comman_buffers;
+
+    protected_submit_info.protectedSubmit = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkProtectedSubmitInfo-protectedSubmit-01817");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    protected_submit_info.protectedSubmit = VK_FALSE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pNext-04120");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
     vk::DestroyBuffer(device(), buffer_protected, nullptr);
     vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
     vk::FreeMemory(device(), memory_protected, nullptr);
