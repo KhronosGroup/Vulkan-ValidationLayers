@@ -1388,7 +1388,8 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 
     // vector index is attachment index. If the value is VK_NULL_HANDLE(0), it means the attachment isn't used in this command.
-    std::vector<VkImageView> GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses);
+    std::vector<VkImageView> GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses,
+                                                const std::vector<IMAGE_VIEW_STATE *> &imagelessFramebufferAttachments);
 };
 
 struct SHADER_MODULE_STATE;

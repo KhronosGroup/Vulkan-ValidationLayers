@@ -1542,8 +1542,8 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         cmd_info.function = function;
         if (cb_node->activeFramebuffer) {
             cmd_info.framebuffer = cb_node->activeFramebuffer->framebuffer;
-            cmd_info.attachment_views =
-                cb_node->activeFramebuffer->GetUsedAttachments(*cb_node->activeRenderPass->createInfo.pSubpasses);
+            cmd_info.attachment_views = cb_node->activeFramebuffer->GetUsedAttachments(
+                *cb_node->activeRenderPass->createInfo.pSubpasses, cb_node->imagelessFramebufferAttachments);
         }
         cb_node->validate_descriptorsets_in_queuesubmit[set_].emplace_back(cmd_info);
     }

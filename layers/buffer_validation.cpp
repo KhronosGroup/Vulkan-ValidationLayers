@@ -61,28 +61,51 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     return NormalizeSubresourceRange(create_info, init_range);
 }
 
-std::vector<VkImageView> FRAMEBUFFER_STATE::GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses) {
+std::vector<VkImageView> FRAMEBUFFER_STATE::GetUsedAttachments(
+    const safe_VkSubpassDescription2 &subpasses, const std::vector<IMAGE_VIEW_STATE *> &imagelessFramebufferAttachments) {
     std::vector<VkImageView> attachment_views(createInfo.attachmentCount, VK_NULL_HANDLE);
 
+    const bool imageless = (createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) ? true : false;
+
     for (uint32_t index = 0; index < subpasses.inputAttachmentCount; ++index) {
-        if (subpasses.pInputAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
-            attachment_views[subpasses.pInputAttachments[index].attachment] =
-                createInfo.pAttachments[subpasses.pInputAttachments[index].attachment];
+        const uint32_t attachment_index = subpasses.pInputAttachments[index].attachment;
+        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            if (imageless) {
+                attachment_views[attachment_index] = imagelessFramebufferAttachments[attachment_index]->image_view;
+            } else {
+                attachment_views[attachment_index] = createInfo.pAttachments[attachment_index];
+            }
         }
     }
     for (uint32_t index = 0; index < subpasses.colorAttachmentCount; ++index) {
-        if (subpasses.pColorAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
-            attachment_views[subpasses.pColorAttachments[index].attachment] =
-                createInfo.pAttachments[subpasses.pColorAttachments[index].attachment];
+        const uint32_t attachment_index = subpasses.pColorAttachments[index].attachment;
+        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            if (imageless) {
+                attachment_views[attachment_index] = imagelessFramebufferAttachments[attachment_index]->image_view;
+            } else {
+                attachment_views[attachment_index] = createInfo.pAttachments[attachment_index];
+            }
         }
-        if (subpasses.pResolveAttachments && subpasses.pResolveAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
-            attachment_views[subpasses.pResolveAttachments[index].attachment] =
-                createInfo.pAttachments[subpasses.pResolveAttachments[index].attachment];
+        if (subpasses.pResolveAttachments) {
+            const uint32_t attachment_index2 = subpasses.pResolveAttachments[index].attachment;
+            if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
+                if (imageless) {
+                    attachment_views[attachment_index2] = imagelessFramebufferAttachments[attachment_index2]->image_view;
+                } else {
+                    attachment_views[attachment_index2] = createInfo.pAttachments[attachment_index2];
+                }
+            }
         }
     }
-    if (subpasses.pDepthStencilAttachment && subpasses.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-        attachment_views[subpasses.pDepthStencilAttachment->attachment] =
-            createInfo.pAttachments[subpasses.pDepthStencilAttachment->attachment];
+    if (subpasses.pDepthStencilAttachment) {
+        const uint32_t attachment_index = subpasses.pDepthStencilAttachment->attachment;
+        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            if (imageless) {
+                attachment_views[attachment_index] = imagelessFramebufferAttachments[attachment_index]->image_view;
+            } else {
+                attachment_views[attachment_index] = createInfo.pAttachments[attachment_index];
+            }
+        }
     }
     return attachment_views;
 }
