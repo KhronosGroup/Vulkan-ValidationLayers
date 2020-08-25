@@ -1083,7 +1083,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     }
                 }
             }
-            attachment_views = cb_node->activeFramebuffer->GetUsedAttachments(subpass);
+            attachment_views = cb_node->activeFramebuffer->GetUsedAttachments(subpass, cb_node->imagelessFramebufferAttachments);
         }
     }
     // Now complete other state checks
