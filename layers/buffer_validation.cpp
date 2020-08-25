@@ -52,7 +52,15 @@ static VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &s
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
     const auto format = create_info.format;
     VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-    if (FormatIsColor(format) || FormatIsMultiplane(format)) {
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    const VkExternalFormatANDROID *pExternalFormatANDROID = lvl_find_in_chain<VkExternalFormatANDROID>(&create_info);
+    bool isExternalFormatConversion = (pExternalFormatANDROID != nullptr && pExternalFormatANDROID->externalFormat != 0);
+#else
+    bool isExternalFormatConversion = false;
+#endif
+
+    if (FormatIsColor(format) || FormatIsMultiplane(format) || isExternalFormatConversion) {
         init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
     } else {
         init_range.aspectMask =
@@ -217,7 +225,15 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
         // Cache a full normalization (for "full image/whole image" comparisons)
         // normalized_subresource_range = NormalizeSubresourceRange(*image_state, ci->subresourceRange);
         samples = image_state->createInfo.samples;
-        descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
+
+        if (image_state->has_ahb_format) {
+            // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
+            // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter. As a Sampler Ycbcr
+            // conversion must be used the shader type is always float.
+            descriptor_format_bits = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
+        } else {
+            descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
+        }
     }
 }
 

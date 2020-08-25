@@ -5364,6 +5364,17 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
     vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    efa.externalFormat = AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420;
+    sycci.format = VK_FORMAT_UNDEFINED;
+    sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
+    sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
+    // Spec says if we use VkExternalFormatANDROID value of components is ignored.
+    sycci.components = {VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO};
+    vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroySamplerYcbcrConversion(dev, ycbcr_conv, nullptr);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
