@@ -3881,7 +3881,7 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
         auto &push_constant_data = cb_state->push_constant_data;
         assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
         std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
-        std::memset(cb_state->push_constant_data_set.data() + offset, 0, static_cast<std::size_t>(size));
+        std::memset(cb_state->push_constant_data_set.data() + offset, 1, static_cast<std::size_t>(size));
         cb_state->push_constant_pipeline_layout_set = layout;
     }
 }
@@ -5715,7 +5715,7 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
         if (use.second.is_atomic_operation) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION);
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
     }
-
+    SetPushConstantUsedInShader(*module, stage_state->accessible_ids, pipeline->push_constant_used_in_shader);
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         pipeline->fragmentShader_writable_output_location_list = CollectWritableOutputLocationinFS(*module, *pStage);
     }
@@ -5740,11 +5740,6 @@ void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CM
         }
         cb_state->push_constant_data.resize(size_needed, 0);
         cb_state->push_constant_data_set.resize(size_needed, 0);
-
-        for (auto push_constant_range : *cb_state->push_constant_data_ranges) {
-            std::memset(cb_state->push_constant_data_set.data() + push_constant_range.offset, 1,
-                        static_cast<std::size_t>(push_constant_range.size));
-        }
     }
 }
 
