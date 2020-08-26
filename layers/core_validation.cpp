@@ -1175,25 +1175,28 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pPipe, function);
 
     // Verify if push constants have been set
-    if (pipeline_layout->push_constant_ranges != cb_node->push_constant_data_ranges) {
-        LogObjectList objlist(cb_node->commandBuffer);
-        objlist.add(cb_node->push_constant_pipeline_layout_set);
-        objlist.add(pipeline_layout->layout);
-        objlist.add(pPipe->pipeline);
-        result |= LogError(
-            objlist, vuid.push_constants_set, "The active push constants of %s isn't compatible with %s of active %s.",
-            report_data->FormatHandle(cb_node->push_constant_pipeline_layout_set).c_str(),
-            report_data->FormatHandle(pipeline_layout->layout).c_str(), report_data->FormatHandle(pPipe->pipeline).c_str());
-    } else {
-        const auto size = cb_node->push_constant_data_set.size();
-        if (size > 0) {
-            const auto *data = cb_node->push_constant_data_set.data();
-            if ((*data != 0) || std::memcmp(data, data + 1, size - 1) != 0) {
-                LogObjectList objlist(cb_node->commandBuffer);
-                objlist.add(pipeline_layout->layout);
-                result |=
-                    LogError(objlist, vuid.push_constants_set, "Not every byte in the push constant ranges of %s have been set.",
-                             report_data->FormatHandle(pipeline_layout->layout).c_str());
+    if (cb_node->push_constant_data_ranges) {
+        if (pipeline_layout->push_constant_ranges != cb_node->push_constant_data_ranges) {
+            LogObjectList objlist(cb_node->commandBuffer);
+            objlist.add(cb_node->push_constant_pipeline_layout_set);
+            objlist.add(pipeline_layout->layout);
+            objlist.add(pPipe->pipeline);
+            result |= LogError(
+                objlist, vuid.push_constants_set, "The active push constants of %s isn't compatible with %s of active %s.",
+                report_data->FormatHandle(cb_node->push_constant_pipeline_layout_set).c_str(),
+                report_data->FormatHandle(pipeline_layout->layout).c_str(), report_data->FormatHandle(pPipe->pipeline).c_str());
+        } else {
+            uint32_t index = 0;
+            for (const auto &used : pPipe->push_constant_used_in_shader) {
+                if (used == 1 && cb_node->push_constant_data_set[index] == 0) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(pipeline_layout->layout);
+                    result |= LogError(objlist, vuid.push_constants_set,
+                                       "Not every byte in the push constant ranges of %s have been set.",
+                                       report_data->FormatHandle(pipeline_layout->layout).c_str());
+                    break;
+                }
+                ++index;
             }
         }
     }
@@ -8044,9 +8047,9 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
             uint32_t missing_stages = ~found_stages & stageFlags;
             skip |= LogError(commandBuffer, "VUID-vkCmdPushConstants-offset-01795",
                              "vkCmdPushConstants(): stageFlags = 0x%" PRIx32
-                             ", VkPushConstantRange in %s overlapping offset = %d and size = %d, do not contain "
-                             "stageFlags 0x%" PRIx32 ".",
-                             (uint32_t)stageFlags, report_data->FormatHandle(layout).c_str(), offset, size, missing_stages);
+                             ", VkPushConstantRange in %s overlapping offset = %d and size = %d, do not contain %s.",
+                             (uint32_t)stageFlags, report_data->FormatHandle(layout).c_str(), offset, size,
+                             string_VkShaderStageFlags(missing_stages).c_str());
         }
     }
     return skip;
