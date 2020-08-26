@@ -2595,7 +2595,7 @@ bool CoreChecks::SemaphoreWasSignaled(VkSemaphore semaphore) const {
     return false;
 }
 
-bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *submit,
+bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *submit, uint32_t submit_index,
                                              unordered_set<VkSemaphore> *unsignaled_sema_arg,
                                              unordered_set<VkSemaphore> *signaled_sema_arg,
                                              unordered_set<VkSemaphore> *internal_sema_arg) const {
@@ -2617,17 +2617,18 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
         const auto *pSemaphore = GetSemaphoreState(semaphore);
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pWaitSemaphores-03239",
-                             "VkQueueSubmit: %s is a timeline semaphore, but pBindInfo does not"
-                             "include an instance of VkTimelineSemaphoreSubmitInfoKHR",
-                             report_data->FormatHandle(semaphore).c_str());
+                             "VkQueueSubmit: pSubmits[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, but pSubmits[%u] does "
+                             "not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                             submit_index, i, report_data->FormatHandle(semaphore).c_str(), submit_index);
         }
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
             submit->waitSemaphoreCount != timeline_semaphore_submit_info->waitSemaphoreValueCount) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pNext-03240",
-                             "VkQueueSubmit: %s is a timeline semaphore, it contains an instance of"
-                             "VkTimelineSemaphoreSubmitInfoKHR, but waitSemaphoreValueCount is different than "
-                             "waitSemaphoreCount",
-                             report_data->FormatHandle(semaphore).c_str());
+                             "VkQueueSubmit: pSubmits[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, it contains an "
+                             "instance of VkTimelineSemaphoreSubmitInfoKHR, but waitSemaphoreValueCount (%u) is different than "
+                             "pSubmits[%u].waitSemaphoreCount (%u)",
+                             submit_index, i, report_data->FormatHandle(semaphore).c_str(),
+                             timeline_semaphore_submit_info->waitSemaphoreValueCount, submit_index, submit->waitSemaphoreCount);
         }
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
             (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
@@ -2635,10 +2636,10 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
                 (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled) && !SemaphoreWasSignaled(semaphore))) {
                 LogObjectList objlist(semaphore);
                 objlist.add(queue);
-                skip |= LogError(objlist,
-                                 pSemaphore->scope == kSyncScopeInternal ? vuid_error : kVUID_Core_DrawState_QueueForwardProgress,
-                                 "vkQueueSubmit: %s is waiting on %s that has no way to be signaled.",
-                                 report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str());
+                skip |= LogError(
+                    objlist, pSemaphore->scope == kSyncScopeInternal ? vuid_error : kVUID_Core_DrawState_QueueForwardProgress,
+                    "vkQueueSubmit: Queue %s is waiting on pSubmits[%u].pWaitSemaphores[%u] (%s) that has no way to be signaled.",
+                    report_data->FormatHandle(queue).c_str(), submit_index, i, report_data->FormatHandle(semaphore).c_str());
             } else {
                 signaled_semaphores.erase(semaphore);
                 unsignaled_semaphores.insert(semaphore);
@@ -2653,23 +2654,28 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
         const auto *pSemaphore = GetSemaphoreState(semaphore);
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pWaitSemaphores-03239",
-                             "VkQueueSubmit: %s is a timeline semaphore, but pBindInfo does not"
-                             "include an instance of VkTimelineSemaphoreSubmitInfoKHR",
-                             report_data->FormatHandle(semaphore).c_str());
+                             "VkQueueSubmit: pSubmits[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, but pSubmits[%u] "
+                             "does not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                             submit_index, i, report_data->FormatHandle(semaphore).c_str(), submit_index);
         }
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
             submit->signalSemaphoreCount != timeline_semaphore_submit_info->signalSemaphoreValueCount) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pNext-03241",
-                             "VkQueueSubmit: %s is a timeline semaphore, it contains an instance of"
-                             "VkTimelineSemaphoreSubmitInfoKHR, but signalSemaphoreValueCount is different than "
-                             "signalSemaphoreCount",
-                             report_data->FormatHandle(semaphore).c_str());
+                             "VkQueueSubmit: pSubmits[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, it contains an "
+                             "instance of VkTimelineSemaphoreSubmitInfoKHR, but signalSemaphoreValueCount (%u) is different than "
+                             "pSubmits[%u].signalSemaphoreCount (%u)",
+                             submit_index, i, report_data->FormatHandle(semaphore).c_str(),
+                             timeline_semaphore_submit_info->signalSemaphoreValueCount, submit_index, submit->signalSemaphoreCount);
         }
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
             timeline_semaphore_submit_info->pSignalSemaphoreValues[i] <= pSemaphore->payload) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pSignalSemaphores-03242",
-                             "VkQueueSubmit: signal value in %s must be greater than current timeline semaphore %s value",
-                             report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str());
+                             "VkQueueSubmit: signal value (0x%" PRIx64
+                             ") in %s must be greater than current timeline semaphore %s value (0x%" PRIx64
+                             ") in pSubmits[%u].pSignalSemaphores[%u]",
+                             pSemaphore->payload, report_data->FormatHandle(queue).c_str(),
+                             report_data->FormatHandle(semaphore).c_str(),
+                             timeline_semaphore_submit_info->pSignalSemaphoreValues[i], submit_index, i);
         }
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
             (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
@@ -2678,9 +2684,10 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
                 objlist.add(queue);
                 objlist.add(pSemaphore->signaler.first);
                 skip |= LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
-                                 "vkQueueSubmit: %s is signaling %s that was previously signaled by %s but has not since "
-                                 "been waited on by any queue.",
-                                 report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str(),
+                                 "vkQueueSubmit: %s is signaling pSubmits[%u].pSignalSemaphores[%u] (%s) that was previously "
+                                 "signaled by %s but has not since been waited on by any queue.",
+                                 report_data->FormatHandle(queue).c_str(), submit_index, i,
+                                 report_data->FormatHandle(semaphore).c_str(),
                                  report_data->FormatHandle(pSemaphore->signaler.first).c_str());
             } else {
                 unsignaled_semaphores.erase(semaphore);
@@ -2818,7 +2825,8 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        skip |= ValidateSemaphoresForSubmit(queue, submit, &unsignaled_semaphores, &signaled_semaphores, &internal_semaphores);
+        skip |= ValidateSemaphoresForSubmit(queue, submit, submit_idx, &unsignaled_semaphores, &signaled_semaphores,
+                                            &internal_semaphores);
         skip |= ValidateCommandBuffersForSubmit(queue, submit, &overlayImageLayoutMap, &local_query_to_state_map, &current_cmds);
 
         auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupSubmitInfo>(submit->pNext);
@@ -10930,9 +10938,9 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) const {
     const auto event_state = GetEventState(event);
     if (event_state) {
         if (event_state->write_in_use) {
-            skip |= LogError(event, kVUID_Core_DrawState_QueueForwardProgress,
-                             "Cannot call vkSetEvent() on %s that is already in use by a command buffer.",
-                             report_data->FormatHandle(event).c_str());
+            skip |=
+                LogError(event, kVUID_Core_DrawState_QueueForwardProgress,
+                         "vkSetEvent(): %s that is already in use by a command buffer.", report_data->FormatHandle(event).c_str());
         }
     }
     return skip;
@@ -10950,9 +10958,8 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
     const auto queueFlags = GetPhysicalDeviceState()->queue_family_properties[queue_data->queueFamilyIndex].queueFlags;
     if (!(queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
-        skip |= LogError(
-            queue, "VUID-vkQueueBindSparse-queuetype",
-            "Attempting vkQueueBindSparse on a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.");
+        skip |= LogError(queue, "VUID-vkQueueBindSparse-queuetype",
+                         "vkQueueBindSparse(): a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.");
     }
 
     unordered_set<VkSemaphore> signaled_semaphores;
@@ -10971,17 +10978,18 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             const auto pSemaphore = GetSemaphoreState(semaphore);
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pWaitSemaphores-03246",
-                                 "VkQueueBindSparse: %s is a timeline semaphore, but pBindInfo does not"
-                                 "include an instance of VkTimelineSemaphoreSubmitInfoKHR",
-                                 report_data->FormatHandle(semaphore).c_str());
+                                 "VkQueueBindSparse: pBindInfo[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, but "
+                                 "pBindInfo[%u] does not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                                 bindIdx, i, report_data->FormatHandle(semaphore).c_str(), bindIdx);
             }
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
                 bindInfo.waitSemaphoreCount != timeline_semaphore_submit_info->waitSemaphoreValueCount) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pNext-03247",
-                                 "VkQueueBindSparse: %s is a timeline semaphore, it contains an instance of"
-                                 "VkTimelineSemaphoreSubmitInfoKHR, but waitSemaphoreValueCount is different than "
-                                 "waitSemaphoreCount",
-                                 report_data->FormatHandle(semaphore).c_str());
+                                 "VkQueueBindSparse: pBindInfo[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, it contains "
+                                 "an instance of VkTimelineSemaphoreSubmitInfoKHR, but waitSemaphoreValueCount (%u) is different "
+                                 "than pBindInfo[%u].waitSemaphoreCount (%u)",
+                                 bindIdx, i, report_data->FormatHandle(semaphore).c_str(),
+                                 timeline_semaphore_submit_info->waitSemaphoreValueCount, bindIdx, bindInfo.waitSemaphoreCount);
             }
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
                 (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
@@ -10991,8 +10999,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     objlist.add(queue);
                     skip |= LogError(
                         objlist, pSemaphore->scope == kSyncScopeInternal ? vuid_error : kVUID_Core_DrawState_QueueForwardProgress,
-                        "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
-                        report_data->FormatHandle(semaphore).c_str());
+                        "vkQueueBindSparse(): Queue %s is waiting on pBindInfo[%u].pWaitSemaphores[%u] (%s) that has no way to be "
+                        "signaled.",
+                        report_data->FormatHandle(queue).c_str(), bindIdx, i, report_data->FormatHandle(semaphore).c_str());
                 } else {
                     signaled_semaphores.erase(semaphore);
                     unsignaled_semaphores.insert(semaphore);
@@ -11009,36 +11018,42 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             const auto pSemaphore = GetSemaphoreState(semaphore);
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pWaitSemaphores-03246",
-                                 "VkQueueBindSparse: %s is a timeline semaphore, but pBindInfo does not"
-                                 "include an instance of VkTimelineSemaphoreSubmitInfoKHR",
-                                 report_data->FormatHandle(semaphore).c_str());
+                                 "VkQueueBindSparse: pBindInfo[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, but "
+                                 "pBindInfo[%u] does not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                                 bindIdx, i, report_data->FormatHandle(semaphore).c_str(), bindIdx);
             }
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
                 timeline_semaphore_submit_info->pSignalSemaphoreValues[i] <= pSemaphore->payload) {
                 LogObjectList objlist(semaphore);
                 objlist.add(queue);
                 skip |= LogError(objlist, "VUID-VkBindSparseInfo-pSignalSemaphores-03249",
-                                 "VkQueueBindSparse: signal value in %s must be greater than current timeline semaphore %s value",
-                                 report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str());
+                                 "VkQueueBindSparse: signal value (0x%" PRIx64
+                                 ") in %s must be greater than current timeline semaphore %s value (0x%" PRIx64
+                                 ") in pBindInfo[%u].pSignalSemaphores[%u]",
+                                 pSemaphore->payload, report_data->FormatHandle(queue).c_str(),
+                                 report_data->FormatHandle(semaphore).c_str(),
+                                 timeline_semaphore_submit_info->pSignalSemaphoreValues[i], bindIdx, i);
             }
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
                 bindInfo.signalSemaphoreCount != timeline_semaphore_submit_info->signalSemaphoreValueCount) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pNext-03248",
-                                 "VkQueueBindSparse: %s is a timeline semaphore, it contains an instance of"
-                                 "VkTimelineSemaphoreSubmitInfoKHR, but signalSemaphoreValueCount is different than "
-                                 "signalSemaphoreCount",
-                                 report_data->FormatHandle(semaphore).c_str());
+                                 "VkQueueBindSparse: pBindInfo[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, it contains "
+                                 "an instance of VkTimelineSemaphoreSubmitInfoKHR, but signalSemaphoreValueCount (%u) is different "
+                                 "than pBindInfo[%u].signalSemaphoreCount (%u)",
+                                 bindIdx, i, report_data->FormatHandle(semaphore).c_str(),
+                                 timeline_semaphore_submit_info->signalSemaphoreValueCount, bindIdx, bindInfo.signalSemaphoreCount);
             }
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR && pSemaphore->scope == kSyncScopeInternal) {
                 if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
                     LogObjectList objlist(semaphore);
                     objlist.add(queue);
                     objlist.add(pSemaphore->signaler.first);
-                    skip |= LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
-                                     "%s is signaling %s that was previously signaled by %s but has not since "
-                                     "been waited on by any queue.",
-                                     report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str(),
-                                     report_data->FormatHandle(pSemaphore->signaler.first).c_str());
+                    skip |=
+                        LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
+                                 "vkQueueBindSparse(): %s is signaling pBindInfo[%u].pSignalSemaphores[%u] (%s) that was "
+                                 "previously signaled by %s but has not since been waited on by any queue.",
+                                 report_data->FormatHandle(queue).c_str(), bindIdx, i, report_data->FormatHandle(semaphore).c_str(),
+                                 report_data->FormatHandle(pSemaphore->signaler.first).c_str());
                 } else {
                     unsignaled_semaphores.erase(semaphore);
                     signaled_semaphores.insert(semaphore);
@@ -11051,9 +11066,10 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             const auto image_state = GetImageState(image_bind.image);
 
             if (image_state && !(image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
-                skip |= LogError(
-                    image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
-                    "VkSparseImageMemoryBindInfo: image must have been created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set");
+                skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
+                                 "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: image must have been created with "
+                                 "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set",
+                                 bindIdx, image_idx);
             }
         }
     }
@@ -11686,14 +11702,15 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto pSemaphore = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_BINARY_KHR) {
             skip |= LogError(pPresentInfo->pWaitSemaphores[i], "VUID-vkQueuePresentKHR-pWaitSemaphores-03267",
-                             "VkQueuePresent: %s is not a VK_SEMAPHORE_TYPE_BINARY_KHR",
+                             "vkQueuePresentKHR: %s is not a VK_SEMAPHORE_TYPE_BINARY_KHR",
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
         if (pSemaphore && !pSemaphore->signaled && !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i])) {
             LogObjectList objlist(queue);
             objlist.add(pPresentInfo->pWaitSemaphores[i]);
             skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
-                             "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
+                             "vkQueuePresentKHR: Queue %s is waiting on %s that has no way to be signaled.",
+                             report_data->FormatHandle(queue).c_str(),
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
     }

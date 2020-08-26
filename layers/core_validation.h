@@ -110,7 +110,7 @@ class CoreChecks : public ValidationStateTracker {
                                uint32_t count, const uint32_t* indices) const;
     bool ValidateFenceForSubmit(const FENCE_STATE* pFence, const char* inflight_vuid, const char* retired_vuid,
                                 const char* func_name) const;
-    bool ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo* submit,
+    bool ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo* submit, uint32_t submit_index,
                                      std::unordered_set<VkSemaphore>* unsignaled_sema_arg,
                                      std::unordered_set<VkSemaphore>* signaled_sema_arg,
                                      std::unordered_set<VkSemaphore>* internal_sema_arg) const;
