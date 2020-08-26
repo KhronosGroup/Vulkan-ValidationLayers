@@ -279,8 +279,11 @@ bool DebugPrintf::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
-    spvtools::ValidatorOptions options;
-    AdjustValidatorOptions(device_extensions, enabled_features, options);
+    spvtools::ValidatorOptions val_options;
+    AdjustValidatorOptions(device_extensions, enabled_features, val_options);
+    spvtools::OptimizerOptions opt_options;
+    opt_options.set_run_validator(true);
+    opt_options.set_validator_options(val_options);
     Optimizer optimizer(target_env);
     const spvtools::MessageConsumer DebugPrintfConsoleMessageConsumer =
         [this](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
@@ -297,7 +300,7 @@ bool DebugPrintf::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     };
     optimizer.SetMessageConsumer(DebugPrintfConsoleMessageConsumer);
     optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_module_id));
-    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, options, false);
+    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
     if (!pass) {
         ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
     }
