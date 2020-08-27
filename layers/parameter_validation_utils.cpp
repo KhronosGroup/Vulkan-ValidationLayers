@@ -85,6 +85,19 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
     return skip;
 }
 
+bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const {
+    if (instance_extensions.vk_khr_get_physical_device_properties_2) {
+        // Struct is legal IF it's supported
+        const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
+        if (dev_exts_enumerated == device_extensions_enumerated.end()) return true;
+        auto enum_iter = dev_exts_enumerated->second.find(ext_name);
+        if (enum_iter != dev_exts_enumerated->second.cend()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool StatelessValidation::validate_validation_features(const VkInstanceCreateInfo *pCreateInfo,
                                                        const VkValidationFeaturesEXT *validation_features) const {
     bool skip = false;
@@ -164,11 +177,22 @@ void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInf
     physical_devices.resize(pdev_count);
     DispatchEnumeratePhysicalDevices(*pInstance, &pdev_count, physical_devices.data());
 
-    // Need to get instance and do a getlayerdata call...
     for (uint32_t i = 0; i < physical_devices.size(); i++) {
         auto phys_dev_props = new VkPhysicalDeviceProperties;
         DispatchGetPhysicalDeviceProperties(physical_devices[i], phys_dev_props);
         physical_device_properties_map[physical_devices[i]] = phys_dev_props;
+
+        // Enumerate the Device Ext Properties to save the PhysicalDevice supported extension state
+        uint32_t ext_count = 0;
+        std::unordered_set<std::string> dev_exts_enumerated{};
+        std::vector<VkExtensionProperties> ext_props{};
+        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_devices[i], nullptr, &ext_count, nullptr);
+        ext_props.resize(ext_count);
+        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_devices[i], nullptr, &ext_count, ext_props.data());
+        for (uint32_t j = 0; j < ext_count; j++) {
+            dev_exts_enumerated.insert(ext_props[j].extensionName);
+        }
+        device_extensions_enumerated[physical_devices[i]] = std::move(dev_exts_enumerated);
     }
 }
 
