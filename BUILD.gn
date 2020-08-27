@@ -79,14 +79,19 @@ config("vulkan_layer_config") {
 }
 
 core_validation_sources = [
+  "layers/android_ndk_types.h",
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",
   "layers/convert_to_renderpass2.cpp",
+  "layers/convert_to_renderpass2.h",
   "layers/core_validation.cpp",
   "layers/core_validation.h",
+  "layers/core_validation_error_enums.h",
+  "layers/core_validation_types.h",
   "layers/descriptor_sets.cpp",
   "layers/descriptor_sets.h",
   "layers/drawdispatch.cpp",
+  "layers/generated/synchronization_validation_types.h",
   "layers/gpu_utils.cpp",
   "layers/gpu_utils.h",
   "layers/gpu_validation.cpp",
@@ -102,20 +107,21 @@ core_validation_sources = [
   "layers/subresource_adapter.h",
   "layers/synchronization_validation.cpp",
   "layers/synchronization_validation.h",
-  "layers/xxhash.c",
-  "layers/xxhash.h",
 ]
 
 object_lifetimes_sources = [
   "layers/generated/object_tracker.cpp",
   "layers/generated/object_tracker.h",
+  "layers/object_lifetime_validation.h",
   "layers/object_tracker_utils.cpp",
 ]
 
 stateless_validation_sources = [
   "layers/generated/parameter_validation.cpp",
   "layers/generated/parameter_validation.h",
+  "layers/parameter_name.h",
   "layers/parameter_validation_utils.cpp",
+  "layers/stateless_validation.h",
 ]
 
 thread_safety_sources = [
@@ -149,14 +155,15 @@ chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
   "layers/generated/chassis.cpp",
   "layers/generated/chassis.h",
-  "layers/layer_options.h",
-  "layers/layer_options.cpp",
-  "layers/vk_layer_settings_ext.h",
   "layers/generated/layer_chassis_dispatch.cpp",
   "layers/generated/layer_chassis_dispatch.h",
   "layers/generated/thread_safety.h",
+  "layers/generated/vk_dispatch_table_helper.h",
+  "layers/generated/vk_extension_helper.h",
   "layers/generated/vk_safe_struct.cpp",
-  "layers/generated/vk_safe_struct.h",
+  "layers/layer_options.cpp",
+  "layers/layer_options.h",
+  "layers/vk_layer_settings_ext.h",
 ]
 
 layers = [ [
@@ -174,7 +181,10 @@ if (!is_android) {
     script = "build-gn/generate_vulkan_layers_json.py"
 
     # Make sure that the cleanup of old layer JSON files happens before the new ones are generated.
-    deps = [ ":vulkan_clean_old_validation_layer_objects" ]
+    deps = [
+      ":vulkan_clean_old_validation_layer_objects",
+      "$vulkan_headers_dir:vulkan_headers",
+    ]
     json_names = [ "VkLayer_khronos_validation.json" ]
     sources = [ "$vulkan_headers_dir/include/vulkan/vulkan_core.h" ]
     outputs = []
@@ -201,14 +211,30 @@ source_set("vulkan_layer_utils") {
     "$vulkan_headers_dir/include/vulkan/vk_layer.h",
     "$vulkan_headers_dir/include/vulkan/vk_sdk_platform.h",
     "$vulkan_headers_dir/include/vulkan/vulkan.h",
+    "layers/cast_utils.h",
+    "layers/generated/vk_enum_string_helper.h",
+    "layers/generated/vk_layer_dispatch_table.h",
+    "layers/generated/vk_object_types.h",
+    "layers/generated/vk_safe_struct.h",
+    "layers/generated/vk_typemap_helper.h",
+    "layers/generated/vk_validation_error_messages.h",
+    "layers/hash_util.h",
+    "layers/hash_vk_types.h",
+    "layers/sparse_containers.h",
     "layers/vk_format_utils.cpp",
     "layers/vk_format_utils.h",
     "layers/vk_layer_config.cpp",
     "layers/vk_layer_config.h",
+    "layers/vk_layer_data.h",
     "layers/vk_layer_extension_utils.cpp",
     "layers/vk_layer_extension_utils.h",
+    "layers/vk_layer_logging.h",
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
+    "layers/vk_loader_platform.h",
+    "layers/vk_mem_alloc.h",
+    "layers/xxhash.c",
+    "layers/xxhash.h",
   ]
   public_configs = [ ":vulkan_internal_config" ]
   configs -= [ "//build/config/compiler:chromium_code" ]
