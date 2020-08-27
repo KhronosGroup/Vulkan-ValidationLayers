@@ -447,8 +447,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             api_func += '}\n'
             write(api_func, file=self.outFile)
 
-            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header,\n'
-            pnext_handler += '                                                      const char *pnext_vuid) const {\n'
+            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,\n'
+            pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid) const {\n'
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
 
@@ -501,7 +501,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         else:
                             print("Error in parameter_validation_generator.py CodeGen.")
                         norm_ext_name = ext_name_define[:-15].lower()
-                        pnext_check += '            if (!%s_extensions.%s) {\n' % (table_type, norm_ext_name.lower())
+                        if table_type == 'device':
+                            pnext_check += '            if ((!SupportedByPdev(physical_device, %s)) && !%s_extensions.%s) {\n' % (ext_name_define, table_type, norm_ext_name.lower())
+                        else:
+                            pnext_check += '            if (!%s_extensions.%s) {\n' % (table_type, norm_ext_name.lower())
                         pnext_check += '                skip |= LogError(\n'
                         pnext_check += '                           instance, pnext_vuid,\n'
                         pnext_check += '                           "%%s: Includes a pNext pointer (%%s) to a VkStructureType (%s), but its parent extension "\n' % struct_type

@@ -91,6 +91,7 @@ class StatelessValidation : public ValidationObject {
     void *device_createinfo_pnext;
     const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
     std::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
+    std::unordered_map<VkPhysicalDevice, std::unordered_set<std::string>> device_extensions_enumerated{};
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
@@ -475,6 +476,7 @@ class StatelessValidation : public ValidationObject {
     // Forward declarations
     bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const;
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const;
+    bool SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const;
 
     bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header,
                                      const char *pnext_vuid) const;

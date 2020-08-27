@@ -261,8 +261,8 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
     return skip;
 }
 
-bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header,
-                                                      const char *pnext_vuid) const {
+bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
+                                                      const VkBaseOutStructure* header, const char *pnext_vuid) const {
     bool skip = false;
     switch(header->sType) {
 
@@ -280,7 +280,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDevice16BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES: { // Covers VUID-VkPhysicalDevice16BitStorageFeatures-sType-sType
             VkPhysicalDevice16BitStorageFeatures *structure = (VkPhysicalDevice16BitStorageFeatures *) header;
-            if (!device_extensions.vk_khr_16bit_storage) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_16BIT_STORAGE_EXTENSION_NAME)) && !device_extensions.vk_khr_16bit_storage) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES), but its parent extension "
@@ -299,7 +299,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkMemoryDedicatedRequirements structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: { // Covers VUID-VkMemoryDedicatedRequirements-sType-sType
-            if (!device_extensions.vk_khr_dedicated_allocation) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) && !device_extensions.vk_khr_dedicated_allocation) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS), but its parent extension "
@@ -311,7 +311,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkMemoryDedicatedAllocateInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO: { // Covers VUID-VkMemoryDedicatedAllocateInfo-sType-sType
-            if (!device_extensions.vk_khr_dedicated_allocation) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) && !device_extensions.vk_khr_dedicated_allocation) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO), but its parent extension "
@@ -324,7 +324,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkMemoryAllocateFlagsInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO: { // Covers VUID-VkMemoryAllocateFlagsInfo-sType-sType
             VkMemoryAllocateFlagsInfo *structure = (VkMemoryAllocateFlagsInfo *) header;
-            if (!device_extensions.vk_khr_device_group) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) && !device_extensions.vk_khr_device_group) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO), but its parent extension "
@@ -338,7 +338,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkDeviceGroupRenderPassBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO: { // Covers VUID-VkDeviceGroupRenderPassBeginInfo-sType-sType
             VkDeviceGroupRenderPassBeginInfo *structure = (VkDeviceGroupRenderPassBeginInfo *) header;
-            if (!device_extensions.vk_khr_device_group) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) && !device_extensions.vk_khr_device_group) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO), but its parent extension "
@@ -358,7 +358,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkDeviceGroupCommandBufferBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO: { // Covers VUID-VkDeviceGroupCommandBufferBeginInfo-sType-sType
-            if (!device_extensions.vk_khr_device_group) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) && !device_extensions.vk_khr_device_group) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO), but its parent extension "
@@ -371,7 +371,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkDeviceGroupSubmitInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO: { // Covers VUID-VkDeviceGroupSubmitInfo-sType-sType
             VkDeviceGroupSubmitInfo *structure = (VkDeviceGroupSubmitInfo *) header;
-            if (!device_extensions.vk_khr_device_group) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) && !device_extensions.vk_khr_device_group) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO), but its parent extension "
@@ -388,7 +388,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkDeviceGroupBindSparseInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO: { // Covers VUID-VkDeviceGroupBindSparseInfo-sType-sType
-            if (!device_extensions.vk_khr_device_group) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) && !device_extensions.vk_khr_device_group) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO), but its parent extension "
@@ -401,7 +401,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkBindBufferMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO: { // Covers VUID-VkBindBufferMemoryDeviceGroupInfo-sType-sType
             VkBindBufferMemoryDeviceGroupInfo *structure = (VkBindBufferMemoryDeviceGroupInfo *) header;
-            if (!device_extensions.vk_khr_device_group) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) && !device_extensions.vk_khr_device_group) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
@@ -415,7 +415,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkBindImageMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO: { // Covers VUID-VkBindImageMemoryDeviceGroupInfo-sType-sType
             VkBindImageMemoryDeviceGroupInfo *structure = (VkBindImageMemoryDeviceGroupInfo *) header;
-            if (!device_extensions.vk_khr_device_group) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) && !device_extensions.vk_khr_device_group) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO), but its parent extension "
@@ -573,7 +573,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDevicePointClippingProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES: { // Covers VUID-VkPhysicalDevicePointClippingProperties-sType-sType
-            if (!device_extensions.vk_khr_maintenance2) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) && !device_extensions.vk_khr_maintenance2) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES), but its parent extension "
@@ -586,7 +586,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkRenderPassInputAttachmentAspectCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO: { // Covers VUID-VkRenderPassInputAttachmentAspectCreateInfo-sType-sType
             VkRenderPassInputAttachmentAspectCreateInfo *structure = (VkRenderPassInputAttachmentAspectCreateInfo *) header;
-            if (!device_extensions.vk_khr_maintenance2) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) && !device_extensions.vk_khr_maintenance2) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO), but its parent extension "
@@ -608,7 +608,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkImageViewUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO: { // Covers VUID-VkImageViewUsageCreateInfo-sType-sType
             VkImageViewUsageCreateInfo *structure = (VkImageViewUsageCreateInfo *) header;
-            if (!device_extensions.vk_khr_maintenance2) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) && !device_extensions.vk_khr_maintenance2) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO), but its parent extension "
@@ -622,7 +622,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPipelineTessellationDomainOriginStateCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO: { // Covers VUID-VkPipelineTessellationDomainOriginStateCreateInfo-sType-sType
             VkPipelineTessellationDomainOriginStateCreateInfo *structure = (VkPipelineTessellationDomainOriginStateCreateInfo *) header;
-            if (!device_extensions.vk_khr_maintenance2) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) && !device_extensions.vk_khr_maintenance2) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO), but its parent extension "
@@ -636,7 +636,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkRenderPassMultiviewCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO: { // Covers VUID-VkRenderPassMultiviewCreateInfo-sType-sType
             VkRenderPassMultiviewCreateInfo *structure = (VkRenderPassMultiviewCreateInfo *) header;
-            if (!device_extensions.vk_khr_multiview) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) && !device_extensions.vk_khr_multiview) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO), but its parent extension "
@@ -654,7 +654,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceMultiviewFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: { // Covers VUID-VkPhysicalDeviceMultiviewFeatures-sType-sType
             VkPhysicalDeviceMultiviewFeatures *structure = (VkPhysicalDeviceMultiviewFeatures *) header;
-            if (!device_extensions.vk_khr_multiview) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) && !device_extensions.vk_khr_multiview) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES), but its parent extension "
@@ -671,7 +671,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceMultiviewProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES: { // Covers VUID-VkPhysicalDeviceMultiviewProperties-sType-sType
-            if (!device_extensions.vk_khr_multiview) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) && !device_extensions.vk_khr_multiview) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES), but its parent extension "
@@ -684,7 +684,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceVariablePointersFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES: { // Covers VUID-VkPhysicalDeviceVariablePointersFeatures-sType-sType
             VkPhysicalDeviceVariablePointersFeatures *structure = (VkPhysicalDeviceVariablePointersFeatures *) header;
-            if (!device_extensions.vk_khr_variable_pointers) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)) && !device_extensions.vk_khr_variable_pointers) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES), but its parent extension "
@@ -737,7 +737,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkSamplerYcbcrConversionInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO: { // Covers VUID-VkSamplerYcbcrConversionInfo-sType-sType
             VkSamplerYcbcrConversionInfo *structure = (VkSamplerYcbcrConversionInfo *) header;
-            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) && !device_extensions.vk_khr_sampler_ycbcr_conversion) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO), but its parent extension "
@@ -751,7 +751,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkBindImagePlaneMemoryInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO: { // Covers VUID-VkBindImagePlaneMemoryInfo-sType-sType
             VkBindImagePlaneMemoryInfo *structure = (VkBindImagePlaneMemoryInfo *) header;
-            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) && !device_extensions.vk_khr_sampler_ycbcr_conversion) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO), but its parent extension "
@@ -765,7 +765,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkImagePlaneMemoryRequirementsInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO: { // Covers VUID-VkImagePlaneMemoryRequirementsInfo-sType-sType
             VkImagePlaneMemoryRequirementsInfo *structure = (VkImagePlaneMemoryRequirementsInfo *) header;
-            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) && !device_extensions.vk_khr_sampler_ycbcr_conversion) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO), but its parent extension "
@@ -779,7 +779,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceSamplerYcbcrConversionFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES: { // Covers VUID-VkPhysicalDeviceSamplerYcbcrConversionFeatures-sType-sType
             VkPhysicalDeviceSamplerYcbcrConversionFeatures *structure = (VkPhysicalDeviceSamplerYcbcrConversionFeatures *) header;
-            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) && !device_extensions.vk_khr_sampler_ycbcr_conversion) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES), but its parent extension "
@@ -792,7 +792,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkSamplerYcbcrConversionImageFormatProperties structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: { // Covers VUID-VkSamplerYcbcrConversionImageFormatProperties-sType-sType
-            if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) && !device_extensions.vk_khr_sampler_ycbcr_conversion) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES), but its parent extension "
@@ -843,7 +843,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkExternalMemoryImageCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO: { // Covers VUID-VkExternalMemoryImageCreateInfo-sType-sType
             VkExternalMemoryImageCreateInfo *structure = (VkExternalMemoryImageCreateInfo *) header;
-            if (!device_extensions.vk_khr_external_memory) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) && !device_extensions.vk_khr_external_memory) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO), but its parent extension "
@@ -857,7 +857,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkExternalMemoryBufferCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO: { // Covers VUID-VkExternalMemoryBufferCreateInfo-sType-sType
             VkExternalMemoryBufferCreateInfo *structure = (VkExternalMemoryBufferCreateInfo *) header;
-            if (!device_extensions.vk_khr_external_memory) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) && !device_extensions.vk_khr_external_memory) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO), but its parent extension "
@@ -871,7 +871,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkExportMemoryAllocateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO: { // Covers VUID-VkExportMemoryAllocateInfo-sType-sType
             VkExportMemoryAllocateInfo *structure = (VkExportMemoryAllocateInfo *) header;
-            if (!device_extensions.vk_khr_external_memory) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) && !device_extensions.vk_khr_external_memory) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO), but its parent extension "
@@ -885,7 +885,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkExportFenceCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO: { // Covers VUID-VkExportFenceCreateInfo-sType-sType
             VkExportFenceCreateInfo *structure = (VkExportFenceCreateInfo *) header;
-            if (!device_extensions.vk_khr_external_fence) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME)) && !device_extensions.vk_khr_external_fence) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO), but its parent extension "
@@ -899,7 +899,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkExportSemaphoreCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO: { // Covers VUID-VkExportSemaphoreCreateInfo-sType-sType
             VkExportSemaphoreCreateInfo *structure = (VkExportSemaphoreCreateInfo *) header;
-            if (!device_extensions.vk_khr_external_semaphore) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)) && !device_extensions.vk_khr_external_semaphore) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO), but its parent extension "
@@ -912,7 +912,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceMaintenance3Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES: { // Covers VUID-VkPhysicalDeviceMaintenance3Properties-sType-sType
-            if (!device_extensions.vk_khr_maintenance3) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_MAINTENANCE3_EXTENSION_NAME)) && !device_extensions.vk_khr_maintenance3) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES), but its parent extension "
@@ -1100,7 +1100,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkImageFormatListCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO: { // Covers VUID-VkImageFormatListCreateInfo-sType-sType
             VkImageFormatListCreateInfo *structure = (VkImageFormatListCreateInfo *) header;
-            if (!device_extensions.vk_khr_image_format_list) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) && !device_extensions.vk_khr_image_format_list) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO), but its parent extension "
@@ -1114,7 +1114,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDevice8BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES: { // Covers VUID-VkPhysicalDevice8BitStorageFeatures-sType-sType
             VkPhysicalDevice8BitStorageFeatures *structure = (VkPhysicalDevice8BitStorageFeatures *) header;
-            if (!device_extensions.vk_khr_8bit_storage) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) && !device_extensions.vk_khr_8bit_storage) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES), but its parent extension "
@@ -1131,7 +1131,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceDriverProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDriverProperties-sType-sType
-            if (!device_extensions.vk_khr_driver_properties) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)) && !device_extensions.vk_khr_driver_properties) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES), but its parent extension "
@@ -1144,7 +1144,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceShaderAtomicInt64Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderAtomicInt64Features-sType-sType
             VkPhysicalDeviceShaderAtomicInt64Features *structure = (VkPhysicalDeviceShaderAtomicInt64Features *) header;
-            if (!device_extensions.vk_khr_shader_atomic_int64) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) && !device_extensions.vk_khr_shader_atomic_int64) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES), but its parent extension "
@@ -1160,7 +1160,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceShaderFloat16Int8Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderFloat16Int8Features-sType-sType
             VkPhysicalDeviceShaderFloat16Int8Features *structure = (VkPhysicalDeviceShaderFloat16Int8Features *) header;
-            if (!device_extensions.vk_khr_shader_float16_int8) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) && !device_extensions.vk_khr_shader_float16_int8) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES), but its parent extension "
@@ -1175,7 +1175,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceFloatControlsProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES: { // Covers VUID-VkPhysicalDeviceFloatControlsProperties-sType-sType
-            if (!device_extensions.vk_khr_shader_float_controls) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME)) && !device_extensions.vk_khr_shader_float_controls) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES), but its parent extension "
@@ -1188,7 +1188,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkDescriptorSetLayoutBindingFlagsCreateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO: { // Covers VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-sType-sType
             VkDescriptorSetLayoutBindingFlagsCreateInfo *structure = (VkDescriptorSetLayoutBindingFlagsCreateInfo *) header;
-            if (!device_extensions.vk_ext_descriptor_indexing) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) && !device_extensions.vk_ext_descriptor_indexing) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO), but its parent extension "
@@ -1202,7 +1202,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceDescriptorIndexingFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES: { // Covers VUID-VkPhysicalDeviceDescriptorIndexingFeatures-sType-sType
             VkPhysicalDeviceDescriptorIndexingFeatures *structure = (VkPhysicalDeviceDescriptorIndexingFeatures *) header;
-            if (!device_extensions.vk_ext_descriptor_indexing) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) && !device_extensions.vk_ext_descriptor_indexing) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES), but its parent extension "
@@ -1253,7 +1253,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceDescriptorIndexingProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDescriptorIndexingProperties-sType-sType
-            if (!device_extensions.vk_ext_descriptor_indexing) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) && !device_extensions.vk_ext_descriptor_indexing) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES), but its parent extension "
@@ -1266,7 +1266,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkDescriptorSetVariableDescriptorCountAllocateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO: { // Covers VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-sType-sType
             VkDescriptorSetVariableDescriptorCountAllocateInfo *structure = (VkDescriptorSetVariableDescriptorCountAllocateInfo *) header;
-            if (!device_extensions.vk_ext_descriptor_indexing) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) && !device_extensions.vk_ext_descriptor_indexing) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO), but its parent extension "
@@ -1279,7 +1279,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkDescriptorSetVariableDescriptorCountLayoutSupport structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT: { // Covers VUID-VkDescriptorSetVariableDescriptorCountLayoutSupport-sType-sType
-            if (!device_extensions.vk_ext_descriptor_indexing) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) && !device_extensions.vk_ext_descriptor_indexing) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT), but its parent extension "
@@ -1292,7 +1292,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkSubpassDescriptionDepthStencilResolve structure members
         case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE: { // Covers VUID-VkSubpassDescriptionDepthStencilResolve-sType-sType
             VkSubpassDescriptionDepthStencilResolve *structure = (VkSubpassDescriptionDepthStencilResolve *) header;
-            if (!device_extensions.vk_khr_depth_stencil_resolve) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) && !device_extensions.vk_khr_depth_stencil_resolve) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE), but its parent extension "
@@ -1314,7 +1314,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceDepthStencilResolveProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES: { // Covers VUID-VkPhysicalDeviceDepthStencilResolveProperties-sType-sType
-            if (!device_extensions.vk_khr_depth_stencil_resolve) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) && !device_extensions.vk_khr_depth_stencil_resolve) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES), but its parent extension "
@@ -1327,7 +1327,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceScalarBlockLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES: { // Covers VUID-VkPhysicalDeviceScalarBlockLayoutFeatures-sType-sType
             VkPhysicalDeviceScalarBlockLayoutFeatures *structure = (VkPhysicalDeviceScalarBlockLayoutFeatures *) header;
-            if (!device_extensions.vk_ext_scalar_block_layout) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) && !device_extensions.vk_ext_scalar_block_layout) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES), but its parent extension "
@@ -1341,7 +1341,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkImageStencilUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO: { // Covers VUID-VkImageStencilUsageCreateInfo-sType-sType
             VkImageStencilUsageCreateInfo *structure = (VkImageStencilUsageCreateInfo *) header;
-            if (!device_extensions.vk_ext_separate_stencil_usage) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) && !device_extensions.vk_ext_separate_stencil_usage) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO), but its parent extension "
@@ -1355,7 +1355,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkSamplerReductionModeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO: { // Covers VUID-VkSamplerReductionModeCreateInfo-sType-sType
             VkSamplerReductionModeCreateInfo *structure = (VkSamplerReductionModeCreateInfo *) header;
-            if (!device_extensions.vk_ext_sampler_filter_minmax) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) && !device_extensions.vk_ext_sampler_filter_minmax) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO), but its parent extension "
@@ -1368,7 +1368,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceSamplerFilterMinmaxProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES: { // Covers VUID-VkPhysicalDeviceSamplerFilterMinmaxProperties-sType-sType
-            if (!device_extensions.vk_ext_sampler_filter_minmax) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) && !device_extensions.vk_ext_sampler_filter_minmax) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES), but its parent extension "
@@ -1381,7 +1381,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceVulkanMemoryModelFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES: { // Covers VUID-VkPhysicalDeviceVulkanMemoryModelFeatures-sType-sType
             VkPhysicalDeviceVulkanMemoryModelFeatures *structure = (VkPhysicalDeviceVulkanMemoryModelFeatures *) header;
-            if (!device_extensions.vk_khr_vulkan_memory_model) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) && !device_extensions.vk_khr_vulkan_memory_model) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES), but its parent extension "
@@ -1399,7 +1399,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceImagelessFramebufferFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES: { // Covers VUID-VkPhysicalDeviceImagelessFramebufferFeatures-sType-sType
             VkPhysicalDeviceImagelessFramebufferFeatures *structure = (VkPhysicalDeviceImagelessFramebufferFeatures *) header;
-            if (!device_extensions.vk_khr_imageless_framebuffer) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) && !device_extensions.vk_khr_imageless_framebuffer) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES), but its parent extension "
@@ -1413,7 +1413,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkFramebufferAttachmentsCreateInfo structure members
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO: { // Covers VUID-VkFramebufferAttachmentsCreateInfo-sType-sType
             VkFramebufferAttachmentsCreateInfo *structure = (VkFramebufferAttachmentsCreateInfo *) header;
-            if (!device_extensions.vk_khr_imageless_framebuffer) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) && !device_extensions.vk_khr_imageless_framebuffer) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO), but its parent extension "
@@ -1439,7 +1439,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkRenderPassAttachmentBeginInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: { // Covers VUID-VkRenderPassAttachmentBeginInfo-sType-sType
             VkRenderPassAttachmentBeginInfo *structure = (VkRenderPassAttachmentBeginInfo *) header;
-            if (!device_extensions.vk_khr_imageless_framebuffer) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) && !device_extensions.vk_khr_imageless_framebuffer) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO), but its parent extension "
@@ -1453,7 +1453,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceUniformBufferStandardLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES: { // Covers VUID-VkPhysicalDeviceUniformBufferStandardLayoutFeatures-sType-sType
             VkPhysicalDeviceUniformBufferStandardLayoutFeatures *structure = (VkPhysicalDeviceUniformBufferStandardLayoutFeatures *) header;
-            if (!device_extensions.vk_khr_uniform_buffer_standard_layout) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) && !device_extensions.vk_khr_uniform_buffer_standard_layout) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES), but its parent extension "
@@ -1466,7 +1466,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES: { // Covers VUID-VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures-sType-sType
-            if (!device_extensions.vk_khr_shader_subgroup_extended_types) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)) && !device_extensions.vk_khr_shader_subgroup_extended_types) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES), but its parent extension "
@@ -1479,7 +1479,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES: { // Covers VUID-VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures-sType-sType
             VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *structure = (VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *) header;
-            if (!device_extensions.vk_khr_separate_depth_stencil_layouts) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) && !device_extensions.vk_khr_separate_depth_stencil_layouts) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES), but its parent extension "
@@ -1493,7 +1493,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkAttachmentReferenceStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT: { // Covers VUID-VkAttachmentReferenceStencilLayout-sType-sType
             VkAttachmentReferenceStencilLayout *structure = (VkAttachmentReferenceStencilLayout *) header;
-            if (!device_extensions.vk_khr_separate_depth_stencil_layouts) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) && !device_extensions.vk_khr_separate_depth_stencil_layouts) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT), but its parent extension "
@@ -1507,7 +1507,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkAttachmentDescriptionStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT: { // Covers VUID-VkAttachmentDescriptionStencilLayout-sType-sType
             VkAttachmentDescriptionStencilLayout *structure = (VkAttachmentDescriptionStencilLayout *) header;
-            if (!device_extensions.vk_khr_separate_depth_stencil_layouts) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) && !device_extensions.vk_khr_separate_depth_stencil_layouts) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT), but its parent extension "
@@ -1523,7 +1523,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceHostQueryResetFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES: { // Covers VUID-VkPhysicalDeviceHostQueryResetFeatures-sType-sType
             VkPhysicalDeviceHostQueryResetFeatures *structure = (VkPhysicalDeviceHostQueryResetFeatures *) header;
-            if (!device_extensions.vk_ext_host_query_reset) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) && !device_extensions.vk_ext_host_query_reset) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES), but its parent extension "
@@ -1537,7 +1537,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceTimelineSemaphoreFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: { // Covers VUID-VkPhysicalDeviceTimelineSemaphoreFeatures-sType-sType
             VkPhysicalDeviceTimelineSemaphoreFeatures *structure = (VkPhysicalDeviceTimelineSemaphoreFeatures *) header;
-            if (!device_extensions.vk_khr_timeline_semaphore) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) && !device_extensions.vk_khr_timeline_semaphore) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES), but its parent extension "
@@ -1550,7 +1550,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceTimelineSemaphoreProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES: { // Covers VUID-VkPhysicalDeviceTimelineSemaphoreProperties-sType-sType
-            if (!device_extensions.vk_khr_timeline_semaphore) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) && !device_extensions.vk_khr_timeline_semaphore) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES), but its parent extension "
@@ -1563,7 +1563,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkSemaphoreTypeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO: { // Covers VUID-VkSemaphoreTypeCreateInfo-sType-sType
             VkSemaphoreTypeCreateInfo *structure = (VkSemaphoreTypeCreateInfo *) header;
-            if (!device_extensions.vk_khr_timeline_semaphore) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) && !device_extensions.vk_khr_timeline_semaphore) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO), but its parent extension "
@@ -1576,7 +1576,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkTimelineSemaphoreSubmitInfo structure members
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO: { // Covers VUID-VkTimelineSemaphoreSubmitInfo-sType-sType
-            if (!device_extensions.vk_khr_timeline_semaphore) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) && !device_extensions.vk_khr_timeline_semaphore) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO), but its parent extension "
@@ -1589,7 +1589,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: { // Covers VUID-VkPhysicalDeviceBufferDeviceAddressFeatures-sType-sType
             VkPhysicalDeviceBufferDeviceAddressFeatures *structure = (VkPhysicalDeviceBufferDeviceAddressFeatures *) header;
-            if (!device_extensions.vk_khr_buffer_device_address) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) && !device_extensions.vk_khr_buffer_device_address) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES), but its parent extension "
@@ -1606,7 +1606,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkBufferOpaqueCaptureAddressCreateInfo structure members
         case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO: { // Covers VUID-VkBufferOpaqueCaptureAddressCreateInfo-sType-sType
-            if (!device_extensions.vk_khr_buffer_device_address) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) && !device_extensions.vk_khr_buffer_device_address) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO), but its parent extension "
@@ -1618,7 +1618,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkMemoryOpaqueCaptureAddressAllocateInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO: { // Covers VUID-VkMemoryOpaqueCaptureAddressAllocateInfo-sType-sType
-            if (!device_extensions.vk_khr_buffer_device_address) {
+            if ((!SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) && !device_extensions.vk_khr_buffer_device_address) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO), but its parent extension "
@@ -2215,7 +2215,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: { // Covers VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
             VkWriteDescriptorSetAccelerationStructureKHR *structure = (VkWriteDescriptorSetAccelerationStructureKHR *) header;
-            if (!device_extensions.vk_nv_ray_tracing) {
+            if ((!SupportedByPdev(physical_device, VK_NV_RAY_TRACING_EXTENSION_NAME)) && !device_extensions.vk_nv_ray_tracing) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR), but its parent extension "
@@ -2371,7 +2371,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkQueryPoolPerformanceQueryCreateInfoINTEL structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL: { // Covers VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-sType-sType
             VkQueryPoolPerformanceQueryCreateInfoINTEL *structure = (VkQueryPoolPerformanceQueryCreateInfoINTEL *) header;
-            if (!device_extensions.vk_intel_performance_query) {
+            if ((!SupportedByPdev(physical_device, VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME)) && !device_extensions.vk_intel_performance_query) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL), but its parent extension "
@@ -2449,7 +2449,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceBufferDeviceAddressFeaturesEXT-sType-sType
             VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *structure = (VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *) header;
-            if (!device_extensions.vk_ext_buffer_device_address) {
+            if ((!SupportedByPdev(physical_device, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) && !device_extensions.vk_ext_buffer_device_address) {
                 skip |= LogError(
                            instance, pnext_vuid,
                            "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT), but its parent extension "
