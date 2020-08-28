@@ -289,6 +289,7 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         }
     }
 
+    bool const is_3D = image_->createInfo.imageType == VK_IMAGE_TYPE_3D;
     for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
         subres_layers.mipLevel = mip_index;
         subres.mipLevel = mip_index;
@@ -310,7 +311,12 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
                 layout.rowPitch = static_cast<VkDeviceSize>(floor(subres_extent.width * texel_sizes_[aspect_index]));
                 layout.arrayPitch = layout.rowPitch * subres_extent.height;
                 layout.depthPitch = layout.arrayPitch;
-                layout.size = layout.arrayPitch * limits_.arrayLayer;
+                if (is_3D) {
+                    layout.size = layout.depthPitch * subres_extent.depth;
+                } else {
+                    // 2D arrays are not affected by MIP level extent reductions.
+                    layout.size = layout.arrayPitch * limits_.arrayLayer;
+                }
                 subres_layouts_.push_back(layout);
             }
         }
