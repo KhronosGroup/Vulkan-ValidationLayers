@@ -408,6 +408,11 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
             init_no_mem(dev,
                         create_info(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, queue_families));
     }
+    void init_as_storage(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
+        const std::vector<uint32_t> *queue_families = nullptr) {
+        init(dev, create_info(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, queue_families), reqs);
+    }
+
     void init_no_mem(const Device &dev, const VkBufferCreateInfo &info);
 
     // get the internal memory
