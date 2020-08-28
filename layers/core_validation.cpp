@@ -2858,8 +2858,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                     if ((cb_state->unprotected == true) && (protectedSubmit == true)) {
                         LogObjectList objlist(cb_state->commandBuffer);
                         objlist.add(queue);
-                        // TODO - This VUID will be relabeled VUID-VkSubmitInfo in future
-                        skip |= LogError(objlist, "VUID-VkProtectedSubmitInfo-protectedSubmit-01817",
+                        skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04148",
                                          "vkQueueSubmit(): command buffer %s is unprotected while queue %s pSubmits[%u] has "
                                          "VkProtectedSubmitInfo:protectedSubmit set to VK_TRUE",
                                          report_data->FormatHandle(cb_state->commandBuffer).c_str(),

@@ -1856,10 +1856,10 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         if (!valid_layout) {
             switch (type) {
                 case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01403";
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04149";
                     break;
                 case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01403";
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04150";
                     break;
                 case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
                     *error_code = "UNASSIGNED-VkWriteDescriptorSet-descriptorType";
