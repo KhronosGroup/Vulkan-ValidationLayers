@@ -522,6 +522,121 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     return;
 }
 
+TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    InitGpuAssistedFramework(false);
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
+        return;
+    }
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+        return;
+    }
+
+    m_device_extension_names.push_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+
+    auto robustness2_features = lvl_init_struct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&robustness2_features);
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (!robustness2_features.nullDescriptor) {
+        printf("%s nullDescriptor feature not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    features2.features.robustBufferAccess = VK_FALSE;
+    robustness2_features.robustBufferAccess2 = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBufferObj offset_buffer;
+    VkBufferObj write_buffer;
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    offset_buffer.init(*m_device, 4, reqs);
+    write_buffer.init_as_storage(*m_device, 16, reqs);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 4);
+    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+    static const char vertshader[] =
+        "#version 450\n"
+        "layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;\n"      // index[1]
+        "layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;\n"  // data[4]
+        "layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;\n"     // VK_NULL_HANDLE
+        "void main() {\n"
+        "   if (u_index.index[0] == 8)"
+        "       Data.data[u_index.index[0]] = 0xdeadca71;\n"
+        "   else if (u_index.index[0] == 0)\n"
+        "       Data.data[0] = u_index.index[4];\n"
+        "   else\n"
+        "       Data.data[0] = Null.data[40];\n"  // No error
+        "}\n";
+
+    VkShaderObj vs(m_device, vertshader, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    uint32_t index = 8;
+    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    *data = index;  // write buffer 4 uints, so 8 is OOB
+    offset_buffer.memory().unmap();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Descriptor size is 16 and highest byte accessed was 35");
+    m_commandBuffer->QueueCommandBuffer();
+    m_errorMonitor->VerifyFound();
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    data = (uint32_t *)offset_buffer.memory().map();
+    *data = 0;  // Now try OOB read
+    offset_buffer.memory().unmap();
+
+    // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
+    // so u_index.index[4] accesses bytes 64, 65, 66, and 67
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Descriptor size is 4 and highest byte accessed was 67");
+    m_commandBuffer->QueueCommandBuffer();
+    m_errorMonitor->VerifyFound();
+
+    data = (uint32_t *)offset_buffer.memory().map();
+    *data = 1;  // Now try NULL read
+    offset_buffer.memory().unmap();
+
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->QueueCommandBuffer();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     bool supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
