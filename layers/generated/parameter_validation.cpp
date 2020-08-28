@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 151;
+const uint32_t GeneratedVulkanHeaderVersion = 152;
 
 const DECORATE_UNUSED VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV;
 const DECORATE_UNUSED VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -11780,8 +11780,6 @@ bool StatelessValidation::PreCallValidateInitializePerformanceApiINTEL(
     if (pInitializeInfo != NULL)
     {
         skip |= validate_struct_pnext("vkInitializePerformanceApiINTEL", "pInitializeInfo->pNext", NULL, pInitializeInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkInitializePerformanceApiInfoINTEL-pNext-pNext", kVUIDUndefined);
-
-        skip |= validate_required_pointer("vkInitializePerformanceApiINTEL", "pInitializeInfo->pUserData", pInitializeInfo->pUserData, kVUIDUndefined);
     }
     return skip;
 }
@@ -11859,7 +11857,7 @@ bool StatelessValidation::PreCallValidateReleasePerformanceConfigurationINTEL(
     VkPerformanceConfigurationINTEL             configuration) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkReleasePerformanceConfigurationINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
-    skip |= validate_required_handle("vkReleasePerformanceConfigurationINTEL", "configuration", configuration);
+    // No xml-driven validation
     return skip;
 }
 
