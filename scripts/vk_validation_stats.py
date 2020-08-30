@@ -33,6 +33,7 @@ import re
 import sys
 import time
 import unicodedata
+import subprocess
 from collections import defaultdict
 
 verbose_mode = False
@@ -44,6 +45,7 @@ csv_filename = "validation_error_database.csv"
 html_filename = "validation_error_database.html"
 header_filename = "vk_validation_error_messages.h"
 vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
+spirvtools_path = None # default is to not search for repo
 
 # Hard-coded flags that could be command line args, if we decide that's useful
 ignore_unassigned = True # These are not found in layer code unless they appear explicitly (most don't), so produce false positives
@@ -69,12 +71,19 @@ unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
     'layers/object_lifetime_validation.h'
 ]]
 
+# These files should not change unless event there is a major refactoring in SPIR-V Tools
+# Paths are relative from root of SPIR-V Tools repo
+spirvtools_source_files = ["source/val/validation_state.cpp"]
+spirvtools_test_files = ["test/val/*.cpp"]
+
 def printHelp():
     print ("Usage:")
     print ("  python vk_validation_stats.py <json_file>")
     print ("                                [ -c ]")
     print ("                                [ -todo ]")
     print ("                                [ -vuid <vuid_name> ]")
+    print ("                                [ -unassigned ]")
+    print ("                                [ -spirvtools [ <path_to_spirv_tools_repo>] ]")
     print ("                                [ -text [ <text_out_filename>] ]")
     print ("                                [ -csv  [ <csv_out_filename>]  ]")
     print ("                                [ -html [ <html_out_filename>] ]")
@@ -87,20 +96,22 @@ def printHelp():
     print ("  and generates coverage values by comparing against the full set of valid")
     print ("  usage identifiers in the Vulkan-Headers registry file 'validusage.json'")
     print ("\nArguments: ")
-    print (" <json-file>       (required) registry file 'validusage.json'")
-    print (" -c                report consistency warnings")
-    print (" -todo             report unimplemented VUIDs")
-    print (" -vuid <vuid_name> report status of individual VUID <vuid_name>")
-    print (" -unassigned       report unassigned VUIDs")
-    print (" -text [filename]  output the error database text to <text_database_filename>,")
-    print ("                   defaults to 'validation_error_database.txt'")
-    print (" -csv [filename]   output the error database in csv to <csv_database_filename>,")
-    print ("                   defaults to 'validation_error_database.csv'")
-    print (" -html [filename]  output the error database in html to <html_database_filename>,")
-    print ("                   defaults to 'validation_error_database.html'")
-    print (" -export_header    export a new VUID error text header file to <%s>" % header_filename)
-    print (" -summary          output summary of VUID coverage")
-    print (" -verbose          show your work (to stdout)")
+    print (" <json-file>        (required) registry file 'validusage.json'")
+    print (" -c                 report consistency warnings")
+    print (" -todo              report unimplemented VUIDs")
+    print (" -vuid <vuid_name>  report status of individual VUID <vuid_name>")
+    print (" -unassigned        report unassigned VUIDs")
+    print (" -spirvtools [path] when pointed to root directory of SPIRV-Tools repo, will search")
+    print ("                    the repo for VUs that are implemented there")
+    print (" -text [filename]   output the error database text to <text_database_filename>,")
+    print ("                    defaults to 'validation_error_database.txt'")
+    print (" -csv [filename]    output the error database in csv to <csv_database_filename>,")
+    print ("                    defaults to 'validation_error_database.csv'")
+    print (" -html [filename]   output the error database in html to <html_database_filename>,")
+    print ("                    defaults to 'validation_error_database.html'")
+    print (" -export_header     export a new VUID error text header file to <%s>" % header_filename)
+    print (" -summary           output summary of VUID coverage")
+    print (" -verbose           show your work (to stdout)")
 
 class ValidationJSON:
     def __init__(self, filename):
@@ -227,12 +238,16 @@ class ValidationSource:
         self.unassigned_vuids = set()
         self.all_vuids = set()
 
-    def parse(self):
+    def parse(self, spirv_val):
         kvuid_dict = buildKvuidDict()
+
+        if spirv_val and spirv_val.enabled:
+            self.source_files.extend(spirv_val.source_files)
 
         # build self.vuid_count_dict
         prepend = None
         for sf in self.source_files:
+            spirv_file = True if spirv_val.enabled and sf.startswith(spirv_val.repo_path) else False
             line_num = 0
             with open(sf, encoding='utf-8') as f:
                 for line in f:
@@ -265,18 +280,25 @@ class ValidationSource:
                                 self.vuid_count_dict[vuid] = {}
                                 self.vuid_count_dict[vuid]['count'] = 1
                                 self.vuid_count_dict[vuid]['file_line'] = []
+                                self.vuid_count_dict[vuid]['spirv'] = False # default
                             else:
                                 if self.vuid_count_dict[vuid]['count'] == 1:    # only count first time duplicated
                                     self.duplicated_checks = self.duplicated_checks + 1
                                 self.vuid_count_dict[vuid]['count'] = self.vuid_count_dict[vuid]['count'] + 1
                             self.vuid_count_dict[vuid]['file_line'].append('%s,%d' % (sf, line_num))
+                            if spirv_file:
+                                self.vuid_count_dict[vuid]['spirv'] = True
         # Sort vuids by type
         for vuid in self.vuid_count_dict.keys():
             if (vuid.startswith('VUID-')):
                 if (vuid[-5:-1].isdecimal()):
                     self.explicit_vuids.add(vuid)    # explicit end in 5 numeric chars
+                    if self.vuid_count_dict[vuid]['spirv']:
+                        spirv_val.source_explicit_vuids.add(vuid)
                 else:
                     self.implicit_vuids.add(vuid)
+                    if self.vuid_count_dict[vuid]['spirv']:
+                        spirv_val.source_implicit_vuids.add(vuid)
             elif (vuid.startswith('UNASSIGNED-')):
                 self.unassigned_vuids.add(vuid)
             else:
@@ -284,6 +306,8 @@ class ValidationSource:
                 print("Confused while parsing VUIDs in layer source code - cannot proceed. (FIXME)")
                 exit(-1)
         self.all_vuids = self.explicit_vuids | self.implicit_vuids | self.unassigned_vuids
+        if spirv_file:
+            spirv_val.source_all_vuids = spirv_val.source_explicit_vuids | spirv_val.source_implicit_vuids
 
 # Class to parse the validation layer test source and store testnames
 class ValidationTests:
@@ -300,14 +324,18 @@ class ValidationTests:
         self.vuid_to_tests = defaultdict(set) # Map VUIDs to set of test names where implemented
 
     # Parse test files into internal data struct
-    def parse(self):
+    def parse(self, spirv_val):
         kvuid_dict = buildKvuidDict()
+
+        if spirv_val and spirv_val.enabled:
+            self.test_files.extend(spirv_val.test_files)
 
         # For each test file, parse test names into set
         grab_next_line = False # handle testname on separate line than wildcard
         testname = ''
         prepend = None
         for test_file in self.test_files:
+            spirv_file = True if spirv_val.enabled and test_file.startswith(spirv_val.repo_path) else False
             with open(test_file) as tf:
                 for line in tf:
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
@@ -348,8 +376,12 @@ class ValidationTests:
                                 if (vuid_str.startswith('VUID-')):
                                     if (vuid_str[-5:-1].isdecimal()):
                                         self.explicit_vuids.add(vuid_str)    # explicit end in 5 numeric chars
+                                        if spirv_file:
+                                            spirv_val.test_explicit_vuids.add(vuid_str)
                                     else:
                                         self.implicit_vuids.add(vuid_str)
+                                        if spirv_file:
+                                            spirv_val.test_implicit_vuids.add(vuid_str)
                                 elif (vuid_str.startswith('UNASSIGNED-')):
                                     self.unassigned_vuids.add(vuid_str)
                                 else:
@@ -426,10 +458,11 @@ class Consistency:
 # Class to output database in various flavors
 #
 class OutputDatabase:
-    def __init__(self, val_json, val_source, val_tests):
+    def __init__(self, val_json, val_source, val_tests, spirv_val):
         self.vj = val_json
         self.vs = val_source
         self.vt = val_tests
+        self.sv = spirv_val
         self.header_version = "/* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */"
         self.header_version += "\n/* Vulkan specification version: %s */" % val_json.apiversion
         self.header_preamble = """
@@ -475,7 +508,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
         print("\n Dumping database to text file: %s" % txt_filename)
         with open (txt_filename, 'w') as txt:
             txt.write("## VUID Database\n")
-            txt.write("## Format: VUID_NAME | CHECKED | TEST | TYPE | API/STRUCT | EXTENSION | VUID_TEXT\n##\n")
+            txt.write("## Format: VUID_NAME | CHECKED | SPIRV-TOOL | TEST | TYPE | API/STRUCT | EXTENSION | VUID_TEXT\n##\n")
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
@@ -483,11 +516,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 db_list.sort(key=operator.itemgetter('ext')) # sort list to ease diffs of output file
                 for db_entry in db_list:
                     checked = 'N'
+                    spirv = 'N'
                     if vuid in self.vs.all_vuids:
                         if only_unimplemented:
                             continue
                         else:
                             checked = 'Y'
+                            if vuid in self.sv.source_all_vuids:
+                                spirv = 'Y'
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
                         test_list = list(self.vt.vuid_to_tests[vuid])
@@ -495,13 +531,13 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                         sep = ', '
                         test = sep.join(test_list)
 
-                    txt.write("%s | %s | %s | %s | %s | %s | %s\n" % (vuid, checked, test, db_entry['type'], db_entry['api'], db_entry['ext'], db_entry['text']))
+                    txt.write("%s | %s | %s | %s | %s | %s | %s | %s\n" % (vuid, checked, test, spirv, db_entry['type'], db_entry['api'], db_entry['ext'], db_entry['text']))
 
     def dump_csv(self, only_unimplemented = False):
         print("\n Dumping database to csv file: %s" % csv_filename)
         with open (csv_filename, 'w', newline='') as csvfile:
             cw = csv.writer(csvfile)
-            cw.writerow(['VUID_NAME','CHECKED','TEST','TYPE','API/STRUCT','EXTENSION','VUID_TEXT'])
+            cw.writerow(['VUID_NAME','CHECKED','SPIRV-TOOL', 'TEST','TYPE','API/STRUCT','EXTENSION','VUID_TEXT'])
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             for vuid in vuid_list:
@@ -511,9 +547,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                         if only_unimplemented:
                             continue
                         else:
-                            row.append('Y')
+                            row.append('Y') # checked
+                            if vuid in self.sv.source_all_vuids:
+                                row.append('Y') # spirv-tool
+                            else:
+                                row.append('N') # spirv-tool
+
                     else:
-                        row.append('N')
+                        row.append('N') # checked
+                        row.append('N') # spirv-tool
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
                         sep = ', '
@@ -528,7 +570,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     def dump_html(self, only_unimplemented = False):
         print("\n Dumping database to html file: %s" % html_filename)
         preamble = '<!DOCTYPE html>\n<html>\n<head>\n<style>\ntable, th, td {\n border: 1px solid black;\n border-collapse: collapse; \n}\n</style>\n<body>\n<h2>Valid Usage Database</h2>\n<font size="2" face="Arial">\n<table style="width:100%">\n'
-        headers = '<tr><th>VUID NAME</th><th>CHECKED</th><th>TEST</th><th>TYPE</th><th>API/STRUCT</th><th>EXTENSION</th><th>VUID TEXT</th></tr>\n'
+        headers = '<tr><th>VUID NAME</th><th>CHECKED</th><th>SPIRV-TOOL</th><th>TEST</th><th>TYPE</th><th>API/STRUCT</th><th>EXTENSION</th><th>VUID TEXT</th></tr>\n'
         with open (html_filename, 'w') as hfile:
             hfile.write(preamble)
             hfile.write(headers)
@@ -537,13 +579,17 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             for vuid in vuid_list:
                 for db_entry in self.vj.vuid_db[vuid]:
                     checked = '<span style="color:red;">N</span>'
+                    spirv = ''
                     if vuid in self.vs.all_vuids:
                         if only_unimplemented:
                             continue
                         else:
                             checked = '<span style="color:limegreen;">Y</span>'
+                            if vuid in self.sv.source_all_vuids:
+                                spirv = 'Y'
                     hfile.write('<tr><th>%s</th>' % vuid)
                     hfile.write('<th>%s</th>' % checked)
+                    hfile.write('<th>%s</th>' % spirv)
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
                         sep = ', '
@@ -684,11 +730,49 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             vuid_vector_string = '#define VUID_MUST_BE_RECORDING_LIST\\\n' + ',\\\n'.join(cmd_vuid_vector) + '\n'
             hfile.write(vuid_vector_string)
 
+class SpirvValidation:
+    def __init__(self, repo_path):
+        self.enabled = (repo_path != None)
+        self.repo_path = repo_path
+        self.version = 'unknown'
+        self.source_files = []
+        self.test_files = []
+        self.source_explicit_vuids = set()
+        self.source_implicit_vuids = set()
+        self.source_all_vuids = set()
+        self.test_explicit_vuids = set()
+        self.test_implicit_vuids = set()
+
+    def load(self, verbose):
+        if self.enabled == False:
+            return
+        # Get hash from git if available
+        try:
+            git_dir = os.path.join(self.repo_path, '.git')
+            process = subprocess.Popen(['git', '--git-dir='+git_dir ,'rev-parse', 'HEAD'], shell=False, stdout=subprocess.PIPE)
+            self.version = process.communicate()[0].strip().decode('utf-8')[:7]
+            if process.poll() != 0:
+                throw
+            elif verbose:
+                print('Found SPIR-V Tools version %s' % self.version)
+        except:
+            # leave as default
+            if verbose:
+                print('Could not find .git file for version of SPIR-V tools, marking as %s' % self.version)
+
+        # Find and parse files with VUIDs in source
+        for path in spirvtools_source_files:
+            self.source_files.extend(glob.glob(os.path.join(self.repo_path, path)))
+        for path in spirvtools_test_files:
+            self.test_files.extend(glob.glob(os.path.join(self.repo_path, path)))
+
+
 def main(argv):
     global verbose_mode
     global txt_filename
     global csv_filename
     global html_filename
+    global spirvtools_path
 
     run_consistency = False
     report_unimplemented = False
@@ -719,6 +803,9 @@ def main(argv):
             report_unimplemented = True
         elif (arg == '-unassigned'):
             report_unassigned = True
+        elif (arg == '-spirvtools'):
+            spirvtools_path = argv[i]
+            i = i + 1
         elif (arg == '-text'):
             txt_out = True
             # Set filename if supplied, else use default
@@ -753,6 +840,10 @@ def main(argv):
 
     result = 0 # Non-zero result indicates an error case
 
+    # Load in SPIRV-Tools if passed in
+    spirv_val = SpirvValidation(spirvtools_path)
+    spirv_val.load(verbose_mode)
+
     # Parse validusage json
     val_json = ValidationJSON(json_filename)
     val_json.read()
@@ -772,35 +863,56 @@ def main(argv):
 
     # Parse layer source files
     val_source = ValidationSource(layer_source_files)
-    val_source.parse()
+    val_source.parse(spirv_val)
     exp_checks = len(val_source.explicit_vuids)
     imp_checks = len(val_source.implicit_vuids)
     all_checks = len(val_source.vuid_count_dict.keys())
+    spirv_exp_checks = len(spirv_val.source_explicit_vuids) if spirv_val.enabled else 0
+    spirv_imp_checks = len(spirv_val.source_implicit_vuids) if spirv_val.enabled else 0
+    spirv_all_checks = (spirv_exp_checks + spirv_imp_checks) if spirv_val.enabled else 0
     if verbose_mode:
         print("Found %d unique vuid checks in layer source code." % all_checks)
         print("  %d explicit" % exp_checks)
+        if spirv_val.enabled:
+            print("    SPIR-V Tool make up %d" % spirv_exp_checks)
         print("  %d implicit" % imp_checks)
+        if spirv_val.enabled:
+            print("    SPIR-V Tool make up %d" % spirv_imp_checks)
         print("  %d unassigned" % len(val_source.unassigned_vuids))
         print("  %d checks are implemented more that once" % val_source.duplicated_checks)
 
     # Parse test files
     val_tests = ValidationTests(test_source_files)
-    val_tests.parse()
+    val_tests.parse(spirv_val)
     exp_tests = len(val_tests.explicit_vuids)
     imp_tests = len(val_tests.implicit_vuids)
     all_tests = len(val_tests.all_vuids)
+    spirv_exp_tests = len(spirv_val.test_explicit_vuids) if spirv_val.enabled else 0
+    spirv_imp_tests = len(spirv_val.test_implicit_vuids) if spirv_val.enabled else 0
+    spirv_all_tests = (spirv_exp_tests + spirv_imp_tests) if spirv_val.enabled else 0
     if verbose_mode:
         print("Found %d unique error vuids in test source code." % all_tests)
         print("  %d explicit" % exp_tests)
+        if spirv_val.enabled:
+            print("    From SPIRV-Tools: %d" % spirv_exp_tests)
         print("  %d implicit" % imp_tests)
+        if spirv_val.enabled:
+            print("    From SPIRV-Tools: %d" % spirv_imp_tests)
         print("  %d unassigned" % len(val_tests.unassigned_vuids))
 
     # Process stats
     if show_summary:
-        print("\nValidation Statistics (using validusage.json version %s)" % val_json.apiversion)
+        if spirv_val.enabled:
+            print("\nValidation Statistics (using validusage.json version %s and SPIRV-Tools version %s)" % (val_json.apiversion, spirv_val.version))
+        else:
+            print("\nValidation Statistics (using validusage.json version %s)" % val_json.apiversion)
         print("  VUIDs defined in JSON file:  %04d explicit, %04d implicit, %04d total." % (exp_json, imp_json, all_json))
         print("  VUIDs checked in layer code: %04d explicit, %04d implicit, %04d total." % (exp_checks, imp_checks, all_checks))
+        if spirv_val.enabled:
+            print("             From SPIRV-Tools: %04d explicit, %04d implicit, %04d total." % (spirv_exp_checks, spirv_imp_checks, spirv_all_checks))
         print("  VUIDs tested in layer tests: %04d explicit, %04d implicit, %04d total." % (exp_tests, imp_tests, all_tests))
+        if spirv_val.enabled:
+            print("             From SPIRV-Tools: %04d explicit, %04d implicit, %04d total." % (spirv_exp_tests, spirv_imp_tests, spirv_all_tests))
 
         print("\nVUID check coverage")
         print("  Explicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * exp_checks / exp_json), exp_checks, exp_json))
@@ -879,7 +991,7 @@ def main(argv):
             print("  OK! No inconsistencies found.")
 
     # Output database in requested format(s)
-    db_out = OutputDatabase(val_json, val_source, val_tests)
+    db_out = OutputDatabase(val_json, val_source, val_tests, spirv_val)
     if txt_out:
         db_out.dump_txt(report_unimplemented)
     if csv_out:
