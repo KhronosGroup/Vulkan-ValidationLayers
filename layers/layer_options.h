@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
+ * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
 #include "chassis.h"
@@ -48,6 +49,7 @@ static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkVal
      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT},
+    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT},
 };
 
 static const std::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {

@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
+ * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
 #include "layer_options.h"
@@ -103,6 +104,10 @@ void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFe
             break;
         case VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT:
             enable_data[debug_printf] = true;
+            break;
+        case VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT:
+            enable_data[sync_validation] = true;
+            break;
         default:
             break;
     }
