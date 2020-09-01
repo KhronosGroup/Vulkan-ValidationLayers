@@ -462,12 +462,12 @@ class VkImageObj : public vk_testing::Image {
 
     VkImageView targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0,
                            uint32_t levelCount = VK_REMAINING_MIP_LEVELS, uint32_t baseArrayLayer = 0,
-                           uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS) {
+                           uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D) {
         if (!m_targetView.initialized()) {
             VkImageViewCreateInfo createView = {};
             createView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             createView.image = handle();
-            createView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            createView.viewType = type;
             createView.format = format;
             createView.components.r = VK_COMPONENT_SWIZZLE_R;
             createView.components.g = VK_COMPONENT_SWIZZLE_G;

@@ -389,6 +389,7 @@ struct OneOffDescriptorSet {
                         int buffer_info_size = 10, int image_info_size = 10, int buffer_view_size = 10);
     ~OneOffDescriptorSet();
     bool Initialized();
+    void Clear();
     void WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize size,
                                    VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uint32_t count = 1);
     void WriteDescriptorBufferView(int binding, VkBufferView &buffer_view,
