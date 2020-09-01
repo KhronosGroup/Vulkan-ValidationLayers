@@ -101,13 +101,13 @@ Synchronization Validation is disabled by default. To turn on Synchronization Va
 `vk_layer_settings.txt`:
 
 ```code
-khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION
+khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
 ```
 
 To enable using environment variables, set the following variable:
 
 ```code
-VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION
+VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
 ```
 
 Some platforms do not support configuration of the validation layers with this configuration file.
@@ -122,7 +122,7 @@ The `VK_EXT_validation_features` extension can be used to enable Synchronization
 Here is sample code illustrating how to enable it:
 
 ```code
-VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION};
+VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
 VkValidationFeaturesEXT features = {};
 features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
 features.enabledValidationFeatureCount = 1;

@@ -106,6 +106,8 @@
 #      validation
 #      VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT - enables processing of
 #      debug printf instructions in shaders and sending debug strings to the debug callback
+#      VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT - enables checks to
+#      identify resource access conflicts due to missing or incorrect synchronization
 #
 #   CUSTOM_STYPE_LIST:
 #   ==================
