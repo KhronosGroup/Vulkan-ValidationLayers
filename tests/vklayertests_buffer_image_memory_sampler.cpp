@@ -12013,6 +12013,113 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
     DestroySwapchain();
 }
 
+TEST_F(VkLayerTest, VerityUnnormalizedCoordinatesSampler) {
+    TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, the imageview has to be some specific types");
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_errorMonitor->ExpectSuccess();
+
+    const char vsSource[] =
+        "#version 450\n"
+        // VK_DESCRIPTOR_TYPE_SAMPLER
+        "layout(set = 0, binding = 1) uniform sampler s1;\n"
+
+        // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+        "layout(set = 0, binding = 2) uniform texture2D si2;\n"
+        "layout(set = 0, binding = 3) uniform texture3D si3[2];\n"
+
+        // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        "layout(set = 0, binding = 4) uniform sampler3D ci4;\n"
+        "layout(set = 0, binding = 5) uniform sampler2D ci5[2];\n"
+
+        "void main() {\n"
+        "   vec4 x = texture(sampler2D(si2, s1), vec2(0));\n"
+        "   x = texture(sampler3D(si3[1], s1), vec3(0));\n"
+        "   x = texture(ci4, vec3(0));\n"
+        "   x = texture(ci5[1], vec2(0));\n"
+        "}\n";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    const char fsSource[] =
+        "#version 450\n"
+        "layout (set = 0, binding = 5) uniform sampler2D tex[2];\n"
+        "layout (set = 0, binding = 6) uniform sampler2DShadow tex_dep[2];\n"
+        "void main() {\n"
+        // sampler uses OpImageSample* or OpImageSparseSample* instructions with ImplicitLod, Dref or Proj in their name to cause
+        // DesiredFailure.
+        "   float f = texture(tex_dep[0], vec3(0));\n"
+        // sampler uses OpImageSample* or OpImageSparseSample* instructions that incudes a bias or offset to cause
+        // DesiredFailure.
+        "   vec4 x = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));\n"
+        "}\n";
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                            {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                            {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                            {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                            {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL_GRAPHICS, nullptr},
+                            {6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.InitState();
+    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(image_ci);
+    ASSERT_TRUE(image.initialized());
+    VkImageView view_pass = image.targetView(format);
+
+    VkImageObj image_3d(m_device);
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_3d.Init(image_ci);
+    ASSERT_TRUE(image_3d.initialized());
+
+    // If the sampler is unnormalizedCoordinates, the imageview type shouldn't be 3D, CUBE, 1D_ARRAY, 2D_ARRAY, CUBE_ARRAY.
+    // This causes DesiredFailure.
+    VkImageView view_fail = image_3d.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                                VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_3D);
+
+    VkSampler sampler;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.maxLod = 0;
+    ASSERT_VK_SUCCESS(vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler));
+
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(2, view_pass, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(3, view_fail, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(4, view_fail, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(5, view_pass, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(6, view_pass, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
+    g_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02702");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02702");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02703");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02704");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_BUFFER_MARKER_EXTENSION_NAME)) {

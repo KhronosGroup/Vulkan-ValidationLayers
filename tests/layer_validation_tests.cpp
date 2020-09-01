@@ -1333,6 +1333,13 @@ OneOffDescriptorSet::~OneOffDescriptorSet() {
 
 bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
 
+void OneOffDescriptorSet::Clear() {
+    buffer_infos.clear();
+    image_infos.clear();
+    buffer_views.clear();
+    descriptor_writes.clear();
+}
+
 void OneOffDescriptorSet::WriteDescriptorBufferInfo(int blinding, VkBuffer buffer, VkDeviceSize size,
                                                     VkDescriptorType descriptorType, uint32_t count) {
     const auto index = buffer_infos.size();
