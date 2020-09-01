@@ -570,7 +570,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     VkBufferCreateInfo bci = {};
     bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 8;
+    bci.size = 12;  // 64 bit pointer + int
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
     VkBufferObj buffer0;
