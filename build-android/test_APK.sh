@@ -148,6 +148,8 @@ sleep 2
 
 # Clear the log
 adb $serialFlag logcat -c
+# Ensure log is complete
+adb $serialFlag logcat -P ""
 
 # Ensure any previous activity has stopped, otherwise it won't run tests
 adb $serialFlag shell am force-stop com.example.VulkanLayerValidationTests
