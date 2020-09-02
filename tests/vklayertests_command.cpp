@@ -7230,12 +7230,13 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    // push constant range: 0 - 100
     char const *const vsSource =
         "#version 450\n"
         "\n"
         "layout(push_constant, std430) uniform foo {\n"
         "   bool b;\n"
-        "   float f2[2];\n"
+        "   float f2[3];\n"
         "   vec3 v;\n"
         "   vec4 v2[2];\n"
         "   mat3 m;\n"
@@ -7244,13 +7245,21 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
         "   gl_Position = constants.v2[0];\n"
         "}\n";
 
+    // push constant range: 0 - 96
     char const *const fsSource =
         "#version 450\n"
         "\n"
-        "layout(push_constant, std430) uniform foo { float x[8]; } constants;\n"
+        "struct foo1{\n"
+        "   int i[4];"
+        "};\n"
+        "layout(push_constant, std430) uniform foo {\n"
+        "   float x[2][2][2];\n"
+        "   foo1 s;\n"
+        "   foo1 ss[3];\n"
+        "} constants;\n"
         "layout(location=0) out vec4 o;\n"
         "void main(){\n"
-        "   o = vec4(constants.x[0]);\n"
+        "   o = vec4(constants.x[0][0][0]);\n"
         "}\n";
 
     VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
