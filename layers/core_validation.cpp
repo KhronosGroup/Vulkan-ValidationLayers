@@ -1188,6 +1188,9 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         } else {
             uint32_t index = 0;
             for (const auto &used : pPipe->push_constant_used_in_shader) {
+                if (index >= cb_node->push_constant_data_set.size()) {
+                    break;
+                }
                 if (used == 1 && cb_node->push_constant_data_set[index] == 0) {
                     LogObjectList objlist(cb_node->commandBuffer);
                     objlist.add(pipeline_layout->layout);

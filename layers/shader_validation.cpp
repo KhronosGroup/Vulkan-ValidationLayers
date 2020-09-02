@@ -1079,58 +1079,74 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
     return out;
 }
 
+void SetStructMemberPushConstant(const SHADER_MODULE_STATE &src, spirv_inst_iter &type,
+                                 std::vector<uint8_t> &push_constant_used_in_shader, const uint32_t struct_offset,
+                                 const uint32_t struct_len) {
+    type = GetStructType(&src, type, false);
+    assert(type != src.end());
+
+    std::vector<uint32_t> struct_member;
+    for (uint32_t i = 2; i < type.len(); ++i) {
+        struct_member.emplace_back(type.word(i));
+    }
+    uint32_t struct_member_index = 0;
+
+    for (auto insn : src) {
+        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
+            if (insn.word(3) == spv::DecorationOffset) {
+                auto def_member = src.get_def(struct_member[struct_member_index]);
+                auto const offset = struct_offset + insn.word(4);
+                auto size = struct_len;
+
+                // Array could be multi-dimensional
+                while (def_member.opcode() == spv::OpTypeArray) {
+                    const auto len_id = def_member.word(3);
+                    const auto def_len = src.get_def(len_id);
+                    size *= def_len.word(3);  // array length
+                    def_member = src.get_def(def_member.word(2));
+                }
+
+                if (def_member.opcode() == spv::OpTypeStruct || def_member.opcode() == spv::OpTypePointer) {
+                    // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
+                    SetStructMemberPushConstant(src, def_member, push_constant_used_in_shader, offset, size);
+
+                } else {
+                    if (def_member.opcode() == spv::OpTypeMatrix) {
+                        size *= def_member.word(3);  // matrix's columns. matrix's row is vector.
+                        def_member = src.get_def(def_member.word(2));
+                    }
+
+                    if (def_member.opcode() == spv::OpTypeVector) {
+                        size *= def_member.word(3);  // vector length
+                        def_member = src.get_def(def_member.word(2));
+                    }
+
+                    // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
+                    size *= (def_member.word(2) / 8);
+
+                    auto const end = offset + size;
+
+                    if (push_constant_used_in_shader.size() < end) {
+                        push_constant_used_in_shader.resize(end, 0);
+                    }
+                    std::memset(push_constant_used_in_shader.data() + offset, 1, static_cast<std::size_t>(size));
+                }
+                ++struct_member_index;
+                if (struct_member_index == struct_member.size()) {
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &src, const std::unordered_set<uint32_t> &accessible_ids,
                                  std::vector<uint8_t> &push_constant_used_in_shader) {
     for (auto id : accessible_ids) {
         auto def_insn = src.get_def(id);
         if (def_insn.opcode() == spv::OpVariable && def_insn.word(3) == spv::StorageClassPushConstant) {
             spirv_inst_iter type = src.get_def(def_insn.word(1));
-            type = GetStructType(&src, type, false);
-            assert(type != src.end());
-
-            std::vector<uint32_t> struct_member;
-            for (uint32_t i = 2; i < type.len(); ++i) {
-                struct_member.emplace_back(type.word(i));
-            }
-            uint32_t struct_member_index = 0;
-
-            for (auto insn : src) {
-                if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
-                    if (insn.word(3) == spv::DecorationOffset) {
-                        auto def_member = src.get_def(struct_member[struct_member_index]);
-                        auto size = 1;
-
-                        if (def_member.opcode() == spv::OpTypeArray) {
-                            const auto len_id = def_member.word(3);
-                            const auto def_len = src.get_def(len_id);
-                            size *= def_len.word(3);  // array length
-                            def_member = src.get_def(def_member.word(2));
-                        }
-
-                        if (def_member.opcode() == spv::OpTypeMatrix) {
-                            size *= def_member.word(3);  // matrix's columns. matrix's row is vector.
-                            def_member = src.get_def(def_member.word(2));
-                        }
-
-                        if (def_member.opcode() == spv::OpTypeVector) {
-                            size *= def_member.word(3);  // vector length
-                            def_member = src.get_def(def_member.word(2));
-                        }
-
-                        // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
-                        size *= (def_member.word(2) / 8);
-
-                        auto const offset = insn.word(4);
-                        auto const end = offset + size;
-
-                        if (push_constant_used_in_shader.size() < end) {
-                            push_constant_used_in_shader.resize(end, 0);
-                        }
-                        std::memset(push_constant_used_in_shader.data() + offset, 1, static_cast<std::size_t>(size));
-                        ++struct_member_index;
-                    }
-                }
-            }
+            SetStructMemberPushConstant(src, type, push_constant_used_in_shader, 0, 1);
         }
     }
 }
@@ -1538,7 +1554,8 @@ std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, s
 
 bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushConstantRange> const *push_constant_ranges,
                                                           SHADER_MODULE_STATE const *src, spirv_inst_iter type,
-                                                          VkShaderStageFlagBits stage) const {
+                                                          VkShaderStageFlagBits stage, const uint32_t struct_offset,
+                                                          const uint32_t struct_len) const {
     bool skip = false;
 
     // Strip off ptrs etc
@@ -1556,45 +1573,56 @@ bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushCons
         if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
             if (insn.word(3) == spv::DecorationOffset) {
                 auto def_member = src->get_def(struct_member[struct_member_index]);
-                auto size = 1;
+                auto const offset = struct_offset + insn.word(4);
+                auto size = struct_len;
 
-                if (def_member.opcode() == spv::OpTypeArray) {
+                // Array could be multi-dimensional
+                while (def_member.opcode() == spv::OpTypeArray) {
                     const auto len_id = def_member.word(3);
                     const auto def_len = src->get_def(len_id);
                     size *= def_len.word(3);  // array length
                     def_member = src->get_def(def_member.word(2));
                 }
 
-                if (def_member.opcode() == spv::OpTypeMatrix) {
-                    size *= def_member.word(3);  // matrix's columns. matrix's row is vector.
-                    def_member = src->get_def(def_member.word(2));
-                }
+                if (def_member.opcode() == spv::OpTypeStruct || def_member.opcode() == spv::OpTypePointer) {
+                    // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
+                    ValidatePushConstantBlockAgainstPipeline(push_constant_ranges, src, def_member, stage, offset, size);
 
-                if (def_member.opcode() == spv::OpTypeVector) {
-                    size *= def_member.word(3);  // vector length
-                }
+                } else {
+                    if (def_member.opcode() == spv::OpTypeMatrix) {
+                        size *= def_member.word(3);  // matrix's columns. matrix's row is vector.
+                        def_member = src->get_def(def_member.word(2));
+                    }
 
-                // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
-                size *= (def_member.word(2) / 8);
+                    if (def_member.opcode() == spv::OpTypeVector) {
+                        size *= def_member.word(3);  // vector length
+                        def_member = src->get_def(def_member.word(2));
+                    }
 
-                auto const member = insn.word(2);
-                auto const offset = insn.word(4);
+                    // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
+                    size *= (def_member.word(2) / 8);
 
-                bool found_range = false;
-                for (auto const &range : *push_constant_ranges) {
-                    if ((range.offset <= offset) && ((range.offset + range.size) >= (offset + size)) &&
-                        (range.stageFlags & stage)) {
-                        found_range = true;
+                    auto const member = insn.word(2);
 
-                        break;
+                    bool found_range = false;
+                    for (auto const &range : *push_constant_ranges) {
+                        if ((range.offset <= offset) && ((range.offset + range.size) >= (offset + size)) &&
+                            (range.stageFlags & stage)) {
+                            found_range = true;
+
+                            break;
+                        }
+                    }
+
+                    if (!found_range) {
+                        skip |= LogError(device, kVUID_Core_Shader_PushConstantOutOfRange,
+                                         "Shader push-constant buffer member %u at offset %u is not declared in pipeline layout",
+                                         member, offset);
                     }
                 }
                 ++struct_member_index;
-
-                if (!found_range) {
-                    skip |= LogError(device, kVUID_Core_Shader_PushConstantOutOfRange,
-                                     "Shader push-constant buffer member %u at offset %u is not declared in pipeline layout",
-                                     member, offset);
+                if (struct_member_index == struct_member.size()) {
+                    break;
                 }
             }
         }
