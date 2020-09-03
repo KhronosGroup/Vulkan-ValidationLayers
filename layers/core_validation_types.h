@@ -597,9 +597,6 @@ struct RENDER_PASS_STATE : public BASE_NODE {
 
     VkRenderPass renderPass;
     safe_VkRenderPassCreateInfo2 createInfo;
-    bool multiview_supported;
-    std::vector<int32_t> mv_view_offsets;
-    std::vector<uint32_t> mv_view_masks;
     std::vector<std::vector<uint32_t>> self_dependencies;
     std::vector<DAGNode> subpassToNode;
     std::unordered_map<uint32_t, bool> attachment_first_read;
@@ -609,47 +606,9 @@ struct RENDER_PASS_STATE : public BASE_NODE {
     std::vector<SubpassDependencyGraphNode> subpass_dependencies;
     std::vector<std::vector<AttachmentTransition>> subpass_transitions;
 
-    RENDER_PASS_STATE(VkRenderPassCreateInfo2KHR const *pCreateInfo) : createInfo(pCreateInfo), multiview_supported(false) {
-        mv_view_masks.resize(pCreateInfo->subpassCount);
-        for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
-            mv_view_masks[i] = pCreateInfo->pSubpasses[i].viewMask;
-            multiview_supported |= (pCreateInfo->pSubpasses[i].viewMask != 0);
-        }
-        if (!multiview_supported) return;
-        mv_view_offsets.resize(pCreateInfo->subpassCount);
-        if (pCreateInfo->dependencyCount == 0) {
-            for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
-                mv_view_offsets[i] = 0;
-            }
-        } else {
-            for (uint32_t i = 0; i < pCreateInfo->dependencyCount; i++) {
-                mv_view_offsets[i] = pCreateInfo->pDependencies[i].viewOffset;
-            }
-        }
-    }
-
-    RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) : multiview_supported(false) {
+    RENDER_PASS_STATE(VkRenderPassCreateInfo2KHR const *pCreateInfo) : createInfo(pCreateInfo) {}
+    RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) {
         ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &createInfo);
-        const auto rpmvci = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
-        if (rpmvci) {
-            mv_view_masks.resize(rpmvci->subpassCount);
-            for (uint32_t i = 0; i < rpmvci->subpassCount; i++) {
-                mv_view_masks[i] = rpmvci->pViewMasks[i];
-                multiview_supported |= (rpmvci->pViewMasks[i] != 0);
-            }
-            if (multiview_supported) {
-                mv_view_offsets.resize(pCreateInfo->subpassCount);
-                if (rpmvci->dependencyCount == 0) {
-                    for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
-                        mv_view_offsets[i] = 0;
-                    }
-                } else {
-                    for (uint32_t i = 0; i < rpmvci->dependencyCount; i++) {
-                        mv_view_offsets[i] = rpmvci->pViewOffsets[i];
-                    }
-                }
-            }
-        }
     }
 };
 
