@@ -131,3 +131,111 @@ features.pEnabledValidationFeatures = enables;
 VkInstanceCreateInfo info = {};
 info.pNext = &features;
 ```
+
+## Quick Start
+
+### Running Synchronization Validation
+
+The simplest way to run synchronization validation and debug issues is to:
+
+*   Enable Synchronization Validation using [Vulkan Configurator (vkconfig)](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html).
+*   On Linux:
+    *   Create a debug callback with `vkCreateDebugUtilsMessengerEXT` with the `VK_DEBUG_REPORT_ERROR_BIT_EXT` set.
+    *   Set a breakpoint in the debug callback and run your application in the debugger.
+    *   The callback will be called when a `vkCmd`... command with a hazard is recorded.
+*   On Windows:
+    *   Select 'Debug Actions' 'Break' and 'Debug Output'
+    *   Debug application in Visual Studio
+    *   Hazard messages will appear in the debugger output window and the debugger will break (in the validation layer code)  when a `vkCmd`... command with a hazard is recorded.
+
+
+### Synchronization Validation Messages
+
+All synchronization error messages begin with SYNC-&lt;hazard name>.  The message body is constructed:
+
+
+```
+<cmd name>: Hazard <hazard name> <command specific details> Access info (<...>)
+```
+
+
+Command specific details typically include the specifics of the access within the current command. The Access info is common to all Synchronization Validation error messages. 
+
+<table>
+  <tr>
+   <td><strong>Field</strong>
+   </td>
+   <td><strong>Description</strong>
+   </td>
+  </tr>
+  <tr>
+   <td><code>usage</code>
+   </td>
+   <td>The stage/access of the current command
+   </td>
+  </tr>
+  <tr>
+   <td><code>prior_usage</code>
+   </td>
+   <td>The stage/access of the previous (hazarded) use
+   </td>
+  </tr>
+  <tr>
+   <td><code>read_barrier</code>
+   </td>
+   <td>For read <code>usage</code>, the list of stages with execution barriers between <code>prior_usage</code> and <code>usage</code>
+   </td>
+  </tr>
+  <tr>
+   <td><code>write_barrier</code>
+   </td>
+   <td>For write <code>usage</code>, the list of stage/access (in <code>usage</code> format) with memory barriers between <code>prior_usage</code> and <code>usage</code>
+   </td>
+  </tr>
+  <tr>
+   <td><code>command</code>
+   </td>
+   <td>The command that performed <code>prior_usage</code>
+   </td>
+  </tr>
+  <tr>
+   <td><code>seq_no</code>
+   </td>
+   <td>The zero based index of <code>command</code> within the command buffer
+   </td>
+  </tr>
+  <tr>
+   <td><code>reset_no</code>
+   </td>
+   <td>the reset count of the command buffer <code>command</code> is recorded to
+   </td>
+  </tr>
+</table>
+
+
+
+
+### Frequently Found Issues
+
+*   Assuming Pipeline stages are logically extended with respect to memory access barriers.  Specifying the vertex shader stage in a barrier will **not** apply to all subsequent shader stages read/write access.
+*   Invalid stage/access pairs (specifying a pipeline stage for which a given access is not valid) that yield no barrier.
+*   Relying on implicit subpass dependencies with `VK_SUBPASS_EXTERNAL` when memory barriers are needed.
+*   Missing memory dependencies with Image Layout Transitions from pipeline barrier or renderpass Begin/Next/End operations.
+*   Missing stage/access scopes for load operations, noting that color and depth/stencil are done by different stage/access.
+
+
+### Debugging Tips
+
+*   Read and write barriers in the error message can help identify the synchronization operation (either subpass dependency or pipeline barrier) with insufficient or incorrect destination stage/access masks (second scope).
+*   `Access info read_barrier` and `write_barrier` values of 0, reflect the absence of any barrier, and can indicate an insufficient or incorrect source mask (first scope)
+*   Insert additional barriers with stage/access `VK_PIPELINE_STAGE_ALL_COMMANDS_BIT`, `VK_ACCESS_MEMORY_READ_BIT`|`VK_ACCESS_MEMORY_WRITE_BIT` for both` src*Mask` and `dst*Mask` fields to locate missing barriers. If the inserted barrier _resolves_ a hazard, the conflicting access _happens-before_ the inserted barrier. (Be sure to delete later.)
+
+
+## Synchronization blogs/articles
+
+Synchronization Examples[ https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples](https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples)
+
+Keeping your GPU fed without getting bitten [ https://www.youtube.com/watch?v=oF7vOTTaAh4](https://www.youtube.com/watch?v=oF7vOTTaAh4)
+
+Yet another blog explaining Vulkan synchronization[ http://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/](http://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/)
+
