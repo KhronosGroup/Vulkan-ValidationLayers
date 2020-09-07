@@ -1553,7 +1553,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (!buf_state) continue;
                         ResourceAccessRange range = MakeRange(buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.hazard) {
+                        if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
                                 buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
                                 "%s: Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
