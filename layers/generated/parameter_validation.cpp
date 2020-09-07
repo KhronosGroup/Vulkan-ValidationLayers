@@ -5501,7 +5501,6 @@ bool StatelessValidation::PreCallValidateCmdDraw(
     uint32_t                                    firstInstance) const {
     bool skip = false;
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     return skip;
 }
 

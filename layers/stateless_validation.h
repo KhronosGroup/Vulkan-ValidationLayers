@@ -1320,9 +1320,6 @@ class StatelessValidation : public ValidationObject {
                                              const VkRect2D *pScissors) const;
     bool manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) const;
 
-    bool manual_PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                       uint32_t firstVertex, uint32_t firstInstance) const;
-
     bool manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                                uint32_t stride) const;
 

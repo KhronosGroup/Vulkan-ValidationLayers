@@ -3430,23 +3430,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                                        uint32_t firstVertex, uint32_t firstInstance) const {
-    bool skip = false;
-    if (vertexCount == 0) {
-        // TODO: Verify against Valid Usage section. I don't see a non-zero vertexCount listed, may need to add that and make
-        // this an error or leave as is.
-        skip |= LogWarning(device, kVUID_PVError_RequiredParameter, "vkCmdDraw parameter, uint32_t vertexCount, is 0");
-    }
-
-    if (instanceCount == 0) {
-        // TODO: Verify against Valid Usage section. I don't see a non-zero instanceCount listed, may need to add that and make
-        // this an error or leave as is.
-        skip |= LogWarning(device, kVUID_PVError_RequiredParameter, "vkCmdDraw parameter, uint32_t instanceCount, is 0");
-    }
-    return skip;
-}
-
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                 uint32_t count, uint32_t stride) const {
     bool skip = false;
