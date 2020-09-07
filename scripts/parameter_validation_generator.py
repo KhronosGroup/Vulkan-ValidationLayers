@@ -165,7 +165,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetViewport',
             'vkCmdSetScissor',
             'vkCmdSetLineWidth',
-            'vkCmdDraw',
             'vkCmdDrawIndirect',
             'vkCmdDrawIndexedIndirect',
             'vkCmdClearAttachments',
