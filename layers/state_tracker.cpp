@@ -5715,7 +5715,7 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
         if (use.second.is_atomic_operation) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION);
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
     }
-    SetPushConstantUsedInShader(*module, stage_state->accessible_ids, pipeline->push_constant_used_in_shader);
+    SetPushConstantUsedInShader(*module, entrypoint, stage_state->accessible_ids, pipeline->push_constant_used_in_shader);
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         pipeline->fragmentShader_writable_output_location_list = CollectWritableOutputLocationinFS(*module, *pStage);
     }

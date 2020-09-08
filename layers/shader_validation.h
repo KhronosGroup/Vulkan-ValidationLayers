@@ -120,6 +120,15 @@ struct decoration_set {
     void add(uint32_t decoration, uint32_t value);
 };
 
+struct function_set {
+    unsigned id;
+    unsigned offset;
+    unsigned length;
+    std::unordered_multimap<uint32_t, uint32_t> op_lists;  // key: spv::Op,  value: offset
+
+    function_set() : id(0), offset(0), length(0){}
+};
+
 struct SHADER_MODULE_STATE : public BASE_NODE {
     // The spirv image itself
     std::vector<uint32_t> words;
@@ -127,6 +136,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // trees, constant expressions, etc requires jumping all over the instruction stream.
     std::unordered_map<unsigned, unsigned> def_index;
     std::unordered_map<unsigned, decoration_set> decorations;
+    std::unordered_multimap<unsigned, unsigned> memberDecorate_lists;  // key: targetId,  value: offset
+    std::unordered_map<unsigned, function_set> function_sets;     // key is id
+
     struct EntryPoint {
         uint32_t offset;
         VkShaderStageFlags stage;
@@ -340,7 +352,8 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
     SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
     bool *has_atomic_descriptor);
 
-void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &src, const std::unordered_set<uint32_t> &accessible_ids,
+void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &src, const spirv_inst_iter &entrypoint,
+                                 const std::unordered_set<uint32_t> &accessible_ids,
                                  std::vector<uint8_t> &push_constant_used_in_shader);
 
 std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,

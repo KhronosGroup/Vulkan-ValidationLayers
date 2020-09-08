@@ -7249,7 +7249,7 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     char const *const fsSource =
         "#version 450\n"
         "\n"
-        "struct foo1{\n"
+        /*"struct foo1{\n"
         "   int i[4];"
         "};\n"
         "layout(push_constant, std430) uniform foo {\n"
@@ -7260,6 +7260,29 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
         "layout(location=0) out vec4 o;\n"
         "void main(){\n"
         "   o = vec4(constants.x[0][0][0]);\n"
+        */
+        "struct foo1 {\n"
+        "   int fi[2];\n"
+        "   int fi2[2];\n"
+        "   int fi3[2];\n"
+        "   int fi4[2];\n"
+        "   int fi5[2];\n"
+        "};\n"
+        "\n"
+        "layout(push_constant, std430) uniform foo {\n"
+        "   float f[2];\n"
+        "   foo1 ss[2];\n"
+        "} constants;\n"
+        "\n"
+        "void func1(int i1) {}\n"
+        "void func2(int i2) { int x2 = i2; }\n"
+        "void func3() { int x3 = constants.ss[0].fi5[0]; }\n"
+        "\n"
+        "void main() {\n"
+        "   float x = constants.ss[0].fi2[0];\n"
+        "   func1(constants.ss[0].fi3[0]);\n"
+        "   func2(constants.ss[0].fi4[0]);\n"
+        "   func3();\n"
         "}\n";
 
     VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
