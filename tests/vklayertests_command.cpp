@@ -4329,7 +4329,7 @@ TEST_F(VkLayerTest, ResolveImageImageType) {
 
     // non-zero value baseArrayLayer
     resolveRegion.srcSubresource.baseArrayLayer = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-srcImage-00268");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-04446");
     m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                   &resolveRegion);
     m_errorMonitor->VerifyFound();

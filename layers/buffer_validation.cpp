@@ -3302,12 +3302,20 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
             const VkImageType dst_image_type = dst_image_state->createInfo.imageType;
 
             if ((VK_IMAGE_TYPE_3D == src_image_type) || (VK_IMAGE_TYPE_3D == dst_image_type)) {
-                if ((0 != src_subresource.baseArrayLayer) || (1 != src_subresource.layerCount) ||
-                    (0 != dst_subresource.baseArrayLayer) || (1 != dst_subresource.layerCount)) {
+                if ((0 != src_subresource.baseArrayLayer) || (1 != src_subresource.layerCount)) {
                     LogObjectList objlist(cb_node->commandBuffer);
                     objlist.add(src_image_state->image);
                     objlist.add(dst_image_state->image);
-                    skip |= LogError(objlist, "VUID-VkImageResolve-srcImage-00268",
+                    skip |= LogError(objlist, "VUID-vkCmdResolveImage-srcImage-04446",
+                                     "vkCmdResolveImage(): pRegions[%u] baseArrayLayer must be 0 and layerCount must be 1 for all "
+                                     "subresources if the src or dst image is 3D.",
+                                     i);
+                }
+                if ((0 != dst_subresource.baseArrayLayer) || (1 != dst_subresource.layerCount)) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(src_image_state->image);
+                    objlist.add(dst_image_state->image);
+                    skip |= LogError(objlist, "VUID-vkCmdResolveImage-srcImage-04447",
                                      "vkCmdResolveImage(): pRegions[%u] baseArrayLayer must be 0 and layerCount must be 1 for all "
                                      "subresources if the src or dst image is 3D.",
                                      i);
