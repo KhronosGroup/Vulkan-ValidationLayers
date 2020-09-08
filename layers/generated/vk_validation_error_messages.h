@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.152 */
+/* Vulkan specification version: 1.2.153 */
 /*
  * Vulkan
  *
@@ -3197,7 +3197,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSwapchainCreateInfoKHR-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-surface-01270", "surface must be a surface that is supported by the device as determined using vkGetPhysicalDeviceSurfaceSupportKHR", "1.2-extensions"},
     {"VUID-VkSwapchainCreateInfoKHR-surface-parameter", "surface must be a valid VkSurfaceKHR handle", "1.2-extensions"},
-    {"VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-localDimmingEnable-XXXXX", "It is only valid to set localDimmingEnable to VK_TRUE if VkDisplayNativeHdrSurfaceCapabilitiesAMD::localDimmingSupport is supported", "1.2-extensions"},
+    {"VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-localDimmingEnable-04449", "It is only valid to set localDimmingEnable to VK_TRUE if VkDisplayNativeHdrSurfaceCapabilitiesAMD::localDimmingSupport is supported", "1.2-extensions"},
     {"VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-sType-sType", "sType must be VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD", "1.2-extensions"},
     {"VUID-VkTextureLODGatherFormatPropertiesAMD-sType-sType", "sType must be VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD", "1.2-extensions"},
     {"VUID-VkTimelineSemaphoreSubmitInfo-pSignalSemaphoreValues-parameter", "If signalSemaphoreValueCount is not 0, and pSignalSemaphoreValues is not NULL, pSignalSemaphoreValues must be a valid pointer to an array of signalSemaphoreValueCount uint64_t values", "1.2-extensions"},
@@ -6660,6 +6660,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkImportFenceFdKHR-fence-01463", "fence must not be associated with any queue command that has not yet completed execution on that queue", "1.2-extensions"},
     {"VUID-vkImportFenceFdKHR-pImportFenceFdInfo-parameter", "pImportFenceFdInfo must be a valid pointer to a valid VkImportFenceFdInfoKHR structure", "1.2-extensions"},
     {"VUID-vkImportFenceWin32HandleKHR-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
+    {"VUID-vkImportFenceWin32HandleKHR-fence-04448", "fence must not be associated with any queue command that has not yet completed execution on that queue", "1.2-extensions"},
     {"VUID-vkImportFenceWin32HandleKHR-pImportFenceWin32HandleInfo-parameter", "pImportFenceWin32HandleInfo must be a valid pointer to a valid VkImportFenceWin32HandleInfoKHR structure", "1.2-extensions"},
     {"VUID-vkImportSemaphoreFdKHR-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
     {"VUID-vkImportSemaphoreFdKHR-pImportSemaphoreFdInfo-parameter", "pImportSemaphoreFdInfo must be a valid pointer to a valid VkImportSemaphoreFdInfoKHR structure", "1.2-extensions"},
