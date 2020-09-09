@@ -529,7 +529,7 @@ class StatelessValidation : public ValidationObject {
                         ((strncmp(api_name, "vkCreateDevice", strlen(api_name)) != 0) ||
                          (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
                         if (cycle_check.find(current->pNext) != cycle_check.end()) {
-                            std::string message = "%s: %s chain contains a cycle -- pNext pointer " PRIx64 " is repeated.";
+                            std::string message = "%s: %s chain contains a cycle -- pNext pointer %" PRIx64 " is repeated.";
                             skip_call |= LogError(device, kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
                                                   parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
                             break;
