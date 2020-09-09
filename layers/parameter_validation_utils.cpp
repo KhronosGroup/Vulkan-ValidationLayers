@@ -3142,7 +3142,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                                  pDescriptorWrites[i].pBufferInfo[descriptorIndex].range != VK_WHOLE_SIZE)) {
                                 skip |= LogError(device, "VUID-VkDescriptorBufferInfo-buffer-02999",
                                                  "%s(): if pDescriptorWrites[%d].buffer is VK_NULL_HANDLE, "
-                                                 "offset (" PRIu64 ") must be zero and range (" PRIu64 ") must be VK_WHOLE_SIZE.",
+                                                 "offset (%" PRIu64 ") must be zero and range (%" PRIu64 ") must be VK_WHOLE_SIZE.",
                                                  vkCallingFunction, i, pDescriptorWrites[i].pBufferInfo[descriptorIndex].offset,
                                                  pDescriptorWrites[i].pBufferInfo[descriptorIndex].range);
                             }
