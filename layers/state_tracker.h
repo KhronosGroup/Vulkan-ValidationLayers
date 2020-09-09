@@ -104,6 +104,7 @@ class QUERY_POOL_STATE : public BASE_NODE {
     bool has_perf_scope_command_buffer = false;
     bool has_perf_scope_render_pass = false;
     uint32_t n_performance_passes = 0;
+    uint32_t perf_counter_index_count = 0;
 };
 
 class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {

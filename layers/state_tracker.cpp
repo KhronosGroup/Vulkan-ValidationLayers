@@ -2826,8 +2826,9 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
     query_pool_state->pool = *pQueryPool;
     if (pCreateInfo->queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
         const auto *perf = lvl_find_in_chain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
-        const QUEUE_FAMILY_PERF_COUNTERS &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
+        query_pool_state->perf_counter_index_count = perf->counterIndexCount;
 
+        const QUEUE_FAMILY_PERF_COUNTERS &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
         for (uint32_t i = 0; i < perf->counterIndexCount; i++) {
             const auto &counter = counters.counters[perf->pCounterIndices[i]];
             switch (counter.scope) {
