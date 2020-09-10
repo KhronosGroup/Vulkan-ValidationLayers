@@ -3953,6 +3953,22 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
         auto &push_constant_data = cb_state->push_constant_data;
         assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
         std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
+        cb_state->push_constant_pipeline_layout_set = layout;
+
+        auto flags = stageFlags;
+        uint32_t bit_shift = 0;
+        while (flags) {
+            if (flags & 1) {
+                VkShaderStageFlagBits flag = static_cast<VkShaderStageFlagBits>(1 << bit_shift);
+                const auto it = cb_state->push_constant_data_update.find(flag);
+
+                if (it != cb_state->push_constant_data_update.end()) {
+                    std::memset(it->second.data() + offset, 1, static_cast<std::size_t>(size));
+                }
+            }
+            flags = flags >> 1;
+            ++bit_shift;
+        }
     }
 }
 
@@ -5731,13 +5747,16 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     auto new_shader_module = is_spirv ? std::make_shared<SHADER_MODULE_STATE>(pCreateInfo, *pShaderModule, spirv_environment,
                                                                               csm_state->unique_shader_id)
                                       : std::make_shared<SHADER_MODULE_STATE>();
+    SetPushConstantUsedInShader(*new_shader_module);
     shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
 void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline,
                                                        PIPELINE_STATE::StageState *stage_state) const {
     // Validation shouldn't rely on anything in stage state being valid if the spirv isn't
-    auto module = GetShaderModuleState(pStage->module);
+    stage_state->entry_point_name = pStage->pName;
+    stage_state->shader_state = GetShared<SHADER_MODULE_STATE>(pStage->module);
+    auto module = stage_state->shader_state.get();
     if (!module->has_valid_spirv) return;
 
     // Validation shouldn't rely on anything in stage state being valid if the entrypoint isn't present
@@ -5787,9 +5806,36 @@ void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CM
     if (cb_state->push_constant_data_ranges != pipeline_layout_state->push_constant_ranges) {
         cb_state->push_constant_data_ranges = pipeline_layout_state->push_constant_ranges;
         cb_state->push_constant_data.clear();
+        cb_state->push_constant_data_update.clear();
         uint32_t size_needed = 0;
         for (auto push_constant_range : *cb_state->push_constant_data_ranges) {
-            size_needed = std::max(size_needed, (push_constant_range.offset + push_constant_range.size));
+            auto size = push_constant_range.offset + push_constant_range.size;
+            size_needed = std::max(size_needed, size);
+
+            auto stageFlags = push_constant_range.stageFlags;
+            uint32_t bit_shift = 0;
+            while (stageFlags) {
+                if (stageFlags & 1) {
+                    VkShaderStageFlagBits flag = static_cast<VkShaderStageFlagBits>(1 << bit_shift);
+                    const auto it = cb_state->push_constant_data_update.find(flag);
+
+                    if (it != cb_state->push_constant_data_update.end()) {
+                        if (it->second.size() < push_constant_range.offset) {
+                            it->second.resize(push_constant_range.offset, -1);
+                        }
+                        if (it->second.size() < size) {
+                            it->second.resize(size, 0);
+                        }
+                    } else {
+                        std::vector<int8_t> bytes;
+                        bytes.resize(push_constant_range.offset, -1);
+                        bytes.resize(size, 0);
+                        cb_state->push_constant_data_update[flag] = bytes;
+                    }
+                }
+                stageFlags = stageFlags >> 1;
+                ++bit_shift;
+            }
         }
         cb_state->push_constant_data.resize(size_needed, 0);
     }
