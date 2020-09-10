@@ -912,9 +912,6 @@ class PIPELINE_STATE : public BASE_NODE {
     VkPrimitiveTopology topology_at_rasterizer;
     VkBool32 sample_location_enabled;
 
-    std::vector<uint8_t> push_constant_used_in_shader;  // vector's index is the byte location. If the value is 0, it means the byte
-                                                        // isn't used in shader. 1 means used.
-
     // Default constructor
     PIPELINE_STATE()
         : pipeline{},
@@ -943,7 +940,6 @@ class PIPELINE_STATE : public BASE_NODE {
         VkRayTracingPipelineCreateInfoKHR emptyRayTracingCI = {};
         raytracingPipelineCI.initialize(&emptyRayTracingCI);
         stage_state.clear();
-        push_constant_used_in_shader.clear();
         fragmentShader_writable_output_location_list.clear();
     }
 
@@ -1275,10 +1271,6 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     std::vector<uint8_t> push_constant_data;
     PushConstantRangesId push_constant_data_ranges;
-
-    std::vector<uint8_t> push_constant_data_set;  // If a byte is set or a byte is not used in push_constant_rage, the value of byte
-                                                  // is 1.
-    VkPipelineLayout push_constant_pipeline_layout_set;
 
     // Used for Best Practices tracking
     uint32_t small_indexed_draw_call_count;
