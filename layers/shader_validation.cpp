@@ -1079,62 +1079,6 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
     return out;
 }
 
-void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &src, const std::unordered_set<uint32_t> &accessible_ids,
-                                 std::vector<uint8_t> &push_constant_used_in_shader) {
-    for (auto id : accessible_ids) {
-        auto def_insn = src.get_def(id);
-        if (def_insn.opcode() == spv::OpVariable && def_insn.word(3) == spv::StorageClassPushConstant) {
-            spirv_inst_iter type = src.get_def(def_insn.word(1));
-            type = GetStructType(&src, type, false);
-            assert(type != src.end());
-
-            std::vector<uint32_t> struct_member;
-            for (uint32_t i = 2; i < type.len(); ++i) {
-                struct_member.emplace_back(type.word(i));
-            }
-            uint32_t struct_member_index = 0;
-
-            for (auto insn : src) {
-                if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
-                    if (insn.word(3) == spv::DecorationOffset) {
-                        auto def_member = src.get_def(struct_member[struct_member_index]);
-                        auto size = 1;
-
-                        if (def_member.opcode() == spv::OpTypeArray) {
-                            const auto len_id = def_member.word(3);
-                            const auto def_len = src.get_def(len_id);
-                            size *= def_len.word(3);  // array length
-                            def_member = src.get_def(def_member.word(2));
-                        }
-
-                        if (def_member.opcode() == spv::OpTypeMatrix) {
-                            size *= def_member.word(3);  // matrix's columns. matrix's row is vector.
-                            def_member = src.get_def(def_member.word(2));
-                        }
-
-                        if (def_member.opcode() == spv::OpTypeVector) {
-                            size *= def_member.word(3);  // vector length
-                            def_member = src.get_def(def_member.word(2));
-                        }
-
-                        // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
-                        size *= (def_member.word(2) / 8);
-
-                        auto const offset = insn.word(4);
-                        auto const end = offset + size;
-
-                        if (push_constant_used_in_shader.size() < end) {
-                            push_constant_used_in_shader.resize(end, 0);
-                        }
-                        std::memset(push_constant_used_in_shader.data() + offset, 1, static_cast<std::size_t>(size));
-                        ++struct_member_index;
-                    }
-                }
-            }
-        }
-    }
-}
-
 std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
                                                                const VkPipelineShaderStageCreateInfo &stage_info) {
     std::unordered_set<uint32_t> location_list;
@@ -1545,40 +1489,14 @@ bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushCons
     type = GetStructType(src, type, false);
     assert(type != src->end());
 
-    std::vector<uint32_t> struct_member;
-    for (uint32_t i = 2; i < type.len(); ++i) {
-        struct_member.emplace_back(type.word(i));
-    }
-    uint32_t struct_member_index = 0;
     // Validate directly off the offsets. this isn't quite correct for arrays and matrices, but is a good first step.
-    // TODO: weird sizes
+    // TODO: arrays, matrices, weird sizes
     for (auto insn : *src) {
         if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
             if (insn.word(3) == spv::DecorationOffset) {
-                auto def_member = src->get_def(struct_member[struct_member_index]);
-                auto size = 1;
-
-                if (def_member.opcode() == spv::OpTypeArray) {
-                    const auto len_id = def_member.word(3);
-                    const auto def_len = src->get_def(len_id);
-                    size *= def_len.word(3);  // array length
-                    def_member = src->get_def(def_member.word(2));
-                }
-
-                if (def_member.opcode() == spv::OpTypeMatrix) {
-                    size *= def_member.word(3);  // matrix's columns. matrix's row is vector.
-                    def_member = src->get_def(def_member.word(2));
-                }
-
-                if (def_member.opcode() == spv::OpTypeVector) {
-                    size *= def_member.word(3);  // vector length
-                }
-
-                // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
-                size *= (def_member.word(2) / 8);
-
                 auto const member = insn.word(2);
                 auto const offset = insn.word(4);
+                auto const size = 4;  // Bytes; TODO: calculate this based on the type
 
                 bool found_range = false;
                 for (auto const &range : *push_constant_ranges) {
@@ -1589,7 +1507,6 @@ bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushCons
                         break;
                     }
                 }
-                ++struct_member_index;
 
                 if (!found_range) {
                     skip |= LogError(device, kVUID_Core_Shader_PushConstantOutOfRange,

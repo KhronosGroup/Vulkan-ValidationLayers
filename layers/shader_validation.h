@@ -340,9 +340,6 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
     SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
     bool *has_atomic_descriptor);
 
-void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &src, const std::unordered_set<uint32_t> &accessible_ids,
-                                 std::vector<uint8_t> &push_constant_used_in_shader);
-
 std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
                                                                const VkPipelineShaderStageCreateInfo &stage_info);
 
