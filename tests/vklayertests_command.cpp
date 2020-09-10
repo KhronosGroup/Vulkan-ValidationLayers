@@ -7626,3 +7626,120 @@ TEST_F(VkLayerTest, InvailStorageAtomicOperation) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
+    TEST_DESCRIPTION("Not every bytes in used push constant ranges has been set before Draw ");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // push constant range: 0-99
+    char const *const vsSource =
+        "#version 450\n"
+        "\n"
+        "layout(push_constant, std430) uniform foo {\n"
+        "   bool b;\n"
+        "   float f2[3];\n"
+        "   vec3 v;\n"
+        "   vec4 v2[2];\n"
+        "   mat3 m;\n"
+        "} constants;\n"
+        "void func1( float f ){\n"
+        // use the whole v2[1]. byte: 48-63.
+        "   vec2 v2 = constants.v2[1].yz;\n"
+        "}\n"
+        "void main(){\n"
+        // use only v2[0].z. byte: 40-43.
+        "   func1( constants.v2[0].z);\n"
+        // index of m is variable. The all m is used. byte: 64-99.
+        "   for(int i=1;i<2;++i) {\n"
+        "      vec3 v3 = constants.m[i]; \n"
+        "   }\n"
+        "}\n";
+
+    // push constant range: 0 - 95
+    char const *const fsSource =
+        "#version 450\n"
+        "\n"
+        "struct foo1{\n"
+        "   int i[4];"
+        "}f;\n"
+        "layout(push_constant, std430) uniform foo {\n"
+        "   float x[2][2][2];\n"
+        "   foo1 s;\n"
+        "   foo1 ss[3];\n"
+        "} constants;\n"
+        "void main(){\n"
+        // use s. byte: 32-47.
+        "   f = constants.s;\n"
+        // use every i[3] in ss. byte: 60-63, 76-79, 92-95.
+        "   for(int i=1;i<2;++i) {\n"
+        "      int ii = constants.ss[i].i[3]; \n"
+        "   }\n"
+        "}\n";
+
+    VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj const fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 128};
+    VkPushConstantRange push_constant_range_small = {VK_SHADER_STAGE_VERTEX_BIT, 4, 4};
+
+    VkPipelineLayoutCreateInfo pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+
+    VkPipelineLayout pipeline_layout;
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    g_pipe.InitState();
+    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+
+    pipeline_layout_info.pPushConstantRanges = &push_constant_range_small;
+    VkPipelineLayout pipeline_layout_small;
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout_small);
+
+    CreatePipelineHelper g_pipe_small_range(*this);
+    g_pipe_small_range.InitInfo();
+    g_pipe_small_range.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe_small_range.pipeline_layout_ci_ = pipeline_layout_info;
+    g_pipe_small_range.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-PushConstantOutOfRange");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-PushConstantOutOfRange");
+    g_pipe_small_range.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02698");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02698");
+    const float dummy_values[128] = {};
+    vk::CmdPushConstants(m_commandBuffer->handle(), g_pipe.pipeline_layout_.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 96, dummy_values);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02698");
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_small, VK_SHADER_STAGE_VERTEX_BIT, 4, 4, dummy_values);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32,
+                         68, dummy_values);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
