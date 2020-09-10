@@ -3745,20 +3745,6 @@ bool CoreChecks::ValidateGetQueryPoolPerformanceResults(VkQueryPool queryPool, u
     return skip;
 }
 
-bool CoreChecks::ValidateGetQueryPoolResultsQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) const {
-    bool skip = false;
-    QueryObject query_obj{queryPool, 0u};
-    for (uint32_t i = 0; i < queryCount; ++i) {
-        query_obj.query = firstQuery + i;
-        if (queryToStateMap.count(query_obj) == 0) {
-            skip |= LogError(queryPool, kVUID_Core_DrawState_InvalidQuery,
-                             "vkGetQueryPoolResults() on %s and query %" PRIu32 ": unknown query due to not being recorded.",
-                             report_data->FormatHandle(queryPool).c_str(), query_obj.query);
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                     uint32_t queryCount, size_t dataSize, void *pData, VkDeviceSize stride,
                                                     VkQueryResultFlags flags) const {
@@ -3766,7 +3752,6 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     bool skip = false;
     skip |= ValidateQueryPoolStride("VUID-vkGetQueryPoolResults-flags-02827", "VUID-vkGetQueryPoolResults-flags-00815", stride,
                                     "dataSize", dataSize, flags);
-    skip |= ValidateGetQueryPoolResultsQueries(queryPool, firstQuery, queryCount);
     skip |= ValidateQueryPoolIndex(queryPool, firstQuery, queryCount, "vkGetQueryPoolResults()",
                                    "VUID-vkGetQueryPoolResults-firstQuery-00813", "VUID-vkGetQueryPoolResults-firstQuery-00816");
     skip |= ValidateGetQueryPoolPerformanceResults(queryPool, firstQuery, queryCount, pData, stride, flags);
@@ -7879,7 +7864,7 @@ bool CoreChecks::ValidateQueryPoolIndex(VkQueryPool queryPool, uint32_t firstQue
                          func_name, report_data->FormatHandle(queryPool).c_str(), firstQuery, queryCount, available_query_count);
         }
     }
-    return false;
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
