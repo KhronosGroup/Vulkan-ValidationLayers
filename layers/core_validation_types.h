@@ -900,6 +900,7 @@ class safe_VkRayTracingPipelineCreateInfoCommon : public safe_VkRayTracingPipeli
     }
 };
 
+struct SHADER_MODULE_STATE;
 class PIPELINE_STATE : public BASE_NODE {
   public:
     struct StageState {
@@ -908,6 +909,8 @@ class PIPELINE_STATE : public BASE_NODE {
         bool has_writable_descriptor;
         bool has_atomic_descriptor;
         VkShaderStageFlagBits stage_flag;
+        std::string entry_point_name;
+        std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
     };
 
     VkPipeline pipeline;
@@ -1290,6 +1293,9 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     std::vector<uint8_t> push_constant_data;
     PushConstantRangesId push_constant_data_ranges;
+
+    std::map<VkShaderStageFlagBits, std::vector<int8_t>> push_constant_data_update;  // -1: not set, 0: not update, 1: update,
+    VkPipelineLayout push_constant_pipeline_layout_set;
 
     // Used for Best Practices tracking
     uint32_t small_indexed_draw_call_count;

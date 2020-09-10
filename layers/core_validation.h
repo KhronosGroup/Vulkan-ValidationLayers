@@ -54,6 +54,7 @@ struct DrawDispatchVuid {
     const char* corner_sampled_address_mode;
     const char* subpass_input;
     const char* imageview_atomic;
+    const char* push_constants_set;
     const char* image_subresources;
     const char* descriptor_valid;
     const char* sampler_imageview_type;
@@ -442,11 +443,10 @@ class CoreChecks : public ValidationStateTracker {
                                    spirv_inst_iter entrypoint) const;
     bool ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const* fs, spirv_inst_iter entrypoint,
                                             PIPELINE_STATE const* pipeline, uint32_t subpass_index) const;
-    bool ValidatePushConstantUsage(std::vector<VkPushConstantRange> const* push_constant_ranges, SHADER_MODULE_STATE const* src,
-                                   std::unordered_set<uint32_t> accessible_ids, VkShaderStageFlagBits stage) const;
-    bool ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushConstantRange> const* push_constant_ranges,
-                                                  SHADER_MODULE_STATE const* src, spirv_inst_iter type,
-                                                  VkShaderStageFlagBits stage) const;
+    bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, SHADER_MODULE_STATE const* src,
+                                   VkPipelineShaderStageCreateInfo const* pStage) const;
+    int ValidatePushConstantSetUpdate(const std::vector<int8_t>& push_constant_data_update,
+                                      const shader_struct_member& push_constant_used_in_shader, uint32_t& out_issue_index) const;
     bool ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo const* info) const;
     bool RequirePropertyFlag(VkBool32 check, char const* flag, char const* structure) const;
     bool RequireFeature(VkBool32 feature, char const* feature_name) const;
