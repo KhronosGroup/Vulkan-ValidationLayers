@@ -3534,43 +3534,6 @@ bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE *mem_info, VkDevi
     return skip;
 }
 
-// Guard value for pad data
-static char NoncoherentMemoryFillValue = 0xb;
-
-void CoreChecks::InitializeShadowMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
-    auto mem_info = GetDevMemState(mem);
-    if (mem_info) {
-        uint32_t index = mem_info->alloc_info.memoryTypeIndex;
-        if (phys_dev_mem_props.memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
-            mem_info->shadow_copy = 0;
-        } else {
-            if (size == VK_WHOLE_SIZE) {
-                size = mem_info->alloc_info.allocationSize - offset;
-            }
-            mem_info->shadow_pad_size = phys_dev_props.limits.minMemoryMapAlignment;
-            assert(SafeModulo(mem_info->shadow_pad_size, phys_dev_props.limits.minMemoryMapAlignment) == 0);
-            // Ensure start of mapped region reflects hardware alignment constraints
-            uint64_t map_alignment = phys_dev_props.limits.minMemoryMapAlignment;
-
-            // From spec: (ppData - offset) must be aligned to at least limits::minMemoryMapAlignment.
-            uint64_t start_offset = offset % map_alignment;
-            // Data passed to driver will be wrapped by a guardband of data to detect over- or under-writes.
-            mem_info->shadow_copy_base =
-                malloc(static_cast<size_t>(2 * mem_info->shadow_pad_size + size + map_alignment + start_offset));
-
-            mem_info->shadow_copy =
-                reinterpret_cast<char *>((reinterpret_cast<uintptr_t>(mem_info->shadow_copy_base) + map_alignment) &
-                                         ~(map_alignment - 1)) +
-                start_offset;
-            assert(SafeModulo(reinterpret_cast<uintptr_t>(mem_info->shadow_copy) + mem_info->shadow_pad_size - start_offset,
-                              map_alignment) == 0);
-
-            memset(mem_info->shadow_copy, NoncoherentMemoryFillValue, static_cast<size_t>(2 * mem_info->shadow_pad_size + size));
-            *ppData = static_cast<char *>(mem_info->shadow_copy) + mem_info->shadow_pad_size;
-        }
-    }
-}
-
 bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                               uint64_t timeout) const {
     // Verify fence status of submitted fences
@@ -10294,13 +10257,6 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
     return skip;
 }
 
-void CoreChecks::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
-                                         void **ppData, VkResult result) {
-    if (VK_SUCCESS != result) return;
-    StateTracker::PostCallRecordMapMemory(device, mem, offset, size, flags, ppData, result);
-    InitializeShadowMemory(mem, offset, size, ppData);
-}
-
 bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem) const {
     bool skip = false;
     const auto mem_info = GetDevMemState(mem);
@@ -10310,18 +10266,6 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem)
                          report_data->FormatHandle(mem).c_str());
     }
     return skip;
-}
-
-void CoreChecks::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
-    // Only core checks uses the shadow copy, clear that up here
-    auto mem_info = GetDevMemState(mem);
-    if (mem_info && mem_info->shadow_copy_base) {
-        free(mem_info->shadow_copy_base);
-        mem_info->shadow_copy_base = nullptr;
-        mem_info->shadow_copy = nullptr;
-        mem_info->shadow_pad_size = 0;
-    }
-    StateTracker::PreCallRecordUnmapMemory(device, mem);
 }
 
 bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeCount, const VkMappedMemoryRange *pMemRanges) const {
@@ -10362,50 +10306,6 @@ bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeC
     return skip;
 }
 
-bool CoreChecks::ValidateAndCopyNoncoherentMemoryToDriver(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges) const {
-    bool skip = false;
-    for (uint32_t i = 0; i < mem_range_count; ++i) {
-        auto mem_info = GetDevMemState(mem_ranges[i].memory);
-        if (mem_info) {
-            if (mem_info->shadow_copy) {
-                VkDeviceSize size = (mem_info->mapped_range.size != VK_WHOLE_SIZE)
-                                        ? mem_info->mapped_range.size
-                                        : (mem_info->alloc_info.allocationSize - mem_info->mapped_range.offset);
-                char *data = static_cast<char *>(mem_info->shadow_copy);
-                for (uint64_t j = 0; j < mem_info->shadow_pad_size; ++j) {
-                    if (data[j] != NoncoherentMemoryFillValue) {
-                        skip |=
-                            LogError(mem_ranges[i].memory, kVUID_Core_MemTrack_InvalidMap, "Memory underflow was detected on %s.",
-                                     report_data->FormatHandle(mem_ranges[i].memory).c_str());
-                    }
-                }
-                for (uint64_t j = (size + mem_info->shadow_pad_size); j < (2 * mem_info->shadow_pad_size + size); ++j) {
-                    if (data[j] != NoncoherentMemoryFillValue) {
-                        skip |=
-                            LogError(mem_ranges[i].memory, kVUID_Core_MemTrack_InvalidMap, "Memory overflow was detected on %s.",
-                                     report_data->FormatHandle(mem_ranges[i].memory).c_str());
-                    }
-                }
-                memcpy(mem_info->p_driver_data, static_cast<void *>(data + mem_info->shadow_pad_size), (size_t)(size));
-            }
-        }
-    }
-    return skip;
-}
-
-void CoreChecks::CopyNoncoherentMemoryFromDriver(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges) {
-    for (uint32_t i = 0; i < mem_range_count; ++i) {
-        auto mem_info = GetDevMemState(mem_ranges[i].memory);
-        if (mem_info && mem_info->shadow_copy) {
-            VkDeviceSize size = (mem_info->mapped_range.size != VK_WHOLE_SIZE)
-                                    ? mem_info->mapped_range.size
-                                    : (mem_info->alloc_info.allocationSize - mem_ranges[i].offset);
-            char *data = static_cast<char *>(mem_info->shadow_copy);
-            memcpy(data + mem_info->shadow_pad_size, mem_info->p_driver_data, (size_t)(size));
-        }
-    }
-}
-
 bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(const char *func_name, uint32_t mem_range_count,
                                                        const VkMappedMemoryRange *mem_ranges) const {
     bool skip = false;
@@ -10436,7 +10336,6 @@ bool CoreChecks::PreCallValidateFlushMappedMemoryRanges(VkDevice device, uint32_
                                                         const VkMappedMemoryRange *pMemRanges) const {
     bool skip = false;
     skip |= ValidateMappedMemoryRangeDeviceLimits("vkFlushMappedMemoryRanges", memRangeCount, pMemRanges);
-    skip |= ValidateAndCopyNoncoherentMemoryToDriver(memRangeCount, pMemRanges);
     skip |= ValidateMemoryIsMapped("vkFlushMappedMemoryRanges", memRangeCount, pMemRanges);
     return skip;
 }
@@ -10447,14 +10346,6 @@ bool CoreChecks::PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, ui
     skip |= ValidateMappedMemoryRangeDeviceLimits("vkInvalidateMappedMemoryRanges", memRangeCount, pMemRanges);
     skip |= ValidateMemoryIsMapped("vkInvalidateMappedMemoryRanges", memRangeCount, pMemRanges);
     return skip;
-}
-
-void CoreChecks::PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uint32_t memRangeCount,
-                                                            const VkMappedMemoryRange *pMemRanges, VkResult result) {
-    if (VK_SUCCESS == result) {
-        // Update our shadow copy with modified driver data
-        CopyNoncoherentMemoryFromDriver(memRangeCount, pMemRanges);
-    }
 }
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize *pCommittedMem) const {
