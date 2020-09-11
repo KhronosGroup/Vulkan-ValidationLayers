@@ -11385,14 +11385,14 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         if (!foundMatch) {
             if (!foundFormat) {
                 if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01273",
-                             "%s called with a non-supported pCreateInfo->imageFormat (i.e. %d).", func_name,
-                             pCreateInfo->imageFormat))
+                             "%s called with a non-supported pCreateInfo->imageFormat (%s).", func_name,
+                             string_VkFormat(pCreateInfo->imageFormat)))
                     return true;
             }
             if (!foundColorSpace) {
                 if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageFormat-01273",
-                             "%s called with a non-supported pCreateInfo->imageColorSpace (i.e. %d).", func_name,
-                             pCreateInfo->imageColorSpace))
+                             "%s called with a non-supported pCreateInfo->imageColorSpace (%s).", func_name,
+                             string_VkColorSpaceKHR(pCreateInfo->imageColorSpace)))
                     return true;
             }
         }
@@ -11665,15 +11665,15 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto pSemaphore = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_BINARY_KHR) {
             skip |= LogError(pPresentInfo->pWaitSemaphores[i], "VUID-vkQueuePresentKHR-pWaitSemaphores-03267",
-                             "vkQueuePresentKHR: %s is not a VK_SEMAPHORE_TYPE_BINARY_KHR",
+                             "vkQueuePresentKHR: pWaitSemaphores[%u] (%s) is not a VK_SEMAPHORE_TYPE_BINARY_KHR", i,
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
         if (pSemaphore && !pSemaphore->signaled && !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i])) {
             LogObjectList objlist(queue);
             objlist.add(pPresentInfo->pWaitSemaphores[i]);
             skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
-                             "vkQueuePresentKHR: Queue %s is waiting on %s that has no way to be signaled.",
-                             report_data->FormatHandle(queue).c_str(),
+                             "vkQueuePresentKHR: Queue %s is waiting on pWaitSemaphores[%u] (%s) that has no way to be signaled.",
+                             report_data->FormatHandle(queue).c_str(), i,
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
     }
@@ -11682,17 +11682,17 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             if (pPresentInfo->pImageIndices[i] >= swapchain_data->images.size()) {
-                skip |=
-                    LogError(pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainInvalidImage,
-                             "vkQueuePresentKHR: Swapchain image index too large (%u). There are only %u images in this swapchain.",
-                             pPresentInfo->pImageIndices[i], (uint32_t)swapchain_data->images.size());
+                skip |= LogError(
+                    pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainInvalidImage,
+                    "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
+                    i, pPresentInfo->pImageIndices[i], (uint32_t)swapchain_data->images.size());
             } else {
                 auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]].image;
                 const auto image_state = GetImageState(image);
 
                 if (!image_state->acquired) {
                     skip |= LogError(pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainImageNotAcquired,
-                                     "vkQueuePresentKHR: Swapchain image index %u has not been acquired.",
+                                     "vkQueuePresentKHR: pSwapchains[%u] image index %u has not been acquired.", i,
                                      pPresentInfo->pImageIndices[i]);
                 }
 
@@ -11705,10 +11705,10 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                                                ? "VUID-VkPresentInfoKHR-pImageIndices-01430"
                                                                : "VUID-VkPresentInfoKHR-pImageIndices-01296";
                             skip |= LogError(queue, validation_error,
-                                             "vkQueuePresentKHR(): Images passed to present must be in layout "
+                                             "vkQueuePresentKHR(): pSwapchains[%u] images passed to present must be in layout "
                                              "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
                                              "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but is in %s.",
-                                             string_VkImageLayout(layout));
+                                             i, string_VkImageLayout(layout));
                         }
                     }
                 }
@@ -11721,11 +11721,14 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 auto support_it = surface_state->gpu_queue_support.find({physical_device, queue_state->queueFamilyIndex});
 
                 if (support_it == surface_state->gpu_queue_support.end()) {
-                    skip |= LogError(pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainUnsupportedQueue,
-                                     "vkQueuePresentKHR: Presenting image without calling vkGetPhysicalDeviceSurfaceSupportKHR");
+                    skip |= LogError(
+                        pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainUnsupportedQueue,
+                        "vkQueuePresentKHR: Presenting pSwapchains[%u] image without calling vkGetPhysicalDeviceSurfaceSupportKHR",
+                        i);
                 } else if (!support_it->second) {
-                    skip |= LogError(pPresentInfo->pSwapchains[i], "VUID-vkQueuePresentKHR-pSwapchains-01292",
-                                     "vkQueuePresentKHR: Presenting image on queue that cannot present to this surface.");
+                    skip |= LogError(
+                        pPresentInfo->pSwapchains[i], "VUID-vkQueuePresentKHR-pSwapchains-01292",
+                        "vkQueuePresentKHR: Presenting pSwapchains[%u] image on queue that cannot present to this surface.", i);
                 }
             }
         }
