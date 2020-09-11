@@ -11029,7 +11029,8 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const char
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(
     VkDevice device, const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) const {
-    return ValidateImportFence(pImportFenceWin32HandleInfo->fence, kVUIDUndefined, "vkImportFenceWin32HandleKHR()");
+    return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "VUID-vkImportFenceWin32HandleKHR-fence-04448",
+                               "vkImportFenceWin32HandleKHR()");
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
