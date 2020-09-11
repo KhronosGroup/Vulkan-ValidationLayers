@@ -39,7 +39,7 @@ static const char DECORATE_UNUSED *kVUID_Core_Bound_Resource_FreedMemoryAccess =
 // static const char DECORATE_UNUSED *kVUID_Core_MemTrack_FenceState = "UNASSIGNED-CoreValidation-MemTrack-FenceState";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidMap = "UNASSIGNED-CoreValidation-MemTrack-InvalidMap";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidState = "UNASSIGNED-CoreValidation-MemTrack-InvalidState";
-static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidUsageFlag = "UNASSIGNED-CoreValidation-MemTrack-InvalidUsageFlag";
+// static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidUsageFlag = "UNASSIGNED-CoreValidation-MemTrack-InvalidUsageFlag";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_RebindObject = "UNASSIGNED-CoreValidation-MemTrack-RebindObject";
 // Previously defined but unused - uncomment as needed
 //static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InternalError = "UNASSIGNED-CoreValidation-MemTrack-InternalError";
