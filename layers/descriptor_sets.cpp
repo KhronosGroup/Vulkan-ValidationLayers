@@ -1795,7 +1795,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00339";
             } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) || ((VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout) &&
                                                                      (device_extensions.vk_khr_shared_presentable_image))) {
-                *error_code = "UNASSIGNED-VkWriteDescriptorSet-descriptorType";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04152";
                 std::stringstream error_str;
                 error_str << "Descriptor update with descriptorType VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"
                           << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
@@ -1854,6 +1854,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                             std::any_of(extended_layouts.cbegin(), extended_layouts.cend(), is_layout);
 
         if (!valid_layout) {
+            // The following works as currently all 3 descriptor types share the same set of valid layouts
             switch (type) {
                 case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
                     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04149";
@@ -1862,7 +1863,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04150";
                     break;
                 case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-                    *error_code = "UNASSIGNED-VkWriteDescriptorSet-descriptorType";
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04151";
                     break;
                 default:
                     break;
