@@ -4461,16 +4461,11 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
     }
 
     if (!correct_usage) {
-        if (msgCode == kVUIDUndefined) {
-            // TODO: Fix callers with kVUIDUndefined to use correct validation checks.
-            skip = LogError(object, kVUID_Core_MemTrack_InvalidUsageFlag,
-                            "Invalid usage flag for %s used by %s. In this case, %s should have %s set during creation.",
-                            report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
-        } else {
-            skip = LogError(object, msgCode,
-                            "Invalid usage flag for %s used by %s. In this case, %s should have %s set during creation.",
-                            report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
-        }
+        // All callers should have a valid VUID
+        assert(msgCode != kVUIDUndefined);
+        skip =
+            LogError(object, msgCode, "Invalid usage flag for %s used by %s. In this case, %s should have %s set during creation.",
+                     report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
     }
     return skip;
 }
@@ -5035,10 +5030,11 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             ValidateImageUsageFlags(image_state,
                                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                        VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT,
-                                    false, kVUIDUndefined, "vkCreateImageView()",
+                                        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV |
+                                        VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT,
+                                    false, "VUID-VkImageViewCreateInfo-image-04441", "vkCreateImageView()",
                                     "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT|"
-                                    "SHADING_RATE_IMAGE|FRAGMENT_DENSITY_MAP]_BIT");
+                                    "TRANSIENT_ATTACHMENT|SHADING_RATE_IMAGE|FRAGMENT_DENSITY_MAP]_BIT");
         // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
         // Checks imported from image layer
