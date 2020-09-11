@@ -6640,7 +6640,7 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
 
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkWriteDescriptorSet-descriptorType");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-04152");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
