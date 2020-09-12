@@ -318,9 +318,6 @@ void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
         (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
 
-    // Some tests mismatch attachment type with layout
-    error_monitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
-
     error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
     err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
     if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
