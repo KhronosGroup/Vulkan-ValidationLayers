@@ -122,7 +122,7 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
 
 TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     TEST_DESCRIPTION("Validate that newer pnext structs are not valid for old Vulkan versions.");
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
@@ -140,12 +140,18 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     m_errorMonitor->VerifyFound();
 
     // 1.1 context, VK_KHR_depth_stencil_resolve is NOT enabled, but using its struct is valid
-    if ((version >= VK_API_VERSION_1_1) && DeviceExtensionSupported(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
+    if (DeviceExtensionSupported(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
         auto unenabled_device_ext_struct = lvl_init_struct<VkPhysicalDeviceDepthStencilResolveProperties>();
         phys_dev_props_2.pNext = &unenabled_device_ext_struct;
-        m_errorMonitor->ExpectSuccess();
-        vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
-        m_errorMonitor->VerifyNotFound();
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+            m_errorMonitor->ExpectSuccess();
+            vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+            m_errorMonitor->VerifyNotFound();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-API-Version-Violation");
+            vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 
