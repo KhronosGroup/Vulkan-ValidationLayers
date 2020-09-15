@@ -575,12 +575,12 @@ struct SubpassDependencyGraphNode {
         Dependency(const VkSubpassDependency2 *dependency_, const SubpassDependencyGraphNode *node_)
             : dependency(dependency_), node(node_) {}
     };
-    std::vector<Dependency> prev;
-    std::vector<Dependency> next;
+    std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> prev;
+    std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> next;
     std::vector<uint32_t> async;  // asynchronous subpasses with a lower subpass index
 
-    const VkSubpassDependency2 *barrier_from_external;
-    const VkSubpassDependency2 *barrier_to_external;
+    std::vector<const VkSubpassDependency2 *> barrier_from_external;
+    std::vector<const VkSubpassDependency2 *> barrier_to_external;
     std::unique_ptr<VkSubpassDependency2> implicit_barrier_from_external;
     std::unique_ptr<VkSubpassDependency2> implicit_barrier_to_external;
 };

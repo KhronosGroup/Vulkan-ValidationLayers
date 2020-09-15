@@ -4141,7 +4141,7 @@ void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_vers
         subpass_dependencies[i].pass = i;
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
-        const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
+        const auto &dependency = pCreateInfo->pDependencies[i];
         const auto srcSubpass = dependency.srcSubpass;
         const auto dstSubpass = dependency.dstSubpass;
         if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass != VK_SUBPASS_EXTERNAL)) {
@@ -4154,13 +4154,13 @@ void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_vers
         }
         if (srcSubpass == VK_SUBPASS_EXTERNAL) {
             assert(dstSubpass != VK_SUBPASS_EXTERNAL);  // this is invalid per VUID-VkSubpassDependency-srcSubpass-00865
-            subpass_dependencies[dstSubpass].barrier_from_external = &dependency;
+            subpass_dependencies[dstSubpass].barrier_from_external.emplace_back(&dependency);
         } else if (dstSubpass == VK_SUBPASS_EXTERNAL) {
-            subpass_dependencies[srcSubpass].barrier_to_external = &dependency;
+            subpass_dependencies[srcSubpass].barrier_to_external.emplace_back(&dependency);
         } else if (dependency.srcSubpass != dependency.dstSubpass) {
             // ignore self dependencies in prev and next
-            subpass_dependencies[srcSubpass].next.emplace_back(&dependency, &subpass_dependencies[dstSubpass]);
-            subpass_dependencies[dstSubpass].prev.emplace_back(&dependency, &subpass_dependencies[srcSubpass]);
+            subpass_dependencies[srcSubpass].next[&subpass_dependencies[dstSubpass]].emplace_back(&dependency);
+            subpass_dependencies[dstSubpass].prev[&subpass_dependencies[srcSubpass]].emplace_back(&dependency);
         }
     }
 
@@ -4175,7 +4175,7 @@ void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_vers
         depends.resize(i);
         auto &subpass_dep = subpass_dependencies[i];
         for (const auto &prev : subpass_dep.prev) {
-            const auto prev_pass = prev.node->pass;
+            const auto prev_pass = prev.first->pass;
             const auto &prev_depends = pass_depends[prev_pass];
             for (uint32_t j = 0; j < prev_pass; j++) {
                 depends[j] = depends[j] | prev_depends[j];
@@ -4284,7 +4284,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
                     last[attachment] = subpass;
 
                     for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
-                        const auto prev_pass = prev.node->pass;
+                        const auto prev_pass = prev.first->pass;
                         const auto prev_layout = subpass_attachment_layout[prev_pass][attachment];
                         if ((prev_layout != kInvalidLayout) && (prev_layout != layout)) {
                             subpass_transitions[subpass].emplace_back(prev_pass, attachment, prev_layout, layout);
@@ -4322,21 +4322,21 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
         const auto first_use = attachment_tracker.first[attachment];
         if (first_use != VK_SUBPASS_EXTERNAL) {
             auto &subpass_dep = render_pass->subpass_dependencies[first_use];
-            if (!subpass_dep.barrier_from_external) {
-                // Add implicit from barrier
+            if (subpass_dep.barrier_from_external.size() == 0) {
+                // Add implicit from barrier if they're aren't any
                 subpass_dep.implicit_barrier_from_external.reset(
                     new VkSubpassDependency2(ImplicitDependencyFromExternal(first_use)));
-                subpass_dep.barrier_from_external = subpass_dep.implicit_barrier_from_external.get();
+                subpass_dep.barrier_from_external.emplace_back(subpass_dep.implicit_barrier_from_external.get());
             }
         }
 
         const auto last_use = attachment_tracker.last[attachment];
         if (last_use != VK_SUBPASS_EXTERNAL) {
             auto &subpass_dep = render_pass->subpass_dependencies[last_use];
-            if (!render_pass->subpass_dependencies[last_use].barrier_to_external) {
-                // Add implicit to barrier
+            if (render_pass->subpass_dependencies[last_use].barrier_to_external.size() == 0) {
+                // Add implicit to barrier  if they're aren't any
                 subpass_dep.implicit_barrier_to_external.reset(new VkSubpassDependency2(ImplicitDependencyToExternal(last_use)));
-                subpass_dep.barrier_to_external = subpass_dep.implicit_barrier_to_external.get();
+                subpass_dep.barrier_to_external.emplace_back(subpass_dep.implicit_barrier_to_external.get());
             }
         }
     }
