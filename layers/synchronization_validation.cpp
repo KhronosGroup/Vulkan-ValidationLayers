@@ -458,23 +458,25 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
     prev_.reserve(subpass_dep.prev.size());
     prev_by_subpass_.resize(subpass, nullptr);  // Can't be more prevs than the subpass we're on
     for (const auto &prev_dep : subpass_dep.prev) {
-        assert(prev_dep.dependency);
-        const auto dep = *prev_dep.dependency;
-        prev_.emplace_back(const_cast<AccessContext *>(&contexts[dep.srcSubpass]), queue_flags, dep);
-        prev_by_subpass_[dep.srcSubpass] = &prev_.back();
+        const auto prev_pass = prev_dep.first->pass;
+        const auto &prev_barriers = prev_dep.second;
+        assert(prev_dep.second.size());
+        prev_.emplace_back(&contexts[prev_pass], queue_flags, prev_barriers);
+        prev_by_subpass_[prev_pass] = &prev_.back();
     }
 
     async_.reserve(subpass_dep.async.size());
     for (const auto async_subpass : subpass_dep.async) {
+        // TODO -- review why async is storing non-const
         async_.emplace_back(const_cast<AccessContext *>(&contexts[async_subpass]));
     }
-    if (subpass_dep.barrier_from_external) {
-        src_external_ = TrackBack(external_context, queue_flags, *subpass_dep.barrier_from_external);
+    if (subpass_dep.barrier_from_external.size()) {
+        src_external_ = TrackBack(external_context, queue_flags, subpass_dep.barrier_from_external);
     } else {
         src_external_ = TrackBack();
     }
-    if (subpass_dep.barrier_to_external) {
-        dst_external_ = TrackBack(this, queue_flags, *subpass_dep.barrier_to_external);
+    if (subpass_dep.barrier_to_external.size()) {
+        dst_external_ = TrackBack(this, queue_flags, subpass_dep.barrier_to_external);
     } else {
         dst_external_ = TrackBack();
     }

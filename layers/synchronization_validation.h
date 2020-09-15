@@ -225,11 +225,13 @@ class AccessContext {
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
 
+    // WIP TODO WIP Multi-dep -- change track back to support barrier vector, not just last.
     struct TrackBack {
         SyncBarrier barrier;
         const AccessContext *context;
-        TrackBack(const AccessContext *context_, VkQueueFlags queue_flags_, const VkSubpassDependency2 &subpass_barrier_)
-            : barrier(queue_flags_, subpass_barrier_), context(context_) {}
+        TrackBack(const AccessContext *context_, VkQueueFlags queue_flags_,
+                  const std::vector<const VkSubpassDependency2 *> &subpass_barrier_)
+            : barrier(queue_flags_, *subpass_barrier_.back()), context(context_) {}
         TrackBack &operator=(const TrackBack &) = default;
         TrackBack() = default;
     };
