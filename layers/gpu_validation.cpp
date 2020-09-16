@@ -309,6 +309,11 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     DestroyAccelerationStructureBuildValidationState();
     UtilPreCallRecordDestroyDevice(this);
     ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
+    // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
+    if (vmaAllocator) {
+        vmaDestroyAllocator(vmaAllocator);
+    }
+    desc_set_manager.reset();
 }
 
 void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *device_gpuav) {
