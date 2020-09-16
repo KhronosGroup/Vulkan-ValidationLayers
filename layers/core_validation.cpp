@@ -7662,15 +7662,6 @@ bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_da
                                      state_data->report_data->FormatHandle(commandBuffer).c_str());
     }
 
-    if (query_pool_state->has_perf_scope_command_buffer && (cb_state->commandCount - 1) != query_obj.endCommandIndex) {
-        skip |= state_data->LogError(commandBuffer, "VUID-vkCmdEndQuery-queryPool-03227",
-                                     "vkCmdEndQuery: Query pool %s was created with a counter of scope"
-                                     "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
-                                     "command in the command buffer %s.",
-                                     state_data->report_data->FormatHandle(query_obj.pool).c_str(),
-                                     state_data->report_data->FormatHandle(commandBuffer).c_str());
-    }
-
     QueryState command_buffer_state = state_data->GetQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
     if (command_buffer_state == QUERYSTATE_RESET) {
         skip |= state_data->LogError(
@@ -7718,6 +7709,29 @@ void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQue
     if (disabled[query_validation]) return;
     QueryObject query_obj = {queryPool, slot};
     EnqueueVerifyBeginQuery(commandBuffer, query_obj, "vkCmdBeginQuery()");
+}
+
+void CoreChecks::EnqueueVerifyEndQuery(VkCommandBuffer command_buffer, const QueryObject &query_obj) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(command_buffer);
+
+    // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
+    cb_state->queryUpdates.emplace_back([command_buffer, query_obj](const ValidationStateTracker *device_data, bool do_validate,
+                                                                    VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                                    QueryMap *localQueryToStateMap) {
+        if (!do_validate) return false;
+        bool skip = false;
+        const CMD_BUFFER_STATE *cb_state = device_data->GetCBState(command_buffer);
+        const auto *query_pool_state = device_data->GetQueryPoolState(query_obj.pool);
+        if (query_pool_state->has_perf_scope_command_buffer && (cb_state->commandCount - 1) != query_obj.endCommandIndex) {
+            skip |= device_data->LogError(command_buffer, "VUID-vkCmdEndQuery-queryPool-03227",
+                                          "vkCmdEndQuery: Query pool %s was created with a counter of scope"
+                                          "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
+                                          "command in the command buffer %s.",
+                                          device_data->report_data->FormatHandle(query_obj.pool).c_str(),
+                                          device_data->report_data->FormatHandle(command_buffer).c_str());
+        }
+        return skip;
+    });
 }
 
 bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, CMD_TYPE cmd,
@@ -7771,6 +7785,14 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
         }
     }
     return skip;
+}
+
+void CoreChecks::PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
+    if (disabled[query_validation]) return;
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    QueryObject query_obj = {queryPool, slot};
+    query_obj.endCommandIndex = cb_state->commandCount - 1;
+    EnqueueVerifyEndQuery(commandBuffer, query_obj);
 }
 
 bool CoreChecks::ValidateQueryPoolIndex(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const char *func_name,
@@ -12100,6 +12122,15 @@ void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuf
     if (disabled[query_validation]) return;
     QueryObject query_obj = {queryPool, query, index};
     EnqueueVerifyBeginQuery(commandBuffer, query_obj, "vkCmdBeginQueryIndexedEXT()");
+}
+
+void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                    uint32_t index) {
+    if (disabled[query_validation]) return;
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    QueryObject query_obj = {queryPool, query, index};
+    query_obj.endCommandIndex = cb_state->commandCount - 1;
+    EnqueueVerifyEndQuery(commandBuffer, query_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
