@@ -8262,9 +8262,8 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
-    uint32_t nPasses = 0;
 
-    // Find a single counter with VK_QUERY_SCOPE_RENDER_PASS_KHR scope.
+    // Find a single counter with VK_QUERY_SCOPE_COMMAND_KHR scope.
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
@@ -8279,19 +8278,11 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) counterIndices.push_back(counterIdx);
-
-        VkQueryPoolPerformanceCreateInfoKHR create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
-        create_info.queueFamilyIndex = idx;
-        create_info.counterIndexCount = counterIndices.size();
-        create_info.pCounterIndices = &counterIndices[0];
-
-        vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(gpu(), &create_info, &nPasses);
-
-        if (nPasses < 2) {
-            counters.clear();
-            continue;
+        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+            if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) {
+                counterIndices.push_back(counterIdx);
+                break;
+            }
         }
         break;
     }
@@ -8371,7 +8362,7 @@ TEST_F(VkLayerTest, QueryPerformanceResetAndBegin) {
         {
             VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
             perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
-            perf_submit_info.counterPassIndex = nPasses - 1;
+            perf_submit_info.counterPassIndex = 0;
             VkSubmitInfo submit_info{};
             submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submit_info.pNext = &perf_submit_info;
