@@ -97,6 +97,12 @@ void DebugPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
 
 void DebugPrintf::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     UtilPreCallRecordDestroyDevice(this);
+    ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
+    // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
+    if (vmaAllocator) {
+        vmaDestroyAllocator(vmaAllocator);
+    }
+    desc_set_manager.reset();
 }
 
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.

@@ -126,11 +126,6 @@ void UtilPreCallRecordDestroyDevice(ObjectType *object_ptr) {
         DispatchDestroyDescriptorSetLayout(object_ptr->device, object_ptr->dummy_desc_layout, NULL);
         object_ptr->dummy_desc_layout = VK_NULL_HANDLE;
     }
-    object_ptr->desc_set_manager.reset();
-
-    if (object_ptr->vmaAllocator) {
-        vmaDestroyAllocator(object_ptr->vmaAllocator);
-    }
 }
 
 template <typename ObjectType>
