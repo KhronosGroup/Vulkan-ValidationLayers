@@ -7999,7 +7999,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
     std::vector<uint32_t> counterIndices;
     uint32_t nPasses = 0;
 
-    // Find a single counter with VK_QUERY_SCOPE_RENDER_PASS_KHR scope.
+    // Find all counters with VK_QUERY_SCOPE_COMMAND_KHR scope.
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
@@ -8014,7 +8014,9 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) counterIndices.push_back(counterIdx);
+        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+            if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) counterIndices.push_back(counterIdx);
+        }
 
         VkQueryPoolPerformanceCreateInfoKHR create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
