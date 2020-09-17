@@ -958,6 +958,19 @@ vkCmdBuildAccelerationStructureNV(...)  // build top level using modified instan
 
 vkEndCommandBuffer(...)
 ```
+
+## GPU-Assisted Buffer Access Validation
+
+When GPU-Assisted Validation is active, either the descriptor indexing input buffer
+(if descriptor indexing is enabled) or an input buffer of the same format without array
+sizes is used to inform instrumented shaders of the size of each of the buffers the shader
+may access.  If the shader accesses a buffer beyond the declared length of the buffer, the
+instrumentation will return an error to the validation layer.  This checking applies to to
+all uniform and storage buffers, but not to texel buffers. If a buffer access is found to be
+out of bounds, it will not be performed.  Instead, writes will be skipped, and reads will return 0.
+Note that this validation can be disabled by setting "khronos_validation.gpuav_buffer_oob = false" 
+in a vk_layer_settings.txt file.
+
 ## GPU-Assisted Validation Testing
 
 Validation Layer Tests (VLTs) exist for GPU-Assisted Validation.
