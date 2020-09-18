@@ -100,6 +100,18 @@ struct SyncBarrier {
     SyncBarrier() = default;
     SyncBarrier &operator=(const SyncBarrier &) = default;
     SyncBarrier(VkQueueFlags gueue_flags, const VkSubpassDependency2 &sub_pass_barrier);
+    void Merge(const SyncBarrier &other) {
+        src_exec_scope |= other.src_exec_scope;
+        src_access_scope |= other.src_access_scope;
+        dst_exec_scope |= other.dst_exec_scope;
+        dst_access_scope |= other.dst_access_scope;
+    }
+    SyncBarrier(VkPipelineStageFlags src_exec_scope_, SyncStageAccessFlags src_access_scope_, VkPipelineStageFlags dst_exec_scope_,
+                SyncStageAccessFlags dst_access_scope_)
+        : src_exec_scope(src_exec_scope_),
+          src_access_scope(src_access_scope_),
+          dst_exec_scope(dst_exec_scope_),
+          dst_access_scope(dst_access_scope_) {}
 };
 
 // To represent ordering guarantees such as rasterization and store
@@ -138,9 +150,10 @@ class ResourceAccessState : public SyncStageAccess {
 
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
     void Resolve(const ResourceAccessState &other);
-    void ApplyBarrier(const SyncBarrier &barrier);
+    void ApplyBarriers(const std::vector<SyncBarrier> &barriers);
     void ApplyExecutionBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
-    void ApplyMemoryAccessBarrier(VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
+    void ApplyExecutionBarriers(const std::vector<SyncBarrier> &barriers);
+    void ApplyMemoryAccessBarrier(bool multi_dep, VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
                                   VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_scope);
 
     ResourceAccessState()
@@ -173,6 +186,9 @@ class ResourceAccessState : public SyncStageAccess {
   private:
     static constexpr VkPipelineStageFlags kNoAttachmentRead = ~VkPipelineStageFlags(0);
     bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
+    bool InSourceScopeOrChain(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope) const {
+        return (src_access_scope & last_write) || (write_dependency_chain & src_exec_scope);
+    }
 
     static bool IsReadHazard(VkPipelineStageFlagBits stage, const VkPipelineStageFlags barriers) {
         return 0 != (stage & ~barriers);
@@ -227,11 +243,18 @@ class AccessContext {
 
     // WIP TODO WIP Multi-dep -- change track back to support barrier vector, not just last.
     struct TrackBack {
-        SyncBarrier barrier;
+        std::vector<SyncBarrier> barriers;
         const AccessContext *context;
         TrackBack(const AccessContext *context_, VkQueueFlags queue_flags_,
-                  const std::vector<const VkSubpassDependency2 *> &subpass_barrier_)
-            : barrier(queue_flags_, *subpass_barrier_.back()), context(context_) {}
+                  const std::vector<const VkSubpassDependency2 *> &subpass_dependencies_)
+            : barriers(), context(context_) {
+            barriers.reserve(subpass_dependencies_.size());
+            for (const VkSubpassDependency2 *dependency : subpass_dependencies_) {
+                assert(dependency);
+                barriers.emplace_back(queue_flags_, *dependency);
+            }
+        }
+
         TrackBack &operator=(const TrackBack &) = default;
         TrackBack() = default;
     };
@@ -264,6 +287,7 @@ class AccessContext {
         prev_by_subpass_.clear();
         async_.clear();
         src_external_ = TrackBack();
+        dst_external_ = TrackBack();
         for (auto &map : access_state_maps_) {
             map.clear();
         }
@@ -275,7 +299,7 @@ class AccessContext {
     void ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
                                AddressType address_type, ResourceAccessRangeMap *descent_map,
                                const ResourceAccessState *infill_state) const;
-    void ResolveAccessRange(AddressType type, const ResourceAccessRange &range, const SyncBarrier *barrier,
+    void ResolveAccessRange(AddressType type, const ResourceAccessRange &range, const std::vector<SyncBarrier> &barriers,
                             ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                             bool recur_to_infill = true) const;
     void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,

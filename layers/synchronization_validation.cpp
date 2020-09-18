@@ -472,13 +472,9 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
     }
     if (subpass_dep.barrier_from_external.size()) {
         src_external_ = TrackBack(external_context, queue_flags, subpass_dep.barrier_from_external);
-    } else {
-        src_external_ = TrackBack();
     }
     if (subpass_dep.barrier_to_external.size()) {
         dst_external_ = TrackBack(this, queue_flags, subpass_dep.barrier_to_external);
-    } else {
-        dst_external_ = TrackBack();
     }
 }
 
@@ -566,7 +562,7 @@ HazardResult AccessContext::DetectAsyncHazard(AddressType type, const Detector &
 // Returns the last resolved entry
 static void ResolveMapToEntry(ResourceAccessRangeMap *dest, ResourceAccessRangeMap::iterator entry,
                               ResourceAccessRangeMap::const_iterator first, ResourceAccessRangeMap::const_iterator last,
-                              const SyncBarrier *barrier) {
+                              const std::vector<SyncBarrier> &barriers) {
     auto at = entry;
     for (auto pos = first; pos != last; ++pos) {
         // Every member of the input iterator range must fit within the remaining portion of entry
@@ -575,15 +571,23 @@ static void ResolveMapToEntry(ResourceAccessRangeMap *dest, ResourceAccessRangeM
         // Trim up at to the same size as the entry to resolve
         at = sparse_container::split(at, *dest, pos->first);
         auto access = pos->second;
-        if (barrier) {
-            access.ApplyBarrier(*barrier);
+        if (barriers.size()) {
+            access.ApplyBarriers(barriers);
         }
         at->second.Resolve(access);
         ++at;  // Go to the remaining unused section of entry
     }
 }
 
-void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRange &range, const SyncBarrier *barrier,
+static SyncBarrier MergeBarriers(const std::vector<SyncBarrier> &barriers) {
+    SyncBarrier merged = {};
+    for (const auto &barrier : barriers) {
+        merged.Merge(barrier);
+    }
+    return merged;
+}
+
+void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRange &range, const std::vector<SyncBarrier> &barriers,
                                        ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                                        bool recur_to_infill) const {
     if (!range.non_empty()) return;
@@ -594,8 +598,8 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
         if (current->pos_B->valid) {
             const auto &src_pos = current->pos_B->lower_bound;
             auto access = src_pos->second;
-            if (barrier) {
-                access.ApplyBarrier(*barrier);
+            if (barriers.size()) {
+                access.ApplyBarriers(barriers);
             }
             if (current->pos_A->valid) {
                 const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
@@ -612,14 +616,14 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
                     // Dest is valid, so we need to accumulate along the DAG and then resolve... in an N-to-1 resolve operation
                     ResourceAccessRangeMap gap_map;
                     ResolvePreviousAccess(type, current_range, &gap_map, infill_state);
-                    ResolveMapToEntry(resolve_map, current->pos_A->lower_bound, gap_map.begin(), gap_map.end(), barrier);
+                    ResolveMapToEntry(resolve_map, current->pos_A->lower_bound, gap_map.begin(), gap_map.end(), barriers);
                 } else {
                     // There isn't anything in dest in current)range, so we can accumulate directly into it.
                     ResolvePreviousAccess(type, current_range, resolve_map, infill_state);
-                    if (barrier) {
+                    if (barriers.size()) {
                         // Need to apply the barrier to the accesses we accumulated, noting that we haven't updated current
                         for (auto pos = resolve_map->lower_bound(current_range); pos != current->pos_A->lower_bound; ++pos) {
-                            pos->second.ApplyBarrier(*barrier);
+                            pos->second.ApplyBarriers(barriers);
                         }
                     }
                 }
@@ -648,7 +652,7 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
         const auto the_end = resolve_map->end();
         ResolvePreviousAccess(type, trailing_fill_range, &gap_map, infill_state);
         for (auto &access : gap_map) {
-            access.second.ApplyBarrier(*barrier);
+            access.second.ApplyBarriers(barriers);
             resolve_map->insert(the_end, access);
         }
     }
@@ -663,11 +667,11 @@ void AccessContext::ResolvePreviousAccess(AddressType type, const ResourceAccess
     } else {
         // Look for something to fill the gap further along.
         for (const auto &prev_dep : prev_) {
-            prev_dep.context->ResolveAccessRange(type, range, &prev_dep.barrier, descent_map, infill_state);
+            prev_dep.context->ResolveAccessRange(type, range, prev_dep.barriers, descent_map, infill_state);
         }
 
         if (src_external_.context) {
-            src_external_.context->ResolveAccessRange(type, range, &src_external_.barrier, descent_map, infill_state);
+            src_external_.context->ResolveAccessRange(type, range, src_external_.barriers, descent_map, infill_state);
         }
     }
 }
@@ -767,7 +771,12 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
     const auto *attachment_ci = rp_state.createInfo.pAttachments;
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
-    const auto external_access_scope = src_external_.barrier.dst_access_scope;
+
+    SyncStageAccessFlags accumulate_access_scope = 0;
+    for (const auto &barrier : src_external_.barriers) {
+        accumulate_access_scope |= barrier.dst_access_scope;
+    }
+    const auto external_access_scope = accumulate_access_scope;
 
     for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
         if (subpass == rp_state.attachment_first_subpass[i]) {
@@ -1175,7 +1184,7 @@ struct ApplyMemoryAccessBarrierFunctor {
 
     Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
         auto &access_state = pos->second;
-        access_state.ApplyMemoryAccessBarrier(src_exec_scope, src_access_scope, dst_exec_scope, dst_access_scope);
+        access_state.ApplyMemoryAccessBarrier(false, src_exec_scope, src_access_scope, dst_exec_scope, dst_access_scope);
         return pos;
     }
 
@@ -1357,7 +1366,7 @@ void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &conte
     for (uint32_t subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
         auto &context = contexts[subpass_index];
         for (const auto address_type : kAddressTypes) {
-            context.ResolveAccessRange(address_type, full_range, &context.GetDstExternalTrackBack().barrier,
+            context.ResolveAccessRange(address_type, full_range, context.GetDstExternalTrackBack().barriers,
                                        &GetAccessStateMap(address_type), nullptr, false);
         }
     }
@@ -1403,14 +1412,17 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track
     assert(track_back.context);
 
     // Do the detection against the specific prior context independent of other contexts.  (Synchronous only)
-    auto hazard = track_back.context->DetectImageBarrierHazard(*image_state, track_back.barrier.src_exec_scope,
-                                                               track_back.barrier.src_access_scope,
-                                                               attach_view->normalized_subresource_range, kDetectPrevious);
+    // Hazard detection for the transition can be against the merged of the barriers (it only uses src_...)
+    const auto merged_barrier = MergeBarriers(track_back.barriers);
+    HazardResult hazard =
+        track_back.context->DetectImageBarrierHazard(*image_state, merged_barrier.src_exec_scope, merged_barrier.src_access_scope,
+                                                     attach_view->normalized_subresource_range, kDetectPrevious);
     if (!hazard.hazard) {
         // The Async hazard check is against the current context's async set.
-        hazard = DetectImageBarrierHazard(*image_state, track_back.barrier.src_exec_scope, track_back.barrier.src_access_scope,
+        hazard = DetectImageBarrierHazard(*image_state, merged_barrier.src_exec_scope, merged_barrier.src_access_scope,
                                           attach_view->normalized_subresource_range, kDetectAsync);
     }
+
     return hazard;
 }
 
@@ -2033,9 +2045,11 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncVa
             context = proxy_for_current.get();
         }
 
-        auto hazard = context->DetectImageBarrierHazard(
-            *attach_view->image_state, trackback.barrier.src_exec_scope, trackback.barrier.src_access_scope,
-            attach_view->normalized_subresource_range, AccessContext::DetectOptions::kDetectPrevious);
+        // Use the merged barrier for the hazard check (safe since it just considers the src (first) scope.
+        const auto merged_barrier = MergeBarriers(trackback.barriers);
+        auto hazard = context->DetectImageBarrierHazard(*attach_view->image_state, merged_barrier.src_exec_scope,
+                                                        merged_barrier.src_access_scope, attach_view->normalized_subresource_range,
+                                                        AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.hazard) {
             skip |= sync_state.LogError(rp_state_->renderPass, string_SyncHazardVUID(hazard.hazard),
                                         "%s: Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
@@ -2059,18 +2073,21 @@ void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag &ta
         const auto image = attachment_view->image_state.get();
         if (!image) continue;
 
-        const auto *barrier = subpass_context.GetTrackBackFromSubpass(transition.prev_pass);
+        const auto *trackback = subpass_context.GetTrackBackFromSubpass(transition.prev_pass);
+        assert(trackback);
+        const auto merged_barrier = MergeBarriers(trackback->barriers);
         auto insert_pair = view_seen.insert(attachment_view);
         if (insert_pair.second) {
             // We haven't recorded the transistion yet, so treat this as a normal barrier with transistion.
-            subpass_context.ApplyImageBarrier(*image, barrier->barrier, attachment_view->normalized_subresource_range, true, tag);
+            subpass_context.ApplyImageBarrier(*image, merged_barrier, attachment_view->normalized_subresource_range, true, tag);
 
         } else {
             // We've recorded the transition, but we need to added on the additional dest barriers, and rerecording the transition
             // would clear out the prior barrier flags, so apply this as a *non* transition barrier
-            auto barrier_to_transition = barrier->barrier;
+            auto barrier_to_transition = merged_barrier;
             barrier_to_transition.src_access_scope |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
-            subpass_context.ApplyImageBarrier(*image, barrier->barrier, attachment_view->normalized_subresource_range, false, tag);
+            subpass_context.ApplyImageBarrier(*image, barrier_to_transition, attachment_view->normalized_subresource_range, false,
+                                              tag);
         }
     }
 }
@@ -2155,7 +2172,9 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
         const auto &attachment = attachment_views_[transition.attachment];
         const auto &last_trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
         assert(&subpass_contexts_[transition.prev_pass] == last_trackback.context);
-        external_context->ApplyImageBarrier(*attachment->image_state, last_trackback.barrier,
+        // Since this is a layout transition vs. a subpass, we can safely merge the barriers, as there are no
+        // chaining effects after the layout transition (write operation) nukes the prior depenency chains
+        external_context->ApplyImageBarrier(*attachment->image_state, MergeBarriers(last_trackback.barriers),
                                             attachment->normalized_subresource_range, true, tag);
     }
 }
@@ -2169,9 +2188,12 @@ SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &b
     dst_access_scope = SyncStageAccess::AccessScope(dst_stage_mask, barrier.dstAccessMask);
 }
 
-void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier) {
-    ApplyExecutionBarrier(barrier.src_exec_scope, barrier.dst_exec_scope);
-    ApplyMemoryAccessBarrier(barrier.src_exec_scope, barrier.src_access_scope, barrier.dst_exec_scope, barrier.dst_access_scope);
+void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers) {
+    for (const auto &barrier : barriers) {
+        ApplyMemoryAccessBarrier(true, barrier.src_exec_scope, barrier.src_access_scope, barrier.dst_exec_scope,
+                                 barrier.dst_access_scope);
+    }
+    ApplyExecutionBarriers(barriers);
 }
 
 HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index) const {
@@ -2432,6 +2454,7 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
     }
 }
 
+// TODO: Leave "old style" execution barrier code until PipelineBarrier is corrected for true unordered barrier application
 void ResourceAccessState::ApplyExecutionBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {
     // Execution Barriers only protect read operations
     for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
@@ -2452,13 +2475,60 @@ void ResourceAccessState::ApplyExecutionBarrier(VkPipelineStageFlags srcStageMas
     }
 }
 
-void ResourceAccessState::ApplyMemoryAccessBarrier(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
-                                                   VkPipelineStageFlags dst_exec_scope, SyncStageAccessFlags dst_access_scope) {
-    // Assuming we've applied the execution side of this barrier, we update just the write
+void ResourceAccessState::ApplyExecutionBarriers(const std::vector<SyncBarrier> &barriers) {
+    // Since all execution chains are unordered, apply before update, accumulating update in pending_
+    // s.t. we don't create unintended dependency chaings.
+    // For reads the barriers function as the dependency chain
+    VkPipelineStageFlags pending_write_chain = 0;
+    VkPipelineStageFlags pending_input_attacment_barriers = 0;
+    std::array<VkPipelineStageFlags, kStageCount> pending_read_barriers;
+    for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+        pending_read_barriers[read_index] = 0;
+    }
+
+    for (const auto &barrier : barriers) {
+        const VkPipelineStageFlags src_scope = barrier.src_exec_scope;
+        const VkPipelineStageFlags dst_scope = barrier.dst_exec_scope;
+        // Execution Barriers only protect read operations
+        for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+            const ReadState &access = last_reads[read_index];
+            // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync scope
+            if (src_scope & (access.stage | access.barriers)) {
+                pending_read_barriers[read_index] |= dst_scope;
+            }
+        }
+        if ((input_attachment_barriers != kNoAttachmentRead) &&
+            (src_scope & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | input_attachment_barriers))) {
+            pending_input_attacment_barriers |= dst_scope;
+        }
+        if (InSourceScopeOrChain(src_scope, barrier.src_access_scope)) {
+            pending_write_chain |= dst_scope;
+        }
+    }
+
+    // Apply accumulated pending changes to the depenendency chains and barriers
+    for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+        last_reads[read_index].barriers |= pending_read_barriers[read_index];
+        read_execution_barriers |= pending_read_barriers[read_index];
+    }
+    input_attachment_barriers |= pending_input_attacment_barriers;
+    read_execution_barriers |= pending_input_attacment_barriers;
+    write_dependency_chain |= pending_write_chain;
+}
+
+void ResourceAccessState::ApplyMemoryAccessBarrier(bool multi_dep, VkPipelineStageFlags src_exec_scope,
+                                                   SyncStageAccessFlags src_access_scope, VkPipelineStageFlags dst_exec_scope,
+                                                   SyncStageAccessFlags dst_access_scope) {
+    // We update just the write barrier side of the execution and memory barrier.  Updating the dependency chain would
+    // create chaining between batches of barriers, which isn't wasn't intended.
+    // The callers is responsible for coming back and updating the dependency chain information after the memory access
+    // batch is complete.
     // The || implements the "dependency chain" logic for this barrier
-    if ((src_access_scope & last_write) || (write_dependency_chain & src_exec_scope)) {
+    if (InSourceScopeOrChain(src_exec_scope, src_access_scope)) {
         write_barriers |= dst_access_scope;
-        write_dependency_chain |= dst_exec_scope;
+        if (!multi_dep) {
+            write_dependency_chain |= dst_exec_scope;
+        }
     }
 }
 
