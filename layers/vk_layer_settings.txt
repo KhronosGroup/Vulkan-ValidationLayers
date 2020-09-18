@@ -140,11 +140,19 @@ khronos_validation.log_filename = stdout
 
 # Example entry showing how to Enable GPU-Assisted Validation
 #khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT
+# Example entry showing how to disable buffer out of bounds checking
+#khronos_validation.gpuav_buffer_oob = false
 
 # Example entry showing how to Enable Best Practices Validation
 #khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
 
 # Example entry showing how to enable Debug Printf messages
 #khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+# Example showing how to set the size in bytes of the buffer used by debug printf (default 1024 bytes)
+#khronos_validation.printf_buffer_size = 1024
+# Example of how to set the verbosity of debug printf messages (default not verbose)
+#khronos_validation.printf_verbose = false
+# Example of how to redirect debug printf messages from the debug callback to stdout
+#khronos_validation.printf_to_stdout = true
 
 ################################################################################
