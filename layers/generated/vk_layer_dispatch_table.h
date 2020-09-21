@@ -533,6 +533,14 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPipelineExecutableStatisticsKHR GetPipelineExecutableStatisticsKHR;
     PFN_vkGetPipelineExecutableInternalRepresentationsKHR GetPipelineExecutableInternalRepresentationsKHR;
 
+    // ---- VK_KHR_copy_commands2 extension commands
+    PFN_vkCmdCopyBuffer2KHR CmdCopyBuffer2KHR;
+    PFN_vkCmdCopyImage2KHR CmdCopyImage2KHR;
+    PFN_vkCmdCopyBufferToImage2KHR CmdCopyBufferToImage2KHR;
+    PFN_vkCmdCopyImageToBuffer2KHR CmdCopyImageToBuffer2KHR;
+    PFN_vkCmdBlitImage2KHR CmdBlitImage2KHR;
+    PFN_vkCmdResolveImage2KHR CmdResolveImage2KHR;
+
     // ---- VK_EXT_debug_marker extension commands
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
     PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;

@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.153 */
+/* Vulkan specification version: 1.2.154 */
 /*
  * Vulkan
  *
@@ -631,7 +631,64 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBindSparseInfo-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
     {"VUID-VkBindVertexBufferIndirectCommandNV-None-02949", "The buffer's usage flag from which the address was acquired must have the VK_BUFFER_USAGE_VERTEX_BUFFER_BIT bit set", "1.2-extensions"},
     {"VUID-VkBindVertexBufferIndirectCommandNV-None-02950", "Each element of the buffer from which the address was acquired and that is non-sparse must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-aspectMask-00241", "For each element of pRegions, srcSubresource.aspectMask must specify aspects present in srcImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-aspectMask-00242", "For each element of pRegions, dstSubresource.aspectMask must specify aspects present in dstImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-commonparent", "Both of dstImage, and srcImage must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-00224", "dstImage must have been created with VK_IMAGE_USAGE_TRANSFER_DST_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-00225", "If dstImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-00234", "dstImage must have been created with a samples value of VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-00250", "If dstImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, dstOffset[0].y must be 0 and dstOffset[1].y must be 1", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-00252", "If dstImage is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of pRegions, dstOffset[0].z must be 0 and dstOffset[1].z must be 1", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-01562", "dstImage must not use a format listed in Formats requiring sampler Y'CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-02000", "The format features of dstImage must contain VK_FORMAT_FEATURE_BLIT_DST_BIT", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-02545", "dstImage and srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImage-parameter", "dstImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImageLayout-00226", "dstImageLayout must specify the layout of the image subresources of dstImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImageLayout-00227", "dstImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkBlitImageInfo2KHR-dstImageLayout-01399", "dstImageLayout must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstImageLayout-parameter", "dstImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstOffset-00248", "For each element of pRegions, dstOffset[0].x and dstOffset[1].x must both be greater than or equal to 0 and less than or equal to the width of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstOffset-00249", "For each element of pRegions, dstOffset[0].y and dstOffset[1].y must both be greater than or equal to 0 and less than or equal to the height of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstOffset-00251", "For each element of pRegions, dstOffset[0].z and dstOffset[1].z must both be greater than or equal to 0 and less than or equal to the depth of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstSubresource-01706", "The dstSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-dstSubresource-01708", "The dstSubresource.baseArrayLayer + dstSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-filter-00237", "If filter is VK_FILTER_CUBIC_EXT, srcImage must be of type VK_IMAGE_TYPE_2D", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-filter-02001", "If filter is VK_FILTER_LINEAR, then the format features of srcImage must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-filter-02002", "If filter is VK_FILTER_CUBIC_EXT, then the format features of srcImage must contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-filter-parameter", "filter must be a valid VkFilter value", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-pRegions-00215", "The source region specified by each element of pRegions must be a region that is contained within srcImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-pRegions-00216", "The destination region specified by each element of pRegions must be a region that is contained within dstImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-pRegions-00217", "The union of all destination regions, specified by the elements of pRegions, must not overlap in memory with any texel that may be sampled during the blit operation", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-pRegions-parameter", "pRegions must be a valid pointer to an array of regionCount valid VkImageBlit2KHR structures", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-regionCount-arraylength", "regionCount must be greater than 0", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00219", "srcImage must have been created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00220", "If srcImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00229", "If either of srcImage or dstImage was created with a signed integer VkFormat, the other must also have been created with a signed integer VkFormat", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00230", "If either of srcImage or dstImage was created with an unsigned integer VkFormat, the other must also have been created with an unsigned integer VkFormat", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00231", "If either of srcImage or dstImage was created with a depth/stencil format, the other must have exactly the same format", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00232", "If srcImage was created with a depth/stencil format, filter must be VK_FILTER_NEAREST", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00233", "srcImage must have been created with a samples value of VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00240", "If either srcImage or dstImage is of type VK_IMAGE_TYPE_3D, then for each element of pRegions, srcSubresource.baseArrayLayer and dstSubresource.baseArrayLayer must each be 0, and srcSubresource.layerCount and dstSubresource.layerCount must each be 1.", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00245", "If srcImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, srcOffset[0].y must be 0 and srcOffset[1].y must be 1", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-00247", "If srcImage is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of pRegions, srcOffset[0].z must be 0 and srcOffset[1].z must be 1", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-01561", "srcImage must not use a format listed in Formats requiring sampler Y'CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-01999", "The format features of srcImage must contain VK_FORMAT_FEATURE_BLIT_SRC_BIT", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImage-parameter", "srcImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImageLayout-00221", "srcImageLayout must specify the layout of the image subresources of srcImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImageLayout-00222", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkBlitImageInfo2KHR-srcImageLayout-01398", "srcImageLayout must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcImageLayout-parameter", "srcImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcOffset-00243", "For each element of pRegions, srcOffset[0].x and srcOffset[1].x must both be greater than or equal to 0 and less than or equal to the width of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcOffset-00244", "For each element of pRegions, srcOffset[0].y and srcOffset[1].y must both be greater than or equal to 0 and less than or equal to the height of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcOffset-00246", "For each element of pRegions, srcOffset[0].z and srcOffset[1].z must both be greater than or equal to 0 and less than or equal to the depth of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcSubresource-01705", "The srcSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-VkBlitImageInfo2KHR-srcSubresource-01707", "The srcSubresource.baseArrayLayer + srcSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
     {"VUID-VkBufferCopy-size-01988", "The size must be greater than 0", "1.2-extensions"},
+    {"VUID-VkBufferCopy2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkBufferCopy2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR", "1.2-extensions"},
+    {"VUID-VkBufferCopy2KHR-size-01988", "The size must be greater than 0", "1.2-extensions"},
     {"VUID-VkBufferCreateInfo-None-01888", "If any of the bits VK_BUFFER_CREATE_SPARSE_BINDING_BIT, VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT, or VK_BUFFER_CREATE_SPARSE_ALIASED_BIT are set, VK_BUFFER_CREATE_PROTECTED_BIT must not also be set", "1.2-extensions"},
     {"VUID-VkBufferCreateInfo-deviceAddress-02604", "If VkBufferDeviceAddressCreateInfoEXT::deviceAddress is not zero, flags must include VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT", "1.2-extensions"},
     {"VUID-VkBufferCreateInfo-flags-00915", "If the sparse bindings feature is not enabled, flags must not contain VK_BUFFER_CREATE_SPARSE_BINDING_BIT", "1.2-extensions"},
@@ -665,6 +722,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkBufferImageCopy-bufferImageHeight-00196", "bufferImageHeight must be 0, or greater than or equal to the height member of imageExtent", "1.2-extensions"},
     {"VUID-VkBufferImageCopy-bufferRowLength-00195", "bufferRowLength must be 0, or greater than or equal to the width member of imageExtent", "1.2-extensions"},
     {"VUID-VkBufferImageCopy-imageSubresource-parameter", "imageSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkBufferImageCopy2KHR-aspectMask-00212", "The aspectMask member of imageSubresource must only have a single bit set", "1.2-extensions"},
+    {"VUID-VkBufferImageCopy2KHR-bufferImageHeight-00196", "bufferImageHeight must be 0, or greater than or equal to the height member of imageExtent", "1.2-extensions"},
+    {"VUID-VkBufferImageCopy2KHR-bufferRowLength-00195", "bufferRowLength must be 0, or greater than or equal to the width member of imageExtent", "1.2-extensions"},
+    {"VUID-VkBufferImageCopy2KHR-imageSubresource-parameter", "imageSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkBufferImageCopy2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkBufferImageCopy2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-buffer-01190", "If buffer was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, srcQueueFamilyIndex and dstQueueFamilyIndex must both be VK_QUEUE_FAMILY_IGNORED", "1.0"},
     {"VUID-VkBufferMemoryBarrier-buffer-01191", "If buffer was created with a sharing mode of VK_SHARING_MODE_CONCURRENT, at least one of srcQueueFamilyIndex and dstQueueFamilyIndex must be VK_QUEUE_FAMILY_IGNORED", "1.2-extensions"},
     {"VUID-VkBufferMemoryBarrier-buffer-01931", "If buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
@@ -815,6 +878,67 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkCopyAccelerationStructureToMemoryInfoKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR", "1.2-extensions"},
     {"VUID-VkCopyAccelerationStructureToMemoryInfoKHR-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
     {"VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-parameter", "src must be a valid VkAccelerationStructureKHR handle", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-commonparent", "Both of dstBuffer, and srcBuffer must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-dstBuffer-00120", "dstBuffer must have been created with VK_BUFFER_USAGE_TRANSFER_DST_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-dstBuffer-00121", "If dstBuffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-dstBuffer-parameter", "dstBuffer must be a valid VkBuffer handle", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-dstOffset-00114", "The dstOffset member of each element of pRegions must be less than the size of dstBuffer", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-pRegions-00117", "The union of the source regions, and the union of the destination regions, specified by the elements of pRegions, must not overlap in memory", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-pRegions-parameter", "pRegions must be a valid pointer to an array of regionCount valid VkBufferCopy2KHR structures", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-regionCount-arraylength", "regionCount must be greater than 0", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-size-00115", "The size member of each element of pRegions must be less than or equal to the size of srcBuffer minus srcOffset", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-size-00116", "The size member of each element of pRegions must be less than or equal to the size of dstBuffer minus dstOffset", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-srcBuffer-00118", "srcBuffer must have been created with VK_BUFFER_USAGE_TRANSFER_SRC_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-srcBuffer-00119", "If srcBuffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-srcBuffer-parameter", "srcBuffer must be a valid VkBuffer handle", "1.2-extensions"},
+    {"VUID-VkCopyBufferInfo2KHR-srcOffset-00113", "The srcOffset member of each element of pRegions must be less than the size of srcBuffer", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-None-00214", "For each element of pRegions whose imageSubresource contains a depth aspect, the data in srcBuffer must be in the range [0,1]", "1.2-khr-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-aspectMask-00211", "For each element of pRegions, imageSubresource.aspectMask must specify aspects present in {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-aspectMask-01560", "If {imageparam} has a multi-planar format, then for each element of pRegions, imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT (with VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes)", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-baseArrayLayer-00213", "If {imageparam} is of type VK_IMAGE_TYPE_3D, for each element of pRegions, imageSubresource.baseArrayLayer must be 0 and imageSubresource.layerCount must be 1", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-bufferImageHeight-00204", "If {imageparam} is a blocked image, for each element of pRegions, bufferImageHeight must be a multiple of the compressed texel block height", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-00193", "If {imageparam} does not have a depth/stencil format, then for each element of pRegions, bufferOffset must be a multiple of the format's texel block size", "1.0"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-00206", "If {imageparam} is a blocked image, for each element of pRegions, bufferOffset must be a multiple of the compressed texel block size in bytes", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-01558", "If {imageparam} does not have either a depth/stencil or a multi-planar format, then for each element of pRegions, bufferOffset must be a multiple of the format's texel block size", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-01559", "If {imageparam} has a multi-planar format, then for each element of pRegions, bufferOffset must be a multiple of the element size of the compatible format for the format and the aspectMask of the imageSubresource as defined in Compatible formats of planes of multi-planar formats", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-bufferRowLength-00203", "If {imageparam} is a blocked image, for each element of pRegions, bufferRowLength must be a multiple of the compressed texel block width", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-commandBuffer-04052", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT or VK_QUEUE_COMPUTE_BIT, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-commonparent", "Both of dstImage, and srcBuffer must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-00177", "dstImage must have been created with VK_IMAGE_USAGE_TRANSFER_DST_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-00178", "If dstImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-00179", "dstImage must have a sample count equal to VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-01997", "The format features of dstImage must contain VK_FORMAT_FEATURE_TRANSFER_DST_BIT", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-02543", "dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-04053", "If dstImage has a depth/stencil format, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-parameter", "dstImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-00180", "dstImageLayout must specify the layout of the image subresources of dstImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-00181", "dstImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-01396", "dstImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-dstImageLayout-parameter", "dstImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00207", "If {imageparam} is a blocked image, for each element of pRegions, imageExtent.width must be a multiple of the compressed texel block width or (imageExtent.width + imageOffset.x) must equal the width of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00208", "If {imageparam} is a blocked image, for each element of pRegions, imageExtent.height must be a multiple of the compressed texel block height or (imageExtent.height + imageOffset.y) must equal the height of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00209", "If {imageparam} is a blocked image, for each element of pRegions, imageExtent.depth must be a multiple of the compressed texel block depth or (imageExtent.depth + imageOffset.z) must equal the depth of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00197", "For each element of pRegions, imageOffset.x and (imageExtent.width + imageOffset.x) must both be greater than or equal to 0 and less than or equal to the width of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00198", "For each element of pRegions, imageOffset.y and (imageExtent.height + imageOffset.y) must both be greater than or equal to 0 and less than or equal to the height of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00200", "For each element of pRegions, imageOffset.z and (imageExtent.depth + imageOffset.z) must both be greater than or equal to 0 and less than or equal to the depth of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00205", "If {imageparam} is a blocked image, for each element of pRegions, all members of imageOffset must be a multiple of the corresponding dimensions of the compressed texel block", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageOffset-01793", "The imageOffset and imageExtent members of each element of pRegions must respect the image transfer granularity requirements of commandBuffer's command pool's queue family, as described in VkQueueFamilyProperties", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageSubresource-01701", "The imageSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-imageSubresource-01702", "The imageSubresource.baseArrayLayer + imageSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-pRegions-00171", "srcBuffer must be large enough to contain all buffer locations that are accessed according to Buffer and Image Addressing, for each element of pRegions", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-pRegions-00172", "The image region specified by each element of pRegions must be a region that is contained within dstImage", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-pRegions-00173", "The union of all source regions, and the union of all destination regions, specified by the elements of pRegions, must not overlap in memory", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-pRegions-parameter", "pRegions must be a valid pointer to an array of regionCount valid VkBufferImageCopy2KHR structures", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-regionCount-arraylength", "regionCount must be greater than 0", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-srcBuffer-00174", "srcBuffer must have been created with VK_BUFFER_USAGE_TRANSFER_SRC_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-srcBuffer-00176", "If srcBuffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-srcBuffer-parameter", "srcBuffer must be a valid VkBuffer handle", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-srcImage-00199", "If {imageparam} is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, imageOffset.y must be 0 and imageExtent.height must be 1", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-srcImage-00201", "If {imageparam} is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of pRegions, imageOffset.z must be 0 and imageExtent.depth must be 1", "1.2-extensions"},
     {"VUID-VkCopyDescriptorSet-commonparent", "Both of dstSet, and srcSet must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
     {"VUID-VkCopyDescriptorSet-dstArrayElement-00348", "The sum of dstArrayElement and descriptorCount must be less than or equal to the number of array elements in the descriptor set binding specified by dstBinding, and all applicable consecutive bindings, as described by consecutive binding updates", "1.2-extensions"},
     {"VUID-VkCopyDescriptorSet-dstBinding-00347", "dstBinding must be a valid binding within dstSet", "1.2-extensions"},
@@ -834,6 +958,121 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkCopyDescriptorSet-srcSet-01920", "If the descriptor pool from which srcSet was allocated was created with the VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set, then the descriptor pool from which dstSet was allocated must also have been created with the VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set", "1.2-extensions"},
     {"VUID-VkCopyDescriptorSet-srcSet-01921", "If the descriptor pool from which srcSet was allocated was created without the VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set, then the descriptor pool from which dstSet was allocated must also have been created without the VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set", "1.2-extensions"},
     {"VUID-VkCopyDescriptorSet-srcSet-parameter", "srcSet must be a valid VkDescriptorSet handle", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-None-01549", "In a copy to or from a plane of a multi-planar image, the VkFormat of the image and plane must be compatible according to the description of compatible planes for the plane being copied", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-aspectMask-00142", "For each element of pRegions, srcSubresource.aspectMask must specify aspects present in srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-aspectMask-00143", "For each element of pRegions, dstSubresource.aspectMask must specify aspects present in dstImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-commonparent", "Both of dstImage, and srcImage must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-00131", "dstImage must have been created with VK_IMAGE_USAGE_TRANSFER_DST_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-00132", "If dstImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.0"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-00152", "If dstImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, dstOffset.y must be 0 and extent.height must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01547", "If dstImage is non-sparse then the image or disjoint plane that is the destination of the copy must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01554", "If dstImage has a VkFormat with two planes then for each element of pRegions, dstSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01555", "If dstImage has a VkFormat with three planes then for each element of pRegions, dstSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01557", "If dstImage has a multi-planar image format and the srcImage does not have a multi-planar image format, then for each element of pRegions, srcSubresource.aspectMask must be VK_IMAGE_ASPECT_COLOR_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01731", "If dstImage is a blocked image, then for each element of pRegions, all members of dstOffset must be a multiple of the corresponding dimensions of the compressed texel block", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01732", "If dstImage is a blocked image, then for each element of pRegions, extent.width must be a multiple of the compressed texel block width or (extent.width + dstOffset.x) must equal the width of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01733", "If dstImage is a blocked image, then for each element of pRegions, extent.height must be a multiple of the compressed texel block height or (extent.height + dstOffset.y) must equal the height of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01734", "If dstImage is a blocked image, then for each element of pRegions, extent.depth must be a multiple of the compressed texel block depth or (extent.depth + dstOffset.z) must equal the depth of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01786", "If dstImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, dstOffset.z must be 0 and extent.depth must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01788", "If dstImage is of type VK_IMAGE_TYPE_2D, then for each element of pRegions, dstOffset.z must be 0", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01792", "If dstImage is of type VK_IMAGE_TYPE_2D, and srcImage is of type VK_IMAGE_TYPE_3D, then for each element of pRegions, extent.depth must equal dstSubresource.layerCount", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-01996", "The format features of dstImage must contain VK_FORMAT_FEATURE_TRANSFER_DST_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-02542", "dstImage and srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-04444", "If dstImage is of type VK_IMAGE_TYPE_3D, then for each element of pRegions, dstSubresource.baseArrayLayer must be 0 and and dstSubresource.layerCount must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImage-parameter", "dstImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImageLayout-00133", "dstImageLayout must specify the layout of the image subresources of dstImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImageLayout-00134", "dstImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkCopyImageInfo2KHR-dstImageLayout-01395", "dstImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstImageLayout-parameter", "dstImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstOffset-00150", "For each element of pRegions, dstOffset.x and (extent.width + dstOffset.x) must both be greater than or equal to 0 and less than or equal to the width of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstOffset-00151", "For each element of pRegions, dstOffset.y and (extent.height + dstOffset.y) must both be greater than or equal to 0 and less than or equal to the height of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstOffset-00153", "For each element of pRegions, dstOffset.z and (extent.depth + dstOffset.z) must both be greater than or equal to 0 and less than or equal to the depth of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstOffset-01784", "The dstOffset and extent members of each element of pRegions must respect the image transfer granularity requirements of commandBuffer's command pool's queue family, as described in VkQueueFamilyProperties", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstSubresource-01697", "The dstSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-dstSubresource-01699", "The dstSubresource.baseArrayLayer + dstSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-pRegions-00124", "The union of all source regions, and the union of all destination regions, specified by the elements of pRegions, must not overlap in memory", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-pRegions-parameter", "pRegions must be a valid pointer to an array of regionCount valid VkImageCopy2KHR structures", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-regionCount-arraylength", "regionCount must be greater than 0", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-00126", "srcImage must have been created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-00127", "If srcImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.0"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-00135", "The VkFormat of each of srcImage and dstImage must be compatible, as defined above", "1.0"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-00136", "The sample count of srcImage and dstImage must match", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-00139", "If either srcImage or dstImage is of type VK_IMAGE_TYPE_3D, then for each element of pRegions, srcSubresource.baseArrayLayer and dstSubresource.baseArrayLayer must each be 0, and srcSubresource.layerCount and dstSubresource.layerCount must each be 1", "1.0"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-00146", "If srcImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, srcOffset.y must be 0 and extent.height must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01546", "If srcImage is non-sparse then the image or disjoint plane to be copied must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01548", "If the VkFormat of each of srcImage and dstImage is not a multi-planar format, the VkFormat of each of srcImage and dstImage must be compatible, as defined above", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01551", "If neither srcImage nor dstImage has a multi-planar image format then for each element of pRegions, srcSubresource.aspectMask and dstSubresource.aspectMask must match", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01552", "If srcImage has a VkFormat with two planes then for each element of pRegions, srcSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01553", "If srcImage has a VkFormat with three planes then for each element of pRegions, srcSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01556", "If srcImage has a multi-planar image format and the dstImage does not have a multi-planar image format, then for each element of pRegions, dstSubresource.aspectMask must be VK_IMAGE_ASPECT_COLOR_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01727", "If srcImage is a blocked image, then for each element of pRegions, all members of srcOffset must be a multiple of the corresponding dimensions of the compressed texel block", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01728", "If srcImage is a blocked image, then for each element of pRegions, extent.width must be a multiple of the compressed texel block width or (extent.width + srcOffset.x) must equal the width of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01729", "If srcImage is a blocked image, then for each element of pRegions, extent.height must be a multiple of the compressed texel block height or (extent.height + srcOffset.y) must equal the height of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01730", "If srcImage is a blocked image, then for each element of pRegions, extent.depth must be a multiple of the compressed texel block depth or (extent.depth + srcOffset.z) must equal the depth of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01785", "If srcImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, srcOffset.z must be 0 and extent.depth must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01787", "If srcImage is of type VK_IMAGE_TYPE_2D, then for each element of pRegions, srcOffset.z must be 0", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01789", "If srcImage or dstImage is of type VK_IMAGE_TYPE_2D, then for each element of pRegions, extent.depth must be 1", "1.0"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01790", "If srcImage and dstImage are both of type VK_IMAGE_TYPE_2D, then for each element of pRegions, extent.depth must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01791", "If srcImage is of type VK_IMAGE_TYPE_2D, and dstImage is of type VK_IMAGE_TYPE_3D, then for each element of pRegions, extent.depth must equal srcSubresource.layerCount", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-01995", "The format features of srcImage must contain VK_FORMAT_FEATURE_TRANSFER_SRC_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-04443", "If srcImage is of type VK_IMAGE_TYPE_3D, then for each element of pRegions, srcSubresource.baseArrayLayer must be 0 and and srcSubresource.layerCount must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImage-parameter", "srcImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImageLayout-00128", "srcImageLayout must specify the layout of the image subresources of srcImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImageLayout-00129", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkCopyImageInfo2KHR-srcImageLayout-01917", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcImageLayout-parameter", "srcImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcOffset-00144", "For each element of pRegions, srcOffset.x and (extent.width + srcOffset.x) must both be greater than or equal to 0 and less than or equal to the width of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcOffset-00145", "For each element of pRegions, srcOffset.y and (extent.height + srcOffset.y) must both be greater than or equal to 0 and less than or equal to the height of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcOffset-00147", "For each element of pRegions, srcOffset.z and (extent.depth + srcOffset.z) must both be greater than or equal to 0 and less than or equal to the depth of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcOffset-01783", "The srcOffset and extent members of each element of pRegions must respect the image transfer granularity requirements of commandBuffer's command pool's queue family, as described in VkQueueFamilyProperties", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcSubresource-01696", "The srcSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-VkCopyImageInfo2KHR-srcSubresource-01698", "The srcSubresource.baseArrayLayer + srcSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-aspectMask-00211", "For each element of pRegions, imageSubresource.aspectMask must specify aspects present in {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-aspectMask-01560", "If {imageparam} has a multi-planar format, then for each element of pRegions, imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT (with VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes)", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-baseArrayLayer-00213", "If {imageparam} is of type VK_IMAGE_TYPE_3D, for each element of pRegions, imageSubresource.baseArrayLayer must be 0 and imageSubresource.layerCount must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-bufferImageHeight-00204", "If {imageparam} is a blocked image, for each element of pRegions, bufferImageHeight must be a multiple of the compressed texel block height", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-00193", "If {imageparam} does not have a depth/stencil format, then for each element of pRegions, bufferOffset must be a multiple of the format's texel block size", "1.0"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-00206", "If {imageparam} is a blocked image, for each element of pRegions, bufferOffset must be a multiple of the compressed texel block size in bytes", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-01558", "If {imageparam} does not have either a depth/stencil or a multi-planar format, then for each element of pRegions, bufferOffset must be a multiple of the format's texel block size", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-01559", "If {imageparam} has a multi-planar format, then for each element of pRegions, bufferOffset must be a multiple of the element size of the compatible format for the format and the aspectMask of the imageSubresource as defined in Compatible formats of planes of multi-planar formats", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-bufferRowLength-00203", "If {imageparam} is a blocked image, for each element of pRegions, bufferRowLength must be a multiple of the compressed texel block width", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-commandBuffer-04054", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT or VK_QUEUE_COMPUTE_BIT, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-commonparent", "Both of dstBuffer, and srcImage must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-dstBuffer-00191", "dstBuffer must have been created with VK_BUFFER_USAGE_TRANSFER_DST_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-dstBuffer-00192", "If dstBuffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-dstBuffer-parameter", "dstBuffer must be a valid VkBuffer handle", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00207", "If {imageparam} is a blocked image, for each element of pRegions, imageExtent.width must be a multiple of the compressed texel block width or (imageExtent.width + imageOffset.x) must equal the width of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00208", "If {imageparam} is a blocked image, for each element of pRegions, imageExtent.height must be a multiple of the compressed texel block height or (imageExtent.height + imageOffset.y) must equal the height of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00209", "If {imageparam} is a blocked image, for each element of pRegions, imageExtent.depth must be a multiple of the compressed texel block depth or (imageExtent.depth + imageOffset.z) must equal the depth of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00197", "For each element of pRegions, imageOffset.x and (imageExtent.width + imageOffset.x) must both be greater than or equal to 0 and less than or equal to the width of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00198", "For each element of pRegions, imageOffset.y and (imageExtent.height + imageOffset.y) must both be greater than or equal to 0 and less than or equal to the height of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00200", "For each element of pRegions, imageOffset.z and (imageExtent.depth + imageOffset.z) must both be greater than or equal to 0 and less than or equal to the depth of the specified imageSubresource of {imageparam}", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00205", "If {imageparam} is a blocked image, for each element of pRegions, all members of imageOffset must be a multiple of the corresponding dimensions of the compressed texel block", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794", "The imageOffset and imageExtent members of each element of pRegions must respect the image transfer granularity requirements of commandBuffer's command pool's queue family, as described in VkQueueFamilyProperties", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageSubresource-01703", "The imageSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-imageSubresource-01704", "The imageSubresource.baseArrayLayer + imageSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-pRegions-00182", "The image region specified by each element of pRegions must be a region that is contained within srcImage", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-pRegions-00183", "dstBuffer must be large enough to contain all buffer locations that are accessed according to Buffer and Image Addressing, for each element of pRegions", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-pRegions-00184", "The union of all source regions, and the union of all destination regions, specified by the elements of pRegions, must not overlap in memory", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-pRegions-parameter", "pRegions must be a valid pointer to an array of regionCount valid VkBufferImageCopy2KHR structures", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-regionCount-arraylength", "regionCount must be greater than 0", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-00186", "srcImage must have been created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT usage flag", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-00187", "If srcImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-00188", "srcImage must have a sample count equal to VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-00199", "If {imageparam} is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, imageOffset.y must be 0 and imageExtent.height must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-00201", "If {imageparam} is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of pRegions, imageOffset.z must be 0 and imageExtent.depth must be 1", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-01998", "The format features of srcImage must contain VK_FORMAT_FEATURE_TRANSFER_SRC_BIT", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-02544", "srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-04055", "If srcImage has a depth/stencil format, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImage-parameter", "srcImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-00189", "srcImageLayout must specify the layout of the image subresources of srcImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-00190", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-01397", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR", "1.2-extensions"},
+    {"VUID-VkCopyImageToBufferInfo2KHR-srcImageLayout-parameter", "srcImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
     {"VUID-VkCopyMemoryToAccelerationStructureInfoKHR-dst-parameter", "dst must be a valid VkAccelerationStructureKHR handle", "1.2-extensions"},
     {"VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-03413", "mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR", "1.2-extensions"},
     {"VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-parameter", "mode must be a valid VkCopyAccelerationStructureModeKHR value", "1.2-extensions"},
@@ -926,6 +1165,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDescriptorImageInfo-imageLayout-00344", "imageLayout must match the actual VkImageLayout of each subresource accessible from imageView at the time this descriptor is accessed as defined by the image layout matching rules", "1.2-extensions"},
     {"VUID-VkDescriptorImageInfo-imageView-00343", "imageView must not be 2D or 2D array image view created from a 3D image", "1.2-extensions"},
     {"VUID-VkDescriptorImageInfo-imageView-01976", "If imageView is created from a depth/stencil image, the aspectMask used to create the imageView must include either VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT but not both", "1.2-extensions"},
+    {"VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::mutableComparisonSamplers is VK_FALSE, then sampler must have been created with VkSamplerCreateInfo::compareEnable set to VK_FALSE.", "1.2-extensions"},
     {"VUID-VkDescriptorImageInfo-sampler-01564", "If sampler is used and the VkFormat of the image is a multi-planar format, the image must have been created with VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, and the aspectMask of the imageView must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT or (for three-plane formats only) VK_IMAGE_ASPECT_PLANE_2_BIT", "1.2-extensions"},
     {"VUID-VkDescriptorPoolCreateInfo-flags-parameter", "flags must be a valid combination of VkDescriptorPoolCreateFlagBits values", "1.2-extensions"},
     {"VUID-VkDescriptorPoolCreateInfo-maxSets-00301", "maxSets must be greater than 0", "1.2-extensions"},
@@ -1013,7 +1253,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDeviceCreateInfo-pNext-00373", "If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-pNext-02829", "If the pNext chain includes a VkPhysicalDeviceVulkan11Features structure, then it must not include a VkPhysicalDevice16BitStorageFeatures, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceSamplerYcbcrConversionFeatures, or VkPhysicalDeviceShaderDrawParametersFeatures structure", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-pNext-02830", "If the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then it must not include a VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceBufferDeviceAddressFeatures, or VkPhysicalDeviceVulkanMemoryModelFeatures structure", "1.2-extensions"},
-    {"VUID-VkDeviceCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkDevicePrivateDataCreateInfoEXT, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice4444FormatsFeaturesEXT, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMap2FeaturesEXT, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImageRobustnessFeaturesEXT, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDevicePrivateDataFeaturesEXT, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceRayTracingFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, or VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", "1.2-extensions"},
+    {"VUID-VkDeviceCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceDiagnosticsConfigCreateInfoNV, VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkDevicePrivateDataCreateInfoEXT, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice4444FormatsFeaturesEXT, VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceCoherentMemoryFeaturesAMD, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceCoverageReductionModeFeaturesNV, VkPhysicalDeviceCustomBorderColorFeaturesEXT, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV, VkPhysicalDeviceDiagnosticsConfigFeaturesNV, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceExtendedDynamicStateFeaturesEXT, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFragmentDensityMap2FeaturesEXT, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT, VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceImageRobustnessFeaturesEXT, VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceIndexTypeUint8FeaturesEXT, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceLineRasterizationFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDevicePerformanceQueryFeaturesKHR, VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT, VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR, VkPhysicalDevicePortabilitySubsetFeaturesKHR, VkPhysicalDevicePrivateDataFeaturesEXT, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceRayTracingFeaturesKHR, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceRobustness2FeaturesEXT, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64Features, VkPhysicalDeviceShaderClockFeaturesKHR, VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL, VkPhysicalDeviceShaderSMBuiltinsFeaturesNV, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceSubgroupSizeControlFeaturesEXT, VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT, VkPhysicalDeviceTextureCompressionASTCHDRFeaturesEXT, VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVulkan11Features, VkPhysicalDeviceVulkan12Features, VkPhysicalDeviceVulkanMemoryModelFeatures, or VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", "1.2-extensions"},
+    {"VUID-VkDeviceCreateInfo-pProperties-04451", "If the [VK_KHR_portability_subset] extension is included in pProperties of vkEnumerateDeviceExtensionProperties, ppEnabledExtensions must include \"VK_KHR_portability_subset\".", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter", "pQueueCreateInfos must be a valid pointer to an array of queueCreateInfoCount valid VkDeviceQueueCreateInfo structures", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374", "ppEnabledExtensionNames must not contain both VK_KHR_maintenance1 and VK_AMD_negative_viewport_height", "1.0-extensions"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840", "ppEnabledExtensionNames must not contain VK_AMD_negative_viewport_height", "1.2-extensions"},
@@ -1489,11 +1730,24 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageBlit-dstSubresource-parameter", "dstSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
     {"VUID-VkImageBlit-layerCount-00239", "The layerCount member of srcSubresource and dstSubresource must match", "1.2-extensions"},
     {"VUID-VkImageBlit-srcSubresource-parameter", "srcSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkImageBlit2KHR-aspectMask-00238", "The aspectMask member of srcSubresource and dstSubresource must match", "1.2-extensions"},
+    {"VUID-VkImageBlit2KHR-dstSubresource-parameter", "dstSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkImageBlit2KHR-layerCount-00239", "The layerCount member of srcSubresource and dstSubresource must match", "1.2-extensions"},
+    {"VUID-VkImageBlit2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkImageBlit2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR", "1.2-extensions"},
+    {"VUID-VkImageBlit2KHR-srcSubresource-parameter", "srcSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
     {"VUID-VkImageCopy-aspectMask-00137", "The aspectMask member of srcSubresource and dstSubresource must match", "1.0"},
     {"VUID-VkImageCopy-dstSubresource-parameter", "dstSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
     {"VUID-VkImageCopy-extent-00140", "The number of slices of the extent (for 3D) or layers of the srcSubresource (for non-3D) must match the number of slices of the extent (for 3D) or layers of the dstSubresource (for non-3D)", "1.2-extensions"},
     {"VUID-VkImageCopy-layerCount-00138", "The layerCount member of srcSubresource and dstSubresource must match", "1.0"},
     {"VUID-VkImageCopy-srcSubresource-parameter", "srcSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkImageCopy2KHR-aspectMask-00137", "The aspectMask member of srcSubresource and dstSubresource must match", "1.0"},
+    {"VUID-VkImageCopy2KHR-dstSubresource-parameter", "dstSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkImageCopy2KHR-extent-00140", "The number of slices of the extent (for 3D) or layers of the srcSubresource (for non-3D) must match the number of slices of the extent (for 3D) or layers of the dstSubresource (for non-3D)", "1.2-extensions"},
+    {"VUID-VkImageCopy2KHR-layerCount-00138", "The layerCount member of srcSubresource and dstSubresource must match", "1.0"},
+    {"VUID-VkImageCopy2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkImageCopy2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR", "1.2-extensions"},
+    {"VUID-VkImageCopy2KHR-srcSubresource-parameter", "srcSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-Format-02536", "If Format is a depth-stencil format and the pNext chain includes a VkImageStencilUsageCreateInfo structure with its stencilUsage member including VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, extent.width must be less than or equal to VkPhysicalDeviceLimits::maxFramebufferWidth", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-None-01891", "If any of the bits VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT are set, VK_IMAGE_CREATE_PROTECTED_BIT must not also be set", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-None-01925", "If any of the bits VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT are set, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT must not also be set", "1.2-extensions"},
@@ -1554,11 +1808,13 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageCreateInfo-imageType-00976", "If the sparse residency for images with 16 samples feature is not enabled, imageType is VK_IMAGE_TYPE_2D, and samples is VK_SAMPLE_COUNT_16_BIT, flags must not contain VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-imageType-02082", "If usage includes VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, imageType must be VK_IMAGE_TYPE_2D", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-imageType-parameter", "imageType must be a valid VkImageType value", "1.2-extensions"},
+    {"VUID-VkImageCreateInfo-imageView2DOn3DImage-04459", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::imageView2DOn3DImage is VK_FALSE, flags must not contain VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT.", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-initialLayout-00993", "initialLayout must be VK_IMAGE_LAYOUT_UNDEFINED or VK_IMAGE_LAYOUT_PREINITIALIZED", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-initialLayout-parameter", "initialLayout must be a valid VkImageLayout value", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-mipLevels-00947", "mipLevels must be greater than 0", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-mipLevels-00958", "mipLevels must be less than or equal to the number of levels in the complete mipmap chain based on extent.width, extent.height, and extent.depth", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-mipLevels-02255", "mipLevels must be less than or equal to imageCreateMaxMipLevels (as defined in Image Creation Limits)", "1.2-extensions"},
+    {"VUID-VkImageCreateInfo-multisampleArrayImage-04460", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::multisampleArrayImage is VK_FALSE, and samples is not VK_SAMPLE_COUNT_1_BIT, then arrayLayers must be 1.", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-pNext-00988", "If the pNext chain includes a VkExternalMemoryImageCreateInfoNV structure, it must not contain a VkExternalMemoryImageCreateInfo structure", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-pNext-00990", "If the pNext chain includes a VkExternalMemoryImageCreateInfo structure, its handleTypes member must only contain bits that are also in VkExternalImageFormatProperties::externalMemoryProperties.compatibleHandleTypes, as returned by vkGetPhysicalDeviceImageFormatProperties2 with format, imageType, tiling, usage, and flags equal to those in this structure, and with a VkPhysicalDeviceExternalImageFormatInfo structure included in the pNext chain, with a handleType equal to any one of the handle types specified in VkExternalMemoryImageCreateInfo::handleTypes", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-pNext-00991", "If the pNext chain includes a VkExternalMemoryImageCreateInfoNV structure, its handleTypes member must only contain bits that are also in VkExternalImageFormatPropertiesNV::externalMemoryProperties.compatibleHandleTypes, as returned by vkGetPhysicalDeviceExternalImageFormatPropertiesNV with format, imageType, tiling, usage, and flags equal to those in this structure, and with externalHandleType equal to any one of the handle types specified in VkExternalMemoryImageCreateInfoNV::handleTypes", "1.2-extensions"},
@@ -1679,6 +1935,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageResolve-dstSubresource-parameter", "dstSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
     {"VUID-VkImageResolve-layerCount-00267", "The layerCount member of srcSubresource and dstSubresource must match", "1.2-extensions"},
     {"VUID-VkImageResolve-srcSubresource-parameter", "srcSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkImageResolve2KHR-aspectMask-00266", "The aspectMask member of srcSubresource and dstSubresource must only contain VK_IMAGE_ASPECT_COLOR_BIT", "1.2-extensions"},
+    {"VUID-VkImageResolve2KHR-dstSubresource-parameter", "dstSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
+    {"VUID-VkImageResolve2KHR-layerCount-00267", "The layerCount member of srcSubresource and dstSubresource must match", "1.2-extensions"},
+    {"VUID-VkImageResolve2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkImageResolve2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR", "1.2-extensions"},
+    {"VUID-VkImageResolve2KHR-srcSubresource-parameter", "srcSubresource must be a valid VkImageSubresourceLayers structure", "1.2-extensions"},
     {"VUID-VkImageSparseMemoryRequirementsInfo2-image-parameter", "image must be a valid VkImage handle", "1.2-extensions"},
     {"VUID-VkImageSparseMemoryRequirementsInfo2-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkImageSparseMemoryRequirementsInfo2-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2", "1.2-extensions"},
@@ -1743,6 +2005,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageViewCreateInfo-image-03569", "If image was created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT and usage containing VK_IMAGE_USAGE_SAMPLED_BIT, subresourceRange.layerCount must be less than or equal to VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::maxSubsampledArrayLayers", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-04441", "image must have been created with a usage value containing at least one of the usages defined in the valid image usage list for image views", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-parameter", "image must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::imageViewFormatReinterpretation is VK_FALSE, the VkFormat in format must not contain a different number of components, or a different number of bits in each component, than the format of the VkImage in image.", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::imageViewFormatSwizzle is VK_FALSE, all elements of components must be VK_COMPONENT_SWIZZLE_IDENTITY.", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-01585", "If a VkImageFormatListCreateInfo structure was included in the pNext chain of the VkImageCreateInfo structure used when creating image and VkImageFormatListCreateInfo::viewFormatCount is not zero then format must be one of the formats in VkImageFormatListCreateInfo::pViewFormats", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-01970", "If the pNext chain includes a VkSamplerYcbcrConversionInfo structure with a conversion value other than VK_NULL_HANDLE, all members of components must have the identity swizzle", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-pNext-02661", "If the pNext chain includes a VkImageViewUsageCreateInfo structure, its usage member must not include any bits that were not set in the usage member of the VkImageCreateInfo structure used to create image", "1.2-khr-extensions"},
@@ -2145,8 +2409,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT", "1.2-extensions"},
     {"VUID-VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR", "1.2-extensions"},
     {"VUID-VkPhysicalDevicePointClippingProperties-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES", "1.2-extensions"},
+    {"VUID-VkPhysicalDevicePortabilitySubsetFeaturesKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR", "1.2-extensions"},
+    {"VUID-VkPhysicalDevicePortabilitySubsetPropertiesKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR", "1.2-extensions"},
     {"VUID-VkPhysicalDevicePrivateDataFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT", "1.2-extensions"},
-    {"VUID-VkPhysicalDeviceProperties2-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT, VkPhysicalDeviceConservativeRasterizationPropertiesEXT, VkPhysicalDeviceCooperativeMatrixPropertiesNV, VkPhysicalDeviceCustomBorderColorPropertiesEXT, VkPhysicalDeviceDepthStencilResolveProperties, VkPhysicalDeviceDescriptorIndexingProperties, VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV, VkPhysicalDeviceDiscardRectanglePropertiesEXT, VkPhysicalDeviceDriverProperties, VkPhysicalDeviceExternalMemoryHostPropertiesEXT, VkPhysicalDeviceFloatControlsProperties, VkPhysicalDeviceFragmentDensityMap2PropertiesEXT, VkPhysicalDeviceFragmentDensityMapPropertiesEXT, VkPhysicalDeviceIDProperties, VkPhysicalDeviceInlineUniformBlockPropertiesEXT, VkPhysicalDeviceLineRasterizationPropertiesEXT, VkPhysicalDeviceMaintenance3Properties, VkPhysicalDeviceMeshShaderPropertiesNV, VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX, VkPhysicalDeviceMultiviewProperties, VkPhysicalDevicePCIBusInfoPropertiesEXT, VkPhysicalDevicePerformanceQueryPropertiesKHR, VkPhysicalDevicePointClippingProperties, VkPhysicalDeviceProtectedMemoryProperties, VkPhysicalDevicePushDescriptorPropertiesKHR, VkPhysicalDeviceRayTracingPropertiesKHR, VkPhysicalDeviceRayTracingPropertiesNV, VkPhysicalDeviceRobustness2PropertiesEXT, VkPhysicalDeviceSampleLocationsPropertiesEXT, VkPhysicalDeviceSamplerFilterMinmaxProperties, VkPhysicalDeviceShaderCoreProperties2AMD, VkPhysicalDeviceShaderCorePropertiesAMD, VkPhysicalDeviceShaderSMBuiltinsPropertiesNV, VkPhysicalDeviceShadingRateImagePropertiesNV, VkPhysicalDeviceSubgroupProperties, VkPhysicalDeviceSubgroupSizeControlPropertiesEXT, VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT, VkPhysicalDeviceTimelineSemaphoreProperties, VkPhysicalDeviceTransformFeedbackPropertiesEXT, VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT, VkPhysicalDeviceVulkan11Properties, or VkPhysicalDeviceVulkan12Properties", "1.2-extensions"},
+    {"VUID-VkPhysicalDeviceProperties2-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT, VkPhysicalDeviceConservativeRasterizationPropertiesEXT, VkPhysicalDeviceCooperativeMatrixPropertiesNV, VkPhysicalDeviceCustomBorderColorPropertiesEXT, VkPhysicalDeviceDepthStencilResolveProperties, VkPhysicalDeviceDescriptorIndexingProperties, VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV, VkPhysicalDeviceDiscardRectanglePropertiesEXT, VkPhysicalDeviceDriverProperties, VkPhysicalDeviceExternalMemoryHostPropertiesEXT, VkPhysicalDeviceFloatControlsProperties, VkPhysicalDeviceFragmentDensityMap2PropertiesEXT, VkPhysicalDeviceFragmentDensityMapPropertiesEXT, VkPhysicalDeviceIDProperties, VkPhysicalDeviceInlineUniformBlockPropertiesEXT, VkPhysicalDeviceLineRasterizationPropertiesEXT, VkPhysicalDeviceMaintenance3Properties, VkPhysicalDeviceMeshShaderPropertiesNV, VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX, VkPhysicalDeviceMultiviewProperties, VkPhysicalDevicePCIBusInfoPropertiesEXT, VkPhysicalDevicePerformanceQueryPropertiesKHR, VkPhysicalDevicePointClippingProperties, VkPhysicalDevicePortabilitySubsetPropertiesKHR, VkPhysicalDeviceProtectedMemoryProperties, VkPhysicalDevicePushDescriptorPropertiesKHR, VkPhysicalDeviceRayTracingPropertiesKHR, VkPhysicalDeviceRayTracingPropertiesNV, VkPhysicalDeviceRobustness2PropertiesEXT, VkPhysicalDeviceSampleLocationsPropertiesEXT, VkPhysicalDeviceSamplerFilterMinmaxProperties, VkPhysicalDeviceShaderCoreProperties2AMD, VkPhysicalDeviceShaderCorePropertiesAMD, VkPhysicalDeviceShaderSMBuiltinsPropertiesNV, VkPhysicalDeviceShadingRateImagePropertiesNV, VkPhysicalDeviceSubgroupProperties, VkPhysicalDeviceSubgroupSizeControlPropertiesEXT, VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT, VkPhysicalDeviceTimelineSemaphoreProperties, VkPhysicalDeviceTransformFeedbackPropertiesEXT, VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT, VkPhysicalDeviceVulkan11Properties, or VkPhysicalDeviceVulkan12Properties", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceProperties2-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceProperties2-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
     {"VUID-VkPhysicalDeviceProtectedMemoryFeatures-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES", "1.2-extensions"},
@@ -2237,6 +2503,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410", "If colorBlendOp or alphaBlendOp is an advanced blend operation, then VkSubpassDescription::colorAttachmentCount of the subpass this pipeline is compiled against must be less than or equal to VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendMaxColorAttachments", "1.2-extensions"},
     {"VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-parameter", "colorBlendOp must be a valid VkBlendOp value", "1.2-extensions"},
     {"VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter", "colorWriteMask must be a valid combination of VkColorComponentFlagBits values", "1.2-extensions"},
+    {"VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors is VK_FALSE, srcColorBlendFactor must not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA.", "1.2-extensions"},
+    {"VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors is VK_FALSE, dstColorBlendFactor must not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA.", "1.2-extensions"},
     {"VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611", "If the dual source blending feature is not enabled, dstAlphaBlendFactor must not be VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_ALPHA, or VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA", "1.2-extensions"},
     {"VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-parameter", "dstAlphaBlendFactor must be a valid VkBlendFactor value", "1.2-extensions"},
     {"VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609", "If the dual source blending feature is not enabled, dstColorBlendFactor must not be VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_ALPHA, or VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA", "1.2-extensions"},
@@ -2280,6 +2548,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineDepthStencilStateCreateInfo-front-parameter", "front must be a valid VkStencilOpState structure", "1.2-extensions"},
     {"VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkPipelineDepthStencilStateCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO", "1.2-extensions"},
+    {"VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::separateStencilMaskRef is VK_FALSE, and the value of VkPipelineDepthStencilStateCreateInfo::stencilTestEnable is VK_TRUE, and the value of VkPipelineRasterizationStateCreateInfo::cullMode is VK_CULL_MODE_NONE, the value of reference in each of the VkStencilOpState structs in front and back must be the same.", "1.2-extensions"},
     {"VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleCount-00582", "discardRectangleCount must be less than or equal to VkPhysicalDeviceDiscardRectanglePropertiesEXT::maxDiscardRectangles", "1.2-extensions"},
     {"VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleMode-parameter", "discardRectangleMode must be a valid VkDiscardRectangleModeEXT value", "1.2-extensions"},
     {"VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-flags-zerobitmask", "flags must be 0", "1.2-extensions"},
@@ -2309,6 +2578,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429", "If the geometry shaders feature is not enabled, topology must not be any of VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY or VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY", "1.2-extensions"},
     {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430", "If the tessellation shaders feature is not enabled, topology must not be VK_PRIMITIVE_TOPOLOGY_PATCH_LIST", "1.2-extensions"},
     {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-parameter", "topology must be a valid VkPrimitiveTopology value", "1.2-extensions"},
+    {"VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::triangleFans is VK_FALSE, topology must not be VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN.", "1.2-extensions"},
     {"VUID-VkPipelineLayoutCreateInfo-descriptorType-02212", "The total number of bindings with a descriptorType of VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT accessible to any given shader stage across all elements of pSetLayouts must be less than or equal to VkPhysicalDeviceInlineUniformBlockPropertiesEXT::maxPerStageDescriptorInlineUniformBlocks", "default"},
     {"VUID-VkPipelineLayoutCreateInfo-descriptorType-02213", "The total number of bindings with a descriptorType of VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT accessible across all shader stages and across all elements of pSetLayouts must be less than or equal to VkPhysicalDeviceInlineUniformBlockPropertiesEXT::maxDescriptorSetInlineUniformBlocks", "default"},
     {"VUID-VkPipelineLayoutCreateInfo-descriptorType-02214", "The total number of bindings in descriptor set layouts created without the VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT bit set with a descriptorType of VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT accessible to any given shader stage across all elements of pSetLayouts must be less than or equal to VkPhysicalDeviceInlineUniformBlockPropertiesEXT::maxPerStageDescriptorInlineUniformBlocks", "1.2-extensions"},
@@ -2401,6 +2671,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineRasterizationStateCreateInfo-flags-zerobitmask", "flags must be 0", "1.2-extensions"},
     {"VUID-VkPipelineRasterizationStateCreateInfo-frontFace-parameter", "frontFace must be a valid VkFrontFace value", "1.2-extensions"},
     {"VUID-VkPipelineRasterizationStateCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkPipelineRasterizationConservativeStateCreateInfoEXT, VkPipelineRasterizationDepthClipStateCreateInfoEXT, VkPipelineRasterizationLineStateCreateInfoEXT, VkPipelineRasterizationStateRasterizationOrderAMD, or VkPipelineRasterizationStateStreamCreateInfoEXT", "1.2-extensions"},
+    {"VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::pointPolygons is VK_FALSE, and rasterizerDiscardEnable is VK_FALSE, polygonMode must not be VK_POLYGON_MODE_POINT.", "1.2-extensions"},
     {"VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413", "If the non-solid fill modes feature is not enabled, polygonMode must be VK_POLYGON_MODE_FILL", "1.2-khr-extensions"},
     {"VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414", "If the VK_NV_fill_rectangle extension is not enabled, polygonMode must not be VK_POLYGON_MODE_FILL_RECTANGLE_NV", "1.2-extensions"},
     {"VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507", "If the non-solid fill modes feature is not enabled, polygonMode must be VK_POLYGON_MODE_FILL or VK_POLYGON_MODE_FILL_RECTANGLE_NV", "1.2-extensions"},
@@ -2773,6 +3044,45 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkRenderPassTransformBeginInfoQCOM-flags-02872", "The renderpass must have been created with VkRenderPassCreateInfo::flags containing VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM", "1.2-extensions"},
     {"VUID-VkRenderPassTransformBeginInfoQCOM-sType-sType", "sType must be VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM", "1.2-extensions"},
     {"VUID-VkRenderPassTransformBeginInfoQCOM-transform-02871", "transform must be VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR, VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR, or VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-commonparent", "Both of dstImage, and srcImage must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImage-00258", "If dstImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImage-00259", "dstImage must have a sample count equal to VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImage-00276", "If dstImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, dstOffset.y must be 0 and extent.height must be 1", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImage-00278", "If dstImage is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of pRegions, dstOffset.z must be 0 and extent.depth must be 1", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImage-02003", "The format features of dstImage must contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImage-02546", "dstImage and srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImage-parameter", "dstImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImageLayout-00262", "dstImageLayout must specify the layout of the image subresources of dstImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImageLayout-00263", "dstImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkResolveImageInfo2KHR-dstImageLayout-01401", "dstImageLayout must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstImageLayout-parameter", "dstImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstOffset-00274", "For each element of pRegions, dstOffset.x and (extent.width + dstOffset.x) must both be greater than or equal to 0 and less than or equal to the width of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstOffset-00275", "For each element of pRegions, dstOffset.y and (extent.height + dstOffset.y) must both be greater than or equal to 0 and less than or equal to the height of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstOffset-00277", "For each element of pRegions, dstOffset.z and (extent.depth + dstOffset.z) must both be greater than or equal to 0 and less than or equal to the depth of the specified dstSubresource of dstImage", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstSubresource-01710", "The dstSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-dstSubresource-01712", "The dstSubresource.baseArrayLayer + dstSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when dstImage was created", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-pRegions-00255", "The union of all source regions, and the union of all destination regions, specified by the elements of pRegions, must not overlap in memory", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-pRegions-parameter", "pRegions must be a valid pointer to an array of regionCount valid VkImageResolve2KHR structures", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-regionCount-arraylength", "regionCount must be greater than 0", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-00256", "If srcImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-00257", "srcImage must have a sample count equal to any valid sample count value other than VK_SAMPLE_COUNT_1_BIT", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-00271", "If srcImage is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, srcOffset.y must be 0 and extent.height must be 1", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-00273", "If srcImage is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of pRegions, srcOffset.z must be 0 and extent.depth must be 1", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-01386", "srcImage and dstImage must have been created with the same image format", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-04446", "If either srcImage or dstImage are of type VK_IMAGE_TYPE_3D, then for each element of pRegions, srcSubresource.baseArrayLayer must be 0 and srcSubresource.layerCount must be 1", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-04447", "If either srcImage or dstImage are of type VK_IMAGE_TYPE_3D, then for each element of pRegions, dstSubresource.baseArrayLayer must be 0 and dstSubresource.layerCount must be 1", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImage-parameter", "srcImage must be a valid VkImage handle", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImageLayout-00260", "srcImageLayout must specify the layout of the image subresources of srcImage specified in pRegions at the time this command is executed on a VkDevice", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImageLayout-00261", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
+    {"VUID-VkResolveImageInfo2KHR-srcImageLayout-01400", "srcImageLayout must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcImageLayout-parameter", "srcImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcOffset-00269", "For each element of pRegions, srcOffset.x and (extent.width + srcOffset.x) must both be greater than or equal to 0 and less than or equal to the width of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcOffset-00270", "For each element of pRegions, srcOffset.y and (extent.height + srcOffset.y) must both be greater than or equal to 0 and less than or equal to the height of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcOffset-00272", "For each element of pRegions, srcOffset.z and (extent.depth + srcOffset.z) must both be greater than or equal to 0 and less than or equal to the depth of the specified srcSubresource of srcImage", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcSubresource-01709", "The srcSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-VkResolveImageInfo2KHR-srcSubresource-01711", "The srcSubresource.baseArrayLayer + srcSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
     {"VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter", "If sampleLocationsCount is not 0, pSampleLocations must be a valid pointer to an array of sampleLocationsCount VkSampleLocationEXT structures", "1.2-extensions"},
     {"VUID-VkSampleLocationsInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT", "1.2-extensions"},
     {"VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527", "sampleLocationsCount must equal sampleLocationsPerPixel {times} sampleLocationGridSize.width {times} sampleLocationGridSize.height", "1.2-extensions"},
@@ -2812,6 +3122,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSamplerCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkSamplerCustomBorderColorCreateInfoEXT, VkSamplerReductionModeCreateInfo, or VkSamplerYcbcrConversionInfo", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
+    {"VUID-VkSamplerCreateInfo-samplerMipLodBias-04467", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::samplerMipLodBias is VK_FALSE, mipLodBias must be zero.", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072", "If unnormalizedCoordinates is VK_TRUE, minFilter and magFilter must be equal", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01073", "If unnormalizedCoordinates is VK_TRUE, mipmapMode must be VK_SAMPLER_MIPMAP_MODE_NEAREST", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074", "If unnormalizedCoordinates is VK_TRUE, minLod and maxLod must be zero", "1.2-extensions"},
@@ -3225,9 +3536,11 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkVertexInputAttributeDescription-format-parameter", "format must be a valid VkFormat value", "1.2-extensions"},
     {"VUID-VkVertexInputAttributeDescription-location-00620", "location must be less than VkPhysicalDeviceLimits::maxVertexInputAttributes", "1.2-extensions"},
     {"VUID-VkVertexInputAttributeDescription-offset-00622", "offset must be less than or equal to VkPhysicalDeviceLimits::maxVertexInputAttributeOffset", "1.2-extensions"},
+    {"VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::vertexAttributeAccessBeyondStride is VK_FALSE, the sum of offset plus the size of the vertex attribute data described by format must not be greater than stride in the VkVertexInputBindingDescription referenced in binding.", "1.2-extensions"},
     {"VUID-VkVertexInputBindingDescription-binding-00618", "binding must be less than VkPhysicalDeviceLimits::maxVertexInputBindings", "1.2-extensions"},
     {"VUID-VkVertexInputBindingDescription-inputRate-parameter", "inputRate must be a valid VkVertexInputRate value", "1.2-extensions"},
     {"VUID-VkVertexInputBindingDescription-stride-00619", "stride must be less than or equal to VkPhysicalDeviceLimits::maxVertexInputBindingStride", "1.2-extensions"},
+    {"VUID-VkVertexInputBindingDescription-stride-04456", "If the [VK_KHR_portability_subset] extension is enabled, stride must be a multiple of, and at least as large as, VkPhysicalDevicePortabilitySubsetPropertiesKHR::minVertexInputBindingStrideAlignment.", "1.2-extensions"},
     {"VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869", "binding must be less than VkPhysicalDeviceLimits::maxVertexInputBindings", "1.2-extensions"},
     {"VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870", "divisor must be a value between 0 and VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::maxVertexAttribDivisor, inclusive", "1.2-extensions"},
     {"VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871", "VkVertexInputBindingDescription::inputRate must be of type VK_VERTEX_INPUT_RATE_INSTANCE for this binding", "1.2-extensions"},
@@ -3788,6 +4101,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdBlitImage-srcOffset-00246", "For each element of pRegions, srcOffset[0].z and srcOffset[1].z must both be greater than or equal to 0 and less than or equal to the depth of the specified srcSubresource of srcImage", "1.2-extensions"},
     {"VUID-vkCmdBlitImage-srcSubresource-01705", "The srcSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
     {"VUID-vkCmdBlitImage-srcSubresource-01707", "The srcSubresource.baseArrayLayer + srcSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-commandBuffer-01834", "If commandBuffer is an unprotected command buffer, then srcImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-commandBuffer-01835", "If commandBuffer is an unprotected command buffer, then dstImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-commandBuffer-01836", "If commandBuffer is a protected command buffer, then dstImage must not be an unprotected image", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-pBlitImageInfo-parameter", "pBlitImageInfo must be a valid pointer to a valid VkBlitImageInfo2KHR structure", "1.2-extensions"},
+    {"VUID-vkCmdBlitImage2KHR-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdBuildAccelerationStructureIndirectKHR-None-03534", "All VkAccelerationStructureKHR objects referenced by this command must be bound to device memory", "1.2-extensions"},
     {"VUID-vkCmdBuildAccelerationStructureIndirectKHR-None-04047", "All VkDeviceOrHostAddressKHR or VkDeviceOrHostAddressConstKHR referenced by this command must contain valid device addresses for a buffer bound to device memory. If the buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdBuildAccelerationStructureIndirectKHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support compute operations", "1.2-extensions"},
@@ -3960,6 +4281,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyBuffer-srcBuffer-00119", "If srcBuffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdCopyBuffer-srcBuffer-parameter", "srcBuffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdCopyBuffer-srcOffset-00113", "The srcOffset member of each element of pRegions must be less than the size of srcBuffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-commandBuffer-01822", "If commandBuffer is an unprotected command buffer, then srcBuffer must not be a protected buffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-commandBuffer-01823", "If commandBuffer is an unprotected command buffer, then dstBuffer must not be a protected buffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-commandBuffer-01824", "If commandBuffer is a protected command buffer, then dstBuffer must not be an unprotected buffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-pCopyBufferInfo-parameter", "pCopyBufferInfo must be a valid pointer to a valid VkCopyBufferInfo2KHR structure", "1.2-extensions"},
+    {"VUID-vkCmdCopyBuffer2KHR-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-None-00214", "For each element of pRegions whose imageSubresource contains a depth aspect, the data in srcBuffer must be in the range [0,1]", "1.2-khr-extensions"},
     {"VUID-vkCmdCopyBufferToImage-aspectMask-00211", "For each element of pRegions, imageSubresource.aspectMask must specify aspects present in {imageparam}", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-aspectMask-01560", "If {imageparam} has a multi-planar format, then for each element of pRegions, imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT (with VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes)", "1.2-extensions"},
@@ -4010,6 +4339,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyBufferToImage-srcBuffer-parameter", "srcBuffer must be a valid VkBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-srcImage-00199", "If {imageparam} is of type VK_IMAGE_TYPE_1D, then for each element of pRegions, imageOffset.y must be 0 and imageExtent.height must be 1", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-srcImage-00201", "If {imageparam} is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of pRegions, imageOffset.z must be 0 and imageExtent.depth must be 1", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-01828", "If commandBuffer is an unprotected command buffer, then srcBuffer must not be a protected buffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-01829", "If commandBuffer is an unprotected command buffer, then dstImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-01830", "If commandBuffer is a protected command buffer, then dstImage must not be an unprotected image", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-pCopyBufferToImageInfo-parameter", "pCopyBufferToImageInfo must be a valid pointer to a valid VkCopyBufferToImageInfo2KHR structure", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage2KHR-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdCopyImage-None-01549", "In a copy to or from a plane of a multi-planar image, the VkFormat of the image and plane must be compatible according to the description of compatible planes for the plane being copied", "1.2-extensions"},
     {"VUID-vkCmdCopyImage-aspectMask-00142", "For each element of pRegions, srcSubresource.aspectMask must specify aspects present in srcImage", "1.2-extensions"},
     {"VUID-vkCmdCopyImage-aspectMask-00143", "For each element of pRegions, dstSubresource.aspectMask must specify aspects present in dstImage", "1.2-extensions"},
@@ -4086,6 +4423,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyImage-srcOffset-01783", "The srcOffset and extent members of each element of pRegions must respect the image transfer granularity requirements of commandBuffer's command pool's queue family, as described in VkQueueFamilyProperties", "1.2-extensions"},
     {"VUID-vkCmdCopyImage-srcSubresource-01696", "The srcSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
     {"VUID-vkCmdCopyImage-srcSubresource-01698", "The srcSubresource.baseArrayLayer + srcSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-commandBuffer-01825", "If commandBuffer is an unprotected command buffer, then srcImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-commandBuffer-01826", "If commandBuffer is an unprotected command buffer, then dstImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-commandBuffer-01827", "If commandBuffer is a protected command buffer, then dstImage must not be an unprotected image", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-pCopyImageInfo-parameter", "pCopyImageInfo must be a valid pointer to a valid VkCopyImageInfo2KHR structure", "1.2-extensions"},
+    {"VUID-vkCmdCopyImage2KHR-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-aspectMask-00211", "For each element of pRegions, imageSubresource.aspectMask must specify aspects present in {imageparam}", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-aspectMask-01560", "If {imageparam} has a multi-planar format, then for each element of pRegions, imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT (with VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes)", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-baseArrayLayer-00213", "If {imageparam} is of type VK_IMAGE_TYPE_3D, for each element of pRegions, imageSubresource.baseArrayLayer must be 0 and imageSubresource.layerCount must be 1", "1.2-extensions"},
@@ -4135,6 +4480,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL", "1.2"},
     {"VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397", "srcImageLayout must be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR", "1.2-extensions"},
     {"VUID-vkCmdCopyImageToBuffer-srcImageLayout-parameter", "srcImageLayout must be a valid VkImageLayout value", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-01831", "If commandBuffer is an unprotected command buffer, then srcImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-01832", "If commandBuffer is an unprotected command buffer, then dstBuffer must not be a protected buffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-01833", "If commandBuffer is a protected command buffer, then dstBuffer must not be an unprotected buffer", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-pCopyImageToBufferInfo-parameter", "pCopyImageToBufferInfo must be a valid pointer to a valid VkCopyImageToBufferInfo2KHR structure", "1.2-extensions"},
+    {"VUID-vkCmdCopyImageToBuffer2KHR-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdCopyMemoryToAccelerationStructureKHR-None-03563", "All VkAccelerationStructureKHR objects referenced by this command must be bound to device memory", "1.2-extensions"},
     {"VUID-vkCmdCopyMemoryToAccelerationStructureKHR-None-04049", "All VkDeviceOrHostAddressKHR referenced by this command must contain valid device addresses for a buffer bound to device memory. If the buffer is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
     {"VUID-vkCmdCopyMemoryToAccelerationStructureKHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support compute operations", "1.2-extensions"},
@@ -5126,6 +5479,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdResolveImage-srcOffset-00272", "For each element of pRegions, srcOffset.z and (extent.depth + srcOffset.z) must both be greater than or equal to 0 and less than or equal to the depth of the specified srcSubresource of srcImage", "1.2-extensions"},
     {"VUID-vkCmdResolveImage-srcSubresource-01709", "The srcSubresource.mipLevel member of each element of pRegions must be less than the mipLevels specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
     {"VUID-vkCmdResolveImage-srcSubresource-01711", "The srcSubresource.baseArrayLayer + srcSubresource.layerCount of each element of pRegions must be less than or equal to the arrayLayers specified in VkImageCreateInfo when srcImage was created", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-commandBuffer-01837", "If commandBuffer is an unprotected command buffer, then srcImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-commandBuffer-01838", "If commandBuffer is an unprotected command buffer, then dstImage must not be a protected image", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-commandBuffer-01839", "If commandBuffer is a protected command buffer, then dstImage must not be an unprotected image", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-pResolveImageInfo-parameter", "pResolveImageInfo must be a valid pointer to a valid VkResolveImageInfo2KHR structure", "1.2-extensions"},
+    {"VUID-vkCmdResolveImage2KHR-renderpass", "This command must only be called outside of a render pass instance", "1.2-extensions"},
     {"VUID-vkCmdSetBlendConstants-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support graphics operations", "1.2-extensions"},
     {"VUID-vkCmdSetBlendConstants-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdSetBlendConstants-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
@@ -5739,6 +6100,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCreateDisplayPlaneSurfaceKHR-pCreateInfo-parameter", "pCreateInfo must be a valid pointer to a valid VkDisplaySurfaceCreateInfoKHR structure", "1.2-extensions"},
     {"VUID-vkCreateDisplayPlaneSurfaceKHR-pSurface-parameter", "pSurface must be a valid pointer to a VkSurfaceKHR handle", "1.2-extensions"},
     {"VUID-vkCreateEvent-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
+    {"VUID-vkCreateEvent-events-04468", "If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::events is VK_FALSE, then the implementation does not support events, and vkCreateEvent must not be used.", "1.2-extensions"},
     {"VUID-vkCreateEvent-pAllocator-parameter", "If pAllocator is not NULL, pAllocator must be a valid pointer to a valid VkAllocationCallbacks structure", "1.2-extensions"},
     {"VUID-vkCreateEvent-pCreateInfo-parameter", "pCreateInfo must be a valid pointer to a valid VkEventCreateInfo structure", "1.2-extensions"},
     {"VUID-vkCreateEvent-pEvent-parameter", "pEvent must be a valid pointer to a VkEvent handle", "1.2-extensions"},
@@ -6326,6 +6688,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetImageSubresourceLayout-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
     {"VUID-vkGetImageSubresourceLayout-format-01581", "If the tiling of the image is VK_IMAGE_TILING_LINEAR and its format is a multi-planar format with two planes, the aspectMask member of pSubresource must be VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT", "1.2-extensions"},
     {"VUID-vkGetImageSubresourceLayout-format-01582", "If the tiling of the image is VK_IMAGE_TILING_LINEAR and its format is a multi-planar format with three planes, the aspectMask member of pSubresource must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT", "1.2-extensions"},
+    {"VUID-vkGetImageSubresourceLayout-format-04461", "If format is a color format, the aspectMask member of pSubresource must be VK_IMAGE_ASPECT_COLOR_BIT", "1.2-extensions"},
+    {"VUID-vkGetImageSubresourceLayout-format-04462", "If format has a depth component, the aspectMask member of pSubresource must contain VK_IMAGE_ASPECT_DEPTH_BIT", "1.2-extensions"},
+    {"VUID-vkGetImageSubresourceLayout-format-04463", "If format has a stencil component, the aspectMask member of pSubresource must contain VK_IMAGE_ASPECT_STENCIL_BIT", "1.2-extensions"},
+    {"VUID-vkGetImageSubresourceLayout-format-04464", "If format does not contain a stencil or depth component, the aspectMask member of pSubresource must not contain VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT", "1.2-extensions"},
     {"VUID-vkGetImageSubresourceLayout-image-00996", "image must have been created with tiling equal to VK_IMAGE_TILING_LINEAR", "1.2-khr-extensions"},
     {"VUID-vkGetImageSubresourceLayout-image-01895", "If image was created with the VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID external memory handle type, then image must be bound to memory", "1.2-extensions"},
     {"VUID-vkGetImageSubresourceLayout-image-02270", "image must have been created with tiling equal to VK_IMAGE_TILING_LINEAR or VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT", "1.2-extensions"},
@@ -6892,101 +7258,107 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     prefix##BINDVERTEXBUFFERS = 14,\
     prefix##BINDVERTEXBUFFERS2EXT = 15,\
     prefix##BLITIMAGE = 16,\
-    prefix##BUILDACCELERATIONSTRUCTUREINDIRECTKHR = 17,\
-    prefix##BUILDACCELERATIONSTRUCTUREKHR = 18,\
-    prefix##BUILDACCELERATIONSTRUCTURENV = 19,\
-    prefix##CLEARATTACHMENTS = 20,\
-    prefix##CLEARCOLORIMAGE = 21,\
-    prefix##CLEARDEPTHSTENCILIMAGE = 22,\
-    prefix##COPYACCELERATIONSTRUCTUREKHR = 23,\
-    prefix##COPYACCELERATIONSTRUCTURENV = 24,\
-    prefix##COPYACCELERATIONSTRUCTURETOMEMORYKHR = 25,\
-    prefix##COPYBUFFER = 26,\
-    prefix##COPYBUFFERTOIMAGE = 27,\
-    prefix##COPYIMAGE = 28,\
-    prefix##COPYIMAGETOBUFFER = 29,\
-    prefix##COPYMEMORYTOACCELERATIONSTRUCTUREKHR = 30,\
-    prefix##COPYQUERYPOOLRESULTS = 31,\
-    prefix##DEBUGMARKERBEGINEXT = 32,\
-    prefix##DEBUGMARKERENDEXT = 33,\
-    prefix##DEBUGMARKERINSERTEXT = 34,\
-    prefix##DISPATCH = 35,\
-    prefix##DISPATCHBASE = 36,\
-    prefix##DISPATCHINDIRECT = 37,\
-    prefix##DRAW = 38,\
-    prefix##DRAWINDEXED = 39,\
-    prefix##DRAWINDEXEDINDIRECT = 40,\
-    prefix##DRAWINDEXEDINDIRECTCOUNT = 41,\
-    prefix##DRAWINDIRECT = 42,\
-    prefix##DRAWINDIRECTBYTECOUNTEXT = 43,\
-    prefix##DRAWINDIRECTCOUNT = 44,\
-    prefix##DRAWMESHTASKSINDIRECTCOUNTNV = 45,\
-    prefix##DRAWMESHTASKSINDIRECTNV = 46,\
-    prefix##DRAWMESHTASKSNV = 47,\
-    prefix##ENDCONDITIONALRENDERINGEXT = 48,\
-    prefix##ENDDEBUGUTILSLABELEXT = 49,\
-    prefix##ENDQUERY = 50,\
-    prefix##ENDQUERYINDEXEDEXT = 51,\
-    prefix##ENDRENDERPASS = 52,\
-    prefix##ENDRENDERPASS2 = 53,\
-    prefix##ENDTRANSFORMFEEDBACKEXT = 54,\
-    prefix##EXECUTECOMMANDS = 55,\
-    prefix##EXECUTEGENERATEDCOMMANDSNV = 56,\
-    prefix##FILLBUFFER = 57,\
-    prefix##INSERTDEBUGUTILSLABELEXT = 58,\
-    prefix##NEXTSUBPASS = 59,\
-    prefix##NEXTSUBPASS2 = 60,\
-    prefix##PIPELINEBARRIER = 61,\
-    prefix##PREPROCESSGENERATEDCOMMANDSNV = 62,\
-    prefix##PUSHCONSTANTS = 63,\
-    prefix##PUSHDESCRIPTORSETKHR = 64,\
-    prefix##PUSHDESCRIPTORSETWITHTEMPLATEKHR = 65,\
-    prefix##RESETEVENT = 66,\
-    prefix##RESETQUERYPOOL = 67,\
-    prefix##RESOLVEIMAGE = 68,\
-    prefix##SETBLENDCONSTANTS = 69,\
-    prefix##SETCHECKPOINTNV = 70,\
-    prefix##SETCOARSESAMPLEORDERNV = 71,\
-    prefix##SETCULLMODEEXT = 72,\
-    prefix##SETDEPTHBIAS = 73,\
-    prefix##SETDEPTHBOUNDS = 74,\
-    prefix##SETDEPTHBOUNDSTESTENABLEEXT = 75,\
-    prefix##SETDEPTHCOMPAREOPEXT = 76,\
-    prefix##SETDEPTHTESTENABLEEXT = 77,\
-    prefix##SETDEPTHWRITEENABLEEXT = 78,\
-    prefix##SETDEVICEMASK = 79,\
-    prefix##SETDISCARDRECTANGLEEXT = 80,\
-    prefix##SETEVENT = 81,\
-    prefix##SETEXCLUSIVESCISSORNV = 82,\
-    prefix##SETFRONTFACEEXT = 83,\
-    prefix##SETLINESTIPPLEEXT = 84,\
-    prefix##SETLINEWIDTH = 85,\
-    prefix##SETPERFORMANCEMARKERINTEL = 86,\
-    prefix##SETPERFORMANCEOVERRIDEINTEL = 87,\
-    prefix##SETPERFORMANCESTREAMMARKERINTEL = 88,\
-    prefix##SETPRIMITIVETOPOLOGYEXT = 89,\
-    prefix##SETSAMPLELOCATIONSEXT = 90,\
-    prefix##SETSCISSOR = 91,\
-    prefix##SETSCISSORWITHCOUNTEXT = 92,\
-    prefix##SETSTENCILCOMPAREMASK = 93,\
-    prefix##SETSTENCILOPEXT = 94,\
-    prefix##SETSTENCILREFERENCE = 95,\
-    prefix##SETSTENCILTESTENABLEEXT = 96,\
-    prefix##SETSTENCILWRITEMASK = 97,\
-    prefix##SETVIEWPORT = 98,\
-    prefix##SETVIEWPORTSHADINGRATEPALETTENV = 99,\
-    prefix##SETVIEWPORTWSCALINGNV = 100,\
-    prefix##SETVIEWPORTWITHCOUNTEXT = 101,\
-    prefix##TRACERAYSINDIRECTKHR = 102,\
-    prefix##TRACERAYSKHR = 103,\
-    prefix##TRACERAYSNV = 104,\
-    prefix##UPDATEBUFFER = 105,\
-    prefix##WAITEVENTS = 106,\
-    prefix##WRITEACCELERATIONSTRUCTURESPROPERTIESKHR = 107,\
-    prefix##WRITEBUFFERMARKERAMD = 108,\
-    prefix##WRITETIMESTAMP = 109,\
-    prefix##ENDCOMMANDBUFFER = 110,\
-    prefix##RANGE_SIZE = 111
+    prefix##BLITIMAGE2KHR = 17,\
+    prefix##BUILDACCELERATIONSTRUCTUREINDIRECTKHR = 18,\
+    prefix##BUILDACCELERATIONSTRUCTUREKHR = 19,\
+    prefix##BUILDACCELERATIONSTRUCTURENV = 20,\
+    prefix##CLEARATTACHMENTS = 21,\
+    prefix##CLEARCOLORIMAGE = 22,\
+    prefix##CLEARDEPTHSTENCILIMAGE = 23,\
+    prefix##COPYACCELERATIONSTRUCTUREKHR = 24,\
+    prefix##COPYACCELERATIONSTRUCTURENV = 25,\
+    prefix##COPYACCELERATIONSTRUCTURETOMEMORYKHR = 26,\
+    prefix##COPYBUFFER = 27,\
+    prefix##COPYBUFFER2KHR = 28,\
+    prefix##COPYBUFFERTOIMAGE = 29,\
+    prefix##COPYBUFFERTOIMAGE2KHR = 30,\
+    prefix##COPYIMAGE = 31,\
+    prefix##COPYIMAGE2KHR = 32,\
+    prefix##COPYIMAGETOBUFFER = 33,\
+    prefix##COPYIMAGETOBUFFER2KHR = 34,\
+    prefix##COPYMEMORYTOACCELERATIONSTRUCTUREKHR = 35,\
+    prefix##COPYQUERYPOOLRESULTS = 36,\
+    prefix##DEBUGMARKERBEGINEXT = 37,\
+    prefix##DEBUGMARKERENDEXT = 38,\
+    prefix##DEBUGMARKERINSERTEXT = 39,\
+    prefix##DISPATCH = 40,\
+    prefix##DISPATCHBASE = 41,\
+    prefix##DISPATCHINDIRECT = 42,\
+    prefix##DRAW = 43,\
+    prefix##DRAWINDEXED = 44,\
+    prefix##DRAWINDEXEDINDIRECT = 45,\
+    prefix##DRAWINDEXEDINDIRECTCOUNT = 46,\
+    prefix##DRAWINDIRECT = 47,\
+    prefix##DRAWINDIRECTBYTECOUNTEXT = 48,\
+    prefix##DRAWINDIRECTCOUNT = 49,\
+    prefix##DRAWMESHTASKSINDIRECTCOUNTNV = 50,\
+    prefix##DRAWMESHTASKSINDIRECTNV = 51,\
+    prefix##DRAWMESHTASKSNV = 52,\
+    prefix##ENDCONDITIONALRENDERINGEXT = 53,\
+    prefix##ENDDEBUGUTILSLABELEXT = 54,\
+    prefix##ENDQUERY = 55,\
+    prefix##ENDQUERYINDEXEDEXT = 56,\
+    prefix##ENDRENDERPASS = 57,\
+    prefix##ENDRENDERPASS2 = 58,\
+    prefix##ENDTRANSFORMFEEDBACKEXT = 59,\
+    prefix##EXECUTECOMMANDS = 60,\
+    prefix##EXECUTEGENERATEDCOMMANDSNV = 61,\
+    prefix##FILLBUFFER = 62,\
+    prefix##INSERTDEBUGUTILSLABELEXT = 63,\
+    prefix##NEXTSUBPASS = 64,\
+    prefix##NEXTSUBPASS2 = 65,\
+    prefix##PIPELINEBARRIER = 66,\
+    prefix##PREPROCESSGENERATEDCOMMANDSNV = 67,\
+    prefix##PUSHCONSTANTS = 68,\
+    prefix##PUSHDESCRIPTORSETKHR = 69,\
+    prefix##PUSHDESCRIPTORSETWITHTEMPLATEKHR = 70,\
+    prefix##RESETEVENT = 71,\
+    prefix##RESETQUERYPOOL = 72,\
+    prefix##RESOLVEIMAGE = 73,\
+    prefix##RESOLVEIMAGE2KHR = 74,\
+    prefix##SETBLENDCONSTANTS = 75,\
+    prefix##SETCHECKPOINTNV = 76,\
+    prefix##SETCOARSESAMPLEORDERNV = 77,\
+    prefix##SETCULLMODEEXT = 78,\
+    prefix##SETDEPTHBIAS = 79,\
+    prefix##SETDEPTHBOUNDS = 80,\
+    prefix##SETDEPTHBOUNDSTESTENABLEEXT = 81,\
+    prefix##SETDEPTHCOMPAREOPEXT = 82,\
+    prefix##SETDEPTHTESTENABLEEXT = 83,\
+    prefix##SETDEPTHWRITEENABLEEXT = 84,\
+    prefix##SETDEVICEMASK = 85,\
+    prefix##SETDISCARDRECTANGLEEXT = 86,\
+    prefix##SETEVENT = 87,\
+    prefix##SETEXCLUSIVESCISSORNV = 88,\
+    prefix##SETFRONTFACEEXT = 89,\
+    prefix##SETLINESTIPPLEEXT = 90,\
+    prefix##SETLINEWIDTH = 91,\
+    prefix##SETPERFORMANCEMARKERINTEL = 92,\
+    prefix##SETPERFORMANCEOVERRIDEINTEL = 93,\
+    prefix##SETPERFORMANCESTREAMMARKERINTEL = 94,\
+    prefix##SETPRIMITIVETOPOLOGYEXT = 95,\
+    prefix##SETSAMPLELOCATIONSEXT = 96,\
+    prefix##SETSCISSOR = 97,\
+    prefix##SETSCISSORWITHCOUNTEXT = 98,\
+    prefix##SETSTENCILCOMPAREMASK = 99,\
+    prefix##SETSTENCILOPEXT = 100,\
+    prefix##SETSTENCILREFERENCE = 101,\
+    prefix##SETSTENCILTESTENABLEEXT = 102,\
+    prefix##SETSTENCILWRITEMASK = 103,\
+    prefix##SETVIEWPORT = 104,\
+    prefix##SETVIEWPORTSHADINGRATEPALETTENV = 105,\
+    prefix##SETVIEWPORTWSCALINGNV = 106,\
+    prefix##SETVIEWPORTWITHCOUNTEXT = 107,\
+    prefix##TRACERAYSINDIRECTKHR = 108,\
+    prefix##TRACERAYSKHR = 109,\
+    prefix##TRACERAYSNV = 110,\
+    prefix##UPDATEBUFFER = 111,\
+    prefix##WAITEVENTS = 112,\
+    prefix##WRITEACCELERATIONSTRUCTURESPROPERTIESKHR = 113,\
+    prefix##WRITEBUFFERMARKERAMD = 114,\
+    prefix##WRITETIMESTAMP = 115,\
+    prefix##ENDCOMMANDBUFFER = 116,\
+    prefix##RANGE_SIZE = 117
 
 #define VUID_CMD_NAME_LIST\
     "Command_Undefined",\
@@ -7006,6 +7378,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "vkCmdBindVertexBuffers",\
     "vkCmdBindVertexBuffers2EXT",\
     "vkCmdBlitImage",\
+    "vkCmdBlitImage2KHR",\
     "vkCmdBuildAccelerationStructureIndirectKHR",\
     "vkCmdBuildAccelerationStructureKHR",\
     "vkCmdBuildAccelerationStructureNV",\
@@ -7016,9 +7389,13 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "vkCmdCopyAccelerationStructureNV",\
     "vkCmdCopyAccelerationStructureToMemoryKHR",\
     "vkCmdCopyBuffer",\
+    "vkCmdCopyBuffer2KHR",\
     "vkCmdCopyBufferToImage",\
+    "vkCmdCopyBufferToImage2KHR",\
     "vkCmdCopyImage",\
+    "vkCmdCopyImage2KHR",\
     "vkCmdCopyImageToBuffer",\
+    "vkCmdCopyImageToBuffer2KHR",\
     "vkCmdCopyMemoryToAccelerationStructureKHR",\
     "vkCmdCopyQueryPoolResults",\
     "vkCmdDebugMarkerBeginEXT",\
@@ -7058,6 +7435,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "vkCmdResetEvent",\
     "vkCmdResetQueryPool",\
     "vkCmdResolveImage",\
+    "vkCmdResolveImage2KHR",\
     "vkCmdSetBlendConstants",\
     "vkCmdSetCheckpointNV",\
     "vkCmdSetCoarseSampleOrderNV",\
@@ -7119,6 +7497,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "VUID-vkCmdBindVertexBuffers-commandBuffer-recording",\
     "VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-recording",\
     "VUID-vkCmdBlitImage-commandBuffer-recording",\
+    "VUID-vkCmdBlitImage2KHR-commandBuffer-recording",\
     "VUID-vkCmdBuildAccelerationStructureIndirectKHR-commandBuffer-recording",\
     "VUID-vkCmdBuildAccelerationStructureKHR-commandBuffer-recording",\
     "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording",\
@@ -7129,9 +7508,13 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording",\
     "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-commandBuffer-recording",\
     "VUID-vkCmdCopyBuffer-commandBuffer-recording",\
+    "VUID-vkCmdCopyBuffer2KHR-commandBuffer-recording",\
     "VUID-vkCmdCopyBufferToImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-recording",\
     "VUID-vkCmdCopyImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyImage2KHR-commandBuffer-recording",\
     "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording",\
+    "VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-recording",\
     "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-commandBuffer-recording",\
     "VUID-vkCmdCopyQueryPoolResults-commandBuffer-recording",\
     "VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording",\
@@ -7171,6 +7554,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     "VUID-vkCmdResetEvent-commandBuffer-recording",\
     "VUID-vkCmdResetQueryPool-commandBuffer-recording",\
     "VUID-vkCmdResolveImage-commandBuffer-recording",\
+    "VUID-vkCmdResolveImage2KHR-commandBuffer-recording",\
     "VUID-vkCmdSetBlendConstants-commandBuffer-recording",\
     "VUID-vkCmdSetCheckpointNV-commandBuffer-recording",\
     "VUID-vkCmdSetCoarseSampleOrderNV-commandBuffer-recording",\

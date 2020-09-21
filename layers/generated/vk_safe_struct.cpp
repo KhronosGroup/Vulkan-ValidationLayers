@@ -18358,6 +18358,190 @@ void safe_VkDisplayPlaneCapabilities2KHR::initialize(const safe_VkDisplayPlaneCa
     capabilities = copy_src->capabilities;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(const VkPhysicalDevicePortabilitySubsetFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    constantAlphaColorBlendFactors(in_struct->constantAlphaColorBlendFactors),
+    events(in_struct->events),
+    imageViewFormatReinterpretation(in_struct->imageViewFormatReinterpretation),
+    imageViewFormatSwizzle(in_struct->imageViewFormatSwizzle),
+    imageView2DOn3DImage(in_struct->imageView2DOn3DImage),
+    multisampleArrayImage(in_struct->multisampleArrayImage),
+    mutableComparisonSamplers(in_struct->mutableComparisonSamplers),
+    pointPolygons(in_struct->pointPolygons),
+    samplerMipLodBias(in_struct->samplerMipLodBias),
+    separateStencilMaskRef(in_struct->separateStencilMaskRef),
+    shaderSampleRateInterpolationFunctions(in_struct->shaderSampleRateInterpolationFunctions),
+    tessellationIsolines(in_struct->tessellationIsolines),
+    tessellationPointMode(in_struct->tessellationPointMode),
+    triangleFans(in_struct->triangleFans),
+    vertexAttributeAccessBeyondStride(in_struct->vertexAttributeAccessBeyondStride)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    constantAlphaColorBlendFactors = copy_src.constantAlphaColorBlendFactors;
+    events = copy_src.events;
+    imageViewFormatReinterpretation = copy_src.imageViewFormatReinterpretation;
+    imageViewFormatSwizzle = copy_src.imageViewFormatSwizzle;
+    imageView2DOn3DImage = copy_src.imageView2DOn3DImage;
+    multisampleArrayImage = copy_src.multisampleArrayImage;
+    mutableComparisonSamplers = copy_src.mutableComparisonSamplers;
+    pointPolygons = copy_src.pointPolygons;
+    samplerMipLodBias = copy_src.samplerMipLodBias;
+    separateStencilMaskRef = copy_src.separateStencilMaskRef;
+    shaderSampleRateInterpolationFunctions = copy_src.shaderSampleRateInterpolationFunctions;
+    tessellationIsolines = copy_src.tessellationIsolines;
+    tessellationPointMode = copy_src.tessellationPointMode;
+    triangleFans = copy_src.triangleFans;
+    vertexAttributeAccessBeyondStride = copy_src.vertexAttributeAccessBeyondStride;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR& safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::operator=(const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    constantAlphaColorBlendFactors = copy_src.constantAlphaColorBlendFactors;
+    events = copy_src.events;
+    imageViewFormatReinterpretation = copy_src.imageViewFormatReinterpretation;
+    imageViewFormatSwizzle = copy_src.imageViewFormatSwizzle;
+    imageView2DOn3DImage = copy_src.imageView2DOn3DImage;
+    multisampleArrayImage = copy_src.multisampleArrayImage;
+    mutableComparisonSamplers = copy_src.mutableComparisonSamplers;
+    pointPolygons = copy_src.pointPolygons;
+    samplerMipLodBias = copy_src.samplerMipLodBias;
+    separateStencilMaskRef = copy_src.separateStencilMaskRef;
+    shaderSampleRateInterpolationFunctions = copy_src.shaderSampleRateInterpolationFunctions;
+    tessellationIsolines = copy_src.tessellationIsolines;
+    tessellationPointMode = copy_src.tessellationPointMode;
+    triangleFans = copy_src.triangleFans;
+    vertexAttributeAccessBeyondStride = copy_src.vertexAttributeAccessBeyondStride;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::~safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::initialize(const VkPhysicalDevicePortabilitySubsetFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    constantAlphaColorBlendFactors = in_struct->constantAlphaColorBlendFactors;
+    events = in_struct->events;
+    imageViewFormatReinterpretation = in_struct->imageViewFormatReinterpretation;
+    imageViewFormatSwizzle = in_struct->imageViewFormatSwizzle;
+    imageView2DOn3DImage = in_struct->imageView2DOn3DImage;
+    multisampleArrayImage = in_struct->multisampleArrayImage;
+    mutableComparisonSamplers = in_struct->mutableComparisonSamplers;
+    pointPolygons = in_struct->pointPolygons;
+    samplerMipLodBias = in_struct->samplerMipLodBias;
+    separateStencilMaskRef = in_struct->separateStencilMaskRef;
+    shaderSampleRateInterpolationFunctions = in_struct->shaderSampleRateInterpolationFunctions;
+    tessellationIsolines = in_struct->tessellationIsolines;
+    tessellationPointMode = in_struct->tessellationPointMode;
+    triangleFans = in_struct->triangleFans;
+    vertexAttributeAccessBeyondStride = in_struct->vertexAttributeAccessBeyondStride;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::initialize(const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    constantAlphaColorBlendFactors = copy_src->constantAlphaColorBlendFactors;
+    events = copy_src->events;
+    imageViewFormatReinterpretation = copy_src->imageViewFormatReinterpretation;
+    imageViewFormatSwizzle = copy_src->imageViewFormatSwizzle;
+    imageView2DOn3DImage = copy_src->imageView2DOn3DImage;
+    multisampleArrayImage = copy_src->multisampleArrayImage;
+    mutableComparisonSamplers = copy_src->mutableComparisonSamplers;
+    pointPolygons = copy_src->pointPolygons;
+    samplerMipLodBias = copy_src->samplerMipLodBias;
+    separateStencilMaskRef = copy_src->separateStencilMaskRef;
+    shaderSampleRateInterpolationFunctions = copy_src->shaderSampleRateInterpolationFunctions;
+    tessellationIsolines = copy_src->tessellationIsolines;
+    tessellationPointMode = copy_src->tessellationPointMode;
+    triangleFans = copy_src->triangleFans;
+    vertexAttributeAccessBeyondStride = copy_src->vertexAttributeAccessBeyondStride;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR(const VkPhysicalDevicePortabilitySubsetPropertiesKHR* in_struct) :
+    sType(in_struct->sType),
+    minVertexInputBindingStrideAlignment(in_struct->minVertexInputBindingStrideAlignment)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR(const safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    minVertexInputBindingStrideAlignment = copy_src.minVertexInputBindingStrideAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR& safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::operator=(const safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    minVertexInputBindingStrideAlignment = copy_src.minVertexInputBindingStrideAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::~safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::initialize(const VkPhysicalDevicePortabilitySubsetPropertiesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    minVertexInputBindingStrideAlignment = in_struct->minVertexInputBindingStrideAlignment;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::initialize(const safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    minVertexInputBindingStrideAlignment = copy_src->minVertexInputBindingStrideAlignment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 
 safe_VkPhysicalDeviceShaderClockFeaturesKHR::safe_VkPhysicalDeviceShaderClockFeaturesKHR(const VkPhysicalDeviceShaderClockFeaturesKHR* in_struct) :
     sType(in_struct->sType),
@@ -19057,6 +19241,1044 @@ void safe_VkPipelineLibraryCreateInfoKHR::initialize(const safe_VkPipelineLibrar
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+
+safe_VkBufferCopy2KHR::safe_VkBufferCopy2KHR(const VkBufferCopy2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcOffset(in_struct->srcOffset),
+    dstOffset(in_struct->dstOffset),
+    size(in_struct->size)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferCopy2KHR::safe_VkBufferCopy2KHR() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkBufferCopy2KHR::safe_VkBufferCopy2KHR(const safe_VkBufferCopy2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcOffset = copy_src.srcOffset;
+    dstOffset = copy_src.dstOffset;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferCopy2KHR& safe_VkBufferCopy2KHR::operator=(const safe_VkBufferCopy2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcOffset = copy_src.srcOffset;
+    dstOffset = copy_src.dstOffset;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferCopy2KHR::~safe_VkBufferCopy2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferCopy2KHR::initialize(const VkBufferCopy2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcOffset = in_struct->srcOffset;
+    dstOffset = in_struct->dstOffset;
+    size = in_struct->size;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferCopy2KHR::initialize(const safe_VkBufferCopy2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcOffset = copy_src->srcOffset;
+    dstOffset = copy_src->dstOffset;
+    size = copy_src->size;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCopyBufferInfo2KHR::safe_VkCopyBufferInfo2KHR(const VkCopyBufferInfo2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcBuffer(in_struct->srcBuffer),
+    dstBuffer(in_struct->dstBuffer),
+    regionCount(in_struct->regionCount),
+    pRegions(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkBufferCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyBufferInfo2KHR::safe_VkCopyBufferInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR),
+    pNext(nullptr),
+    pRegions(nullptr)
+{}
+
+safe_VkCopyBufferInfo2KHR::safe_VkCopyBufferInfo2KHR(const safe_VkCopyBufferInfo2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcBuffer = copy_src.srcBuffer;
+    dstBuffer = copy_src.dstBuffer;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkBufferCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyBufferInfo2KHR& safe_VkCopyBufferInfo2KHR::operator=(const safe_VkCopyBufferInfo2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcBuffer = copy_src.srcBuffer;
+    dstBuffer = copy_src.dstBuffer;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkBufferCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkCopyBufferInfo2KHR::~safe_VkCopyBufferInfo2KHR()
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCopyBufferInfo2KHR::initialize(const VkCopyBufferInfo2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcBuffer = in_struct->srcBuffer;
+    dstBuffer = in_struct->dstBuffer;
+    regionCount = in_struct->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkBufferCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+void safe_VkCopyBufferInfo2KHR::initialize(const safe_VkCopyBufferInfo2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcBuffer = copy_src->srcBuffer;
+    dstBuffer = copy_src->dstBuffer;
+    regionCount = copy_src->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (regionCount && copy_src->pRegions) {
+        pRegions = new safe_VkBufferCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src->pRegions[i]);
+        }
+    }
+}
+
+safe_VkImageCopy2KHR::safe_VkImageCopy2KHR(const VkImageCopy2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcSubresource(in_struct->srcSubresource),
+    srcOffset(in_struct->srcOffset),
+    dstSubresource(in_struct->dstSubresource),
+    dstOffset(in_struct->dstOffset),
+    extent(in_struct->extent)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageCopy2KHR::safe_VkImageCopy2KHR() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkImageCopy2KHR::safe_VkImageCopy2KHR(const safe_VkImageCopy2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcSubresource = copy_src.srcSubresource;
+    srcOffset = copy_src.srcOffset;
+    dstSubresource = copy_src.dstSubresource;
+    dstOffset = copy_src.dstOffset;
+    extent = copy_src.extent;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageCopy2KHR& safe_VkImageCopy2KHR::operator=(const safe_VkImageCopy2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcSubresource = copy_src.srcSubresource;
+    srcOffset = copy_src.srcOffset;
+    dstSubresource = copy_src.dstSubresource;
+    dstOffset = copy_src.dstOffset;
+    extent = copy_src.extent;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageCopy2KHR::~safe_VkImageCopy2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageCopy2KHR::initialize(const VkImageCopy2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcSubresource = in_struct->srcSubresource;
+    srcOffset = in_struct->srcOffset;
+    dstSubresource = in_struct->dstSubresource;
+    dstOffset = in_struct->dstOffset;
+    extent = in_struct->extent;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageCopy2KHR::initialize(const safe_VkImageCopy2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcSubresource = copy_src->srcSubresource;
+    srcOffset = copy_src->srcOffset;
+    dstSubresource = copy_src->dstSubresource;
+    dstOffset = copy_src->dstOffset;
+    extent = copy_src->extent;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCopyImageInfo2KHR::safe_VkCopyImageInfo2KHR(const VkCopyImageInfo2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcImage(in_struct->srcImage),
+    srcImageLayout(in_struct->srcImageLayout),
+    dstImage(in_struct->dstImage),
+    dstImageLayout(in_struct->dstImageLayout),
+    regionCount(in_struct->regionCount),
+    pRegions(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyImageInfo2KHR::safe_VkCopyImageInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR),
+    pNext(nullptr),
+    pRegions(nullptr)
+{}
+
+safe_VkCopyImageInfo2KHR::safe_VkCopyImageInfo2KHR(const safe_VkCopyImageInfo2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyImageInfo2KHR& safe_VkCopyImageInfo2KHR::operator=(const safe_VkCopyImageInfo2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkCopyImageInfo2KHR::~safe_VkCopyImageInfo2KHR()
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCopyImageInfo2KHR::initialize(const VkCopyImageInfo2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcImage = in_struct->srcImage;
+    srcImageLayout = in_struct->srcImageLayout;
+    dstImage = in_struct->dstImage;
+    dstImageLayout = in_struct->dstImageLayout;
+    regionCount = in_struct->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+void safe_VkCopyImageInfo2KHR::initialize(const safe_VkCopyImageInfo2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcImage = copy_src->srcImage;
+    srcImageLayout = copy_src->srcImageLayout;
+    dstImage = copy_src->dstImage;
+    dstImageLayout = copy_src->dstImageLayout;
+    regionCount = copy_src->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (regionCount && copy_src->pRegions) {
+        pRegions = new safe_VkImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src->pRegions[i]);
+        }
+    }
+}
+
+safe_VkBufferImageCopy2KHR::safe_VkBufferImageCopy2KHR(const VkBufferImageCopy2KHR* in_struct) :
+    sType(in_struct->sType),
+    bufferOffset(in_struct->bufferOffset),
+    bufferRowLength(in_struct->bufferRowLength),
+    bufferImageHeight(in_struct->bufferImageHeight),
+    imageSubresource(in_struct->imageSubresource),
+    imageOffset(in_struct->imageOffset),
+    imageExtent(in_struct->imageExtent)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferImageCopy2KHR::safe_VkBufferImageCopy2KHR() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkBufferImageCopy2KHR::safe_VkBufferImageCopy2KHR(const safe_VkBufferImageCopy2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    bufferOffset = copy_src.bufferOffset;
+    bufferRowLength = copy_src.bufferRowLength;
+    bufferImageHeight = copy_src.bufferImageHeight;
+    imageSubresource = copy_src.imageSubresource;
+    imageOffset = copy_src.imageOffset;
+    imageExtent = copy_src.imageExtent;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferImageCopy2KHR& safe_VkBufferImageCopy2KHR::operator=(const safe_VkBufferImageCopy2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    bufferOffset = copy_src.bufferOffset;
+    bufferRowLength = copy_src.bufferRowLength;
+    bufferImageHeight = copy_src.bufferImageHeight;
+    imageSubresource = copy_src.imageSubresource;
+    imageOffset = copy_src.imageOffset;
+    imageExtent = copy_src.imageExtent;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferImageCopy2KHR::~safe_VkBufferImageCopy2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferImageCopy2KHR::initialize(const VkBufferImageCopy2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    bufferOffset = in_struct->bufferOffset;
+    bufferRowLength = in_struct->bufferRowLength;
+    bufferImageHeight = in_struct->bufferImageHeight;
+    imageSubresource = in_struct->imageSubresource;
+    imageOffset = in_struct->imageOffset;
+    imageExtent = in_struct->imageExtent;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferImageCopy2KHR::initialize(const safe_VkBufferImageCopy2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    bufferOffset = copy_src->bufferOffset;
+    bufferRowLength = copy_src->bufferRowLength;
+    bufferImageHeight = copy_src->bufferImageHeight;
+    imageSubresource = copy_src->imageSubresource;
+    imageOffset = copy_src->imageOffset;
+    imageExtent = copy_src->imageExtent;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCopyBufferToImageInfo2KHR::safe_VkCopyBufferToImageInfo2KHR(const VkCopyBufferToImageInfo2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcBuffer(in_struct->srcBuffer),
+    dstImage(in_struct->dstImage),
+    dstImageLayout(in_struct->dstImageLayout),
+    regionCount(in_struct->regionCount),
+    pRegions(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyBufferToImageInfo2KHR::safe_VkCopyBufferToImageInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR),
+    pNext(nullptr),
+    pRegions(nullptr)
+{}
+
+safe_VkCopyBufferToImageInfo2KHR::safe_VkCopyBufferToImageInfo2KHR(const safe_VkCopyBufferToImageInfo2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcBuffer = copy_src.srcBuffer;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyBufferToImageInfo2KHR& safe_VkCopyBufferToImageInfo2KHR::operator=(const safe_VkCopyBufferToImageInfo2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcBuffer = copy_src.srcBuffer;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkCopyBufferToImageInfo2KHR::~safe_VkCopyBufferToImageInfo2KHR()
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCopyBufferToImageInfo2KHR::initialize(const VkCopyBufferToImageInfo2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcBuffer = in_struct->srcBuffer;
+    dstImage = in_struct->dstImage;
+    dstImageLayout = in_struct->dstImageLayout;
+    regionCount = in_struct->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+void safe_VkCopyBufferToImageInfo2KHR::initialize(const safe_VkCopyBufferToImageInfo2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcBuffer = copy_src->srcBuffer;
+    dstImage = copy_src->dstImage;
+    dstImageLayout = copy_src->dstImageLayout;
+    regionCount = copy_src->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (regionCount && copy_src->pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src->pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyImageToBufferInfo2KHR::safe_VkCopyImageToBufferInfo2KHR(const VkCopyImageToBufferInfo2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcImage(in_struct->srcImage),
+    srcImageLayout(in_struct->srcImageLayout),
+    dstBuffer(in_struct->dstBuffer),
+    regionCount(in_struct->regionCount),
+    pRegions(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyImageToBufferInfo2KHR::safe_VkCopyImageToBufferInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR),
+    pNext(nullptr),
+    pRegions(nullptr)
+{}
+
+safe_VkCopyImageToBufferInfo2KHR::safe_VkCopyImageToBufferInfo2KHR(const safe_VkCopyImageToBufferInfo2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstBuffer = copy_src.dstBuffer;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+}
+
+safe_VkCopyImageToBufferInfo2KHR& safe_VkCopyImageToBufferInfo2KHR::operator=(const safe_VkCopyImageToBufferInfo2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstBuffer = copy_src.dstBuffer;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkCopyImageToBufferInfo2KHR::~safe_VkCopyImageToBufferInfo2KHR()
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCopyImageToBufferInfo2KHR::initialize(const VkCopyImageToBufferInfo2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcImage = in_struct->srcImage;
+    srcImageLayout = in_struct->srcImageLayout;
+    dstBuffer = in_struct->dstBuffer;
+    regionCount = in_struct->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+void safe_VkCopyImageToBufferInfo2KHR::initialize(const safe_VkCopyImageToBufferInfo2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcImage = copy_src->srcImage;
+    srcImageLayout = copy_src->srcImageLayout;
+    dstBuffer = copy_src->dstBuffer;
+    regionCount = copy_src->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (regionCount && copy_src->pRegions) {
+        pRegions = new safe_VkBufferImageCopy2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src->pRegions[i]);
+        }
+    }
+}
+
+safe_VkImageBlit2KHR::safe_VkImageBlit2KHR(const VkImageBlit2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcSubresource(in_struct->srcSubresource),
+    dstSubresource(in_struct->dstSubresource)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        srcOffsets[i] = in_struct->srcOffsets[i];
+    }
+    for (uint32_t i = 0; i < 2; ++i) {
+        dstOffsets[i] = in_struct->dstOffsets[i];
+    }
+}
+
+safe_VkImageBlit2KHR::safe_VkImageBlit2KHR() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkImageBlit2KHR::safe_VkImageBlit2KHR(const safe_VkImageBlit2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcSubresource = copy_src.srcSubresource;
+    dstSubresource = copy_src.dstSubresource;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        srcOffsets[i] = copy_src.srcOffsets[i];
+    }
+    for (uint32_t i = 0; i < 2; ++i) {
+        dstOffsets[i] = copy_src.dstOffsets[i];
+    }
+}
+
+safe_VkImageBlit2KHR& safe_VkImageBlit2KHR::operator=(const safe_VkImageBlit2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcSubresource = copy_src.srcSubresource;
+    dstSubresource = copy_src.dstSubresource;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        srcOffsets[i] = copy_src.srcOffsets[i];
+    }
+    for (uint32_t i = 0; i < 2; ++i) {
+        dstOffsets[i] = copy_src.dstOffsets[i];
+    }
+
+    return *this;
+}
+
+safe_VkImageBlit2KHR::~safe_VkImageBlit2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageBlit2KHR::initialize(const VkImageBlit2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcSubresource = in_struct->srcSubresource;
+    dstSubresource = in_struct->dstSubresource;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        srcOffsets[i] = in_struct->srcOffsets[i];
+    }
+    for (uint32_t i = 0; i < 2; ++i) {
+        dstOffsets[i] = in_struct->dstOffsets[i];
+    }
+}
+
+void safe_VkImageBlit2KHR::initialize(const safe_VkImageBlit2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcSubresource = copy_src->srcSubresource;
+    dstSubresource = copy_src->dstSubresource;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        srcOffsets[i] = copy_src->srcOffsets[i];
+    }
+    for (uint32_t i = 0; i < 2; ++i) {
+        dstOffsets[i] = copy_src->dstOffsets[i];
+    }
+}
+
+safe_VkBlitImageInfo2KHR::safe_VkBlitImageInfo2KHR(const VkBlitImageInfo2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcImage(in_struct->srcImage),
+    srcImageLayout(in_struct->srcImageLayout),
+    dstImage(in_struct->dstImage),
+    dstImageLayout(in_struct->dstImageLayout),
+    regionCount(in_struct->regionCount),
+    pRegions(nullptr),
+    filter(in_struct->filter)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkImageBlit2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+safe_VkBlitImageInfo2KHR::safe_VkBlitImageInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR),
+    pNext(nullptr),
+    pRegions(nullptr)
+{}
+
+safe_VkBlitImageInfo2KHR::safe_VkBlitImageInfo2KHR(const safe_VkBlitImageInfo2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    filter = copy_src.filter;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkImageBlit2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+}
+
+safe_VkBlitImageInfo2KHR& safe_VkBlitImageInfo2KHR::operator=(const safe_VkBlitImageInfo2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    filter = copy_src.filter;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkImageBlit2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkBlitImageInfo2KHR::~safe_VkBlitImageInfo2KHR()
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBlitImageInfo2KHR::initialize(const VkBlitImageInfo2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcImage = in_struct->srcImage;
+    srcImageLayout = in_struct->srcImageLayout;
+    dstImage = in_struct->dstImage;
+    dstImageLayout = in_struct->dstImageLayout;
+    regionCount = in_struct->regionCount;
+    pRegions = nullptr;
+    filter = in_struct->filter;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkImageBlit2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+void safe_VkBlitImageInfo2KHR::initialize(const safe_VkBlitImageInfo2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcImage = copy_src->srcImage;
+    srcImageLayout = copy_src->srcImageLayout;
+    dstImage = copy_src->dstImage;
+    dstImageLayout = copy_src->dstImageLayout;
+    regionCount = copy_src->regionCount;
+    pRegions = nullptr;
+    filter = copy_src->filter;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (regionCount && copy_src->pRegions) {
+        pRegions = new safe_VkImageBlit2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src->pRegions[i]);
+        }
+    }
+}
+
+safe_VkImageResolve2KHR::safe_VkImageResolve2KHR(const VkImageResolve2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcSubresource(in_struct->srcSubresource),
+    srcOffset(in_struct->srcOffset),
+    dstSubresource(in_struct->dstSubresource),
+    dstOffset(in_struct->dstOffset),
+    extent(in_struct->extent)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageResolve2KHR::safe_VkImageResolve2KHR() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkImageResolve2KHR::safe_VkImageResolve2KHR(const safe_VkImageResolve2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcSubresource = copy_src.srcSubresource;
+    srcOffset = copy_src.srcOffset;
+    dstSubresource = copy_src.dstSubresource;
+    dstOffset = copy_src.dstOffset;
+    extent = copy_src.extent;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageResolve2KHR& safe_VkImageResolve2KHR::operator=(const safe_VkImageResolve2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcSubresource = copy_src.srcSubresource;
+    srcOffset = copy_src.srcOffset;
+    dstSubresource = copy_src.dstSubresource;
+    dstOffset = copy_src.dstOffset;
+    extent = copy_src.extent;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageResolve2KHR::~safe_VkImageResolve2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageResolve2KHR::initialize(const VkImageResolve2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcSubresource = in_struct->srcSubresource;
+    srcOffset = in_struct->srcOffset;
+    dstSubresource = in_struct->dstSubresource;
+    dstOffset = in_struct->dstOffset;
+    extent = in_struct->extent;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageResolve2KHR::initialize(const safe_VkImageResolve2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcSubresource = copy_src->srcSubresource;
+    srcOffset = copy_src->srcOffset;
+    dstSubresource = copy_src->dstSubresource;
+    dstOffset = copy_src->dstOffset;
+    extent = copy_src->extent;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkResolveImageInfo2KHR::safe_VkResolveImageInfo2KHR(const VkResolveImageInfo2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcImage(in_struct->srcImage),
+    srcImageLayout(in_struct->srcImageLayout),
+    dstImage(in_struct->dstImage),
+    dstImageLayout(in_struct->dstImageLayout),
+    regionCount(in_struct->regionCount),
+    pRegions(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkImageResolve2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+safe_VkResolveImageInfo2KHR::safe_VkResolveImageInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR),
+    pNext(nullptr),
+    pRegions(nullptr)
+{}
+
+safe_VkResolveImageInfo2KHR::safe_VkResolveImageInfo2KHR(const safe_VkResolveImageInfo2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkImageResolve2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+}
+
+safe_VkResolveImageInfo2KHR& safe_VkResolveImageInfo2KHR::operator=(const safe_VkResolveImageInfo2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcImage = copy_src.srcImage;
+    srcImageLayout = copy_src.srcImageLayout;
+    dstImage = copy_src.dstImage;
+    dstImageLayout = copy_src.dstImageLayout;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (regionCount && copy_src.pRegions) {
+        pRegions = new safe_VkImageResolve2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src.pRegions[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkResolveImageInfo2KHR::~safe_VkResolveImageInfo2KHR()
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkResolveImageInfo2KHR::initialize(const VkResolveImageInfo2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcImage = in_struct->srcImage;
+    srcImageLayout = in_struct->srcImageLayout;
+    dstImage = in_struct->dstImage;
+    dstImageLayout = in_struct->dstImageLayout;
+    regionCount = in_struct->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (regionCount && in_struct->pRegions) {
+        pRegions = new safe_VkImageResolve2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&in_struct->pRegions[i]);
+        }
+    }
+}
+
+void safe_VkResolveImageInfo2KHR::initialize(const safe_VkResolveImageInfo2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcImage = copy_src->srcImage;
+    srcImageLayout = copy_src->srcImageLayout;
+    dstImage = copy_src->dstImage;
+    dstImageLayout = copy_src->dstImageLayout;
+    regionCount = copy_src->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (regionCount && copy_src->pRegions) {
+        pRegions = new safe_VkImageResolve2KHR[regionCount];
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            pRegions[i].initialize(&copy_src->pRegions[i]);
+        }
+    }
+}
 
 safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT(const VkDebugReportCallbackCreateInfoEXT* in_struct) :
     sType(in_struct->sType),
@@ -35179,6 +36401,12 @@ void *SafePnextCopy(const void *pNext) {
             safe_pNext = new safe_VkPhysicalDevice4444FormatsFeaturesEXT(reinterpret_cast<const VkPhysicalDevice4444FormatsFeaturesEXT *>(pNext));
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR:
+            safe_pNext = new safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR(reinterpret_cast<const VkPhysicalDevicePortabilitySubsetPropertiesKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:
             safe_pNext = new safe_VkDeferredOperationInfoKHR(reinterpret_cast<const VkDeferredOperationInfoKHR *>(pNext));
             break;
@@ -35960,6 +37188,12 @@ void FreePnextChain(const void *pNext) {
             delete reinterpret_cast<const safe_VkPhysicalDevice4444FormatsFeaturesEXT *>(header);
             break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_DEFERRED_OPERATION_INFO_KHR:
             delete reinterpret_cast<const safe_VkDeferredOperationInfoKHR *>(header);
             break;

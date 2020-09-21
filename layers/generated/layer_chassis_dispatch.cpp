@@ -5540,6 +5540,150 @@ VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
     return result;
 }
 
+void DispatchCmdCopyBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyBufferInfo2KHR*                 pCopyBufferInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
+    safe_VkCopyBufferInfo2KHR var_local_pCopyBufferInfo;
+    safe_VkCopyBufferInfo2KHR *local_pCopyBufferInfo = NULL;
+    {
+        if (pCopyBufferInfo) {
+            local_pCopyBufferInfo = &var_local_pCopyBufferInfo;
+            local_pCopyBufferInfo->initialize(pCopyBufferInfo);
+            if (pCopyBufferInfo->srcBuffer) {
+                local_pCopyBufferInfo->srcBuffer = layer_data->Unwrap(pCopyBufferInfo->srcBuffer);
+            }
+            if (pCopyBufferInfo->dstBuffer) {
+                local_pCopyBufferInfo->dstBuffer = layer_data->Unwrap(pCopyBufferInfo->dstBuffer);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, (const VkCopyBufferInfo2KHR*)local_pCopyBufferInfo);
+
+}
+
+void DispatchCmdCopyImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyImageInfo2KHR*                  pCopyImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
+    safe_VkCopyImageInfo2KHR var_local_pCopyImageInfo;
+    safe_VkCopyImageInfo2KHR *local_pCopyImageInfo = NULL;
+    {
+        if (pCopyImageInfo) {
+            local_pCopyImageInfo = &var_local_pCopyImageInfo;
+            local_pCopyImageInfo->initialize(pCopyImageInfo);
+            if (pCopyImageInfo->srcImage) {
+                local_pCopyImageInfo->srcImage = layer_data->Unwrap(pCopyImageInfo->srcImage);
+            }
+            if (pCopyImageInfo->dstImage) {
+                local_pCopyImageInfo->dstImage = layer_data->Unwrap(pCopyImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyImage2KHR(commandBuffer, (const VkCopyImageInfo2KHR*)local_pCopyImageInfo);
+
+}
+
+void DispatchCmdCopyBufferToImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyBufferToImageInfo2KHR*          pCopyBufferToImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
+    safe_VkCopyBufferToImageInfo2KHR var_local_pCopyBufferToImageInfo;
+    safe_VkCopyBufferToImageInfo2KHR *local_pCopyBufferToImageInfo = NULL;
+    {
+        if (pCopyBufferToImageInfo) {
+            local_pCopyBufferToImageInfo = &var_local_pCopyBufferToImageInfo;
+            local_pCopyBufferToImageInfo->initialize(pCopyBufferToImageInfo);
+            if (pCopyBufferToImageInfo->srcBuffer) {
+                local_pCopyBufferToImageInfo->srcBuffer = layer_data->Unwrap(pCopyBufferToImageInfo->srcBuffer);
+            }
+            if (pCopyBufferToImageInfo->dstImage) {
+                local_pCopyBufferToImageInfo->dstImage = layer_data->Unwrap(pCopyBufferToImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyBufferToImage2KHR(commandBuffer, (const VkCopyBufferToImageInfo2KHR*)local_pCopyBufferToImageInfo);
+
+}
+
+void DispatchCmdCopyImageToBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyImageToBufferInfo2KHR*          pCopyImageToBufferInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
+    safe_VkCopyImageToBufferInfo2KHR var_local_pCopyImageToBufferInfo;
+    safe_VkCopyImageToBufferInfo2KHR *local_pCopyImageToBufferInfo = NULL;
+    {
+        if (pCopyImageToBufferInfo) {
+            local_pCopyImageToBufferInfo = &var_local_pCopyImageToBufferInfo;
+            local_pCopyImageToBufferInfo->initialize(pCopyImageToBufferInfo);
+            if (pCopyImageToBufferInfo->srcImage) {
+                local_pCopyImageToBufferInfo->srcImage = layer_data->Unwrap(pCopyImageToBufferInfo->srcImage);
+            }
+            if (pCopyImageToBufferInfo->dstBuffer) {
+                local_pCopyImageToBufferInfo->dstBuffer = layer_data->Unwrap(pCopyImageToBufferInfo->dstBuffer);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyImageToBuffer2KHR(commandBuffer, (const VkCopyImageToBufferInfo2KHR*)local_pCopyImageToBufferInfo);
+
+}
+
+void DispatchCmdBlitImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkBlitImageInfo2KHR*                  pBlitImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
+    safe_VkBlitImageInfo2KHR var_local_pBlitImageInfo;
+    safe_VkBlitImageInfo2KHR *local_pBlitImageInfo = NULL;
+    {
+        if (pBlitImageInfo) {
+            local_pBlitImageInfo = &var_local_pBlitImageInfo;
+            local_pBlitImageInfo->initialize(pBlitImageInfo);
+            if (pBlitImageInfo->srcImage) {
+                local_pBlitImageInfo->srcImage = layer_data->Unwrap(pBlitImageInfo->srcImage);
+            }
+            if (pBlitImageInfo->dstImage) {
+                local_pBlitImageInfo->dstImage = layer_data->Unwrap(pBlitImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdBlitImage2KHR(commandBuffer, (const VkBlitImageInfo2KHR*)local_pBlitImageInfo);
+
+}
+
+void DispatchCmdResolveImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkResolveImageInfo2KHR*               pResolveImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
+    safe_VkResolveImageInfo2KHR var_local_pResolveImageInfo;
+    safe_VkResolveImageInfo2KHR *local_pResolveImageInfo = NULL;
+    {
+        if (pResolveImageInfo) {
+            local_pResolveImageInfo = &var_local_pResolveImageInfo;
+            local_pResolveImageInfo->initialize(pResolveImageInfo);
+            if (pResolveImageInfo->srcImage) {
+                local_pResolveImageInfo->srcImage = layer_data->Unwrap(pResolveImageInfo->srcImage);
+            }
+            if (pResolveImageInfo->dstImage) {
+                local_pResolveImageInfo->dstImage = layer_data->Unwrap(pResolveImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdResolveImage2KHR(commandBuffer, (const VkResolveImageInfo2KHR*)local_pResolveImageInfo);
+
+}
+
 VkResult DispatchCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
