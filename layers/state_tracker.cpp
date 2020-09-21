@@ -5693,6 +5693,8 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
         auto &reqs = pipeline->active_slots[slot][use.first.second].reqs;
         reqs = descriptor_req(reqs | DescriptorTypeToReqs(module, use.second.type_id));
         if (use.second.is_atomic_operation) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION);
+        if (use.second.is_sampler_implicitLod_dref_proj) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ);
+
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
         if (use.second.samplers_used_by_image.size()) {
             pipeline->active_slots[slot][use.first.second].samplers_used_by_image[stage_state->stage_flag] =

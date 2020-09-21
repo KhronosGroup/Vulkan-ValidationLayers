@@ -858,6 +858,29 @@ static bool AtomicOperation(uint32_t opcode) {
     return false;
 }
 
+bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<unsigned> &operator_members,
+                             const std::unordered_map<unsigned, unsigned> &load_members,
+                             const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> &accesschain_members) {
+    for (auto load_id : operator_members) {
+        auto load_it = load_members.find(load_id);
+        if (load_it == load_members.end()) {
+            continue;
+        }
+        if (load_it->second == object_id) {
+            return true;
+        }
+
+        auto accesschain_it = accesschain_members.find(load_it->second);
+        if (accesschain_it == accesschain_members.end()) {
+            continue;
+        }
+        if (accesschain_it->second.first == object_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Check writable, image atomic operation
 static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const spirv_inst_iter &id_it, bool is_storage_buffer,
                                      bool is_check_writable, interface_var &out_interface_var) {
@@ -867,8 +890,10 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
     auto type = module->get_def(type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray) {
-        if (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypeRuntimeArray) {
+    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray ||
+           type.opcode() == spv::OpTypeSampledImage) {
+        if (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypeRuntimeArray ||
+            type.opcode() == spv::OpTypeSampledImage) {
             type = module->get_def(type.word(2));  // Element type
         } else {
             type = module->get_def(type.word(3));  // Pointer type
@@ -880,15 +905,25 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
             if (dim != spv::DimSubpassData) {
                 std::vector<unsigned> imagwrite_members;
                 std::vector<unsigned> atomic_members;
+                std::vector<unsigned> sampler_implicitLod_members;  // sampler Load id
                 std::vector<std::pair<unsigned, unsigned>> sampledImage_members;
                 std::unordered_map<unsigned, unsigned> load_members;
                 std::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
                 std::unordered_map<unsigned, unsigned> image_texel_pointer_members;
 
-                // unsigned int id = id_it.word(2);
-
                 for (auto insn : *module) {
                     switch (insn.opcode()) {
+                        case spv::OpImageSampleImplicitLod:
+                        case spv::OpImageSampleDrefImplicitLod:
+                        case spv::OpImageSampleProjImplicitLod:
+                        case spv::OpImageSampleProjDrefImplicitLod:
+                        case spv::OpImageSparseSampleImplicitLod:
+                        case spv::OpImageSparseSampleDrefImplicitLod:
+                        case spv::OpImageSparseSampleProjImplicitLod:
+                        case spv::OpImageSparseSampleProjDrefImplicitLod: {
+                            sampler_implicitLod_members.emplace_back(insn.word(3));  // Load id
+                            break;
+                        }
                         case spv::OpImageWrite: {
                             if (is_check_writable) imagwrite_members.emplace_back(insn.word(1));  // Load id
                             break;
@@ -928,24 +963,14 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                 }
                 out_interface_var.is_writable = false;
                 out_interface_var.is_atomic_operation = false;
+                out_interface_var.is_sampler_implicitLod = false;
 
-                for (auto load_id : imagwrite_members) {
-                    auto load_it = load_members.find(load_id);
-                    if (load_it == load_members.end()) {
-                        continue;
-                    }
-                    if (load_it->second == id) {
-                        out_interface_var.is_writable = true;
-                        break;
-                    }
-
-                    auto accesschain_it = accesschain_members.find(load_it->second);
-                    if (accesschain_it == accesschain_members.end()) {
-                        continue;
-                    }
+                if (CheckObjectIDFromOpLoad(id, imagwrite_members, load_members, accesschain_members)) {
                     out_interface_var.is_writable = true;
-                    accesschain_members.erase(accesschain_it);
-                    break;
+                }
+                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_members, used_operators.load_members,
+                                            used_operators.accesschain_members)) {
+                    out_interface_var.is_sampler_implicitLod_dref_proj = true;
                 }
 
                 for (auto &itp_id : sampledImage_members) {
