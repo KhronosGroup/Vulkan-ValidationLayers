@@ -998,14 +998,16 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             }
                         }
 
-                        // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
                         for (const auto &sampler_state : sampler_states) {
-                            if ((sampler_state && sampler_state->createInfo.unnormalizedCoordinates) &&
-                                (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D ||
-                                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
-                                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY ||
-                                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
-                                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)) {
+                            if (!sampler_state || !sampler_state->createInfo.unnormalizedCoordinates) {
+                                continue;
+                            }
+                            // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
+                            if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D ||
+                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
+                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY ||
+                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
+                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
                                 objlist.add(image_view);
@@ -1016,6 +1018,21 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                 report_data->FormatHandle(set).c_str(), caller,
                                                 report_data->FormatHandle(image_view).c_str(),
                                                 string_VkImageViewType(image_view_ci.viewType), binding, index,
+                                                report_data->FormatHandle(sampler_state->sampler).c_str());
+                            }
+                            // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample* instructions
+                            // with ImplicitLod, Dref or Proj in their name
+                            if (reqs & DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ) {
+                                auto set = descriptor_set->GetSet();
+                                LogObjectList objlist(set);
+                                objlist.add(image_view);
+                                objlist.add(sampler_state->sampler);
+                                return LogError(objlist, vuids.sampler_implicitLod_dref_proj,
+                                                "%s encountered the following validation error at %s time: %s in "
+                                                "Descriptor in binding #%" PRIu32 " index %" PRIu32
+                                                " is used by %s that uses invalid operator.",
+                                                report_data->FormatHandle(set).c_str(), caller,
+                                                report_data->FormatHandle(image_view).c_str(), binding, index,
                                                 report_data->FormatHandle(sampler_state->sampler).c_str());
                             }
                         }
