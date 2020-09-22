@@ -84,6 +84,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_command.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
                    $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
+                   $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
                    $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
@@ -117,6 +118,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_command.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
                    $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
+                   $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
                    $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \

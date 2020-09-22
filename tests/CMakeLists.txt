@@ -72,6 +72,7 @@ set(COMMON_CPP
     vklayertests_buffer_image_memory_sampler.cpp
     vklayertests_others.cpp
     vklayertests_best_practices.cpp
+    vklayertests_arm_best_practices.cpp
     vklayertests_gpu.cpp
     vklayertests_descriptor_renderpass_framebuffer.cpp
     vklayertests_command.cpp
