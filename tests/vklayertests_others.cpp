@@ -8188,10 +8188,15 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         vk::QueueWaitIdle(queue);
 
         // Invalid stride
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03229");
-        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR) + 4, VK_QUERY_RESULT_WAIT_BIT);
-        m_errorMonitor->VerifyFound();
+        {
+            std::vector<VkPerformanceCounterResultKHR> results_invalid_stride;
+            results_invalid_stride.resize(counterIndices.size() * 2);
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03229");
+            vk::GetQueryPoolResults(
+                device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
+                &results_invalid_stride[0], sizeof(VkPerformanceCounterResultKHR) + 4, VK_QUERY_RESULT_WAIT_BIT);
+            m_errorMonitor->VerifyFound();
+        }
 
         // Invalid flags
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
