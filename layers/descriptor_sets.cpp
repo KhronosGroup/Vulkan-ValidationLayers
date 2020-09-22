@@ -1035,6 +1035,21 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                 report_data->FormatHandle(image_view).c_str(), binding, index,
                                                 report_data->FormatHandle(sampler_state->sampler).c_str());
                             }
+                            // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample* instructions
+                            // that includes a LOD bias or any offset values
+                            if (reqs & DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET) {
+                                auto set = descriptor_set->GetSet();
+                                LogObjectList objlist(set);
+                                objlist.add(image_view);
+                                objlist.add(sampler_state->sampler);
+                                return LogError(objlist, vuids.sampler_bias_offset,
+                                                "%s encountered the following validation error at %s time: %s in "
+                                                "Descriptor in binding #%" PRIu32 " index %" PRIu32
+                                                " is used by %s that uses invalid bias or offset operator.",
+                                                report_data->FormatHandle(set).c_str(), caller,
+                                                report_data->FormatHandle(image_view).c_str(), binding, index,
+                                                report_data->FormatHandle(sampler_state->sampler).c_str());
+                            }
                         }
                     }
                 } else if (descriptor_class == DescriptorClass::TexelBuffer) {

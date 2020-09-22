@@ -160,6 +160,8 @@ enum descriptor_req {
 
     DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT << 1,
     DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ = DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION << 1,
+    DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET = DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ << 1,
+
 };
 
 extern unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt);
@@ -828,6 +830,7 @@ struct interface_var {
     bool is_writable;
     bool is_atomic_operation;
     bool is_sampler_implicitLod_dref_proj;
+    bool is_sampler_bias_offset;
     // TODO: collect the name, too? Isn't required to be present.
 
     interface_var()
@@ -840,7 +843,8 @@ struct interface_var {
           is_relaxed_precision(false),
           is_writable(false),
           is_atomic_operation(false),
-          is_sampler_implicitLod_dref_proj(false) {}
+          is_sampler_implicitLod_dref_proj(false),
+          is_sampler_bias_offset(false) {}
 };
 
 // Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
