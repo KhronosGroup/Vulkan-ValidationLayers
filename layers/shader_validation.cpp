@@ -881,6 +881,13 @@ bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<unsigned> &op
     return false;
 }
 
+bool CheckImageOperandsBiasOffset(uint32_t type) {
+    return type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
+                   spv::ImageOperandsConstOffsetsMask)
+               ? true
+               : false;
+}
+
 // Check writable, image atomic operation
 static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const spirv_inst_iter &id_it, bool is_storage_buffer,
                                      bool is_check_writable, interface_var &out_interface_var) {
@@ -906,6 +913,7 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                 std::vector<unsigned> imagwrite_members;
                 std::vector<unsigned> atomic_members;
                 std::vector<unsigned> sampler_implicitLod_members;  // sampler Load id
+                std::vector<unsigned> sampler_bias_offset_members;  // sampler Load id
                 std::vector<std::pair<unsigned, unsigned>> sampledImage_members;
                 std::unordered_map<unsigned, unsigned> load_members;
                 std::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
@@ -914,14 +922,45 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                 for (auto insn : *module) {
                     switch (insn.opcode()) {
                         case spv::OpImageSampleImplicitLod:
-                        case spv::OpImageSampleDrefImplicitLod:
                         case spv::OpImageSampleProjImplicitLod:
-                        case spv::OpImageSampleProjDrefImplicitLod:
                         case spv::OpImageSparseSampleImplicitLod:
+                        case spv::OpImageSparseSampleProjImplicitLod: {
+                            sampler_implicitLod_members.emplace_back(insn.word(3));  // Load id
+                            // ImageOperands in index: 5
+                            if (insn.len() > 5 && CheckImageOperandsBiasOffset(insn.word(5))) {
+                                sampler_bias_offset_members.emplace_back(insn.word(3));
+                            }
+                            break;
+                        }
+                        case spv::OpImageSampleDrefImplicitLod:
+                        case spv::OpImageSampleProjDrefImplicitLod:
                         case spv::OpImageSparseSampleDrefImplicitLod:
-                        case spv::OpImageSparseSampleProjImplicitLod:
                         case spv::OpImageSparseSampleProjDrefImplicitLod: {
                             sampler_implicitLod_members.emplace_back(insn.word(3));  // Load id
+                            // ImageOperands in index: 6
+                            if (insn.len() > 6 && CheckImageOperandsBiasOffset(insn.word(6))) {
+                                sampler_bias_offset_members.emplace_back(insn.word(3));
+                            }
+                            break;
+                        }
+                        case spv::OpImageSampleExplicitLod:
+                        case spv::OpImageSampleProjExplicitLod:
+                        case spv::OpImageSparseSampleExplicitLod:
+                        case spv::OpImageSparseSampleProjExplicitLod: {
+                            // ImageOperands in index: 5
+                            if (insn.len() > 5 && CheckImageOperandsBiasOffset(insn.word(5))) {
+                                sampler_bias_offset_members.emplace_back(insn.word(3));
+                            }
+                            break;
+                        }
+                        case spv::OpImageSampleDrefExplicitLod:
+                        case spv::OpImageSampleProjDrefExplicitLod:
+                        case spv::OpImageSparseSampleDrefExplicitLod:
+                        case spv::OpImageSparseSampleProjDrefExplicitLod: {
+                            // ImageOperands in index: 6
+                            if (insn.len() > 6 && CheckImageOperandsBiasOffset(insn.word(6))) {
+                                sampler_bias_offset_members.emplace_back(insn.word(3));
+                            }
                             break;
                         }
                         case spv::OpImageWrite: {
@@ -964,6 +1003,7 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                 out_interface_var.is_writable = false;
                 out_interface_var.is_atomic_operation = false;
                 out_interface_var.is_sampler_implicitLod = false;
+                out_interface_var.is_sampler_bias_offset = false;
 
                 if (CheckObjectIDFromOpLoad(id, imagwrite_members, load_members, accesschain_members)) {
                     out_interface_var.is_writable = true;
@@ -971,6 +1011,9 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                 if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_members, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_sampler_implicitLod_dref_proj = true;
+                }
+                if (CheckObjectIDFromOpLoad(id, sampler_bias_offset_members, load_members, accesschain_members)) {
+                    out_interface_var.is_sampler_bias_offset = true;
                 }
 
                 for (auto &itp_id : sampledImage_members) {
@@ -1117,7 +1160,6 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
     SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
     bool *has_atomic_descriptor) {
     std::vector<std::pair<descriptor_slot_t, interface_var>> out;
-
     for (auto id : accessible_ids) {
         auto insn = src->get_def(id);
         assert(insn != src->end());
