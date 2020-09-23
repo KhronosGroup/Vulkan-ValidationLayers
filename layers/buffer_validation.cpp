@@ -621,7 +621,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 LayoutUseCheckAndMessage layout_check(subresource_map);
                 bool subres_skip = false;
                 auto pos = subresource_map->Find(view_state->normalized_subresource_range);
-                for (; pos != subresource_map->End() && !subres_skip; ++pos) {
+                // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
+                // the next "constant value" range
+                for (; !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
                     const VkImageSubresource &subres = pos->subresource;
 
                     // Allow for differing depth and stencil layouts
@@ -971,7 +973,9 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
                 bool subres_skip = false;
                 LayoutUseCheckAndMessage layout_check(subresource_map);
                 VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier.subresourceRange);
-                for (auto pos = subresource_map->Find(normalized_isr); (pos != subresource_map->End()) && !subres_skip; ++pos) {
+                // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
+                // the next "constant value" range
+                for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
                     const auto &value = *pos;
                     if (!layout_check.Check(value.subresource, img_barrier.oldLayout, value.current_layout, value.initial_layout)) {
                         subres_skip = LogError(
@@ -1321,7 +1325,9 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map, aspect_mask);
-        for (auto pos = subresource_map->Find(range); (pos != subresource_map->End()) && !subres_skip; ++pos) {
+        // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
+        // the next "constant value" range
+        for (auto pos = subresource_map->Find(range); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
             if (!layout_check.Check(pos->subresource, explicit_layout, pos->current_layout, pos->initial_layout)) {
                 *error = true;
                 subres_skip |= LogError(cb_node->commandBuffer, layout_mismatch_msg_code,
@@ -2020,7 +2026,9 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map);
         VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, range);
-        for (auto pos = subresource_map->Find(normalized_isr); (pos != subresource_map->End()) && !subres_skip; ++pos) {
+        // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
+        // the next "constant value" range
+        for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
             if (!layout_check.Check(pos->subresource, dest_image_layout, pos->current_layout, pos->initial_layout)) {
                 const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
                 if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
