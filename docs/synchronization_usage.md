@@ -132,21 +132,24 @@ VkInstanceCreateInfo info = {};
 info.pNext = &features;
 ```
 
-## Quick Start
+## Typical Synchronization Validation Usage
 
-### Running Synchronization Validation
+### Debugging Synchronization Validation Issues
 
-The simplest way to run synchronization validation and debug issues is to:
+To debug synchronization validation issues (all platforms):
 
-*   Enable Synchronization Validation using [Vulkan Configurator (vkconfig)](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html).
-*   On Linux:
-    *   Create a debug callback with `vkCreateDebugUtilsMessengerEXT` with the `VK_DEBUG_REPORT_ERROR_BIT_EXT` set.
-    *   Set a breakpoint in the debug callback and run your application in the debugger.
-    *   The callback will be called when a `vkCmd`... command with a hazard is recorded.
-*   On Windows:
+- Create a debug callback with `vkCreateDebugUtilsMessengerEXT` with the `VK_DEBUG_REPORT_ERROR_BIT_EXT` set.
+- Enable synchronization as noted above. On Linux and Windows this can be simplified by enabling Synchronization Validation using [Vulkan Configurator (vkconfig)](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html)
+- Set a breakpoint in the debug callback and run your application in the debugger.
+- The callback will be called when a `vkCmd`... command with a hazard is recorded.
+
+On Windows, Synchronization Validation can be run using just vkconfig and the debugger without defining a callback:
+
+*   In vkconfig
+    *   Enable Synchronization Valdation
     *   Select 'Debug Actions' 'Break' and 'Debug Output'
-    *   Debug application in Visual Studio
-    *   Hazard messages will appear in the debugger output window and the debugger will break (in the validation layer code)  when a `vkCmd`... command with a hazard is recorded.
+*   Debug application in Visual Studio
+*   Hazard messages will appear in the debugger output window and the debugger will break (in the validation layer code)  when a `vkCmd`... command with a hazard is recorded.
 
 
 ### Synchronization Validation Messages
@@ -213,8 +216,6 @@ Command specific details typically include the specifics of the access within th
 </table>
 
 
-
-
 ### Frequently Found Issues
 
 *   Assuming Pipeline stages are logically extended with respect to memory access barriers.  Specifying the vertex shader stage in a barrier will **not** apply to all subsequent shader stages read/write access.
@@ -238,4 +239,6 @@ Synchronization Examples[ https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synch
 Keeping your GPU fed without getting bitten [ https://www.youtube.com/watch?v=oF7vOTTaAh4](https://www.youtube.com/watch?v=oF7vOTTaAh4)
 
 Yet another blog explaining Vulkan synchronization[ http://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/](http://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/)
+
+A Guide to Vulkan Synchronization Validation https://www.khronos.org/news/permalink/blog-a-guide-to-vulkan-synchronization-validation
 
