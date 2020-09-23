@@ -2201,12 +2201,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
     auto usage = FlagBit(usage_index);
     const auto usage_stage = PipelineStageBit(usage_index);
     if (IsRead(usage)) {
-        // Only check reads vs. last_write if it doesn't happen-after any other read because either:
-        //    * the previous reads are not hazards, and thus last_write must be visible and available to
-        //      any reads that happen after.
-        //    * the previous reads *are* hazards to last_write, have been reported, and if that hazard is fixed
-        //      the current read will be also not be a hazard, thus reporting a hazard here adds no needed information.
-        if (((usage_stage & read_execution_barriers) == 0) && last_write && IsWriteHazard(usage)) {
+        if (IsRAWHazard(usage_stage, usage)) {
             hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
         }
     } else {
@@ -2227,10 +2222,6 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
                     break;
                 }
             }
-        } else if (input_attachment_barriers != kNoAttachmentRead) {
-            if (IsReadHazard(usage_stage, input_attachment_barriers)) {
-                hazard.Set(this, usage_index, WRITE_AFTER_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, input_attachment_tag);
-            }
         } else if (last_write && IsWriteHazard(usage)) {
             // Write-After-Write check -- if we have a previous write to test against
             hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
@@ -2242,50 +2233,54 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
 HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index, const SyncOrderingBarrier &ordering) const {
     // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
     HazardResult hazard;
-    const auto usage = FlagBit(usage_index);
+    const auto usage_bit = FlagBit(usage_index);
     const auto usage_stage = PipelineStageBit(usage_index);
-    const bool write_is_ordered = (last_write & ordering.access_scope) == last_write;  // Is true if no write, and that's good.
-    if (IsRead(usage)) {
-        if (!write_is_ordered) {
-            // Only check for RAW if the write is unordered, and there are no reads ordered before the current read since last_write
-            // See DetectHazard(SyncStagetAccessIndex) above for more details.
-            // We need to assemble the effect read_execution barriers from the union of the state barriers and the ordering rules
-            // Check to see if there are any reads ordered before usage, including ordering rules and barriers.
-            bool ordered_read = 0 != ((last_read_stages & ordering.exec_scope) | (read_execution_barriers & usage_stage));
-            // Noting the "special* encoding of the input attachment ordering rule (in access, but not exec)
-            if ((ordering.access_scope & SyncStageAccessFlagBits::SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT) &&
-                (input_attachment_barriers != kNoAttachmentRead)) {
-                ordered_read = true;
-            }
-
-            if (!ordered_read && IsWriteHazard(usage)) {
-                hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
+    const bool input_attachment_ordering = 0 != (ordering.access_scope & SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT);
+    const bool last_write_is_ordered = 0 != (last_write & ordering.access_scope);
+    if (IsRead(usage_bit)) {
+        // Exclude RAW if no write, or write not most "most recent" operation w.r.t. usage;
+        bool is_raw_hazard = IsRAWHazard(usage_stage, usage_bit);
+        if (is_raw_hazard) {
+            // NOTE: we know last_write is non-zero
+            // See if the ordering rules save us from the simple RAW check above
+            // First check to see if the current usage is covered by the ordering rules
+            const bool usage_is_input_attachment = (usage_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
+            const bool usage_is_ordered =
+                (input_attachment_ordering && usage_is_input_attachment) || (0 != (usage_stage & ordering.exec_scope));
+            if (usage_is_ordered) {
+                // Now see of the most recent write (or a subsequent read) are ordered
+                const bool most_recent_is_ordered = last_write_is_ordered || (0 != GetOrderedStages(ordering));
+                is_raw_hazard = !most_recent_is_ordered;
             }
         }
-
+        if (is_raw_hazard) {
+            hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
+        }
     } else {
         // Only check for WAW if there are no reads since last_write
+        bool usage_write_is_ordered = 0 != (usage_bit & ordering.access_scope);
         if (last_read_count) {
-            // Ignore ordered read stages (which represent frame-buffer local operations, except input attachment
-            const auto unordered_reads = last_read_stages & ~ordering.exec_scope;
             // Look for any WAR hazards outside the ordered set of stages
-            for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                const auto &read_access = last_reads[read_index];
-                if ((read_access.stage & unordered_reads) && IsReadHazard(usage_stage, read_access)) {
-                    hazard.Set(this, usage_index, WRITE_AFTER_READ, read_access.access, read_access.tag);
-                    break;
+            VkPipelineStageFlags ordered_stages = 0;
+            if (usage_write_is_ordered) {
+                // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
+                ordered_stages = GetOrderedStages(ordering);
+            }
+            // If we're tracking any reads that aren't ordered against the current write, got to check 'em all.
+            if ((ordered_stages & last_read_stages) != last_read_stages) {
+                for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+                    const auto &read_access = last_reads[read_index];
+                    if (read_access.stage & ordered_stages) continue;  // but we can skip the ordered ones
+                    if (IsReadHazard(usage_stage, read_access)) {
+                        hazard.Set(this, usage_index, WRITE_AFTER_READ, read_access.access, read_access.tag);
+                        break;
+                    }
                 }
             }
-        } else if (input_attachment_barriers != kNoAttachmentRead) {
-            // This is special case code for the fragment shader input attachment, which unlike all other fragment shader operations
-            // is framebuffer local, and thus subject to raster ordering guarantees
-            if (0 == (ordering.access_scope & SyncStageAccessFlagBits::SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT)) {
-                // NOTE: Currently all ordering barriers include this bit, so this code may never be reached, but it's
-                //       here s.t. if we need to change the ordering barrier/rules we needn't change the code.
-                hazard.Set(this, usage_index, WRITE_AFTER_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, input_attachment_tag);
+        } else if (!(last_write_is_ordered && usage_write_is_ordered)) {
+            if (last_write && IsWriteHazard(usage_bit)) {
+                hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
             }
-        } else if (!write_is_ordered && IsWriteHazard(usage)) {
-            hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
         }
     }
     return hazard;
@@ -2303,9 +2298,8 @@ HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_i
         if (last_write != 0) {
             hazard.Set(this, usage_index, WRITE_RACING_WRITE, last_write, write_tag);
         } else if (last_read_count > 0) {
+            // Any read could be reported, so we'll just pick the first one arbitrarily
             hazard.Set(this, usage_index, WRITE_RACING_READ, last_reads[0].access, last_reads[0].tag);
-        } else if (input_attachment_barriers != kNoAttachmentRead) {
-            hazard.Set(this, usage_index, WRITE_RACING_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, input_attachment_tag);
         }
     }
     return hazard;
@@ -2330,11 +2324,6 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
                 break;
             }
         }
-    } else if (input_attachment_barriers != kNoAttachmentRead) {
-        // Same logic as read acces above for the special case of input attachment read
-        if ((src_exec_scope & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | input_attachment_barriers)) == 0) {
-            hazard.Set(this, usage_index, WRITE_AFTER_READ, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT, input_attachment_tag);
-        }
     } else if (last_write) {
         // If the previous write is *not* in the 1st access scope
         // *AND* the current barrier is not in the dependency chain
@@ -2354,7 +2343,8 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
 // exists, but if you fix *that* hazard it either fixes or unmasks the subsequent ones.
 void ResourceAccessState::Resolve(const ResourceAccessState &other) {
     if (write_tag.IsBefore(other.write_tag)) {
-        // If this is a later write, we've reported any exsiting hazard, and we can just overwrite as the more recent operation
+        // If this is a later write, we've reported any exsiting hazard, and we can just overwrite as the more recent
+        // operation
         *this = other;
     } else if (!other.write_tag.IsBefore(write_tag)) {
         // This is the *equals* case for write operations, we merged the write barriers and the read state (but without the
@@ -2362,31 +2352,29 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         write_barriers |= other.write_barriers;
 
         // Merge the read states
-        if (input_attachment_barriers == kNoAttachmentRead) {
-            // this doesn't have an input attachment read, so we'll take other, unconditionally (even if it's kNoAttachmentRead)
-            input_attachment_barriers = other.input_attachment_barriers;
-            input_attachment_tag = other.input_attachment_tag;
-        } else if (other.input_attachment_barriers != kNoAttachmentRead) {
-            // Both states have an input attachment read, pick the newest tag and merge barriers.
-            if (input_attachment_tag.IsBefore(other.input_attachment_tag)) {
-                input_attachment_tag = other.input_attachment_tag;
-            }
-            input_attachment_barriers |= other.input_attachment_barriers;
-        }
-        // The else clause is that only this has an attachment read and no merge is needed
-
+        const auto pre_merge_count = last_read_count;
+        const auto pre_merge_stages = last_read_stages;
         for (uint32_t other_read_index = 0; other_read_index < other.last_read_count; other_read_index++) {
             auto &other_read = other.last_reads[other_read_index];
-            if (last_read_stages & other_read.stage) {
+            if (pre_merge_stages & other_read.stage) {
                 // Merge in the barriers for read stages that exist in *both* this and other
-                // TODO: This is N^2 with stages... perhaps the ReadStates should be by stage index.
-                for (uint32_t my_read_index = 0; my_read_index < last_read_count; my_read_index++) {
+                // TODO: This is N^2 with stages... perhaps the ReadStates should be sorted by stage index.
+                //       but we should wait on profiling data for that.
+                for (uint32_t my_read_index = 0; my_read_index < pre_merge_count; my_read_index++) {
                     auto &my_read = last_reads[my_read_index];
                     if (other_read.stage == my_read.stage) {
                         if (my_read.tag.IsBefore(other_read.tag)) {
-                            my_read.tag = other_read.tag;
+                            // Other is more recent, copy in the state
                             my_read.access = other_read.access;
+                            my_read.tag = other_read.tag;
+                            if (my_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+                                // Since I'm overwriting the fragement stage read, also update the input attachment info
+                                // as this is the only stage that affects it.
+                                input_attachment_stage = other.input_attachment_stage;
+                            }
                         }
+                        // TODO: Phase 2 -- review the state merge logic to avoid false negative from the OR'ing of the barriers
+                        //                  May require tracking more than one access per stage.
                         my_read.barriers |= other_read.barriers;
                         break;
                     }
@@ -2396,43 +2384,46 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                 last_reads[last_read_count] = other_read;
                 last_read_count++;
                 last_read_stages |= other_read.stage;
+                if (other_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+                    input_attachment_stage = other.input_attachment_stage;
+                }
             }
         }
         read_execution_barriers |= other.read_execution_barriers;
-    }  // the else clause would be that other write is before this write... in which case we supercede the other state and ignore
-       // it.
+    }  // the else clause would be that other write is before this write... in which case we supercede the other state and
+       // ignore it.
 }
 
 void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag) {
     // Move this logic in the ResourceStateTracker as methods, thereof (or we'll repeat it for every flavor of resource...
     const auto usage_bit = FlagBit(usage_index);
-    if (usage_bit == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT) {
-        // Input attachment requires special treatment for raster/load/store ordering guarantees
-        input_attachment_barriers = 0;
-        input_attachment_tag = tag;
-    } else if (IsRead(usage_index)) {
+    if (IsRead(usage_index)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
         // However, for purposes of barrier tracking, only one read per pipeline stage matters
         const auto usage_stage = PipelineStageBit(usage_index);
+        uint32_t update_index = kStageCount;
         if (usage_stage & last_read_stages) {
             for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                ReadState &access = last_reads[read_index];
-                if (access.stage == usage_stage) {
-                    access.access = usage_bit;
-                    access.barriers = 0;
-                    access.tag = tag;
+                if (last_reads[read_index].stage == usage_stage) {
+                    update_index = read_index;
                     break;
                 }
             }
+            assert(update_index < last_read_count);
         } else {
-            // We don't have this stage in the list yet...
             assert(last_read_count < last_reads.size());
-            ReadState &access = last_reads[last_read_count++];
-            access.stage = usage_stage;
-            access.access = usage_bit;
-            access.barriers = 0;
-            access.tag = tag;
+            update_index = last_read_count++;
             last_read_stages |= usage_stage;
+        }
+        last_reads[update_index].Set(usage_stage, usage_bit, 0, tag);
+
+        // Fragment shader reads come in two flavors, and we need to track if the one we're tracking is the special one.
+        if (usage_stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+            if (usage_bit == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT) {
+                input_attachment_stage = usage_stage;
+            } else {
+                input_attachment_stage = kInvalidAttachmentStage;
+            }
         }
     } else {
         // Assume write
@@ -2443,9 +2434,7 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
         last_read_count = 0;
         last_read_stages = 0;
         read_execution_barriers = 0;
-
-        input_attachment_barriers = kNoAttachmentRead;  // Denotes no outstanding input attachment read after the last write.
-        // NOTE: we don't reset the tag, as the equality check ignores it when kNoAttachmentRead is set.
+        input_attachment_stage = kInvalidAttachmentStage;  // Denotes no outstanding input attachment read after the last write.
 
         write_barriers = 0;
         write_dependency_chain = 0;
@@ -2464,11 +2453,6 @@ void ResourceAccessState::ApplyExecutionBarrier(VkPipelineStageFlags srcStageMas
             access.barriers |= dstStageMask;
             read_execution_barriers |= dstStageMask;
         }
-    }
-    if ((input_attachment_barriers != kNoAttachmentRead) &&
-        (srcStageMask & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | input_attachment_barriers))) {
-        input_attachment_barriers |= dstStageMask;
-        read_execution_barriers |= dstStageMask;
     }
     if (write_dependency_chain & srcStageMask) {
         write_dependency_chain |= dstStageMask;
@@ -2492,14 +2476,11 @@ void ResourceAccessState::ApplyExecutionBarriers(const std::vector<SyncBarrier> 
         // Execution Barriers only protect read operations
         for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
             const ReadState &access = last_reads[read_index];
-            // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync scope
+            // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync
+            // scope
             if (src_scope & (access.stage | access.barriers)) {
                 pending_read_barriers[read_index] |= dst_scope;
             }
-        }
-        if ((input_attachment_barriers != kNoAttachmentRead) &&
-            (src_scope & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | input_attachment_barriers))) {
-            pending_input_attacment_barriers |= dst_scope;
         }
         if (InSourceScopeOrChain(src_scope, barrier.src_access_scope)) {
             pending_write_chain |= dst_scope;
@@ -2511,7 +2492,6 @@ void ResourceAccessState::ApplyExecutionBarriers(const std::vector<SyncBarrier> 
         last_reads[read_index].barriers |= pending_read_barriers[read_index];
         read_execution_barriers |= pending_read_barriers[read_index];
     }
-    input_attachment_barriers |= pending_input_attacment_barriers;
     read_execution_barriers |= pending_input_attacment_barriers;
     write_dependency_chain |= pending_write_chain;
 }
@@ -2535,18 +2515,54 @@ void ResourceAccessState::ApplyMemoryAccessBarrier(bool multi_dep, VkPipelineSta
 // This should be just Bits or Index, but we don't have an invalid state for Index
 VkPipelineStageFlags ResourceAccessState::GetReadBarriers(SyncStageAccessFlags usage_bit) const {
     VkPipelineStageFlags barriers = 0U;
-    if (usage_bit & SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT) {
-        barriers = input_attachment_barriers;
-    } else {
-        for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-            const auto &read_access = last_reads[read_index];
-            if (read_access.access & usage_bit) {
-                barriers = read_access.barriers;
-                break;
-            }
+
+    for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+        const auto &read_access = last_reads[read_index];
+        if (read_access.access & usage_bit) {
+            barriers = read_access.barriers;
+            break;
         }
     }
+
     return barriers;
+}
+
+inline bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const {
+    assert(IsRead(usage));
+    // Only RAW vs. last_write if it doesn't happen-after any other read because either:
+    //    * the previous reads are not hazards, and thus last_write must be visible and available to
+    //      any reads that happen after.
+    //    * the previous reads *are* hazards to last_write, have been reported, and if that hazard is fixed
+    //      the current read will be also not be a hazard, thus reporting a hazard here adds no needed information.
+    return (0 != last_write) && (0 == (read_execution_barriers & usage_stage)) && IsWriteHazard(usage);
+}
+
+bool ResourceAccessState::IsWARHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const { return false; }
+
+VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const SyncOrderingBarrier &ordering) const {
+    // Whether the stage are in the ordering scope only matters if the current write is ordered
+    VkPipelineStageFlags ordered_stages = last_read_stages & ordering.exec_scope;
+    // Special input attachment handling as always (not encoded in exec_scop)
+    const bool input_attachment_ordering = ordering.access_scope & SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT;
+    if (input_attachment_ordering && (input_attachment_stage != kInvalidAttachmentStage)) {
+        // If we have an input attachment in last_reads and input attachments are ordered we all that stage
+        ordered_stages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+
+    return ordered_stages;
+}
+
+inline ResourceAccessState::ReadState *ResourceAccessState::GetReadStateForStage(VkPipelineStageFlagBits stage,
+                                                                                 uint32_t search_limit) {
+    ReadState *read_state = nullptr;
+    search_limit = std::min(search_limit, last_read_count);
+    for (uint32_t i = 0; i < search_limit; i++) {
+        if (last_reads[i].stage == stage) {
+            read_state = &last_reads[i];
+            break;
+        }
+    }
+    return read_state;
 }
 
 void SyncValidator::ResetCommandBufferCallback(VkCommandBuffer command_buffer) {

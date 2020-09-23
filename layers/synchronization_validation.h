@@ -138,6 +138,13 @@ class ResourceAccessState : public SyncStageAccess {
             return same;
         }
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
+        inline void Set(VkPipelineStageFlagBits stage_, SyncStageAccessFlags access_, VkPipelineStageFlags barriers_,
+                        const ResourceUsageTag &tag_) {
+            stage = stage_;
+            access = access_;
+            barriers = barriers_;
+            tag = tag_;
+        }
     };
 
   public:
@@ -161,8 +168,7 @@ class ResourceAccessState : public SyncStageAccess {
           write_dependency_chain(0),
           write_tag(),
           last_write(0),
-          input_attachment_barriers(kNoAttachmentRead),
-          input_attachment_tag(),
+          input_attachment_stage(kInvalidAttachmentStage),
           last_read_count(0),
           last_read_stages(0),
           read_execution_barriers(0) {}
@@ -171,11 +177,11 @@ class ResourceAccessState : public SyncStageAccess {
     bool operator==(const ResourceAccessState &rhs) const {
         bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
                     (last_read_count == rhs.last_read_count) && (last_read_stages == rhs.last_read_stages) &&
-                    (write_tag == rhs.write_tag) && (input_attachment_barriers == rhs.input_attachment_barriers) &&
-                    ((input_attachment_barriers == kNoAttachmentRead) || input_attachment_tag == rhs.input_attachment_tag) &&
+                    (write_tag == rhs.write_tag) && (input_attachment_stage == rhs.input_attachment_stage) &&
+                    ((input_attachment_stage == kInvalidAttachmentStage)) &&
                     (read_execution_barriers == rhs.read_execution_barriers);
         for (uint32_t i = 0; same && i < last_read_count; i++) {
-            same |= last_reads[i] == rhs.last_reads[i];
+            same &= last_reads[i] == rhs.last_reads[i];
         }
         return same;
     }
@@ -184,8 +190,10 @@ class ResourceAccessState : public SyncStageAccess {
     SyncStageAccessFlags GetWriteBarriers() const { return write_barriers; }
 
   private:
-    static constexpr VkPipelineStageFlags kNoAttachmentRead = ~VkPipelineStageFlags(0);
+    static constexpr VkPipelineStageFlags kInvalidAttachmentStage = ~VkPipelineStageFlags(0);
     bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
+    bool IsRAWHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const;
+    bool IsWARHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const;
     bool InSourceScopeOrChain(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope) const {
         return (src_access_scope & last_write) || (write_dependency_chain & src_exec_scope);
     }
@@ -203,6 +211,8 @@ class ResourceAccessState : public SyncStageAccess {
     bool IsReadHazard(VkPipelineStageFlags stage_mask, const ReadState &read_access) const {
         return IsReadHazard(stage_mask, read_access.barriers);
     }
+    VkPipelineStageFlags GetOrderedStages(const SyncOrderingBarrier &ordering) const;
+    ReadState *GetReadStateForStage(VkPipelineStageFlagBits stage, uint32_t search_limit = kStageCount);
 
     // TODO: Add a NONE (zero) enum to SyncStageAccessFlagBits for input_attachment_read and last_write
 
@@ -214,12 +224,8 @@ class ResourceAccessState : public SyncStageAccess {
     ResourceUsageTag write_tag;
     SyncStageAccessFlags last_write;  // only the most recent write
 
-    // This is special as it's a framebuffer-local read from a framebuffer-global pipeline stage
-    // As the only possible state for the input attachment stage/access is SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT,
-    // encode the presence with the barriers mask, ~0 denotes no pending input attachment. Zero -- is the no-barrier state,
-    // otherwise reflects the barrier/dependency chain information.
-    VkPipelineStageFlags input_attachment_barriers;
-    ResourceUsageTag input_attachment_tag;
+    // Track the last_read_stages entry for a framebuffer-local read from a framebuffer-global pipeline stage if any
+    VkPipelineStageFlags input_attachment_stage;
 
     uint32_t last_read_count;
     VkPipelineStageFlags last_read_stages;
