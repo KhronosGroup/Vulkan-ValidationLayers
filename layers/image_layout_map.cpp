@@ -312,6 +312,15 @@ void ImageSubresourceLayoutMap::ConstIterator::Increment() {
         pos_.subresource = range_gen_.GetSubresource();
     }
 }
+
+void ImageSubresourceLayoutMap::ConstIterator::IncrementInterval() {
+    // constant_value_bound_ is the exclusive upper bound of the constant value range.
+    // When current index is set to point to that, UpdateRangeAndValue skips to the next constant value range,
+    // setting that state as the current position / state for the iterator.
+    current_index_ = constant_value_bound_;
+    UpdateRangeAndValue();
+}
+
 ImageSubresourceLayoutMap::ConstIterator::ConstIterator(const RangeMap& current, const RangeMap& initial, const Encoder& encoder,
                                                         const VkImageSubresourceRange& subres, bool skip_invalid,
                                                         bool always_get_initial)
