@@ -18,6 +18,10 @@
 # Needed to make structure definitions match with glslang libraries
 add_definitions(-DNV_EXTENSIONS -DAMD_EXTENSIONS)
 
+if(ANNOTATED_SPEC_LINK)
+    add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
+endif()
+
 if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN -DNOMINMAX)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
@@ -68,6 +72,7 @@ set(COMMON_CPP
     vklayertests_buffer_image_memory_sampler.cpp
     vklayertests_others.cpp
     vklayertests_best_practices.cpp
+    vklayertests_arm_best_practices.cpp
     vklayertests_gpu.cpp
     vklayertests_descriptor_renderpass_framebuffer.cpp
     vklayertests_command.cpp

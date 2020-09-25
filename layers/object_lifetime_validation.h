@@ -76,8 +76,18 @@ class ObjectLifetimes : public ValidationObject {
     // Special-case map for swapchain images
     object_map_type swapchainImageMap;
 
+    void *device_createinfo_pnext;
+    bool null_descriptor_enabled;
+
     // Constructor for object lifetime tracking
-    ObjectLifetimes() : num_objects{}, num_total_objects(0) { container_type = LayerObjectTypeObjectTracker; }
+    ObjectLifetimes() : num_objects{}, num_total_objects(0), device_createinfo_pnext(nullptr), null_descriptor_enabled(false) {
+        container_type = LayerObjectTypeObjectTracker;
+    }
+    ~ObjectLifetimes() {
+        if (device_createinfo_pnext) {
+            FreePnextChain(device_createinfo_pnext);
+        }
+    }
 
     template <typename T1>
     void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, std::shared_ptr<ObjTrackState> pNode) {

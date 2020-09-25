@@ -541,7 +541,8 @@ struct alignas(alignof(AnyDescriptor)) DescriptorBackingStore {
 struct AllocateDescriptorSetsData {
     std::map<uint32_t, uint32_t> required_descriptors_by_type;
     std::vector<std::shared_ptr<DescriptorSetLayout const>> layout_nodes;
-    AllocateDescriptorSetsData(uint32_t);
+    void Init(uint32_t);
+    AllocateDescriptorSetsData(){};
 };
 // Helper functions for descriptor set functions that cross multiple sets
 // "Validate" will make sure an update is ok without actually performing it
@@ -627,8 +628,8 @@ class DescriptorSet : public BASE_NODE {
     VkDescriptorSet GetSet() const { return set_; };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, const PIPELINE_STATE *,
-                         const std::map<uint32_t, descriptor_req> &);
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, CMD_TYPE cmd_type, const PIPELINE_STATE *,
+                         const std::map<uint32_t, descriptor_req> &, const char *function);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present

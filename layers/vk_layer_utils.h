@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <iomanip>
 #include "cast_utils.h"
 #include "vk_format_utils.h"
 #include "vk_layer_logging.h"
@@ -42,6 +43,27 @@
 #define STRINGIFY_HELPER(s) #s
 
 #ifdef __cplusplus
+static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
+    VkExtent3D d3 = {d2.width, d2.height, 1};
+    return d3;
+}
+
+static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
+    VkOffset3D d3 = {d2.x, d2.y, 0};
+    return d3;
+}
+
+// Convert integer API version to a string
+static inline std::string StringAPIVersion(uint32_t version) {
+    std::stringstream version_name;
+    uint32_t major = VK_VERSION_MAJOR(version);
+    uint32_t minor = VK_VERSION_MINOR(version);
+    uint32_t patch = VK_VERSION_PATCH(version);
+    version_name << major << "." << minor << "." << patch << " (0x" << std::setfill('0') << std::setw(8) << std::hex << version
+                 << ")";
+    return version_name.str();
+}
+
 // Traits objects to allow string_join to operate on collections of const char *
 template <typename String>
 struct StringJoinSizeTrait {
@@ -166,6 +188,17 @@ static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
     return size;
 }
 
+static inline bool IsIdentitySwizzle(VkComponentMapping components) {
+    // clang-format off
+    return (
+        ((components.r == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.r == VK_COMPONENT_SWIZZLE_R)) &&
+        ((components.g == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.g == VK_COMPONENT_SWIZZLE_G)) &&
+        ((components.b == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.b == VK_COMPONENT_SWIZZLE_B)) &&
+        ((components.a == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.a == VK_COMPONENT_SWIZZLE_A))
+    );
+    // clang-format on
+}
+
 extern "C" {
 #endif
 
@@ -203,14 +236,16 @@ static inline int u_ffs(int val) {
 }
 #endif
 
-// shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+// Minimum Visual Studio 2015 Update 2, or libc++ with C++17
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
 #include <shared_mutex>
 #endif
 
 class ReadWriteLock {
   private:
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
     typedef std::shared_mutex lock_t;
 #else
     typedef std::mutex lock_t;
@@ -220,7 +255,8 @@ class ReadWriteLock {
     void lock() { m_lock.lock(); }
     bool try_lock() { return m_lock.try_lock(); }
     void unlock() { m_lock.unlock(); }
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
     void lock_shared() { m_lock.lock_shared(); }
     bool try_lock_shared() { return m_lock.try_lock_shared(); }
     void unlock_shared() { m_lock.unlock_shared(); }
@@ -233,7 +269,8 @@ class ReadWriteLock {
     lock_t m_lock;
 };
 
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
 typedef std::shared_lock<ReadWriteLock> read_lock_guard_t;
 typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
 #else

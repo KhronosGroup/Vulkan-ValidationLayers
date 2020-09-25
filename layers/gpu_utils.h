@@ -126,11 +126,6 @@ void UtilPreCallRecordDestroyDevice(ObjectType *object_ptr) {
         DispatchDestroyDescriptorSetLayout(object_ptr->device, object_ptr->dummy_desc_layout, NULL);
         object_ptr->dummy_desc_layout = VK_NULL_HANDLE;
     }
-    object_ptr->desc_set_manager.reset();
-
-    if (object_ptr->vmaAllocator) {
-        vmaDestroyAllocator(object_ptr->vmaAllocator);
-    }
 }
 
 template <typename ObjectType>
@@ -332,6 +327,20 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
         }
     }
 }
+template <typename CreateInfos, typename SafeCreateInfos>
+void UtilCopyCreatePipelineFeedbackData(const uint32_t count, CreateInfos *pCreateInfos, SafeCreateInfos *pSafeCreateInfos) {
+    for (uint32_t i = 0; i < count; i++) {
+        auto src_feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pSafeCreateInfos[i].pNext);
+        if (!src_feedback_struct) return;
+        auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfoEXT *>(
+            lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext));
+        *dst_feedback_struct->pPipelineCreationFeedback = *src_feedback_struct->pPipelineCreationFeedback;
+        for (uint32_t j = 0; j < src_feedback_struct->pipelineStageCreationFeedbackCount; j++) {
+            dst_feedback_struct->pPipelineStageCreationFeedbacks[j] = src_feedback_struct->pPipelineStageCreationFeedbacks[j];
+        }
+    }
+}
+
 template <typename ObjectType>
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void UtilProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, ObjectType *object_ptr) {

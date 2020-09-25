@@ -26,9 +26,28 @@
 #include "vulkan/vk_layer.h"
 #include "vulkan/vulkan.h"
 
+#if defined(WIN32)
+#define DEFAULT_VK_REGISTRY_HIVE HKEY_LOCAL_MACHINE
+#define DEFAULT_VK_REGISTRY_HIVE_STR "HKEY_LOCAL_MACHINE"
+#define SECONDARY_VK_REGISTRY_HIVE HKEY_CURRENT_USER
+#define SECONDARY_VK_REGISTRY_HIVE_STR "HKEY_CURRENT_USER"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    kVkConfig,
+    kEnvVar,
+    kLocal,
+} SettingsFileSource;
+
+typedef struct SettingsFileInfo {
+    bool file_found = false;
+    std::string location{};
+    SettingsFileSource source = kLocal;
+} SettingsFileInfo;
 
 typedef enum {
     kInformationBit = 0x00000001,
@@ -75,6 +94,7 @@ const std::unordered_map<std::string, VkFlags> log_msg_type_option_definitions =
 
 VK_LAYER_EXPORT const char *getLayerOption(const char *option);
 VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option);
+VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo();
 
 VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name);
 VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string option, std::unordered_map<std::string, VkFlags> const &enum_data,

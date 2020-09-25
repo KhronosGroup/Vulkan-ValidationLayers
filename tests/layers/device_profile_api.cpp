@@ -43,6 +43,7 @@ struct layer_data {
     VkInstance instance;
     VkPhysicalDeviceProperties phy_device_props;
     std::unordered_map<VkFormat, VkFormatProperties, std::hash<int> > format_properties_map;
+    VkPhysicalDeviceFeatures phy_device_features;
     VkLayerInstanceDispatchTable dispatch_table;
 };
 
@@ -60,6 +61,9 @@ typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)(VkP
                                                                              const VkFormatProperties2 *properties);
 typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                      const VkFormatProperties2 newProperties);
+typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceFeatures *features);
+typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice, const VkFormatProperties2 newFeatures);
 
 VKAPI_ATTR void VKAPI_CALL GetOriginalPhysicalDeviceLimitsEXT(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits *orgLimits) {
     std::lock_guard<std::mutex> lock(global_lock);
@@ -110,6 +114,22 @@ VKAPI_ATTR void VKAPI_CALL SetPhysicalDeviceFormatProperties2EXT(VkPhysicalDevic
     memcpy(&(phy_dev_data->format_properties_map[format]), &(newProperties.formatProperties), sizeof(VkFormatProperties));
 }
 
+VKAPI_ATTR void VKAPI_CALL GetOriginalPhysicalDeviceFeaturesEXT(VkPhysicalDevice physicalDevice,
+                                                                VkPhysicalDeviceFeatures *features) {
+    std::lock_guard<std::mutex> lock(global_lock);
+    layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
+    layer_data *instance_data = GetLayerDataPtr(phy_dev_data->instance, device_profile_api_dev_data_map);
+    instance_data->dispatch_table.GetPhysicalDeviceFeatures(physicalDevice, features);
+}
+
+VKAPI_ATTR void VKAPI_CALL SetPhysicalDeviceFeaturesEXT(VkPhysicalDevice physicalDevice,
+                                                        const VkPhysicalDeviceFeatures newFeatures) {
+    std::lock_guard<std::mutex> lock(global_lock);
+    layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
+
+    memcpy(&phy_dev_data->phy_device_features, &newFeatures, sizeof(VkPhysicalDeviceFeatures));
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                               VkInstance *pInstance) {
     VkLayerInstanceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
@@ -142,6 +162,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     for (VkPhysicalDevice physical_device : physical_devices) {
         layer_data *phy_dev_data = GetLayerDataPtr(physical_device, device_profile_api_dev_data_map);
         instance_data->dispatch_table.GetPhysicalDeviceProperties(physical_device, &phy_dev_data->phy_device_props);
+        instance_data->dispatch_table.GetPhysicalDeviceFeatures(physical_device, &phy_dev_data->phy_device_features);
         phy_dev_data->instance = *pInstance;
     }
     return result;
@@ -177,6 +198,12 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
     } else {
         instance_data->dispatch_table.GetPhysicalDeviceFormatProperties2(physicalDevice, format, pProperties);
     }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures *pFeatures) {
+    std::lock_guard<std::mutex> lock(global_lock);
+    layer_data *phy_dev_data = GetLayerDataPtr(physicalDevice, device_profile_api_dev_data_map);
+    memcpy(pFeatures, &phy_dev_data->phy_device_features, sizeof(VkPhysicalDeviceFeatures));
 }
 
 static const VkLayerProperties device_profile_api_LayerProps = {
@@ -221,6 +248,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
     if (!strcmp(name, "vkSetPhysicalDeviceFormatProperties2EXT")) return (PFN_vkVoidFunction)SetPhysicalDeviceFormatProperties2EXT;
     if (!strcmp(name, "vkGetOriginalPhysicalDeviceFormatProperties2EXT"))
         return (PFN_vkVoidFunction)GetOriginalPhysicalDeviceFormatProperties2EXT;
+    if (!strcmp(name, "vkGetOriginalPhysicalDeviceFeaturesEXT")) return (PFN_vkVoidFunction)GetOriginalPhysicalDeviceFeaturesEXT;
+    if (!strcmp(name, "vkSetPhysicalDeviceFeaturesEXT")) return (PFN_vkVoidFunction)SetPhysicalDeviceFeaturesEXT;
     layer_data *instance_data = GetLayerDataPtr(instance, device_profile_api_dev_data_map);
     auto &table = instance_data->dispatch_table;
     if (!table.GetPhysicalDeviceProcAddr) return nullptr;
@@ -233,6 +262,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
     if (!strcmp(name, "vkGetPhysicalDeviceFormatProperties")) return (PFN_vkVoidFunction)GetPhysicalDeviceFormatProperties;
     if (!strcmp(name, "vkGetPhysicalDeviceFormatProperties2")) return (PFN_vkVoidFunction)GetPhysicalDeviceFormatProperties2;
     if (!strcmp(name, "vkGetPhysicalDeviceFormatProperties2KHR")) return (PFN_vkVoidFunction)GetPhysicalDeviceFormatProperties2;
+    if (!strcmp(name, "vkGetPhysicalDeviceFeatures")) return (PFN_vkVoidFunction)GetPhysicalDeviceFeatures;
     if (!strcmp(name, "vkGetInstanceProcAddr")) return (PFN_vkVoidFunction)GetInstanceProcAddr;
     if (!strcmp(name, "vkEnumerateInstanceExtensionProperties")) return (PFN_vkVoidFunction)EnumerateInstanceExtensionProperties;
     if (!strcmp(name, "vkEnumerateInstanceLayerProperties")) return (PFN_vkVoidFunction)EnumerateInstanceLayerProperties;
@@ -244,6 +274,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
     if (!strcmp(name, "vkSetPhysicalDeviceFormatProperties2EXT")) return (PFN_vkVoidFunction)SetPhysicalDeviceFormatProperties2EXT;
     if (!strcmp(name, "vkGetOriginalPhysicalDeviceFormatProperties2EXT"))
         return (PFN_vkVoidFunction)GetOriginalPhysicalDeviceFormatProperties2EXT;
+    if (!strcmp(name, "vkGetOriginalPhysicalDeviceFeaturesEXT")) return (PFN_vkVoidFunction)GetOriginalPhysicalDeviceFeaturesEXT;
+    if (!strcmp(name, "vkSetPhysicalDeviceFeaturesEXT")) return (PFN_vkVoidFunction)SetPhysicalDeviceFeaturesEXT;
     assert(instance);
     layer_data *instance_data = GetLayerDataPtr(instance, device_profile_api_dev_data_map);
     auto &table = instance_data->dispatch_table;

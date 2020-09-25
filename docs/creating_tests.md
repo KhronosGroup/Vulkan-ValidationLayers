@@ -151,7 +151,7 @@ m_errorMonitor->VerifyFound();
 - When a VUID is dependent on an extension being present
     - Note: The start of the test might already have a boolean that checks for extension support
 ```
-const char* vuid = DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ? "VUID-VkImageCopy-dstImage-01733" : "VUID-VkImageCopy-extent-00164";
+const char* vuid = DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ? "VUID-vkCmdCopyImage-dstImage-01733" : "VUID-vkCmdCopyImage-dstImage-01733";
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
 m_commandBuffer->CopyImage(image_2.image(), VK_IMAGE_LAYOUT_GENERAL, image_1.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 m_errorMonitor->VerifyFound();

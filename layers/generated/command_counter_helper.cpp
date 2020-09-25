@@ -207,6 +207,24 @@ void CommandCounter::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer comman
 void CommandCounter::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
+void CommandCounter::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
 void CommandCounter::PreCallRecordCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
@@ -318,6 +336,42 @@ void CommandCounter::PreCallRecordCmdSetPerformanceOverrideINTEL(VkCommandBuffer
 void CommandCounter::PreCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
+void CommandCounter::PreCallRecordCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes, const VkDeviceSize* pStrides) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
 void CommandCounter::PreCallRecordCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
@@ -333,7 +387,7 @@ void CommandCounter::PreCallRecordCmdBuildAccelerationStructureKHR(VkCommandBuff
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-void CommandCounter::PreCallRecordCmdBuildAccelerationStructureIndirectKHR(VkCommandBuffer                                    commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR* pInfo, VkBuffer                                           indirectBuffer, VkDeviceSize                                       indirectOffset, uint32_t                                           indirectStride) {
+void CommandCounter::PreCallRecordCmdBuildAccelerationStructureIndirectKHR(VkCommandBuffer                  commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR* pInfo, VkBuffer                                           indirectBuffer, VkDeviceSize                                       indirectOffset, uint32_t                                           indirectStride) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS

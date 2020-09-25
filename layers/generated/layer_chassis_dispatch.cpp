@@ -26,9 +26,7 @@
 #include "chassis.h"
 #include "layer_chassis_dispatch.h"
 #include "vk_layer_utils.h"
-
-// This intentionally includes a cpp file
-#include "vk_safe_struct.cpp"
+#include "vk_safe_struct.h"
 
 ReadWriteLock dispatch_lock;
 
@@ -1038,6 +1036,50 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
     return result;
 }
 
+bool NotDispatchableHandle(VkObjectType object_type) {
+    bool not_dispatchable = true;
+    if ((object_type == VK_OBJECT_TYPE_INSTANCE)        ||
+        (object_type == VK_OBJECT_TYPE_PHYSICAL_DEVICE) ||
+        (object_type == VK_OBJECT_TYPE_DEVICE)          ||
+        (object_type == VK_OBJECT_TYPE_QUEUE)           ||
+        (object_type == VK_OBJECT_TYPE_COMMAND_BUFFER)) {
+        not_dispatchable = false;
+    }
+    return not_dispatchable;
+}
+
+VkResult DispatchSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+    privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    if (NotDispatchableHandle(objectType)) {
+        objectHandle = layer_data->Unwrap(objectHandle);
+    }
+    VkResult result = layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+    return result;
+}
+
+void DispatchGetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t*                                   pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+    privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    if (NotDispatchableHandle(objectType)) {
+        objectHandle = layer_data->Unwrap(objectHandle);
+    }
+    layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+}
 
 
 
@@ -5498,6 +5540,150 @@ VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
     return result;
 }
 
+void DispatchCmdCopyBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyBufferInfo2KHR*                 pCopyBufferInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
+    safe_VkCopyBufferInfo2KHR var_local_pCopyBufferInfo;
+    safe_VkCopyBufferInfo2KHR *local_pCopyBufferInfo = NULL;
+    {
+        if (pCopyBufferInfo) {
+            local_pCopyBufferInfo = &var_local_pCopyBufferInfo;
+            local_pCopyBufferInfo->initialize(pCopyBufferInfo);
+            if (pCopyBufferInfo->srcBuffer) {
+                local_pCopyBufferInfo->srcBuffer = layer_data->Unwrap(pCopyBufferInfo->srcBuffer);
+            }
+            if (pCopyBufferInfo->dstBuffer) {
+                local_pCopyBufferInfo->dstBuffer = layer_data->Unwrap(pCopyBufferInfo->dstBuffer);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, (const VkCopyBufferInfo2KHR*)local_pCopyBufferInfo);
+
+}
+
+void DispatchCmdCopyImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyImageInfo2KHR*                  pCopyImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
+    safe_VkCopyImageInfo2KHR var_local_pCopyImageInfo;
+    safe_VkCopyImageInfo2KHR *local_pCopyImageInfo = NULL;
+    {
+        if (pCopyImageInfo) {
+            local_pCopyImageInfo = &var_local_pCopyImageInfo;
+            local_pCopyImageInfo->initialize(pCopyImageInfo);
+            if (pCopyImageInfo->srcImage) {
+                local_pCopyImageInfo->srcImage = layer_data->Unwrap(pCopyImageInfo->srcImage);
+            }
+            if (pCopyImageInfo->dstImage) {
+                local_pCopyImageInfo->dstImage = layer_data->Unwrap(pCopyImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyImage2KHR(commandBuffer, (const VkCopyImageInfo2KHR*)local_pCopyImageInfo);
+
+}
+
+void DispatchCmdCopyBufferToImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyBufferToImageInfo2KHR*          pCopyBufferToImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
+    safe_VkCopyBufferToImageInfo2KHR var_local_pCopyBufferToImageInfo;
+    safe_VkCopyBufferToImageInfo2KHR *local_pCopyBufferToImageInfo = NULL;
+    {
+        if (pCopyBufferToImageInfo) {
+            local_pCopyBufferToImageInfo = &var_local_pCopyBufferToImageInfo;
+            local_pCopyBufferToImageInfo->initialize(pCopyBufferToImageInfo);
+            if (pCopyBufferToImageInfo->srcBuffer) {
+                local_pCopyBufferToImageInfo->srcBuffer = layer_data->Unwrap(pCopyBufferToImageInfo->srcBuffer);
+            }
+            if (pCopyBufferToImageInfo->dstImage) {
+                local_pCopyBufferToImageInfo->dstImage = layer_data->Unwrap(pCopyBufferToImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyBufferToImage2KHR(commandBuffer, (const VkCopyBufferToImageInfo2KHR*)local_pCopyBufferToImageInfo);
+
+}
+
+void DispatchCmdCopyImageToBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyImageToBufferInfo2KHR*          pCopyImageToBufferInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
+    safe_VkCopyImageToBufferInfo2KHR var_local_pCopyImageToBufferInfo;
+    safe_VkCopyImageToBufferInfo2KHR *local_pCopyImageToBufferInfo = NULL;
+    {
+        if (pCopyImageToBufferInfo) {
+            local_pCopyImageToBufferInfo = &var_local_pCopyImageToBufferInfo;
+            local_pCopyImageToBufferInfo->initialize(pCopyImageToBufferInfo);
+            if (pCopyImageToBufferInfo->srcImage) {
+                local_pCopyImageToBufferInfo->srcImage = layer_data->Unwrap(pCopyImageToBufferInfo->srcImage);
+            }
+            if (pCopyImageToBufferInfo->dstBuffer) {
+                local_pCopyImageToBufferInfo->dstBuffer = layer_data->Unwrap(pCopyImageToBufferInfo->dstBuffer);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdCopyImageToBuffer2KHR(commandBuffer, (const VkCopyImageToBufferInfo2KHR*)local_pCopyImageToBufferInfo);
+
+}
+
+void DispatchCmdBlitImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkBlitImageInfo2KHR*                  pBlitImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
+    safe_VkBlitImageInfo2KHR var_local_pBlitImageInfo;
+    safe_VkBlitImageInfo2KHR *local_pBlitImageInfo = NULL;
+    {
+        if (pBlitImageInfo) {
+            local_pBlitImageInfo = &var_local_pBlitImageInfo;
+            local_pBlitImageInfo->initialize(pBlitImageInfo);
+            if (pBlitImageInfo->srcImage) {
+                local_pBlitImageInfo->srcImage = layer_data->Unwrap(pBlitImageInfo->srcImage);
+            }
+            if (pBlitImageInfo->dstImage) {
+                local_pBlitImageInfo->dstImage = layer_data->Unwrap(pBlitImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdBlitImage2KHR(commandBuffer, (const VkBlitImageInfo2KHR*)local_pBlitImageInfo);
+
+}
+
+void DispatchCmdResolveImage2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkResolveImageInfo2KHR*               pResolveImageInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
+    safe_VkResolveImageInfo2KHR var_local_pResolveImageInfo;
+    safe_VkResolveImageInfo2KHR *local_pResolveImageInfo = NULL;
+    {
+        if (pResolveImageInfo) {
+            local_pResolveImageInfo = &var_local_pResolveImageInfo;
+            local_pResolveImageInfo->initialize(pResolveImageInfo);
+            if (pResolveImageInfo->srcImage) {
+                local_pResolveImageInfo->srcImage = layer_data->Unwrap(pResolveImageInfo->srcImage);
+            }
+            if (pResolveImageInfo->dstImage) {
+                local_pResolveImageInfo->dstImage = layer_data->Unwrap(pResolveImageInfo->dstImage);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdResolveImage2KHR(commandBuffer, (const VkResolveImageInfo2KHR*)local_pResolveImageInfo);
+
+}
+
 VkResult DispatchCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
@@ -7020,11 +7206,10 @@ VkResult DispatchAcquirePerformanceConfigurationINTEL(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
-    {
-        pConfiguration = layer_data->Unwrap(pConfiguration);
-    }
     VkResult result = layer_data->device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
-
+    if (VK_SUCCESS == result) {
+        *pConfiguration = layer_data->WrapNew(*pConfiguration);
+    }
     return result;
 }
 
@@ -7290,6 +7475,137 @@ void DispatchResetQueryPoolEXT(
 
 }
 
+void DispatchCmdSetCullModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCullModeFlags                             cullMode)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetCullModeEXT(commandBuffer, cullMode);
+
+}
+
+void DispatchCmdSetFrontFaceEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkFrontFace                                 frontFace)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetFrontFaceEXT(commandBuffer, frontFace);
+
+}
+
+void DispatchCmdSetPrimitiveTopologyEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPrimitiveTopology                         primitiveTopology)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
+
+}
+
+void DispatchCmdSetViewportWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    viewportCount,
+    const VkViewport*                           pViewports)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
+
+}
+
+void DispatchCmdSetScissorWithCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    scissorCount,
+    const VkRect2D*                             pScissors)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
+
+}
+
+void DispatchCmdBindVertexBuffers2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBuffer*                             pBuffers,
+    const VkDeviceSize*                         pOffsets,
+    const VkDeviceSize*                         pSizes,
+    const VkDeviceSize*                         pStrides)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
+    VkBuffer var_local_pBuffers[DISPATCH_MAX_STACK_ALLOCATIONS];
+    VkBuffer *local_pBuffers = NULL;
+    {
+        if (pBuffers) {
+            local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
+            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+                local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, (const VkBuffer*)local_pBuffers, pOffsets, pSizes, pStrides);
+    if (local_pBuffers != var_local_pBuffers)
+        delete[] local_pBuffers;
+}
+
+void DispatchCmdSetDepthTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthTestEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
+
+}
+
+void DispatchCmdSetDepthWriteEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthWriteEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
+
+}
+
+void DispatchCmdSetDepthCompareOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkCompareOp                                 depthCompareOp)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
+
+}
+
+void DispatchCmdSetDepthBoundsTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthBoundsTestEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
+
+}
+
+void DispatchCmdSetStencilTestEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    stencilTestEnable)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
+
+}
+
+void DispatchCmdSetStencilOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkStencilFaceFlags                          faceMask,
+    VkStencilOp                                 failOp,
+    VkStencilOp                                 passOp,
+    VkStencilOp                                 depthFailOp,
+    VkCompareOp                                 compareOp)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+
+}
+
 void DispatchGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
@@ -7458,6 +7774,75 @@ void DispatchDestroyIndirectCommandsLayoutNV(
     layer_data->device_dispatch_table.DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
 
 }
+
+VkResult DispatchCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+    VkResult result = layer_data->device_dispatch_table.CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+    if (VK_SUCCESS == result) {
+        *pPrivateDataSlot = layer_data->WrapNew(*pPrivateDataSlot);
+    }
+    return result;
+}
+
+void DispatchDestroyPrivateDataSlotEXT(
+    VkDevice                                    device,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    const VkAllocationCallbacks*                pAllocator)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
+    uint64_t privateDataSlot_id = reinterpret_cast<uint64_t &>(privateDataSlot);
+    auto iter = unique_id_mapping.pop(privateDataSlot_id);
+    if (iter != unique_id_mapping.end()) {
+        privateDataSlot = (VkPrivateDataSlotEXT)iter->second;
+    } else {
+        privateDataSlot = (VkPrivateDataSlotEXT)0;
+    }
+    layer_data->device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
+
+}
+
+// Skip vkSetPrivateDataEXT dispatch, manually generated
+
+// Skip vkGetPrivateDataEXT dispatch, manually generated
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+
+VkResult DispatchCreateDirectFBSurfaceEXT(
+    VkInstance                                  instance,
+    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    if (!wrap_handles) return layer_data->instance_dispatch_table.CreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    VkResult result = layer_data->instance_dispatch_table.CreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
+    if (VK_SUCCESS == result) {
+        *pSurface = layer_data->WrapNew(*pSurface);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+
+VkBool32 DispatchGetPhysicalDeviceDirectFBPresentationSupportEXT(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    IDirectFB*                                  dfb)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkBool32 result = layer_data->instance_dispatch_table.GetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 

@@ -328,11 +328,26 @@ spirv_inst_iter FindEntrypoint(SHADER_MODULE_STATE const *src, char const *name,
 // converting parts of this to be generated from the machine-readable spec instead.
 std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint);
 
+// Returns an int32_t corresponding to the spv::Dim of the given resource, when positive, and corresponding to an unknown type, when
+// negative.
+int32_t GetShaderResourceDimensionality(const SHADER_MODULE_STATE *module, const interface_var &resource);
+
+bool FindLocalSize(SHADER_MODULE_STATE const *src, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z);
+
 void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline);
 
 std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
-    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor);
+    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
+    bool *has_atomic_descriptor);
+
+std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
+                                                               const VkPipelineShaderStageCreateInfo &stage_info);
 
 uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id);
+
+spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
+
+void AdjustValidatorOptions(const DeviceExtensions device_extensions, const DeviceFeatures enabled_features,
+                            spvtools::ValidatorOptions &options);
 
 #endif  // VULKAN_SHADER_VALIDATION_H

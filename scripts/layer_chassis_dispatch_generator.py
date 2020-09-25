@@ -64,6 +64,7 @@ class LayerChassisDispatchGeneratorOptions(GeneratorOptions):
                  conventions = None,
                  filename = None,
                  directory = '.',
+                 genpath = None,
                  apiname = None,
                  profile = None,
                  versions = '.*',
@@ -84,9 +85,20 @@ class LayerChassisDispatchGeneratorOptions(GeneratorOptions):
                  indentFuncPointer = False,
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
-                                  versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions, emitExtensions, sortProcedure)
+        GeneratorOptions.__init__(self,
+                conventions = conventions,
+                filename = filename,
+                directory = directory,
+                genpath = genpath,
+                apiname = apiname,
+                profile = profile,
+                versions = versions,
+                emitversions = emitversions,
+                defaultExtensions = defaultExtensions,
+                addExtensions = addExtensions,
+                removeExtensions = removeExtensions,
+                emitExtensions = emitExtensions,
+                sortProcedure = sortProcedure)
         self.prefixText      = prefixText
         self.genFuncPointers = genFuncPointers
         self.protectFile     = protectFile
@@ -1000,6 +1012,50 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
     return result;
 }
 
+bool NotDispatchableHandle(VkObjectType object_type) {
+    bool not_dispatchable = true;
+    if ((object_type == VK_OBJECT_TYPE_INSTANCE)        ||
+        (object_type == VK_OBJECT_TYPE_PHYSICAL_DEVICE) ||
+        (object_type == VK_OBJECT_TYPE_DEVICE)          ||
+        (object_type == VK_OBJECT_TYPE_QUEUE)           ||
+        (object_type == VK_OBJECT_TYPE_COMMAND_BUFFER)) {
+        not_dispatchable = false;
+    }
+    return not_dispatchable;
+}
+
+VkResult DispatchSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+    privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    if (NotDispatchableHandle(objectType)) {
+        objectHandle = layer_data->Unwrap(objectHandle);
+    }
+    VkResult result = layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+    return result;
+}
+
+void DispatchGetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t*                                   pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+    privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    if (NotDispatchableHandle(objectType)) {
+        objectHandle = layer_data->Unwrap(objectHandle);
+    }
+    layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+}
 """
     # Separate generated text for source and headers
     ALL_SECTIONS = ['source_file', 'header_file']
@@ -1055,6 +1111,8 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateInstanceVersion',
             'vkGetPhysicalDeviceToolPropertiesEXT',
+            'vkSetPrivateDataEXT',
+            'vkGetPrivateDataEXT',
             ]
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
@@ -1133,9 +1191,7 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
             write('#include "chassis.h"', file=self.outFile)
             write('#include "layer_chassis_dispatch.h"', file=self.outFile)
             write('#include "vk_layer_utils.h"', file=self.outFile)
-            self.newline()
-            write('// This intentionally includes a cpp file', file=self.outFile)
-            write('#include "vk_safe_struct.cpp"', file=self.outFile)
+            write('#include "vk_safe_struct.h"', file=self.outFile)
             self.newline()
             write('ReadWriteLock dispatch_lock;', file=self.outFile)
             self.newline()
@@ -1701,8 +1757,8 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
             elif type in struct_member_dict:
                 if self.struct_contains_ndo(type) == True:
                     islocal = True
-            isdestroy = True if True in [destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free']] else False
-            iscreate = True if True in [create_txt in cmdname for create_txt in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent']] else False
+            isdestroy = True if True in [destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL']] else False
+            iscreate = True if True in [create_txt in cmdname for create_txt in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']] else False
             extstructs = self.registry.validextensionstructs[type] if name == 'pNext' else None
             membersInfo.append(self.CommandParam(type=type,
                                                  name=name,

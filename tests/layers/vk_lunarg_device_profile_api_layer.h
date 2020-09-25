@@ -45,6 +45,10 @@ typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)(VkP
                                                                              const VkFormatProperties2 *properties);
 typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                      const VkFormatProperties2 newProperties);
+typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceFeatures *features);
+typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
+                                                            const VkPhysicalDeviceFeatures newFeatures);
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

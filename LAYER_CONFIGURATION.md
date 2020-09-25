@@ -17,11 +17,11 @@ Vulkan supports intercepting or hooking API entry points via a layer framework. 
 
 Vulkan validation and utility layers give Vulkan application developers the ability to add additional functionality to applications without modifying the application itself, e.g., dumping API entry points or generating screenshots of specified frames.
 
-### Vulkan Configurator Tool
+## Configuring Vulkan Layers using *Vulkan Configurator*
 
-Developers can use the Vulkan Configurator, `vkconfig`, to enable explicit layers and disable implicit layers as well as change layer settings through a graphical user interface.  Please see [the Vulkan Configurator documentation in the Vulkan SDK](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) for more information on using the Vulkan Configurator. Continue reading for instructions on how to configure layers without using vkconfig.
+Developers can configure layers through a graphical user interface. *[Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html)* allows full user control of Vulkan layers, including enabling or disabling specific layers, controlling layer order, changing layer settings, etc.
 
-## Validation Layer Overview
+## Configuring Vulkan Layers using Environment Variables
 
 Application validation in Vulkan is implemented solely by the [Khronos validation layer](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/khronos_validation_layer.md),
  **`VK_LAYER_KHRONOS_validation`**.
@@ -50,9 +50,9 @@ deprecated. For additional detail, see the [Unified Validation Layer whitepaper]
 |   VK_LAYER_LUNARG_shader_checker            | April 2015          |  Deprecated      |
 |   VK_LAYER_LUNARG_image                     | June 2015           |  Deprecated      |
 
-## Activating Layers on Windows
+### Activating Layers on Windows
 Before or during execution of a Vulkan application, the loader must be informed of the layers to activate.
-This can be done in two ways:  programmatically, or by using environment variables.
+This can be done in two ways: programmatically, or by using environment variables.
 
 Applications may programmatically activate layers via the `vkCreateInstance()` entry point.
 
@@ -78,7 +78,7 @@ C:\> set VK_INSTANCE_LAYERS=VK_LAYER_LUNARG_api_dump;VK_LAYER_KHRONOS_validation
 C:\> vkcube
 ```
 
-## Activating Layers on Linux and macOS
+### Activating Layers on Linux and macOS
 Before or during execution of a Vulkan application, the loader must be informed of the layers to activate.
 This can be done in two ways:  programmatically, or by using environment variables.
 
@@ -161,7 +161,7 @@ Consult these sample layer settings files for additional information and detail 
 
 Note: If layers are activated via `VK_INSTANCE_LAYERS` environment variable and if neither an application-defined callback is defined nor a layer settings file is present, the loader/layers will provide default callbacks enabling output of error-level messages to standard out (and via `OutputDebugString` on Windows).
 
-## Advanced Layer Configuration, Installation, and Discovery Details
+### Advanced Layer Configuration, Installation, and Discovery Details
 The Vulkan loader searches specific platform-specific locations to find installed layers.
 For additional details, see the `LoaderAndLayerInterface.md` available [here](https://vulkan.lunarg.com/doc/sdk/latest/windows/loader_and_layer_interface.html),
 or in the Vulkan-Loader repository, [here](https://github.com/KhronosGroup/Vulkan-Loader/blob/master/loader/LoaderAndLayerInterface.md).

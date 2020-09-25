@@ -34,6 +34,7 @@
 #endif
 
 #include "layers/vk_device_profile_api_layer.h"
+#include "vk_layer_settings_ext.h"
 
 #if defined(ANDROID)
 #include <android/log.h>
@@ -187,6 +188,9 @@ bool ImageFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkIm
 bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
                                      const VkFormatFeatureFlags features);
 
+// Returns true if format and *all* requested features are available.
+bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkFormatFeatureFlags features);
+
 // Simple sane SamplerCreateInfo boilerplate
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo();
 
@@ -272,8 +276,10 @@ class VkBestPracticesLayerTest : public VkLayerTest {
 
   protected:
     VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
-    VkValidationFeatureDisableEXT disables_[1] = {VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
-    VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 1, disables_};
+    VkValidationFeatureDisableEXT disables_[4] = {
+        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 4, disables_};
 };
 
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {};
@@ -296,6 +302,18 @@ class VkDebugPrintfTest : public VkLayerTest {
     void InitDebugPrintfFramework();
 
   protected:
+};
+
+class VkSyncValTest : public VkLayerTest {
+  public:
+    void InitSyncValFramework();
+
+  protected:
+    VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
+    VkValidationFeatureDisableEXT disables_[4] = {
+        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 4, disables_};
 };
 
 class VkBufferTest {
@@ -363,18 +381,21 @@ struct OneOffDescriptorSet {
     typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
     std::vector<VkDescriptorBufferInfo> buffer_infos;
     std::vector<VkDescriptorImageInfo> image_infos;
+    std::vector<VkBufferView> buffer_views;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
     OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
-                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL);
+                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL,
+                        int buffer_info_size = 10, int image_info_size = 10, int buffer_view_size = 10);
     ~OneOffDescriptorSet();
     bool Initialized();
     void WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize size,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uint32_t count = 1);
     void WriteDescriptorBufferView(int binding, VkBufferView &buffer_view,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, uint32_t count = 1);
     void WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
-                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                  VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, uint32_t count = 1);
     void UpdateDescriptorSets();
 };
 
@@ -535,10 +556,12 @@ struct CreateNVRayTracingPipelineHelper {
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
     VkPipelineLayoutObj pipeline_layout_;
     VkRayTracingPipelineCreateInfoNV rp_ci_ = {};
+    VkRayTracingPipelineCreateInfoKHR rp_ci_KHR_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::vector<VkRayTracingShaderGroupCreateInfoNV> groups_;
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups_KHR_;
     std::unique_ptr<VkShaderObj> rgs_;
     std::unique_ptr<VkShaderObj> chs_;
     std::unique_ptr<VkShaderObj> mis_;
@@ -549,16 +572,18 @@ struct CreateNVRayTracingPipelineHelper {
     static bool InitInstanceExtensions(VkLayerTest &test, std::vector<const char *> &instance_extension_names);
     static bool InitDeviceExtensions(VkLayerTest &test, std::vector<const char *> &device_extension_names);
     void InitShaderGroups();
+    void InitShaderGroupsKHR();
     void InitDescriptorSetInfo();
     void InitPipelineLayoutInfo();
     void InitShaderInfo();
     void InitNVRayTracingPipelineInfo();
+    void InitKHRRayTracingPipelineInfo();
     void InitPipelineCacheInfo();
-    void InitInfo();
+    void InitInfo(bool isKHR = false);
     void InitState();
-    void LateBindPipelineInfo();
+    void LateBindPipelineInfo(bool isKHR = false);
     VkResult CreateNVRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
-
+    VkResult CreateKHRRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
     // Helper function to create a simple test case (positive or negative)
     //
     // info_override can be any callable that takes a CreateNVRayTracingPipelineHelper &
@@ -758,7 +783,8 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreate
 bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
                                     std::vector<const char *> &instance_extension_names,
                                     std::vector<const char *> &device_extension_names, void *user_data,
-                                    bool need_gpu_validation = false, bool need_push_descriptors = false);
+                                    bool need_gpu_validation = false, bool need_push_descriptors = false,
+                                    bool deferred_state_init = false);
 
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
                                                     VkGeometryNV *geometry);

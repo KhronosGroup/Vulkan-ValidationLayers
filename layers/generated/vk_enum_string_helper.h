@@ -39,17 +39,6 @@
 #include <vulkan/vulkan.h>
 
 
-static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHeaderVersion input_value)
-{
-    switch ((VkPipelineCacheHeaderVersion)input_value)
-    {
-        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
-            return "VK_PIPELINE_CACHE_HEADER_VERSION_ONE";
-        default:
-            return "Unhandled VkPipelineCacheHeaderVersion";
-    }
-}
-
 static inline const char* string_VkResult(VkResult input_value)
 {
     switch ((VkResult)input_value)
@@ -205,12 +194,18 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO";
         case VK_STRUCTURE_TYPE_BIND_SPARSE_INFO:
             return "VK_STRUCTURE_TYPE_BIND_SPARSE_INFO";
+        case VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR:
+            return "VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR";
+        case VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR:
+            return "VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR";
         case VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO";
         case VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT:
             return "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO:
             return "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO";
+        case VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR:
+            return "VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR";
         case VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER:
             return "VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER";
         case VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2:
@@ -245,8 +240,16 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR";
         case VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR:
             return "VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR";
+        case VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR:
+            return "VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR";
+        case VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR:
+            return "VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR";
         case VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET:
             return "VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET";
+        case VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR:
+            return "VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR";
+        case VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR:
+            return "VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR";
         case VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR:
             return "VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR";
         case VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR:
@@ -321,12 +324,16 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO";
         case VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD:
             return "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD";
+        case VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT:
             return "VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2:
             return "VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2";
+        case VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_DISPLAY_EVENT_INFO_EXT:
             return "VK_STRUCTURE_TYPE_DISPLAY_EVENT_INFO_EXT";
         case VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR:
@@ -427,6 +434,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA:
             return "VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA";
+        case VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR:
+            return "VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR";
+        case VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR:
+            return "VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR";
         case VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT:
@@ -445,6 +456,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2";
         case VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO:
             return "VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO";
+        case VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR:
+            return "VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR";
         case VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2:
             return "VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2";
         case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO:
@@ -545,6 +558,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT:
@@ -573,6 +588,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT:
@@ -595,6 +614,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO:
@@ -609,6 +630,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_PROPERTIES_EXT:
@@ -629,6 +654,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT:
@@ -671,6 +698,12 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES:
@@ -687,6 +720,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES:
@@ -697,6 +734,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR:
@@ -859,6 +898,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR";
         case VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE:
             return "VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE";
+        case VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO:
             return "VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO";
         case VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO:
@@ -899,8 +940,12 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT";
         case VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM:
             return "VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM";
+        case VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR:
+            return "VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR";
         case VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO";
+        case VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO:
@@ -1002,6 +1047,300 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
     }
 }
 
+static inline const char* string_VkAccessFlagBits(VkAccessFlagBits input_value)
+{
+    switch ((VkAccessFlagBits)input_value)
+    {
+        case VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR:
+            return "VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR";
+        case VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR:
+            return "VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR";
+        case VK_ACCESS_COLOR_ATTACHMENT_READ_BIT:
+            return "VK_ACCESS_COLOR_ATTACHMENT_READ_BIT";
+        case VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT:
+            return "VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT";
+        case VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT:
+            return "VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT";
+        case VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV:
+            return "VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV";
+        case VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV:
+            return "VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV";
+        case VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT:
+            return "VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT";
+        case VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT:
+            return "VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT";
+        case VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT:
+            return "VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT";
+        case VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT:
+            return "VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT";
+        case VK_ACCESS_HOST_READ_BIT:
+            return "VK_ACCESS_HOST_READ_BIT";
+        case VK_ACCESS_HOST_WRITE_BIT:
+            return "VK_ACCESS_HOST_WRITE_BIT";
+        case VK_ACCESS_INDEX_READ_BIT:
+            return "VK_ACCESS_INDEX_READ_BIT";
+        case VK_ACCESS_INDIRECT_COMMAND_READ_BIT:
+            return "VK_ACCESS_INDIRECT_COMMAND_READ_BIT";
+        case VK_ACCESS_INPUT_ATTACHMENT_READ_BIT:
+            return "VK_ACCESS_INPUT_ATTACHMENT_READ_BIT";
+        case VK_ACCESS_MEMORY_READ_BIT:
+            return "VK_ACCESS_MEMORY_READ_BIT";
+        case VK_ACCESS_MEMORY_WRITE_BIT:
+            return "VK_ACCESS_MEMORY_WRITE_BIT";
+        case VK_ACCESS_SHADER_READ_BIT:
+            return "VK_ACCESS_SHADER_READ_BIT";
+        case VK_ACCESS_SHADER_WRITE_BIT:
+            return "VK_ACCESS_SHADER_WRITE_BIT";
+        case VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV:
+            return "VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV";
+        case VK_ACCESS_TRANSFER_READ_BIT:
+            return "VK_ACCESS_TRANSFER_READ_BIT";
+        case VK_ACCESS_TRANSFER_WRITE_BIT:
+            return "VK_ACCESS_TRANSFER_WRITE_BIT";
+        case VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT:
+            return "VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT";
+        case VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT:
+            return "VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT";
+        case VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT:
+            return "VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT";
+        case VK_ACCESS_UNIFORM_READ_BIT:
+            return "VK_ACCESS_UNIFORM_READ_BIT";
+        case VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT:
+            return "VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT";
+        default:
+            return "Unhandled VkAccessFlagBits";
+    }
+}
+
+static inline std::string string_VkAccessFlags(VkAccessFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkAccessFlagBits(static_cast<VkAccessFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkAccessFlagBits(static_cast<VkAccessFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkImageLayout(VkImageLayout input_value)
+{
+    switch ((VkImageLayout)input_value)
+    {
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+            return "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT";
+        case VK_IMAGE_LAYOUT_GENERAL:
+            return "VK_IMAGE_LAYOUT_GENERAL";
+        case VK_IMAGE_LAYOUT_PREINITIALIZED:
+            return "VK_IMAGE_LAYOUT_PREINITIALIZED";
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+            return "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR";
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+            return "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV";
+        case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+            return "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR";
+        case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL";
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL";
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            return "VK_IMAGE_LAYOUT_UNDEFINED";
+        default:
+            return "Unhandled VkImageLayout";
+    }
+}
+
+static inline const char* string_VkImageAspectFlagBits(VkImageAspectFlagBits input_value)
+{
+    switch ((VkImageAspectFlagBits)input_value)
+    {
+        case VK_IMAGE_ASPECT_COLOR_BIT:
+            return "VK_IMAGE_ASPECT_COLOR_BIT";
+        case VK_IMAGE_ASPECT_DEPTH_BIT:
+            return "VK_IMAGE_ASPECT_DEPTH_BIT";
+        case VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT:
+            return "VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT";
+        case VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT:
+            return "VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT";
+        case VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT:
+            return "VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT";
+        case VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT:
+            return "VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT";
+        case VK_IMAGE_ASPECT_METADATA_BIT:
+            return "VK_IMAGE_ASPECT_METADATA_BIT";
+        case VK_IMAGE_ASPECT_PLANE_0_BIT:
+            return "VK_IMAGE_ASPECT_PLANE_0_BIT";
+        case VK_IMAGE_ASPECT_PLANE_1_BIT:
+            return "VK_IMAGE_ASPECT_PLANE_1_BIT";
+        case VK_IMAGE_ASPECT_PLANE_2_BIT:
+            return "VK_IMAGE_ASPECT_PLANE_2_BIT";
+        case VK_IMAGE_ASPECT_STENCIL_BIT:
+            return "VK_IMAGE_ASPECT_STENCIL_BIT";
+        default:
+            return "Unhandled VkImageAspectFlagBits";
+    }
+}
+
+static inline std::string string_VkImageAspectFlags(VkImageAspectFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkImageAspectFlagBits(static_cast<VkImageAspectFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkImageAspectFlagBits(static_cast<VkImageAspectFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkObjectType(VkObjectType input_value)
+{
+    switch ((VkObjectType)input_value)
+    {
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return "VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR";
+        case VK_OBJECT_TYPE_BUFFER:
+            return "VK_OBJECT_TYPE_BUFFER";
+        case VK_OBJECT_TYPE_BUFFER_VIEW:
+            return "VK_OBJECT_TYPE_BUFFER_VIEW";
+        case VK_OBJECT_TYPE_COMMAND_BUFFER:
+            return "VK_OBJECT_TYPE_COMMAND_BUFFER";
+        case VK_OBJECT_TYPE_COMMAND_POOL:
+            return "VK_OBJECT_TYPE_COMMAND_POOL";
+        case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
+            return "VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT";
+        case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
+            return "VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT";
+        case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR:
+            return "VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR";
+        case VK_OBJECT_TYPE_DESCRIPTOR_POOL:
+            return "VK_OBJECT_TYPE_DESCRIPTOR_POOL";
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET:
+            return "VK_OBJECT_TYPE_DESCRIPTOR_SET";
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT:
+            return "VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT";
+        case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE:
+            return "VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE";
+        case VK_OBJECT_TYPE_DEVICE:
+            return "VK_OBJECT_TYPE_DEVICE";
+        case VK_OBJECT_TYPE_DEVICE_MEMORY:
+            return "VK_OBJECT_TYPE_DEVICE_MEMORY";
+        case VK_OBJECT_TYPE_DISPLAY_KHR:
+            return "VK_OBJECT_TYPE_DISPLAY_KHR";
+        case VK_OBJECT_TYPE_DISPLAY_MODE_KHR:
+            return "VK_OBJECT_TYPE_DISPLAY_MODE_KHR";
+        case VK_OBJECT_TYPE_EVENT:
+            return "VK_OBJECT_TYPE_EVENT";
+        case VK_OBJECT_TYPE_FENCE:
+            return "VK_OBJECT_TYPE_FENCE";
+        case VK_OBJECT_TYPE_FRAMEBUFFER:
+            return "VK_OBJECT_TYPE_FRAMEBUFFER";
+        case VK_OBJECT_TYPE_IMAGE:
+            return "VK_OBJECT_TYPE_IMAGE";
+        case VK_OBJECT_TYPE_IMAGE_VIEW:
+            return "VK_OBJECT_TYPE_IMAGE_VIEW";
+        case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV:
+            return "VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV";
+        case VK_OBJECT_TYPE_INSTANCE:
+            return "VK_OBJECT_TYPE_INSTANCE";
+        case VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL:
+            return "VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL";
+        case VK_OBJECT_TYPE_PHYSICAL_DEVICE:
+            return "VK_OBJECT_TYPE_PHYSICAL_DEVICE";
+        case VK_OBJECT_TYPE_PIPELINE:
+            return "VK_OBJECT_TYPE_PIPELINE";
+        case VK_OBJECT_TYPE_PIPELINE_CACHE:
+            return "VK_OBJECT_TYPE_PIPELINE_CACHE";
+        case VK_OBJECT_TYPE_PIPELINE_LAYOUT:
+            return "VK_OBJECT_TYPE_PIPELINE_LAYOUT";
+        case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT:
+            return "VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT";
+        case VK_OBJECT_TYPE_QUERY_POOL:
+            return "VK_OBJECT_TYPE_QUERY_POOL";
+        case VK_OBJECT_TYPE_QUEUE:
+            return "VK_OBJECT_TYPE_QUEUE";
+        case VK_OBJECT_TYPE_RENDER_PASS:
+            return "VK_OBJECT_TYPE_RENDER_PASS";
+        case VK_OBJECT_TYPE_SAMPLER:
+            return "VK_OBJECT_TYPE_SAMPLER";
+        case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
+            return "VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION";
+        case VK_OBJECT_TYPE_SEMAPHORE:
+            return "VK_OBJECT_TYPE_SEMAPHORE";
+        case VK_OBJECT_TYPE_SHADER_MODULE:
+            return "VK_OBJECT_TYPE_SHADER_MODULE";
+        case VK_OBJECT_TYPE_SURFACE_KHR:
+            return "VK_OBJECT_TYPE_SURFACE_KHR";
+        case VK_OBJECT_TYPE_SWAPCHAIN_KHR:
+            return "VK_OBJECT_TYPE_SWAPCHAIN_KHR";
+        case VK_OBJECT_TYPE_UNKNOWN:
+            return "VK_OBJECT_TYPE_UNKNOWN";
+        case VK_OBJECT_TYPE_VALIDATION_CACHE_EXT:
+            return "VK_OBJECT_TYPE_VALIDATION_CACHE_EXT";
+        default:
+            return "Unhandled VkObjectType";
+    }
+}
+
+static inline const char* string_VkVendorId(VkVendorId input_value)
+{
+    switch ((VkVendorId)input_value)
+    {
+        case VK_VENDOR_ID_CODEPLAY:
+            return "VK_VENDOR_ID_CODEPLAY";
+        case VK_VENDOR_ID_KAZAN:
+            return "VK_VENDOR_ID_KAZAN";
+        case VK_VENDOR_ID_MESA:
+            return "VK_VENDOR_ID_MESA";
+        case VK_VENDOR_ID_VIV:
+            return "VK_VENDOR_ID_VIV";
+        case VK_VENDOR_ID_VSI:
+            return "VK_VENDOR_ID_VSI";
+        default:
+            return "Unhandled VkVendorId";
+    }
+}
+
+static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHeaderVersion input_value)
+{
+    switch ((VkPipelineCacheHeaderVersion)input_value)
+    {
+        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
+            return "VK_PIPELINE_CACHE_HEADER_VERSION_ONE";
+        default:
+            return "Unhandled VkPipelineCacheHeaderVersion";
+    }
+}
+
 static inline const char* string_VkSystemAllocationScope(VkSystemAllocationScope input_value)
 {
     switch ((VkSystemAllocationScope)input_value)
@@ -1062,6 +1401,10 @@ static inline const char* string_VkFormat(VkFormat input_value)
             return "VK_FORMAT_A2R10G10B10_UNORM_PACK32";
         case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
             return "VK_FORMAT_A2R10G10B10_USCALED_PACK32";
+        case VK_FORMAT_A4B4G4R4_UNORM_PACK16_EXT:
+            return "VK_FORMAT_A4B4G4R4_UNORM_PACK16_EXT";
+        case VK_FORMAT_A4R4G4B4_UNORM_PACK16_EXT:
+            return "VK_FORMAT_A4R4G4B4_UNORM_PACK16_EXT";
         case VK_FORMAT_A8B8G8R8_SINT_PACK32:
             return "VK_FORMAT_A8B8G8R8_SINT_PACK32";
         case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
@@ -1600,81 +1943,6 @@ static inline std::string string_VkFormatFeatureFlags(VkFormatFeatureFlags input
     return ret;
 }
 
-static inline const char* string_VkImageType(VkImageType input_value)
-{
-    switch ((VkImageType)input_value)
-    {
-        case VK_IMAGE_TYPE_1D:
-            return "VK_IMAGE_TYPE_1D";
-        case VK_IMAGE_TYPE_2D:
-            return "VK_IMAGE_TYPE_2D";
-        case VK_IMAGE_TYPE_3D:
-            return "VK_IMAGE_TYPE_3D";
-        default:
-            return "Unhandled VkImageType";
-    }
-}
-
-static inline const char* string_VkImageTiling(VkImageTiling input_value)
-{
-    switch ((VkImageTiling)input_value)
-    {
-        case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
-            return "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT";
-        case VK_IMAGE_TILING_LINEAR:
-            return "VK_IMAGE_TILING_LINEAR";
-        case VK_IMAGE_TILING_OPTIMAL:
-            return "VK_IMAGE_TILING_OPTIMAL";
-        default:
-            return "Unhandled VkImageTiling";
-    }
-}
-
-static inline const char* string_VkImageUsageFlagBits(VkImageUsageFlagBits input_value)
-{
-    switch ((VkImageUsageFlagBits)input_value)
-    {
-        case VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT:
-            return "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT";
-        case VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT:
-            return "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT";
-        case VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT:
-            return "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT";
-        case VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT:
-            return "VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT";
-        case VK_IMAGE_USAGE_SAMPLED_BIT:
-            return "VK_IMAGE_USAGE_SAMPLED_BIT";
-        case VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV:
-            return "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV";
-        case VK_IMAGE_USAGE_STORAGE_BIT:
-            return "VK_IMAGE_USAGE_STORAGE_BIT";
-        case VK_IMAGE_USAGE_TRANSFER_DST_BIT:
-            return "VK_IMAGE_USAGE_TRANSFER_DST_BIT";
-        case VK_IMAGE_USAGE_TRANSFER_SRC_BIT:
-            return "VK_IMAGE_USAGE_TRANSFER_SRC_BIT";
-        case VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT:
-            return "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT";
-        default:
-            return "Unhandled VkImageUsageFlagBits";
-    }
-}
-
-static inline std::string string_VkImageUsageFlags(VkImageUsageFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkImageUsageFlagBits(static_cast<VkImageUsageFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkImageUsageFlagBits(static_cast<VkImageUsageFlagBits>(0)));
-    return ret;
-}
-
 static inline const char* string_VkImageCreateFlagBits(VkImageCreateFlagBits input_value)
 {
     switch ((VkImageCreateFlagBits)input_value)
@@ -1769,6 +2037,151 @@ static inline std::string string_VkSampleCountFlags(VkSampleCountFlags input_val
     return ret;
 }
 
+static inline const char* string_VkImageTiling(VkImageTiling input_value)
+{
+    switch ((VkImageTiling)input_value)
+    {
+        case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
+            return "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT";
+        case VK_IMAGE_TILING_LINEAR:
+            return "VK_IMAGE_TILING_LINEAR";
+        case VK_IMAGE_TILING_OPTIMAL:
+            return "VK_IMAGE_TILING_OPTIMAL";
+        default:
+            return "Unhandled VkImageTiling";
+    }
+}
+
+static inline const char* string_VkImageType(VkImageType input_value)
+{
+    switch ((VkImageType)input_value)
+    {
+        case VK_IMAGE_TYPE_1D:
+            return "VK_IMAGE_TYPE_1D";
+        case VK_IMAGE_TYPE_2D:
+            return "VK_IMAGE_TYPE_2D";
+        case VK_IMAGE_TYPE_3D:
+            return "VK_IMAGE_TYPE_3D";
+        default:
+            return "Unhandled VkImageType";
+    }
+}
+
+static inline const char* string_VkImageUsageFlagBits(VkImageUsageFlagBits input_value)
+{
+    switch ((VkImageUsageFlagBits)input_value)
+    {
+        case VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT:
+            return "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT";
+        case VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT:
+            return "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT";
+        case VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT:
+            return "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT";
+        case VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT:
+            return "VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT";
+        case VK_IMAGE_USAGE_SAMPLED_BIT:
+            return "VK_IMAGE_USAGE_SAMPLED_BIT";
+        case VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV:
+            return "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV";
+        case VK_IMAGE_USAGE_STORAGE_BIT:
+            return "VK_IMAGE_USAGE_STORAGE_BIT";
+        case VK_IMAGE_USAGE_TRANSFER_DST_BIT:
+            return "VK_IMAGE_USAGE_TRANSFER_DST_BIT";
+        case VK_IMAGE_USAGE_TRANSFER_SRC_BIT:
+            return "VK_IMAGE_USAGE_TRANSFER_SRC_BIT";
+        case VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT:
+            return "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT";
+        default:
+            return "Unhandled VkImageUsageFlagBits";
+    }
+}
+
+static inline std::string string_VkImageUsageFlags(VkImageUsageFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkImageUsageFlagBits(static_cast<VkImageUsageFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkImageUsageFlagBits(static_cast<VkImageUsageFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkMemoryHeapFlagBits(VkMemoryHeapFlagBits input_value)
+{
+    switch ((VkMemoryHeapFlagBits)input_value)
+    {
+        case VK_MEMORY_HEAP_DEVICE_LOCAL_BIT:
+            return "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT";
+        case VK_MEMORY_HEAP_MULTI_INSTANCE_BIT:
+            return "VK_MEMORY_HEAP_MULTI_INSTANCE_BIT";
+        default:
+            return "Unhandled VkMemoryHeapFlagBits";
+    }
+}
+
+static inline std::string string_VkMemoryHeapFlags(VkMemoryHeapFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkMemoryHeapFlagBits(static_cast<VkMemoryHeapFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkMemoryHeapFlagBits(static_cast<VkMemoryHeapFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkMemoryPropertyFlagBits(VkMemoryPropertyFlagBits input_value)
+{
+    switch ((VkMemoryPropertyFlagBits)input_value)
+    {
+        case VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD:
+            return "VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD";
+        case VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT:
+            return "VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT";
+        case VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD:
+            return "VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD";
+        case VK_MEMORY_PROPERTY_HOST_CACHED_BIT:
+            return "VK_MEMORY_PROPERTY_HOST_CACHED_BIT";
+        case VK_MEMORY_PROPERTY_HOST_COHERENT_BIT:
+            return "VK_MEMORY_PROPERTY_HOST_COHERENT_BIT";
+        case VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT:
+            return "VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT";
+        case VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT:
+            return "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT";
+        case VK_MEMORY_PROPERTY_PROTECTED_BIT:
+            return "VK_MEMORY_PROPERTY_PROTECTED_BIT";
+        default:
+            return "Unhandled VkMemoryPropertyFlagBits";
+    }
+}
+
+static inline std::string string_VkMemoryPropertyFlags(VkMemoryPropertyFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkMemoryPropertyFlagBits(static_cast<VkMemoryPropertyFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkMemoryPropertyFlagBits(static_cast<VkMemoryPropertyFlagBits>(0)));
+    return ret;
+}
+
 static inline const char* string_VkPhysicalDeviceType(VkPhysicalDeviceType input_value)
 {
     switch ((VkPhysicalDeviceType)input_value)
@@ -1820,76 +2233,6 @@ static inline std::string string_VkQueueFlags(VkQueueFlags input_value)
         input_value >>= 1;
     }
     if( ret.empty()) ret.append(string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkMemoryPropertyFlagBits(VkMemoryPropertyFlagBits input_value)
-{
-    switch ((VkMemoryPropertyFlagBits)input_value)
-    {
-        case VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD:
-            return "VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD";
-        case VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT:
-            return "VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT";
-        case VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD:
-            return "VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD";
-        case VK_MEMORY_PROPERTY_HOST_CACHED_BIT:
-            return "VK_MEMORY_PROPERTY_HOST_CACHED_BIT";
-        case VK_MEMORY_PROPERTY_HOST_COHERENT_BIT:
-            return "VK_MEMORY_PROPERTY_HOST_COHERENT_BIT";
-        case VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT:
-            return "VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT";
-        case VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT:
-            return "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT";
-        case VK_MEMORY_PROPERTY_PROTECTED_BIT:
-            return "VK_MEMORY_PROPERTY_PROTECTED_BIT";
-        default:
-            return "Unhandled VkMemoryPropertyFlagBits";
-    }
-}
-
-static inline std::string string_VkMemoryPropertyFlags(VkMemoryPropertyFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkMemoryPropertyFlagBits(static_cast<VkMemoryPropertyFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkMemoryPropertyFlagBits(static_cast<VkMemoryPropertyFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkMemoryHeapFlagBits(VkMemoryHeapFlagBits input_value)
-{
-    switch ((VkMemoryHeapFlagBits)input_value)
-    {
-        case VK_MEMORY_HEAP_DEVICE_LOCAL_BIT:
-            return "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT";
-        case VK_MEMORY_HEAP_MULTI_INSTANCE_BIT:
-            return "VK_MEMORY_HEAP_MULTI_INSTANCE_BIT";
-        default:
-            return "Unhandled VkMemoryHeapFlagBits";
-    }
-}
-
-static inline std::string string_VkMemoryHeapFlags(VkMemoryHeapFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkMemoryHeapFlagBits(static_cast<VkMemoryHeapFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkMemoryHeapFlagBits(static_cast<VkMemoryHeapFlagBits>(0)));
     return ret;
 }
 
@@ -1997,50 +2340,30 @@ static inline std::string string_VkPipelineStageFlags(VkPipelineStageFlags input
     return ret;
 }
 
-static inline const char* string_VkImageAspectFlagBits(VkImageAspectFlagBits input_value)
+static inline const char* string_VkSparseMemoryBindFlagBits(VkSparseMemoryBindFlagBits input_value)
 {
-    switch ((VkImageAspectFlagBits)input_value)
+    switch ((VkSparseMemoryBindFlagBits)input_value)
     {
-        case VK_IMAGE_ASPECT_COLOR_BIT:
-            return "VK_IMAGE_ASPECT_COLOR_BIT";
-        case VK_IMAGE_ASPECT_DEPTH_BIT:
-            return "VK_IMAGE_ASPECT_DEPTH_BIT";
-        case VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT:
-            return "VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT";
-        case VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT:
-            return "VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT";
-        case VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT:
-            return "VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT";
-        case VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT:
-            return "VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT";
-        case VK_IMAGE_ASPECT_METADATA_BIT:
-            return "VK_IMAGE_ASPECT_METADATA_BIT";
-        case VK_IMAGE_ASPECT_PLANE_0_BIT:
-            return "VK_IMAGE_ASPECT_PLANE_0_BIT";
-        case VK_IMAGE_ASPECT_PLANE_1_BIT:
-            return "VK_IMAGE_ASPECT_PLANE_1_BIT";
-        case VK_IMAGE_ASPECT_PLANE_2_BIT:
-            return "VK_IMAGE_ASPECT_PLANE_2_BIT";
-        case VK_IMAGE_ASPECT_STENCIL_BIT:
-            return "VK_IMAGE_ASPECT_STENCIL_BIT";
+        case VK_SPARSE_MEMORY_BIND_METADATA_BIT:
+            return "VK_SPARSE_MEMORY_BIND_METADATA_BIT";
         default:
-            return "Unhandled VkImageAspectFlagBits";
+            return "Unhandled VkSparseMemoryBindFlagBits";
     }
 }
 
-static inline std::string string_VkImageAspectFlags(VkImageAspectFlags input_value)
+static inline std::string string_VkSparseMemoryBindFlags(VkSparseMemoryBindFlags input_value)
 {
     std::string ret;
     int index = 0;
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkImageAspectFlagBits(static_cast<VkImageAspectFlagBits>(1 << index)));
+            ret.append(string_VkSparseMemoryBindFlagBits(static_cast<VkSparseMemoryBindFlagBits>(1 << index)));
         }
         ++index;
         input_value >>= 1;
     }
-    if( ret.empty()) ret.append(string_VkImageAspectFlagBits(static_cast<VkImageAspectFlagBits>(0)));
+    if( ret.empty()) ret.append(string_VkSparseMemoryBindFlagBits(static_cast<VkSparseMemoryBindFlagBits>(0)));
     return ret;
 }
 
@@ -2075,33 +2398,6 @@ static inline std::string string_VkSparseImageFormatFlags(VkSparseImageFormatFla
     return ret;
 }
 
-static inline const char* string_VkSparseMemoryBindFlagBits(VkSparseMemoryBindFlagBits input_value)
-{
-    switch ((VkSparseMemoryBindFlagBits)input_value)
-    {
-        case VK_SPARSE_MEMORY_BIND_METADATA_BIT:
-            return "VK_SPARSE_MEMORY_BIND_METADATA_BIT";
-        default:
-            return "Unhandled VkSparseMemoryBindFlagBits";
-    }
-}
-
-static inline std::string string_VkSparseMemoryBindFlags(VkSparseMemoryBindFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSparseMemoryBindFlagBits(static_cast<VkSparseMemoryBindFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkSparseMemoryBindFlagBits(static_cast<VkSparseMemoryBindFlagBits>(0)));
-    return ret;
-}
-
 static inline const char* string_VkFenceCreateFlagBits(VkFenceCreateFlagBits input_value)
 {
     switch ((VkFenceCreateFlagBits)input_value)
@@ -2127,31 +2423,6 @@ static inline std::string string_VkFenceCreateFlags(VkFenceCreateFlags input_val
     }
     if( ret.empty()) ret.append(string_VkFenceCreateFlagBits(static_cast<VkFenceCreateFlagBits>(0)));
     return ret;
-}
-
-static inline const char* string_VkQueryType(VkQueryType input_value)
-{
-    switch ((VkQueryType)input_value)
-    {
-        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
-            return "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR";
-        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
-            return "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR";
-        case VK_QUERY_TYPE_OCCLUSION:
-            return "VK_QUERY_TYPE_OCCLUSION";
-        case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
-            return "VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL";
-        case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
-            return "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR";
-        case VK_QUERY_TYPE_PIPELINE_STATISTICS:
-            return "VK_QUERY_TYPE_PIPELINE_STATISTICS";
-        case VK_QUERY_TYPE_TIMESTAMP:
-            return "VK_QUERY_TYPE_TIMESTAMP";
-        case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
-            return "VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT";
-        default:
-            return "Unhandled VkQueryType";
-    }
 }
 
 static inline const char* string_VkQueryPipelineStatisticFlagBits(VkQueryPipelineStatisticFlagBits input_value)
@@ -2199,6 +2470,31 @@ static inline std::string string_VkQueryPipelineStatisticFlags(VkQueryPipelineSt
     }
     if( ret.empty()) ret.append(string_VkQueryPipelineStatisticFlagBits(static_cast<VkQueryPipelineStatisticFlagBits>(0)));
     return ret;
+}
+
+static inline const char* string_VkQueryType(VkQueryType input_value)
+{
+    switch ((VkQueryType)input_value)
+    {
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
+            return "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR";
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
+            return "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR";
+        case VK_QUERY_TYPE_OCCLUSION:
+            return "VK_QUERY_TYPE_OCCLUSION";
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
+            return "VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL";
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
+            return "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR";
+        case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+            return "VK_QUERY_TYPE_PIPELINE_STATISTICS";
+        case VK_QUERY_TYPE_TIMESTAMP:
+            return "VK_QUERY_TYPE_TIMESTAMP";
+        case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
+            return "VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT";
+        default:
+            return "Unhandled VkQueryType";
+    }
 }
 
 static inline const char* string_VkQueryResultFlagBits(VkQueryResultFlagBits input_value)
@@ -2335,50 +2631,26 @@ static inline const char* string_VkSharingMode(VkSharingMode input_value)
     }
 }
 
-static inline const char* string_VkImageLayout(VkImageLayout input_value)
+static inline const char* string_VkComponentSwizzle(VkComponentSwizzle input_value)
 {
-    switch ((VkImageLayout)input_value)
+    switch ((VkComponentSwizzle)input_value)
     {
-        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL";
-        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL";
-        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL";
-        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL";
-        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL";
-        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL";
-        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL";
-        case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
-            return "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT";
-        case VK_IMAGE_LAYOUT_GENERAL:
-            return "VK_IMAGE_LAYOUT_GENERAL";
-        case VK_IMAGE_LAYOUT_PREINITIALIZED:
-            return "VK_IMAGE_LAYOUT_PREINITIALIZED";
-        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-            return "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR";
-        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL";
-        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
-            return "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV";
-        case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
-            return "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR";
-        case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL";
-        case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL";
-        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL";
-        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            return "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL";
-        case VK_IMAGE_LAYOUT_UNDEFINED:
-            return "VK_IMAGE_LAYOUT_UNDEFINED";
+        case VK_COMPONENT_SWIZZLE_A:
+            return "VK_COMPONENT_SWIZZLE_A";
+        case VK_COMPONENT_SWIZZLE_B:
+            return "VK_COMPONENT_SWIZZLE_B";
+        case VK_COMPONENT_SWIZZLE_G:
+            return "VK_COMPONENT_SWIZZLE_G";
+        case VK_COMPONENT_SWIZZLE_IDENTITY:
+            return "VK_COMPONENT_SWIZZLE_IDENTITY";
+        case VK_COMPONENT_SWIZZLE_ONE:
+            return "VK_COMPONENT_SWIZZLE_ONE";
+        case VK_COMPONENT_SWIZZLE_R:
+            return "VK_COMPONENT_SWIZZLE_R";
+        case VK_COMPONENT_SWIZZLE_ZERO:
+            return "VK_COMPONENT_SWIZZLE_ZERO";
         default:
-            return "Unhandled VkImageLayout";
+            return "Unhandled VkComponentSwizzle";
     }
 }
 
@@ -2386,6 +2658,8 @@ static inline const char* string_VkImageViewCreateFlagBits(VkImageViewCreateFlag
 {
     switch ((VkImageViewCreateFlagBits)input_value)
     {
+        case VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT:
+            return "VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT";
         case VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT:
             return "VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT";
         default:
@@ -2432,29 +2706,6 @@ static inline const char* string_VkImageViewType(VkImageViewType input_value)
     }
 }
 
-static inline const char* string_VkComponentSwizzle(VkComponentSwizzle input_value)
-{
-    switch ((VkComponentSwizzle)input_value)
-    {
-        case VK_COMPONENT_SWIZZLE_A:
-            return "VK_COMPONENT_SWIZZLE_A";
-        case VK_COMPONENT_SWIZZLE_B:
-            return "VK_COMPONENT_SWIZZLE_B";
-        case VK_COMPONENT_SWIZZLE_G:
-            return "VK_COMPONENT_SWIZZLE_G";
-        case VK_COMPONENT_SWIZZLE_IDENTITY:
-            return "VK_COMPONENT_SWIZZLE_IDENTITY";
-        case VK_COMPONENT_SWIZZLE_ONE:
-            return "VK_COMPONENT_SWIZZLE_ONE";
-        case VK_COMPONENT_SWIZZLE_R:
-            return "VK_COMPONENT_SWIZZLE_R";
-        case VK_COMPONENT_SWIZZLE_ZERO:
-            return "VK_COMPONENT_SWIZZLE_ZERO";
-        default:
-            return "Unhandled VkComponentSwizzle";
-    }
-}
-
 static inline const char* string_VkPipelineCacheCreateFlagBits(VkPipelineCacheCreateFlagBits input_value)
 {
     switch ((VkPipelineCacheCreateFlagBits)input_value)
@@ -2480,351 +2731,6 @@ static inline std::string string_VkPipelineCacheCreateFlags(VkPipelineCacheCreat
     }
     if( ret.empty()) ret.append(string_VkPipelineCacheCreateFlagBits(static_cast<VkPipelineCacheCreateFlagBits>(0)));
     return ret;
-}
-
-static inline const char* string_VkPipelineCreateFlagBits(VkPipelineCreateFlagBits input_value)
-{
-    switch ((VkPipelineCreateFlagBits)input_value)
-    {
-        case VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT:
-            return "VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT";
-        case VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR:
-            return "VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR";
-        case VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR:
-            return "VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR";
-        case VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV:
-            return "VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV";
-        case VK_PIPELINE_CREATE_DERIVATIVE_BIT:
-            return "VK_PIPELINE_CREATE_DERIVATIVE_BIT";
-        case VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT:
-            return "VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT";
-        case VK_PIPELINE_CREATE_DISPATCH_BASE_BIT:
-            return "VK_PIPELINE_CREATE_DISPATCH_BASE_BIT";
-        case VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT:
-            return "VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT";
-        case VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT:
-            return "VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT";
-        case VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV:
-            return "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV";
-        case VK_PIPELINE_CREATE_LIBRARY_BIT_KHR:
-            return "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR";
-        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR:
-            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR";
-        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR:
-            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR";
-        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR:
-            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR";
-        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR:
-            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR";
-        case VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR:
-            return "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR";
-        case VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR:
-            return "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR";
-        case VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT:
-            return "VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT";
-        default:
-            return "Unhandled VkPipelineCreateFlagBits";
-    }
-}
-
-static inline std::string string_VkPipelineCreateFlags(VkPipelineCreateFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineCreateFlagBits(static_cast<VkPipelineCreateFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkPipelineCreateFlagBits(static_cast<VkPipelineCreateFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkPipelineShaderStageCreateFlagBits(VkPipelineShaderStageCreateFlagBits input_value)
-{
-    switch ((VkPipelineShaderStageCreateFlagBits)input_value)
-    {
-        case VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT:
-            return "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT";
-        case VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT:
-            return "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT";
-        default:
-            return "Unhandled VkPipelineShaderStageCreateFlagBits";
-    }
-}
-
-static inline std::string string_VkPipelineShaderStageCreateFlags(VkPipelineShaderStageCreateFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineShaderStageCreateFlagBits(static_cast<VkPipelineShaderStageCreateFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkPipelineShaderStageCreateFlagBits(static_cast<VkPipelineShaderStageCreateFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkShaderStageFlagBits(VkShaderStageFlagBits input_value)
-{
-    switch ((VkShaderStageFlagBits)input_value)
-    {
-        case VK_SHADER_STAGE_ALL:
-            return "VK_SHADER_STAGE_ALL";
-        case VK_SHADER_STAGE_ALL_GRAPHICS:
-            return "VK_SHADER_STAGE_ALL_GRAPHICS";
-        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
-            return "VK_SHADER_STAGE_ANY_HIT_BIT_KHR";
-        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
-            return "VK_SHADER_STAGE_CALLABLE_BIT_KHR";
-        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
-            return "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR";
-        case VK_SHADER_STAGE_COMPUTE_BIT:
-            return "VK_SHADER_STAGE_COMPUTE_BIT";
-        case VK_SHADER_STAGE_FRAGMENT_BIT:
-            return "VK_SHADER_STAGE_FRAGMENT_BIT";
-        case VK_SHADER_STAGE_GEOMETRY_BIT:
-            return "VK_SHADER_STAGE_GEOMETRY_BIT";
-        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
-            return "VK_SHADER_STAGE_INTERSECTION_BIT_KHR";
-        case VK_SHADER_STAGE_MESH_BIT_NV:
-            return "VK_SHADER_STAGE_MESH_BIT_NV";
-        case VK_SHADER_STAGE_MISS_BIT_KHR:
-            return "VK_SHADER_STAGE_MISS_BIT_KHR";
-        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
-            return "VK_SHADER_STAGE_RAYGEN_BIT_KHR";
-        case VK_SHADER_STAGE_TASK_BIT_NV:
-            return "VK_SHADER_STAGE_TASK_BIT_NV";
-        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            return "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT";
-        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            return "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT";
-        case VK_SHADER_STAGE_VERTEX_BIT:
-            return "VK_SHADER_STAGE_VERTEX_BIT";
-        default:
-            return "Unhandled VkShaderStageFlagBits";
-    }
-}
-
-static inline std::string string_VkShaderStageFlags(VkShaderStageFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkShaderStageFlagBits(static_cast<VkShaderStageFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkShaderStageFlagBits(static_cast<VkShaderStageFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkVertexInputRate(VkVertexInputRate input_value)
-{
-    switch ((VkVertexInputRate)input_value)
-    {
-        case VK_VERTEX_INPUT_RATE_INSTANCE:
-            return "VK_VERTEX_INPUT_RATE_INSTANCE";
-        case VK_VERTEX_INPUT_RATE_VERTEX:
-            return "VK_VERTEX_INPUT_RATE_VERTEX";
-        default:
-            return "Unhandled VkVertexInputRate";
-    }
-}
-
-static inline const char* string_VkPrimitiveTopology(VkPrimitiveTopology input_value)
-{
-    switch ((VkPrimitiveTopology)input_value)
-    {
-        case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
-            return "VK_PRIMITIVE_TOPOLOGY_LINE_LIST";
-        case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
-            return "VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY";
-        case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
-            return "VK_PRIMITIVE_TOPOLOGY_LINE_STRIP";
-        case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
-            return "VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY";
-        case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
-            return "VK_PRIMITIVE_TOPOLOGY_PATCH_LIST";
-        case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-            return "VK_PRIMITIVE_TOPOLOGY_POINT_LIST";
-        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
-            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN";
-        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
-            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST";
-        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
-            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY";
-        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
-            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP";
-        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
-            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY";
-        default:
-            return "Unhandled VkPrimitiveTopology";
-    }
-}
-
-static inline const char* string_VkPolygonMode(VkPolygonMode input_value)
-{
-    switch ((VkPolygonMode)input_value)
-    {
-        case VK_POLYGON_MODE_FILL:
-            return "VK_POLYGON_MODE_FILL";
-        case VK_POLYGON_MODE_FILL_RECTANGLE_NV:
-            return "VK_POLYGON_MODE_FILL_RECTANGLE_NV";
-        case VK_POLYGON_MODE_LINE:
-            return "VK_POLYGON_MODE_LINE";
-        case VK_POLYGON_MODE_POINT:
-            return "VK_POLYGON_MODE_POINT";
-        default:
-            return "Unhandled VkPolygonMode";
-    }
-}
-
-static inline const char* string_VkCullModeFlagBits(VkCullModeFlagBits input_value)
-{
-    switch ((VkCullModeFlagBits)input_value)
-    {
-        case VK_CULL_MODE_BACK_BIT:
-            return "VK_CULL_MODE_BACK_BIT";
-        case VK_CULL_MODE_FRONT_AND_BACK:
-            return "VK_CULL_MODE_FRONT_AND_BACK";
-        case VK_CULL_MODE_FRONT_BIT:
-            return "VK_CULL_MODE_FRONT_BIT";
-        case VK_CULL_MODE_NONE:
-            return "VK_CULL_MODE_NONE";
-        default:
-            return "Unhandled VkCullModeFlagBits";
-    }
-}
-
-static inline std::string string_VkCullModeFlags(VkCullModeFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCullModeFlagBits(static_cast<VkCullModeFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkCullModeFlagBits(static_cast<VkCullModeFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkFrontFace(VkFrontFace input_value)
-{
-    switch ((VkFrontFace)input_value)
-    {
-        case VK_FRONT_FACE_CLOCKWISE:
-            return "VK_FRONT_FACE_CLOCKWISE";
-        case VK_FRONT_FACE_COUNTER_CLOCKWISE:
-            return "VK_FRONT_FACE_COUNTER_CLOCKWISE";
-        default:
-            return "Unhandled VkFrontFace";
-    }
-}
-
-static inline const char* string_VkCompareOp(VkCompareOp input_value)
-{
-    switch ((VkCompareOp)input_value)
-    {
-        case VK_COMPARE_OP_ALWAYS:
-            return "VK_COMPARE_OP_ALWAYS";
-        case VK_COMPARE_OP_EQUAL:
-            return "VK_COMPARE_OP_EQUAL";
-        case VK_COMPARE_OP_GREATER:
-            return "VK_COMPARE_OP_GREATER";
-        case VK_COMPARE_OP_GREATER_OR_EQUAL:
-            return "VK_COMPARE_OP_GREATER_OR_EQUAL";
-        case VK_COMPARE_OP_LESS:
-            return "VK_COMPARE_OP_LESS";
-        case VK_COMPARE_OP_LESS_OR_EQUAL:
-            return "VK_COMPARE_OP_LESS_OR_EQUAL";
-        case VK_COMPARE_OP_NEVER:
-            return "VK_COMPARE_OP_NEVER";
-        case VK_COMPARE_OP_NOT_EQUAL:
-            return "VK_COMPARE_OP_NOT_EQUAL";
-        default:
-            return "Unhandled VkCompareOp";
-    }
-}
-
-static inline const char* string_VkStencilOp(VkStencilOp input_value)
-{
-    switch ((VkStencilOp)input_value)
-    {
-        case VK_STENCIL_OP_DECREMENT_AND_CLAMP:
-            return "VK_STENCIL_OP_DECREMENT_AND_CLAMP";
-        case VK_STENCIL_OP_DECREMENT_AND_WRAP:
-            return "VK_STENCIL_OP_DECREMENT_AND_WRAP";
-        case VK_STENCIL_OP_INCREMENT_AND_CLAMP:
-            return "VK_STENCIL_OP_INCREMENT_AND_CLAMP";
-        case VK_STENCIL_OP_INCREMENT_AND_WRAP:
-            return "VK_STENCIL_OP_INCREMENT_AND_WRAP";
-        case VK_STENCIL_OP_INVERT:
-            return "VK_STENCIL_OP_INVERT";
-        case VK_STENCIL_OP_KEEP:
-            return "VK_STENCIL_OP_KEEP";
-        case VK_STENCIL_OP_REPLACE:
-            return "VK_STENCIL_OP_REPLACE";
-        case VK_STENCIL_OP_ZERO:
-            return "VK_STENCIL_OP_ZERO";
-        default:
-            return "Unhandled VkStencilOp";
-    }
-}
-
-static inline const char* string_VkLogicOp(VkLogicOp input_value)
-{
-    switch ((VkLogicOp)input_value)
-    {
-        case VK_LOGIC_OP_AND:
-            return "VK_LOGIC_OP_AND";
-        case VK_LOGIC_OP_AND_INVERTED:
-            return "VK_LOGIC_OP_AND_INVERTED";
-        case VK_LOGIC_OP_AND_REVERSE:
-            return "VK_LOGIC_OP_AND_REVERSE";
-        case VK_LOGIC_OP_CLEAR:
-            return "VK_LOGIC_OP_CLEAR";
-        case VK_LOGIC_OP_COPY:
-            return "VK_LOGIC_OP_COPY";
-        case VK_LOGIC_OP_COPY_INVERTED:
-            return "VK_LOGIC_OP_COPY_INVERTED";
-        case VK_LOGIC_OP_EQUIVALENT:
-            return "VK_LOGIC_OP_EQUIVALENT";
-        case VK_LOGIC_OP_INVERT:
-            return "VK_LOGIC_OP_INVERT";
-        case VK_LOGIC_OP_NAND:
-            return "VK_LOGIC_OP_NAND";
-        case VK_LOGIC_OP_NOR:
-            return "VK_LOGIC_OP_NOR";
-        case VK_LOGIC_OP_NO_OP:
-            return "VK_LOGIC_OP_NO_OP";
-        case VK_LOGIC_OP_OR:
-            return "VK_LOGIC_OP_OR";
-        case VK_LOGIC_OP_OR_INVERTED:
-            return "VK_LOGIC_OP_OR_INVERTED";
-        case VK_LOGIC_OP_OR_REVERSE:
-            return "VK_LOGIC_OP_OR_REVERSE";
-        case VK_LOGIC_OP_SET:
-            return "VK_LOGIC_OP_SET";
-        case VK_LOGIC_OP_XOR:
-            return "VK_LOGIC_OP_XOR";
-        default:
-            return "Unhandled VkLogicOp";
-    }
 }
 
 static inline const char* string_VkBlendFactor(VkBlendFactor input_value)
@@ -3018,44 +2924,472 @@ static inline std::string string_VkColorComponentFlags(VkColorComponentFlags inp
     return ret;
 }
 
+static inline const char* string_VkCompareOp(VkCompareOp input_value)
+{
+    switch ((VkCompareOp)input_value)
+    {
+        case VK_COMPARE_OP_ALWAYS:
+            return "VK_COMPARE_OP_ALWAYS";
+        case VK_COMPARE_OP_EQUAL:
+            return "VK_COMPARE_OP_EQUAL";
+        case VK_COMPARE_OP_GREATER:
+            return "VK_COMPARE_OP_GREATER";
+        case VK_COMPARE_OP_GREATER_OR_EQUAL:
+            return "VK_COMPARE_OP_GREATER_OR_EQUAL";
+        case VK_COMPARE_OP_LESS:
+            return "VK_COMPARE_OP_LESS";
+        case VK_COMPARE_OP_LESS_OR_EQUAL:
+            return "VK_COMPARE_OP_LESS_OR_EQUAL";
+        case VK_COMPARE_OP_NEVER:
+            return "VK_COMPARE_OP_NEVER";
+        case VK_COMPARE_OP_NOT_EQUAL:
+            return "VK_COMPARE_OP_NOT_EQUAL";
+        default:
+            return "Unhandled VkCompareOp";
+    }
+}
+
+static inline const char* string_VkPipelineCreateFlagBits(VkPipelineCreateFlagBits input_value)
+{
+    switch ((VkPipelineCreateFlagBits)input_value)
+    {
+        case VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT:
+            return "VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT";
+        case VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR:
+            return "VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR";
+        case VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR:
+            return "VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR";
+        case VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV:
+            return "VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV";
+        case VK_PIPELINE_CREATE_DERIVATIVE_BIT:
+            return "VK_PIPELINE_CREATE_DERIVATIVE_BIT";
+        case VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT:
+            return "VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT";
+        case VK_PIPELINE_CREATE_DISPATCH_BASE_BIT:
+            return "VK_PIPELINE_CREATE_DISPATCH_BASE_BIT";
+        case VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT:
+            return "VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT";
+        case VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT:
+            return "VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT";
+        case VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV:
+            return "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV";
+        case VK_PIPELINE_CREATE_LIBRARY_BIT_KHR:
+            return "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR";
+        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR:
+            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR";
+        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR:
+            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR";
+        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR:
+            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR";
+        case VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR:
+            return "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR";
+        case VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR:
+            return "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR";
+        case VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR:
+            return "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR";
+        case VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT:
+            return "VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT";
+        default:
+            return "Unhandled VkPipelineCreateFlagBits";
+    }
+}
+
+static inline std::string string_VkPipelineCreateFlags(VkPipelineCreateFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkPipelineCreateFlagBits(static_cast<VkPipelineCreateFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkPipelineCreateFlagBits(static_cast<VkPipelineCreateFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkPipelineShaderStageCreateFlagBits(VkPipelineShaderStageCreateFlagBits input_value)
+{
+    switch ((VkPipelineShaderStageCreateFlagBits)input_value)
+    {
+        case VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT:
+            return "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT";
+        case VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT:
+            return "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT";
+        default:
+            return "Unhandled VkPipelineShaderStageCreateFlagBits";
+    }
+}
+
+static inline std::string string_VkPipelineShaderStageCreateFlags(VkPipelineShaderStageCreateFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkPipelineShaderStageCreateFlagBits(static_cast<VkPipelineShaderStageCreateFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkPipelineShaderStageCreateFlagBits(static_cast<VkPipelineShaderStageCreateFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkShaderStageFlagBits(VkShaderStageFlagBits input_value)
+{
+    switch ((VkShaderStageFlagBits)input_value)
+    {
+        case VK_SHADER_STAGE_ALL:
+            return "VK_SHADER_STAGE_ALL";
+        case VK_SHADER_STAGE_ALL_GRAPHICS:
+            return "VK_SHADER_STAGE_ALL_GRAPHICS";
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+            return "VK_SHADER_STAGE_ANY_HIT_BIT_KHR";
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+            return "VK_SHADER_STAGE_CALLABLE_BIT_KHR";
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+            return "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR";
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            return "VK_SHADER_STAGE_COMPUTE_BIT";
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+            return "VK_SHADER_STAGE_FRAGMENT_BIT";
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+            return "VK_SHADER_STAGE_GEOMETRY_BIT";
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+            return "VK_SHADER_STAGE_INTERSECTION_BIT_KHR";
+        case VK_SHADER_STAGE_MESH_BIT_NV:
+            return "VK_SHADER_STAGE_MESH_BIT_NV";
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+            return "VK_SHADER_STAGE_MISS_BIT_KHR";
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+            return "VK_SHADER_STAGE_RAYGEN_BIT_KHR";
+        case VK_SHADER_STAGE_TASK_BIT_NV:
+            return "VK_SHADER_STAGE_TASK_BIT_NV";
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            return "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT";
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            return "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT";
+        case VK_SHADER_STAGE_VERTEX_BIT:
+            return "VK_SHADER_STAGE_VERTEX_BIT";
+        default:
+            return "Unhandled VkShaderStageFlagBits";
+    }
+}
+
+static inline std::string string_VkShaderStageFlags(VkShaderStageFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkShaderStageFlagBits(static_cast<VkShaderStageFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkShaderStageFlagBits(static_cast<VkShaderStageFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkCullModeFlagBits(VkCullModeFlagBits input_value)
+{
+    switch ((VkCullModeFlagBits)input_value)
+    {
+        case VK_CULL_MODE_BACK_BIT:
+            return "VK_CULL_MODE_BACK_BIT";
+        case VK_CULL_MODE_FRONT_AND_BACK:
+            return "VK_CULL_MODE_FRONT_AND_BACK";
+        case VK_CULL_MODE_FRONT_BIT:
+            return "VK_CULL_MODE_FRONT_BIT";
+        case VK_CULL_MODE_NONE:
+            return "VK_CULL_MODE_NONE";
+        default:
+            return "Unhandled VkCullModeFlagBits";
+    }
+}
+
+static inline std::string string_VkCullModeFlags(VkCullModeFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkCullModeFlagBits(static_cast<VkCullModeFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkCullModeFlagBits(static_cast<VkCullModeFlagBits>(0)));
+    return ret;
+}
+
 static inline const char* string_VkDynamicState(VkDynamicState input_value)
 {
     switch ((VkDynamicState)input_value)
     {
         case VK_DYNAMIC_STATE_BLEND_CONSTANTS:
             return "VK_DYNAMIC_STATE_BLEND_CONSTANTS";
+        case VK_DYNAMIC_STATE_CULL_MODE_EXT:
+            return "VK_DYNAMIC_STATE_CULL_MODE_EXT";
         case VK_DYNAMIC_STATE_DEPTH_BIAS:
             return "VK_DYNAMIC_STATE_DEPTH_BIAS";
         case VK_DYNAMIC_STATE_DEPTH_BOUNDS:
             return "VK_DYNAMIC_STATE_DEPTH_BOUNDS";
+        case VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT:
+            return "VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT";
+        case VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT:
+            return "VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT";
+        case VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT:
+            return "VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT";
+        case VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT:
+            return "VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT";
         case VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT:
             return "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT";
         case VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
             return "VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV";
+        case VK_DYNAMIC_STATE_FRONT_FACE_EXT:
+            return "VK_DYNAMIC_STATE_FRONT_FACE_EXT";
         case VK_DYNAMIC_STATE_LINE_STIPPLE_EXT:
             return "VK_DYNAMIC_STATE_LINE_STIPPLE_EXT";
         case VK_DYNAMIC_STATE_LINE_WIDTH:
             return "VK_DYNAMIC_STATE_LINE_WIDTH";
+        case VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT:
+            return "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT";
         case VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
             return "VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT";
         case VK_DYNAMIC_STATE_SCISSOR:
             return "VK_DYNAMIC_STATE_SCISSOR";
+        case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT:
+            return "VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT";
         case VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK:
             return "VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK";
+        case VK_DYNAMIC_STATE_STENCIL_OP_EXT:
+            return "VK_DYNAMIC_STATE_STENCIL_OP_EXT";
         case VK_DYNAMIC_STATE_STENCIL_REFERENCE:
             return "VK_DYNAMIC_STATE_STENCIL_REFERENCE";
+        case VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT:
+            return "VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT";
         case VK_DYNAMIC_STATE_STENCIL_WRITE_MASK:
             return "VK_DYNAMIC_STATE_STENCIL_WRITE_MASK";
+        case VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT:
+            return "VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT";
         case VK_DYNAMIC_STATE_VIEWPORT:
             return "VK_DYNAMIC_STATE_VIEWPORT";
         case VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
             return "VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV";
         case VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
             return "VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV";
+        case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT:
+            return "VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT";
         case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
             return "VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV";
         default:
             return "Unhandled VkDynamicState";
+    }
+}
+
+static inline const char* string_VkFrontFace(VkFrontFace input_value)
+{
+    switch ((VkFrontFace)input_value)
+    {
+        case VK_FRONT_FACE_CLOCKWISE:
+            return "VK_FRONT_FACE_CLOCKWISE";
+        case VK_FRONT_FACE_COUNTER_CLOCKWISE:
+            return "VK_FRONT_FACE_COUNTER_CLOCKWISE";
+        default:
+            return "Unhandled VkFrontFace";
+    }
+}
+
+static inline const char* string_VkVertexInputRate(VkVertexInputRate input_value)
+{
+    switch ((VkVertexInputRate)input_value)
+    {
+        case VK_VERTEX_INPUT_RATE_INSTANCE:
+            return "VK_VERTEX_INPUT_RATE_INSTANCE";
+        case VK_VERTEX_INPUT_RATE_VERTEX:
+            return "VK_VERTEX_INPUT_RATE_VERTEX";
+        default:
+            return "Unhandled VkVertexInputRate";
+    }
+}
+
+static inline const char* string_VkPrimitiveTopology(VkPrimitiveTopology input_value)
+{
+    switch ((VkPrimitiveTopology)input_value)
+    {
+        case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+            return "VK_PRIMITIVE_TOPOLOGY_LINE_LIST";
+        case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+            return "VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY";
+        case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+            return "VK_PRIMITIVE_TOPOLOGY_LINE_STRIP";
+        case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
+            return "VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY";
+        case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
+            return "VK_PRIMITIVE_TOPOLOGY_PATCH_LIST";
+        case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+            return "VK_PRIMITIVE_TOPOLOGY_POINT_LIST";
+        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN";
+        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST";
+        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY";
+        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP";
+        case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+            return "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY";
+        default:
+            return "Unhandled VkPrimitiveTopology";
+    }
+}
+
+static inline const char* string_VkPolygonMode(VkPolygonMode input_value)
+{
+    switch ((VkPolygonMode)input_value)
+    {
+        case VK_POLYGON_MODE_FILL:
+            return "VK_POLYGON_MODE_FILL";
+        case VK_POLYGON_MODE_FILL_RECTANGLE_NV:
+            return "VK_POLYGON_MODE_FILL_RECTANGLE_NV";
+        case VK_POLYGON_MODE_LINE:
+            return "VK_POLYGON_MODE_LINE";
+        case VK_POLYGON_MODE_POINT:
+            return "VK_POLYGON_MODE_POINT";
+        default:
+            return "Unhandled VkPolygonMode";
+    }
+}
+
+static inline const char* string_VkStencilOp(VkStencilOp input_value)
+{
+    switch ((VkStencilOp)input_value)
+    {
+        case VK_STENCIL_OP_DECREMENT_AND_CLAMP:
+            return "VK_STENCIL_OP_DECREMENT_AND_CLAMP";
+        case VK_STENCIL_OP_DECREMENT_AND_WRAP:
+            return "VK_STENCIL_OP_DECREMENT_AND_WRAP";
+        case VK_STENCIL_OP_INCREMENT_AND_CLAMP:
+            return "VK_STENCIL_OP_INCREMENT_AND_CLAMP";
+        case VK_STENCIL_OP_INCREMENT_AND_WRAP:
+            return "VK_STENCIL_OP_INCREMENT_AND_WRAP";
+        case VK_STENCIL_OP_INVERT:
+            return "VK_STENCIL_OP_INVERT";
+        case VK_STENCIL_OP_KEEP:
+            return "VK_STENCIL_OP_KEEP";
+        case VK_STENCIL_OP_REPLACE:
+            return "VK_STENCIL_OP_REPLACE";
+        case VK_STENCIL_OP_ZERO:
+            return "VK_STENCIL_OP_ZERO";
+        default:
+            return "Unhandled VkStencilOp";
+    }
+}
+
+static inline const char* string_VkLogicOp(VkLogicOp input_value)
+{
+    switch ((VkLogicOp)input_value)
+    {
+        case VK_LOGIC_OP_AND:
+            return "VK_LOGIC_OP_AND";
+        case VK_LOGIC_OP_AND_INVERTED:
+            return "VK_LOGIC_OP_AND_INVERTED";
+        case VK_LOGIC_OP_AND_REVERSE:
+            return "VK_LOGIC_OP_AND_REVERSE";
+        case VK_LOGIC_OP_CLEAR:
+            return "VK_LOGIC_OP_CLEAR";
+        case VK_LOGIC_OP_COPY:
+            return "VK_LOGIC_OP_COPY";
+        case VK_LOGIC_OP_COPY_INVERTED:
+            return "VK_LOGIC_OP_COPY_INVERTED";
+        case VK_LOGIC_OP_EQUIVALENT:
+            return "VK_LOGIC_OP_EQUIVALENT";
+        case VK_LOGIC_OP_INVERT:
+            return "VK_LOGIC_OP_INVERT";
+        case VK_LOGIC_OP_NAND:
+            return "VK_LOGIC_OP_NAND";
+        case VK_LOGIC_OP_NOR:
+            return "VK_LOGIC_OP_NOR";
+        case VK_LOGIC_OP_NO_OP:
+            return "VK_LOGIC_OP_NO_OP";
+        case VK_LOGIC_OP_OR:
+            return "VK_LOGIC_OP_OR";
+        case VK_LOGIC_OP_OR_INVERTED:
+            return "VK_LOGIC_OP_OR_INVERTED";
+        case VK_LOGIC_OP_OR_REVERSE:
+            return "VK_LOGIC_OP_OR_REVERSE";
+        case VK_LOGIC_OP_SET:
+            return "VK_LOGIC_OP_SET";
+        case VK_LOGIC_OP_XOR:
+            return "VK_LOGIC_OP_XOR";
+        default:
+            return "Unhandled VkLogicOp";
+    }
+}
+
+static inline const char* string_VkBorderColor(VkBorderColor input_value)
+{
+    switch ((VkBorderColor)input_value)
+    {
+        case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
+            return "VK_BORDER_COLOR_FLOAT_CUSTOM_EXT";
+        case VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
+            return "VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK";
+        case VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
+            return "VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE";
+        case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
+            return "VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK";
+        case VK_BORDER_COLOR_INT_CUSTOM_EXT:
+            return "VK_BORDER_COLOR_INT_CUSTOM_EXT";
+        case VK_BORDER_COLOR_INT_OPAQUE_BLACK:
+            return "VK_BORDER_COLOR_INT_OPAQUE_BLACK";
+        case VK_BORDER_COLOR_INT_OPAQUE_WHITE:
+            return "VK_BORDER_COLOR_INT_OPAQUE_WHITE";
+        case VK_BORDER_COLOR_INT_TRANSPARENT_BLACK:
+            return "VK_BORDER_COLOR_INT_TRANSPARENT_BLACK";
+        default:
+            return "Unhandled VkBorderColor";
+    }
+}
+
+static inline const char* string_VkFilter(VkFilter input_value)
+{
+    switch ((VkFilter)input_value)
+    {
+        case VK_FILTER_CUBIC_IMG:
+            return "VK_FILTER_CUBIC_IMG";
+        case VK_FILTER_LINEAR:
+            return "VK_FILTER_LINEAR";
+        case VK_FILTER_NEAREST:
+            return "VK_FILTER_NEAREST";
+        default:
+            return "Unhandled VkFilter";
+    }
+}
+
+static inline const char* string_VkSamplerAddressMode(VkSamplerAddressMode input_value)
+{
+    switch ((VkSamplerAddressMode)input_value)
+    {
+        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+            return "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER";
+        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+            return "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE";
+        case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+            return "VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT";
+        case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
+            return "VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE";
+        case VK_SAMPLER_ADDRESS_MODE_REPEAT:
+            return "VK_SAMPLER_ADDRESS_MODE_REPEAT";
+        default:
+            return "Unhandled VkSamplerAddressMode";
     }
 }
 
@@ -3088,21 +3422,6 @@ static inline std::string string_VkSamplerCreateFlags(VkSamplerCreateFlags input
     return ret;
 }
 
-static inline const char* string_VkFilter(VkFilter input_value)
-{
-    switch ((VkFilter)input_value)
-    {
-        case VK_FILTER_CUBIC_IMG:
-            return "VK_FILTER_CUBIC_IMG";
-        case VK_FILTER_LINEAR:
-            return "VK_FILTER_LINEAR";
-        case VK_FILTER_NEAREST:
-            return "VK_FILTER_NEAREST";
-        default:
-            return "Unhandled VkFilter";
-    }
-}
-
 static inline const char* string_VkSamplerMipmapMode(VkSamplerMipmapMode input_value)
 {
     switch ((VkSamplerMipmapMode)input_value)
@@ -3116,72 +3435,32 @@ static inline const char* string_VkSamplerMipmapMode(VkSamplerMipmapMode input_v
     }
 }
 
-static inline const char* string_VkSamplerAddressMode(VkSamplerAddressMode input_value)
+static inline const char* string_VkDescriptorPoolCreateFlagBits(VkDescriptorPoolCreateFlagBits input_value)
 {
-    switch ((VkSamplerAddressMode)input_value)
+    switch ((VkDescriptorPoolCreateFlagBits)input_value)
     {
-        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
-            return "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER";
-        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
-            return "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE";
-        case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
-            return "VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT";
-        case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
-            return "VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE";
-        case VK_SAMPLER_ADDRESS_MODE_REPEAT:
-            return "VK_SAMPLER_ADDRESS_MODE_REPEAT";
+        case VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT:
+            return "VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT";
+        case VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT:
+            return "VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT";
         default:
-            return "Unhandled VkSamplerAddressMode";
+            return "Unhandled VkDescriptorPoolCreateFlagBits";
     }
 }
 
-static inline const char* string_VkBorderColor(VkBorderColor input_value)
-{
-    switch ((VkBorderColor)input_value)
-    {
-        case VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
-            return "VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK";
-        case VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
-            return "VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE";
-        case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
-            return "VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK";
-        case VK_BORDER_COLOR_INT_OPAQUE_BLACK:
-            return "VK_BORDER_COLOR_INT_OPAQUE_BLACK";
-        case VK_BORDER_COLOR_INT_OPAQUE_WHITE:
-            return "VK_BORDER_COLOR_INT_OPAQUE_WHITE";
-        case VK_BORDER_COLOR_INT_TRANSPARENT_BLACK:
-            return "VK_BORDER_COLOR_INT_TRANSPARENT_BLACK";
-        default:
-            return "Unhandled VkBorderColor";
-    }
-}
-
-static inline const char* string_VkDescriptorSetLayoutCreateFlagBits(VkDescriptorSetLayoutCreateFlagBits input_value)
-{
-    switch ((VkDescriptorSetLayoutCreateFlagBits)input_value)
-    {
-        case VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR:
-            return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR";
-        case VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT:
-            return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT";
-        default:
-            return "Unhandled VkDescriptorSetLayoutCreateFlagBits";
-    }
-}
-
-static inline std::string string_VkDescriptorSetLayoutCreateFlags(VkDescriptorSetLayoutCreateFlags input_value)
+static inline std::string string_VkDescriptorPoolCreateFlags(VkDescriptorPoolCreateFlags input_value)
 {
     std::string ret;
     int index = 0;
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDescriptorSetLayoutCreateFlagBits(static_cast<VkDescriptorSetLayoutCreateFlagBits>(1 << index)));
+            ret.append(string_VkDescriptorPoolCreateFlagBits(static_cast<VkDescriptorPoolCreateFlagBits>(1 << index)));
         }
         ++index;
         input_value >>= 1;
     }
-    if( ret.empty()) ret.append(string_VkDescriptorSetLayoutCreateFlagBits(static_cast<VkDescriptorSetLayoutCreateFlagBits>(0)));
+    if( ret.empty()) ret.append(string_VkDescriptorPoolCreateFlagBits(static_cast<VkDescriptorPoolCreateFlagBits>(0)));
     return ret;
 }
 
@@ -3220,86 +3499,32 @@ static inline const char* string_VkDescriptorType(VkDescriptorType input_value)
     }
 }
 
-static inline const char* string_VkDescriptorPoolCreateFlagBits(VkDescriptorPoolCreateFlagBits input_value)
+static inline const char* string_VkDescriptorSetLayoutCreateFlagBits(VkDescriptorSetLayoutCreateFlagBits input_value)
 {
-    switch ((VkDescriptorPoolCreateFlagBits)input_value)
+    switch ((VkDescriptorSetLayoutCreateFlagBits)input_value)
     {
-        case VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT:
-            return "VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT";
-        case VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT:
-            return "VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT";
+        case VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR:
+            return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR";
+        case VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT:
+            return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT";
         default:
-            return "Unhandled VkDescriptorPoolCreateFlagBits";
+            return "Unhandled VkDescriptorSetLayoutCreateFlagBits";
     }
 }
 
-static inline std::string string_VkDescriptorPoolCreateFlags(VkDescriptorPoolCreateFlags input_value)
+static inline std::string string_VkDescriptorSetLayoutCreateFlags(VkDescriptorSetLayoutCreateFlags input_value)
 {
     std::string ret;
     int index = 0;
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDescriptorPoolCreateFlagBits(static_cast<VkDescriptorPoolCreateFlagBits>(1 << index)));
+            ret.append(string_VkDescriptorSetLayoutCreateFlagBits(static_cast<VkDescriptorSetLayoutCreateFlagBits>(1 << index)));
         }
         ++index;
         input_value >>= 1;
     }
-    if( ret.empty()) ret.append(string_VkDescriptorPoolCreateFlagBits(static_cast<VkDescriptorPoolCreateFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkFramebufferCreateFlagBits(VkFramebufferCreateFlagBits input_value)
-{
-    switch ((VkFramebufferCreateFlagBits)input_value)
-    {
-        case VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT:
-            return "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT";
-        default:
-            return "Unhandled VkFramebufferCreateFlagBits";
-    }
-}
-
-static inline std::string string_VkFramebufferCreateFlags(VkFramebufferCreateFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkFramebufferCreateFlagBits(static_cast<VkFramebufferCreateFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkFramebufferCreateFlagBits(static_cast<VkFramebufferCreateFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkRenderPassCreateFlagBits(VkRenderPassCreateFlagBits input_value)
-{
-    switch ((VkRenderPassCreateFlagBits)input_value)
-    {
-        case VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM:
-            return "VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM";
-        default:
-            return "Unhandled VkRenderPassCreateFlagBits";
-    }
-}
-
-static inline std::string string_VkRenderPassCreateFlags(VkRenderPassCreateFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkRenderPassCreateFlagBits(static_cast<VkRenderPassCreateFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkRenderPassCreateFlagBits(static_cast<VkRenderPassCreateFlagBits>(0)));
+    if( ret.empty()) ret.append(string_VkDescriptorSetLayoutCreateFlagBits(static_cast<VkDescriptorSetLayoutCreateFlagBits>(0)));
     return ret;
 }
 
@@ -3360,131 +3585,6 @@ static inline const char* string_VkAttachmentStoreOp(VkAttachmentStoreOp input_v
     }
 }
 
-static inline const char* string_VkSubpassDescriptionFlagBits(VkSubpassDescriptionFlagBits input_value)
-{
-    switch ((VkSubpassDescriptionFlagBits)input_value)
-    {
-        case VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX:
-            return "VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX";
-        case VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX:
-            return "VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX";
-        default:
-            return "Unhandled VkSubpassDescriptionFlagBits";
-    }
-}
-
-static inline std::string string_VkSubpassDescriptionFlags(VkSubpassDescriptionFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSubpassDescriptionFlagBits(static_cast<VkSubpassDescriptionFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkSubpassDescriptionFlagBits(static_cast<VkSubpassDescriptionFlagBits>(0)));
-    return ret;
-}
-
-static inline const char* string_VkPipelineBindPoint(VkPipelineBindPoint input_value)
-{
-    switch ((VkPipelineBindPoint)input_value)
-    {
-        case VK_PIPELINE_BIND_POINT_COMPUTE:
-            return "VK_PIPELINE_BIND_POINT_COMPUTE";
-        case VK_PIPELINE_BIND_POINT_GRAPHICS:
-            return "VK_PIPELINE_BIND_POINT_GRAPHICS";
-        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
-            return "VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR";
-        default:
-            return "Unhandled VkPipelineBindPoint";
-    }
-}
-
-static inline const char* string_VkAccessFlagBits(VkAccessFlagBits input_value)
-{
-    switch ((VkAccessFlagBits)input_value)
-    {
-        case VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR:
-            return "VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR";
-        case VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR:
-            return "VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR";
-        case VK_ACCESS_COLOR_ATTACHMENT_READ_BIT:
-            return "VK_ACCESS_COLOR_ATTACHMENT_READ_BIT";
-        case VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT:
-            return "VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT";
-        case VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT:
-            return "VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT";
-        case VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV:
-            return "VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV";
-        case VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV:
-            return "VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV";
-        case VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT:
-            return "VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT";
-        case VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT:
-            return "VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT";
-        case VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT:
-            return "VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT";
-        case VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT:
-            return "VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT";
-        case VK_ACCESS_HOST_READ_BIT:
-            return "VK_ACCESS_HOST_READ_BIT";
-        case VK_ACCESS_HOST_WRITE_BIT:
-            return "VK_ACCESS_HOST_WRITE_BIT";
-        case VK_ACCESS_INDEX_READ_BIT:
-            return "VK_ACCESS_INDEX_READ_BIT";
-        case VK_ACCESS_INDIRECT_COMMAND_READ_BIT:
-            return "VK_ACCESS_INDIRECT_COMMAND_READ_BIT";
-        case VK_ACCESS_INPUT_ATTACHMENT_READ_BIT:
-            return "VK_ACCESS_INPUT_ATTACHMENT_READ_BIT";
-        case VK_ACCESS_MEMORY_READ_BIT:
-            return "VK_ACCESS_MEMORY_READ_BIT";
-        case VK_ACCESS_MEMORY_WRITE_BIT:
-            return "VK_ACCESS_MEMORY_WRITE_BIT";
-        case VK_ACCESS_SHADER_READ_BIT:
-            return "VK_ACCESS_SHADER_READ_BIT";
-        case VK_ACCESS_SHADER_WRITE_BIT:
-            return "VK_ACCESS_SHADER_WRITE_BIT";
-        case VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV:
-            return "VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV";
-        case VK_ACCESS_TRANSFER_READ_BIT:
-            return "VK_ACCESS_TRANSFER_READ_BIT";
-        case VK_ACCESS_TRANSFER_WRITE_BIT:
-            return "VK_ACCESS_TRANSFER_WRITE_BIT";
-        case VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT:
-            return "VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT";
-        case VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT:
-            return "VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT";
-        case VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT:
-            return "VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT";
-        case VK_ACCESS_UNIFORM_READ_BIT:
-            return "VK_ACCESS_UNIFORM_READ_BIT";
-        case VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT:
-            return "VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT";
-        default:
-            return "Unhandled VkAccessFlagBits";
-    }
-}
-
-static inline std::string string_VkAccessFlags(VkAccessFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkAccessFlagBits(static_cast<VkAccessFlagBits>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkAccessFlagBits(static_cast<VkAccessFlagBits>(0)));
-    return ret;
-}
-
 static inline const char* string_VkDependencyFlagBits(VkDependencyFlagBits input_value)
 {
     switch ((VkDependencyFlagBits)input_value)
@@ -3513,6 +3613,108 @@ static inline std::string string_VkDependencyFlags(VkDependencyFlags input_value
         input_value >>= 1;
     }
     if( ret.empty()) ret.append(string_VkDependencyFlagBits(static_cast<VkDependencyFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkFramebufferCreateFlagBits(VkFramebufferCreateFlagBits input_value)
+{
+    switch ((VkFramebufferCreateFlagBits)input_value)
+    {
+        case VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT:
+            return "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT";
+        default:
+            return "Unhandled VkFramebufferCreateFlagBits";
+    }
+}
+
+static inline std::string string_VkFramebufferCreateFlags(VkFramebufferCreateFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkFramebufferCreateFlagBits(static_cast<VkFramebufferCreateFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkFramebufferCreateFlagBits(static_cast<VkFramebufferCreateFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkPipelineBindPoint(VkPipelineBindPoint input_value)
+{
+    switch ((VkPipelineBindPoint)input_value)
+    {
+        case VK_PIPELINE_BIND_POINT_COMPUTE:
+            return "VK_PIPELINE_BIND_POINT_COMPUTE";
+        case VK_PIPELINE_BIND_POINT_GRAPHICS:
+            return "VK_PIPELINE_BIND_POINT_GRAPHICS";
+        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
+            return "VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR";
+        default:
+            return "Unhandled VkPipelineBindPoint";
+    }
+}
+
+static inline const char* string_VkRenderPassCreateFlagBits(VkRenderPassCreateFlagBits input_value)
+{
+    switch ((VkRenderPassCreateFlagBits)input_value)
+    {
+        case VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM:
+            return "VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM";
+        default:
+            return "Unhandled VkRenderPassCreateFlagBits";
+    }
+}
+
+static inline std::string string_VkRenderPassCreateFlags(VkRenderPassCreateFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkRenderPassCreateFlagBits(static_cast<VkRenderPassCreateFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkRenderPassCreateFlagBits(static_cast<VkRenderPassCreateFlagBits>(0)));
+    return ret;
+}
+
+static inline const char* string_VkSubpassDescriptionFlagBits(VkSubpassDescriptionFlagBits input_value)
+{
+    switch ((VkSubpassDescriptionFlagBits)input_value)
+    {
+        case VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM:
+            return "VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM";
+        case VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX:
+            return "VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX";
+        case VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX:
+            return "VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX";
+        case VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM:
+            return "VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM";
+        default:
+            return "Unhandled VkSubpassDescriptionFlagBits";
+    }
+}
+
+static inline std::string string_VkSubpassDescriptionFlags(VkSubpassDescriptionFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkSubpassDescriptionFlagBits(static_cast<VkSubpassDescriptionFlagBits>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkSubpassDescriptionFlagBits(static_cast<VkSubpassDescriptionFlagBits>(0)));
     return ret;
 }
 
@@ -3672,6 +3874,23 @@ static inline std::string string_VkCommandBufferResetFlags(VkCommandBufferResetF
     return ret;
 }
 
+static inline const char* string_VkIndexType(VkIndexType input_value)
+{
+    switch ((VkIndexType)input_value)
+    {
+        case VK_INDEX_TYPE_NONE_KHR:
+            return "VK_INDEX_TYPE_NONE_KHR";
+        case VK_INDEX_TYPE_UINT16:
+            return "VK_INDEX_TYPE_UINT16";
+        case VK_INDEX_TYPE_UINT32:
+            return "VK_INDEX_TYPE_UINT32";
+        case VK_INDEX_TYPE_UINT8_EXT:
+            return "VK_INDEX_TYPE_UINT8_EXT";
+        default:
+            return "Unhandled VkIndexType";
+    }
+}
+
 static inline const char* string_VkStencilFaceFlagBits(VkStencilFaceFlagBits input_value)
 {
     switch ((VkStencilFaceFlagBits)input_value)
@@ -3703,23 +3922,6 @@ static inline std::string string_VkStencilFaceFlags(VkStencilFaceFlags input_val
     return ret;
 }
 
-static inline const char* string_VkIndexType(VkIndexType input_value)
-{
-    switch ((VkIndexType)input_value)
-    {
-        case VK_INDEX_TYPE_NONE_KHR:
-            return "VK_INDEX_TYPE_NONE_KHR";
-        case VK_INDEX_TYPE_UINT16:
-            return "VK_INDEX_TYPE_UINT16";
-        case VK_INDEX_TYPE_UINT32:
-            return "VK_INDEX_TYPE_UINT32";
-        case VK_INDEX_TYPE_UINT8_EXT:
-            return "VK_INDEX_TYPE_UINT8_EXT";
-        default:
-            return "Unhandled VkIndexType";
-    }
-}
-
 static inline const char* string_VkSubpassContents(VkSubpassContents input_value)
 {
     switch ((VkSubpassContents)input_value)
@@ -3730,110 +3932,6 @@ static inline const char* string_VkSubpassContents(VkSubpassContents input_value
             return "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS";
         default:
             return "Unhandled VkSubpassContents";
-    }
-}
-
-static inline const char* string_VkObjectType(VkObjectType input_value)
-{
-    switch ((VkObjectType)input_value)
-    {
-        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return "VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR";
-        case VK_OBJECT_TYPE_BUFFER:
-            return "VK_OBJECT_TYPE_BUFFER";
-        case VK_OBJECT_TYPE_BUFFER_VIEW:
-            return "VK_OBJECT_TYPE_BUFFER_VIEW";
-        case VK_OBJECT_TYPE_COMMAND_BUFFER:
-            return "VK_OBJECT_TYPE_COMMAND_BUFFER";
-        case VK_OBJECT_TYPE_COMMAND_POOL:
-            return "VK_OBJECT_TYPE_COMMAND_POOL";
-        case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
-            return "VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT";
-        case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
-            return "VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT";
-        case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR:
-            return "VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR";
-        case VK_OBJECT_TYPE_DESCRIPTOR_POOL:
-            return "VK_OBJECT_TYPE_DESCRIPTOR_POOL";
-        case VK_OBJECT_TYPE_DESCRIPTOR_SET:
-            return "VK_OBJECT_TYPE_DESCRIPTOR_SET";
-        case VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT:
-            return "VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT";
-        case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE:
-            return "VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE";
-        case VK_OBJECT_TYPE_DEVICE:
-            return "VK_OBJECT_TYPE_DEVICE";
-        case VK_OBJECT_TYPE_DEVICE_MEMORY:
-            return "VK_OBJECT_TYPE_DEVICE_MEMORY";
-        case VK_OBJECT_TYPE_DISPLAY_KHR:
-            return "VK_OBJECT_TYPE_DISPLAY_KHR";
-        case VK_OBJECT_TYPE_DISPLAY_MODE_KHR:
-            return "VK_OBJECT_TYPE_DISPLAY_MODE_KHR";
-        case VK_OBJECT_TYPE_EVENT:
-            return "VK_OBJECT_TYPE_EVENT";
-        case VK_OBJECT_TYPE_FENCE:
-            return "VK_OBJECT_TYPE_FENCE";
-        case VK_OBJECT_TYPE_FRAMEBUFFER:
-            return "VK_OBJECT_TYPE_FRAMEBUFFER";
-        case VK_OBJECT_TYPE_IMAGE:
-            return "VK_OBJECT_TYPE_IMAGE";
-        case VK_OBJECT_TYPE_IMAGE_VIEW:
-            return "VK_OBJECT_TYPE_IMAGE_VIEW";
-        case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV:
-            return "VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV";
-        case VK_OBJECT_TYPE_INSTANCE:
-            return "VK_OBJECT_TYPE_INSTANCE";
-        case VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL:
-            return "VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL";
-        case VK_OBJECT_TYPE_PHYSICAL_DEVICE:
-            return "VK_OBJECT_TYPE_PHYSICAL_DEVICE";
-        case VK_OBJECT_TYPE_PIPELINE:
-            return "VK_OBJECT_TYPE_PIPELINE";
-        case VK_OBJECT_TYPE_PIPELINE_CACHE:
-            return "VK_OBJECT_TYPE_PIPELINE_CACHE";
-        case VK_OBJECT_TYPE_PIPELINE_LAYOUT:
-            return "VK_OBJECT_TYPE_PIPELINE_LAYOUT";
-        case VK_OBJECT_TYPE_QUERY_POOL:
-            return "VK_OBJECT_TYPE_QUERY_POOL";
-        case VK_OBJECT_TYPE_QUEUE:
-            return "VK_OBJECT_TYPE_QUEUE";
-        case VK_OBJECT_TYPE_RENDER_PASS:
-            return "VK_OBJECT_TYPE_RENDER_PASS";
-        case VK_OBJECT_TYPE_SAMPLER:
-            return "VK_OBJECT_TYPE_SAMPLER";
-        case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
-            return "VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION";
-        case VK_OBJECT_TYPE_SEMAPHORE:
-            return "VK_OBJECT_TYPE_SEMAPHORE";
-        case VK_OBJECT_TYPE_SHADER_MODULE:
-            return "VK_OBJECT_TYPE_SHADER_MODULE";
-        case VK_OBJECT_TYPE_SURFACE_KHR:
-            return "VK_OBJECT_TYPE_SURFACE_KHR";
-        case VK_OBJECT_TYPE_SWAPCHAIN_KHR:
-            return "VK_OBJECT_TYPE_SWAPCHAIN_KHR";
-        case VK_OBJECT_TYPE_UNKNOWN:
-            return "VK_OBJECT_TYPE_UNKNOWN";
-        case VK_OBJECT_TYPE_VALIDATION_CACHE_EXT:
-            return "VK_OBJECT_TYPE_VALIDATION_CACHE_EXT";
-        default:
-            return "Unhandled VkObjectType";
-    }
-}
-
-static inline const char* string_VkVendorId(VkVendorId input_value)
-{
-    switch ((VkVendorId)input_value)
-    {
-        case VK_VENDOR_ID_CODEPLAY:
-            return "VK_VENDOR_ID_CODEPLAY";
-        case VK_VENDOR_ID_KAZAN:
-            return "VK_VENDOR_ID_KAZAN";
-        case VK_VENDOR_ID_VIV:
-            return "VK_VENDOR_ID_VIV";
-        case VK_VENDOR_ID_VSI:
-            return "VK_VENDOR_ID_VSI";
-        default:
-            return "Unhandled VkVendorId";
     }
 }
 
@@ -4308,8 +4406,12 @@ static inline const char* string_VkDriverId(VkDriverId input_value)
             return "VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA";
         case VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS:
             return "VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS";
+        case VK_DRIVER_ID_MESA_LLVMPIPE:
+            return "VK_DRIVER_ID_MESA_LLVMPIPE";
         case VK_DRIVER_ID_MESA_RADV:
             return "VK_DRIVER_ID_MESA_RADV";
+        case VK_DRIVER_ID_MOLTENVK:
+            return "VK_DRIVER_ID_MOLTENVK";
         case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
             return "VK_DRIVER_ID_NVIDIA_PROPRIETARY";
         case VK_DRIVER_ID_QUALCOMM_PROPRIETARY:
@@ -4500,37 +4602,25 @@ static inline std::string string_VkSurfaceTransformFlagsKHR(VkSurfaceTransformFl
     return ret;
 }
 
-static inline const char* string_VkCompositeAlphaFlagBitsKHR(VkCompositeAlphaFlagBitsKHR input_value)
+static inline const char* string_VkPresentModeKHR(VkPresentModeKHR input_value)
 {
-    switch ((VkCompositeAlphaFlagBitsKHR)input_value)
+    switch ((VkPresentModeKHR)input_value)
     {
-        case VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR";
-        case VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR";
-        case VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR";
-        case VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR";
+        case VK_PRESENT_MODE_FIFO_KHR:
+            return "VK_PRESENT_MODE_FIFO_KHR";
+        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+            return "VK_PRESENT_MODE_FIFO_RELAXED_KHR";
+        case VK_PRESENT_MODE_IMMEDIATE_KHR:
+            return "VK_PRESENT_MODE_IMMEDIATE_KHR";
+        case VK_PRESENT_MODE_MAILBOX_KHR:
+            return "VK_PRESENT_MODE_MAILBOX_KHR";
+        case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
+            return "VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR";
+        case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
+            return "VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR";
         default:
-            return "Unhandled VkCompositeAlphaFlagBitsKHR";
+            return "Unhandled VkPresentModeKHR";
     }
-}
-
-static inline std::string string_VkCompositeAlphaFlagsKHR(VkCompositeAlphaFlagsKHR input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(0)));
-    return ret;
 }
 
 static inline const char* string_VkColorSpaceKHR(VkColorSpaceKHR input_value)
@@ -4574,25 +4664,37 @@ static inline const char* string_VkColorSpaceKHR(VkColorSpaceKHR input_value)
     }
 }
 
-static inline const char* string_VkPresentModeKHR(VkPresentModeKHR input_value)
+static inline const char* string_VkCompositeAlphaFlagBitsKHR(VkCompositeAlphaFlagBitsKHR input_value)
 {
-    switch ((VkPresentModeKHR)input_value)
+    switch ((VkCompositeAlphaFlagBitsKHR)input_value)
     {
-        case VK_PRESENT_MODE_FIFO_KHR:
-            return "VK_PRESENT_MODE_FIFO_KHR";
-        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
-            return "VK_PRESENT_MODE_FIFO_RELAXED_KHR";
-        case VK_PRESENT_MODE_IMMEDIATE_KHR:
-            return "VK_PRESENT_MODE_IMMEDIATE_KHR";
-        case VK_PRESENT_MODE_MAILBOX_KHR:
-            return "VK_PRESENT_MODE_MAILBOX_KHR";
-        case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
-            return "VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR";
-        case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
-            return "VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR";
+        case VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR";
+        case VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR";
+        case VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR";
+        case VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR";
         default:
-            return "Unhandled VkPresentModeKHR";
+            return "Unhandled VkCompositeAlphaFlagBitsKHR";
     }
+}
+
+static inline std::string string_VkCompositeAlphaFlagsKHR(VkCompositeAlphaFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(0)));
+    return ret;
 }
 
 static inline const char* string_VkSwapchainCreateFlagBitsKHR(VkSwapchainCreateFlagBitsKHR input_value)
@@ -5216,8 +5318,12 @@ static inline const char* string_VkDriverIdKHR(VkDriverIdKHR input_value)
             return "VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA";
         case VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS:
             return "VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS";
+        case VK_DRIVER_ID_MESA_LLVMPIPE:
+            return "VK_DRIVER_ID_MESA_LLVMPIPE";
         case VK_DRIVER_ID_MESA_RADV:
             return "VK_DRIVER_ID_MESA_RADV";
+        case VK_DRIVER_ID_MOLTENVK:
+            return "VK_DRIVER_ID_MOLTENVK";
         case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
             return "VK_DRIVER_ID_NVIDIA_PROPRIETARY";
         case VK_DRIVER_ID_QUALCOMM_PROPRIETARY:
@@ -5334,6 +5440,41 @@ static inline const char* string_VkPipelineExecutableStatisticFormatKHR(VkPipeli
     }
 }
 
+static inline const char* string_VkDebugReportFlagBitsEXT(VkDebugReportFlagBitsEXT input_value)
+{
+    switch ((VkDebugReportFlagBitsEXT)input_value)
+    {
+        case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
+            return "VK_DEBUG_REPORT_DEBUG_BIT_EXT";
+        case VK_DEBUG_REPORT_ERROR_BIT_EXT:
+            return "VK_DEBUG_REPORT_ERROR_BIT_EXT";
+        case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
+            return "VK_DEBUG_REPORT_INFORMATION_BIT_EXT";
+        case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
+            return "VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT";
+        case VK_DEBUG_REPORT_WARNING_BIT_EXT:
+            return "VK_DEBUG_REPORT_WARNING_BIT_EXT";
+        default:
+            return "Unhandled VkDebugReportFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkDebugReportFlagsEXT(VkDebugReportFlagsEXT input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(0)));
+    return ret;
+}
+
 static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectTypeEXT input_value)
 {
     switch ((VkDebugReportObjectTypeEXT)input_value)
@@ -5411,41 +5552,6 @@ static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectT
         default:
             return "Unhandled VkDebugReportObjectTypeEXT";
     }
-}
-
-static inline const char* string_VkDebugReportFlagBitsEXT(VkDebugReportFlagBitsEXT input_value)
-{
-    switch ((VkDebugReportFlagBitsEXT)input_value)
-    {
-        case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-            return "VK_DEBUG_REPORT_DEBUG_BIT_EXT";
-        case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            return "VK_DEBUG_REPORT_ERROR_BIT_EXT";
-        case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            return "VK_DEBUG_REPORT_INFORMATION_BIT_EXT";
-        case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            return "VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT";
-        case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-            return "VK_DEBUG_REPORT_WARNING_BIT_EXT";
-        default:
-            return "Unhandled VkDebugReportFlagBitsEXT";
-    }
-}
-
-static inline std::string string_VkDebugReportFlagsEXT(VkDebugReportFlagsEXT input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(0)));
-    return ret;
 }
 
 static inline const char* string_VkRasterizationOrderAMD(VkRasterizationOrderAMD input_value)
@@ -6444,6 +6550,8 @@ static inline const char* string_VkValidationFeatureEnableEXT(VkValidationFeatur
             return "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT";
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
             return "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT";
+        case VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT:
+            return "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT";
         default:
             return "Unhandled VkValidationFeatureEnableEXT";
     }

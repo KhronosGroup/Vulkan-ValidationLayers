@@ -42,14 +42,12 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
 
 ErrorMonitor::ErrorMonitor() {
     test_platform_thread_create_mutex(&mutex_);
-    test_platform_thread_lock_mutex(&mutex_);
-    Reset();
-    test_platform_thread_unlock_mutex(&mutex_);
+    MonitorReset();
 }
 
 ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mutex_); }
 
-void ErrorMonitor::Reset() {
+void ErrorMonitor::MonitorReset() {
     message_flags_ = 0;
     bailout_ = NULL;
     message_found_ = VK_FALSE;
@@ -58,6 +56,12 @@ void ErrorMonitor::Reset() {
     ignore_message_strings_.clear();
     allowed_message_strings_.clear();
     other_messages_.clear();
+}
+
+void ErrorMonitor::Reset() {
+    test_platform_thread_lock_mutex(&mutex_);
+    MonitorReset();
+    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
@@ -77,9 +81,7 @@ void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
 
 void ErrorMonitor::SetUnexpectedError(const char *const msg) {
     test_platform_thread_lock_mutex(&mutex_);
-
     ignore_message_strings_.emplace_back(msg);
-
     test_platform_thread_unlock_mutex(&mutex_);
 }
 
@@ -137,18 +139,24 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
 
 vector<string> ErrorMonitor::GetOtherFailureMsgs() const { return other_messages_; }
 
-VkDebugReportFlagsEXT ErrorMonitor::GetMessageFlags() const { return message_flags_; }
+VkDebugReportFlagsEXT ErrorMonitor::GetMessageFlags() { return message_flags_; }
 
 bool ErrorMonitor::AnyDesiredMsgFound() const { return message_found_; }
 
 bool ErrorMonitor::AllDesiredMsgsFound() const { return desired_message_strings_.empty(); }
 
 void ErrorMonitor::SetError(const char *const errorString) {
+    test_platform_thread_lock_mutex(&mutex_);
     message_found_ = true;
     failure_message_strings_.insert(errorString);
+    test_platform_thread_unlock_mutex(&mutex_);
 }
 
-void ErrorMonitor::SetBailout(bool *bailout) { bailout_ = bailout; }
+void ErrorMonitor::SetBailout(bool *bailout) {
+    test_platform_thread_lock_mutex(&mutex_);
+    bailout_ = bailout;
+    test_platform_thread_unlock_mutex(&mutex_);
+}
 
 void ErrorMonitor::DumpFailureMsgs() const {
     vector<string> otherMsgs = GetOtherFailureMsgs();
@@ -162,11 +170,14 @@ void ErrorMonitor::DumpFailureMsgs() const {
 
 void ErrorMonitor::ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask) {
     // Match ANY message matching specified type
-    SetDesiredFailureMsg(message_flag_mask, "");
-    message_flags_ = message_flag_mask;  // override mask handling in SetDesired...
+    test_platform_thread_lock_mutex(&mutex_);
+    desired_message_strings_.insert("");
+    message_flags_ = message_flag_mask;
+    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::VerifyFound() {
+    test_platform_thread_lock_mutex(&mutex_);
     // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
     if (!AllDesiredMsgsFound()) {
         DumpFailureMsgs();
@@ -184,10 +195,12 @@ void ErrorMonitor::VerifyFound() {
         ADD_FAILURE() << "Received unexpected error(s).";
 #endif
     }
-    Reset();
+    MonitorReset();
+    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::VerifyNotFound() {
+    test_platform_thread_lock_mutex(&mutex_);
     // ExpectSuccess() configured us to match anything. Any error is a failure.
     if (AnyDesiredMsgFound()) {
         DumpFailureMsgs();
@@ -205,7 +218,8 @@ void ErrorMonitor::VerifyNotFound() {
         ADD_FAILURE() << "Received unexpected error(s).";
 #endif
     }
-    Reset();
+    MonitorReset();
+    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 bool ErrorMonitor::IgnoreMessage(string const &msg) const {
@@ -1089,12 +1103,44 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     vk::CreateRenderPass(device, &rpci, NULL, &m_renderpass);
 }
 
+VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthStencil) {
+    if (!depthStencil) {
+        VkRenderpassObj(dev, format);
+    } else {
+        // Create a renderPass with a depth/stencil attachment
+        VkAttachmentReference attach = {};
+        attach.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass = {};
+        subpass.pDepthStencilAttachment = &attach;
+
+        VkRenderPassCreateInfo rpci = {};
+        rpci.subpassCount = 1;
+        rpci.pSubpasses = &subpass;
+        rpci.attachmentCount = 1;
+
+        VkAttachmentDescription attach_desc = {};
+        attach_desc.format = format;
+        attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+        attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        rpci.pAttachments = &attach_desc;
+        rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+        device = dev->device();
+        vk::CreateRenderPass(device, &rpci, NULL, &m_renderpass);
+    }
+}
+
 VkRenderpassObj::~VkRenderpassObj() NOEXCEPT { vk::DestroyRenderPass(device, m_renderpass, NULL); }
 
 VkImageObj::VkImageObj(VkDeviceObj *dev) {
     m_device = dev;
     m_descriptorImageInfo.imageView = VK_NULL_HANDLE;
     m_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    m_arrayLayers = 0;
+    m_mipLevels = 0;
 }
 
 // clang-format off
@@ -1118,9 +1164,7 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
                                     VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages,
                                     uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     // clang-format on
-    // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
-    const VkImageSubresourceRange subresourceRange =
-        subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1 /*VK_REMAINING_ARRAY_LAYERS*/);
+    const VkImageSubresourceRange subresourceRange = subresource_range(aspect, 0, m_mipLevels, 0, m_arrayLayers);
     VkImageMemoryBarrier barrier;
     barrier = image_memory_barrier(output_mask, input_mask, Layout(), image_layout, subresourceRange, srcQueueFamilyIndex,
                                    dstQueueFamilyIndex);
@@ -1139,59 +1183,63 @@ void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspec
     const VkFlags all_cache_inputs = VK_ACCESS_HOST_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT |
                                      VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
                                      VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                     VK_ACCESS_MEMORY_READ_BIT;
+                                     VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
+
+    const VkFlags shader_read_inputs = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
     if (image_layout == m_descriptorImageInfo.imageLayout) {
         return;
     }
 
+    // Attempt to narrow the src_mask, by what the image could have validly been used for in it's current layout
+    switch (m_descriptorImageInfo.imageLayout) {
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            src_mask = shader_read_inputs;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            src_mask = VK_ACCESS_TRANSFER_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            src_mask = 0;
+            break;
+        default:
+            src_mask = all_cache_outputs;  // Only need to worry about writes, as the stage mask will protect reads
+    }
+
+    // Narrow the dst mask by the valid accesss for the new layout
     switch (image_layout) {
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            else
-                src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            // NOTE: not sure why shader read is here...
             dst_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
             break;
 
         case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            else if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                src_mask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-            else
-                src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
             dst_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
             break;
 
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-                src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            else
-                src_mask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-            dst_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
+            dst_mask = shader_read_inputs;
             break;
 
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                src_mask = VK_ACCESS_TRANSFER_READ_BIT;
-            else
-                src_mask = 0;
             dst_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             break;
 
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
             dst_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            src_mask = all_cache_outputs;
             break;
 
         default:
-            src_mask = all_cache_outputs;
-            dst_mask = all_cache_inputs;
+            // Must wait all read and write operations for the completion of the layout tranisition
+            dst_mask = all_cache_inputs | all_cache_outputs;
             break;
     }
-
-    if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_UNDEFINED) src_mask = 0;
 
     ImageMemoryBarrier(cmd_buf, aspect, src_mask, dst_mask, image_layout);
     m_descriptorImageInfo.imageLayout = image_layout;
@@ -1263,14 +1311,42 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
 
     return true;
 }
+VkImageCreateInfo VkImageObj::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mipLevels,
+                                                uint32_t const layers, VkFormat const format, VkFlags const usage,
+                                                VkImageTiling const requested_tiling, const std::vector<uint32_t> *queue_families) {
+    VkImageCreateInfo imageCreateInfo = vk_testing::Image::create_info();
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = format;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.mipLevels = mipLevels;
+    imageCreateInfo.arrayLayers = layers;
+    imageCreateInfo.tiling = requested_tiling;  // This will be touched up below...
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+    // Automatically set sharing mode etc. based on queue family information
+    if (queue_families && (queue_families->size() > 1)) {
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families->size());
+        imageCreateInfo.pQueueFamilyIndices = queue_families->data();
+    }
+    imageCreateInfo.usage = usage;
+    return imageCreateInfo;
+}
 void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                               VkFlags const usage, VkImageTiling const requested_tiling, VkMemoryPropertyFlags const reqs,
                               const vector<uint32_t> *queue_families, bool memory) {
+    InitNoLayout(ImageCreateInfo2D(width, height, mipLevels, 1, format, usage, requested_tiling, queue_families), reqs, memory);
+}
+
+void VkImageObj::InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags const reqs, bool memory) {
     VkFormatProperties image_fmt;
+    // Touch up create info for tiling compatiblity...
+    auto usage = create_info.usage;
+    VkImageTiling requested_tiling = create_info.tiling;
     VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
 
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), format, &image_fmt);
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), create_info.format, &image_fmt);
 
     if (requested_tiling == VK_IMAGE_TILING_LINEAR) {
         if (IsCompatible(usage, image_fmt.linearTilingFeatures)) {
@@ -1290,24 +1366,13 @@ void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint3
                << ", supported optimal features: " << image_fmt.optimalTilingFeatures;
     }
 
-    VkImageCreateInfo imageCreateInfo = vk_testing::Image::create_info();
-    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageCreateInfo.format = format;
-    imageCreateInfo.extent.width = width;
-    imageCreateInfo.extent.height = height;
-    imageCreateInfo.mipLevels = mipLevels;
+    VkImageCreateInfo imageCreateInfo = create_info;
     imageCreateInfo.tiling = tiling;
-    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    // Automatically set sharing mode etc. based on queue family information
-    if (queue_families && (queue_families->size() > 1)) {
-        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families->size());
-        imageCreateInfo.pQueueFamilyIndices = queue_families->data();
-    }
+    m_mipLevels = imageCreateInfo.mipLevels;
+    m_arrayLayers = imageCreateInfo.arrayLayers;
 
     Layout(imageCreateInfo.initialLayout);
-    imageCreateInfo.usage = usage;
     if (memory)
         vk_testing::Image::init(*m_device, imageCreateInfo, reqs);
     else
@@ -1317,11 +1382,16 @@ void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint3
 void VkImageObj::Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                       VkFlags const usage, VkImageTiling const requested_tiling, VkMemoryPropertyFlags const reqs,
                       const vector<uint32_t> *queue_families, bool memory) {
-    InitNoLayout(width, height, mipLevels, format, usage, requested_tiling, reqs, queue_families, memory);
+    Init(ImageCreateInfo2D(width, height, mipLevels, 1, format, usage, requested_tiling, queue_families), reqs, memory);
+}
+
+void VkImageObj::Init(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags const reqs, bool memory) {
+    InitNoLayout(create_info, reqs, memory);
 
     if (!initialized() || !memory) return;  // We don't have a valid handle from early stage init, and thus SetLayout will fail
 
     VkImageLayout newLayout;
+    const auto usage = create_info.usage;
     if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
         newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     else if (usage & VK_IMAGE_USAGE_SAMPLED_BIT)
@@ -1330,6 +1400,7 @@ void VkImageObj::Init(uint32_t const width, uint32_t const height, uint32_t cons
         newLayout = m_descriptorImageInfo.imageLayout;
 
     VkImageAspectFlags image_aspect = 0;
+    const auto format = create_info.format;
     if (FormatIsDepthAndStencil(format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
     } else if (FormatIsDepthOnly(format)) {
@@ -1365,6 +1436,8 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     Layout(create_info->initialLayout);
 
     vk_testing::Image::init(*m_device, *create_info, 0);
+    m_mipLevels = create_info->mipLevels;
+    m_arrayLayers = create_info->arrayLayers;
 
     VkImageAspectFlags image_aspect = 0;
     if (FormatIsDepthAndStencil(create_info->format)) {

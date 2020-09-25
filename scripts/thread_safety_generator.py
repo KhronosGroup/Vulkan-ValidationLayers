@@ -63,6 +63,7 @@ class ThreadGeneratorOptions(GeneratorOptions):
                  conventions = None,
                  filename = None,
                  directory = '.',
+                 genpath = None,
                  apiname = None,
                  profile = None,
                  versions = '.*',
@@ -83,9 +84,20 @@ class ThreadGeneratorOptions(GeneratorOptions):
                  indentFuncPointer = False,
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
-                                  versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions, emitExtensions, sortProcedure)
+        GeneratorOptions.__init__(self,
+                conventions = conventions,
+                filename = filename,
+                directory = directory,
+                genpath = genpath,
+                apiname = apiname,
+                profile = profile,
+                versions = versions,
+                emitversions = emitversions,
+                defaultExtensions = defaultExtensions,
+                addExtensions = addExtensions,
+                removeExtensions = removeExtensions,
+                emitExtensions = emitExtensions,
+                sortProcedure = sortProcedure)
         self.prefixText      = prefixText
         self.genFuncPointers = genFuncPointers
         self.protectFile     = protectFile
@@ -589,7 +601,29 @@ void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayProperties2KHR*                    pProperties,
-    VkResult                                    result);"""
+    VkResult                                    result);
+
+void PreCallRecordGetDisplayPlaneCapabilities2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities);
+
+void PostCallRecordGetDisplayPlaneCapabilities2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities,
+    VkResult                                    result);
+
+#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+void PostCallRecordGetRandROutputDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    Display*                                    dpy,
+    RROutput                                    rrOutput,
+    VkDisplayKHR*                               pDisplay,
+    VkResult                                    result);
+
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT"""
 
 
     inline_custom_source_preamble = """
@@ -1164,6 +1198,104 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     }
 }
 
+void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    planeIndex,
+    uint32_t*                                   pDisplayCount,
+    VkDisplayKHR*                               pDisplays) {
+    // Nothing to do for this pre-call function
+}
+
+void ThreadSafety::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    planeIndex,
+    uint32_t*                                   pDisplayCount,
+    VkDisplayKHR*                               pDisplays,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pDisplays) {
+        for (uint32_t index = 0; index < *pDisplayCount; index++) {
+            CreateObject(pDisplays[index]);
+        }
+    }
+}
+
+void ThreadSafety::PreCallRecordGetDisplayModePropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModePropertiesKHR*                 pProperties) {
+    StartReadObject(display, "vkGetDisplayModePropertiesKHR");
+}
+
+void ThreadSafety::PostCallRecordGetDisplayModePropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModePropertiesKHR*                 pProperties,
+    VkResult                                    result) {
+    FinishReadObject(display, "vkGetDisplayModePropertiesKHR");
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties != nullptr) {
+        for (uint32_t index = 0; index < *pPropertyCount; index++) {
+            CreateObject(pProperties[index].displayMode);
+        }
+    }
+}
+
+void ThreadSafety::PreCallRecordGetDisplayModeProperties2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModeProperties2KHR*                pProperties) {
+    StartReadObject(display, "vkGetDisplayModeProperties2KHR");
+}
+
+void ThreadSafety::PostCallRecordGetDisplayModeProperties2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    VkDisplayKHR                                display,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayModeProperties2KHR*                pProperties,
+    VkResult                                    result) {
+    FinishReadObject(display, "vkGetDisplayModeProperties2KHR");
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties != nullptr) {
+        for (uint32_t index = 0; index < *pPropertyCount; index++) {
+            CreateObject(pProperties[index].displayModeProperties.displayMode);
+        }
+    }
+}
+
+void ThreadSafety::PreCallRecordGetDisplayPlaneCapabilities2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities) {
+    StartWriteObject(pDisplayPlaneInfo->mode, "vkGetDisplayPlaneCapabilities2KHR");
+}
+
+void ThreadSafety::PostCallRecordGetDisplayPlaneCapabilities2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities,
+    VkResult                                    result) {
+    FinishWriteObject(pDisplayPlaneInfo->mode, "vkGetDisplayPlaneCapabilities2KHR");
+}
+
+#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    Display*                                    dpy,
+    RROutput                                    rrOutput,
+    VkDisplayKHR*                               pDisplay,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) || (pDisplay == nullptr)) return;
+    CreateObject(*pDisplay);
+}
+
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+
 """
 
 
@@ -1224,7 +1356,7 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
                         paramdecl += '}\n'
                     else:
                         paramdecl += functionprefix + 'WriteObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ', "' + name + '");\n'
-                        if ('Destroy' in name or 'Free' in name) and functionprefix == 'Finish':
+                        if ('Destroy' in name or 'Free' in name or 'ReleasePerformanceConfigurationINTEL' in name) and functionprefix == 'Finish':
                             paramdecl += 'DestroyObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ');\n'
                 elif (param.attrib.get('externsync')):
                     if self.paramIsArray(param):
@@ -1272,7 +1404,7 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
                             if 'surface' in member:
                                 suffix = 'ParentInstance'
                             paramdecl += '    ' + functionprefix + 'WriteObject' + suffix + '(' + member + ', "' + name + '");\n'
-                elif self.paramIsPointer(param) and ('Create' in name or 'Allocate' in name) and functionprefix == 'Finish':
+                elif self.paramIsPointer(param) and ('Create' in name or 'Allocate' in name or 'AcquirePerformanceConfigurationINTEL' in name) and functionprefix == 'Finish':
                     paramtype = param.find('type')
                     if paramtype is not None:
                         paramtype = paramtype.text
@@ -1492,6 +1624,11 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
             'vkUpdateDescriptorSets',
             'vkUpdateDescriptorSetWithTemplate',
             'vkUpdateDescriptorSetWithTemplateKHR',
+            'vkGetDisplayPlaneSupportedDisplaysKHR',
+            'vkGetDisplayModePropertiesKHR',
+            'vkGetDisplayModeProperties2KHR',
+            'vkGetDisplayPlaneCapabilities2KHR',
+            'vkGetRandROutputDisplayEXT',
         ]
         if name == 'vkQueuePresentKHR' or (name in special_functions and self.source_file):
             return

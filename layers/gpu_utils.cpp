@@ -255,10 +255,15 @@ void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo
     }
     if (features) {
         VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features);
-        VkBool32 *featurePtr = reinterpret_cast<VkBool32 *>(&features);
+        VkBool32 *featurePtr = reinterpret_cast<VkBool32 *>(features);
         VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features);
         for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures); i += (sizeof(VkBool32))) {
-            *featurePtr++ |= (*supported++ & *desired++);
+            if (*supported && *desired) {
+                *featurePtr = true;
+            }
+            supported++;
+            desired++;
+            featurePtr++;
         }
     } else {
         VkPhysicalDeviceFeatures new_features = {};
@@ -322,6 +327,14 @@ void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg) {
         case spv::ExecutionModelCallableNV: {
             strm << "Stage = Callable.  Global Launch ID (x,y,z) = (" << debug_record[kInstRayTracingOutLaunchIdX] << ", "
                  << debug_record[kInstRayTracingOutLaunchIdY] << ", " << debug_record[kInstRayTracingOutLaunchIdZ] << "). ";
+        } break;
+        case spv::ExecutionModelTaskNV: {
+            strm << "Stage = Task. Global invocation ID (x, y, z) = (" << debug_record[kInstTaskOutGlobalInvocationIdX] << ", "
+                 << debug_record[kInstTaskOutGlobalInvocationIdY] << ", " << debug_record[kInstTaskOutGlobalInvocationIdZ] << " )";
+        } break;
+        case spv::ExecutionModelMeshNV: {
+            strm << "Stage = Mesh.Global invocation ID (x, y, z) = (" << debug_record[kInstMeshOutGlobalInvocationIdX] << ", "
+                 << debug_record[kInstMeshOutGlobalInvocationIdY] << ", " << debug_record[kInstMeshOutGlobalInvocationIdZ] << " )";
         } break;
         default: {
             strm << "Internal Error (unexpected stage = " << debug_record[kInstCommonOutStageIdx] << "). ";

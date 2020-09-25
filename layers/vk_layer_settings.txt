@@ -16,11 +16,13 @@
 #
 #   DEBUG_ACTION:
 #   =============
-#   <LayerIdentifier>.debug_action : This is an enum value indicating what
-#    action is to be taken when a layer wants to report information.
+#   <LayerIdentifier>.debug_action : This is a comma-delited list of options
+#    indicating what actions are to be taken when a layer wants to report
+#    information.
 #    Possible settings values are defined in the vk_layer.h header file.
 #    These settings are:
-#    VK_DBG_LAYER_ACTION_IGNORE - Take no action.
+#    VK_DBG_LAYER_ACTION_IGNORE - Take no action -- has no effect if specified with
+#       other options.
 #    VK_DBG_LAYER_ACTION_LOG_MSG - Log a txt message to stdout or to a log filename
 #       specified via the <LayerIdentifier>.log_filename setting (see below).
 #    VK_DBG_LAYER_ACTION_CALLBACK - Call user defined callback function(s) that
@@ -29,7 +31,7 @@
 #    VK_DBG_LAYER_ACTION_DEBUG_OUTPUT [Windows only] - Log a txt message using the
 #       Windows OutputDebugString function -- messages will show up in the
 #       Visual Studio output window, for instance.
-#    VK_DBG_LAYER_ACTION_BREAK - Trigger a breakpoint.
+#    VK_DBG_LAYER_ACTION_BREAK - Trigger a breakpoint if a debugger is in use.
 #
 #   REPORT_FLAGS:
 #   =============
@@ -45,6 +47,23 @@
 #    debug - For layer development. Report messages for debugging layer
 #            behavior.
 #
+#   MESSAGE_ID_FILTER:
+#   ==================
+#   <LayerIdentifier>.message_id_filter: This is a comma-delineated list of VUIDs
+#    or VUID identifers which are to be IGNORED by the layers. These can be in
+#    any combination of the normal VUID string form,
+#        "VUID-vkCmdPipelineBarrier-image-02635",
+#    or the hexadecimal or decimal representation of the VUID id returned from
+#    a validation message, for example:
+#        0xdf3391a2 or 3744698786.
+#
+#   DUPLICATE_MESSAGE_LIMIT:
+#   =======================
+#   <LayerIdentifier>.duplicate_message_limit: This is an unsigned integer
+#    which signifies the limit for the number of times any validation
+#    message can be output by the layers. Any non-zero value will be respected,
+#    and the default is no limit.
+#
 #   LOG_FILENAME:
 #   =============
 #   <LayerIdentifier>.log_filename : output filename. Can be relative to
@@ -53,7 +72,7 @@
 #      is used by default.
 #
 #   DISABLES:
-#   =============
+#   =========
 #   <LayerIdentifier>.disables : comma separated list of feature/flag/disable enums
 #      These can include VkValidationFeatureDisableEXT flags defined in the Vulkan
 #      specification, or ValidationCheckDisables enums defined in chassis.h.
@@ -76,7 +95,7 @@
 #          This may not always be necessary late in a development cycle.
 #
 #   ENABLES:
-#   =============
+#   ========
 #   <LayerIdentifier>.enables : comma separated list of feature enable enums
 #      These can include VkValidationFeatureEnableEXT flags defined in the Vulkan
 #      specification, where their effects are described.  The most useful
@@ -85,15 +104,36 @@
 #      shader validation in khronos validation layers
 #      VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT - enables best practices warning
 #      validation
-#      VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT - enables processing of 
+#      VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT - enables processing of
 #      debug printf instructions in shaders and sending debug strings to the debug callback
+#      VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT - enables checks to
+#      identify resource access conflicts due to missing or incorrect synchronization
 #
+#   CUSTOM_STYPE_LIST:
+#   ==================
+#   <LayerIdentifier>.custom_stype_list: This is a comma-delimited list of uin32_t
+#    value-pairs describing custom structure types. Unrecognized structures encountered
+#    in wrapped pNext chains are typically removed. Specifying the sType value and size
+#    in bytes in this list will allow the layers to properly preserve the containing
+#    pNext chain. Multiple structs can be specified.  For instance, in the following
+#    example, two custom structs are declared, the first in decimal and the second in
+#    hexadecimal:
+#        khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
 
 # VK_LAYER_KHRONOS_validation Settings
 
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
 khronos_validation.report_flags = error,warn,perf
 khronos_validation.log_filename = stdout
+
+# Example entry showing how to filter specific VUIDs from layer output
+#khronos_validation.message_id_filter = 3744698786,0xdf3391a2,"VUID-vkCmdPipelineBarrier-image-02635"
+
+# Example entry showing how to declare custom non-Vulkan structure types
+#khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
+
+# Example entry showing how to limit the number of repeated validation messages
+#khronos_validation.duplicate_message_limit = 25
 
 # Example entry showing how to disable threading checks and validation at DestroyPipeline time
 #khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE

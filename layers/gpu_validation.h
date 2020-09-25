@@ -96,12 +96,13 @@ class GpuAssisted : public ValidationStateTracker {
     GpuAssisted() { container_type = LayerObjectTypeGpuAssisted; }
 
     bool aborted = false;
+    bool descriptor_indexing = false;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
     uint32_t adjusted_max_desc_sets;
     uint32_t desc_set_bind_index;
-    VkDescriptorSetLayout debug_desc_layout;
-    VkDescriptorSetLayout dummy_desc_layout;
+    VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
     std::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
@@ -120,6 +121,7 @@ class GpuAssisted : public ValidationStateTracker {
   public:
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
+    bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
     void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                    safe_VkDeviceCreateInfo* modified_create_info);
@@ -208,8 +210,30 @@ class GpuAssisted : public ValidationStateTracker {
                                       uint32_t stride);
     void PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                              uint32_t stride);
+    void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                              uint32_t stride);
+    void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                           uint32_t stride);
+    void PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                     uint32_t stride);
+    void PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                  uint32_t stride);
+    void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
+    void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 uint32_t drawCount, uint32_t stride);
+    void PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                      uint32_t stride);
     void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
     void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
+    void PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
+                                      uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    void PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                         uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
     void PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                      VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                      VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,

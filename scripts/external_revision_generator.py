@@ -28,7 +28,7 @@ import json
 
 def generate(symbol_name, commit_id, output_header_file):
     # Write commit ID to output header file
-    with open(output_header_file, "w") as header_file:
+    with open(output_header_file, "w", newline='\n') as header_file:
          # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
         file_comment += '// See external_revision_generator.py for modifications\n'

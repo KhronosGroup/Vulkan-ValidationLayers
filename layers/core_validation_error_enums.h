@@ -35,10 +35,11 @@
 
 // clang-format off
 
-static const char DECORATE_UNUSED *kVUID_Core_MemTrack_FenceState = "UNASSIGNED-CoreValidation-MemTrack-FenceState";
+static const char DECORATE_UNUSED *kVUID_Core_Bound_Resource_FreedMemoryAccess = "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess";
+// static const char DECORATE_UNUSED *kVUID_Core_MemTrack_FenceState = "UNASSIGNED-CoreValidation-MemTrack-FenceState";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidMap = "UNASSIGNED-CoreValidation-MemTrack-InvalidMap";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidState = "UNASSIGNED-CoreValidation-MemTrack-InvalidState";
-static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidUsageFlag = "UNASSIGNED-CoreValidation-MemTrack-InvalidUsageFlag";
+// static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidUsageFlag = "UNASSIGNED-CoreValidation-MemTrack-InvalidUsageFlag";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_RebindObject = "UNASSIGNED-CoreValidation-MemTrack-RebindObject";
 // Previously defined but unused - uncomment as needed
 //static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InternalError = "UNASSIGNED-CoreValidation-MemTrack-InternalError";
@@ -57,7 +58,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_ClearCmdBeforeDraw = "UN
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_CommandBufferSingleSubmitViolation = "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_DescriptorSetNotBound = "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotBound";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_DescriptorSetNotUpdated = "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_DoubleDestroy = "UNASSIGNED-CoreValidation-DrawState-DoubleDestroy";
+// static const char DECORATE_UNUSED *kVUID_Core_DrawState_DoubleDestroy = "UNASSIGNED-CoreValidation-DrawState-DoubleDestroy";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_ExtensionNotEnabled = "UNASSIGNED-CoreValidation-DrawState-ExtensionNotEnabled";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InternalError = "UNASSIGNED-CoreValidation-DrawState-InternalError";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidBarrier = "UNASSIGNED-CoreValidation-DrawState-InvalidBarrier";
@@ -68,7 +69,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidDescriptorSet = "
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidEvent = "UNASSIGNED-CoreValidation-DrawState-InvalidEvent";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidExtents = "UNASSIGNED-CoreValidation-DrawState-InvalidExtents";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFeature = "UNASSIGNED-CoreValidation-DrawState-InvalidFeature";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFence = "UNASSIGNED-CoreValidation-DrawState-InvalidFence";
+// static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFence = "UNASSIGNED-CoreValidation-DrawState-InvalidFence";
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImage = "UNASSIGNED-CoreValidation-DrawState-InvalidImage";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageAspect = "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageLayout = "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout";
@@ -168,8 +169,8 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageView = "UNAS
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_ViewportNotBound = "UNASSIGNED-CoreValidation-DrawState-ViewportNotBound";
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_VtxIndexAlignmentError = "UNASSIGNED-CoreValidation-DrawState-VtxIndexAlignmentError";
 
-static const char DECORATE_UNUSED *kVUID_Core_Shader_DescriptorNotAccessibleFromStage = "UNASSIGNED-CoreValidation-Shader-DescriptorNotAccessibleFromStage";
-static const char DECORATE_UNUSED *kVUID_Core_Shader_DescriptorTypeMismatch = "UNASSIGNED-CoreValidation-Shader-DescriptorTypeMismatch";
+//static const char DECORATE_UNUSED *kVUID_Core_Shader_DescriptorNotAccessibleFromStage = "UNASSIGNED-CoreValidation-Shader-DescriptorNotAccessibleFromStage";
+//static const char DECORATE_UNUSED *kVUID_Core_Shader_DescriptorTypeMismatch = "UNASSIGNED-CoreValidation-Shader-DescriptorTypeMismatch";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_ExceedDeviceLimit = "UNASSIGNED-CoreValidation-Shader-ExceedDeviceLimit";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_FeatureNotEnabled = "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InconsistentSpirv = "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv";
@@ -177,7 +178,7 @@ static const char DECORATE_UNUSED *kVUID_Core_Shader_InconsistentVi = "UNASSIGNE
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InputAttachmentTypeMismatch = "UNASSIGNED-CoreValidation-Shader-InputAttachmentTypeMismatch";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InputNotProduced = "UNASSIGNED-CoreValidation-Shader-InputNotProduced";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InterfaceTypeMismatch = "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch";
-static const char DECORATE_UNUSED *kVUID_Core_Shader_MissingDescriptor = "UNASSIGNED-CoreValidation-Shader-MissingDescriptor";
+//static const char DECORATE_UNUSED *kVUID_Core_Shader_MissingDescriptor = "UNASSIGNED-CoreValidation-Shader-MissingDescriptor";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_MissingInputAttachment = "UNASSIGNED-CoreValidation-Shader-MissingInputAttachment";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_OutputNotConsumed = "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_PushConstantNotAccessibleFromStage = "UNASSIGNED-CoreValidation-Shader-PushConstantNotAccessibleFromStage";
@@ -250,6 +251,12 @@ static const char DECORATE_UNUSED *kVUID_Core_BindBuffer_NoMemReqQuery = "UNASSI
 static const char DECORATE_UNUSED *kVUID_Core_BindAccelNV_NoMemReqQuery = "UNASSIGNED-CoreValidation-vkBindAccelerationStructureMemoryNV-object-requirements";
 static const char DECORATE_UNUSED *kVUID_Core_CmdBuildAccelNV_NoScratchMemReqQuery = "UNASSIGNED-CoreValidation-vkCmdBuildAccelerationStructureNV-scratch-requirements";
 static const char DECORATE_UNUSED *kVUID_Core_CmdBuildAccelNV_NoUpdateMemReqQuery = "UNASSIGNED-CoreValidation-vkCmdBuildAccelerationStructureNV-update-requirements";
+
+static const char DECORATE_UNUSED *kVUID_Core_CreatInstance_Status = "UNASSIGNED-khronos-validation-createinstance-status-message";
+static const char DECORATE_UNUSED *kVUID_Core_CreateInstance_Debug_Warning = "UNASSIGNED-khronos-Validation-debug-build-warning-message";
+
+static const char DECORATE_UNUSED *kVUID_Core_ImageMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-vkImageMemoryBarrier-sharing-mode-exclusive-same-family";
+static const char DECORATE_UNUSED *kVUID_Core_BufferMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-vkBufferMemoryBarrier-sharing-mode-exclusive-same-family";
 
 // clang-format on
 

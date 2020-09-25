@@ -59,8 +59,20 @@ static const uint32_t kMaxSmallIndexedDrawcalls = 10;
 // How many indices make a small indexed drawcall
 static const int kSmallIndexedDrawcallIndices = 10;
 
+// Minimum number of vertices/indices to take into account when doing depth pre-pass checks for Arm Mali GPUs
+static const int kDepthPrePassMinDrawCountArm = 500;
+
+// Minimum, number of draw calls in order to trigger depth pre-pass warnings for Arm Mali GPUs
+static const int kDepthPrePassNumDrawCallsArm = 20;
+
 // Maximum sample count for full throughput on Mali GPUs
 static const VkSampleCountFlagBits kMaxEfficientSamplesArm = VK_SAMPLE_COUNT_4_BIT;
+
+// On Arm Mali architectures, it's generally best to align work group dimensions to 4.
+static const uint32_t kThreadGroupDispatchCountAlignmentArm = 4;
+
+// Maximum number of threads which can efficiently be part of a compute workgroup when using thread group barriers.
+static const uint32_t kMaxEfficientWorkGroupThreadCountArm = 64;
 
 class BestPractices : public ValidationStateTracker {
   public:
@@ -71,6 +83,10 @@ class BestPractices : public ValidationStateTracker {
     std::string GetAPIVersionName(uint32_t version) const;
 
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
+
+    void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
+
+    void RecordCmdDrawTypeArm(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
 
     bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version, const char* vuid) const;
 
@@ -130,6 +146,7 @@ class BestPractices : public ValidationStateTracker {
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                void* pipe_state) const;
+    bool ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const;
 
     bool CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) const;
@@ -149,6 +166,7 @@ class BestPractices : public ValidationStateTracker {
                                            const VkImageMemoryBarrier* pImageMemoryBarriers) const;
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                           VkQueryPool queryPool, uint32_t query) const;
+    void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                     const VkRenderPassBeginInfo* pRenderPassBegin) const;
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -157,20 +175,37 @@ class BestPractices : public ValidationStateTracker {
                                                const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const;
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const;
+    void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
+                                  const VkRenderPassBeginInfo* pRenderPassBegin);
+    void PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                          VkSubpassContents contents);
+    void PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                           const VkSubpassBeginInfo* pSubpassBeginInfo);
+    void PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                              const VkSubpassBeginInfo* pSubpassBeginInfo);
     bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                                 uint32_t firstInstance) const;
+    void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                               uint32_t firstInstance);
     bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                        uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const;
     bool ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
                                 int32_t vertexOffset, uint32_t firstInstance) const;
     void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                      uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
+    void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+                                      uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
     bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
                                         uint32_t stride) const;
+    void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                       uint32_t stride);
     bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                uint32_t drawCount, uint32_t stride) const;
+    void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                              uint32_t stride);
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                     uint32_t groupCountZ) const;
+    bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const;
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const char* api_name) const;
     bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                             uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) const;
@@ -212,6 +247,10 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const;
     void ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
+    void ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                     const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                     VkResult result, void* cgpl_state_data);
 
 // Include code-generated functions
 #include "best_practices.h"
@@ -244,4 +283,25 @@ class BestPractices : public ValidationStateTracker {
         std::vector<CacheEntry> _entries = {};
         uint32_t iteration = 0;
     };
+
+    struct GraphicsPipelineCIs {
+        const safe_VkPipelineDepthStencilStateCreateInfo* depthStencilStateCI;
+        const safe_VkPipelineColorBlendStateCreateInfo* colorBlendStateCI;
+    };
+
+    // used to track CreateInfos for graphics pipelines
+    std::unordered_map<VkPipeline, GraphicsPipelineCIs> graphicsPipelineCIs = {};
+
+    // used to track state regarding depth pre-pass heuristic checks
+    struct DepthPrePassState {
+        bool depthAttachment = false;
+        bool colorAttachment = false;
+        bool depthOnly = false;
+        bool depthEqualComparison = false;
+        uint32_t numDrawCallsDepthOnly = 0;
+        uint32_t numDrawCallsDepthEqualCompare = 0;
+    };
+
+    // used to track depth pre-pass heuristic data per command buffer
+    std::unordered_map<VkCommandBuffer, DepthPrePassState> cbDepthPrePassStates = {};
 };

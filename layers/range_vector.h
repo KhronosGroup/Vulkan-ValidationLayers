@@ -72,6 +72,8 @@ struct range {
         return *this;
     }
 
+    inline range operator+(const index_type &offset) const { return range(begin + offset, end + offset); }
+
     // for a reversible/transitive < operator compare first on begin and then end
     // only less or begin is less or if end is less when begin is equal
     bool operator<(const range &rhs) const {
@@ -1474,6 +1476,12 @@ class cached_lower_bound_impl {
         return *this;
     }
 
+    // For times when the application knows what it's done to the underlying map... (with assert in set_value)
+    cached_lower_bound_impl &invalidate(const iterator &hint, index_type index) {
+        set_value(index, hint);
+        return *this;
+    }
+
     cached_lower_bound_impl &invalidate() { return invalidate(index_); }
 
     // Allow a hint for a *valid* lower bound for current index
@@ -1501,6 +1509,9 @@ class cached_lower_bound_impl {
         }
     }
 
+    Map &map() { return *map_; }
+    const Map &map() const { return *map_; }
+
     // Default constructed object reports valid (correctly) as false, but otherwise will fail (assert) under nearly any use.
     cached_lower_bound_impl()
         : map_(nullptr), end_(), pos_(index_, lower_bound_, valid_), index_(0), lower_bound_(), valid_(false) {}
@@ -1519,6 +1530,26 @@ const MappedType &evaluate(const CachedLowerBound &clb, const MappedType &defaul
         return clb->lower_bound->second;
     }
     return default_value;
+}
+
+// Split a range into pieces bound by the interection of the interator's range and the supplied range
+template <typename Iterator, typename Map, typename Range>
+Iterator split(Iterator in, Map &map, const Range &range) {
+    assert(in != map.end());  // Not designed for use with invalid iterators...
+    const auto in_range = in->first;
+    const auto split_range = in_range & range;
+
+    if (split_range.empty()) return map.end();
+
+    auto pos = in;
+    if (split_range.begin != in_range.begin) {
+        pos = map.split(pos, split_range.begin, sparse_container::split_op_keep_both());
+        ++pos;
+    }
+    if (split_range.end != in_range.end) {
+        pos = map.split(pos, split_range.end, sparse_container::split_op_keep_both());
+    }
+    return pos;
 }
 
 // Parallel iterator
@@ -1620,16 +1651,40 @@ class parallel_iterator {
         seek(start);
         return *this;
     }
+
     parallel_iterator &invalidate_A() {
         const index_type index = range_.begin;
         pos_A_.invalidate(static_cast<index_type_A>(index));
         range_ = key_type(index, index + compute_delta());
         return *this;
     }
+
+    parallel_iterator &invalidate_A(const iterator_A &hint) {
+        const index_type index = range_.begin;
+        pos_A_.invalidate(hint, static_cast<index_type_A>(index));
+        range_ = key_type(index, index + compute_delta());
+        return *this;
+    }
+
     parallel_iterator &invalidate_B() {
         const index_type index = range_.begin;
         pos_B_.invalidate(static_cast<index_type_B>(index));
         range_ = key_type(index, index + compute_delta());
+        return *this;
+    }
+
+    parallel_iterator &invalidate_B(const iterator_B &hint) {
+        const index_type index = range_.begin;
+        pos_B_.invalidate(hint, static_cast<index_type_B>(index));
+        range_ = key_type(index, index + compute_delta());
+        return *this;
+    }
+
+    parallel_iterator &trim_A() {
+        if (pos_A_->valid && (range_ != pos_A_->lower_bound->first)) {
+            split(pos_A_->lower_bound, pos_A_.map(), range_);
+            invalidate_A();
+        }
         return *this;
     }
 

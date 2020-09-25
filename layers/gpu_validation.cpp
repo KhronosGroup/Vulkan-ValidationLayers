@@ -182,6 +182,31 @@ void GpuAssisted::ReportSetupProblem(T object, const char *const specific_messag
     LogError(object, "UNASSIGNED-GPU-Assisted Validation Error. ", "Detail: (%s)", specific_message);
 }
 
+bool GpuAssisted::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
+    bool result =
+        (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing) &&
+         (enabled_features.core12.descriptorIndexing || enabled_features.core12.shaderInputAttachmentArrayDynamicIndexing ||
+          enabled_features.core12.shaderUniformTexelBufferArrayDynamicIndexing ||
+          enabled_features.core12.shaderStorageTexelBufferArrayDynamicIndexing ||
+          enabled_features.core12.shaderUniformBufferArrayNonUniformIndexing ||
+          enabled_features.core12.shaderSampledImageArrayNonUniformIndexing ||
+          enabled_features.core12.shaderStorageBufferArrayNonUniformIndexing ||
+          enabled_features.core12.shaderStorageImageArrayNonUniformIndexing ||
+          enabled_features.core12.shaderInputAttachmentArrayNonUniformIndexing ||
+          enabled_features.core12.shaderUniformTexelBufferArrayNonUniformIndexing ||
+          enabled_features.core12.shaderStorageTexelBufferArrayNonUniformIndexing ||
+          enabled_features.core12.descriptorBindingUniformBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingSampledImageUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingStorageImageUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingStorageBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingUniformTexelBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingStorageTexelBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingUpdateUnusedWhilePending ||
+          enabled_features.core12.descriptorBindingPartiallyBound ||
+          enabled_features.core12.descriptorBindingVariableDescriptorCount || enabled_features.core12.runtimeDescriptorArray));
+    return result;
+}
+
 void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, void *cb_state_data) {
     // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
@@ -220,8 +245,7 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
         return;
     }
 
-    if (!device_gpu_assisted->enabled_features.core.fragmentStoresAndAtomics ||
-        !device_gpu_assisted->enabled_features.core.vertexPipelineStoresAndAtomics) {
+    if (!supported_features.fragmentStoresAndAtomics || !supported_features.vertexPipelineStoresAndAtomics) {
         ReportSetupProblem(device,
                            "GPU-Assisted validation requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.  "
                            "GPU-Assisted Validation disabled.");
@@ -230,17 +254,20 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     }
 
     if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) &&
-        !device_gpu_assisted->enabled_features.core.shaderInt64) {
+        !supported_features.shaderInt64) {
         LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
                    "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
     }
-    device_gpu_assisted->shaderInt64 = device_gpu_assisted->enabled_features.core.shaderInt64;
+    device_gpu_assisted->shaderInt64 = supported_features.shaderInt64;
     device_gpu_assisted->physicalDevice = physicalDevice;
     device_gpu_assisted->device = *pDevice;
     device_gpu_assisted->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
+    device_gpu_assisted->descriptor_indexing = CheckForDescriptorIndexing(device_gpu_assisted->enabled_features);
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing,
+                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
+                                                VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV |
+                                                kShaderStageAllRayTracing,
                                             NULL};
     bindings.push_back(binding);
     for (auto i = 1; i < 3; i++) {
@@ -274,12 +301,19 @@ void GpuAssisted::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const
 void GpuAssisted::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) buffer_map.erase(buffer_state->deviceAddress);
+    ValidationStateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
 }
 
 // Clean up device-related resources
 void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     DestroyAccelerationStructureBuildValidationState();
     UtilPreCallRecordDestroyDevice(this);
+    ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
+    // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
+    if (vmaAllocator) {
+        vmaDestroyAllocator(vmaAllocator);
+    }
+    desc_set_manager.reset();
 }
 
 void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *device_gpuav) {
@@ -465,37 +499,19 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     }
 
     VkBuffer scratch = VK_NULL_HANDLE;
+    VmaAllocation scratch_allocation = {};
     if (result == VK_SUCCESS) {
         VkBufferCreateInfo scratch_ci = {};
         scratch_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         scratch_ci.size = scratch_mem_requirements.memoryRequirements.size;
         scratch_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-
-        result = DispatchCreateBuffer(device_gpuav->device, &scratch_ci, nullptr, &scratch);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device_gpuav->device,
-                               "Failed to create scratch buffer for acceleration structure build validation.");
-        }
-    }
-
-    VmaAllocation scratch_allocation = VK_NULL_HANDLE;
-    VmaAllocationInfo scratch_allocation_info = {};
-    if (result == VK_SUCCESS) {
         VmaAllocationCreateInfo scratch_aci = {};
         scratch_aci.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-        result = vmaAllocateMemory(device_gpuav->vmaAllocator, &scratch_mem_requirements.memoryRequirements, &scratch_aci,
-                                   &scratch_allocation, &scratch_allocation_info);
+        result = vmaCreateBuffer(device_gpuav->vmaAllocator, &scratch_ci, &scratch_aci, &scratch, &scratch_allocation, nullptr);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device_gpuav->device, "Failed to alloc scratch memory for acceleration structure build validation.");
-        }
-    }
-
-    if (result == VK_SUCCESS) {
-        result = DispatchBindBufferMemory(device_gpuav->device, scratch, scratch_allocation_info.deviceMemory,
-                                          scratch_allocation_info.offset);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device_gpuav->device, "Failed to bind scratch memory for acceleration structure build validation.");
+            ReportSetupProblem(device_gpuav->device,
+                               "Failed to create scratch buffer for acceleration structure build validation.");
         }
     }
 
@@ -578,8 +594,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
         vmaDestroyBuffer(device_gpuav->vmaAllocator, ibo, ibo_allocation);
     }
     if (scratch != VK_NULL_HANDLE) {
-        DispatchDestroyBuffer(device_gpuav->device, scratch, nullptr);
-        vmaFreeMemory(device_gpuav->vmaAllocator, scratch_allocation);
+        vmaDestroyBuffer(device_gpuav->vmaAllocator, scratch, scratch_allocation);
     }
     if (command_pool != VK_NULL_HANDLE) {
         DispatchDestroyCommandPool(device_gpuav->device, command_pool, nullptr);
@@ -1027,7 +1042,7 @@ bool GpuAssisted::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, ui
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                             VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled.gpu_validation_reserve_binding_slot && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
+    if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
         } else {
@@ -1040,7 +1055,7 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice phy
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceProperties2 *pPhysicalDeviceProperties2) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled.gpu_validation_reserve_binding_slot && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
+    if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets -= 1;
         } else {
@@ -1104,6 +1119,8 @@ void GpuAssisted::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipel
                                                         VkResult result, void *cgpl_state_data) {
     ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                   pPipelines, result, cgpl_state_data);
+    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, cgpl_state->gpu_create_infos.data());
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS, this);
 }
 
@@ -1113,6 +1130,8 @@ void GpuAssisted::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
                                                        VkResult result, void *ccpl_state_data) {
     ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                                  result, ccpl_state_data);
+    create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, ccpl_state->gpu_create_infos.data());
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE, this);
 }
 
@@ -1120,8 +1139,10 @@ void GpuAssisted::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             VkResult result, void *crtpl_state_data) {
+    auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                       pPipelines, result, crtpl_state_data);
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->gpu_create_infos.data());
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, this);
 }
 
@@ -1129,8 +1150,10 @@ void GpuAssisted::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                              VkResult result, void *crtpl_state_data) {
+    auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                        pPipelines, result, crtpl_state_data);
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->gpu_create_infos.data());
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
 }
 
@@ -1152,6 +1175,20 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     if (aborted) return false;
     if (pCreateInfo->pCode[0] != spv::MagicNumber) return false;
 
+    const spvtools::MessageConsumer GpuConsoleMessageConsumer =
+        [this](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
+        switch (level) {
+            case SPV_MSG_FATAL:
+            case SPV_MSG_INTERNAL_ERROR:
+            case SPV_MSG_ERROR:
+                this->LogError(this->device, "UNASSIGNED-GPU-Assisted", "Error during shader instrumentation: line %zu: %s",
+                               position.index, message);
+                break;
+            default:
+                break;
+        }
+    };
+
     // Load original shader SPIR-V
     uint32_t num_words = static_cast<uint32_t>(pCreateInfo->codeSize / 4);
     new_pgm.clear();
@@ -1161,16 +1198,19 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
-    const bool descriptor_indexing = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing);
     using namespace spvtools;
-    spv_target_env target_env = SPV_ENV_VULKAN_1_1;
+    spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
+    spvtools::ValidatorOptions options;
+    AdjustValidatorOptions(device_extensions, enabled_features, options);
     Optimizer optimizer(target_env);
+    optimizer.SetMessageConsumer(GpuConsoleMessageConsumer);
     optimizer.RegisterPass(
         CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing, descriptor_indexing));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
-    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64)
+    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64 &&
+        enabled_features.core12.bufferDeviceAddress)
         optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
-    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm);
+    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, options, false);
     if (!pass) {
         ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
     }
@@ -1311,7 +1351,7 @@ void GpuAssisted::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
                                             VkResult result) {
     ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
 
-    if (aborted) return;
+    if (aborted || (result != VK_SUCCESS)) return;
     bool buffers_present = false;
     // Don't QueueWaitIdle if there's nothing to process
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -1365,11 +1405,74 @@ void GpuAssisted::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuf
     AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
+void GpuAssisted::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                       uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                                 maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                    uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                              maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                              uint32_t maxDrawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer,
+                                                                        countBufferOffset, maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                           uint32_t maxDrawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                                     maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
+    ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                          uint32_t drawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                               uint32_t maxDrawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer,
+                                                                         countBufferOffset, maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
 void GpuAssisted::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
     AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
 void GpuAssisted::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+}
+
+void GpuAssisted::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                               uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                               uint32_t groupCountZ) {
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+}
+
+void GpuAssisted::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                  uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                  uint32_t groupCountZ) {
     AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
@@ -1493,7 +1596,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
-    if (number_of_sets > 0 && device_extensions.vk_ext_descriptor_indexing) {
+    if (number_of_sets > 0 && descriptor_indexing) {
         uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
         uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
         for (auto s : state.per_set) {
@@ -1621,8 +1724,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         desc_count = 2;
     }
 
-    if (number_of_sets > 0 && (device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) &&
-        buffer_map.size() && shaderInt64) {
+    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && buffer_map.size() &&
+        shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
         // Example BDA input buffer assuming 2 buffers using BDA:
         // Word 0 | Index of start of buffer sizes (in this case 5)
         // Word 1 | 0x0000000000000000
@@ -1689,18 +1792,27 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     auto iter = cb_node->lastBound.find(bind_point);  // find() allows read-only access to cb_state
     if (iter != cb_node->lastBound.end()) {
         auto pipeline_state = iter->second.pipeline_state;
-        if (pipeline_state && (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index)) {
+        if (pipeline_state && (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
+            !pipeline_state->pipeline_layout->destroyed) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
-        // Record buffer and memory info in CB state tracking
-        GetBufferInfo(cmd_buffer).emplace_back(output_block, di_input_block, bda_input_block, desc_sets[0], desc_pool, bind_point);
+        if (pipeline_state && pipeline_state->pipeline_layout->destroyed) {
+            ReportSetupProblem(device, "Pipeline layout has been destroyed, aborting GPU-AV");
+            aborted = true;
+        } else {
+            // Record buffer and memory info in CB state tracking
+            GetBufferInfo(cmd_buffer)
+                .emplace_back(output_block, di_input_block, bda_input_block, desc_sets[0], desc_pool, bind_point);
+        }
     } else {
         ReportSetupProblem(device, "Unable to find pipeline state");
+        aborted = true;
+    }
+    if (aborted) {
         vmaDestroyBuffer(vmaAllocator, di_input_block.buffer, di_input_block.allocation);
         vmaDestroyBuffer(vmaAllocator, bda_input_block.buffer, bda_input_block.allocation);
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
-        aborted = true;
         return;
     }
 }

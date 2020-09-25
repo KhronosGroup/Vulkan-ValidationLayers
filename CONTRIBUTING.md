@@ -8,17 +8,20 @@ The source code for The Vulkan-ValidationLayer components is sponsored by Khrono
 
 ### **The Vulkan Ecosystem Needs Your Help**
 
-The Vulkan validation layers are one of the larger and more important components in this repository.
+The Vulkan validation layers make up a significant part of the Vulkan ecosystem.
 While there are often active and organized development efforts underway to improve their coverage,
-there are always opportunities for anyone to help by contributing additional validation layer checks
-and tests for these validation checks.
+opportunities always exist for anyone to help by contributing additional validation layer checks
+and tests.
 
 There are a couple of methods to identify areas of need:
 * Examine the [issues list](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues)
 in this repository and look for issues that are of interest
-* Alternatively, run the `vk_validation_stats.py` script (in the scripts directory) with the `-todo`
+* Examine the Validation Layer 'Coverage - html' page at [the Vulkan SDK
+documentation page](https://vulkan.lunarg.com/doc/sdk/) -- it lists all published Vulkan VUIDs and their status.
+* Run the `vk_validation_stats.py` script (in the scripts directory) with the `-todo`
 command line argument to see a list of as-yet unimplemented validation checks.
-* Having selected a validation check to work on, it is often efficient to implement a block of related checks
+
+Having selected a validation check to work on, it is often efficient to implement a block of related checks
 at once. Refer to the validation database output from `vk_validation_stats.py` (available in text, html,
 or csv format) to identify related checks that may be implemented simultaneously.
 
@@ -46,12 +49,15 @@ to work on an issue that is assigned, simply coordinate with the current assigne
 * Use the existing GitHub forking and pull request process.
   This will involve [forking the repository](https://help.github.com/articles/fork-a-repo/),
   creating a branch with your commits, and then [submitting a pull request](https://help.github.com/articles/using-pull-requests/).
-* Please read and adhere to the style and process [guidelines ](#coding-conventions-and-formatting) enumerated below.
-* Please base your fixes on the master branch.  SDK branches are generally not updated except for critical fixes needed to repair an SDK release.
+* Please read and adhere to the style and process [guidelines ](#coding-conventions-and-formatting) enumerated below. Some highlights:
+  - Source code must follow the repo coding style guidelines, including a pass through a clang-format utility
+  - Implemented VUID checks must be accompanied by relevant tests
+  - Validation source code should be in a separate commit from the tests, unless there are interdependencies. The repo should compile and
+    pass all tests after each commit.
+* Please base your fixes on the master branch. SDK branches are generally not updated except for critical fixes needed to repair an SDK release.
 * The resulting Pull Request will be assigned to a repository maintainer. It is the maintainer's responsibility to ensure the Pull Request
   passes the Google/LunarG internal CI processes. Once the Pull Request has been approved and is passing internal CI, a repository maintainer
   will merge the PR.
-
 
 #### **Coding Conventions and Formatting**
 * Use the **[Google style guide](https://google.github.io/styleguide/cppguide.html)** for source code with the following exceptions:
@@ -122,7 +128,9 @@ checks that require (mostly) no state at all. Please inquire if you are unsure o
 validation objects (thread_safety, object lifetimes) are more special-purpose and are mostly code-generated from the specification.
 * **Validation Error/Warning Messages:**  Strive to give specific information describing the particulars of the failure, including
 output all of the applicable Vulkan Objects and related values. Also, ensure that when messages can give suggestions about _how_ to
-fix the problem, they should do so to better assist the user.
+fix the problem, they should do so to better assist the user. Note that Vulkan object handles must be output via the `FormatHandle()`
+function, and that all object handles visible in a message should also be included in the callback data.  If more than a single object is
+output, the LogObjectList structure should be used.
 * **Validation Statistics:** The `vk_validation_stats.py` script (in the scripts directory) inspects the layer and test source files
 and reports a variety of statistics on validation completeness and correctness. Before submitting a change you should run this
 script with the consistency check (`-c`) argument to ensure that your changes have not introduced any inconsistencies in the code.

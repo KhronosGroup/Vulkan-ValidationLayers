@@ -46,9 +46,11 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/debug_printf.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/best_practices.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/synchronization_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_options.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
@@ -56,6 +58,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/command_counter_helper.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/subresource_adapter.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
@@ -80,6 +83,8 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
                    $(SRC_DIR)/tests/vklayertests_command.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
+                   $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
+                   $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
                    $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
@@ -112,6 +117,8 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
                    $(SRC_DIR)/tests/vklayertests_command.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
+                   $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
+                   $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
                    $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \

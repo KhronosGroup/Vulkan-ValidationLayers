@@ -197,9 +197,12 @@ typedef struct _debug_report_data {
     std::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
     std::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;
     std::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
+    std::vector<uint32_t> filter_message_ids{};
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
     mutable std::mutex debug_output_mutex;
+    int32_t duplicate_message_limit = 0;
+    mutable std::unordered_map<uint32_t, int32_t> duplicate_message_count_map{};
     const void *instance_pnext_chain{};
 
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
@@ -333,6 +336,22 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, std:
     callbacks.clear();
 }
 
+// Returns TRUE if the number of times this message has been logged is over the set limit
+static inline bool UpdateLogMsgCounts(const debug_report_data *debug_data, int32_t vuid_hash) {
+    auto vuid_count_it = debug_data->duplicate_message_count_map.find(vuid_hash);
+    if (vuid_count_it == debug_data->duplicate_message_count_map.end()) {
+        debug_data->duplicate_message_count_map.insert({vuid_hash, 1});
+        return false;
+    } else {
+        if (vuid_count_it->second >= debug_data->duplicate_message_limit) {
+            return true;
+        } else {
+            vuid_count_it->second++;
+            return false;
+        }
+    }
+}
+
 static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
                                  const char *layer_prefix, const char *message, const char *text_vuid) {
     bool bail = false;
@@ -383,10 +402,14 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         }
     }
 
-    size_t location = 0;
+    int32_t location = 0;
     if (text_vuid != nullptr) {
         // Hash for vuid text
         location = XXH32(text_vuid, strlen(text_vuid), 8);
+        if ((debug_data->duplicate_message_limit > 0) && UpdateLogMsgCounts(debug_data, location)) {
+            // Count for this particular message is over the limit, ignore it
+            return false;
+        }
     }
 
     VkDebugUtilsMessengerCallbackDataEXT callback_data;
@@ -628,22 +651,62 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
                                 const std::string &vuid_text, char *err_msg) {
     std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
 
+    // If message is in filter list, bail out very early
+    size_t message_id = XXH32(vuid_text.c_str(), strlen(vuid_text.c_str()), 8);
+    if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(),
+                  static_cast<uint32_t>(message_id)) != debug_data->filter_message_ids.end())
+        return false;
+
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
-    if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos)) {
+    if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos) &&
+        (vuid_text.rfind("SYNC-", 0) == std::string::npos)) {
         // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
         // this point in the error reporting path
         uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
         const char *spec_text = nullptr;
+        std::string spec_type;
         for (uint32_t i = 0; i < num_vuids; i++) {
             if (0 == strcmp(vuid_text.c_str(), vuid_spec_text[i].vuid)) {
                 spec_text = vuid_spec_text[i].spec_text;
+                spec_type = vuid_spec_text[i].url_id;
                 break;
             }
         }
 
+        // Construct and append the specification text and link to the appropriate version of the spec
         if (nullptr != spec_text) {
-            str_plus_spec_text += " The Vulkan spec states: ";
-            str_plus_spec_text += spec_text;
+            std::string spec_link = "https://www.khronos.org/registry/vulkan/specs/_MAGIC_KHRONOS_SPEC_TYPE_/html/vkspec.html";
+#ifdef ANNOTATED_SPEC_LINK
+            spec_link = ANNOTATED_SPEC_LINK;
+#endif
+            static std::string kAtToken = "_MAGIC_ANNOTATED_SPEC_TYPE_";
+            static std::string kKtToken = "_MAGIC_KHRONOS_SPEC_TYPE_";
+            static std::string kVeToken = "_MAGIC_VERSION_ID_";
+            auto Replace = [](std::string &dest_string, const std::string &to_replace, const std::string &replace_with) {
+                if (dest_string.find(to_replace) != std::string::npos) {
+                    dest_string.replace(dest_string.find(to_replace), to_replace.size(), replace_with);
+                }
+            };
+
+            str_plus_spec_text.append(" The Vulkan spec states: ");
+            str_plus_spec_text.append(spec_text);
+            if (0 == spec_type.compare("default")) {
+                str_plus_spec_text.append(" (https://github.com/KhronosGroup/Vulkan-Docs/search?q=)");
+            } else {
+                str_plus_spec_text.append(" (");
+                str_plus_spec_text.append(spec_link);
+                std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
+                std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
+                std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+                std::string header_version = major_version + "." + minor_version + "." + patch_version;
+                std::string annotated_spec_type = major_version + "." + minor_version + "-extensions";
+                Replace(str_plus_spec_text, kKtToken, spec_type);
+                Replace(str_plus_spec_text, kAtToken, annotated_spec_type);
+                Replace(str_plus_spec_text, kVeToken, header_version);
+                str_plus_spec_text.append("#");  // CMake hates hashes
+            }
+            str_plus_spec_text.append(vuid_text);
+            str_plus_spec_text.append(")");
         }
     }
 

@@ -154,6 +154,12 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function -Wno-sign-compare")
 endif()
 
+
+if(ANNOTATED_SPEC_LINK)
+    message("-- ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")
+    add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
+endif()
+
 # Clang warns about unused const variables. Generated files may purposely contain unused consts, so silence this warning in Clang
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     set_source_files_properties(parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
@@ -163,11 +169,15 @@ set(CHASSIS_LIBRARY_FILES
     generated/chassis.cpp
     generated/layer_chassis_dispatch.cpp
     generated/command_counter_helper.cpp
+    generated/vk_safe_struct.cpp
+    generated/vk_safe_struct.h
+    layer_options.cpp
     state_tracker.cpp
     state_tracker.h
     image_layout_map.cpp
     image_layout_map.h
     range_vector.h
+    vk_layer_settings_ext.h
     subresource_adapter.cpp
     subresource_adapter.h)
 
@@ -222,6 +232,10 @@ set(GPU_UTILITY_LIBRARY_FILES
     gpu_utils.cpp
     gpu_utils.h)
 
+set(SYNC_VALIDATION_LIBRARY_FILES
+    synchronization_validation.cpp
+    synchronization_validation.h)
+
 if(BUILD_LAYERS)
     AddVkLayer(khronos_validation ""
         ${CHASSIS_LIBRARY_FILES}
@@ -232,7 +246,8 @@ if(BUILD_LAYERS)
         ${BEST_PRACTICES_LIBRARY_FILES}
         ${GPU_UTILITY_LIBRARY_FILES}
         ${GPU_ASSISTED_LIBRARY_FILES}
-        ${DEBUG_PRINTF_LIBRARY_FILES})
+        ${DEBUG_PRINTF_LIBRARY_FILES}
+        ${SYNC_VALIDATION_LIBRARY_FILES})
 
     # Khronos validation additional dependencies
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})

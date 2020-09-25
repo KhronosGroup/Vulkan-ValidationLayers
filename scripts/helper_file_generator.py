@@ -26,6 +26,7 @@ import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
 from common_codegen import *
+import sync_val_gen
 
 #
 # HelperFileOutputGeneratorOptions - subclass of GeneratorOptions.
@@ -34,6 +35,7 @@ class HelperFileOutputGeneratorOptions(GeneratorOptions):
                  conventions = None,
                  filename = None,
                  directory = '.',
+                 genpath = None,
                  apiname = None,
                  profile = None,
                  versions = '.*',
@@ -54,9 +56,20 @@ class HelperFileOutputGeneratorOptions(GeneratorOptions):
                  library_name = '',
                  expandEnumerants = True,
                  helper_file_type = ''):
-        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
-                                  versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions, emitExtensions, sortProcedure)
+        GeneratorOptions.__init__(self,
+                conventions = conventions,
+                filename = filename,
+                directory = directory,
+                genpath = genpath,
+                apiname = apiname,
+                profile = profile,
+                versions = versions,
+                emitversions = emitversions,
+                defaultExtensions = defaultExtensions,
+                addExtensions = addExtensions,
+                removeExtensions = removeExtensions,
+                emitExtensions = emitExtensions,
+                sortProcedure = sortProcedure)
         self.prefixText       = prefixText
         self.genFuncPointers  = genFuncPointers
         self.protectFile      = protectFile
@@ -87,6 +100,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.object_type_aliases = []                     # Aliases to handles types (for handles that were extensions)
         self.debug_report_object_types = []               # Handy copy of debug_report_object_type enum data
         self.core_object_types = []                       # Handy copy of core_object_type enum data
+        self.sync_enum = dict()                           # Handy copy of synchronization enum data
         self.device_extension_info = dict()               # Dict of device extension name defines and ifdef values
         self.instance_extension_info = dict()             # Dict of instance extension name defines and ifdef values
         self.structextends_list = []                      # List of structs which extend another struct via pNext
@@ -220,6 +234,12 @@ class HelperFileOutputGenerator(OutputGenerator):
                         if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
                             item_name = elem.get('name')
                             self.core_object_types.append(item_name)
+        elif self.helper_file_type == 'synchronization_helper_header':
+            if groupName in sync_val_gen.sync_enum_types:
+                self.sync_enum[groupName] = []
+                for elem in groupElem.findall('enum'):
+                    if elem.get('supported') != 'disabled':
+                        self.sync_enum[groupName].append(elem)
 
     #
     # Called for each type -- if the type is a struct/union, grab the metadata
@@ -441,6 +461,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_header = '\n'
         safe_struct_helper_header += '#pragma once\n'
         safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
+        safe_struct_helper_header += '#include <stdlib.h>\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
         safe_struct_helper_header += 'void FreePnextChain(const void *pNext);\n'
@@ -987,7 +1008,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         build_pnext_proc += 'void *SafePnextCopy(const void *pNext) {\n'
         build_pnext_proc += '    if (!pNext) return nullptr;\n'
         build_pnext_proc += '\n'
-        build_pnext_proc += '    void *safe_pNext;\n'
+        build_pnext_proc += '    void *safe_pNext{};\n'
         build_pnext_proc += '    const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);\n'
         build_pnext_proc += '\n'
         build_pnext_proc += '    switch (header->sType) {\n'
@@ -1051,16 +1072,41 @@ class HelperFileOutputGenerator(OutputGenerator):
                 free_pnext_proc += '#endif // %s\n' % ifdef
 
         build_pnext_proc += '        default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain\n'
-        build_pnext_proc += '            safe_pNext = SafePnextCopy(header->pNext);\n'
+        build_pnext_proc += '            // If sType is in custom list, construct blind copy\n'
+        build_pnext_proc += '            for (auto item : custom_stype_info) {\n'
+        build_pnext_proc += '                if (item.first == header->sType) {\n'
+        build_pnext_proc += '                    safe_pNext = malloc(item.second);\n'
+        build_pnext_proc += '                    memcpy(safe_pNext, header, item.second);\n'
+        build_pnext_proc += '                    // Deep copy the rest of the pNext chain\n'
+        build_pnext_proc += '                    VkBaseOutStructure *custom_struct = reinterpret_cast<VkBaseOutStructure *>(safe_pNext);\n'
+        build_pnext_proc += '                    if (custom_struct->pNext) {\n'
+        build_pnext_proc += '                        custom_struct->pNext = reinterpret_cast<VkBaseOutStructure *>(SafePnextCopy(custom_struct->pNext));\n'
+        build_pnext_proc += '                    }\n'
+        build_pnext_proc += '                }\n'
+        build_pnext_proc += '            }\n'
+        build_pnext_proc += '            if (!safe_pNext) {\n'
+        build_pnext_proc += '                safe_pNext = SafePnextCopy(header->pNext);\n'
+        build_pnext_proc += '            }\n'
         build_pnext_proc += '            break;\n'
         build_pnext_proc += '    }\n'
         build_pnext_proc += '\n'
         build_pnext_proc += '    return safe_pNext;\n'
         build_pnext_proc += '}\n'
 
-        free_pnext_proc += '        default: // Encountered an unknown sType -- panic, there should be none such in safe chain\n'
-        free_pnext_proc += '            assert(false);\n'
-        free_pnext_proc += '            FreePnextChain(header->pNext);\n'
+        free_pnext_proc += '        default: // Encountered an unknown sType\n'
+        free_pnext_proc += '            // If sType is in custom list, free custom struct memory and clean up\n'
+        free_pnext_proc += '            for (auto item : custom_stype_info) {\n'
+        free_pnext_proc += '                if (item.first == header->sType) {\n'
+        free_pnext_proc += '                    if (header->pNext) {\n'
+        free_pnext_proc += '                        FreePnextChain(header->pNext);\n'
+        free_pnext_proc += '                    }\n'
+        free_pnext_proc += '                    free(const_cast<void *>(pNext));\n'
+        free_pnext_proc += '                    pNext = nullptr;\n'
+        free_pnext_proc += '                }\n'
+        free_pnext_proc += '            }\n'
+        free_pnext_proc += '            if (pNext) {\n'
+        free_pnext_proc += '                FreePnextChain(header->pNext);\n'
+        free_pnext_proc += '            }\n'
         free_pnext_proc += '            break;\n'
         free_pnext_proc += '    }\n'
         free_pnext_proc += '}\n'
@@ -1088,8 +1134,11 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_source += '#include <string.h>\n'
         safe_struct_helper_source += '#include <cassert>\n'
         safe_struct_helper_source += '#include <cstring>\n'
+        safe_struct_helper_source += '#include <vector>\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += '#include <vulkan/vk_layer.h>\n'
+        safe_struct_helper_source += '\n'
+        safe_struct_helper_source += 'extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += self.GenerateSafeStructSource()
         safe_struct_helper_source += self.build_safe_struct_utility_funcs()
@@ -1386,6 +1435,10 @@ class HelperFileOutputGenerator(OutputGenerator):
                     member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                     if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
                         m_type = 'safe_%s' % member.type
+                if member.name == 'sType':
+                    if item.name in self.structTypes:
+                        struct_type = self.structTypes[item.name]
+                        default_init_list += '\n    %s(%s),' % (member.name, struct_type.value)
                 if member.ispointer and 'safe_' not in m_type and self.TypeContainsObjectHandle(member.type, False) == False:
                     # Ptr types w/o a safe_struct, for non-null case need to allocate new ptr and copy data in
                     if m_type in ['void', 'char']:
@@ -1630,6 +1683,11 @@ class HelperFileOutputGenerator(OutputGenerator):
         return "\n".join(code)
 
     #
+    # Generate the type map
+    def GenerateSyncHelperHeader(self):
+        return sync_val_gen.GenSyncTypeHelper(self)
+
+    #
     # Create a helper file and return it as a string
     def OutputDestFile(self):
         if self.helper_file_type == 'enum_string_header':
@@ -1644,5 +1702,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             return self.GenerateExtensionHelperHeader()
         elif self.helper_file_type == 'typemap_helper_header':
             return self.GenerateTypeMapHelperHeader()
+        elif self.helper_file_type == 'synchronization_helper_header':
+            return self.GenerateSyncHelperHeader()
         else:
             return 'Bad Helper File Generator Option %s' % self.helper_file_type

@@ -51,6 +51,13 @@
 #define AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE 0x4000000
 #endif  // __ANDROID_API_O__ && !_P__
 
+// GPU_FRAMEBUFFER was added as the desired alias for GPU_COLOR_OUTPUT starting in NDK r20
+// GPU_COLOR_OUTPUT was removed from the spec, so to prevent confusion, all aspect of the layers
+// should use GPU_FRAMEBUFFER, but need to define here for older NDK versions
+#ifndef AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
+#define AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT
+#endif
+
 #else  // Not __ANDROID__, but VK_USE_PLATFORM_ANDROID_KHR
 // This combination should not be seen in the wild, but can be used to allow testing
 // of the AHB extension validation on other platforms using MockICD
@@ -78,7 +85,7 @@ typedef enum AHardwareBufferFormat {
 
 typedef enum AHardwareBufferUsage {
     AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE = 0x100,
-    AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT = 0x200,  // alias to AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
+    AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER = 0x200,
     AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP = 0x2000000,
     AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE = 0x4000000,
     AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT = 0x4000,
