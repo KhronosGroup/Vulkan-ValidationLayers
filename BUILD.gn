@@ -157,7 +157,6 @@ chassis_sources = [
   "layers/generated/chassis.h",
   "layers/generated/layer_chassis_dispatch.cpp",
   "layers/generated/layer_chassis_dispatch.h",
-  "layers/generated/thread_safety.h",
   "layers/generated/vk_dispatch_table_helper.h",
   "layers/generated/vk_extension_helper.h",
   "layers/generated/vk_safe_struct.cpp",
