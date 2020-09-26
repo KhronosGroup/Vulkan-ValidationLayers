@@ -638,12 +638,12 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     if (rp1_state->createInfo.flags != rp2_state->createInfo.flags) {
         LogObjectList objlist(rp1_state->renderPass);
         objlist.add(rp2_state->renderPass);
-        skip |= LogError(objlist, error_code,
-            "%s: RenderPasses incompatible between %s w/ %s with flags of %u and %s w/ "
-            "%s with a flags of %u.",
-            caller, type1_string, report_data->FormatHandle(rp1_state->renderPass).c_str(),
-            rp1_state->createInfo.flags, type2_string, report_data->FormatHandle(rp2_state->renderPass).c_str(),
-            rp2_state->createInfo.flags);
+        skip |=
+            LogError(objlist, error_code,
+                     "%s: RenderPasses incompatible between %s w/ %s with flags of %u and %s w/ "
+                     "%s with a flags of %u.",
+                     caller, type1_string, report_data->FormatHandle(rp1_state->renderPass).c_str(), rp1_state->createInfo.flags,
+                     type2_string, report_data->FormatHandle(rp2_state->renderPass).c_str(), rp2_state->createInfo.flags);
     }
 
     if (rp1_state->createInfo.subpassCount != rp2_state->createInfo.subpassCount) {
