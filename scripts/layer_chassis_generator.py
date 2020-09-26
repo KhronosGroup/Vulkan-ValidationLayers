@@ -990,6 +990,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     std::vector<ValidationObject*> local_objs = {
         thread_checker_obj, object_tracker_obj, parameter_validation_obj,
         core_checks_obj, best_practices_obj, gpu_assisted_obj, debug_printf_obj,
+        sync_validation_obj,
     };
     for (auto obj : local_objs) {
         if (std::find(local_object_dispatch.begin(), local_object_dispatch.end(), obj) == local_object_dispatch.end()) {
@@ -1129,6 +1130,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     std::vector<ValidationObject *> local_objs = {
         thread_safety_obj, stateless_validation_obj, object_tracker_obj,
         core_checks_obj, best_practices_obj, gpu_assisted_obj, debug_printf_obj,
+        sync_validation_obj,
     };
     for (auto obj : local_objs) {
         if (std::find(device_interceptor->object_dispatch.begin(), device_interceptor->object_dispatch.end(), obj) ==
