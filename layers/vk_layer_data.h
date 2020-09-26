@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019 Valve Corporation
- * Copyright (c) 2015-2017, 2019 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2020 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ class small_container {
 
     bool contains(const Key &key) const {
         for (int i = 0; i < N; ++i) {
-            if (value_type_helper().compare_equal(small_data[i], key) && small_data_allocated[i]) {
+            if (small_data_allocated[i] && value_type_helper().compare_equal(small_data[i], key)) {
                 return true;
             }
         }
@@ -208,7 +208,7 @@ class small_container {
 
     std::pair<iterator, bool> insert(const value_type &value) {
         for (int i = 0; i < N; ++i) {
-            if (value_type_helper().compare_equal(small_data[i], value) && small_data_allocated[i]) {
+            if (small_data_allocated[i] && value_type_helper().compare_equal(small_data[i], value)) {
                 iterator it;
                 it.parent = this;
                 it.index = i;
@@ -245,7 +245,7 @@ class small_container {
 
     typename inner_container_type::size_type erase(const Key &key) {
         for (int i = 0; i < N; ++i) {
-            if (value_type_helper().compare_equal(small_data[i], key) && small_data_allocated[i]) {
+            if (small_data_allocated[i] && value_type_helper().compare_equal(small_data[i], key)) {
                 small_data_allocated[i] = false;
                 return 1;
             }
@@ -317,7 +317,7 @@ class small_unordered_map
   public:
     T &operator[](const Key &key) {
         for (int i = 0; i < N; ++i) {
-            if (value_type_helper_map<Key, T>().compare_equal(this->small_data[i], key) && this->small_data_allocated[i]) {
+            if (this->small_data_allocated[i] && value_type_helper_map<Key, T>().compare_equal(this->small_data[i], key)) {
                 return this->small_data[i].second;
             }
         }
