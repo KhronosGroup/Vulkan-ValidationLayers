@@ -2352,6 +2352,22 @@ void ValidationStateTracker::PostCallRecordWaitSemaphoresKHR(VkDevice device, co
     RecordWaitSemaphores(device, pWaitInfo, timeout, result);
 }
 
+void ValidationStateTracker::RecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                            VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    RetireTimelineSemaphore(semaphore, *pValue);
+}
+
+void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                                    VkResult result) {
+    RecordGetSemaphoreCounterValue(device, semaphore, pValue, result);
+}
+void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                                       VkResult result) {
+    RecordGetSemaphoreCounterValue(device, semaphore, pValue, result);
+}
+
 void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
     if (VK_SUCCESS != result) return;
     RetireFence(fence);
