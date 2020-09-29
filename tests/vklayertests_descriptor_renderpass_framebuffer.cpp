@@ -7832,7 +7832,10 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->ExpectSuccess();
 
@@ -7864,7 +7867,47 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
     offset = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-04002");
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
+    m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
+
+    // Make sure sampler with NULL image view doesn't cause a crash or errors
+    m_errorMonitor->ExpectSuccess();
+    OneOffDescriptorSet sampler_descriptor_set(m_device,
+                                               {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkSampler sampler;
+    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    sampler_descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    sampler_descriptor_set.UpdateDescriptorSets();
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&sampler_descriptor_set.layout_});
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(set=0, binding=0) uniform sampler2D tex;\n"
+        "layout(location=0) out vec4 x;\n"
+        "void main(){\n"
+        "   x = texture(tex, vec2(1));\n"
+        "}\n";
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &sampler_descriptor_set.set_, 0, nullptr);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &m_viewports[0]);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &m_scissors[0]);
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroySampler(m_device->handle(), sampler, nullptr);
 }
 
 TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
