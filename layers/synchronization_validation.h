@@ -112,6 +112,7 @@ struct SyncBarrier {
           src_access_scope(src_access_scope_),
           dst_exec_scope(dst_exec_scope_),
           dst_access_scope(dst_access_scope_) {}
+    SyncBarrier(const SyncBarrier &other) = default;
 };
 
 // To represent ordering guarantees such as rasterization and store
@@ -133,6 +134,9 @@ class ResourceAccessState : public SyncStageAccess {
         SyncStageAccessFlags access;    // TODO: Change to FlagBits when we have a None bit enum
         VkPipelineStageFlags barriers;  // all applicable barriered stages
         ResourceUsageTag tag;
+        VkPipelineStageFlags pending_dep_chain;  // Should be zero except during barrier application
+                                                 // Excluded from comparison
+        ReadState() = default;
         bool operator==(const ReadState &rhs) const {
             bool same = (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) && (tag == rhs.tag);
             return same;
@@ -144,6 +148,7 @@ class ResourceAccessState : public SyncStageAccess {
             access = access_;
             barriers = barriers_;
             tag = tag_;
+            pending_dep_chain = 0;  // If this is a new read, we aren't applying a barrier set.
         }
     };
 
@@ -156,12 +161,11 @@ class ResourceAccessState : public SyncStageAccess {
     HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index) const;
 
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
+    void SetWrite(SyncStageAccessFlagBits usage_bit, const ResourceUsageTag &tag);
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers);
-    void ApplyExecutionBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
-    void ApplyExecutionBarriers(const std::vector<SyncBarrier> &barriers);
-    void ApplyMemoryAccessBarrier(bool multi_dep, VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
-                                  VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_scope);
+    void ApplyBarrier(const SyncBarrier &barrier, bool layout_transition);
+    void ApplyPendingBarriers(const ResourceUsageTag &tag);
 
     ResourceAccessState()
         : write_barriers(~SyncStageAccessFlags(0)),
@@ -171,7 +175,10 @@ class ResourceAccessState : public SyncStageAccess {
           input_attachment_stage(kInvalidAttachmentStage),
           last_read_count(0),
           last_read_stages(0),
-          read_execution_barriers(0) {}
+          read_execution_barriers(0),
+          pending_write_dep_chain(0),
+          pending_layout_transition(false),
+          pending_write_barriers(0) {}
 
     bool HasWriteOp() const { return last_write != 0; }
     bool operator==(const ResourceAccessState &rhs) const {
@@ -232,6 +239,11 @@ class ResourceAccessState : public SyncStageAccess {
     VkPipelineStageFlags read_execution_barriers;
     static constexpr size_t kStageCount = 32;  // TODO: The manual count was 28 real stages. Add stage count to codegen
     std::array<ReadState, kStageCount> last_reads;
+
+    // Pending execution state to support independent parallel barriers
+    VkPipelineStageFlags pending_write_dep_chain;
+    bool pending_layout_transition;
+    SyncStageAccessFlags pending_write_barriers;
 };
 
 using ResourceAccessRangeMap = sparse_container::range_map<VkDeviceSize, ResourceAccessState>;
@@ -327,20 +339,10 @@ class AccessContext {
 
     void ResolveChildContexts(const std::vector<AccessContext> &contexts);
 
-    void ApplyImageBarrier(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
-                           VkPipelineStageFlags dst_exec_scope, SyncStageAccessFlags dst_accesse_scope,
-                           const VkImageSubresourceRange &subresource_range);
-
-    void ApplyImageBarrier(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
-                           VkPipelineStageFlags dst_exec_scope, SyncStageAccessFlags dst_access_scope,
-                           const VkImageSubresourceRange &subresource_range, bool layout_transition, const ResourceUsageTag &tag);
-    void ApplyImageBarrier(const IMAGE_STATE &image, const SyncBarrier &barrier, const VkImageSubresourceRange &subresource_range,
-                           bool layout_transition, const ResourceUsageTag &tag);
-
     template <typename Action>
-    void UpdateMemoryAccess(const BUFFER_STATE &buffer, const ResourceAccessRange &range, const Action action);
+    void UpdateResourceAccess(const BUFFER_STATE &buffer, const ResourceAccessRange &range, const Action action);
     template <typename Action>
-    void UpdateMemoryAccess(const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range, const Action action);
+    void UpdateResourceAccess(const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range, const Action action);
 
     template <typename Action>
     void ApplyGlobalBarriers(const Action &barrier_action);
@@ -552,7 +554,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     void ApplyGlobalBarriers(AccessContext *context, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                              SyncStageAccessFlags src_stage_scope, SyncStageAccessFlags dst_stage_scope,
-                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers);
+                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag);
     void ApplyBufferBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_stage_scope,
                              VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
                              const VkBufferMemoryBarrier *barriers);
