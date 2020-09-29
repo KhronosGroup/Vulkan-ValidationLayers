@@ -5749,8 +5749,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
     if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
 
     if (pSwapchainImages) {
-        if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
-            swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
+        if (!swapchain_state->vkGetSwapchainImagesKHRCalled) {
+            swapchain_state->vkGetSwapchainImagesKHRCalled = true;
         }
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
             if (swapchain_state->images[i].image != VK_NULL_HANDLE) continue;  // Already retrieved this.
@@ -5799,8 +5799,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
     }
 
     if (*pSwapchainImageCount) {
-        if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_COUNT) {
-            swapchain_state->vkGetSwapchainImagesKHRState = QUERY_COUNT;
+        if (!swapchain_state->vkGetSwapchainImagesKHRCalled) {
+            swapchain_state->vkGetSwapchainImagesKHRCalled = true;
         }
         swapchain_state->get_swapchain_image_count = *pSwapchainImageCount;
     }

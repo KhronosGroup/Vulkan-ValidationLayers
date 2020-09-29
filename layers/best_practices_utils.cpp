@@ -1698,7 +1698,7 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
 
     if (swapchain_state && pSwapchainImages) {
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
-        if (swapchain_state->vkGetSwapchainImagesKHRState == UNCALLED) {
+        if (!swapchain_state->vkGetSwapchainImagesKHRCalled) {
             skip |=
                 LogWarning(device, kVUID_Core_Swapchain_PriorCount,
                            "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImageCount; but no prior positive value has "

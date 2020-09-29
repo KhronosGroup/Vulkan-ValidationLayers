@@ -118,6 +118,12 @@ class QUEUE_FAMILY_PERF_COUNTERS {
     std::vector<VkPerformanceCounterKHR> counters;
 };
 
+enum CALL_STATE {
+    UNCALLED,       // Function has not been called
+    QUERY_COUNT,    // Function called once to query a count
+    QUERY_DETAILS,  // Function called w/ a count to query details
+};
+
 struct PHYSICAL_DEVICE_STATE {
     // Track the call state and array sizes for various query functions
     CALL_STATE vkGetPhysicalDeviceQueueFamilyPropertiesState = UNCALLED;
