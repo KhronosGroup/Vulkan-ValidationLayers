@@ -228,8 +228,6 @@ struct SubpassLayout {
     VkImageLayout layout;
 };
 
-using std::unordered_map;
-
 #define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \
     template <typename Dummy>                                                                         \
     struct AccessorStateHandle<state_type, Dummy> {                                                   \
@@ -351,13 +349,13 @@ class ValidationStateTracker : public ValidationObject {
   public:
     //  TODO -- move to private
     //  TODO -- make consistent with traits approach below.
-    unordered_map<VkQueue, QUEUE_STATE> queueMap;
-    unordered_map<VkEvent, EVENT_STATE> eventMap;
+    std::unordered_map<VkQueue, QUEUE_STATE> queueMap;
+    std::unordered_map<VkEvent, EVENT_STATE> eventMap;
 
     std::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
-    unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
-    unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
+    std::unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
+    std::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
@@ -375,7 +373,7 @@ class ValidationStateTracker : public ValidationObject {
         using SharedType = std::shared_ptr<StateType>;
         using ConstSharedType = std::shared_ptr<const StateType>;
         using MappedType = std::shared_ptr<StateType>;
-        using MapType = unordered_map<HandleType, MappedType>;
+        using MapType = std::unordered_map<HandleType, MappedType>;
     };
 
     // Override base class, we have some extra work to do here
@@ -606,7 +604,7 @@ class ValidationStateTracker : public ValidationObject {
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
 
     // Used for instance versions of this object
-    unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
+    std::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 
@@ -1343,8 +1341,8 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
 
     // Map for queue family index to queue count
-    unordered_map<uint32_t, uint32_t> queue_family_index_map;
-    unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
+    std::unordered_map<uint32_t, uint32_t> queue_family_index_map;
+    std::unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
     bool performance_lock_acquired = false;
 
     template <typename ExtProp>
