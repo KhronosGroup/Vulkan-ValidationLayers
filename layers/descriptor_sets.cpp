@@ -1097,90 +1097,94 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     if (descriptor_class == DescriptorClass::ImageSampler) {
                         const IMAGE_VIEW_STATE *image_view_state;
                         image_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
-                        if ((sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
-                             sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) &&
-                            (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
-                            if (image_view_state->create_info.format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 ||
-                                image_view_state->create_info.format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
-                                image_view_state->create_info.format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
+                        if (image_view_state) {
+                            if ((sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+                                 sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) &&
+                                (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
+                                if (image_view_state->create_info.format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 ||
+                                    image_view_state->create_info.format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
+                                    image_view_state->create_info.format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
+                                    auto set = descriptor_set->GetSet();
+                                    LogObjectList objlist(set);
+                                    objlist.add(sampler);
+                                    objlist.add(image_view_state->image_view);
+                                    return LogError(objlist, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015",
+                                                    "%s encountered the following validation error at %s time: Sampler %s in "
+                                                    "binding #%" PRIu32 " index %" PRIu32
+                                                    " has a custom border color with format = VK_FORMAT_UNDEFINED and is used to "
+                                                    "sample an image view %s with format %s",
+                                                    report_data->FormatHandle(set).c_str(), caller,
+                                                    report_data->FormatHandle(sampler).c_str(), binding, index,
+                                                    report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                                    string_VkFormat(image_view_state->create_info.format));
+                                }
+                            }
+                            VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
+                            VkFilter sampler_min_filter = sampler_state->createInfo.minFilter;
+                            if ((sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) &&
+                                !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
                                 objlist.add(sampler);
                                 objlist.add(image_view_state->image_view);
-                                return LogError(objlist, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015",
-                                                "%s encountered the following validation error at %s time: Sampler %s in "
-                                                "binding #%" PRIu32 " index %" PRIu32
-                                                " has a custom border color with format = VK_FORMAT_UNDEFINED and is used to "
-                                                "sample an image view %s with format %s",
-                                                report_data->FormatHandle(set).c_str(), caller,
-                                                report_data->FormatHandle(sampler).c_str(), binding, index,
+                                return LogError(objlist, vuids.linear_sampler,
+                                                "sampler (%s) in descriptor set (%s) "
+                                                "is set to use VK_FILTER_LINEAR, then image view's (%s"
+                                                ") format (%s) MUST "
+                                                "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
+                                                report_data->FormatHandle(sampler).c_str(), report_data->FormatHandle(set).c_str(),
                                                 report_data->FormatHandle(image_view_state->image_view).c_str(),
                                                 string_VkFormat(image_view_state->create_info.format));
                             }
-                        }
-                        VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
-                        VkFilter sampler_min_filter = sampler_state->createInfo.minFilter;
-                        if ((sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) &&
-                            !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-                            auto set = descriptor_set->GetSet();
-                            LogObjectList objlist(set);
-                            objlist.add(sampler);
-                            objlist.add(image_view_state->image_view);
-                            return LogError(objlist, vuids.linear_sampler,
-                                            "sampler (%s) in descriptor set (%s) "
-                                            "is set to use VK_FILTER_LINEAR, then image view's (%s"
-                                            ") format (%s) MUST "
-                                            "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
-                                            report_data->FormatHandle(sampler).c_str(), report_data->FormatHandle(set).c_str(),
-                                            report_data->FormatHandle(image_view_state->image_view).c_str(),
-                                            string_VkFormat(image_view_state->create_info.format));
-                        }
-                        if ((sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) &&
-                            !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
-                            auto set = descriptor_set->GetSet();
-                            LogObjectList objlist(set);
-                            objlist.add(sampler);
-                            objlist.add(image_view_state->image_view);
-                            return LogError(objlist, vuids.cubic_sampler,
-                                            "sampler (%s) in descriptor set (%s) "
-                                            "is set to use VK_FILTER_CUBIC_EXT, then image view's (%s"
-                                            ") format (%s) MUST "
-                                            "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in its format features.",
-                                            report_data->FormatHandle(sampler).c_str(), report_data->FormatHandle(set).c_str(),
-                                            report_data->FormatHandle(image_view_state->image_view).c_str(),
-                                            string_VkFormat(image_view_state->create_info.format));
-                        }
+                            if ((sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) &&
+                                !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
+                                auto set = descriptor_set->GetSet();
+                                LogObjectList objlist(set);
+                                objlist.add(sampler);
+                                objlist.add(image_view_state->image_view);
+                                return LogError(
+                                    objlist, vuids.cubic_sampler,
+                                    "sampler (%s) in descriptor set (%s) "
+                                    "is set to use VK_FILTER_CUBIC_EXT, then image view's (%s"
+                                    ") format (%s) MUST "
+                                    "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in its format features.",
+                                    report_data->FormatHandle(sampler).c_str(), report_data->FormatHandle(set).c_str(),
+                                    report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                    string_VkFormat(image_view_state->create_info.format));
+                            }
 
-                        const IMAGE_STATE *image_state;
-                        image_state = GetImageState(image_view_state->create_info.image);
-                        if ((image_state->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
-                            (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
-                             sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
-                             sampler_state->createInfo.addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)) {
-                            std::string address_mode_letter =
-                                (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-                                    ? "U"
-                                    : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ? "V" : "W";
-                            VkSamplerAddressMode address_mode =
-                                (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-                                    ? sampler_state->createInfo.addressModeU
-                                    : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-                                          ? sampler_state->createInfo.addressModeV
-                                          : sampler_state->createInfo.addressModeW;
-                            auto set = descriptor_set->GetSet();
-                            LogObjectList objlist(set);
-                            objlist.add(sampler);
-                            objlist.add(image_state->image);
-                            objlist.add(image_view_state->image_view);
-                            return LogError(
-                                objlist, vuids.corner_sampled_address_mode,
-                                "image (%s) in image view (%s) in descriptor set (%s) is created with flag "
-                                "VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and can only be sampled using "
-                                "VK_SAMPLER_ADDRESS_MODE_CLAMP_EDGE, but sampler (%s) has createInfo.addressMode%s set to %s.",
-                                report_data->FormatHandle(image_state->image).c_str(),
-                                report_data->FormatHandle(image_view_state->image_view).c_str(),
-                                report_data->FormatHandle(set).c_str(), report_data->FormatHandle(sampler).c_str(),
-                                address_mode_letter.c_str(), string_VkSamplerAddressMode(address_mode));
+                            const IMAGE_STATE *image_state;
+                            image_state = GetImageState(image_view_state->create_info.image);
+                            if ((image_state->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
+                                (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
+                                 sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
+                                 sampler_state->createInfo.addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)) {
+                                std::string address_mode_letter =
+                                    (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                        ? "U"
+                                        : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ? "V"
+                                                                                                                            : "W";
+                                VkSamplerAddressMode address_mode =
+                                    (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                        ? sampler_state->createInfo.addressModeU
+                                        : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                              ? sampler_state->createInfo.addressModeV
+                                              : sampler_state->createInfo.addressModeW;
+                                auto set = descriptor_set->GetSet();
+                                LogObjectList objlist(set);
+                                objlist.add(sampler);
+                                objlist.add(image_state->image);
+                                objlist.add(image_view_state->image_view);
+                                return LogError(
+                                    objlist, vuids.corner_sampled_address_mode,
+                                    "image (%s) in image view (%s) in descriptor set (%s) is created with flag "
+                                    "VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and can only be sampled using "
+                                    "VK_SAMPLER_ADDRESS_MODE_CLAMP_EDGE, but sampler (%s) has createInfo.addressMode%s set to %s.",
+                                    report_data->FormatHandle(image_state->image).c_str(),
+                                    report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                    report_data->FormatHandle(set).c_str(), report_data->FormatHandle(sampler).c_str(),
+                                    address_mode_letter.c_str(), string_VkSamplerAddressMode(address_mode));
+                            }
                         }
                     }
                 }
