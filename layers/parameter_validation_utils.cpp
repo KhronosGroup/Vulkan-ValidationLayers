@@ -5142,11 +5142,17 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
         }
     }
 
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
     const VkExternalFormatANDROID *pExternalFormatANDROID = lvl_find_in_chain<VkExternalFormatANDROID>(pCreateInfo);
+    const bool isExternalFormat = pExternalFormatANDROID != nullptr && pExternalFormatANDROID->externalFormat != 0;
+#else
+    const bool isExternalFormat = false;
+#endif
+
     const VkFormat format = pCreateInfo->format;
 
     // If there is a VkExternalFormatANDROID with externalFormat != 0, the value of components is ignored.
-    if (pExternalFormatANDROID == nullptr || pExternalFormatANDROID->externalFormat == 0) {
+    if (!isExternalFormat) {
         const VkComponentMapping components = pCreateInfo->components;
         // XChroma Subsampled is same as "the format has a _422 or _420 suffix" from spec
         if (FormatIsXChromaSubsampled(format) == true) {
