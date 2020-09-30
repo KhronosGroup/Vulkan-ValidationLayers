@@ -36,12 +36,13 @@ void DebugPrintf::ReportSetupProblem(T object, const char *const specific_messag
 // Turn on necessary device features.
 void DebugPrintf::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                            safe_VkDeviceCreateInfo *modified_create_info) {
+                                            void *modified_create_info) {
     DispatchGetPhysicalDeviceFeatures(gpu, &supported_features);
     VkPhysicalDeviceFeatures features = {};
     features.vertexPipelineStoresAndAtomics = true;
     features.fragmentStoresAndAtomics = true;
-    UtilPreCallRecordCreateDevice(gpu, modified_create_info, supported_features, features);
+    UtilPreCallRecordCreateDevice(gpu, reinterpret_cast<safe_VkDeviceCreateInfo *>(modified_create_info), supported_features,
+                                  features);
 }
 
 // Perform initializations that can be done at Create Device time.
