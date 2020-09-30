@@ -123,8 +123,7 @@ class GpuAssisted : public ValidationStateTracker {
     void ReportSetupProblem(T object, const char* const specific_message) const;
     bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
     void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                   safe_VkDeviceCreateInfo* modified_create_info);
+                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void* modified_create_info);
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
     void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo, VkDeviceAddress address);
