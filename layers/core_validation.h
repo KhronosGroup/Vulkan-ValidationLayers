@@ -25,6 +25,9 @@
 
 #pragma once
 
+#include <iostream>
+#include <fstream>
+
 #include "state_tracker.h"
 #include "image_layout_map.h"
 #include "gpu_validation.h"

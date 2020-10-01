@@ -680,6 +680,7 @@ bool wrap_handles = true;
 // Include layer validation object definitions
 #include "best_practices_validation.h"
 #include "core_validation.h"
+#include "corechecks_instrumentation.h"
 #include "gpu_validation.h"
 #include "object_lifetime_validation.h"
 #include "debug_printf.h"
@@ -689,6 +690,14 @@ bool wrap_handles = true;
 
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+
+extern void OpenInstrumentationFile();
+extern void CloseInstrumentationFile();
+#ifdef INSTRUMENT_CORECHECKS
+static const bool use_corechecks_instrumentation = true;
+#else
+static const bool use_corechecks_instrumentation = false;
+#endif
 
 namespace vulkan_layer_chassis {
 
@@ -918,7 +927,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     auto object_tracker_obj = new ObjectLifetimes;
     object_tracker_obj->RegisterValidationObject(!local_disables[object_tracking], api_version, report_data, local_object_dispatch);
 
-    auto core_checks_obj = new CoreChecks;
+    auto core_checks_obj = use_corechecks_instrumentation ? new CoreChecksInstrumented : new CoreChecks;
     core_checks_obj->RegisterValidationObject(!local_disables[core_checks], api_version, report_data, local_object_dispatch);
 
     auto best_practices_obj = new BestPractices;
@@ -953,6 +962,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
     if (result != VK_SUCCESS) return result;
 
+    OpenInstrumentationFile();
     auto framework = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
 
     framework->object_dispatch = local_object_dispatch;
@@ -1033,6 +1043,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         delete *item;
     }
     FreeLayerDataPtr(key, layer_data_map);
+    CloseInstrumentationFile();
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
@@ -1109,7 +1120,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     auto object_tracker_obj = new ObjectLifetimes;
     object_tracker_obj->InitDeviceValidationObject(!disables[object_tracking], instance_interceptor, device_interceptor);
 
-    auto core_checks_obj = new CoreChecks;
+    auto core_checks_obj = use_corechecks_instrumentation ? new CoreChecksInstrumented : new CoreChecks;
     core_checks_obj->InitDeviceValidationObject(!disables[core_checks], instance_interceptor, device_interceptor);
 
     auto best_practices_obj = new BestPractices;

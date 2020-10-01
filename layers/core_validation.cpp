@@ -62,6 +62,7 @@
 #include "shader_validation.h"
 #include "vk_layer_utils.h"
 #include "command_counter.h"
+#include "corechecks_instrumentation.h"
 
 static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
     return (layout == non_normal) ? normal : layout;
