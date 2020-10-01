@@ -108,7 +108,8 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.structOrUnion = dict()                       # Map of Vulkan typename to 'struct' or 'union'
         self.inst_header_decls = ''                       # String of corechecks instrumentation fcn declarations
         self.inst_source_funcs = ''                       # String containing corechecks instrumentation function definitions
-
+        self.api_id_list = ''                             # String containing api_id list for the instrumentation header file
+        self.current_api_id = 0                           # Integer containing global API id
 
         # Named tuples to store struct and command data
         self.StructType = namedtuple('StructType', ['name', 'value'])
@@ -517,12 +518,25 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
 
         # If creating header, done
         if self.helper_file_type == 'cc_instrumentation_header':
+            self.current_api_id += 1
+            self.api_id_list += '    "%s",\n' % name
             return '    %s\n    %s\n    %s\n' % (pre_call_validate, pre_call_record, post_call_record)
 
         start_counting = '    auto start = StartCounting();\n'
         pre_val_fcn_name = "PreCallValidate%s" % name[2:]
         pre_rec_fcn_name = "PreCallRecord%s" % name[2:]
         post_call_fcn_name = "PostCallRecord%s" % name[2:]
+
+        # typedef enum CallTypeFlagBits {
+        #     CALL_TYPE_PRE_CALL_VALIDATE = 0x01000000,
+        #     CALL_TYPE_PRE_CALL_RECORD   = 0x02000000,
+        #     CALL_TYPE_POST_CALL_RECORD  = 0x04000000,
+        # } CallTypeFlagBits;
+        # function_id in timing record: bits 31-24 are CallTypeFlagBits, bits 23:0 are an index into ApiIds
+
+        pre_call_val_id = 0x01000000
+        pre_call_rec_id = 0x02000000
+        post_call_rec_id = 0x04000000
 
         # Create PreCallValidate Function
         if pre_val_fcn_name in inst_manually_written_functions:
@@ -533,7 +547,7 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             pre_call_validate_func = pre_call_validate.replace("bool ", "    auto result = CoreChecks::")
             pre_call_validate_func = pre_call_validate_func.split("(")[0] + "(" + self.GetParameterList(pre_call_validate) + ")" + pre_call_validate_func.split(")")[1]
             pre_call_validate_func = pre_call_validate_func.replace(" const;", ";\n")
-            stop_counting = '    StopCounting(start, 0000, "%s");\n' % pre_val_fcn_name
+            stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | pre_call_val_id), pre_val_fcn_name)
             pre_call_validate = pre_call_validate_sig + start_counting + pre_call_validate_func + stop_counting + '    return result;\n}\n'
 
         # Create PreCallRecord Function
@@ -545,7 +559,7 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             pre_call_record_func = pre_call_record.replace("void ", "    CoreChecks::")
             pre_call_record_func = pre_call_record_func.split("(")[0] + "(" + self.GetParameterList(pre_call_record) + ")" + pre_call_record_func.split(")")[1]
             pre_call_record_func = pre_call_record_func.replace(";", ";\n")
-            stop_counting = '    StopCounting(start, 0000, "%s");\n' % pre_rec_fcn_name
+            stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | pre_call_rec_id), pre_rec_fcn_name)
             pre_call_record = pre_call_record_sig + start_counting + pre_call_record_func + stop_counting + '}\n'
 
         # Create PostCallRecord Function
@@ -557,9 +571,10 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             post_call_record_func = post_call_record.replace("void ", "    CoreChecks::")
             post_call_record_func = post_call_record_func.split("(")[0] + "(" + self.GetParameterList(post_call_record) + ")" + post_call_record_func.split(")")[1]
             post_call_record_func = post_call_record_func.replace(";", ";\n")
-            stop_counting = '    StopCounting(start, 0000, "%s");\n' % post_call_fcn_name
+            stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | post_call_rec_id), post_call_fcn_name)
             post_call_record = post_call_record_sig + start_counting + post_call_record_func + stop_counting + '}\n'
 
+        self.current_api_id += 1
         return '%s\n%s\n%s\n' %  (pre_call_validate, pre_call_record, post_call_record)
     #
     # Check if the parameter passed in is a pointer
@@ -836,6 +851,10 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         cc_inst_helper_header += '    uint32_t elapsed_time;\n'
         cc_inst_helper_header += '} TimingRecord;\n'
         cc_inst_helper_header += '\n'
+        cc_inst_helper_header += '#ifdef INSTRUMENT_CORECHECKS\n\n'
+        cc_inst_helper_header += 'static const std::vector<std::string> ApiIds = {\n%s' % self.api_id_list
+        cc_inst_helper_header += '};\n'
+        cc_inst_helper_header += '#endif // INSTRUMENT_CORECHECKS\n'
         cc_inst_helper_header += '\n'
         cc_inst_helper_header += 'class CoreChecksInstrumented : public CoreChecks {\n'
         cc_inst_helper_header += '  public:\n'
