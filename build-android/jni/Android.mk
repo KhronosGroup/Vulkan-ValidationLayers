@@ -61,6 +61,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/command_counter_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/subresource_adapter.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/corechecks_instrumentation.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \

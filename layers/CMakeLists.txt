@@ -154,7 +154,6 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function -Wno-sign-compare")
 endif()
 
-
 if(ANNOTATED_SPEC_LINK)
     message("-- ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")
     add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
@@ -195,6 +194,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     shader_validation.cpp
     shader_validation.h
     gpu_validation.cpp
+    generated/corechecks_instrumentation.cpp
     xxhash.c)
 
 set(OBJECT_LIFETIMES_LIBRARY_FILES
@@ -236,8 +236,18 @@ set(SYNC_VALIDATION_LIBRARY_FILES
     synchronization_validation.cpp
     synchronization_validation.h)
 
+if(WIN32)
+    # If instrumented corechecks build is specified on the command line, define it for the Windows CMake build
+    if(INSTRUMENT_CORECHECKS)
+        message("-- Building CoreChecks instrumentation features")
+        set(KHRONOS_LAYER_COMPILE_DEFINITIONS -DINSTRUMENT_CORECHECKS)
+        ####target_compile_definitions(VkLayer_khronos_validation PUBLIC )
+        ####add_definitions(-DINSTRUMENT_CORECHECKS)
+    endif()
+endif()
+
 if(BUILD_LAYERS)
-    AddVkLayer(khronos_validation ""
+    AddVkLayer(khronos_validation "${KHRONOS_LAYER_COMPILE_DEFINITIONS}"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
         ${OBJECT_LIFETIMES_LIBRARY_FILES}

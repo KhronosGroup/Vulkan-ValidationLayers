@@ -107,6 +107,8 @@ core_validation_sources = [
   "layers/subresource_adapter.h",
   "layers/synchronization_validation.cpp",
   "layers/synchronization_validation.h",
+  "layers/generated/corechecks_instrumentation.cpp",
+  "layers/generated/corechecks_instrumentation.h",
 ]
 
 object_lifetimes_sources = [
