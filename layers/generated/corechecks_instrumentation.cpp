@@ -81,17 +81,21 @@ bool GetFrameRangeInfo(const std::string& data) {
 // Comment out this definition to get human-readable (and much larger) file output
 #define BINARY_INSTRUMENTATION_OUTPUT
 
+static const std::string inst_filename_base = "CorechecksInstrumentationData-";
 #ifdef BINARY_INSTRUMENTATION_OUTPUT
-const char* output_filename = "CorechecksInstrumentationData.bin";
+std::string inst_filename_ext = ".bin";
 #else
-const char* output_filename = "CorechecksInstrumentationData.txt";
+std::string inst_filename_ext = ".txt";
 #endif
+
+std::string DetermineInstrumentationFilename(void);
 
 // These functions are the chassis interface to instrumentation -- define them as no-ops for default case
 void OpenInstrumentationFile() {
 #ifdef INSTRUMENT_CORECHECKS
     if (!instrumentation_data_file.is_open()) {
-        instrumentation_data_file.open(output_filename, std::ofstream::binary | std::ofstream::app);
+        auto output_filename = DetermineInstrumentationFilename();
+        instrumentation_data_file.open(output_filename.c_str(), std::ofstream::binary);
         std::string frames_to_instrument{};
         std::string env_instrumentation_frames = GetLayerEnvVar("VK_LAYER_INSTRUMENTATION_FRAMES");
         std::string config_instrumentation_frames = getLayerOption("khronos_validation.instrumentation_frames");
@@ -119,8 +123,20 @@ void OpenInstrumentationFile() {
             }
         }
 
-        // TODO: Output instrumentation header content
-
+        // Output instrumentation header content
+#ifdef BINARY_INSTRUMENTATION_OUTPUT
+        std::string delimiter = ",";
+        std::string num_ids = std::to_string(ApiIds.size());
+        instrumentation_data_file.write(num_ids.c_str(), num_ids.size());
+        instrumentation_data_file.write(delimiter.c_str(), delimiter.size());
+        for (auto apiname : ApiIds) {
+            instrumentation_data_file.write(apiname.c_str(), apiname.size());
+            instrumentation_data_file.write(delimiter.c_str(), delimiter.size());
+        }
+        instrumentation_data_file.write(delimiter.c_str(), delimiter.size());
+        instrumentation_data_file.write(delimiter.c_str(), delimiter.size());
+        instrumentation_data_file.write(delimiter.c_str(), delimiter.size());
+#endif
     }
     refcount++;
 #endif
@@ -135,6 +151,20 @@ void CloseInstrumentationFile() {
 }
 
 #ifdef INSTRUMENT_CORECHECKS
+
+std::string DetermineInstrumentationFilename(void) {
+    uint32_t file_counter = 0;
+    std::string instrumentation_filename = inst_filename_base + "0000" + inst_filename_ext;
+    while (true) {
+        std::ifstream file_candidate(instrumentation_filename.c_str());
+        if (!file_candidate.good()) {
+            return instrumentation_filename;
+        }
+        std::stringstream int_string;
+        int_string << std::setfill('0') << std::setw(4) << std::to_string(file_counter++);
+        instrumentation_filename = inst_filename_base + int_string.str() + inst_filename_ext;
+    }
+}
 
 static inline int64_t StartCounting() {
     LARGE_INTEGER payload;
