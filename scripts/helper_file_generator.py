@@ -28,6 +28,7 @@ from collections import namedtuple
 from common_codegen import *
 import sync_val_gen
 
+
 #
 # HelperFileOutputGeneratorOptions - subclass of GeneratorOptions.
 class HelperFileOutputGeneratorOptions(GeneratorOptions):
@@ -105,6 +106,8 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.instance_extension_info = dict()             # Dict of instance extension name defines and ifdef values
         self.structextends_list = []                      # List of structs which extend another struct via pNext
         self.structOrUnion = dict()                       # Map of Vulkan typename to 'struct' or 'union'
+        self.inst_header_decls = ''                       # String of corechecks instrumentation fcn declarations
+        self.inst_source_funcs = ''                       # String containing corechecks instrumentation function definitions
 
 
         # Named tuples to store struct and command data
@@ -120,6 +123,158 @@ class HelperFileOutputGenerator(OutputGenerator):
             'VkPipelineViewportStateCreateInfo' :
                 ', const bool is_dynamic_viewports, const bool is_dynamic_scissors',
         }
+
+    inline_corechecks_instrumentation_source = """
+
+#include "corechecks_instrumentation.h"
+
+#ifdef INSTRUMENT_CORECHECKS
+std::ofstream instrumentation_data_file;
+static uint32_t refcount = 0;
+
+static TargetFrameInfo target_frame_info{};
+static bool select_frames = false;
+static bool key_frames = false;
+static bool key_capture_state = false;
+static uint64_t frame_counter = 0;
+
+std::vector<std::string> TokenizeRangeList(const std::string& str, char splitter) {
+    std::vector<std::string> tokens;
+    std::istringstream string_stream(str);
+    std::string token;
+    while (std::getline(string_stream, token, splitter)) {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+bool GetFrameRangeInfo(const std::string& data) {
+    bool use_ranges = false;
+    std::vector<std::string> tokens = TokenizeRangeList(data, ',');
+
+    for (const auto& token : tokens) {
+        std::vector<std::string> range = TokenizeRangeList(token, '-');
+        if ((range.size() == 1) && range[0].length()) {
+            target_frame_info.target_frames.push_back(std::stoi(range[0]));
+        } else if ((range.size() == 2) && range[0].length() && range[1].length()) {
+            uint32_t r_begin = std::stoi(range[0]);
+            uint32_t r_end = std::stoi(range[1]);
+            for (uint32_t i = r_begin; i <= r_end; i++) {
+                target_frame_info.target_frames.push_back(i);
+            }
+        }
+        if (target_frame_info.target_frames.size()) {
+            target_frame_info.min_frame = *min_element(target_frame_info.target_frames.begin(), target_frame_info.target_frames.end());
+            target_frame_info.max_frame = *max_element(target_frame_info.target_frames.begin(), target_frame_info.target_frames.end());
+            use_ranges = true;
+        }
+    }
+    return use_ranges;
+}
+#endif
+
+// Comment out this definition to get human-readable (and much larger) file output
+#define BINARY_INSTRUMENTATION_OUTPUT
+
+#ifdef BINARY_INSTRUMENTATION_OUTPUT
+const char* output_filename = "CorechecksInstrumentationData.bin";
+#else
+const char* output_filename = "CorechecksInstrumentationData.txt";
+#endif
+
+// These functions are the chassis interface to instrumentation -- define them as no-ops for default case
+void OpenInstrumentationFile() {
+#ifdef INSTRUMENT_CORECHECKS
+    if (!instrumentation_data_file.is_open()) {
+        instrumentation_data_file.open(output_filename, std::ofstream::binary | std::ofstream::app);
+        std::string frames_to_instrument{};
+        std::string env_instrumentation_frames = GetLayerEnvVar("VK_LAYER_INSTRUMENTATION_FRAMES");
+        std::string config_instrumentation_frames = getLayerOption("khronos_validation.instrumentation_frames");
+
+        // Check for settings, env var takes precedence over layer settings file
+        if (env_instrumentation_frames.length() != 0) {
+            frames_to_instrument = env_instrumentation_frames;
+        } else if (config_instrumentation_frames.length() != 0) {
+            frames_to_instrument = config_instrumentation_frames;
+        } else {
+            frames_to_instrument = "all";
+        }
+        // Convert to items to lower-case
+        std::transform(frames_to_instrument.begin(), frames_to_instrument.end(), frames_to_instrument.begin(), [](unsigned char c) { return std::tolower(c); });
+
+        // Valid options are "all", "hotkey", or string of ints and ranges: "1-5,10,-12,15-16,25-35,67,69,99-105"
+        if (frames_to_instrument != "all") {
+            if (frames_to_instrument == "hotkey") {
+                key_frames = true;
+                key_capture_state = false;
+                GetAsyncKeyState(VK_F12);
+                GetAsyncKeyState(VK_SNAPSHOT);
+            } else {
+                select_frames = GetFrameRangeInfo(frames_to_instrument);
+            }
+        }
+
+        // TODO: Output instrumentation header content
+
+    }
+    refcount++;
+#endif
+}
+void CloseInstrumentationFile() {
+#ifdef INSTRUMENT_CORECHECKS
+    refcount--;
+    if (!refcount) {
+        instrumentation_data_file.close();
+    }
+#endif
+}
+
+#ifdef INSTRUMENT_CORECHECKS
+
+static inline int64_t StartCounting() {
+    LARGE_INTEGER payload;
+    QueryPerformanceCounter(&payload);
+    return payload.QuadPart;
+}
+
+static inline void StopCounting(int64_t start_time, uint32_t api_id, const char* api_name) {
+    LARGE_INTEGER payload;
+    QueryPerformanceCounter(&payload);
+
+    if (key_frames) {
+        if ((GetAsyncKeyState(VK_F12) & 0x01) || (GetAsyncKeyState(VK_SNAPSHOT))) key_capture_state = !key_capture_state;
+        if (!key_capture_state) return;
+    } else if (select_frames) {
+        if (frame_counter < target_frame_info.min_frame || frame_counter > target_frame_info.max_frame) return;
+        if (std::find(target_frame_info.target_frames.begin(), target_frame_info.target_frames.end(), frame_counter) ==
+            target_frame_info.target_frames.end()) return;
+    }
+
+    uint32_t diff = (payload.QuadPart - start_time) & 0xFFFFFFFF;
+
+#ifdef BINARY_INSTRUMENTATION_OUTPUT
+    TimingRecord out_rec = { start_time, api_id, diff };
+    instrumentation_data_file.write(reinterpret_cast<char*>(&out_rec), sizeof(TimingRecord));
+#else // Human-readable instrumentation output
+    std::stringstream out_string;
+    out_string << "Frame " << frame_counter << " : " << start_time << ": " << api_name << ": " << diff << std::endl;
+    instrumentation_data_file << out_string.str();
+#endif // BINARY_INSTRUMENTATION_OUTPUT
+}
+
+// Manually written intercepts
+void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) {
+    auto start = StartCounting();
+    CoreChecks::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
+    StopCounting(start, 21, "PostCallRecordQueuePresentKHR");
+    // Track frames for selective output. Bumping in PostCallRecord regardless of result value matches api_dump behavior
+    frame_counter++;
+};
+
+// Code-generated intercepts
+"""
+
+
     #
     # Called once at the beginning of each run
     def beginFile(self, genOpts):
@@ -263,6 +418,149 @@ class HelperFileOutputGenerator(OutputGenerator):
                 self.structOrUnion[name] = 'union'
             else:
                 self.structOrUnion[name] = 'struct'
+    #
+    # Command generation
+    def genCmd(self, cmdinfo, name, alias):
+        if 'instrumentation' not in self.helper_file_type:
+            return
+        inst_header_ignore_functions = [
+            'vkEnumerateInstanceVersion',
+            'vkGetDeviceProcAddr',
+            'vkGetInstanceProcAddr',
+            'vkGetPhysicalDeviceProcAddr',
+            ]
+
+        if self.helper_file_type == 'cc_instrumentation_header':
+            if name in inst_header_ignore_functions:
+                return
+            if self.featureExtraProtect != None:
+                self.inst_header_decls += '#ifdef %s\n' % self.featureExtraProtect
+            if 'ValidationCache' not in name:
+                self.inst_header_decls += self.BaseClassCdecl(cmdinfo, name)
+            if (self.featureExtraProtect != None):
+                self.inst_header_decls += '#endif // %s\n' % self.featureExtraProtect
+            return
+        elif self.helper_file_type == 'cc_instrumentation_source':
+            if name in inst_header_ignore_functions:
+                return
+            if self.featureExtraProtect != None:
+                self.inst_source_funcs += '#ifdef %s\n' % self.featureExtraProtect
+            if 'ValidationCache' not in name:
+                self.inst_source_funcs += self.BaseClassCdecl(cmdinfo, name)
+            if (self.featureExtraProtect != None):
+                self.inst_source_funcs += '#endif // %s\n' % self.featureExtraProtect
+            return
+    #
+    # Get parameters from function definition
+    def GetParameterList(self, func_call):
+        parm_list = ''
+        parms = func_call.split("(")[1]
+        parms = parms.split(")")[0]
+        parm_defs = parms.split(",")
+        for parm_def in parm_defs:
+            parm_name = parm_def.split(" ")[-1]
+            parm_name = parm_name.split("[")[0]
+            parm_list += parm_name + ', '
+        parm_list = parm_list[:-2]
+        return parm_list
+    #
+    # Customize Cdecl for corechecks instrumentation header base class
+    def BaseClassCdecl(self, cmdinfo, name):
+
+        # These APIs are special-cased by the chassis and include an extra void* for a final parameter
+        inst_overloaded_apis = [
+            'PreCallValidateCreateGraphicsPipelines',
+            'PreCallRecordCreateGraphicsPipelines',
+            'PostCallRecordCreateGraphicsPipelines',
+            'PreCallValidateCreateComputePipelines',
+            'PreCallRecordCreateComputePipelines',
+            'PostCallRecordCreateComputePipelines',
+            'PreCallValidateCreateRayTracingPipelinesNV',
+            'PreCallRecordCreateRayTracingPipelinesNV',
+            'PostCallRecordCreateRayTracingPipelinesNV',
+            'PreCallValidateCreateRayTracingPipelinesKHR',
+            'PreCallRecordCreateRayTracingPipelinesKHR',
+            'PostCallRecordCreateRayTracingPipelinesKHR',
+            'PreCallRecordCreatePipelineLayout',
+            'PreCallRecordCreateShaderModule',
+            'PostCallRecordCreateShaderModule',
+            'PreCallValidateAllocateDescriptorSets',
+            'PostCallRecordAllocateDescriptorSets',
+            'PreCallRecordCreateBuffer',
+            'PreCallRecordCreateDevice',
+            ]
+        inst_manually_written_functions = [
+            'PostCallRecordQueuePresentKHR',
+            ]
+
+        raw = self.makeCDecls(cmdinfo.elem)[1]
+        prototype = raw.split("VKAPI_PTR *PFN_vk")[1]
+        prototype = prototype.replace(")", "", 1)
+        # Build up pre/post call function declarations
+        pre_call_validate = 'bool PreCallValidate' + prototype
+        pre_call_validate = pre_call_validate.replace(");", ") const;")
+        if 'PreCallValidate' + name[2:] in inst_overloaded_apis:
+            pre_call_validate = pre_call_validate.replace(")", ", void* extra_data)")
+
+        pre_call_record = 'void PreCallRecord' + prototype
+        if 'PreCallRecord' + name[2:] in inst_overloaded_apis:
+            pre_call_record = pre_call_record.replace(")", ", void* extra_data)")
+
+        post_call_record = 'void PostCallRecord' + prototype
+        resulttype = cmdinfo.elem.find('proto/type')
+        if resulttype.text == 'VkResult':
+            post_call_record = post_call_record.replace(');', ', VkResult result);')
+        elif resulttype.text == 'VkDeviceAddress':
+            post_call_record = post_call_record.replace(');', ', VkDeviceAddress result);')
+        if 'PostCallRecord' + name[2:] in inst_overloaded_apis:
+            post_call_record = post_call_record.replace(")", ", void* extra_data)")
+
+        # If creating header, done
+        if self.helper_file_type == 'cc_instrumentation_header':
+            return '    %s\n    %s\n    %s\n' % (pre_call_validate, pre_call_record, post_call_record)
+
+        start_counting = '    auto start = StartCounting();\n'
+        pre_val_fcn_name = "PreCallValidate%s" % name[2:]
+        pre_rec_fcn_name = "PreCallRecord%s" % name[2:]
+        post_call_fcn_name = "PostCallRecord%s" % name[2:]
+
+        # Create PreCallValidate Function
+        if pre_val_fcn_name in inst_manually_written_functions:
+            pre_call_validate = ''
+        else:
+            pre_call_validate_sig = pre_call_validate.replace("bool ", "bool CoreChecksInstrumented::")
+            pre_call_validate_sig = pre_call_validate_sig.replace(";", " {\n")
+            pre_call_validate_func = pre_call_validate.replace("bool ", "    auto result = CoreChecks::")
+            pre_call_validate_func = pre_call_validate_func.split("(")[0] + "(" + self.GetParameterList(pre_call_validate) + ")" + pre_call_validate_func.split(")")[1]
+            pre_call_validate_func = pre_call_validate_func.replace(" const;", ";\n")
+            stop_counting = '    StopCounting(start, 0000, "%s");\n' % pre_val_fcn_name
+            pre_call_validate = pre_call_validate_sig + start_counting + pre_call_validate_func + stop_counting + '    return result;\n}\n'
+
+        # Create PreCallRecord Function
+        if pre_rec_fcn_name in inst_manually_written_functions:
+            ppre_call_record = ''
+        else:
+            pre_call_record_sig = pre_call_record.replace("void ", "void CoreChecksInstrumented::")
+            pre_call_record_sig = pre_call_record_sig.replace(";", " {\n")
+            pre_call_record_func = pre_call_record.replace("void ", "    CoreChecks::")
+            pre_call_record_func = pre_call_record_func.split("(")[0] + "(" + self.GetParameterList(pre_call_record) + ")" + pre_call_record_func.split(")")[1]
+            pre_call_record_func = pre_call_record_func.replace(";", ";\n")
+            stop_counting = '    StopCounting(start, 0000, "%s");\n' % pre_rec_fcn_name
+            pre_call_record = pre_call_record_sig + start_counting + pre_call_record_func + stop_counting + '}\n'
+
+        # Create PostCallRecord Function
+        if post_call_fcn_name in inst_manually_written_functions:
+            post_call_record = ''
+        else:
+            post_call_record_sig = post_call_record.replace("void ", "void CoreChecksInstrumented::")
+            post_call_record_sig = post_call_record_sig.replace(";", " {\n")
+            post_call_record_func = post_call_record.replace("void ", "    CoreChecks::")
+            post_call_record_func = post_call_record_func.split("(")[0] + "(" + self.GetParameterList(post_call_record) + ")" + post_call_record_func.split(")")[1]
+            post_call_record_func = post_call_record_func.replace(";", ";\n")
+            stop_counting = '    StopCounting(start, 0000, "%s");\n' % post_call_fcn_name
+            post_call_record = post_call_record_sig + start_counting + post_call_record_func + stop_counting + '}\n'
+
+        return '%s\n%s\n%s\n' %  (pre_call_validate, pre_call_record, post_call_record)
     #
     # Check if the parameter passed in is a pointer
     def paramIsPointer(self, param):
@@ -506,6 +804,56 @@ class HelperFileOutputGenerator(OutputGenerator):
                 if item.ifdef_protect is not None:
                     safe_struct_header += '#endif // %s\n' % item.ifdef_protect
         return safe_struct_header
+    #
+    # Combine corechecks instrumentation helper header file preamble with body text and return
+    def GenerateCcInstrumentationHelperHeader(self):
+        cc_inst_helper_header = ''
+        cc_inst_helper_header += '#pragma once\n'
+        cc_inst_helper_header += '\n'
+        cc_inst_helper_header += '#include "core_validation.h"\n'
+        cc_inst_helper_header += '#include <iostream>\n'
+        cc_inst_helper_header += '#include <fstream>\n'
+        cc_inst_helper_header += '#include <sstream>\n'
+        cc_inst_helper_header += '#include <vector>\n'
+        cc_inst_helper_header += '#include <string>\n'
+        cc_inst_helper_header += '\n'
+        cc_inst_helper_header += 'typedef struct {\n'
+        cc_inst_helper_header += '    uint32_t min_frame;\n'
+        cc_inst_helper_header += '    uint32_t max_frame;\n'
+        cc_inst_helper_header += '    std::vector<int> target_frames;\n'
+        cc_inst_helper_header += '} TargetFrameInfo;\n'
+        cc_inst_helper_header += '\n'
+        cc_inst_helper_header += 'typedef enum CallTypeFlagBits {\n'
+        cc_inst_helper_header += '    CALL_TYPE_PRE_CALL_VALIDATE = 0x01000000,\n'
+        cc_inst_helper_header += '    CALL_TYPE_PRE_CALL_RECORD   = 0x02000000,\n'
+        cc_inst_helper_header += '    CALL_TYPE_POST_CALL_RECORD  = 0x04000000,\n'
+        cc_inst_helper_header += '} CallTypeFlagBits;\n'
+        cc_inst_helper_header += '\n'
+        cc_inst_helper_header += 'typedef struct {\n'
+        cc_inst_helper_header += '    int64_t start_count;\n'
+        cc_inst_helper_header += '    // function_id: bits 31-24 are CallTypeFlagBits, bits 23:0 are an index into ApiIds\n'
+        cc_inst_helper_header += '    uint32_t function_id;\n'
+        cc_inst_helper_header += '    uint32_t elapsed_time;\n'
+        cc_inst_helper_header += '} TimingRecord;\n'
+        cc_inst_helper_header += '\n'
+        cc_inst_helper_header += '\n'
+        cc_inst_helper_header += 'class CoreChecksInstrumented : public CoreChecks {\n'
+        cc_inst_helper_header += '  public:\n'
+        cc_inst_helper_header += '#ifdef INSTRUMENT_CORECHECKS\n'
+
+        cc_inst_helper_header += self.inst_header_decls
+
+        cc_inst_helper_header += '#endif // INSTRUMENT_CORECHECKS\n'
+        cc_inst_helper_header += '\n'
+        cc_inst_helper_header += '};\n'
+        return cc_inst_helper_header
+    #
+    # Combine corechecks instrumentation helper source file preamble with body text and return
+    def GenerateCcInstrumentationHelperSource(self):
+        cc_inst_source = self.inline_corechecks_instrumentation_source
+        cc_inst_source += self.inst_source_funcs
+        cc_inst_source += '#endif // INSTRUMENT_CORECHECKS'
+        return cc_inst_source
     #
     # Generate extension helper header file
     def GenerateExtensionHelperHeader(self):
@@ -1704,5 +2052,9 @@ class HelperFileOutputGenerator(OutputGenerator):
             return self.GenerateTypeMapHelperHeader()
         elif self.helper_file_type == 'synchronization_helper_header':
             return self.GenerateSyncHelperHeader()
+        elif self.helper_file_type == 'cc_instrumentation_header':
+            return self.GenerateCcInstrumentationHelperHeader()
+        elif self.helper_file_type == 'cc_instrumentation_source':
+            return self.GenerateCcInstrumentationHelperSource()
         else:
             return 'Bad Helper File Generator Option %s' % self.helper_file_type
