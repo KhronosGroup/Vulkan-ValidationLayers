@@ -2373,7 +2373,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                             if (my_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
                                 // Since I'm overwriting the fragement stage read, also update the input attachment info
                                 // as this is the only stage that affects it.
-                                input_attachment_stage = other.input_attachment_stage;
+                                input_attachment_read = other.input_attachment_read;
                             }
                         }
                         // TODO: Phase 2 -- review the state merge logic to avoid false negative from the OR'ing of the barriers
@@ -2388,7 +2388,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                 last_read_count++;
                 last_read_stages |= other_read.stage;
                 if (other_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
-                    input_attachment_stage = other.input_attachment_stage;
+                    input_attachment_read = other.input_attachment_read;
                 }
             }
         }
@@ -2422,11 +2422,8 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
 
         // Fragment shader reads come in two flavors, and we need to track if the one we're tracking is the special one.
         if (usage_stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
-            if (usage_bit == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT) {
-                input_attachment_stage = usage_stage;
-            } else {
-                input_attachment_stage = kInvalidAttachmentStage;
-            }
+            // TODO Revisit re: multiple reads for a given stage
+            input_attachment_read = (usage_bit == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT);
         }
     } else {
         // Assume write
@@ -2444,7 +2441,7 @@ void ResourceAccessState::SetWrite(SyncStageAccessFlagBits usage_bit, const Reso
     last_read_count = 0;
     last_read_stages = 0;
     read_execution_barriers = 0;
-    input_attachment_stage = kInvalidAttachmentStage;  // Denotes no outstanding input attachment read after the last write.
+    input_attachment_read = false;  // Denotes no outstanding input attachment read after the last write.
 
     write_barriers = 0;
     write_dependency_chain = 0;
@@ -2536,7 +2533,7 @@ VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const SyncOrderingBar
     VkPipelineStageFlags ordered_stages = last_read_stages & ordering.exec_scope;
     // Special input attachment handling as always (not encoded in exec_scop)
     const bool input_attachment_ordering = 0 != (ordering.access_scope & SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT);
-    if (input_attachment_ordering && (input_attachment_stage != kInvalidAttachmentStage)) {
+    if (input_attachment_ordering && input_attachment_read) {
         // If we have an input attachment in last_reads and input attachments are ordered we all that stage
         ordered_stages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     }
