@@ -132,6 +132,7 @@ class ResourceAccessState : public SyncStageAccess {
     struct ReadState {
         VkPipelineStageFlagBits stage;  // The stage of this read
         SyncStageAccessFlags access;    // TODO: Change to FlagBits when we have a None bit enum
+                                        // TODO: Revisit whether this needs to support multiple reads per stage
         VkPipelineStageFlags barriers;  // all applicable barriered stages
         ResourceUsageTag tag;
         VkPipelineStageFlags pending_dep_chain;  // Should be zero except during barrier application
@@ -172,7 +173,7 @@ class ResourceAccessState : public SyncStageAccess {
           write_dependency_chain(0),
           write_tag(),
           last_write(0),
-          input_attachment_stage(kInvalidAttachmentStage),
+          input_attachment_read(false),
           last_read_count(0),
           last_read_stages(0),
           read_execution_barriers(0),
@@ -184,8 +185,7 @@ class ResourceAccessState : public SyncStageAccess {
     bool operator==(const ResourceAccessState &rhs) const {
         bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
                     (last_read_count == rhs.last_read_count) && (last_read_stages == rhs.last_read_stages) &&
-                    (write_tag == rhs.write_tag) && (input_attachment_stage == rhs.input_attachment_stage) &&
-                    ((input_attachment_stage == kInvalidAttachmentStage)) &&
+                    (write_tag == rhs.write_tag) && (input_attachment_read == rhs.input_attachment_read) &&
                     (read_execution_barriers == rhs.read_execution_barriers);
         for (uint32_t i = 0; same && i < last_read_count; i++) {
             same &= last_reads[i] == rhs.last_reads[i];
@@ -231,8 +231,9 @@ class ResourceAccessState : public SyncStageAccess {
     ResourceUsageTag write_tag;
     SyncStageAccessFlags last_write;  // only the most recent write
 
-    // Track the last_read_stages entry for a framebuffer-local read from a framebuffer-global pipeline stage if any
-    VkPipelineStageFlags input_attachment_stage;
+    // TODO Input Attachment cleanup for multiple reads in a given stage
+    // Tracks whether the fragment shader read is input attachment read
+    bool input_attachment_read;
 
     uint32_t last_read_count;
     VkPipelineStageFlags last_read_stages;
