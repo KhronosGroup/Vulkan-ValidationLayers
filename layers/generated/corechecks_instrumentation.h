@@ -60,6 +60,7 @@ typedef struct {
 #ifdef INSTRUMENT_CORECHECKS
 
 static const std::vector<std::string> ApiIds = {
+    "vkQueuePresentKHR",
     "vkCreateInstance",
     "vkDestroyInstance",
     "vkEnumeratePhysicalDevices",
@@ -244,7 +245,6 @@ static const std::vector<std::string> ApiIds = {
     "vkDestroySwapchainKHR",
     "vkGetSwapchainImagesKHR",
     "vkAcquireNextImageKHR",
-    "vkQueuePresentKHR",
     "vkGetDeviceGroupPresentCapabilitiesKHR",
     "vkGetDeviceGroupSurfacePresentModesKHR",
     "vkGetPhysicalDevicePresentRectanglesKHR",
@@ -326,6 +326,8 @@ static const std::vector<std::string> ApiIds = {
     "vkGetSemaphoreCounterValueKHR",
     "vkWaitSemaphoresKHR",
     "vkSignalSemaphoreKHR",
+    "vkGetPhysicalDeviceFragmentShadingRatesKHR",
+    "vkCmdSetFragmentShadingRateKHR",
     "vkGetBufferDeviceAddressKHR",
     "vkGetBufferOpaqueCaptureAddressKHR",
     "vkGetDeviceMemoryOpaqueCaptureAddressKHR",
@@ -473,6 +475,7 @@ static const std::vector<std::string> ApiIds = {
     "vkDestroyPrivateDataSlotEXT",
     "vkSetPrivateDataEXT",
     "vkGetPrivateDataEXT",
+    "vkCmdSetFragmentShadingRateEnumNV",
     "vkCreateDirectFBSurfaceEXT",
     "vkGetPhysicalDeviceDirectFBPresentationSupportEXT",
     "vkCreateAccelerationStructureKHR",
@@ -1327,6 +1330,12 @@ class CoreChecksInstrumented : public CoreChecks {
     bool PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) const;
     void PreCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo);
     void PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo, VkResult result);
+    bool PreCallValidateGetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount, VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates) const;
+    void PreCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount, VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates);
+    void PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount, VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates, VkResult result);
+    bool PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer           commandBuffer, const VkExtent2D*                           pFragmentSize, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) const;
+    void PreCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer           commandBuffer, const VkExtent2D*                           pFragmentSize, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]);
+    void PostCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer           commandBuffer, const VkExtent2D*                           pFragmentSize, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]);
     bool PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) const;
     void PreCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
     void PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo, VkDeviceAddress result);
@@ -1808,6 +1817,9 @@ class CoreChecksInstrumented : public CoreChecks {
     bool PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData) const;
     void PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData);
     void PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData);
+    bool PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) const;
+    void PreCallRecordCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]);
+    void PostCallRecordCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]);
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     bool PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) const;
     void PreCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);

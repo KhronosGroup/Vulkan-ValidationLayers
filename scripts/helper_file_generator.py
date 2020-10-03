@@ -125,6 +125,12 @@ class HelperFileOutputGenerator(OutputGenerator):
                 ', const bool is_dynamic_viewports, const bool is_dynamic_scissors',
         }
 
+        # Note that adding an API here reqires that all three pre/post routines be added to inline_corechecks_instrumentation_source
+        #     and that the api_ids for those functions are set manually, in monotonically increasing order
+        self.inst_manually_written_functions = [
+            'vkQueuePresentKHR',
+            ]
+
     inline_corechecks_instrumentation_source = """
 
 #include "corechecks_instrumentation.h"
@@ -297,10 +303,23 @@ static inline void StopCounting(int64_t start_time, uint32_t api_id, const char*
 void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) {
     auto start = StartCounting();
     CoreChecks::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
-    StopCounting(start, 21, "PostCallRecordQueuePresentKHR");
+    StopCounting(start, CALL_TYPE_POST_CALL_RECORD | 0, "PostCallRecordQueuePresentKHR");
     // Track frames for selective output. Bumping in PostCallRecord regardless of result value matches api_dump behavior
     frame_counter++;
 };
+
+bool CoreChecksInstrumented::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const {
+    auto start = StartCounting();
+    auto result = CoreChecks::PreCallValidateQueuePresentKHR(queue, pPresentInfo);
+    StopCounting(start, CALL_TYPE_PRE_CALL_VALIDATE | 0, "PreCallValidateQueuePresentKHR");
+    return result;
+}
+
+void CoreChecksInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
+    auto start = StartCounting();
+    CoreChecks::PreCallRecordQueuePresentKHR(queue, pPresentInfo);
+    StopCounting(start, CALL_TYPE_PRE_CALL_RECORD | 0, "PreCallRecordQueuePresentKHR");
+}
 
 // Code-generated intercepts
 """
@@ -349,6 +368,10 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
+
+        for item in self.inst_manually_written_functions:
+            self.api_id_list += '    "%s",\n' % item
+            self.current_api_id += 1
     #
     # Write generated file content to output file
     def endFile(self):
@@ -467,7 +490,7 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             if self.featureExtraProtect != None:
                 self.inst_header_decls += '#ifdef %s\n' % self.featureExtraProtect
             if 'ValidationCache' not in name:
-                self.inst_header_decls += self.BaseClassCdecl(cmdinfo, name)
+                self.inst_header_decls += self.InstBaseClassCdecl(cmdinfo, name)
             if (self.featureExtraProtect != None):
                 self.inst_header_decls += '#endif // %s\n' % self.featureExtraProtect
             return
@@ -477,7 +500,7 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             if self.featureExtraProtect != None:
                 self.inst_source_funcs += '#ifdef %s\n' % self.featureExtraProtect
             if 'ValidationCache' not in name:
-                self.inst_source_funcs += self.BaseClassCdecl(cmdinfo, name)
+                self.inst_source_funcs += self.InstBaseClassCdecl(cmdinfo, name)
             if (self.featureExtraProtect != None):
                 self.inst_source_funcs += '#endif // %s\n' % self.featureExtraProtect
             return
@@ -496,7 +519,10 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         return parm_list
     #
     # Customize Cdecl for corechecks instrumentation header base class
-    def BaseClassCdecl(self, cmdinfo, name):
+    def InstBaseClassCdecl(self, cmdinfo, name):
+
+        if name in self.inst_manually_written_functions and self.helper_file_type == 'cc_instrumentation_source':
+            return ''
 
         # These APIs are special-cased by the chassis and include an extra void* for a final parameter
         inst_overloaded_apis = [
@@ -519,9 +545,6 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             'PostCallRecordAllocateDescriptorSets',
             'PreCallRecordCreateBuffer',
             'PreCallRecordCreateDevice',
-            ]
-        inst_manually_written_functions = [
-            'PostCallRecordQueuePresentKHR',
             ]
 
         raw = self.makeCDecls(cmdinfo.elem)[1]
@@ -548,8 +571,9 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
 
         # If creating header, done
         if self.helper_file_type == 'cc_instrumentation_header':
-            self.current_api_id += 1
-            self.api_id_list += '    "%s",\n' % name
+            if name not in self.inst_manually_written_functions:
+                self.current_api_id += 1
+                self.api_id_list += '    "%s",\n' % name
             return '    %s\n    %s\n    %s\n' % (pre_call_validate, pre_call_record, post_call_record)
 
         start_counting = '    auto start = StartCounting();\n'
@@ -569,40 +593,31 @@ void CoreChecksInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         post_call_rec_id = 0x04000000
 
         # Create PreCallValidate Function
-        if pre_val_fcn_name in inst_manually_written_functions:
-            pre_call_validate = ''
-        else:
-            pre_call_validate_sig = pre_call_validate.replace("bool ", "bool CoreChecksInstrumented::")
-            pre_call_validate_sig = pre_call_validate_sig.replace(";", " {\n")
-            pre_call_validate_func = pre_call_validate.replace("bool ", "    auto result = CoreChecks::")
-            pre_call_validate_func = pre_call_validate_func.split("(")[0] + "(" + self.GetParameterList(pre_call_validate) + ")" + pre_call_validate_func.split(")")[1]
-            pre_call_validate_func = pre_call_validate_func.replace(" const;", ";\n")
-            stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | pre_call_val_id), pre_val_fcn_name)
-            pre_call_validate = pre_call_validate_sig + start_counting + pre_call_validate_func + stop_counting + '    return result;\n}\n'
+        pre_call_validate_sig = pre_call_validate.replace("bool ", "bool CoreChecksInstrumented::")
+        pre_call_validate_sig = pre_call_validate_sig.replace(";", " {\n")
+        pre_call_validate_func = pre_call_validate.replace("bool ", "    auto result = CoreChecks::")
+        pre_call_validate_func = pre_call_validate_func.split("(")[0] + "(" + self.GetParameterList(pre_call_validate) + ")" + pre_call_validate_func.split(")")[1]
+        pre_call_validate_func = pre_call_validate_func.replace(" const;", ";\n")
+        stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | pre_call_val_id), pre_val_fcn_name)
+        pre_call_validate = pre_call_validate_sig + start_counting + pre_call_validate_func + stop_counting + '    return result;\n}\n'
 
         # Create PreCallRecord Function
-        if pre_rec_fcn_name in inst_manually_written_functions:
-            ppre_call_record = ''
-        else:
-            pre_call_record_sig = pre_call_record.replace("void ", "void CoreChecksInstrumented::")
-            pre_call_record_sig = pre_call_record_sig.replace(";", " {\n")
-            pre_call_record_func = pre_call_record.replace("void ", "    CoreChecks::")
-            pre_call_record_func = pre_call_record_func.split("(")[0] + "(" + self.GetParameterList(pre_call_record) + ")" + pre_call_record_func.split(")")[1]
-            pre_call_record_func = pre_call_record_func.replace(";", ";\n")
-            stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | pre_call_rec_id), pre_rec_fcn_name)
-            pre_call_record = pre_call_record_sig + start_counting + pre_call_record_func + stop_counting + '}\n'
+        pre_call_record_sig = pre_call_record.replace("void ", "void CoreChecksInstrumented::")
+        pre_call_record_sig = pre_call_record_sig.replace(";", " {\n")
+        pre_call_record_func = pre_call_record.replace("void ", "    CoreChecks::")
+        pre_call_record_func = pre_call_record_func.split("(")[0] + "(" + self.GetParameterList(pre_call_record) + ")" + pre_call_record_func.split(")")[1]
+        pre_call_record_func = pre_call_record_func.replace(";", ";\n")
+        stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | pre_call_rec_id), pre_rec_fcn_name)
+        pre_call_record = pre_call_record_sig + start_counting + pre_call_record_func + stop_counting + '}\n'
 
         # Create PostCallRecord Function
-        if post_call_fcn_name in inst_manually_written_functions:
-            post_call_record = ''
-        else:
-            post_call_record_sig = post_call_record.replace("void ", "void CoreChecksInstrumented::")
-            post_call_record_sig = post_call_record_sig.replace(";", " {\n")
-            post_call_record_func = post_call_record.replace("void ", "    CoreChecks::")
-            post_call_record_func = post_call_record_func.split("(")[0] + "(" + self.GetParameterList(post_call_record) + ")" + post_call_record_func.split(")")[1]
-            post_call_record_func = post_call_record_func.replace(";", ";\n")
-            stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | post_call_rec_id), post_call_fcn_name)
-            post_call_record = post_call_record_sig + start_counting + post_call_record_func + stop_counting + '}\n'
+        post_call_record_sig = post_call_record.replace("void ", "void CoreChecksInstrumented::")
+        post_call_record_sig = post_call_record_sig.replace(";", " {\n")
+        post_call_record_func = post_call_record.replace("void ", "    CoreChecks::")
+        post_call_record_func = post_call_record_func.split("(")[0] + "(" + self.GetParameterList(post_call_record) + ")" + post_call_record_func.split(")")[1]
+        post_call_record_func = post_call_record_func.replace(";", ";\n")
+        stop_counting = '    StopCounting(start, %s, "%s");\n' % (hex(self.current_api_id | post_call_rec_id), post_call_fcn_name)
+        post_call_record = post_call_record_sig + start_counting + post_call_record_func + stop_counting + '}\n'
 
         self.current_api_id += 1
         return '%s\n%s\n%s\n' %  (pre_call_validate, pre_call_record, post_call_record)
