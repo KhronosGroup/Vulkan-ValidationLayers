@@ -305,7 +305,9 @@ static inline bool IsExtentSizeZero(const VkExtent3D* extent) {
     return ((extent->width == 0) || (extent->height == 0) || (extent->depth == 0));
 }
 
-static inline VkDeviceSize GetBufferSizeFromCopyImage(const VkBufferImageCopy& region, VkFormat image_format) {
+// Get buffer size from vkBufferImageCopy / vkBufferImageCopy2KHR structure, for a given format
+template <typename BufferImageCopyRegionType>
+static inline VkDeviceSize GetBufferSizeFromCopyImage(const BufferImageCopyRegionType& region, VkFormat image_format) {
     VkDeviceSize buffer_size = 0;
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
@@ -999,6 +1001,7 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
                                    VkFilter filter);
+    void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo);
     void PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                        VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                        VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
@@ -1013,12 +1016,18 @@ class ValidationStateTracker : public ValidationObject {
                                                       VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode);
     void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                     const VkBufferCopy* pRegions);
+    void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfos);
     void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                            VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions);
+    void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                               const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo);
     void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions);
+    void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo);
     void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions);
+    void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                               const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo);
     void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
                                                VkQueryResultFlags flags);
@@ -1085,6 +1094,7 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                       const VkImageResolve* pRegions);
+    void PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo);
     void PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]);
     void PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                       float depthBiasSlopeFactor);

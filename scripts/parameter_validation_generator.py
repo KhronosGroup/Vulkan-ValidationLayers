@@ -235,6 +235,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetViewportWithCountEXT',
             'vkCmdSetScissorWithCountEXT',
             'vkCmdBindVertexBuffers2EXT',
+            'vkCmdCopyBuffer2KHR',
             ]
 
         # Commands to ignore

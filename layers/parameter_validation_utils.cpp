@@ -3645,6 +3645,21 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer co
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                                  const VkCopyBufferInfo2KHR *pCopyBufferInfo) const {
+    bool skip = false;
+
+    if (pCopyBufferInfo->pRegions != nullptr) {
+        for (uint32_t i = 0; i < pCopyBufferInfo->regionCount; i++) {
+            if (pCopyBufferInfo->pRegions[i].size == 0) {
+                skip |= LogError(device, "VUID-VkBufferCopy2KHR-size-01988",
+                                 "vkCmdCopyBuffer2KHR() pCopyBufferInfo->pRegions[%u].size must be greater than zero", i);
+            }
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer,
                                                                      VkImage dstImage, VkImageLayout dstImageLayout,
                                                                      uint32_t regionCount,

@@ -2671,6 +2671,68 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     }
 }
 
+bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                     const VkCopyBufferInfo2KHR *pCopyBufferInfos) const {
+    bool skip = false;
+    const auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return skip;
+    const auto *context = cb_context->GetCurrentAccessContext();
+
+    // If we have no previous accesses, we have no hazards
+    const auto *src_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->srcBuffer);
+    const auto *dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->dstBuffer);
+
+    for (uint32_t region = 0; region < pCopyBufferInfos->regionCount; region++) {
+        const auto &copy_region = pCopyBufferInfos->pRegions[region];
+        if (src_buffer) {
+            const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
+            auto hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
+            if (hazard.hazard) {
+                // TODO -- add tag information to log msg when useful.
+                skip |= LogError(pCopyBufferInfos->srcBuffer, string_SyncHazardVUID(hazard.hazard),
+                                 "vkCmdCopyBuffer2KHR(): Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.",
+                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyBufferInfos->srcBuffer).c_str(),
+                                 region, string_UsageTag(hazard).c_str());
+            }
+        }
+        if (dst_buffer && !skip) {
+            const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
+            auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
+            if (hazard.hazard) {
+                skip |= LogError(pCopyBufferInfos->dstBuffer, string_SyncHazardVUID(hazard.hazard),
+                                 "vkCmdCopyBuffer2KHR(): Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
+                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyBufferInfos->dstBuffer).c_str(),
+                                 region, string_UsageTag(hazard).c_str());
+            }
+        }
+        if (skip) break;
+    }
+    return skip;
+}
+
+void SyncValidator::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos) {
+    auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    const auto tag = cb_context->NextCommandTag(CMD_COPYBUFFER2KHR);
+    auto *context = cb_context->GetCurrentAccessContext();
+
+    const auto *src_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->srcBuffer);
+    const auto *dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->dstBuffer);
+
+    for (uint32_t region = 0; region < pCopyBufferInfos->regionCount; region++) {
+        const auto &copy_region = pCopyBufferInfos->pRegions[region];
+        if (src_buffer) {
+            const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
+            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range, tag);
+        }
+        if (dst_buffer) {
+            const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
+            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range, tag);
+        }
+    }
+}
+
 bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageCopy *pRegions) const {
@@ -2730,6 +2792,75 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
+        if (src_image) {
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.srcSubresource, copy_region.srcOffset,
+                                       copy_region.extent, tag);
+        }
+        if (dst_image) {
+            VkExtent3D dst_copy_extent =
+                GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource, copy_region.dstOffset,
+                                       dst_copy_extent, tag);
+        }
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyImageInfo2KHR *pCopyImageInfo) const {
+    bool skip = false;
+    const auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    if (!cb_access_context) return skip;
+
+    const auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+    if (!context) return skip;
+
+    const auto *src_image = Get<IMAGE_STATE>(pCopyImageInfo->srcImage);
+    const auto *dst_image = Get<IMAGE_STATE>(pCopyImageInfo->dstImage);
+    for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
+        const auto &copy_region = pCopyImageInfo->pRegions[region];
+        if (src_image) {
+            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.srcSubresource,
+                                                copy_region.srcOffset, copy_region.extent);
+            if (hazard.hazard) {
+                skip |= LogError(pCopyImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
+                                 "vkCmdCopyImage2KHR: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
+                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->srcImage).c_str(),
+                                 region, string_UsageTag(hazard).c_str());
+            }
+        }
+
+        if (dst_image) {
+            VkExtent3D dst_copy_extent =
+                GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
+            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource,
+                                                copy_region.dstOffset, dst_copy_extent);
+            if (hazard.hazard) {
+                skip |= LogError(pCopyImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
+                                 "vkCmdCopyImage2KHR: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
+                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(pCopyImageInfo->dstImage).c_str(),
+                                 region, string_UsageTag(hazard).c_str());
+            }
+            if (skip) break;
+        }
+    }
+
+    return skip;
+}
+
+void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo) {
+    auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    const auto tag = cb_access_context->NextCommandTag(CMD_COPYIMAGE2KHR);
+    auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+
+    auto *src_image = Get<IMAGE_STATE>(pCopyImageInfo->srcImage);
+    auto *dst_image = Get<IMAGE_STATE>(pCopyImageInfo->dstImage);
+
+    for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
+        const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.srcSubresource, copy_region.srcOffset,
                                        copy_region.extent, tag);
@@ -3053,13 +3184,17 @@ void SyncValidator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBu
     StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
-bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                        VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                        const VkBufferImageCopy *pRegions) const {
+template <typename BufferImageCopyRegionType>
+bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                 VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                 const BufferImageCopyRegionType *pRegions, CopyCommandVersion version) const {
     bool skip = false;
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
+
+    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
+    const char *func_name = is_2khr ? "vkCmdCopyBufferToImage2KHR()" : "vkCmdCopyBufferToImage()";
 
     const auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
@@ -3077,7 +3212,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandB
             if (hazard.hazard) {
                 // PHASE1 TODO -- add tag information to log msg when useful.
                 skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdCopyBufferToImage: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region,
                                  string_UsageTag(hazard).c_str());
             }
@@ -3087,7 +3222,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandB
                                                 copy_region.imageOffset, copy_region.imageExtent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdCopyBufferToImage: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
                                  string_UsageTag(hazard).c_str());
             }
@@ -3098,13 +3233,31 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandB
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                      const VkBufferImageCopy *pRegions) {
-    StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                        VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                        const VkBufferImageCopy *pRegions) const {
+    return ValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
+                                        COPY_COMMAND_VERSION_1);
+}
+
+bool SyncValidator::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                            const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo) const {
+    return ValidateCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
+                                        pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
+                                        pCopyBufferToImageInfo->pRegions, COPY_COMMAND_VERSION_2);
+}
+
+template <typename BufferImageCopyRegionType>
+void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                               VkImageLayout dstImageLayout, uint32_t regionCount,
+                                               const BufferImageCopyRegionType *pRegions, CopyCommandVersion version) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
-    const auto tag = cb_access_context->NextCommandTag(CMD_COPYBUFFERTOIMAGE);
+
+    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
+    const CMD_TYPE cmd_type = is_2khr ? CMD_COPYBUFFERTOIMAGE2KHR : CMD_COPYBUFFERTOIMAGE;
+
+    const auto tag = cb_access_context->NextCommandTag(cmd_type);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -3125,13 +3278,32 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuf
     }
 }
 
-bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                        VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount,
-                                                        const VkBufferImageCopy *pRegions) const {
+void SyncValidator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                      const VkBufferImageCopy *pRegions) {
+    StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+    RecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions, COPY_COMMAND_VERSION_1);
+}
+
+void SyncValidator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo) {
+    StateTracker::PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
+    RecordCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
+                               pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
+                               pCopyBufferToImageInfo->pRegions, COPY_COMMAND_VERSION_2);
+}
+
+template <typename BufferImageCopyRegionType>
+bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                 VkBuffer dstBuffer, uint32_t regionCount,
+                                                 const BufferImageCopyRegionType *pRegions, CopyCommandVersion version) const {
     bool skip = false;
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
+
+    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
+    const char *func_name = is_2khr ? "vkCmdCopyImageToBuffer2KHR()" : "vkCmdCopyImageToBuffer()";
 
     const auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
@@ -3147,7 +3319,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandB
                                                 copy_region.imageOffset, copy_region.imageExtent);
             if (hazard.hazard) {
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdCopyImageToBuffer: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
                                  string_UsageTag(hazard).c_str());
             }
@@ -3158,7 +3330,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandB
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
             if (hazard.hazard) {
                 skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdCopyImageToBuffer: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(), region,
                                  string_UsageTag(hazard).c_str());
             }
@@ -3168,12 +3340,31 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandB
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
-    StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
+                                                        VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount,
+                                                        const VkBufferImageCopy *pRegions) const {
+    return ValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
+                                        COPY_COMMAND_VERSION_1);
+}
+
+bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                            const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo) const {
+    return ValidateCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
+                                        pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
+                                        pCopyImageToBufferInfo->pRegions, COPY_COMMAND_VERSION_2);
+}
+
+template <typename BufferImageCopyRegionType>
+void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                               VkBuffer dstBuffer, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
+                                               CopyCommandVersion version) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
-    const auto tag = cb_access_context->NextCommandTag(CMD_COPYIMAGETOBUFFER);
+
+    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
+    const CMD_TYPE cmd_type = is_2khr ? CMD_COPYIMAGETOBUFFER2KHR : CMD_COPYIMAGETOBUFFER;
+
+    const auto tag = cb_access_context->NextCommandTag(cmd_type);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -3196,9 +3387,24 @@ void SyncValidator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuf
     }
 }
 
-bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageBlit *pRegions, VkFilter filter) const {
+void SyncValidator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+    StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+    RecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions, COPY_COMMAND_VERSION_1);
+}
+
+void SyncValidator::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo) {
+    StateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
+    RecordCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
+                               pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
+                               pCopyImageToBufferInfo->pRegions, COPY_COMMAND_VERSION_2);
+}
+
+template <typename RegionType>
+bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                         const RegionType *pRegions, VkFilter filter, const char *apiName) const {
     bool skip = false;
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
@@ -3224,7 +3430,7 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
                 context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, blit_region.srcSubresource, offset, extent);
             if (hazard.hazard) {
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdBlitImage: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", apiName,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
                                  string_UsageTag(hazard).c_str());
             }
@@ -3241,7 +3447,7 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
                 context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "vkCmdBlitImage: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
+                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", apiName,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region,
                                  string_UsageTag(hazard).c_str());
             }
@@ -3252,14 +3458,26 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                              const VkImageBlit *pRegions, VkFilter filter) {
-    StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                            pRegions, filter);
+bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                const VkImageBlit *pRegions, VkFilter filter) const {
+    return ValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
+                                "vkCmdBlitImage");
+}
+
+bool SyncValidator::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer,
+                                                    const VkBlitImageInfo2KHR *pBlitImageInfo) const {
+    return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
+                                pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
+                                pBlitImageInfo->filter, "vkCmdBlitImage2KHR");
+}
+
+template <typename RegionType>
+void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                       const RegionType *pRegions, VkFilter filter, ResourceUsageTag tag) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
-    const auto tag = cb_access_context->NextCommandTag(CMD_BLITIMAGE);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -3287,6 +3505,27 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
             context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent, tag);
         }
     }
+}
+
+void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              const VkImageBlit *pRegions, VkFilter filter) {
+    auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    const auto tag = cb_access_context->NextCommandTag(CMD_BLITIMAGE);
+    StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                            pRegions, filter);
+    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter, tag);
+}
+
+void SyncValidator::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) {
+    StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
+    auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    const auto tag = cb_access_context->NextCommandTag(CMD_BLITIMAGE2KHR);
+    RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
+                       pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
+                       pBlitImageInfo->filter, tag);
 }
 
 bool SyncValidator::ValidateIndirectBuffer(const AccessContext &context, VkCommandBuffer commandBuffer,
@@ -3973,6 +4212,74 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
+        if (src_image) {
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, resolve_region.srcSubresource,
+                                       resolve_region.srcOffset, resolve_region.extent, tag);
+        }
+        if (dst_image) {
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, resolve_region.dstSubresource,
+                                       resolve_region.dstOffset, resolve_region.extent, tag);
+        }
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
+                                                       const VkResolveImageInfo2KHR *pResolveImageInfo) const {
+    bool skip = false;
+    const auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    if (!cb_access_context) return skip;
+
+    const auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+    if (!context) return skip;
+
+    const auto *src_image = Get<IMAGE_STATE>(pResolveImageInfo->srcImage);
+    const auto *dst_image = Get<IMAGE_STATE>(pResolveImageInfo->dstImage);
+
+    for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
+        const auto &resolve_region = pResolveImageInfo->pRegions[region];
+        if (src_image) {
+            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, resolve_region.srcSubresource,
+                                                resolve_region.srcOffset, resolve_region.extent);
+            if (hazard.hazard) {
+                skip |= LogError(pResolveImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
+                                 "vkCmdResolveImage2KHR: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.",
+                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(pResolveImageInfo->srcImage).c_str(),
+                                 region, string_UsageTag(hazard).c_str());
+            }
+        }
+
+        if (dst_image) {
+            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, resolve_region.dstSubresource,
+                                                resolve_region.dstOffset, resolve_region.extent);
+            if (hazard.hazard) {
+                skip |= LogError(pResolveImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
+                                 "vkCmdResolveImage2KHR: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.",
+                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(pResolveImageInfo->dstImage).c_str(),
+                                 region, string_UsageTag(hazard).c_str());
+            }
+            if (skip) break;
+        }
+    }
+
+    return skip;
+}
+
+void SyncValidator::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
+                                                     const VkResolveImageInfo2KHR *pResolveImageInfo) {
+    StateTracker::PreCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
+    auto *cb_access_context = GetAccessContext(commandBuffer);
+    assert(cb_access_context);
+    const auto tag = cb_access_context->NextCommandTag(CMD_RESOLVEIMAGE2KHR);
+    auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+
+    auto *src_image = Get<IMAGE_STATE>(pResolveImageInfo->srcImage);
+    auto *dst_image = Get<IMAGE_STATE>(pResolveImageInfo->dstImage);
+
+    for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
+        const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, resolve_region.srcSubresource,
                                        resolve_region.srcOffset, resolve_region.extent, tag);
