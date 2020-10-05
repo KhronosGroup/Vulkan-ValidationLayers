@@ -9682,6 +9682,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer2KHR(
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
     return skip;
 }
 

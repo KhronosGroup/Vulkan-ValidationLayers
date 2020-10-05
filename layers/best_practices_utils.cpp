@@ -2007,6 +2007,20 @@ bool BestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
     return skip;
 }
 
+bool BestPractices::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
+                                                       const VkResolveImageInfo2KHR* pResolveImageInfo) const {
+    bool skip = false;
+
+    skip |= VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(device, kVUID_BestPractices_CmdResolveImage2KHR_ResolvingImage,
+                                  "%s Attempting to use vkCmdResolveImage2KHR to resolve a multisampled image. "
+                                  "This is a very slow and extremely bandwidth intensive path. "
+                                  "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
+                                  VendorSpecificTag(kBPVendorArm));
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const {
     bool skip = false;

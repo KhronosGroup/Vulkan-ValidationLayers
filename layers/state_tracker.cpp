@@ -393,6 +393,17 @@ void ValidationStateTracker::PreCallRecordCmdCopyImage(VkCommandBuffer commandBu
     AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
+                                                           const VkCopyImageInfo2KHR *pCopyImageInfo) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_image_state = GetImageState(pCopyImageInfo->srcImage);
+    auto dst_image_state = GetImageState(pCopyImageInfo->dstImage);
+
+    // Update bindings between images and cmd buffer
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
+}
+
 void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                           VkImageLayout srcImageLayout, VkImage dstImage,
                                                           VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -406,12 +417,34 @@ void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer comman
     AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
+void ValidationStateTracker::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
+                                                              const VkResolveImageInfo2KHR *pResolveImageInfo) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_image_state = GetImageState(pResolveImageInfo->srcImage);
+    auto dst_image_state = GetImageState(pResolveImageInfo->dstImage);
+
+    // Update bindings between images and cmd buffer
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
+}
+
 void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                        VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
                                                        uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
     auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
+
+    // Update bindings between images and cmd buffer
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
+}
+
+void ValidationStateTracker::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer,
+                                                           const VkBlitImageInfo2KHR *pBlitImageInfo) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_image_state = GetImageState(pBlitImageInfo->srcImage);
+    auto dst_image_state = GetImageState(pBlitImageInfo->dstImage);
 
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(cb_node, src_image_state);
@@ -504,6 +537,17 @@ void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandB
     AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                            const VkCopyBufferInfo2KHR *pCopyBufferInfos) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_buffer_state = GetBufferState(pCopyBufferInfos->srcBuffer);
+    auto dst_buffer_state = GetBufferState(pCopyBufferInfos->dstBuffer);
+
+    // Update bindings between buffers and cmd buffer
+    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
+    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
+}
+
 void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView,
                                                            const VkAllocationCallbacks *pAllocator) {
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
@@ -562,12 +606,33 @@ void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer c
     AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                                   const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_image_state = GetImageState(pCopyImageToBufferInfo->srcImage);
+    auto dst_buffer_state = GetBufferState(pCopyImageToBufferInfo->dstBuffer);
+
+    // Update bindings between buffer/image and cmd buffer
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
+}
+
 void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                                VkImageLayout dstImageLayout, uint32_t regionCount,
                                                                const VkBufferImageCopy *pRegions) {
     auto cb_node = GetCBState(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(dstImage);
+
+    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
+}
+
+void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                                   const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_buffer_state = GetBufferState(pCopyBufferToImageInfo->srcBuffer);
+    auto dst_image_state = GetImageState(pCopyBufferToImageInfo->dstImage);
 
     AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
     AddCommandBufferBindingImage(cb_node, dst_image_state);

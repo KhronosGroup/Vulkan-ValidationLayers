@@ -586,12 +586,20 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                     const VkBufferCopy *pRegions);
 
+    bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos) const;
+
+    void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos);
+
     bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                      const VkImageCopy *pRegions) const;
 
     void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions);
+
+    bool PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo) const;
+
+    void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo);
 
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                            VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
@@ -639,26 +647,62 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer);
     void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo);
     void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo);
+
+    template <typename BufferImageCopyRegionType>
+    bool ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                      VkImageLayout dstImageLayout, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
+                                      CopyCommandVersion version) const;
     bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                              VkImageLayout dstImageLayout, uint32_t regionCount,
                                              const VkBufferImageCopy *pRegions) const;
+    bool PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                 const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo) const;
 
+    template <typename BufferImageCopyRegionType>
+    void RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                    VkImageLayout dstImageLayout, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
+                                    CopyCommandVersion version);
     void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                            VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy *pRegions);
+    void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                               const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo);
 
+    template <typename BufferImageCopyRegionType>
+    bool ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                      VkBuffer dstBuffer, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
+                                      CopyCommandVersion version) const;
     bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) const;
+    bool PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                 const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo) const;
 
+    template <typename BufferImageCopyRegionType>
+    void RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                    VkBuffer dstBuffer, uint32_t regionCount, const BufferImageCopyRegionType *pRegions,
+                                    CopyCommandVersion version);
     void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions);
+    void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                               const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo);
+
+    template <typename RegionType>
+    bool ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                              VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions, VkFilter filter,
+                              const char *apiName) const;
 
     bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                      const VkImageBlit *pRegions, VkFilter filter) const;
+    bool PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) const;
 
+    template <typename RegionType>
+    void RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                            VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions, VkFilter filter,
+                            ResourceUsageTag tag);
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions,
                                    VkFilter filter);
+    void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo);
 
     bool ValidateIndirectBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, const VkDeviceSize struct_size,
                                 const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
@@ -769,9 +813,13 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                         const VkImageResolve *pRegions) const;
+
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                       const VkImageResolve *pRegions);
+
+    bool PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR *pResolveImageInfo) const;
+    void PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR *pResolveImageInfo);
 
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                         VkDeviceSize dataSize, const void *pData) const;

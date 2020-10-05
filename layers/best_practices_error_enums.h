@@ -122,6 +122,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_Anisotropy 
     "UNASSIGNED-BestPractices-vkCreateSampler-anisotropy";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CmdResolveImage_ResolvingImage =
     "UNASSIGNED-BestPractices-vkCmdResolveImage-resolving-image";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdResolveImage2KHR_ResolvingImage =
+    "UNASSIGNED-BestPractices-vkCmdResolveImage2KHR-resolving-image";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls =
     "UNASSIGNED-BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer =
