@@ -26,8 +26,6 @@
 #include <string.h>
 #include <mutex>
 
-#define VALIDATION_ERROR_MAP_IMPL
-
 #include "chassis.h"
 #include "layer_options.h"
 #include "layer_chassis_dispatch.h"
