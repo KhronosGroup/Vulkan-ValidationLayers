@@ -6965,6 +6965,22 @@ struct safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD {
     VkPhysicalDeviceCoherentMemoryFeaturesAMD const *ptr() const { return reinterpret_cast<VkPhysicalDeviceCoherentMemoryFeaturesAMD const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderImageInt64Atomics;
+    VkBool32 sparseImageInt64Atomics;
+    safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT(const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT(const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT();
+    ~safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT();
+    void initialize(const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* copy_src);
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *>(this); }
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT {
     VkStructureType sType;
     void* pNext;
@@ -7647,6 +7663,59 @@ struct safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM {
     void initialize(const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM* copy_src);
     VkCommandBufferInheritanceRenderPassTransformInfoQCOM *ptr() { return reinterpret_cast<VkCommandBufferInheritanceRenderPassTransformInfoQCOM *>(this); }
     VkCommandBufferInheritanceRenderPassTransformInfoQCOM const *ptr() const { return reinterpret_cast<VkCommandBufferInheritanceRenderPassTransformInfoQCOM const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 deviceMemoryReport;
+    safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& operator=(const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT();
+    ~safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT();
+    void initialize(const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* copy_src);
+    VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(this); }
+    VkPhysicalDeviceDeviceMemoryReportFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDeviceMemoryReportFeaturesEXT const *>(this); }
+};
+
+struct safe_VkDeviceMemoryReportCallbackDataEXT {
+    VkStructureType sType;
+    const void* pNext;
+    VkDeviceMemoryReportFlagsEXT flags;
+    VkDeviceMemoryReportEventTypeEXT type;
+    uint64_t memoryObjectId;
+    VkDeviceSize size;
+    VkObjectType objectType;
+    uint64_t objectHandle;
+    uint32_t heapIndex;
+    safe_VkDeviceMemoryReportCallbackDataEXT(const VkDeviceMemoryReportCallbackDataEXT* in_struct);
+    safe_VkDeviceMemoryReportCallbackDataEXT(const safe_VkDeviceMemoryReportCallbackDataEXT& copy_src);
+    safe_VkDeviceMemoryReportCallbackDataEXT& operator=(const safe_VkDeviceMemoryReportCallbackDataEXT& copy_src);
+    safe_VkDeviceMemoryReportCallbackDataEXT();
+    ~safe_VkDeviceMemoryReportCallbackDataEXT();
+    void initialize(const VkDeviceMemoryReportCallbackDataEXT* in_struct);
+    void initialize(const safe_VkDeviceMemoryReportCallbackDataEXT* copy_src);
+    VkDeviceMemoryReportCallbackDataEXT *ptr() { return reinterpret_cast<VkDeviceMemoryReportCallbackDataEXT *>(this); }
+    VkDeviceMemoryReportCallbackDataEXT const *ptr() const { return reinterpret_cast<VkDeviceMemoryReportCallbackDataEXT const *>(this); }
+};
+
+struct safe_VkDeviceDeviceMemoryReportCreateInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    VkDeviceMemoryReportFlagsEXT flags;
+    PFN_vkDeviceMemoryReportCallbackEXT pfnUserCallback;
+    void* pUserData;
+    safe_VkDeviceDeviceMemoryReportCreateInfoEXT(const VkDeviceDeviceMemoryReportCreateInfoEXT* in_struct);
+    safe_VkDeviceDeviceMemoryReportCreateInfoEXT(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT& copy_src);
+    safe_VkDeviceDeviceMemoryReportCreateInfoEXT& operator=(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT& copy_src);
+    safe_VkDeviceDeviceMemoryReportCreateInfoEXT();
+    ~safe_VkDeviceDeviceMemoryReportCreateInfoEXT();
+    void initialize(const VkDeviceDeviceMemoryReportCreateInfoEXT* in_struct);
+    void initialize(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT* copy_src);
+    VkDeviceDeviceMemoryReportCreateInfoEXT *ptr() { return reinterpret_cast<VkDeviceDeviceMemoryReportCreateInfoEXT *>(this); }
+    VkDeviceDeviceMemoryReportCreateInfoEXT const *ptr() const { return reinterpret_cast<VkDeviceDeviceMemoryReportCreateInfoEXT const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceRobustness2FeaturesEXT {

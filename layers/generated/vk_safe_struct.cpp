@@ -30124,6 +30124,64 @@ void safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::initialize(const safe_VkPhy
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT(const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    shaderImageInt64Atomics(in_struct->shaderImageInt64Atomics),
+    sparseImageInt64Atomics(in_struct->sparseImageInt64Atomics)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT(const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    shaderImageInt64Atomics = copy_src.shaderImageInt64Atomics;
+    sparseImageInt64Atomics = copy_src.sparseImageInt64Atomics;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::operator=(const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderImageInt64Atomics = copy_src.shaderImageInt64Atomics;
+    sparseImageInt64Atomics = copy_src.sparseImageInt64Atomics;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::~safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::initialize(const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    shaderImageInt64Atomics = in_struct->shaderImageInt64Atomics;
+    sparseImageInt64Atomics = in_struct->sparseImageInt64Atomics;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::initialize(const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    shaderImageInt64Atomics = copy_src->shaderImageInt64Atomics;
+    sparseImageInt64Atomics = copy_src->sparseImageInt64Atomics;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT(const VkPhysicalDeviceMemoryBudgetPropertiesEXT* in_struct) :
     sType(in_struct->sType)
 {
@@ -33055,6 +33113,206 @@ void safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::initialize(cons
     sType = copy_src->sType;
     transform = copy_src->transform;
     renderArea = copy_src->renderArea;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    deviceMemoryReport(in_struct->deviceMemoryReport)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    deviceMemoryReport = copy_src.deviceMemoryReport;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::operator=(const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    deviceMemoryReport = copy_src.deviceMemoryReport;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::~safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::initialize(const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    deviceMemoryReport = in_struct->deviceMemoryReport;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::initialize(const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    deviceMemoryReport = copy_src->deviceMemoryReport;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDeviceMemoryReportCallbackDataEXT::safe_VkDeviceMemoryReportCallbackDataEXT(const VkDeviceMemoryReportCallbackDataEXT* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    type(in_struct->type),
+    memoryObjectId(in_struct->memoryObjectId),
+    size(in_struct->size),
+    objectType(in_struct->objectType),
+    objectHandle(in_struct->objectHandle),
+    heapIndex(in_struct->heapIndex)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDeviceMemoryReportCallbackDataEXT::safe_VkDeviceMemoryReportCallbackDataEXT() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_MEMORY_REPORT_CALLBACK_DATA_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkDeviceMemoryReportCallbackDataEXT::safe_VkDeviceMemoryReportCallbackDataEXT(const safe_VkDeviceMemoryReportCallbackDataEXT& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    type = copy_src.type;
+    memoryObjectId = copy_src.memoryObjectId;
+    size = copy_src.size;
+    objectType = copy_src.objectType;
+    objectHandle = copy_src.objectHandle;
+    heapIndex = copy_src.heapIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDeviceMemoryReportCallbackDataEXT& safe_VkDeviceMemoryReportCallbackDataEXT::operator=(const safe_VkDeviceMemoryReportCallbackDataEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    type = copy_src.type;
+    memoryObjectId = copy_src.memoryObjectId;
+    size = copy_src.size;
+    objectType = copy_src.objectType;
+    objectHandle = copy_src.objectHandle;
+    heapIndex = copy_src.heapIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDeviceMemoryReportCallbackDataEXT::~safe_VkDeviceMemoryReportCallbackDataEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceMemoryReportCallbackDataEXT::initialize(const VkDeviceMemoryReportCallbackDataEXT* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    type = in_struct->type;
+    memoryObjectId = in_struct->memoryObjectId;
+    size = in_struct->size;
+    objectType = in_struct->objectType;
+    objectHandle = in_struct->objectHandle;
+    heapIndex = in_struct->heapIndex;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDeviceMemoryReportCallbackDataEXT::initialize(const safe_VkDeviceMemoryReportCallbackDataEXT* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    type = copy_src->type;
+    memoryObjectId = copy_src->memoryObjectId;
+    size = copy_src->size;
+    objectType = copy_src->objectType;
+    objectHandle = copy_src->objectHandle;
+    heapIndex = copy_src->heapIndex;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDeviceDeviceMemoryReportCreateInfoEXT::safe_VkDeviceDeviceMemoryReportCreateInfoEXT(const VkDeviceDeviceMemoryReportCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    pfnUserCallback(in_struct->pfnUserCallback),
+    pUserData(in_struct->pUserData)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDeviceDeviceMemoryReportCreateInfoEXT::safe_VkDeviceDeviceMemoryReportCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT),
+    pNext(nullptr),
+    pUserData(nullptr)
+{}
+
+safe_VkDeviceDeviceMemoryReportCreateInfoEXT::safe_VkDeviceDeviceMemoryReportCreateInfoEXT(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pfnUserCallback = copy_src.pfnUserCallback;
+    pUserData = copy_src.pUserData;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDeviceDeviceMemoryReportCreateInfoEXT& safe_VkDeviceDeviceMemoryReportCreateInfoEXT::operator=(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pfnUserCallback = copy_src.pfnUserCallback;
+    pUserData = copy_src.pUserData;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDeviceDeviceMemoryReportCreateInfoEXT::~safe_VkDeviceDeviceMemoryReportCreateInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceDeviceMemoryReportCreateInfoEXT::initialize(const VkDeviceDeviceMemoryReportCreateInfoEXT* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    pfnUserCallback = in_struct->pfnUserCallback;
+    pUserData = in_struct->pUserData;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDeviceDeviceMemoryReportCreateInfoEXT::initialize(const safe_VkDeviceDeviceMemoryReportCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    pfnUserCallback = copy_src->pfnUserCallback;
+    pUserData = copy_src->pUserData;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
@@ -36277,6 +36535,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD:
             safe_pNext = new safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD(reinterpret_cast<const VkPhysicalDeviceCoherentMemoryFeaturesAMD *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceMemoryBudgetPropertiesEXT *>(pNext));
             break;
@@ -36357,6 +36618,12 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM:
             safe_pNext = new safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM(reinterpret_cast<const VkCommandBufferInheritanceRenderPassTransformInfoQCOM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkDeviceDeviceMemoryReportCreateInfoEXT(reinterpret_cast<const VkDeviceDeviceMemoryReportCreateInfoEXT *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceRobustness2FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceRobustness2FeaturesEXT *>(pNext));
@@ -37064,6 +37331,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD:
             delete reinterpret_cast<const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT *>(header);
             break;
@@ -37144,6 +37414,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM:
             delete reinterpret_cast<const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkDeviceDeviceMemoryReportCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceRobustness2FeaturesEXT *>(header);

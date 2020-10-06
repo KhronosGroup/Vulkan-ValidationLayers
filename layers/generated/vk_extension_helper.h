@@ -359,6 +359,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_depth_clip_enable{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
     ExtEnabled vk_ext_descriptor_indexing{kNotEnabled};
+    ExtEnabled vk_ext_device_memory_report{kNotEnabled};
     ExtEnabled vk_ext_discard_rectangles{kNotEnabled};
     ExtEnabled vk_ext_display_control{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state{kNotEnabled};
@@ -392,6 +393,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_separate_stencil_usage{kNotEnabled};
     ExtEnabled vk_ext_shader_atomic_float{kNotEnabled};
     ExtEnabled vk_ext_shader_demote_to_helper_invocation{kNotEnabled};
+    ExtEnabled vk_ext_shader_image_atomic_int64{kNotEnabled};
     ExtEnabled vk_ext_shader_stencil_export{kNotEnabled};
     ExtEnabled vk_ext_shader_subgroup_ballot{kNotEnabled};
     ExtEnabled vk_ext_shader_subgroup_vote{kNotEnabled};
@@ -576,6 +578,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_descriptor_indexing, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE3_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_device_memory_report, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_discard_rectangles, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_display_control, {{
@@ -642,6 +646,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_demote_to_helper_invocation, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_image_atomic_int64, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_stencil_export, {})),
             std::make_pair(VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_ballot, {})),
@@ -1010,6 +1016,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+    VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME,
     VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME,
     VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME,
     VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
@@ -1045,6 +1052,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
     VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
     VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
+    VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME,
     VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
