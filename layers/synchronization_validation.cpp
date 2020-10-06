@@ -197,6 +197,12 @@ static constexpr SyncOrderingBarrier kAttachmentRasterOrder = {kDepthStencilAtta
 // Sometimes we have an internal access conflict, and we using the kCurrentCommandTag to set and detect in temporary/proxy contexts
 static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, CMD_NONE);
 
+static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) {
+    return bindable.binding.offset + bindable.binding.mem_state->fake_base_address;
+}
+
+static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
+
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
     if (size == VK_WHOLE_SIZE) {
         return (whole_size - offset);
@@ -320,6 +326,20 @@ bool IsImageLayoutStencilWritable(VkImageLayout image_layout) {
 // Class AccessContext stores the state of accesses specific to a Command, Subpass, or Queue
 const std::array<AccessContext::AddressType, AccessContext::kAddressTypeCount> AccessContext::kAddressTypes = {
     AccessContext::AddressType::kLinearAddress, AccessContext::AddressType::kIdealizedAddress};
+
+template <typename Action>
+static void ApplyOverImageRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range_arg,
+                                Action &action) {
+    // At this point the "apply over range" logic only supports a single memory binding
+    if (!SimpleBinding(image_state)) return;
+    auto subresource_range = NormalizeSubresourceRange(image_state.createInfo, subresource_range_arg);
+    subresource_adapter::ImageRangeGenerator range_gen(*image_state.fragment_encoder.get(), subresource_range, {0, 0, 0},
+                                                       image_state.createInfo.extent);
+    const auto base_address = ResourceBaseAddress(image_state);
+    for (; range_gen->non_empty(); ++range_gen) {
+        action((*range_gen + base_address));
+    }
+}
 
 // Tranverse the attachment resolves for this a specific subpass, and do action() to them.
 // Used by both validation and record operations
@@ -559,10 +579,35 @@ HazardResult AccessContext::DetectAsyncHazard(AddressType type, const Detector &
     return hazard;
 }
 
-// Returns the last resolved entry
+struct ApplySubpassTransitionBarriersAction {
+    ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
+    void operator()(ResourceAccessState *access) const {
+        assert(access);
+        access->ApplyBarriers(barriers, true);
+    }
+    const std::vector<SyncBarrier> &barriers;
+};
+
+struct ApplyTrackbackBarriersAction {
+    ApplyTrackbackBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
+    void operator()(ResourceAccessState *access) const {
+        assert(access);
+        assert(!access->HasPendingState());
+        access->ApplyBarriers(barriers, false);
+        access->ApplyPendingBarriers(kCurrentCommandTag);
+    }
+    const std::vector<SyncBarrier> &barriers;
+};
+
+// Splits a single map entry into piece matching the entries in [first, last) the total range over [first, last) must be
+// contained with entry.  Entry must be an iterator pointing to dest, first and last must be iterators pointing to a
+// *different* map from dest.
+// Returns the position past the last resolved range -- the entry covering the remainder of entry->first not included in the
+// range [first, last)
+template <typename BarrierAction>
 static void ResolveMapToEntry(ResourceAccessRangeMap *dest, ResourceAccessRangeMap::iterator entry,
                               ResourceAccessRangeMap::const_iterator first, ResourceAccessRangeMap::const_iterator last,
-                              const std::vector<SyncBarrier> &barriers) {
+                              BarrierAction &barrier_action) {
     auto at = entry;
     for (auto pos = first; pos != last; ++pos) {
         // Every member of the input iterator range must fit within the remaining portion of entry
@@ -570,10 +615,8 @@ static void ResolveMapToEntry(ResourceAccessRangeMap *dest, ResourceAccessRangeM
         assert(at != dest->end());
         // Trim up at to the same size as the entry to resolve
         at = sparse_container::split(at, *dest, pos->first);
-        auto access = pos->second;
-        if (barriers.size()) {
-            access.ApplyBarriers(barriers);
-        }
+        auto access = pos->second;  // intentional copy
+        barrier_action(&access);
         at->second.Resolve(access);
         ++at;  // Go to the remaining unused section of entry
     }
@@ -587,7 +630,8 @@ static SyncBarrier MergeBarriers(const std::vector<SyncBarrier> &barriers) {
     return merged;
 }
 
-void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRange &range, const std::vector<SyncBarrier> &barriers,
+template <typename BarrierAction>
+void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
                                        ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                                        bool recur_to_infill) const {
     if (!range.non_empty()) return;
@@ -597,10 +641,9 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
         const auto current_range = current->range & range;
         if (current->pos_B->valid) {
             const auto &src_pos = current->pos_B->lower_bound;
-            auto access = src_pos->second;
-            if (barriers.size()) {
-                access.ApplyBarriers(barriers);
-            }
+            auto access = src_pos->second;  // intentional copy
+            barrier_action(&access);
+
             if (current->pos_A->valid) {
                 const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
                 trimmed->second.Resolve(access);
@@ -616,15 +659,13 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
                     // Dest is valid, so we need to accumulate along the DAG and then resolve... in an N-to-1 resolve operation
                     ResourceAccessRangeMap gap_map;
                     ResolvePreviousAccess(type, current_range, &gap_map, infill_state);
-                    ResolveMapToEntry(resolve_map, current->pos_A->lower_bound, gap_map.begin(), gap_map.end(), barriers);
+                    ResolveMapToEntry(resolve_map, current->pos_A->lower_bound, gap_map.begin(), gap_map.end(), barrier_action);
                 } else {
                     // There isn't anything in dest in current)range, so we can accumulate directly into it.
                     ResolvePreviousAccess(type, current_range, resolve_map, infill_state);
-                    if (barriers.size()) {
-                        // Need to apply the barrier to the accesses we accumulated, noting that we haven't updated current
-                        for (auto pos = resolve_map->lower_bound(current_range); pos != current->pos_A->lower_bound; ++pos) {
-                            pos->second.ApplyBarriers(barriers);
-                        }
+                    // Need to apply the barrier to the accesses we accumulated, noting that we haven't updated current
+                    for (auto pos = resolve_map->lower_bound(current_range); pos != current->pos_A->lower_bound; ++pos) {
+                        barrier_action(&pos->second);
                     }
                 }
                 // Given that there could be gaps we need to seek carefully to not repeatedly search the same gaps in the next
@@ -652,7 +693,7 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
         const auto the_end = resolve_map->end();
         ResolvePreviousAccess(type, trailing_fill_range, &gap_map, infill_state);
         for (auto &access : gap_map) {
-            access.second.ApplyBarriers(barriers);
+            barrier_action(&access.second);
             resolve_map->insert(the_end, access);
         }
     }
@@ -667,11 +708,13 @@ void AccessContext::ResolvePreviousAccess(AddressType type, const ResourceAccess
     } else {
         // Look for something to fill the gap further along.
         for (const auto &prev_dep : prev_) {
-            prev_dep.context->ResolveAccessRange(type, range, prev_dep.barriers, descent_map, infill_state);
+            const ApplyTrackbackBarriersAction barrier_action(prev_dep.barriers);
+            prev_dep.context->ResolveAccessRange(type, range, barrier_action, descent_map, infill_state);
         }
 
         if (src_external_.context) {
-            src_external_.context->ResolveAccessRange(type, range, src_external_.barriers, descent_map, infill_state);
+            const ApplyTrackbackBarriersAction barrier_action(src_external_.barriers);
+            src_external_.context->ResolveAccessRange(type, range, barrier_action, descent_map, infill_state);
         }
     }
 }
@@ -680,11 +723,6 @@ AccessContext::AddressType AccessContext::ImageAddressType(const IMAGE_STATE &im
     return (image.fragment_encoder->IsLinearImage()) ? AddressType::kLinearAddress : AddressType::kIdealizedAddress;
 }
 
-VkDeviceSize AccessContext::ResourceBaseAddress(const BINDABLE &bindable) {
-    return bindable.binding.offset + bindable.binding.mem_state->fake_base_address;
-}
-
-static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
 
 static SyncStageAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {
     const auto stage_access = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
@@ -707,18 +745,52 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
     return proxy;
 }
 
-void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range_arg,
+class ResolvePreviousAccessFunctor {
+  public:
+    ResolvePreviousAccessFunctor(const AccessContext &context, AccessContext::AddressType address_type,
+                                 ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state)
+        : context_(context), address_type_(address_type), descent_map_(descent_map), infill_state_(infill_state) {}
+    ResolvePreviousAccessFunctor() = delete;
+    void operator()(const ResourceAccessRange &range) const {
+        context_.ResolvePreviousAccess(address_type_, range, descent_map_, infill_state_);
+    }
+
+  protected:
+    const AccessContext &context_;
+    const AccessContext::AddressType address_type_;
+    ResourceAccessRangeMap *const descent_map_;
+    const ResourceAccessState *infill_state_;
+};
+
+template <typename BarrierAction>
+class ResolveAccessRangeFunctor : public ResolvePreviousAccessFunctor {
+  public:
+    ResolveAccessRangeFunctor(const AccessContext &context, AccessContext::AddressType address_type,
+                              ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state,
+                              BarrierAction &barrier_action)
+        : ResolvePreviousAccessFunctor(context, address_type, descent_map, infill_state), barrier_action_(barrier_action) {}
+    ResolveAccessRangeFunctor() = delete;
+    void operator()(const ResourceAccessRange &range) const {
+        context_.ResolveAccessRange(address_type_, range, barrier_action_, descent_map_, infill_state_);
+    }
+
+  private:
+    BarrierAction &barrier_action_;
+};
+
+void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
                                           AddressType address_type, ResourceAccessRangeMap *descent_map,
                                           const ResourceAccessState *infill_state) const {
-    if (!SimpleBinding(image_state)) return;
+    const ResolvePreviousAccessFunctor action(*this, address_type, descent_map, infill_state);
+    ApplyOverImageRange(image_state, subresource_range, action);
+}
 
-    auto subresource_range = NormalizeSubresourceRange(image_state.createInfo, subresource_range_arg);
-    subresource_adapter::ImageRangeGenerator range_gen(*image_state.fragment_encoder.get(), subresource_range, {0, 0, 0},
-                                                       image_state.createInfo.extent);
-    const auto base_address = ResourceBaseAddress(image_state);
-    for (; range_gen->non_empty(); ++range_gen) {
-        ResolvePreviousAccess(address_type, (*range_gen + base_address), descent_map, infill_state);
-    }
+template <typename BarrierAction>
+void AccessContext::ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
+                                       BarrierAction &barrier_action, AddressType address_type, ResourceAccessRangeMap *descent_map,
+                                       const ResourceAccessState *infill_state) const {
+    const ResolveAccessRangeFunctor<BarrierAction> action(*this, address_type, descent_map, infill_state, barrier_action);
+    ApplyOverImageRange(image_state, subresource_range, action);
 }
 
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
@@ -772,12 +844,6 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
 
-    SyncStageAccessFlags accumulate_access_scope = 0;
-    for (const auto &barrier : src_external_.barriers) {
-        accumulate_access_scope |= barrier.dst_access_scope;
-    }
-    const auto external_access_scope = accumulate_access_scope;
-
     for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
         if (subpass == rp_state.attachment_first_subpass[i]) {
             if (attachment_views[i] == nullptr) continue;
@@ -785,7 +851,6 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
             const IMAGE_STATE *image = view.image_state.get();
             if (image == nullptr) continue;
             const auto &ci = attachment_ci[i];
-            const bool is_transition = rp_state.attachment_first_is_transition[i];
 
             // Need check in the following way
             // 1) if the usage bit isn't in the dest_access_scope, and there is layout traniition for initial use, report hazard
@@ -798,62 +863,39 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
             const bool is_color = !(has_depth || has_stencil);
 
             const SyncStageAccessIndex load_index = has_depth ? DepthStencilLoadUsage(ci.loadOp) : ColorLoadUsage(ci.loadOp);
-            const SyncStageAccessFlags load_mask = (has_depth || is_color) ? SyncStageAccess::Flags(load_index) : 0U;
             const SyncStageAccessIndex stencil_load_index = has_stencil ? DepthStencilLoadUsage(ci.stencilLoadOp) : load_index;
-            const SyncStageAccessFlags stencil_mask = has_stencil ? SyncStageAccess::Flags(stencil_load_index) : 0U;
 
             HazardResult hazard;
             const char *aspect = nullptr;
-            if (is_transition) {
-                // For transition w
-                SyncHazard transition_hazard = SyncHazard::NONE;
-                bool checked_stencil = false;
-                if (load_mask) {
-                    if ((load_mask & external_access_scope) != load_mask) {
-                        transition_hazard =
-                            SyncStageAccess::HasWrite(load_mask) ? SyncHazard::WRITE_AFTER_WRITE : SyncHazard::READ_AFTER_WRITE;
-                        aspect = is_color ? "color" : "depth";
-                    }
-                    if (!transition_hazard && stencil_mask) {
-                        if ((stencil_mask & external_access_scope) != stencil_mask) {
-                            transition_hazard = SyncStageAccess::HasWrite(stencil_mask) ? SyncHazard::WRITE_AFTER_WRITE
-                                                                                        : SyncHazard::READ_AFTER_WRITE;
-                            aspect = "stencil";
-                            checked_stencil = true;
-                        }
-                    }
-                }
-                if (transition_hazard) {
-                    // Hazard vs. ILT
-                    auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
-                    skip |=
-                        sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(transition_hazard),
-                                            "%s: Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32
-                                            " aspect %s during load with loadOp %s.",
-                                            func_name, string_SyncHazard(transition_hazard), subpass, i, aspect, load_op_string);
-                }
-            } else {
-                auto hazard_range = view.normalized_subresource_range;
-                bool checked_stencil = false;
-                if (is_color) {
-                    hazard = DetectHazard(*image, load_index, view.normalized_subresource_range, offset, extent);
-                    aspect = "color";
-                } else {
-                    if (has_depth) {
-                        hazard_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                        hazard = DetectHazard(*image, load_index, hazard_range, offset, extent);
-                        aspect = "depth";
-                    }
-                    if (!hazard.hazard && has_stencil) {
-                        hazard_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                        hazard = DetectHazard(*image, stencil_load_index, hazard_range, offset, extent);
-                        aspect = "stencil";
-                        checked_stencil = true;
-                    }
-                }
 
-                if (hazard.hazard) {
-                    auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
+            auto hazard_range = view.normalized_subresource_range;
+            bool checked_stencil = false;
+            if (is_color) {
+                hazard = DetectHazard(*image, load_index, view.normalized_subresource_range, offset, extent);
+                aspect = "color";
+            } else {
+                if (has_depth) {
+                    hazard_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    hazard = DetectHazard(*image, load_index, hazard_range, offset, extent);
+                    aspect = "depth";
+                }
+                if (!hazard.hazard && has_stencil) {
+                    hazard_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                    hazard = DetectHazard(*image, stencil_load_index, hazard_range, offset, extent);
+                    aspect = "stencil";
+                    checked_stencil = true;
+                }
+            }
+
+            if (hazard.hazard) {
+                auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
+                if (hazard.tag == kCurrentCommandTag) {
+                    // Hazard vs. ILT
+                    skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                                                "%s: Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32
+                                                " aspect %s during load with loadOp %s.",
+                                                func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string);
+                } else {
                     skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
                                                 "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s. Access info %s.",
@@ -1239,7 +1281,8 @@ class ApplyBarrierOpsFunctor {
     // A valid tag is required IFF layout_transition is true, as transitions are write ops
     ApplyBarrierOpsFunctor(bool resolve, const std::vector<SyncBarrier> &barriers, bool layout_transition,
                            const ResourceUsageTag &tag)
-        : resolve_(resolve), barrier_ops_(barriers.size()), tag_(tag) {
+        : resolve_(resolve), barrier_ops_(), tag_(tag) {
+        barrier_ops_.reserve(barriers.size());
         for (const auto &barrier : barriers) {
             barrier_ops_.emplace_back(barrier, layout_transition);
         }
@@ -1392,9 +1435,9 @@ void AccessContext::ApplyGlobalBarriers(const Action &barrier_action) {
 void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
     for (uint32_t subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
         auto &context = contexts[subpass_index];
+        ApplyTrackbackBarriersAction barrier_action(context.GetDstExternalTrackBack().barriers);
         for (const auto address_type : kAddressTypes) {
-            context.ResolveAccessRange(address_type, full_range, context.GetDstExternalTrackBack().barriers,
-                                       &GetAccessStateMap(address_type), nullptr, false);
+            context.ResolveAccessRange(address_type, full_range, barrier_action, &GetAccessStateMap(address_type), nullptr, false);
         }
     }
 }
@@ -1421,6 +1464,35 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track
     }
 
     return hazard;
+}
+
+void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
+                                            const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                            const ResourceUsageTag &tag) {
+    const auto &transitions = rp_state.subpass_transitions[subpass];
+    for (const auto &transition : transitions) {
+        const auto prev_pass = transition.prev_pass;
+        const auto attachment_view = attachment_views[transition.attachment];
+        if (!attachment_view) continue;
+        const auto *image = attachment_view->image_state.get();
+        if (!image) continue;
+        if (!SimpleBinding(*image)) continue;
+
+        const auto *trackback = GetTrackBackFromSubpass(prev_pass);
+        assert(trackback);
+
+        // Import the attachments into the current context
+        const auto *prev_context = trackback->context;
+        assert(prev_context);
+        const auto address_type = ImageAddressType(*image);
+        auto &target_map = GetAccessStateMap(address_type);
+        ApplySubpassTransitionBarriersAction barrier_action(trackback->barriers);
+        prev_context->ResolveAccessRange(*image, attachment_view->normalized_subresource_range, barrier_action, address_type,
+                                         &target_map, nullptr);
+    }
+
+    ApplyBarrierOpsFunctor apply_pending_action(true /* resolve */, 0, tag);
+    ApplyGlobalBarriers(apply_pending_action);
 }
 
 // Class CommandBufferAccessContext: Keep track of resource access state information for a specific command buffer
@@ -1458,7 +1530,10 @@ bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE
         }
 
         skip |= temp_context.ValidateLayoutTransitions(*sync_state_, rp_state, pRenderPassBegin->renderArea, 0, views, func_name);
-        skip |= temp_context.ValidateLoadOperation(*sync_state_, rp_state, pRenderPassBegin->renderArea, 0, views, func_name);
+        if (!skip) {
+            temp_context.RecordLayoutTransitions(rp_state, 0, views, kCurrentCommandTag);
+            skip |= temp_context.ValidateLoadOperation(*sync_state_, rp_state, pRenderPassBegin->renderArea, 0, views, func_name);
+        }
     }
     return skip;
 }
@@ -1996,7 +2071,14 @@ bool RenderPassAccessContext::ValidateNextSubpass(const SyncValidator &sync_stat
     const auto next_subpass = current_subpass_ + 1;
     const auto &next_context = subpass_contexts_[next_subpass];
     skip |= next_context.ValidateLayoutTransitions(sync_state, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
-    skip |= next_context.ValidateLoadOperation(sync_state, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
+    if (!skip) {
+        // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
+        // on a copy of the (empty) next context.
+        // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
+        AccessContext temp_context(next_context);
+        temp_context.RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kCurrentCommandTag);
+        skip |= temp_context.ValidateLoadOperation(sync_state, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
+    }
     return skip;
 }
 bool RenderPassAccessContext::ValidateEndRenderPass(const SyncValidator &sync_state, const VkRect2D &render_area,
@@ -2061,35 +2143,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncVa
 
 void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag &tag) {
     // Add layout transitions...
-    const auto &transitions = rp_state_->subpass_transitions[current_subpass_];
-    auto &subpass_context = subpass_contexts_[current_subpass_];
-    std::unordered_map<const IMAGE_VIEW_STATE *, ApplyBarrierOpsFunctor> view_ops;
-    for (const auto &transition : transitions) {
-        const auto attachment_view = attachment_views_[transition.attachment];
-        if (!attachment_view) continue;
-        const auto image = attachment_view->image_state.get();
-        if (!image) continue;
-
-        const auto *trackback = subpass_context.GetTrackBackFromSubpass(transition.prev_pass);
-        assert(trackback);
-
-        // And the trackback barriers to the to the barriers for this view
-        auto found = view_ops.find(attachment_view);
-        if (found != view_ops.end()) {
-            // Add this set of barriers to the list for this view
-            found->second.PushBack(trackback->barriers, true /* layout transition */);
-        } else {
-            // TODO: Aliasing.  When we clean up for aliasing support, may need to reassess using true -> resolve, below.
-            view_ops.insert(std::make_pair(attachment_view, ApplyBarrierOpsFunctor(true /* resolve */, trackback->barriers,
-                                                                                   true /* layout transition */, tag)));
-        }
-    }
-    // For each view with a layout transition, apply the barriers
-    for (const auto &op : view_ops) {
-        const auto view = op.first;
-        const auto image = view->image_state.get();
-        subpass_context.UpdateResourceAccess(*image, view->normalized_subresource_range, op.second);
-    }
+    subpass_contexts_[current_subpass_].RecordLayoutTransitions(*rp_state_, current_subpass_, attachment_views_, tag);
 }
 
 void RenderPassAccessContext::RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag) {
@@ -2189,16 +2243,25 @@ SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &b
     dst_access_scope = SyncStageAccess::AccessScope(dst_stage_mask, barrier.dstAccessMask);
 }
 
+// Apply a list of barriers, without resolving pending state, useful for subpass layout transitions
+void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition) {
+    for (const auto &barrier : barriers) {
+        ApplyBarrier(barrier, layout_transition);
+    }
+}
+
 // ApplyBarriers is design for *fully* inclusive barrier lists without layout tranistions.  Designed use was for
 // inter-subpass barriers for lazy-evaluation of parent context memory ranges.  Subpass layout transistions are *not* done
 // lazily, s.t. no previous access reports should need layout transitions.
-void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers) {
+void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers, const ResourceUsageTag &tag) {
+    assert(!pending_layout_transition);  // This should never be call in the middle of another barrier application
+    assert(!pending_write_barriers);
+    assert(!pending_write_dep_chain);
     for (const auto &barrier : barriers) {
         ApplyBarrier(barrier, false);
     }
-    ApplyPendingBarriers(kCurrentCommandTag);
+    ApplyPendingBarriers(tag);
 }
-
 HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index) const {
     HazardResult hazard;
     auto usage = FlagBit(usage_index);
@@ -2353,6 +2416,9 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         // This is the *equals* case for write operations, we merged the write barriers and the read state (but without the
         // dependency chaining logic or any stage expansion)
         write_barriers |= other.write_barriers;
+        pending_write_barriers |= other.pending_write_barriers;
+        pending_layout_transition |= other.pending_layout_transition;
+        pending_write_dep_chain |= other.pending_write_dep_chain;
 
         // Merge the read states
         const auto pre_merge_count = last_read_count;
@@ -2370,15 +2436,21 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                             // Other is more recent, copy in the state
                             my_read.access = other_read.access;
                             my_read.tag = other_read.tag;
+                            my_read.pending_dep_chain = other_read.pending_dep_chain;
+                            // TODO: Phase 2 -- review the state merge logic to avoid false positive from overwriting the barriers
+                            //                  May require tracking more than one access per stage.
+                            my_read.barriers = other_read.barriers;
                             if (my_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
                                 // Since I'm overwriting the fragement stage read, also update the input attachment info
                                 // as this is the only stage that affects it.
                                 input_attachment_read = other.input_attachment_read;
                             }
+                        } else if (other_read.tag.IsBefore(my_read.tag)) {
+                            // The read tags match so merge the barriers
+                            my_read.barriers |= other_read.barriers;
+                            my_read.pending_dep_chain |= other_read.pending_dep_chain;
                         }
-                        // TODO: Phase 2 -- review the state merge logic to avoid false negative from the OR'ing of the barriers
-                        //                  May require tracking more than one access per stage.
-                        my_read.barriers |= other_read.barriers;
+
                         break;
                     }
                 }
@@ -2478,8 +2550,6 @@ void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_t
 
 void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag &tag) {
     if (pending_layout_transition) {
-        // Should only be true for valid tags -- barrier/subpass record not "resolve previous" traversals...
-        assert(tag != kCurrentCommandTag);
         // SetWrite clobbers the read count, and thus we don't have to clear the read_state out.
         SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION_BIT, tag);  // Side effect notes below
         pending_layout_transition = false;
