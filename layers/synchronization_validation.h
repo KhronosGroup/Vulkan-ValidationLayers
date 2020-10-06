@@ -164,7 +164,8 @@ class ResourceAccessState : public SyncStageAccess {
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
     void SetWrite(SyncStageAccessFlagBits usage_bit, const ResourceUsageTag &tag);
     void Resolve(const ResourceAccessState &other);
-    void ApplyBarriers(const std::vector<SyncBarrier> &barriers);
+    void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
+    void ApplyBarriers(const std::vector<SyncBarrier> &barriers, const ResourceUsageTag &tag);
     void ApplyBarrier(const SyncBarrier &barrier, bool layout_transition);
     void ApplyPendingBarriers(const ResourceUsageTag &tag);
 
@@ -181,6 +182,9 @@ class ResourceAccessState : public SyncStageAccess {
           pending_layout_transition(false),
           pending_write_barriers(0) {}
 
+    bool HasPendingState() const {
+        return (0 != pending_layout_transition) || (0 != pending_write_barriers) || (0 != pending_write_dep_chain);
+    }
     bool HasWriteOp() const { return last_write != 0; }
     bool operator==(const ResourceAccessState &rhs) const {
         bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
@@ -259,6 +263,9 @@ class AccessContext {
         kDetectAsync = 1U << 1,
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
+    constexpr static int kAddressTypeCount = AddressType::kMaxAddressType + 1;
+    static const std::array<AddressType, kAddressTypeCount> kAddressTypes;
+    using MapArray = std::array<ResourceAccessRangeMap, kAddressTypeCount>;
 
     // WIP TODO WIP Multi-dep -- change track back to support barrier vector, not just last.
     struct TrackBack {
@@ -300,6 +307,9 @@ class AccessContext {
                                           SyncStageAccessFlags src_stage_accesses, const VkImageMemoryBarrier &barrier) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const IMAGE_VIEW_STATE *attach_view) const;
 
+    void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
+                                 const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const ResourceUsageTag &tag);
+
     const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
         prev_.clear();
@@ -311,6 +321,9 @@ class AccessContext {
             map.clear();
         }
     }
+
+    // Follow the context previous to access the access state, supporting "lazy" import into the context. Not intended for
+    // subpass layout transition, as the pending state handling is more complex
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
     void ResolvePreviousAccess(AddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
@@ -318,9 +331,15 @@ class AccessContext {
     void ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
                                AddressType address_type, ResourceAccessRangeMap *descent_map,
                                const ResourceAccessState *infill_state) const;
-    void ResolveAccessRange(AddressType type, const ResourceAccessRange &range, const std::vector<SyncBarrier> &barriers,
+    template <typename BarrierAction>
+    void ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
+                            BarrierAction &barrier_action, AddressType address_type, ResourceAccessRangeMap *descent_map,
+                            const ResourceAccessState *infill_state) const;
+    template <typename BarrierAction>
+    void ResolveAccessRange(AddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
                             ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                             bool recur_to_infill = true) const;
+
     void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                            const ResourceUsageTag &tag);
     void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
@@ -349,7 +368,6 @@ class AccessContext {
     void ApplyGlobalBarriers(const Action &barrier_action);
 
     static AddressType ImageAddressType(const IMAGE_STATE &image);
-    static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable);
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                   const std::vector<AccessContext> &contexts, const AccessContext *external_context);
@@ -405,9 +423,8 @@ class AccessContext {
     HazardResult DetectPreviousHazard(AddressType type, const Detector &detector, const ResourceAccessRange &range) const;
     void UpdateAccessState(AddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                            const ResourceUsageTag &tag);
-    constexpr static int kAddressTypeCount = AddressType::kMaxAddressType + 1;
-    static const std::array<AddressType, kAddressTypeCount> kAddressTypes;
-    std::array<ResourceAccessRangeMap, kAddressTypeCount> access_state_maps_;
+
+    MapArray access_state_maps_;
     std::vector<TrackBack> prev_;
     std::vector<TrackBack *> prev_by_subpass_;
     std::vector<AccessContext *> async_;
