@@ -119,17 +119,6 @@ class QUEUE_FAMILY_PERF_COUNTERS {
 };
 
 struct PHYSICAL_DEVICE_STATE {
-    // Track the call state and array sizes for various query functions
-    CALL_STATE vkGetPhysicalDeviceQueueFamilyPropertiesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceLayerPropertiesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceExtensionPropertiesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceFeaturesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = UNCALLED;
-    bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
-    CALL_STATE vkGetPhysicalDeviceSurfacePresentModesKHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfaceFormatsKHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = UNCALLED;
-    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
     safe_VkPhysicalDeviceFeatures2 features2 = {};
     VkPhysicalDevice phys_device = VK_NULL_HANDLE;
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
@@ -141,6 +130,10 @@ struct PHYSICAL_DEVICE_STATE {
 
     // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
     std::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
+
+    // TODO These are currently used by CoreChecks, but should probably be refactored
+    bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
+    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
 };
 
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call

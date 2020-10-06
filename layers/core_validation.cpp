@@ -12096,13 +12096,6 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
                                  acquirable > 1 ? "are" : "is", swapchain_image_count, min_image_count);
             }
         }
-
-        if (swapchain_data->images.size() == 0) {
-            skip |= LogWarning(swapchain, kVUID_Core_DrawState_SwapchainImagesNotFound,
-                               "%s: No images found to acquire from. Application probably did not call "
-                               "vkGetSwapchainImagesKHR after swapchain creation.",
-                               func_name);
-        }
     }
     return skip;
 }

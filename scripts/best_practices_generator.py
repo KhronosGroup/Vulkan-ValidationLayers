@@ -110,6 +110,22 @@ class BestPracticesOutputGenerator(OutputGenerator):
             'vkQueuePresentKHR',
             'vkQueueBindSparse',
             'vkCreateGraphicsPipelines',
+            'vkGetPhysicalDeviceQueueFamilyProperties',
+            'vkGetPhysicalDeviceFeatures',
+            'vkGetPhysicalDeviceFeatures2',
+            'vkGetPhysicalDeviceFeatures2KHR',
+            'vkGetPhysicalDeviceSurfaceCapabilitiesKHR',
+            'vkGetPhysicalDeviceSurfaceCapabilities2KHR',
+            'vkGetPhysicalDeviceSurfaceCapabilities2EXT',
+            'vkGetPhysicalDeviceSurfacePresentModesKHR',
+            'vkGetPhysicalDeviceSurfaceFormatsKHR',
+            'vkGetPhysicalDeviceSurfaceFormats2KHR',
+            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
+            'vkCreateSwapchainKHR',
+            'vkDestroySwapchainKHR',
+            'vkGetSwapchainImagesKHR',
+            'vkEnumeratePhysicalDevices',
+            'vkCreateDevice',
             ]
 
         self.extension_info = dict()
