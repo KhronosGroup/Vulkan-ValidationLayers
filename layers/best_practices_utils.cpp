@@ -175,8 +175,8 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
     }
 
-    auto pd_state = GetPhysicalDeviceState(physicalDevice);
-    if ((pd_state->vkGetPhysicalDeviceFeaturesState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
+    const auto bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if ((bp_pd_state->vkGetPhysicalDeviceFeaturesState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
         skip |= LogWarning(device, kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled,
                            "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
     }
@@ -255,24 +255,25 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
                                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) const {
     bool skip = false;
 
-    auto physical_device_state = GetPhysicalDeviceState();
+    const auto* bp_pd_state = GetPhysicalDeviceStateBP();
+    if (bp_pd_state) {
+        if (bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
+            skip |= LogWarning(device, kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
+                               "vkCreateSwapchainKHR() called before getting surface capabilities from "
+                               "vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
+        }
 
-    if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
-        skip |= LogWarning(
-            device, kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
-            "vkCreateSwapchainKHR() called before getting surface capabilities from vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
-    }
+        if (bp_pd_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
+            skip |= LogWarning(device, kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
+                               "vkCreateSwapchainKHR() called before getting surface present mode(s) from "
+                               "vkGetPhysicalDeviceSurfacePresentModesKHR().");
+        }
 
-    if (physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
-        skip |= LogWarning(device, kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
-                           "vkCreateSwapchainKHR() called before getting surface present mode(s) from "
-                           "vkGetPhysicalDeviceSurfacePresentModesKHR().");
-    }
-
-    if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
-        skip |= LogWarning(
-            device, kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
-            "vkCreateSwapchainKHR() called before getting surface format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().");
+        if (bp_pd_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
+            skip |= LogWarning(
+                device, kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
+                "vkCreateSwapchainKHR() called before getting surface format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().");
+        }
     }
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
@@ -1649,13 +1650,15 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
 bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
                                                                             const char* api_name) const {
     bool skip = false;
-    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    const auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
 
-    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
-        skip |= LogWarning(physicalDevice, kVUID_BestPractices_DisplayPlane_PropertiesNotCalled,
-                           "Potential problem with calling %s() without first retrieving properties from "
-                           "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
-                           api_name);
+    if (bp_pd_state) {
+        if (bp_pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
+            skip |= LogWarning(physicalDevice, kVUID_BestPractices_DisplayPlane_PropertiesNotCalled,
+                               "Potential problem with calling %s() without first retrieving properties from "
+                               "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
+                               api_name);
+        }
     }
 
     return skip;
@@ -1694,11 +1697,11 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
                                                          VkImage* pSwapchainImages) const {
     bool skip = false;
 
-    auto swapchain_state = GetSwapchainState(swapchain);
+    auto swapchain_state_itr = swapchain_bp_state_map.find(swapchain);
 
-    if (swapchain_state && pSwapchainImages) {
+    if ((swapchain_state_itr != swapchain_bp_state_map.cend()) && pSwapchainImages) {
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
-        if (swapchain_state->vkGetSwapchainImagesKHRState == UNCALLED) {
+        if (swapchain_state_itr->second.vkGetSwapchainImagesKHRState == UNCALLED) {
             skip |=
                 LogWarning(device, kVUID_Core_Swapchain_PriorCount,
                            "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImageCount; but no prior positive value has "
@@ -1716,21 +1719,27 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const P
     bool skip = false;
     if (!qfp_null) {
         // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
-        if (UNCALLED == pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState) {
-            skip |= LogWarning(
-                pd_state->phys_device, kVUID_Core_DevLimit_MissingQueryCount,
-                "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is recommended "
-                "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
-                caller_name, caller_name);
-            // Then verify that pCount that is passed in on second call matches what was returned
-        } else if (pd_state->queue_family_known_count != requested_queue_family_property_count) {
-            skip |= LogWarning(
-                pd_state->phys_device, kVUID_Core_DevLimit_CountMismatch,
-                "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
-                ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
-                ". It is recommended to instead receive all the properties by calling %s with pQueueFamilyPropertyCount that was "
-                "previously obtained by calling %s with NULL pQueueFamilyProperties.",
-                caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name, caller_name);
+        const auto* bp_pd_state = GetPhysicalDeviceStateBP(pd_state->phys_device);
+        if (bp_pd_state) {
+            if (UNCALLED == bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState) {
+                skip |= LogWarning(
+                    pd_state->phys_device, kVUID_Core_DevLimit_MissingQueryCount,
+                    "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is "
+                    "recommended "
+                    "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
+                    caller_name, caller_name);
+                // Then verify that pCount that is passed in on second call matches what was returned
+            } else if (pd_state->queue_family_known_count != requested_queue_family_property_count) {
+                skip |=
+                    LogWarning(pd_state->phys_device, kVUID_Core_DevLimit_CountMismatch,
+                               "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
+                               ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
+                               ". It is recommended to instead receive all the properties by calling %s with "
+                               "pQueueFamilyPropertyCount that was "
+                               "previously obtained by calling %s with NULL pQueueFamilyProperties.",
+                               caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name,
+                               caller_name);
+            }
         }
     }
 
@@ -1793,7 +1802,8 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
                                                                       VkSurfaceFormatKHR* pSurfaceFormats) const {
     if (!pSurfaceFormats) return false;
     const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    const auto& call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
+    const auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    const auto& call_state = bp_pd_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
     bool skip = false;
     if (call_state == UNCALLED) {
         // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application didn't
@@ -2093,4 +2103,245 @@ bool BestPractices::PostTransformLRUCacheModel::query_cache(uint32_t value) {
     }
     iteration++;
     return false;
+}
+
+bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                                       VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) const {
+    const auto swapchain_data = GetSwapchainState(swapchain);
+    bool skip = false;
+    if (swapchain_data && swapchain_data->images.size() == 0) {
+        skip |= LogWarning(swapchain, kVUID_Core_DrawState_SwapchainImagesNotFound,
+                           "vkAcquireNextImageKHR: No images found to acquire from. Application probably did not call "
+                           "vkGetSwapchainImagesKHR after swapchain creation.");
+    }
+    return skip;
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t* pQueueFamilyPropertyCount,
+                                                                               VkQueueFamilyProperties* pQueueFamilyProperties) {
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+
+    if (bp_pd_state) {
+        if (!pQueueFamilyProperties) {
+            if (UNCALLED == bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState)
+                bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState = QUERY_COUNT;
+        } else {  // Save queue family properties
+            bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState = QUERY_DETAILS;
+        }
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice,
+                                                                  VkPhysicalDeviceFeatures* pFeatures) {
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
+                                                                   VkPhysicalDeviceFeatures2* pFeatures) {
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
+                                                                      VkPhysicalDeviceFeatures2* pFeatures) {
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice,
+                                                                                VkSurfaceKHR surface,
+                                                                                VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
+                                                                                VkResult result) {
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+    VkSurfaceCapabilities2KHR* pSurfaceCapabilities, VkResult result) {
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
+                                                                                 VkSurfaceKHR surface,
+                                                                                 VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
+                                                                                 VkResult result) {
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
+                                                                                VkSurfaceKHR surface, uint32_t* pPresentModeCount,
+                                                                                VkPresentModeKHR* pPresentModes, VkResult result) {
+    auto* bp_pd_data = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_data) {
+        auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfacePresentModesKHRState;
+
+        if (*pPresentModeCount) {
+            if (call_state < QUERY_COUNT) {
+                call_state = QUERY_COUNT;
+            }
+        }
+        if (pPresentModes) {
+            if (call_state < QUERY_DETAILS) {
+                call_state = QUERY_DETAILS;
+            }
+        }
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                           uint32_t* pSurfaceFormatCount,
+                                                                           VkSurfaceFormatKHR* pSurfaceFormats, VkResult result) {
+    auto* bp_pd_data = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_data) {
+        auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState;
+
+        if (*pSurfaceFormatCount) {
+            if (call_state < QUERY_COUNT) {
+                call_state = QUERY_COUNT;
+            }
+        }
+        if (pSurfaceFormats) {
+            if (call_state < QUERY_DETAILS) {
+                call_state = QUERY_DETAILS;
+            }
+        }
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                            uint32_t* pSurfaceFormatCount,
+                                                                            VkSurfaceFormat2KHR* pSurfaceFormats, VkResult result) {
+    auto* bp_pd_data = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_data) {
+        if (*pSurfaceFormatCount) {
+            if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_COUNT) {
+                bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState = QUERY_COUNT;
+            }
+        }
+        if (pSurfaceFormats) {
+            if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_DETAILS) {
+                bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState = QUERY_DETAILS;
+            }
+        }
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                                   uint32_t* pPropertyCount,
+                                                                                   VkDisplayPlanePropertiesKHR* pProperties,
+                                                                                   VkResult result) {
+    auto* bp_pd_data = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_data) {
+        if (*pPropertyCount) {
+            if (bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_COUNT) {
+                bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_COUNT;
+            }
+        }
+        if (pProperties) {
+            if (bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_DETAILS) {
+                bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_DETAILS;
+            }
+        }
+    }
+}
+
+void BestPractices::ManualPostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
+                                                           VkResult result) {
+    if (VK_SUCCESS == result) {
+        swapchain_bp_state_map.emplace(*pSwapchain, SWAPCHAIN_STATE_BP{});
+    }
+}
+
+void BestPractices::ManualPostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                            const VkAllocationCallbacks* pAllocator) {
+    auto swapchain_state_itr = swapchain_bp_state_map.find(swapchain);
+    if (swapchain_state_itr != swapchain_bp_state_map.cend()) {
+        swapchain_bp_state_map.erase(swapchain_state_itr);
+    }
+}
+
+void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                              uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
+                                                              VkResult result) {
+    auto swapchain_state_itr = swapchain_bp_state_map.find(swapchain);
+    assert(swapchain_state_itr != swapchain_bp_state_map.cend());
+    auto& swapchain_state = swapchain_state_itr->second;
+    if (pSwapchainImages || *pSwapchainImageCount) {
+        if (swapchain_state.vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
+            swapchain_state.vkGetSwapchainImagesKHRState = QUERY_DETAILS;
+        }
+    }
+}
+
+void BestPractices::ManualPostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
+                                                                 VkPhysicalDevice* pPhysicalDevices, VkResult result) {
+    if ((nullptr != pPhysicalDevices) && ((result == VK_SUCCESS || result == VK_INCOMPLETE))) {
+        for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
+            phys_device_bp_state_map.emplace(pPhysicalDevices[i], PHYSICAL_DEVICE_STATE_BP{});
+        }
+    }
+}
+
+void BestPractices::ManualPostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo*, const VkAllocationCallbacks*,
+                                                     VkDevice*, VkResult result) {
+    if (VK_SUCCESS == result) {
+        instance_device_bp_state = &phys_device_bp_state_map[gpu];
+    }
+}
+
+PHYSICAL_DEVICE_STATE_BP* BestPractices::GetPhysicalDeviceStateBP(const VkPhysicalDevice& phys_device) {
+    if (phys_device_bp_state_map.count(phys_device) > 0) {
+        return &phys_device_bp_state_map.at(phys_device);
+    } else {
+        return nullptr;
+    }
+}
+
+const PHYSICAL_DEVICE_STATE_BP* BestPractices::GetPhysicalDeviceStateBP(const VkPhysicalDevice& phys_device) const {
+    if (phys_device_bp_state_map.count(phys_device) > 0) {
+        return &phys_device_bp_state_map.at(phys_device);
+    } else {
+        return nullptr;
+    }
+}
+
+PHYSICAL_DEVICE_STATE_BP* BestPractices::GetPhysicalDeviceStateBP() {
+    auto bp_state = (reinterpret_cast<BestPractices*>(instance_state))->instance_device_bp_state;
+    if (bp_state) {
+        return bp_state;
+    } else if (!bp_state && phys_device_bp_state_map.count(physical_device_state->phys_device) > 0) {
+        return &phys_device_bp_state_map.at(physical_device_state->phys_device);
+    } else {
+        return nullptr;
+    }
+}
+
+const PHYSICAL_DEVICE_STATE_BP* BestPractices::GetPhysicalDeviceStateBP() const {
+    auto bp_state = (reinterpret_cast<BestPractices*>(instance_state))->instance_device_bp_state;
+    if (bp_state) {
+        return bp_state;
+    } else if (!bp_state && phys_device_bp_state_map.count(physical_device_state->phys_device) > 0) {
+        return &phys_device_bp_state_map.at(physical_device_state->phys_device);
+    } else {
+        return nullptr;
+    }
 }
