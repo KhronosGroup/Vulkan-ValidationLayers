@@ -21,7 +21,6 @@ The following components are available in this repository:
 - [*Tests*](tests/)
 
 ## Contact Information
-* [Tobin Ehlis](mailto:tobine@google.com)
 * [Mark Lobodzinski](mailto:mark@lunarg.com)
 
 ## Information for Developing or Contributing:
