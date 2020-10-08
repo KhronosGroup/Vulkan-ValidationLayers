@@ -1081,6 +1081,63 @@ void DispatchGetPrivateDataEXT(
     layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
+VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo, VkCommandBuffer* pCommandBuffers) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
+    safe_VkCommandBufferAllocateInfo var_local_pAllocateInfo;
+    safe_VkCommandBufferAllocateInfo *local_pAllocateInfo = NULL;
+    if (pAllocateInfo) {
+        local_pAllocateInfo = &var_local_pAllocateInfo;
+        local_pAllocateInfo->initialize(pAllocateInfo);
+        if (pAllocateInfo->commandPool) {
+            local_pAllocateInfo->commandPool = layer_data->Unwrap(pAllocateInfo->commandPool);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.AllocateCommandBuffers(device, (const VkCommandBufferAllocateInfo*)local_pAllocateInfo, pCommandBuffers);
+    return result;
+}
+
+void DispatchFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+    commandPool = layer_data->Unwrap(commandPool);
+    layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+}
+
+void DispatchDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
+    uint64_t commandPool_id = reinterpret_cast<uint64_t &>(commandPool);
+    auto iter = unique_id_mapping.pop(commandPool_id);
+    if (iter != unique_id_mapping.end()) {
+        commandPool = (VkCommandPool)iter->second;
+    } else {
+        commandPool = (VkCommandPool)0;
+    }
+    layer_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
+}
+
+VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
+    safe_VkCommandBufferBeginInfo var_local_pBeginInfo;
+    safe_VkCommandBufferBeginInfo *local_pBeginInfo = NULL;
+    if (pBeginInfo) {
+        local_pBeginInfo = &var_local_pBeginInfo;
+        local_pBeginInfo->initialize(pBeginInfo);
+        if (local_pBeginInfo->pInheritanceInfo) {
+            if (pBeginInfo->pInheritanceInfo->renderPass) {
+                local_pBeginInfo->pInheritanceInfo->renderPass = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->renderPass);
+            }
+            if (pBeginInfo->pInheritanceInfo->framebuffer) {
+                local_pBeginInfo->pInheritanceInfo->framebuffer = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->framebuffer);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, (const VkCommandBufferBeginInfo*)local_pBeginInfo);
+    return result;
+}
+
 
 
 // Skip vkCreateInstance dispatch, manually generated
@@ -2496,23 +2553,7 @@ VkResult DispatchCreateCommandPool(
     return result;
 }
 
-void DispatchDestroyCommandPool(
-    VkDevice                                    device,
-    VkCommandPool                               commandPool,
-    const VkAllocationCallbacks*                pAllocator)
-{
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
-    uint64_t commandPool_id = reinterpret_cast<uint64_t &>(commandPool);
-    auto iter = unique_id_mapping.pop(commandPool_id);
-    if (iter != unique_id_mapping.end()) {
-        commandPool = (VkCommandPool)iter->second;
-    } else {
-        commandPool = (VkCommandPool)0;
-    }
-    layer_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
-
-}
+// Skip vkDestroyCommandPool dispatch, manually generated
 
 VkResult DispatchResetCommandPool(
     VkDevice                                    device,
@@ -2529,70 +2570,11 @@ VkResult DispatchResetCommandPool(
     return result;
 }
 
-VkResult DispatchAllocateCommandBuffers(
-    VkDevice                                    device,
-    const VkCommandBufferAllocateInfo*          pAllocateInfo,
-    VkCommandBuffer*                            pCommandBuffers)
-{
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
-    safe_VkCommandBufferAllocateInfo var_local_pAllocateInfo;
-    safe_VkCommandBufferAllocateInfo *local_pAllocateInfo = NULL;
-    {
-        if (pAllocateInfo) {
-            local_pAllocateInfo = &var_local_pAllocateInfo;
-            local_pAllocateInfo->initialize(pAllocateInfo);
-            if (pAllocateInfo->commandPool) {
-                local_pAllocateInfo->commandPool = layer_data->Unwrap(pAllocateInfo->commandPool);
-            }
-        }
-    }
-    VkResult result = layer_data->device_dispatch_table.AllocateCommandBuffers(device, (const VkCommandBufferAllocateInfo*)local_pAllocateInfo, pCommandBuffers);
+// Skip vkAllocateCommandBuffers dispatch, manually generated
 
-    return result;
-}
+// Skip vkFreeCommandBuffers dispatch, manually generated
 
-void DispatchFreeCommandBuffers(
-    VkDevice                                    device,
-    VkCommandPool                               commandPool,
-    uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers)
-{
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
-    {
-        commandPool = layer_data->Unwrap(commandPool);
-    }
-    layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
-
-}
-
-VkResult DispatchBeginCommandBuffer(
-    VkCommandBuffer                             commandBuffer,
-    const VkCommandBufferBeginInfo*             pBeginInfo)
-{
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
-    safe_VkCommandBufferBeginInfo var_local_pBeginInfo;
-    safe_VkCommandBufferBeginInfo *local_pBeginInfo = NULL;
-    {
-        if (pBeginInfo) {
-            local_pBeginInfo = &var_local_pBeginInfo;
-            local_pBeginInfo->initialize(pBeginInfo);
-            if (local_pBeginInfo->pInheritanceInfo) {
-                if (pBeginInfo->pInheritanceInfo->renderPass) {
-                    local_pBeginInfo->pInheritanceInfo->renderPass = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->renderPass);
-                }
-                if (pBeginInfo->pInheritanceInfo->framebuffer) {
-                    local_pBeginInfo->pInheritanceInfo->framebuffer = layer_data->Unwrap(pBeginInfo->pInheritanceInfo->framebuffer);
-                }
-            }
-        }
-    }
-    VkResult result = layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, (const VkCommandBufferBeginInfo*)local_pBeginInfo);
-
-    return result;
-}
+// Skip vkBeginCommandBuffer dispatch, manually generated
 
 VkResult DispatchEndCommandBuffer(
     VkCommandBuffer                             commandBuffer)
