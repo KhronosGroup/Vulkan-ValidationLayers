@@ -1081,6 +1081,18 @@ void DispatchGetPrivateDataEXT(
     layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
+std::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+
+ReadWriteLock dispatch_secondary_cb_map_mutex;
+
+read_lock_guard_t dispatch_cb_read_lock() {
+    return read_lock_guard_t(dispatch_secondary_cb_map_mutex);
+}
+
+write_lock_guard_t dispatch_cb_write_lock() {
+    return write_lock_guard_t(dispatch_secondary_cb_map_mutex);
+}
+
 VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo, VkCommandBuffer* pCommandBuffers) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
@@ -1094,6 +1106,12 @@ VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAl
         }
     }
     VkResult result = layer_data->device_dispatch_table.AllocateCommandBuffers(device, (const VkCommandBufferAllocateInfo*)local_pAllocateInfo, pCommandBuffers);
+    if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+        auto lock = dispatch_cb_write_lock();
+        for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
+            secondary_cb_map.insert({ pCommandBuffers[cb_index], pAllocateInfo->commandPool });
+        }
+    }
     return result;
 }
 
@@ -1102,6 +1120,10 @@ void DispatchFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint
     if (!wrap_handles) return layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
     commandPool = layer_data->Unwrap(commandPool);
     layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+    auto lock = dispatch_cb_write_lock();
+    for (uint32_t cb_index = 0; cb_index < commandBufferCount; cb_index++) {
+        secondary_cb_map.erase(pCommandBuffers[cb_index]);
+    }
 }
 
 void DispatchDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) {
@@ -1115,11 +1137,24 @@ void DispatchDestroyCommandPool(VkDevice device, VkCommandPool commandPool, cons
         commandPool = (VkCommandPool)0;
     }
     layer_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
+    auto lock = dispatch_cb_write_lock();
+    for (auto item = secondary_cb_map.begin(); item != secondary_cb_map.end();) {
+        if (item->second == commandPool) {
+            item = secondary_cb_map.erase(item);
+        } else {
+            ++item;
+        }
+    }
 }
 
 VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
+    bool cb_is_primary;
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
+    {
+        auto lock = dispatch_cb_read_lock();
+        cb_is_primary = (secondary_cb_map.find(commandBuffer) == secondary_cb_map.end());
+    }
+    if (!wrap_handles || cb_is_primary) return layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
     safe_VkCommandBufferBeginInfo var_local_pBeginInfo;
     safe_VkCommandBufferBeginInfo *local_pBeginInfo = NULL;
     if (pBeginInfo) {
