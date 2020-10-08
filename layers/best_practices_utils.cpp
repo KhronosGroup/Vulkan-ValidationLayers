@@ -2117,11 +2117,12 @@ bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapch
     return skip;
 }
 
-void BestPractices::ManualPostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                               uint32_t* pQueueFamilyPropertyCount,
-                                                                               VkQueueFamilyProperties* pQueueFamilyProperties) {
+void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
+                                                                         uint32_t* pQueueFamilyPropertyCount,
+                                                                         VkQueueFamilyProperties* pQueueFamilyProperties) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
+                                                                                 pQueueFamilyProperties);
     auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
-
     if (bp_pd_state) {
         if (!pQueueFamilyProperties) {
             if (UNCALLED == bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState)
@@ -2132,24 +2133,26 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceQueueFamilyProperties(V
     }
 }
 
-void BestPractices::ManualPostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice,
-                                                                  VkPhysicalDeviceFeatures* pFeatures) {
+void BestPractices::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures);
     auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
 }
 
-void BestPractices::ManualPostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
-                                                                   VkPhysicalDeviceFeatures2* pFeatures) {
+void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
+                                                             VkPhysicalDeviceFeatures2* pFeatures) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
     auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
 }
 
-void BestPractices::ManualPostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
-                                                                      VkPhysicalDeviceFeatures2* pFeatures) {
+void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
+                                                                VkPhysicalDeviceFeatures2* pFeatures) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
     auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
@@ -2271,8 +2274,9 @@ void BestPractices::ManualPostCallRecordCreateSwapchainKHR(VkDevice device, cons
     }
 }
 
-void BestPractices::ManualPostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                            const VkAllocationCallbacks* pAllocator) {
+void BestPractices::PostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                      const VkAllocationCallbacks* pAllocator) {
+    ValidationStateTracker::PostCallRecordDestroySwapchainKHR(device, swapchain, pAllocator);
     auto swapchain_state_itr = swapchain_bp_state_map.find(swapchain);
     if (swapchain_state_itr != swapchain_bp_state_map.cend()) {
         swapchain_bp_state_map.erase(swapchain_state_itr);
