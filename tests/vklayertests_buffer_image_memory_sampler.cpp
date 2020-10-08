@@ -14098,3 +14098,85 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
                            &full_subresource_range);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
+    TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761");
+
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+
+    auto maintenance2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (maintenance2_support) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    }
+    auto ycbcr_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (ycbcr_support) {
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    }
+
+    const char *error_vuid;
+    if ((!maintenance2_support) && (!ycbcr_support)) {
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01018";
+    } else if ((maintenance2_support) && (!ycbcr_support)) {
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01759";
+    } else if ((!maintenance2_support) && (ycbcr_support)) {
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01760";
+    } else {
+        // both enabled
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01761";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+
+    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                   nullptr,
+                                   0,
+                                   VK_IMAGE_TYPE_2D,
+                                   VK_FORMAT_R8_UINT,
+                                   {128, 128, 1},
+                                   1,
+                                   1,
+                                   VK_SAMPLE_COUNT_1_BIT,
+                                   VK_IMAGE_TILING_OPTIMAL,
+                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                   VK_SHARING_MODE_EXCLUSIVE,
+                                   0,
+                                   nullptr,
+                                   VK_IMAGE_LAYOUT_UNDEFINED};
+
+    imageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    VkImageObj mutImage(m_device);
+    mutImage.init(&imageInfo);
+    ASSERT_TRUE(mutImage.initialized());
+
+    VkImageViewCreateInfo imgViewInfo = {};
+    imgViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imgViewInfo.subresourceRange.layerCount = 1;
+    imgViewInfo.subresourceRange.baseMipLevel = 0;
+    imgViewInfo.subresourceRange.levelCount = 1;
+    imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imgViewInfo.image = mutImage.handle();
+
+    // The Image's format is non-planar and incompatible with the ImageView's format, which should trigger
+    // VUID-VkImageViewCreateInfo-image-01761
+    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+    CreateImageViewTest(*this, &imgViewInfo, error_vuid);
+
+    // With a compatible format, there should be no error
+    imgViewInfo.format = imageInfo.format;
+    CreateImageViewTest(*this, &imgViewInfo, {});
+
+    imageInfo.flags |= VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+    VkImageObj mut_compat_image(m_device);
+    mut_compat_image.init(&imageInfo);
+    ASSERT_TRUE(mut_compat_image.initialized());
+
+    imgViewInfo.image = mut_compat_image.handle();
+    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+    // Now the Image and ImageView formats are incompatible, but the image was created with
+    // VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, so there should be no error. This is specifically for testing issue
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2203.
+    CreateImageViewTest(*this, &imgViewInfo, {});
+}
