@@ -163,6 +163,7 @@ struct create_ray_tracing_pipeline_api_state {
 // This structure is used to save data across the CreateRayTracingPipelinesKHR down-chain API call.
 struct create_ray_tracing_pipeline_khr_api_state {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> gpu_create_infos;
+    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> printf_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
 };
