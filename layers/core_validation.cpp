@@ -1042,46 +1042,35 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         // First check flag states
         result |= ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
 
-        // We only check if input attachments mismatch between subpass and fs.
-        // Mismatch between fs and descriptor set is checked in createGraphicsPipeline
+        // We only check if input attachments mismatch between subpass and fs that if fs sets a input index, but subpass doesn't set
+        // it. Mismatch between fs and descriptor set is checked in createGraphicsPipeline
         if (cb_node->activeRenderPass && cb_node->activeFramebuffer) {
             const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
-            if (subpass.inputAttachmentCount) {
-                for (const auto &stage : pPipe->stage_state) {
-                    if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
-                        std::vector<bool> subpass_input_in_fs(subpass.inputAttachmentCount, false);
-                        for (const auto &descriptor : stage.descriptor_uses) {
-                            if (descriptor.second.input_index >= 0) {
-                                if (descriptor.second.input_index < static_cast<int32_t>(subpass.inputAttachmentCount)) {
-                                    subpass_input_in_fs[descriptor.second.input_index] = true;
-                                } else {
-                                    LogObjectList objlist(cb_node->commandBuffer);
-                                    objlist.add(cb_node->activeRenderPass->renderPass);
-                                    result |= LogError(objlist, vuid.subpass_input,
-                                                       "%s: Fragment Shader's input attachment index #%" PRIu32
-                                                       " doesn't exist in %s, subpass "
-                                                       "#%" PRIu32 ".",
-                                                       function, descriptor.second.input_index,
-                                                       report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
-                                                       cb_node->activeSubpass);
-                                }
-                            }
+            for (const auto &stage : pPipe->stage_state) {
+                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                    std::set<uint32_t> subpass_input_index;
+                    for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
+                        auto index = subpass.pInputAttachments[i].attachment;
+                        if (index != VK_ATTACHMENT_UNUSED) {
+                            subpass_input_index.insert(index);
                         }
-                        uint32_t index = 0;
-                        for (const auto input : subpass_input_in_fs) {
-                            if (!input && subpass.pInputAttachments[index].attachment != VK_ATTACHMENT_UNUSED) {
-                                LogObjectList objlist(cb_node->commandBuffer);
-                                objlist.add(cb_node->activeRenderPass->renderPass);
-                                result |= LogError(
-                                    objlist, vuid.subpass_input,
-                                    "%s: %s, subpass #%" PRIu32 ", input attachment #%" PRIu32 " is not used in fragment shader.",
-                                    function, report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
-                                    cb_node->activeSubpass, index);
-                            }
-                            ++index;
-                        }
-                        break;
                     }
+
+                    for (const auto &descriptor : stage.descriptor_uses) {
+                        if (descriptor.second.input_index != VK_ATTACHMENT_UNUSED &&
+                            subpass_input_index.end() == subpass_input_index.find(descriptor.second.input_index)) {
+                            LogObjectList objlist(cb_node->commandBuffer);
+                            objlist.add(cb_node->activeRenderPass->renderPass);
+                            result |= LogError(objlist, vuid.subpass_input,
+                                               "%s: Fragment Shader's input attachment index #%" PRIu32
+                                               " doesn't exist or VK_ATTACHMENT_UNUSED in %s, subpass "
+                                               "#%" PRIu32 ".",
+                                               function, descriptor.second.input_index,
+                                               report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
+                                               cb_node->activeSubpass);
+                        }
+                    }
+                    break;
                 }
             }
             attachment_views = cb_node->activeFramebuffer->GetUsedAttachments(subpass, cb_node->imagelessFramebufferAttachments);
