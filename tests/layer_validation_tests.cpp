@@ -550,7 +550,7 @@ void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_command
                                          {{0.0, max_bound, 64.0, 1.0, 0.0, 1.0}, {"VUID-VkViewport-y-01233"}}};
 
     for (const auto &test_case : test_cases) {
-        for (const auto vuid : test_case.vuids) {
+        for (const auto &vuid : test_case.vuids) {
             if (vuid == "VUID-Undefined")
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "is less than VkPhysicalDeviceLimits::viewportBoundsRange[0]");
             else
