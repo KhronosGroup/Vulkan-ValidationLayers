@@ -181,7 +181,7 @@ void ErrorMonitor::VerifyFound() {
     // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
     if (!AllDesiredMsgsFound()) {
         DumpFailureMsgs();
-        for (const auto desired_msg : desired_message_strings_) {
+        for (const auto &desired_msg : desired_message_strings_) {
             ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
         }
     } else if (GetOtherFailureMsgs().size() > 0) {
@@ -204,7 +204,7 @@ void ErrorMonitor::VerifyNotFound() {
     // ExpectSuccess() configured us to match anything. Any error is a failure.
     if (AnyDesiredMsgFound()) {
         DumpFailureMsgs();
-        for (const auto msg : failure_message_strings_) {
+        for (const auto &msg : failure_message_strings_) {
             ADD_FAILURE() << "Expected to succeed but got error: " << msg;
         }
     } else if (GetOtherFailureMsgs().size() > 0) {
@@ -1150,7 +1150,7 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
                                     VK_ACCESS_SHADER_WRITE_BIT |
                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-                                    VK_MEMORY_OUTPUT_COPY_BIT*/, 
+                                    VK_MEMORY_OUTPUT_COPY_BIT*/,
                                     VkFlags input_mask /*=
                                     VK_ACCESS_HOST_READ_BIT |
                                     VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
