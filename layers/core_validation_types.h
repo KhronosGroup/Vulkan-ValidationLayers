@@ -820,7 +820,7 @@ struct interface_var {
     uint32_t id;
     uint32_t type_id;
     uint32_t offset;
-    int32_t input_index;  // index = -1 means that it's not input attachment.
+    uint32_t input_index;  // index = VK_ATTACHMENT_UNUSED means that it's not input attachment.
 
     std::vector<SamplerUsedByImage> samplers_used_by_image;  // List of samplers that sample a given image
 
@@ -837,7 +837,7 @@ struct interface_var {
         : id(0),
           type_id(0),
           offset(0),
-          input_index(-1),
+          input_index(VK_ATTACHMENT_UNUSED),
           is_patch(false),
           is_block_member(false),
           is_relaxed_precision(false),
