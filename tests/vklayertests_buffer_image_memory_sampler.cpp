@@ -33,7 +33,19 @@ TEST_F(VkLayerTest, BufferExtents) {
     TEST_DESCRIPTION("Perform copies across a buffer, provoking out-of-range errors.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool copy_commands2 = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+        copy_commands2 = true;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2Function = nullptr;
+    if (copy_commands2) {
+        vkCmdCopyBuffer2Function = (PFN_vkCmdCopyBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR");
+    }
 
     const VkDeviceSize buffer_size = 2048;
 
@@ -43,27 +55,72 @@ TEST_F(VkLayerTest, BufferExtents) {
     buffer_one.init_as_src_and_dst(*m_device, buffer_size, reqs);
     buffer_two.init_as_src_and_dst(*m_device, buffer_size, reqs);
 
+    VkBufferCopy copy_info = {4096, 256, 256};
+
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-srcOffset-00113");
-    VkBufferCopy copy_info = {4096, 256, 256};
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
     m_errorMonitor->VerifyFound();
+
+    // equivalent test using KHR_copy_commands2
+    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                             copy_info.size};
+        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2KHR-srcOffset-00113");
+        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        m_errorMonitor->VerifyFound();
+    }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-dstOffset-00114");
     copy_info = {256, 4096, 256};
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
     m_errorMonitor->VerifyFound();
 
+    // equivalent test using KHR_copy_commands2
+    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                             copy_info.size};
+        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2KHR-dstOffset-00114");
+        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        m_errorMonitor->VerifyFound();
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-size-00115");
     copy_info = {1024, 256, 1280};
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
     m_errorMonitor->VerifyFound();
 
+    // equivalent test using KHR_copy_commands2
+    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                             copy_info.size};
+        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2KHR-size-00115");
+        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        m_errorMonitor->VerifyFound();
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-size-00116");
     copy_info = {256, 1024, 1280};
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
     m_errorMonitor->VerifyFound();
+
+    // equivalent test using KHR_copy_commands2
+    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                             copy_info.size};
+        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2KHR-size-00116");
+        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        m_errorMonitor->VerifyFound();
+    }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     copy_info = {256, 512, 512};
@@ -875,7 +932,21 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
         "Specify wrong usage for image then create conflicting view of image Initialize buffer with wrong usage then perform copy "
         "expecting errors from both the image and the buffer (2 calls)");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool copy_commands2 = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+        copy_commands2 = true;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCmdCopyBufferToImage2KHR vkCmdCopyBufferToImage2Function = nullptr;
+    if (copy_commands2) {
+        vkCmdCopyBufferToImage2Function =
+            (PFN_vkCmdCopyBufferToImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBufferToImage2KHR");
+    }
+
     auto format = FindSupportedDepthStencilFormat(gpu());
     if (!format) {
         printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
@@ -926,6 +997,30 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
     m_errorMonitor->VerifyFound();
+
+    // equvalent test using using KHR_copy_commands2
+    if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
+        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
+                                               NULL,
+                                               region.bufferRowLength,
+                                               region.bufferImageHeight,
+                                               region.bufferImageHeight,
+                                               region.imageSubresource,
+                                               region.imageOffset,
+                                               region.imageExtent};
+        VkCopyBufferToImageInfo2KHR buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
+                                                             NULL,
+                                                             buffer.handle(),
+                                                             image.handle(),
+                                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                             1,
+                                                             &region2};
+        // two separate errors from this call:
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferToImageInfo2KHR-dstImage-00177");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferToImageInfo2KHR-srcBuffer-00174");
+        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &buffer_to_image_info2);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
@@ -2761,7 +2856,19 @@ TEST_F(VkLayerTest, ImageSampleCounts) {
 }
 
 TEST_F(VkLayerTest, BlitImageFormatTypes) {
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool copy_commands2 = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+        copy_commands2 = true;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCmdBlitImage2KHR vkCmdBlitImage2Function = nullptr;
+    if (copy_commands2) {
+        vkCmdBlitImage2Function = (PFN_vkCmdBlitImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBlitImage2KHR");
+    }
 
     VkFormat f_unsigned = VK_FORMAT_R8G8B8A8_UINT;
     VkFormat f_signed = VK_FORMAT_R8G8B8A8_SINT;
@@ -2842,12 +2949,58 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     vk::CmdBlitImage(m_commandBuffer->handle(), unsigned_image.image(), unsigned_image.Layout(), float_image.image(),
                      float_image.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
+
+    // equivalent test using KHR_copy_commands2
+    if (copy_commands2 && vkCmdBlitImage2Function) {
+        const VkImageBlit2KHR blitRegion2 = {
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
+            blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
+                                                      NULL,
+                                                      unsigned_image.image(),
+                                                      unsigned_image.Layout(),
+                                                      float_image.image(),
+                                                      float_image.Layout(),
+                                                      1,
+                                                      &blitRegion2,
+                                                      VK_FILTER_NEAREST};
+        // Unsigned int vs not an int
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBlitImageInfo2KHR-srcImage-00230");
+        if (usrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2KHR-srcImage-01999");
+        if (fdst) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2KHR-dstImage-02000");
+        vkCmdBlitImage2Function(m_commandBuffer->handle(), &blit_image_info2);
+        m_errorMonitor->VerifyFound();
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImage-00230");
     if (fsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (udst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
     vk::CmdBlitImage(m_commandBuffer->handle(), float_image.image(), float_image.Layout(), unsigned_image.image(),
                      unsigned_image.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
+
+    // equivalent test using KHR_copy_commands2
+    if (copy_commands2 && vkCmdBlitImage2Function) {
+        const VkImageBlit2KHR blitRegion2 = {
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
+            blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
+                                                      NULL,
+                                                      float_image.image(),
+                                                      float_image.Layout(),
+                                                      unsigned_image.image(),
+                                                      unsigned_image.Layout(),
+                                                      1,
+                                                      &blitRegion2,
+                                                      VK_FILTER_NEAREST};
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBlitImageInfo2KHR-srcImage-00230");
+        if (fsrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2KHR-srcImage-01999");
+        if (udst) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2KHR-dstImage-02000");
+        vkCmdBlitImage2Function(m_commandBuffer->handle(), &blit_image_info2);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Signed int vs not an int,
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImage-00229");
@@ -2856,6 +3009,29 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     vk::CmdBlitImage(m_commandBuffer->handle(), signed_image.image(), signed_image.Layout(), float_image.image(),
                      float_image.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
+
+    // equivalent test using KHR_copy_commands2
+    if (copy_commands2 && vkCmdBlitImage2Function) {
+        const VkImageBlit2KHR blitRegion2 = {
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
+            blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
+                                                      NULL,
+                                                      signed_image.image(),
+                                                      signed_image.Layout(),
+                                                      float_image.image(),
+                                                      float_image.Layout(),
+                                                      1,
+                                                      &blitRegion2,
+                                                      VK_FILTER_NEAREST};
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBlitImageInfo2KHR-srcImage-00229");
+        if (ssrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2KHR-srcImage-01999");
+        if (fdst) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2KHR-dstImage-02000");
+        vkCmdBlitImage2Function(m_commandBuffer->handle(), &blit_image_info2);
+        m_errorMonitor->VerifyFound();
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImage-00229");
     if (fsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (sdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
@@ -6359,7 +6535,20 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // *  -2 Cmd buf submit of image w/ layout not matching first use w/ subresource
     // *  -3 Cmd buf submit of image w/ layout not matching first use w/o subresource
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool copy_commands2 = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+        copy_commands2 = true;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCmdCopyImage2KHR vkCmdCopyImage2Function = nullptr;
+    if (copy_commands2) {
+        vkCmdCopyImage2Function = (PFN_vkCmdCopyImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImage2KHR");
+    }
+
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
         printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
@@ -6422,7 +6611,6 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
     m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
-
     m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -6465,6 +6653,68 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_commandBuffer->CopyImage(src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
+
+    // Equivalent tests using KHR_copy_commands2
+    if (copy_commands2 && vkCmdCopyImage2Function) {
+        const VkImageCopy2KHR copy_region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
+                                              NULL,
+                                              copy_region.srcSubresource,
+                                              copy_region.srcOffset,
+                                              copy_region.dstSubresource,
+                                              copy_region.dstOffset,
+                                              copy_region.extent};
+        VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
+                                                NULL,
+                                                src_image.handle(),
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                dst_image.handle(),
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                1,
+                                                &copy_region2};
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
+        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
+        vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+        // The first call hits the expected WARNING and skips the call down the chain, so call a second time to call down chain and
+        // update layer state
+        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
+        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
+        vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
+        // Now cause error due to src image layout changing
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-srcImageLayout-00128");
+        m_errorMonitor->SetUnexpectedError("is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT");
+        copy_image_info2.srcImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+        // Final src error is due to bad layout type
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-srcImageLayout-00129");
+        m_errorMonitor->SetUnexpectedError(
+            "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the previously used layout "
+            "VK_IMAGE_LAYOUT_GENERAL.");
+        vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+        // Now verify same checks for dst
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
+        m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL instead of GENERAL.");
+        copy_image_info2.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+        // Now cause error due to src image layout changing
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-dstImageLayout-00133");
+        m_errorMonitor->SetUnexpectedError(
+            "is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL.");
+        copy_image_info2.dstImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-dstImageLayout-00134");
+        m_errorMonitor->SetUnexpectedError(
+            "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the previously used layout "
+            "VK_IMAGE_LAYOUT_GENERAL.");
+        vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Convert dst and depth images to TRANSFER_DST for subsequent tests
     VkImageMemoryBarrier transfer_dst_image_barrier[1] = {};
