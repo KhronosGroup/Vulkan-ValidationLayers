@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.156 */
+/* Vulkan specification version: 1.2.157 */
 /*
  * Vulkan
  *
@@ -905,6 +905,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-01559", "If {imageparam} has a multi-planar format, then for each element of pRegions, bufferOffset must be a multiple of the element size of the compatible format for the format and the aspectMask of the imageSubresource as defined in Compatible formats of planes of multi-planar formats", "1.2-extensions"},
     {"VUID-VkCopyBufferToImageInfo2KHR-bufferRowLength-00203", "If {imageparam} is a blocked image, for each element of pRegions, bufferRowLength must be a multiple of the compressed texel block width", "1.2-extensions"},
     {"VUID-VkCopyBufferToImageInfo2KHR-commandBuffer-04052", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT or VK_QUEUE_COMPUTE_BIT, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
+    {"VUID-VkCopyBufferToImageInfo2KHR-commandBuffer-04477", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT, for each element of pRegions, the aspectMask member of imageSubresource must not be VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT.", "1.2-extensions"},
     {"VUID-VkCopyBufferToImageInfo2KHR-commonparent", "Both of dstImage, and srcBuffer must have been created, allocated, or retrieved from the same VkDevice", "1.2-extensions"},
     {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-00177", "dstImage must have been created with VK_IMAGE_USAGE_TRANSFER_DST_BIT usage flag", "1.2-extensions"},
     {"VUID-VkCopyBufferToImageInfo2KHR-dstImage-00178", "If dstImage is non-sparse then it must be bound completely and contiguously to a single VkDeviceMemory object", "1.2-extensions"},
@@ -1265,6 +1266,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensions-02833", "If ppEnabledExtensions contains \"VK_EXT_descriptor_indexing\" and the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then VkPhysicalDeviceVulkan12Features::descriptorIndexing must be VK_TRUE", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensions-02834", "If ppEnabledExtensions contains \"VK_EXT_sampler_filter_minmax\" and the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then VkPhysicalDeviceVulkan12Features::samplerFilterMinmax must be VK_TRUE", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensions-02835", "If ppEnabledExtensions contains \"VK_EXT_shader_viewport_index_layer\" and the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then VkPhysicalDeviceVulkan12Features::shaderOutputViewportIndex and VkPhysicalDeviceVulkan12Features::shaderOutputLayer must both be VK_TRUE", "1.2-extensions"},
+    {"VUID-VkDeviceCreateInfo-ppEnabledExtensions-04476", "If ppEnabledExtensions contains \"VK_KHR_shader_draw_parameters\" and the pNext chain includes a VkPhysicalDeviceVulkan11Features structure, then VkPhysicalDeviceVulkan11Features::shaderDrawParameters must be VK_TRUE", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", "If enabledLayerCount is not 0, ppEnabledLayerNames must be a valid pointer to an array of enabledLayerCount null-terminated UTF-8 strings", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-queueCreateInfoCount-arraylength", "queueCreateInfoCount must be greater than 0", "1.2-extensions"},
     {"VUID-VkDeviceCreateInfo-queueFamilyIndex-00372", "The queueFamilyIndex member of each element of pQueueCreateInfos must be unique within pQueueCreateInfos", "1.0-extensions"},
@@ -4311,6 +4313,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-01829", "If commandBuffer is an unprotected command buffer, then dstImage must not be a protected image", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-01830", "If commandBuffer is a protected command buffer, then dstImage must not be an unprotected image", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-04052", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT or VK_QUEUE_COMPUTE_BIT, the bufferOffset member of any element of pRegions must be a multiple of 4", "1.2-extensions"},
+    {"VUID-vkCmdCopyBufferToImage-commandBuffer-04477", "If the queue family used to create the VkCommandPool which commandBuffer was allocated from does not support VK_QUEUE_GRAPHICS_BIT, for each element of pRegions, the aspectMask member of imageSubresource must not be VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT.", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-cmdpool", "The VkCommandPool that commandBuffer was allocated from must support transfer, graphics, or compute operations", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle", "1.2-extensions"},
     {"VUID-vkCmdCopyBufferToImage-commandBuffer-recording", "commandBuffer must be in the recording state", "1.2-extensions"},
