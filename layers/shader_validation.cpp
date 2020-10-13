@@ -1005,9 +1005,15 @@ struct shader_module_used_operators {
                     break;
                 }
                 case spv::OpAccessChain: {
-                    // 2: AccessChain id, 3: object id, 4: object id of array index
-                    accesschain_members.insert(
-                        std::make_pair(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), insn.word(4))));
+                    if (insn.len() == 4) {
+                        // If it is for struct, the length is only 4.
+                        // 2: AccessChain id, 3: object id
+                        accesschain_members.insert(std::make_pair(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), 0)));
+                    } else {
+                        // 2: AccessChain id, 3: object id, 4: object id of array index
+                        accesschain_members.insert(
+                            std::make_pair(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), insn.word(4))));
+                    }
                     break;
                 }
                 case spv::OpImageTexelPointer: {
@@ -1089,6 +1095,11 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                                 if (accesschain_it->second.first != id) {
                                     continue;
                                 }
+                                if (used_operators.load_members.end() !=
+                                    used_operators.load_members.find(accesschain_it->second.second)) {
+                                    // image_index isn't a constant, skip.
+                                    break;
+                                }
                                 image_index = GetConstantValue(module, accesschain_it->second.second);
                             }
                         }
@@ -1102,6 +1113,11 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                         uint32_t sampler_index = 0;
                         auto accesschain_it = used_operators.accesschain_members.find(load_it->second);
                         if (accesschain_it != used_operators.accesschain_members.end()) {
+                            if (used_operators.load_members.end() !=
+                                used_operators.load_members.find(accesschain_it->second.second)) {
+                                // sampler_index isn't a constant, skip.
+                                break;
+                            }
                             sampler_id = accesschain_it->second.first;
                             sampler_index = GetConstantValue(module, accesschain_it->second.second);
                         }
