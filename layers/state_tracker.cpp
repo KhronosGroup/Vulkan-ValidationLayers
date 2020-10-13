@@ -5783,8 +5783,18 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
 
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
         if (use.second.samplers_used_by_image.size()) {
-            pipeline->active_slots[slot][use.first.second].samplers_used_by_image[stage_state->stage_flag] =
-                &use.second.samplers_used_by_image;
+            auto &samplers_used_by_image = pipeline->active_slots[slot][use.first.second].samplers_used_by_image;
+            if (use.second.samplers_used_by_image.size() > samplers_used_by_image.size()) {
+                samplers_used_by_image.resize(use.second.samplers_used_by_image.size());
+            }
+            std::map<VkDescriptorSet, const cvdescriptorset::Descriptor *> sampler_descriptors;
+            uint32_t image_index = 0;
+            for (const auto &samplers : use.second.samplers_used_by_image) {
+                for (const auto &sampler : samplers) {
+                    samplers_used_by_image[image_index].emplace(sampler, sampler_descriptors);
+                }
+                ++image_index;
+            }
         }
     }
 

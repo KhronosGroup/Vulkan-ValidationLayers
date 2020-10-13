@@ -1121,11 +1121,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                         state.per_set[setIndex].validated_set_binding_req_map.begin(),
                                         state.per_set[setIndex].validated_set_binding_req_map.end(),
                                         std::inserter(delta_reqs, delta_reqs.begin()));
-                    result |= ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                attachment_views, function, vuid);
+                    result |= ValidateDrawState(bind_point, descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets,
+                                                cb_node, attachment_views, function, vuid);
                 } else {
-                    result |= ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                attachment_views, function, vuid);
+                    result |= ValidateDrawState(bind_point, descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets,
+                                                cb_node, attachment_views, function, vuid);
                 }
             }
         }
@@ -2760,8 +2760,8 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::string error;
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding_info,
-                                                                     cmd_info.framebuffer, cmd_info.attachment_views,
+                            skip |= ValidateDescriptorSetBindingData(cmd_info.bind_point, cb_node, set_node, dynamicOffsets,
+                                                                     binding_info, cmd_info.framebuffer, cmd_info.attachment_views,
                                                                      function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }

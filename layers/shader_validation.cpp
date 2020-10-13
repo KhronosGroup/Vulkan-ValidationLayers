@@ -1122,8 +1122,11 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                             sampler_index = GetConstantValue(module, accesschain_it->second.second);
                         }
                         auto sampler_dec = module->get_decorations(sampler_id);
-                        out_interface_var.samplers_used_by_image.emplace_back(SamplerUsedByImage{
-                            image_index, descriptor_slot_t{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
+                        if (image_index >= out_interface_var.samplers_used_by_image.size()) {
+                            out_interface_var.samplers_used_by_image.resize(image_index + 1);
+                        }
+                        out_interface_var.samplers_used_by_image[image_index].emplace(
+                            SamplerUsedByImage{descriptor_slot_t{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
                     }
                 }
             }
