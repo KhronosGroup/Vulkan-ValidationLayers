@@ -276,6 +276,17 @@ bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) 
     return true;
 }
 
+const cvdescriptorset::DescriptorSet *CMD_BUFFER_STATE::GetDescriptorSet(VkPipelineBindPoint bind_point, uint32_t set) const {
+    const auto last_bound_it = lastBound.find(bind_point);
+    if (last_bound_it == lastBound.cend()) {
+        return nullptr;
+    }
+    if (set >= last_bound_it->second.per_set.size()) {
+        return nullptr;
+    }
+    return last_bound_it->second.per_set[set].bound_descriptor_set;
+}
+
 const cvdescriptorset::Descriptor *CMD_BUFFER_STATE::GetDescriptor(VkShaderStageFlagBits shader_stage, uint32_t set,
                                                                    uint32_t binding, uint32_t index) const {
     VkPipelineBindPoint bind_point;

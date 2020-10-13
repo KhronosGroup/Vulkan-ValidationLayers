@@ -169,15 +169,22 @@ extern unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 
 struct SamplerUsedByImage {
-    uint32_t image_index;
     descriptor_slot_t sampler_slot;
     uint32_t sampler_index;
 };
 
+namespace std {
+template <>
+struct less<SamplerUsedByImage> {
+    bool operator()(const SamplerUsedByImage &left, const SamplerUsedByImage &right) const { return false; }
+};
+}  // namespace std
+
 struct DescriptorReqirement {
     descriptor_req reqs;
-    std::map<VkShaderStageFlagBits, const std::vector<SamplerUsedByImage> *>
-        samplers_used_by_image;  // Refer from StageState.interface_var
+    std::vector<std::map<SamplerUsedByImage, std::map<VkDescriptorSet, const cvdescriptorset::Descriptor *>>>
+        samplers_used_by_image;  // Copy from StageState.interface_var. BUT it combines from plural shader stages.
+                                 // The index of array is index of image.
     DescriptorReqirement() : reqs(descriptor_req(0)) {}
 };
 
@@ -828,7 +835,8 @@ struct interface_var {
     uint32_t type_id;
     uint32_t offset;
 
-    std::vector<SamplerUsedByImage> samplers_used_by_image;  // List of samplers that sample a given image
+    std::vector<std::set<SamplerUsedByImage>> samplers_used_by_image;  // List of samplers that sample a given image.
+                                                                       // The index of array is index of image.
 
     bool is_patch;
     bool is_block_member;
@@ -1233,9 +1241,10 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::map<uint32_t, LAST_BOUND_STATE> lastBound;
 
     struct CmdDrawDispatchInfo {
+        VkPipelineBindPoint bind_point;
         CMD_TYPE cmd_type;
         std::string function;
-        std::vector<std::pair<uint32_t, DescriptorReqirement>> binding_infos;
+        std::vector<std::pair<const uint32_t, DescriptorReqirement>> binding_infos;
         VkFramebuffer framebuffer;
         std::vector<VkImageView> attachment_views;  // vector index is attachment index. If the value is VK_NULL_HANDLE(0),
                                                     // it means the attachment isn't used in this command.
@@ -1309,6 +1318,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<IMAGE_VIEW_STATE *> imagelessFramebufferAttachments;
 
     bool transform_feedback_active{false};
+
+    const cvdescriptorset::DescriptorSet *GetDescriptorSet(VkPipelineBindPoint bind_point, uint32_t set) const;
 
     const cvdescriptorset::Descriptor *GetDescriptor(VkShaderStageFlagBits shader_stage, uint32_t set, uint32_t binding,
                                                      uint32_t index) const;
