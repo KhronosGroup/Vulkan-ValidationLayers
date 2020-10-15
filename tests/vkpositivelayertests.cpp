@@ -132,6 +132,54 @@ TEST_F(VkPositiveLayerTest, NullFunctionPointer) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
+    TEST_DESCRIPTION("DynamicViewportWithCount/ScissorWithCount without multiViewport feature not enabled.");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+        return;
+    }
+
+    auto extended_dynamic_state_features = lvl_init_struct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
+        return;
+    }
+    // Ensure multiViewport feature is *not* enabled for this device
+    features2.features.multiViewport = 0;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    const VkDynamicState dyn_states[] = {
+        VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
+        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,
+    };
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.vp_state_ci_.scissorCount = 0;
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     TEST_DESCRIPTION("Add a pipeline barrier in a secondary command buffer");
     ASSERT_NO_FATAL_FAILURE(Init());
