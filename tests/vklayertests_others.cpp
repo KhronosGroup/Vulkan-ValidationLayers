@@ -8164,7 +8164,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03231");
         vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_WAIT_BIT);
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
         m_errorMonitor->VerifyFound();
 
         {
@@ -8194,27 +8194,28 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03229");
             vk::GetQueryPoolResults(
                 device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
-                &results_invalid_stride[0], sizeof(VkPerformanceCounterResultKHR) + 4, VK_QUERY_RESULT_WAIT_BIT);
+                &results_invalid_stride[0], sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size() + 4,
+                VK_QUERY_RESULT_WAIT_BIT);
             m_errorMonitor->VerifyFound();
         }
 
         // Invalid flags
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
         vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
         vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_PARTIAL_BIT);
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
         vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_64_BIT);
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->ExpectSuccess(kErrorBit);
         vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_WAIT_BIT);
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
         m_errorMonitor->VerifyNotFound();
 
         vk::DestroyBuffer(device(), buffer, nullptr);
