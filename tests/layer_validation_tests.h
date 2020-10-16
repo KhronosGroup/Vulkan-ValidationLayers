@@ -293,6 +293,8 @@ class VkWsiEnabledLayerTest : public VkLayerTest {
 class VkGpuAssistedLayerTest : public VkLayerTest {
   public:
     bool InitGpuAssistedFramework(bool request_descriptor_indexing);
+    void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
+                              VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error);
 
   protected:
 };

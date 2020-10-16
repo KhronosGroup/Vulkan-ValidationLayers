@@ -636,6 +636,179 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     m_commandBuffer->QueueCommandBuffer();
     m_errorMonitor->VerifyNotFound();
 }
+void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
+                                                  VkDescriptorType descriptor_type, const char *fragment_shader,
+                                                  const char *expected_error) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    InitGpuAssistedFramework(false);
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
+        return;
+    }
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceFeatures features = {};  // Make sure robust buffer access is not enabled
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, expected_error);
+
+    OneOffDescriptorSet ds(m_device, {{0, descriptor_type, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+                                                                     : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    bci.size = buffer_size;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer;
+    buffer.init(*m_device, bci);
+    VkPipelineObj pipe(m_device);
+
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.buffer = buffer.handle();
+    buffer_info.offset = binding_offset;
+    buffer_info.range = binding_range;
+
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = descriptor_type;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+    char const *vsSource =
+        "#version 450\n"
+        "vec2 vertices[3];\n"
+        "void main(){\n"
+        "      vertices[0] = vec2(-1.0, -1.0);\n"
+        "      vertices[1] = vec2( 1.0, -1.0);\n"
+        "      vertices[2] = vec2( 0.0,  1.0);\n"
+        "      gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+
+    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_,
+                              0, nullptr);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer(true);
+    m_errorMonitor->VerifyFound();
+    DestroyRenderTarget();
+}
+
+TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
+    TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.x, bar.y, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(4,  // buffer size
+                         0,  // binding offset
+                         4,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 4 and highest byte accessed was 7");
+}
+TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
+    TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) buffer readonly foo { int x; int y; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.x, bar.y, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(4,  // buffer size
+                         0,  // binding offset
+                         4,  // binding range
+                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource, "Descriptor size is 4 and highest byte accessed was 7");
+}
+
+TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses array in block "
+        "definition.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int x[17]; } bar;\n"
+        "void main(){\n"
+        "   int y = 0;\n"
+        "   for (int i = 0; i < 17; i++)\n"
+        "       y += bar.x[i];\n"
+        "   x = vec4(y, 0, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(64,  // buffer size
+                         0,   // binding offset
+                         64,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 64 and highest byte accessed was 67");
+}
+
+TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses nested struct in block "
+        "definition.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "struct S {\n"
+        "    int x;\n"
+        "    int y;\n"
+        "};\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int a; S b; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.a, bar.b.x, bar.b.y, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(8,  // buffer size
+                         0,  // binding offset
+                         8,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 8 and highest byte accessed was 19");
+}
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
