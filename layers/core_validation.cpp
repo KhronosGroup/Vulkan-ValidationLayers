@@ -766,12 +766,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer);
                     objlist.add(state.pipeline_state->pipeline);
-                    skip |= LogError(objlist, kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
+                    skip |= LogError(objlist, vuid.vertex_binding_attribute,
                                      "%s: Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
-                                     " from %s and vertex %s.",
-                                     caller, i, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                                     ", %s,from of %s and vertex %s.",
+                                     caller, i, string_VkFormat(attribute_description.format),
+                                     report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
                                      report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer).c_str());
                 }
+            } else {
+                LogObjectList objlist(pCB->commandBuffer);
+                objlist.add(state.pipeline_state->pipeline);
+                skip |= LogError(objlist, vuid.vertex_binding_attribute,
+                                 "%s: binding #%" PRIu32
+                                 " in pVertexAttributeDescriptions of %s is invalid in vkCmdBindVertexBuffers of %s.",
+                                 caller, vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                                 report_data->FormatHandle(pCB->commandBuffer).c_str());
             }
         }
     }

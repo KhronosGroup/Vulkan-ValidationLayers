@@ -71,6 +71,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-None-02702",
         "VUID-vkCmdDraw-None-02703",
         "VUID-vkCmdDraw-None-02704",
+        "VUID-vkCmdDraw-None-02721",
     }},
     {CMD_DRAWINDEXED, {
         "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
@@ -101,6 +102,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-None-02702",
         "VUID-vkCmdDrawIndexed-None-02703",
         "VUID-vkCmdDrawIndexed-None-02704",
+        "VUID-vkCmdDrawIndexed-None-02721",
     }},
     {CMD_DRAWINDIRECT, {
         "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
@@ -131,6 +133,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-None-02702",
         "VUID-vkCmdDrawIndirect-None-02703",
         "VUID-vkCmdDrawIndirect-None-02704",
+        "VUID-vkCmdDrawIndirect-None-02721",
     }},
     {CMD_DRAWINDEXEDINDIRECT, {
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool",
@@ -161,6 +164,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-None-02702",
         "VUID-vkCmdDrawIndexedIndirect-None-02703",
         "VUID-vkCmdDrawIndexedIndirect-None-02704",
+        "VUID-vkCmdDrawIndexedIndirect-None-02721",
     }},
     {CMD_DISPATCH, {
         "VUID-vkCmdDispatch-commandBuffer-cmdpool",
@@ -191,6 +195,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatch-None-02702",
         "VUID-vkCmdDispatch-None-02703",
         "VUID-vkCmdDispatch-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_DISPATCHINDIRECT, {
         "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
@@ -221,6 +226,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatchIndirect-None-02702",
         "VUID-vkCmdDispatchIndirect-None-02703",
         "VUID-vkCmdDispatchIndirect-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_DRAWINDIRECTCOUNT, {
         "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool",
@@ -251,6 +257,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-None-02702",
         "VUID-vkCmdDrawIndirectCount-None-02703",
         "VUID-vkCmdDrawIndirectCount-None-02704",
+        "VUID-vkCmdDrawIndirectCount-None-02721",
     }},
     {CMD_DRAWINDEXEDINDIRECTCOUNT,{
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool",
@@ -281,6 +288,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-None-02702",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02703",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02704",
+        "VUID-vkCmdDrawIndexedIndirectCount-None-02721",
     }},
     {CMD_TRACERAYSNV, {
         "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool",
@@ -311,6 +319,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysNV-None-02702",
         "VUID-vkCmdTraceRaysNV-None-02703",
         "VUID-vkCmdTraceRaysNV-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_TRACERAYSKHR, {
         "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
@@ -341,6 +350,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysKHR-None-02702",
         "VUID-vkCmdTraceRaysKHR-None-02703",
         "VUID-vkCmdTraceRaysKHR-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_TRACERAYSINDIRECTKHR, {
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
@@ -371,6 +381,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysIndirectKHR-None-02702",
         "VUID-vkCmdTraceRaysIndirectKHR-None-02703",
         "VUID-vkCmdTraceRaysIndirectKHR-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
@@ -401,6 +412,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-None-02702",
         "VUID-vkCmdDrawMeshTasksNV-None-02703",
         "VUID-vkCmdDrawMeshTasksNV-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_DRAWMESHTASKSINDIRECTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
@@ -431,6 +443,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02702",
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02703",
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool",
@@ -461,6 +474,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02702",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02703",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     {CMD_DRAWINDIRECTBYTECOUNTEXT, {
         "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-cmdpool",
@@ -491,6 +505,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02702",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02703",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02704",
+        "VUID-vkCmdDrawIndirectByteCountEXT-None-02721",
     }},
     {CMD_DISPATCHBASE, {
         "VUID-vkCmdDispatchBase-commandBuffer-cmdpool",
@@ -521,6 +536,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatchBase-None-02702",
         "VUID-vkCmdDispatchBase-None-02703",
         "VUID-vkCmdDispatchBase-None-02704",
+        kVUIDUndefined, // vertex_binding_attribute
     }},
     // Used if invalid cmd_type is used
     {CMD_NONE, {
