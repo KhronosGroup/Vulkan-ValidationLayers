@@ -1869,10 +1869,12 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const ch
                                        const char *error_code) const {
     auto pool = cb_node->command_pool.get();
     if (pool) {
-        VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].queueFlags;
+        const uint32_t queue_family_index = pool->queueFamilyIndex;
+        const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queue_family_index].queueFlags;
         if (!(required_flags & queue_flags)) {
             string required_flags_string;
-            for (auto flag : {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT}) {
+            for (auto flag : {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_SPARSE_BINDING_BIT,
+                              VK_QUEUE_PROTECTED_BIT}) {
                 if (flag & required_flags) {
                     if (required_flags_string.size()) {
                         required_flags_string += " or ";
@@ -1881,7 +1883,10 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const ch
                 }
             }
             return LogError(cb_node->commandBuffer, error_code,
-                            "Cannot call %s on a command buffer allocated from a pool without %s capabilities..", caller_name,
+                            "%s(): Called in command buffer %s which was allocated from the command pool %s which was created with "
+                            "queueFamilyIndex %u which doesn't contain the required %s capability flags.",
+                            caller_name, report_data->FormatHandle(cb_node->commandBuffer).c_str(),
+                            report_data->FormatHandle(pool->commandPool).c_str(), queue_family_index,
                             required_flags_string.c_str());
         }
     }
