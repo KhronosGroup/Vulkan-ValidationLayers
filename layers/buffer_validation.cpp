@@ -5537,29 +5537,6 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 }
             }
         }
-
-        // Checks depth or stencil aspect are used in graphics queue
-        if ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
-            assert(cb_node != nullptr);
-            const COMMAND_POOL_STATE *command_pool = cb_node->command_pool.get();
-            if (command_pool != nullptr) {
-                const uint32_t queueFamilyIndex = command_pool->queueFamilyIndex;
-                const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queueFamilyIndex].queueFlags;
-
-                if ((queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-                    LogObjectList objlist(cb_node->commandBuffer);
-                    objlist.add(command_pool->commandPool);
-                    // TODO - Label when future headers get merged in from internral MR 4077 fix
-                    skip |=
-                        LogError(image_state->image, "UNASSIGNED-VkBufferImageCopy-aspectMask",
-                                 "%s: pRegion[%d] subresource aspectMask 0x%x specifies VK_IMAGE_ASPECT_DEPTH_BIT or "
-                                 "VK_IMAGE_ASPECT_STENCIL_BIT but the command buffer %s was allocated from the command pool %s "
-                                 "which was create with queueFamilyIndex %u which doesn't contain the VK_QUEUE_GRAPHICS_BIT flag.",
-                                 function, i, region_aspect_mask, report_data->FormatHandle(cb_node->commandBuffer).c_str(),
-                                 report_data->FormatHandle(command_pool->commandPool).c_str(), queueFamilyIndex);
-                }
-            }
-        }
     }
 
     return skip;
@@ -5785,17 +5762,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     // Validate command buffer state
     skip |= ValidateCmd(cb_node, cmd_type, func_name);
 
-    // Command pool must support graphics, compute, or transfer operations
-    const auto pPool = cb_node->command_pool.get();
-    VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
-    if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
-        vuid =
-            is_2khr ? "VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-cmdpool" : "VUID-vkCmdCopyBufferToImage-commandBuffer-cmdpool";
-        skip |= LogError(cb_node->createInfo.commandPool, vuid,
-                         "Cannot call %s on a command buffer allocated from a pool without graphics, compute, "
-                         "or transfer capabilities.",
-                         func_name);
-    }
+    vuid = is_2khr ? "VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-cmdpool" : "VUID-vkCmdCopyBufferToImage-commandBuffer-cmdpool";
+    skip |= ValidateCmdQueueFlags(cb_node, func_name, VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid);
+
     vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-pRegions-00172" : "VUID-vkCmdCopyBufferToImage-pRegions-00172";
     skip |= ValidateImageBounds(dst_image_state, regionCount, pRegions, func_name, vuid);
     vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-pRegions-00171" : "VUID-vkCmdCopyBufferToImage-pRegions-00171";
@@ -5860,6 +5829,26 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                        : "VUID-vkCmdCopyBufferToImage-imageSubresource-01702";
         skip |= ValidateImageArrayLayerRange(cb_node, dst_image_state, pRegions[i].imageSubresource.baseArrayLayer,
                                              pRegions[i].imageSubresource.layerCount, i, func_name, "imageSubresource", vuid);
+
+        // TODO - Don't use ValidateCmdQueueFlags due to currently not having way to add more descriptive message
+        const COMMAND_POOL_STATE *command_pool = cb_node->command_pool.get();
+        assert(command_pool != nullptr);
+        const uint32_t queue_family_index = command_pool->queueFamilyIndex;
+        const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queue_family_index].queueFlags;
+        const VkImageAspectFlags region_aspect_mask = pRegions[i].imageSubresource.aspectMask;
+        if (((queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) &&
+            ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0)) {
+            LogObjectList objlist(cb_node->commandBuffer);
+            objlist.add(command_pool->commandPool);
+            vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-commandBuffer-04477"
+                           : "VUID-vkCmdCopyBufferToImage-commandBuffer-04477";
+            skip |= LogError(dst_image_state->image, vuid,
+                             "%s(): pRegion[%d] subresource aspectMask 0x%x specifies VK_IMAGE_ASPECT_DEPTH_BIT or "
+                             "VK_IMAGE_ASPECT_STENCIL_BIT but the command buffer %s was allocated from the command pool %s "
+                             "which was created with queueFamilyIndex %u, which doesn't contain the VK_QUEUE_GRAPHICS_BIT flag.",
+                             func_name, i, region_aspect_mask, report_data->FormatHandle(cb_node->commandBuffer).c_str(),
+                             report_data->FormatHandle(command_pool->commandPool).c_str(), queue_family_index);
+        }
     }
     return skip;
 }
