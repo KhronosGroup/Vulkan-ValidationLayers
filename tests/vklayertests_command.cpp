@@ -5018,7 +5018,7 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkBufferImageCopy-aspectMask");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-04477");
         vk::CmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), ds_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                  1, &region);
         m_errorMonitor->VerifyFound();
