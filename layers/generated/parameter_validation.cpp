@@ -5674,7 +5674,6 @@ bool StatelessValidation::PreCallValidateCmdCopyImage(
             // No xml-driven validation
         }
     }
-    if (!skip) skip |= manual_PreCallValidateCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
     return skip;
 }
 
@@ -5703,7 +5702,6 @@ bool StatelessValidation::PreCallValidateCmdBlitImage(
         }
     }
     skip |= validate_ranged_enum("vkCmdBlitImage", "filter", "VkFilter", AllVkFilterEnums, filter, "VUID-vkCmdBlitImage-filter-parameter");
-    if (!skip) skip |= manual_PreCallValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
     return skip;
 }
 
@@ -5730,7 +5728,6 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage(
             // No xml-driven validation
         }
     }
-    if (!skip) skip |= manual_PreCallValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
     return skip;
 }
 
@@ -5757,7 +5754,6 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer(
             // No xml-driven validation
         }
     }
-    if (!skip) skip |= manual_PreCallValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
     return skip;
 }
 
