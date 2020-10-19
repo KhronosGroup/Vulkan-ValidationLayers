@@ -1366,26 +1366,10 @@ class StatelessValidation : public ValidationObject {
                                                                           const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                           VkImageFormatProperties2 *pImageFormatProperties) const;
 
-    bool manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageCopy *pRegions) const;
-
-    bool manual_PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageBlit *pRegions, VkFilter filter) const;
-
     bool manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                              uint32_t regionCount, const VkBufferCopy *pRegions) const;
 
     bool manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo) const;
-
-    bool manual_PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                    VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                    const VkBufferImageCopy *pRegions) const;
-
-    bool manual_PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                    VkBuffer dstBuffer, uint32_t regionCount,
-                                                    const VkBufferImageCopy *pRegions) const;
 
     bool manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                VkDeviceSize dataSize, const void *pData) const;

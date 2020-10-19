@@ -3576,60 +3576,6 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                                                            "vkGetPhysicalDeviceImageFormatProperties2KHR");
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                             VkImageLayout srcImageLayout, VkImage dstImage,
-                                                             VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                             const VkImageCopy *pRegions) const {
-    bool skip = false;
-
-    VkImageAspectFlags legal_aspect_flags =
-        VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-    }
-
-    if (pRegions != nullptr) {
-        if ((pRegions->srcSubresource.aspectMask & legal_aspect_flags) == 0) {
-            skip |= LogError(
-                device, "VUID-VkImageSubresourceLayers-aspectMask-parameter",
-                "vkCmdCopyImage() parameter, VkImageAspect pRegions->srcSubresource.aspectMask, is an unrecognized enumerator.");
-        }
-        if ((pRegions->dstSubresource.aspectMask & legal_aspect_flags) == 0) {
-            skip |= LogError(
-                device, "VUID-VkImageSubresourceLayers-aspectMask-parameter",
-                "vkCmdCopyImage() parameter, VkImageAspect pRegions->dstSubresource.aspectMask, is an unrecognized enumerator.");
-        }
-    }
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                             VkImageLayout srcImageLayout, VkImage dstImage,
-                                                             VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                             const VkImageBlit *pRegions, VkFilter filter) const {
-    bool skip = false;
-
-    VkImageAspectFlags legal_aspect_flags =
-        VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-    }
-
-    if (pRegions != nullptr) {
-        if ((pRegions->srcSubresource.aspectMask & legal_aspect_flags) == 0) {
-            skip |= LogError(
-                device, kVUID_PVError_UnrecognizedValue,
-                "vkCmdBlitImage() parameter, VkImageAspect pRegions->srcSubresource.aspectMask, is an unrecognized enumerator");
-        }
-        if ((pRegions->dstSubresource.aspectMask & legal_aspect_flags) == 0) {
-            skip |= LogError(
-                device, kVUID_PVError_UnrecognizedValue,
-                "vkCmdBlitImage() parameter, VkImageAspect pRegions->dstSubresource.aspectMask, is an unrecognized enumerator");
-        }
-    }
-    return skip;
-}
-
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                                               uint32_t regionCount, const VkBufferCopy *pRegions) const {
     bool skip = false;
@@ -3655,51 +3601,6 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffe
                 skip |= LogError(device, "VUID-VkBufferCopy2KHR-size-01988",
                                  "vkCmdCopyBuffer2KHR() pCopyBufferInfo->pRegions[%u].size must be greater than zero", i);
             }
-        }
-    }
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer,
-                                                                     VkImage dstImage, VkImageLayout dstImageLayout,
-                                                                     uint32_t regionCount,
-                                                                     const VkBufferImageCopy *pRegions) const {
-    bool skip = false;
-
-    VkImageAspectFlags legal_aspect_flags =
-        VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-    }
-
-    if (pRegions != nullptr) {
-        if ((pRegions->imageSubresource.aspectMask & legal_aspect_flags) == 0) {
-            skip |= LogError(device, kVUID_PVError_UnrecognizedValue,
-                             "vkCmdCopyBufferToImage() parameter, VkImageAspect pRegions->imageSubresource.aspectMask, is an "
-                             "unrecognized enumerator");
-        }
-    }
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                                     VkImageLayout srcImageLayout, VkBuffer dstBuffer,
-                                                                     uint32_t regionCount,
-                                                                     const VkBufferImageCopy *pRegions) const {
-    bool skip = false;
-
-    VkImageAspectFlags legal_aspect_flags =
-        VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-    }
-
-    if (pRegions != nullptr) {
-        if ((pRegions->imageSubresource.aspectMask & legal_aspect_flags) == 0) {
-            skip |= LogError(
-                device, kVUID_PVError_UnrecognizedValue,
-                "vkCmdCopyImageToBuffer parameter, VkImageAspect pRegions->imageSubresource.aspectMask, is an unrecognized "
-                "enumerator");
         }
     }
     return skip;
