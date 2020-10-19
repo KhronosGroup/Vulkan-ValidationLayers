@@ -589,7 +589,7 @@ class StatelessValidation : public ValidationObject {
     /**
      * Validate a VkBool32 value.
      *
-     * Generate a warning if a VkBool32 value is neither VK_TRUE nor VK_FALSE.
+     * Generate an error if a VkBool32 value is neither VK_TRUE nor VK_FALSE.
      *
      * @param apiName Name of API call being validated.
      * @param parameterName Name of parameter being validated.
@@ -598,12 +598,12 @@ class StatelessValidation : public ValidationObject {
      */
     bool validate_bool32(const char *apiName, const ParameterName &parameterName, VkBool32 value) const {
         bool skip_call = false;
-
         if ((value != VK_TRUE) && (value != VK_FALSE)) {
-            skip_call |= LogWarning(device, kVUID_PVError_UnrecognizedValue, "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE",
-                                    apiName, parameterName.get_name().c_str(), value);
+            skip_call |= LogError(device, kVUID_PVError_UnrecognizedValue,
+                                  "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE. Applications MUST not pass any other "
+                                  "values than VK_TRUE or VK_FALSE into a Vulkan implementation where a VkBool32 is expected.",
+                                  apiName, parameterName.get_name().c_str(), value);
         }
-
         return skip_call;
     }
 
