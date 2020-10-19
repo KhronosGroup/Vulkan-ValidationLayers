@@ -13279,13 +13279,12 @@ TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
     // A global execution barrier that the implict external dependency can chain with should work...
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 0,
                            nullptr);
-    m_errorMonitor->VerifyNotFound();
 
-    // With the barrier above, the layout transition has a chained "availability" memory sync operation, but the default
-    // implict VkSubpassDependency doesn't safe the load op clear vs. the layout transition... so we fail there.
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    // With the barrier above, the layout transition has a chained execution sync operation, and the default
+    // implict VkSubpassDependency safes the load op clear vs. the layout transition...
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
@@ -14586,8 +14585,8 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
         VK_ATTACHMENT_STORE_OP_STORE,
         VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         VK_ATTACHMENT_STORE_OP_STORE,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
+        VK_IMAGE_LAYOUT_GENERAL,
     };
 
     std::vector<VkAttachmentDescription> attachmentDescs;
@@ -14602,21 +14601,21 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
         VK_ATTACHMENT_STORE_OP_DONT_CARE,
         VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
+        VK_IMAGE_LAYOUT_GENERAL,
     };
     attachmentDescs.push_back(inputAttachment);
 
     std::vector<VkAttachmentReference> inputAttachments;
     const VkAttachmentReference inputRef = {
         1u,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
     };
     inputAttachments.push_back(inputRef);
 
     const VkAttachmentReference colorRef = {
         0u,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
     };
     const std::vector<VkAttachmentReference> colorAttachments(1u, colorRef);
 
@@ -14719,8 +14718,8 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
                                                   nullptr,
                                                   VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
                                                   VK_ACCESS_TRANSFER_WRITE_BIT,
-                                                  VK_IMAGE_LAYOUT_UNDEFINED,
-                                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                  VK_IMAGE_LAYOUT_GENERAL,
+                                                  VK_IMAGE_LAYOUT_GENERAL,
                                                   VK_QUEUE_FAMILY_IGNORED,
                                                   VK_QUEUE_FAMILY_IGNORED,
                                                   VK_NULL_HANDLE,
@@ -14730,8 +14729,8 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
         nullptr,
         VK_ACCESS_TRANSFER_WRITE_BIT,
         VK_ACCESS_TRANSFER_READ_BIT,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
+        VK_IMAGE_LAYOUT_GENERAL,
         VK_QUEUE_FAMILY_IGNORED,
         VK_QUEUE_FAMILY_IGNORED,
         VK_NULL_HANDLE,
@@ -14750,14 +14749,14 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                            &preClearBarrier);
 
-    vk::CmdClearColorImage(m_commandBuffer->handle(), image_color.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &ccv, 1,
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image_color.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1,
                            &full_subresource_range);
 
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 2u,
                            preCopyBarriers);
 
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_color.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_input.handle(),
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &full_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_color.handle(), VK_IMAGE_LAYOUT_GENERAL, image_input.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1u, &full_region);
 
     // No post copy image barrier, we are testing the subpass dependencies
 
@@ -14777,7 +14776,7 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     m_commandBuffer->EndRenderPass();
     // m_errorMonitor->VerifyNotFound();
 
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_color.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_input.handle(),
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_color.handle(), VK_IMAGE_LAYOUT_GENERAL, image_input.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &full_region);
     m_errorMonitor->VerifyNotFound();
 

@@ -1491,8 +1491,11 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
                                          &target_map, nullptr);
     }
 
-    ApplyBarrierOpsFunctor apply_pending_action(true /* resolve */, 0, tag);
-    ApplyGlobalBarriers(apply_pending_action);
+    // If there were no transitions skip this global map walk
+    if (transitions.size()) {
+        ApplyBarrierOpsFunctor apply_pending_action(true /* resolve */, 0, tag);
+        ApplyGlobalBarriers(apply_pending_action);
+    }
 }
 
 // Class CommandBufferAccessContext: Keep track of resource access state information for a specific command buffer
@@ -1503,38 +1506,35 @@ bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE
                                                          const char *func_name) const {
     // Check if any of the layout transitions are hazardous.... but we don't have the renderpass context to work with, so we
     bool skip = false;
-    uint32_t subpass = 0;
-    const auto &transitions = rp_state.subpass_transitions[subpass];
-    if (transitions.size()) {
-        const std::vector<AccessContext> empty_context_vector;
-        // Create context we can use to validate against...
-        AccessContext temp_context(subpass, queue_flags_, rp_state.subpass_dependencies, empty_context_vector,
-                                   const_cast<AccessContext *>(&cb_access_context_));
 
-        assert(pRenderPassBegin);
-        if (nullptr == pRenderPassBegin) return skip;
+    assert(pRenderPassBegin);
+    if (nullptr == pRenderPassBegin) return skip;
 
-        const auto fb_state = sync_state_->Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
-        assert(fb_state);
-        if (nullptr == fb_state) return skip;
+    const uint32_t subpass = 0;
 
-        // Create a limited array of views (which we'll need to toss
-        std::vector<const IMAGE_VIEW_STATE *> views;
-        const auto count_attachment = GetFramebufferAttachments(*pRenderPassBegin, *fb_state);
-        const auto attachment_count = count_attachment.first;
-        const auto *attachments = count_attachment.second;
-        views.resize(attachment_count, nullptr);
-        for (const auto &transition : transitions) {
-            assert(transition.attachment < attachment_count);
-            views[transition.attachment] = sync_state_->Get<IMAGE_VIEW_STATE>(attachments[transition.attachment]);
-        }
+    // Construct the state we can use to validate against... (since validation is const and RecordCmdBeginRenderPass
+    // hasn't happened yet)
+    const std::vector<AccessContext> empty_context_vector;
+    AccessContext temp_context(subpass, queue_flags_, rp_state.subpass_dependencies, empty_context_vector,
+                               const_cast<AccessContext *>(&cb_access_context_));
 
-        skip |= temp_context.ValidateLayoutTransitions(*sync_state_, rp_state, pRenderPassBegin->renderArea, 0, views, func_name);
-        if (!skip) {
-            temp_context.RecordLayoutTransitions(rp_state, 0, views, kCurrentCommandTag);
-            skip |= temp_context.ValidateLoadOperation(*sync_state_, rp_state, pRenderPassBegin->renderArea, 0, views, func_name);
-        }
+    // Create a view list
+    const auto fb_state = sync_state_->Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+    assert(fb_state);
+    if (nullptr == fb_state) return skip;
+    // NOTE: Must not use COMMAND_BUFFER_STATE variant of this as RecordCmdBeginRenderPass hasn't run and thus
+    //       the activeRenderPass.* fields haven't been set.
+    const auto views = sync_state_->GetAttachmentViews(*pRenderPassBegin, *fb_state);
+
+    // Validate transitions
+    skip |= temp_context.ValidateLayoutTransitions(*sync_state_, rp_state, pRenderPassBegin->renderArea, subpass, views, func_name);
+
+    // Validate load operations if there were no layout transition hazards
+    if (!skip) {
+        temp_context.RecordLayoutTransitions(rp_state, subpass, views, kCurrentCommandTag);
+        skip |= temp_context.ValidateLoadOperation(*sync_state_, rp_state, pRenderPassBegin->renderArea, subpass, views, func_name);
     }
+
     return skip;
 }
 
@@ -2528,7 +2528,11 @@ void ResourceAccessState::SetWrite(SyncStageAccessFlagBits usage_bit, const Reso
 void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_transition) {
     // For independent barriers we need to track what the new barriers and dependency chain *will* be when we're done
     // applying the memory barriers
-    if (InSourceScopeOrChain(barrier.src_exec_scope, barrier.src_access_scope)) {
+    // NOTE: We update the write barrier if the write is in the first access scope or if there is a layout
+    //       transistion, under the theory of "most recent access".  If the read/write *isn't* safe
+    //       vs. this layout transition DetectBarrierHazard should report it.  We treat the layout
+    //       transistion *as* a write and in scope with the barrier (it's before visibility).
+    if (layout_transition || InSourceScopeOrChain(barrier.src_exec_scope, barrier.src_access_scope)) {
         pending_write_barriers |= barrier.dst_access_scope;
         pending_write_dep_chain |= barrier.dst_exec_scope;
     }
