@@ -783,7 +783,7 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
     dev_info.pNext = &features2;
     VkDevice dev;
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "is neither VK_TRUE nor VK_FALSE");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "is neither VK_TRUE nor VK_FALSE");
     m_errorMonitor->SetUnexpectedError("Failed to create");
     vk::CreateDevice(gpu(), &dev_info, NULL, &dev);
     m_errorMonitor->VerifyFound();
