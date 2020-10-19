@@ -1042,37 +1042,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         // First check flag states
         result |= ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
 
-        // We only check if input attachments mismatch between subpass and fs that if fs sets a input index, but subpass doesn't set
-        // it. Mismatch between fs and descriptor set is checked in createGraphicsPipeline
         if (cb_node->activeRenderPass && cb_node->activeFramebuffer) {
             const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
-            for (const auto &stage : pPipe->stage_state) {
-                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
-                    std::set<uint32_t> subpass_input_index;
-                    for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
-                        auto index = subpass.pInputAttachments[i].attachment;
-                        if (index != VK_ATTACHMENT_UNUSED) {
-                            subpass_input_index.insert(index);
-                        }
-                    }
-
-                    for (const auto &descriptor : stage.descriptor_uses) {
-                        if (descriptor.second.input_index != VK_ATTACHMENT_UNUSED &&
-                            subpass_input_index.end() == subpass_input_index.find(descriptor.second.input_index)) {
-                            LogObjectList objlist(cb_node->commandBuffer);
-                            objlist.add(cb_node->activeRenderPass->renderPass);
-                            result |= LogError(objlist, vuid.subpass_input,
-                                               "%s: Fragment Shader's input attachment index #%" PRIu32
-                                               " doesn't exist or VK_ATTACHMENT_UNUSED in %s, subpass "
-                                               "#%" PRIu32 ".",
-                                               function, descriptor.second.input_index,
-                                               report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
-                                               cb_node->activeSubpass);
-                        }
-                    }
-                    break;
-                }
-            }
             attachment_views = cb_node->activeFramebuffer->GetUsedAttachments(subpass, cb_node->imagelessFramebufferAttachments);
         }
     }
