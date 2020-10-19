@@ -8068,7 +8068,6 @@ TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
     };
     std::vector<VkAttachmentDescription> attachmentDescs;
     attachmentDescs.push_back(inputAttachment);
-    attachmentDescs.push_back(inputAttachment);
 
     VkAttachmentReference inputRef = {
         0,
@@ -8119,7 +8118,7 @@ TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
     // It causes desired failures.
     char const *fsSource_fail =
         "#version 450\n"
-        "layout(input_attachment_index=2, set=0, binding=1) uniform subpassInput x;\n"
+        "layout(input_attachment_index=1, set=0, binding=1) uniform subpassInput x;\n"
         "void main() {\n"
         "   vec4 color = subpassLoad(x);\n"
         "}\n";
@@ -8138,40 +8137,6 @@ TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
     g_pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
-
-    char const *fsSource =
-        "#version 450\n"
-        "layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;\n"
-        "layout(input_attachment_index=2, set=0, binding=0) uniform subpassInput x2;\n"
-        "void main() {\n"
-        "   vec4 color = subpassLoad(x);\n"
-        "   color = subpassLoad(x2);\n"
-        "}\n";
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    g_pipe.InitState();
-    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
-
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-    g_pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_commandBuffer->begin();
-    m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
-    m_renderPassBeginInfo.renderPass = rp;
-    m_renderPassBeginInfo.framebuffer = fb;
-
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02686");
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
