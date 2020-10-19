@@ -52,7 +52,7 @@ struct DrawDispatchVuid {
     const char* viewport_scissor_count;
     const char* primitive_topology;
     const char* corner_sampled_address_mode;
-    const char* subpass_input;
+    const char* subpass_input;  // It doesn't validate anything because those stuff have done in ValidateCreateGraphicsPipelines.
     const char* imageview_atomic;
     const char* push_constants_set;
     const char* image_subresources;

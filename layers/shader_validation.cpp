@@ -1178,9 +1178,6 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
                                      !(d.flags & decoration_set::nonwritable_bit), v, operators);
             if (v.is_writable) *has_writable_descriptor = true;
             if (v.is_atomic_operation) *has_atomic_descriptor = true;
-            if (d.flags & decoration_set::input_attachment_index_bit) {
-                v.input_index = d.input_attachment_index;
-            }
             out.emplace_back(std::make_pair(set, binding), v);
         }
     }
