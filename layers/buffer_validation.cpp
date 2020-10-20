@@ -3404,7 +3404,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         const char *invalid_src_layout_vuid =
             is_2khr ? ((src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
                            ? "VUID-VkResolveImageInfo2KHR-srcImageLayout-01400"
-                           : "VUID-vkCmdResolveImag2KHR-srcImageLayout-00261")
+                           : "VUID-VkResolveImageInfo2KHR-srcImageLayout-00261")
                     : ((src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
                            ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
                            : "VUID-vkCmdResolveImage-srcImageLayout-00261");

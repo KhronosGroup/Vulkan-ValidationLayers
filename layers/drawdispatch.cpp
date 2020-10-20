@@ -85,7 +85,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-renderPass-02684",
         "VUID-vkCmdDrawIndexed-subpass-02685",
         "VUID-vkCmdDrawIndexed-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawIndexed-None-02690",
+        "VUID-vkCmdDrawIndexed-magFilter-04553",
         "VUID-vkCmdDrawIndexed-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
@@ -117,7 +117,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-renderPass-02684",
         "VUID-vkCmdDrawIndirect-subpass-02685",
         "VUID-vkCmdDrawIndirect-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawIndirect-None-02690",
+        "VUID-vkCmdDrawIndirect-magFilter-04553",
         "VUID-vkCmdDrawIndirect-None-02692",
         "VUID-vkCmdDrawIndirect-commandBuffer-02711",
         "VUID-vkCmdDrawIndirect-buffer-02708",
@@ -149,7 +149,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-renderPass-02684",
         "VUID-vkCmdDrawIndexedIndirect-subpass-02685",
         "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawIndexedIndirect-None-02690",
+        "VUID-vkCmdDrawIndexedIndirect-magFilter-04553",
         "VUID-vkCmdDrawIndexedIndirect-None-02692",
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711",
         "VUID-vkCmdDrawIndexedIndirect-buffer-02708",
@@ -181,7 +181,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          kVUIDUndefined, // render_pass_compatible
          kVUIDUndefined, // subpass_index
          kVUIDUndefined, // sample_location
-         "VUID-vkCmdDispatch-None-02690",
+         "VUID-vkCmdDispatch-magFilter-04553",
          "VUID-vkCmdDispatch-None-02692",
          kVUIDUndefined, // indirect_protected_cb
          kVUIDUndefined, // indirect_contiguous_memory;
@@ -213,7 +213,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // render_pass_compatible
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
-        "VUID-vkCmdDispatchIndirect-None-02690",
+        "VUID-vkCmdDispatchIndirect-magFilter-04553",
         "VUID-vkCmdDispatchIndirect-None-02692",
         "VUID-vkCmdDispatchIndirect-commandBuffer-02711",
         "VUID-vkCmdDispatchIndirect-buffer-02708",
@@ -245,7 +245,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-renderPass-02684",
         "VUID-vkCmdDrawIndirectCount-subpass-02685",
         "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawIndirectCount-None-02690",
+        "VUID-vkCmdDrawIndirectCount-magFilter-04553",
         "VUID-vkCmdDrawIndirectCount-None-02692",
         "VUID-vkCmdDrawIndirectCount-commandBuffer-02711",
         "VUID-vkCmdDrawIndirectCount-buffer-02708",
@@ -277,7 +277,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684",
         "VUID-vkCmdDrawIndexedIndirectCount-subpass-02685",
         "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawIndexedIndirectCount-None-02690",
+        "VUID-vkCmdDrawIndexedIndirectCount-magFilter-04553",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02692",
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711",
         "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708",
@@ -309,7 +309,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // render_pass_compatible
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
-        "VUID-vkCmdTraceRaysNV-None-02690",
+        "VUID-vkCmdTraceRaysNV-magFilter-04553",
         "VUID-vkCmdTraceRaysNV-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
@@ -341,7 +341,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // render_pass_compatible
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
-        "VUID-vkCmdTraceRaysKHR-None-02690",
+        "VUID-vkCmdTraceRaysKHR-magFilter-04553",
         "VUID-vkCmdTraceRaysKHR-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
@@ -373,7 +373,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // render_pass_compatible
         kVUIDUndefined, // subpass_index
         kVUIDUndefined, // sample_location
-        "VUID-vkCmdTraceRaysIndirectKHR-None-02690",
+        "VUID-vkCmdTraceRaysIndirectKHR-magFilter-04553",
         "VUID-vkCmdTraceRaysIndirectKHR-None-02692",
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02711",
         "VUID-vkCmdTraceRaysIndirectKHR-buffer-02708",
@@ -405,7 +405,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-renderPass-02684",
         "VUID-vkCmdDrawMeshTasksNV-subpass-02685",
         "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawMeshTasksNV-None-02690",
+        "VUID-vkCmdDrawMeshTasksNV-magFilter-04553",
         "VUID-vkCmdDrawMeshTasksNV-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
@@ -437,7 +437,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684",
         "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685",
         "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawMeshTasksIndirectNV-None-02690",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-magFilter-04553",
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692",
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711",
         "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708",
@@ -469,7 +469,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02690",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-magFilter-04553",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02692",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708",
@@ -501,11 +501,8 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-02684",
         "VUID-vkCmdDrawIndirectByteCountEXT-subpass-02685",
         "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-02689",
-        "VUID-vkCmdDrawIndirectByteCountEXT-None-02690",
+        "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02692",
-        "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02711",
-        "VUID-vkCmdDrawIndirectByteCountEXT-buffer-02708",
-        "VUID-vkCmdDrawIndirectByteCountEXT-buffer-02709",
         "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03417",
         "VUID-vkCmdDrawIndirectByteCountEXT-scissorCount-03418",
         "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419",
@@ -533,7 +530,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
          kVUIDUndefined, // render_pass_compatible
          kVUIDUndefined, // subpass_index
          kVUIDUndefined, // sample_location
-         "VUID-vkCmdDispatchBase-None-02690",
+         "VUID-vkCmdDispatchBase-magFilter-04553",
          "VUID-vkCmdDispatchBase-None-02692",
          kVUIDUndefined, // indirect_protected_cb
          kVUIDUndefined, // indirect_contiguous_memory;

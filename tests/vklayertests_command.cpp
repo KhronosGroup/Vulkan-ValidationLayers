@@ -1390,12 +1390,9 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdCopyBufferToImage2KHR vkCmdCopyBufferToImage2Function = nullptr;
-    PFN_vkCmdCopyImageToBuffer2KHR vkCmdCopyImageToBuffer2Function = nullptr;
     if (copy_commands2) {
         vkCmdCopyBufferToImage2Function =
             (PFN_vkCmdCopyBufferToImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBufferToImage2KHR");
-        vkCmdCopyImageToBuffer2Function =
-            (PFN_vkCmdCopyImageToBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImageToBuffer2KHR");
     }
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -1545,61 +1542,11 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyImageToBuffer2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyImageToBufferInfo2KHR copy_image_to_buffer_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR,
-                                                                        NULL,
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        buffer_16.handle(),
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00207" : "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00207";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // width not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794");  // image transfer granularity
-        vkCmdCopyImageToBuffer2Function(m_commandBuffer->handle(), &copy_image_to_buffer_info2);
-        m_errorMonitor->VerifyFound();
-    }
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // width not a multiple of compressed block width
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyBufferToImage-imageOffset-01793");  // image transfer granularity
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyBufferToImageInfo2KHR copy_buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                                        NULL,
-                                                                        buffer_16.handle(),
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00207" : "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00207";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // width not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-01793");  // image transfer granularity
-        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy_buffer_to_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     // Copy height < compressed block size but not the full mip height
     region.imageExtent = {2, 1, 1};
@@ -1610,61 +1557,11 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyImageToBuffer2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyImageToBufferInfo2KHR copy_image_to_buffer_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR,
-                                                                        NULL,
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        buffer_16.handle(),
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00208" : "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00208";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // height not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794");  // image transfer granularity
-        vkCmdCopyImageToBuffer2Function(m_commandBuffer->handle(), &copy_image_to_buffer_info2);
-        m_errorMonitor->VerifyFound();
-    }
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // height not a multiple of compressed block width
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyBufferToImage-imageOffset-01793");  // image transfer granularity
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyBufferToImageInfo2KHR copy_buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                                        NULL,
-                                                                        buffer_16.handle(),
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00208" : "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00208";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // height not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-01793");  // image transfer granularity
-        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy_buffer_to_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     // Offsets must be multiple of compressed block size
     region.imageOffset = {1, 1, 0};
@@ -1675,31 +1572,6 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
                                          "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");  // image transfer granularity
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyImageToBuffer2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyImageToBufferInfo2KHR copy_image_to_buffer_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR,
-                                                                        NULL,
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        buffer_16.handle(),
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00205" : "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00205";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // imageOffset not a multiple of block size
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794");  // image transfer granularity
-        vkCmdCopyImageToBuffer2Function(m_commandBuffer->handle(), &copy_image_to_buffer_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // imageOffset not a multiple of block size
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
