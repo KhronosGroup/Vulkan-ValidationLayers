@@ -690,8 +690,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 elif spec_list[0]['khr']: spec_url_id = '1.%s-khr-extensions' % spec_list[0]['version']
                 else: spec_url_id = '1.%s' % spec_list[0]['version']
 
-                # Escape quotes when generating C strings for source code
-                db_text = db_entry['text'].replace('"', '\\"')
+                # Escape quotes and backslashes when generating C strings for source code
+                db_text = db_entry['text'].replace('\\', '\\\\').replace('"', '\\"')
                 hfile.write('    {"%s", "%s", "%s"},\n' % (vuid, db_text, spec_url_id))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
