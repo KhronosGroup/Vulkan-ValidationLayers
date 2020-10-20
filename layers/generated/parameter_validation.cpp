@@ -4265,7 +4265,7 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(
 
         skip |= validate_reserved_flags("vkCreateShaderModule", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkShaderModuleCreateInfo-flags-zerobitmask");
 
-        skip |= validate_array("vkCreateShaderModule", "pCreateInfo->codeSize", "pCreateInfo->pCode", pCreateInfo->codeSize, &pCreateInfo->pCode, true, true, kVUIDUndefined, "VUID-VkShaderModuleCreateInfo-pCode-parameter");
+        skip |= validate_array("vkCreateShaderModule", "pCreateInfo->codeSize / 4", "pCreateInfo->pCode", pCreateInfo->codeSize / 4, &pCreateInfo->pCode, true, true, kVUIDUndefined, "VUID-VkShaderModuleCreateInfo-pCode-parameter");
     }
     if (pAllocator != NULL)
     {
