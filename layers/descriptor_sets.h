@@ -669,7 +669,7 @@ class DescriptorSet : public BASE_NODE {
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
     const Descriptor *GetDescriptorFromBinding(const uint32_t binding, const uint32_t index = 0) const {
         const auto range = GetGlobalIndexRangeFromBinding(binding);
-        if ((range.start + index) > range.end) {
+        if ((range.start + index) >= range.end) {
             return nullptr;
         }
         return descriptors_[range.start + index].get();

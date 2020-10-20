@@ -178,11 +178,12 @@ struct less<SamplerUsedByImage> {
 };
 }  // namespace std
 
+struct SAMPLER_STATE;
 struct DescriptorRequirement {
     descriptor_req reqs;
     bool is_writable;
-    std::vector<std::map<SamplerUsedByImage, std::map<VkDescriptorSet, const cvdescriptorset::Descriptor *>>>
-        samplers_used_by_image;  // Copy from StageState.interface_var. BUT it combines from plural shader stages.
+    std::vector<std::map<SamplerUsedByImage, const cvdescriptorset::Descriptor *>>
+        samplers_used_by_image;  // Copy from StageState.interface_var. It combines from plural shader stages.
                                  // The index of array is index of image.
 
     DescriptorRequirement() : reqs(descriptor_req(0)), is_writable(false) {}
@@ -1243,7 +1244,6 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::map<uint32_t, LAST_BOUND_STATE> lastBound;
 
     struct CmdDrawDispatchInfo {
-        VkPipelineBindPoint bind_point;
         CMD_TYPE cmd_type;
         std::string function;
         std::vector<std::pair<const uint32_t, DescriptorRequirement>> binding_infos;
