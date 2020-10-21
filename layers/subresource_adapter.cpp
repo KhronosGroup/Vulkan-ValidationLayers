@@ -358,10 +358,21 @@ inline VkImageSubresourceRange GetRemaining(const VkImageSubresourceRange& full_
     return subres_range;
 }
 
+static bool SubresourceRangeIsEmpty(const VkImageSubresourceRange& range) {
+    return (0 == range.aspectMask) || (0 == range.levelCount) || (0 == range.layerCount);
+}
+static bool ExtentIsEmpty(const VkExtent3D& extent) { return (0 == extent.width) || (0 == extent.height) || (0 == extent.width); }
+
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
                                          const VkOffset3D& offset, const VkExtent3D& extent)
     : encoder_(&encoder), subres_range_(GetRemaining(encoder.FullRange(), subres_range)), offset_(offset), extent_(extent) {
     assert(IsValid(*encoder_, subres_range_));
+    if (SubresourceRangeIsEmpty(subres_range) || ExtentIsEmpty(extent)) {
+        // Empty range forces empty position -- no operations other than deref for empty check are valid
+        pos_ = {0, 0};
+        return;
+    }
+
     mip_level_index_ = 0;
     aspect_index_ = encoder_->LowerBoundFromMask(subres_range_.aspectMask);
     if ((offset_.z + extent_.depth) == 1) {
