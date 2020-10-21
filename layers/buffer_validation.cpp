@@ -3235,9 +3235,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             auto clear_desc = &pAttachments[attachment_index];
             uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
 
-            if (0 == clear_desc->aspectMask) {
-                skip |= LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-requiredbitmask", " ");
-            } else if (clear_desc->aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+            if (clear_desc->aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
                 skip |= LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-00020", " ");
             } else if (clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                 uint32_t color_attachment = VK_ATTACHMENT_UNUSED;
@@ -3271,11 +3269,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     skip |= LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-00019", str, attachment_index);
                 }
             } else {  // Must be depth and/or stencil
-                if (((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) &&
-                    ((clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                    char const str[] = "vkCmdClearAttachments() aspectMask [%d] is not a valid combination of bits.";
-                    skip |= LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-parameter", str, attachment_index);
-                }
                 if (!subpass_desc->pDepthStencilAttachment ||
                     (subpass_desc->pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED)) {
                     skip |= LogPerformanceWarning(
