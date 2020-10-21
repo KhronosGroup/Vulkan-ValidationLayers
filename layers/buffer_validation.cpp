@@ -5301,6 +5301,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                                              const BufferImageCopyRegionType *pRegions, const IMAGE_STATE *image_state,
                                              const char *function, CopyCommandVersion version) const {
     bool skip = false;
+    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
+    const char *vuid;
 
     assert(image_state != nullptr);
     const VkFormat image_format = image_state->createInfo.format;
@@ -5341,9 +5343,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         // If not depth/stencil and not multi-plane
         if ((!FormatIsDepthAndStencil(image_format) && !FormatIsMultiplane(image_format)) &&
             SafeModulo(pRegions[i].bufferOffset, element_size) != 0) {
-            const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                   ? "VUID-vkCmdCopyBufferToImage-bufferOffset-01558"
-                                   : "VUID-vkCmdCopyBufferToImage-bufferOffset-00193";
+            vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-bufferOffset-01558"
+                                                                       : "VUID-vkCmdCopyBufferToImage-bufferOffset-00193";
             skip |= LogError(image_state->image, vuid,
                              "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
                              " must be a multiple of this format's texel size (%" PRIu32 ").",
@@ -5405,7 +5406,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         const int num_bits = sizeof(VkFlags) * CHAR_BIT;
         std::bitset<num_bits> aspect_mask_bits(region_aspect_mask);
         if (aspect_mask_bits.count() != 1) {
-            skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-aspectMask-00212",
+            vuid = (is_2khr) ? "VUID-VkBufferImageCopy2KHR-aspectMask-00212" : "VUID-VkBufferImageCopy-aspectMask-00212";
+            skip |= LogError(image_state->image, vuid,
                              "%s: aspectMasks for imageSubresource in pRegion[%d] must have only a single bit set.", function, i);
         }
 
@@ -5423,9 +5425,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
 
             //  BufferRowLength must be a multiple of block width
             if (SafeModulo(pRegions[i].bufferRowLength, block_size.width) != 0) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                       ? "VUID-vkCmdCopyBufferToImage-bufferRowLength-00203"
-                                       : "VUID-vkCmdCopyBufferToImage-bufferRowLength-00203";
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-bufferRowLength-00203"
+                                                                           : "VUID-vkCmdCopyBufferToImage-bufferRowLength-00203";
                 skip |=
                     LogError(image_state->image, vuid,
                              "%s: pRegion[%d] bufferRowLength (%d) must be a multiple of the compressed image's texel width (%d)..",
@@ -5434,9 +5435,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
 
             //  BufferRowHeight must be a multiple of block height
             if (SafeModulo(pRegions[i].bufferImageHeight, block_size.height) != 0) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                       ? "VUID-vkCmdCopyBufferToImage-bufferImageHeight-00204"
-                                       : "VUID-vkCmdCopyBufferToImage-bufferImageHeight-00204";
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-bufferImageHeight-00204"
+                                                                           : "VUID-vkCmdCopyBufferToImage-bufferImageHeight-00204";
                 skip |= LogError(
                     image_state->image, vuid,
                     "%s: pRegion[%d] bufferImageHeight (%d) must be a multiple of the compressed image's texel height (%d)..",
@@ -5447,9 +5447,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if ((SafeModulo(pRegions[i].imageOffset.x, block_size.width) != 0) ||
                 (SafeModulo(pRegions[i].imageOffset.y, block_size.height) != 0) ||
                 (SafeModulo(pRegions[i].imageOffset.z, block_size.depth) != 0)) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                       ? "VUID-vkCmdCopyBufferToImage-imageOffset-00205"
-                                       : "VUID-vkCmdCopyBufferToImage-imageOffset-00205";
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-imageOffset-00205"
+                                                                           : "VUID-vkCmdCopyBufferToImage-imageOffset-00205";
                 skip |= LogError(image_state->image, vuid,
                                  "%s: pRegion[%d] imageOffset(x,y) (%d, %d) must be multiples of the compressed image's texel "
                                  "width & height (%d, %d)..",
@@ -5460,9 +5459,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             // bufferOffset must be a multiple of block size (linear bytes)
             uint32_t block_size_in_bytes = FormatElementSize(image_format);
             if (SafeModulo(pRegions[i].bufferOffset, block_size_in_bytes) != 0) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                       ? "VUID-vkCmdCopyBufferToImage-bufferOffset-00206"
-                                       : "VUID-vkCmdCopyBufferToImage-bufferOffset-00206";
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-bufferOffset-00206"
+                                                                           : "VUID-vkCmdCopyBufferToImage-bufferOffset-00206";
                 skip |= LogError(image_state->image, vuid,
                                  "%s: pRegion[%d] bufferOffset (0x%" PRIxLEAST64
                                  ") must be a multiple of the compressed image's texel block size (%" PRIu32 ")..",
@@ -5473,9 +5471,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             VkExtent3D mip_extent = GetImageSubresourceExtent(image_state, &(pRegions[i].imageSubresource));
             if ((SafeModulo(pRegions[i].imageExtent.width, block_size.width) != 0) &&
                 (pRegions[i].imageExtent.width + pRegions[i].imageOffset.x != mip_extent.width)) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                       ? "VUID-vkCmdCopyBufferToImage-imageExtent-00207"
-                                       : "VUID-vkCmdCopyBufferToImage-imageExtent-00207";
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-imageExtent-00207"
+                                                                           : "VUID-vkCmdCopyBufferToImage-imageExtent-00207";
                 skip |= LogError(image_state->image, vuid,
                                  "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block width "
                                  "(%d), or when added to offset.x (%d) must equal the image subresource width (%d)..",
@@ -5486,9 +5483,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             // imageExtent height must be a multiple of block height, or extent+offset height must equal subresource height
             if ((SafeModulo(pRegions[i].imageExtent.height, block_size.height) != 0) &&
                 (pRegions[i].imageExtent.height + pRegions[i].imageOffset.y != mip_extent.height)) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                       ? "VUID-vkCmdCopyBufferToImage-imageExtent-00208"
-                                       : "VUID-vkCmdCopyBufferToImage-imageExtent-00208";
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-imageExtent-00208"
+                                                                           : "VUID-vkCmdCopyBufferToImage-imageExtent-00208";
                 skip |= LogError(image_state->image, vuid,
                                  "%s: pRegion[%d] extent height (%d) must be a multiple of the compressed texture block height "
                                  "(%d), or when added to offset.y (%d) must equal the image subresource height (%d)..",
@@ -5499,9 +5495,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             // imageExtent depth must be a multiple of block depth, or extent+offset depth must equal subresource depth
             if ((SafeModulo(pRegions[i].imageExtent.depth, block_size.depth) != 0) &&
                 (pRegions[i].imageExtent.depth + pRegions[i].imageOffset.z != mip_extent.depth)) {
-                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                                       ? "VUID-vkCmdCopyBufferToImage-imageExtent-00209"
-                                       : "VUID-vkCmdCopyBufferToImage-imageExtent-00209";
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyBufferToImage-imageExtent-00209"
+                                                                           : "VUID-vkCmdCopyBufferToImage-imageExtent-00209";
                 skip |= LogError(image_state->image, vuid,
                                  "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block depth "
                                  "(%d), or when added to offset.z (%d) must equal the image subresource depth (%d)..",
