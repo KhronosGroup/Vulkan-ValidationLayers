@@ -1112,6 +1112,129 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
     }
 }
 
+TEST_F(VkLayerTest, RenderPassCreateInputAttachmentReferenceInvalidAspectMask) {
+    TEST_DESCRIPTION("Input Attachment reference using invalid aspect mask");
+
+    // Check for VK_KHR_get_physical_device_properties2
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    if (!rp2Supported) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+    }
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto separate_depth_stencil_layouts_features = lvl_init_struct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&separate_depth_stencil_layouts_features);
+    if (vkGetPhysicalDeviceFeatures2KHR) {
+        vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    } else {
+        separate_depth_stencil_layouts_features.separateDepthStencilLayouts = VK_FALSE;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, (vkGetPhysicalDeviceFeatures2KHR) ? &features2 : nullptr));
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL},
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+        {0, ds_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+    };
+    VkAttachmentReference refs[] = {
+        {0, VK_IMAGE_LAYOUT_GENERAL},  // color
+        {1, VK_IMAGE_LAYOUT_GENERAL},  // color input - pInputAttachments[0]
+        {2, VK_IMAGE_LAYOUT_GENERAL},  // depth input - pInputAttachments[1]
+    };
+
+    // Because an input attachment in the first subpass doesn't make sense, first subpass is a dummy write to a color
+    // Second subpass used to test having 2 input attachment, one for color and one for depth
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, nullptr, 0, nullptr},
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 2, &refs[1], 0, nullptr, nullptr, nullptr, 0, nullptr},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 3, attach, 2, subpasses, 0, nullptr};
+
+    safe_VkRenderPassCreateInfo2 rpci2;
+    ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
+
+    rpci2.pSubpasses[1].pInputAttachments[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03311");
+    rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03311");
+    rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+    m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03311");
+    rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+    m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03311");
+    rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;  // reset
+
+    rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03312");
+    rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_GENERAL;  // reset
+
+    if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
+        rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03314");
+        rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03314");
+        rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03314");
+        rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03314");
+
+        // reset to valid layout
+        rpci2.pSubpasses[1].pInputAttachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;
+
+        rpci2.pSubpasses[1].pInputAttachments[1].aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+        rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03315");
+        rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03315");
+
+        rpci2.pSubpasses[1].pInputAttachments[1].aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+        rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03316");
+        rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03316");
+
+        rpci2.pSubpasses[1].pInputAttachments[1].aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+
+        rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03317");
+        rpci2.pSubpasses[1].pInputAttachments[1].layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(), "VUID-VkAttachmentReference2-attachment-03317");
+    }
+}
+
 TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
     TEST_DESCRIPTION("Create a subpass with overlapping correlation masks");
 
