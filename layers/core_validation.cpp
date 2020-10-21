@@ -703,12 +703,38 @@ static void ListBits(std::ostream &s, uint32_t bits) {
     }
 }
 
+std::string DynamicStateString(CBStatusFlags input_value) {
+    std::string ret;
+    int index = 0;
+    while (input_value) {
+        if (input_value & 1) {
+            if (!ret.empty()) ret.append("|");
+            ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(1 << index))));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(0))));
+    return ret;
+}
+
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
                                                const PIPELINE_STATE *pPipeline, const char *caller) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+
+    // Verify if using dynamic state setting commands that it doesn't set up in pipeline
+    CBStatusFlags invalid_status = CBSTATUS_ALL_STATE_SET & ~(pCB->dynamic_status | pCB->static_status);
+    if (invalid_status) {
+        std::string dynamic_states = DynamicStateString(invalid_status);
+        LogObjectList objlist(pCB->commandBuffer);
+        objlist.add(pPipeline->pipeline);
+        skip |= LogError(objlist, vuid.dynamic_state_setting_commands,
+                         "%s: %s doesn't set up %s, but it calls the related dynamic state setting commands", caller,
+                         report_data->FormatHandle(state.pipeline_state->pipeline).c_str(), dynamic_states.c_str());
+    }
 
     // Verify vertex binding
     if (pPipeline->vertex_binding_descriptions_.size() > 0) {

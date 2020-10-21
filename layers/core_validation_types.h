@@ -672,9 +672,16 @@ enum CBStatusFlagBits {
     CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET    = 0x00800000,
     CBSTATUS_STENCIL_TEST_ENABLE_SET         = 0x01000000,
     CBSTATUS_STENCIL_OP_SET                  = 0x02000000,
-    CBSTATUS_ALL_STATE_SET                   = 0x03FFFDFF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_DISCARD_RECTANGLE_SET           = 0x04000000,
+    CBSTATUS_SAMPLE_LOCATIONS_SET            = 0x08000000,
+    CBSTATUS_COARSE_SAMPLE_ORDER_SET         = 0x10000000,
+    CBSTATUS_ALL_STATE_SET                   = 0x1FFFFDFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
+
+VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag);
+CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state);
+std::string DynamicStateString(CBStatusFlags input_value);
 
 struct QueryObject {
     VkQueryPool pool;
@@ -1218,6 +1225,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     CBStatusFlags status;                              // Track status of various bindings on cmd buffer
     CBStatusFlags static_status;                       // All state bits provided by current graphics pipeline
                                                        // rather than dynamic state
+    CBStatusFlags dynamic_status;                      // dynamic state set up in pipeline
     // Currently storing "lastBound" objects on per-CB basis
     //  long-term may want to create caches of "lastBound" states and could have
     //  each individual CMD_NODE referencing its own "lastBound" state
