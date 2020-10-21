@@ -4,6 +4,7 @@
 # Copyright (c) 2015-2020 Valve Corporation
 # Copyright (c) 2015-2020 LunarG, Inc.
 # Copyright (c) 2015-2020 Google Inc.
+# Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@
 # Author: Dustin Graves <dustin@lunarg.com>
 # Author: Mark Lobodzinski <mark@lunarg.com>
 # Author: Dave Houlton <daveh@lunarg.com>
+# Author: Tobias Hector <tobias.hector@amd.com>
 
 import os,re,sys,string,json
 import xml.etree.ElementTree as etree
@@ -895,6 +897,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Retrieve the value of the len tag
     def getLen(self, param):
         result = None
+        
+        # Get the array length for static arrays
+        # Currently only handles integer values for 1-dimensional arrays
+        if self.paramIsStaticArray(param):
+            paramname = param.find('name')
+            start = paramname.tail.find('[')
+            end = paramname.tail.find(']')
+            if end > start:
+                return paramname.tail[start+1:end]
+        
         len = param.attrib.get('len')
         if len and len != 'null-terminated':
             # For string arrays, 'len' can look like 'count,null-terminated', indicating that we have a null terminated array of
@@ -1281,28 +1293,34 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 req = 'true'    # Parameter cannot be NULL
                 cpReq = 'true'  # Count pointer cannot be NULL
                 cvReq = 'true'  # Count value cannot be 0
+                lenParamName = None
                 lenDisplayName = None # Name of length parameter to print with validation messages; parameter name with prefix applied
                 # Generate required/optional parameter strings for the pointer and count values
                 if value.isoptional:
                     req = 'false'
                 if value.len:
-                    # The parameter is an array with an explicit count parameter
-                    lenParam = self.getLenParam(values, value.len)
-                    if lenParam:
-                        lenDisplayName = '{}{}'.format(displayNamePrefix, lenParam.name)
-                        if lenParam.ispointer:
-                            # Count parameters that are pointers are inout
-                            if type(lenParam.isoptional) is list:
-                                if lenParam.isoptional[0]:
-                                    cpReq = 'false'
-                                if lenParam.isoptional[1]:
-                                    cvReq = 'false'
+                    if value.isstaticarray:
+                        lenParamName = value.len
+                        lenDisplayName = value.len
+                    else:
+                        # The parameter is an array with an explicit count parameter
+                        lenParam = self.getLenParam(values, value.len)
+                        if lenParam:
+                            lenParamName = lenParam.name
+                            lenDisplayName = '{}{}'.format(displayNamePrefix, lenParamName)
+                            if lenParam.ispointer:
+                                # Count parameters that are pointers are inout
+                                if type(lenParam.isoptional) is list:
+                                    if lenParam.isoptional[0]:
+                                        cpReq = 'false'
+                                    if lenParam.isoptional[1]:
+                                        cvReq = 'false'
+                                else:
+                                    if lenParam.isoptional:
+                                        cpReq = 'false'
                             else:
                                 if lenParam.isoptional:
-                                    cpReq = 'false'
-                        else:
-                            if lenParam.isoptional:
-                                cvReq = 'false'
+                                    cvReq = 'false'
                 #
                 # The parameter will not be processed when tagged as 'noautovalidity'
                 # For the pointer to struct case, the struct pointer will not be validated, but any
@@ -1322,10 +1340,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     elif value.type in self.flags and value.isconst:
                         usedLines += self.makeFlagsArrayCheck(valuePrefix, value, lenParam, req, cvReq, funcName, lenDisplayName, valueDisplayName, postProcSpec)
                     elif value.isbool and value.isconst:
-                        usedLines.append('skip |= validate_bool32_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
+                        usedLines.append('skip |= validate_bool32_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, lenParamName, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.israngedenum and value.isconst:
                         enum_value_list = 'All%sEnums' % value.type
-                        usedLines.append('skip |= validate_ranged_enum_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
+                        usedLines.append('skip |= validate_ranged_enum_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, lenParamName, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.name == 'pNext':
                         usedLines += self.makeStructNextCheck(valuePrefix, value, funcName, valueDisplayName, postProcSpec, structTypeName)
                     else:

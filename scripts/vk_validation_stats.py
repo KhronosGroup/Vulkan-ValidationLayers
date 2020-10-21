@@ -3,6 +3,7 @@
 # Copyright (c) 2015-2020 Valve Corporation
 # Copyright (c) 2015-2020 LunarG, Inc.
 # Copyright (c) 2015-2020 Google Inc.
+# Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +20,7 @@
 # Author: Tobin Ehlis <tobine@google.com>
 # Author: Dave Houlton <daveh@lunarg.com>
 # Author: Shannon McPherson <shannon@lunarg.com>
+# Author: Tobias Hector <tobias.hector@amd.com>
 
 import argparse
 import common_codegen
@@ -690,8 +692,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 elif spec_list[0]['khr']: spec_url_id = '1.%s-khr-extensions' % spec_list[0]['version']
                 else: spec_url_id = '1.%s' % spec_list[0]['version']
 
+                # Escape backslashes when generating C strings for source code
+                # NOTE: This needs to be done before other characters are escaped, otherwise
+                # it ends up escaping the escapes for those other characters.
+                db_text = db_entry['text'].replace('\\', '\\\\')
+                
                 # Escape quotes when generating C strings for source code
-                db_text = db_entry['text'].replace('"', '\\"')
+                db_text = db_text.replace('"', '\\"')
+                
                 hfile.write('    {"%s", "%s", "%s"},\n' % (vuid, db_text, spec_url_id))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:

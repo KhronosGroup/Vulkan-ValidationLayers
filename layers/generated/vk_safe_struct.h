@@ -4148,6 +4148,117 @@ struct safe_VkPhysicalDeviceShaderClockFeaturesKHR {
     VkPhysicalDeviceShaderClockFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderClockFeaturesKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderTerminateInvocation;
+    safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR(const VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR(const safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR& operator=(const safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR();
+    ~safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR();
+    void initialize(const VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR* copy_src);
+    VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *>(this); }
+    VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR const *>(this); }
+};
+
+struct safe_VkFragmentShadingRateAttachmentInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    safe_VkAttachmentReference2* pFragmentShadingRateAttachment;
+    VkExtent2D shadingRateAttachmentTexelSize;
+    safe_VkFragmentShadingRateAttachmentInfoKHR(const VkFragmentShadingRateAttachmentInfoKHR* in_struct);
+    safe_VkFragmentShadingRateAttachmentInfoKHR(const safe_VkFragmentShadingRateAttachmentInfoKHR& copy_src);
+    safe_VkFragmentShadingRateAttachmentInfoKHR& operator=(const safe_VkFragmentShadingRateAttachmentInfoKHR& copy_src);
+    safe_VkFragmentShadingRateAttachmentInfoKHR();
+    ~safe_VkFragmentShadingRateAttachmentInfoKHR();
+    void initialize(const VkFragmentShadingRateAttachmentInfoKHR* in_struct);
+    void initialize(const safe_VkFragmentShadingRateAttachmentInfoKHR* copy_src);
+    VkFragmentShadingRateAttachmentInfoKHR *ptr() { return reinterpret_cast<VkFragmentShadingRateAttachmentInfoKHR *>(this); }
+    VkFragmentShadingRateAttachmentInfoKHR const *ptr() const { return reinterpret_cast<VkFragmentShadingRateAttachmentInfoKHR const *>(this); }
+};
+
+struct safe_VkPipelineFragmentShadingRateStateCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkExtent2D fragmentSize;
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2];
+    safe_VkPipelineFragmentShadingRateStateCreateInfoKHR(const VkPipelineFragmentShadingRateStateCreateInfoKHR* in_struct);
+    safe_VkPipelineFragmentShadingRateStateCreateInfoKHR(const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& copy_src);
+    safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& operator=(const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& copy_src);
+    safe_VkPipelineFragmentShadingRateStateCreateInfoKHR();
+    ~safe_VkPipelineFragmentShadingRateStateCreateInfoKHR();
+    void initialize(const VkPipelineFragmentShadingRateStateCreateInfoKHR* in_struct);
+    void initialize(const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR* copy_src);
+    VkPipelineFragmentShadingRateStateCreateInfoKHR *ptr() { return reinterpret_cast<VkPipelineFragmentShadingRateStateCreateInfoKHR *>(this); }
+    VkPipelineFragmentShadingRateStateCreateInfoKHR const *ptr() const { return reinterpret_cast<VkPipelineFragmentShadingRateStateCreateInfoKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 pipelineFragmentShadingRate;
+    VkBool32 primitiveFragmentShadingRate;
+    VkBool32 attachmentFragmentShadingRate;
+    safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(const VkPhysicalDeviceFragmentShadingRateFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& operator=(const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR();
+    ~safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR();
+    void initialize(const VkPhysicalDeviceFragmentShadingRateFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR* copy_src);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateFeaturesKHR *>(this); }
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateFeaturesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkExtent2D minFragmentShadingRateAttachmentTexelSize;
+    VkExtent2D maxFragmentShadingRateAttachmentTexelSize;
+    uint32_t maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
+    VkBool32 primitiveFragmentShadingRateWithMultipleViewports;
+    VkBool32 layeredShadingRateAttachments;
+    VkBool32 fragmentShadingRateNonTrivialCombinerOps;
+    VkExtent2D maxFragmentSize;
+    uint32_t maxFragmentSizeAspectRatio;
+    uint32_t maxFragmentShadingRateCoverageSamples;
+    VkSampleCountFlagBits maxFragmentShadingRateRasterizationSamples;
+    VkBool32 fragmentShadingRateWithShaderDepthStencilWrites;
+    VkBool32 fragmentShadingRateWithSampleMask;
+    VkBool32 fragmentShadingRateWithShaderSampleMask;
+    VkBool32 fragmentShadingRateWithConservativeRasterization;
+    VkBool32 fragmentShadingRateWithFragmentShaderInterlock;
+    VkBool32 fragmentShadingRateWithCustomSampleLocations;
+    VkBool32 fragmentShadingRateStrictMultiplyCombiner;
+    safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR(const VkPhysicalDeviceFragmentShadingRatePropertiesKHR* in_struct);
+    safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR(const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& operator=(const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR();
+    ~safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR();
+    void initialize(const VkPhysicalDeviceFragmentShadingRatePropertiesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR* copy_src);
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRatePropertiesKHR *>(this); }
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRatePropertiesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceFragmentShadingRateKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkSampleCountFlags sampleCounts;
+    VkExtent2D fragmentSize;
+    safe_VkPhysicalDeviceFragmentShadingRateKHR(const VkPhysicalDeviceFragmentShadingRateKHR* in_struct);
+    safe_VkPhysicalDeviceFragmentShadingRateKHR(const safe_VkPhysicalDeviceFragmentShadingRateKHR& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateKHR& operator=(const safe_VkPhysicalDeviceFragmentShadingRateKHR& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateKHR();
+    ~safe_VkPhysicalDeviceFragmentShadingRateKHR();
+    void initialize(const VkPhysicalDeviceFragmentShadingRateKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceFragmentShadingRateKHR* copy_src);
+    VkPhysicalDeviceFragmentShadingRateKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateKHR *>(this); }
+    VkPhysicalDeviceFragmentShadingRateKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateKHR const *>(this); }
+};
+
 struct safe_VkSurfaceProtectedCapabilitiesKHR {
     VkStructureType sType;
     const void* pNext;

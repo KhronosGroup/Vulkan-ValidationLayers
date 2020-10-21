@@ -4629,6 +4629,22 @@ void ThreadSafety::PostCallRecordSignalSemaphoreKHR(
     FinishReadObjectParentInstance(device, "vkSignalSemaphoreKHR");
 }
 
+void ThreadSafety::PreCallRecordCmdSetFragmentShadingRateKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkExtent2D*                           pFragmentSize,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    StartWriteObject(commandBuffer, "vkCmdSetFragmentShadingRateKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkExtent2D*                           pFragmentSize,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    FinishWriteObject(commandBuffer, "vkCmdSetFragmentShadingRateKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) {
