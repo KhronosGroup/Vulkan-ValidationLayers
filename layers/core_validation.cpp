@@ -3810,6 +3810,14 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                     // Performance queries store results in a tightly packed array of VkPerformanceCounterResultsKHR
                     query_items = query_pool_state->perf_counter_index_count;
                     query_size = sizeof(VkPerformanceCounterResultKHR) * query_items;
+                    if (query_size && (query_size > stride)) {
+                        skip |= LogError(queryPool, "VUID-vkGetQueryPoolResults-queryType-04519",
+                                         "vkGetQueryPoolResults() on querypool %s specified stride %" PRIu64
+                                         " which must be at least counterIndexCount (%d) "
+                                         "multiplied by sizeof(VkPerformanceCounterResultKHR) (%d).",
+                                         report_data->FormatHandle(queryPool).c_str(), stride, query_items,
+                                         sizeof(VkPerformanceCounterResultKHR));
+                    }
                     break;
 
                 // These cases intentionally fall through to the default
@@ -3820,7 +3828,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                     query_size = 0;
                     break;
             }
-            // TODO: Add new VU for stride check
+
             if (query_size && (((queryCount - 1) * stride + query_size) > dataSize)) {
                 skip |= LogError(queryPool, "VUID-vkGetQueryPoolResults-dataSize-00817",
                                  "vkGetQueryPoolResults() on querypool %s specified dataSize %zu which is "
