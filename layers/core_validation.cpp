@@ -8978,7 +8978,8 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
 }
 
 // Handles attachment references regardless of type (input, color, depth, etc)
-bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version, VkAttachmentReference2 reference,
+// Input attachments have extra VUs associated with them
+bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version, VkAttachmentReference2 reference, bool input,
                                              const char *error_type, const char *function_name) const {
     bool skip = false;
 
@@ -9005,6 +9006,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                 break;
         }
     } else {
+        const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(reference.pNext);
         switch (reference.layout) {
             case VK_IMAGE_LAYOUT_UNDEFINED:
             case VK_IMAGE_LAYOUT_PREINITIALIZED:
@@ -9019,7 +9021,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
             case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
             case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
             case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
-                if ((reference.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) == 0) {
+                if ((input == true) && ((reference.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) == 0)) {
                     skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03311",
                                      "%s: Layout for %s can't be %s because the current aspectMask (%x) does not include "
                                      "VK_IMAGE_ASPECT_STENCIL_BIT or VK_IMAGE_ASPECT_DEPTH_BIT.",
@@ -9028,7 +9030,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                 break;
 
             case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-                if ((reference.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) == 0) {
+                if ((input == true) && ((reference.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
                     skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03312",
                                      "%s: Layout for %s can't be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL because the current "
                                      "aspectMask (%x) does not include VK_IMAGE_ASPECT_COLOR_BIT.",
@@ -9036,73 +9038,48 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                 }
                 break;
 
-            case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
-            case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
             case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
             case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
-                if (!enabled_features.core12.separateDepthStencilLayouts) {
-                    skip |= LogError(device, "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
-                                     "%s: Layout for %s is %s but without separateDepthStencilLayouts enabled the layout must not "
-                                     "be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
-                                     "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                     function_name, error_type, string_VkImageLayout(reference.layout));
-                } else if ((reference.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0) {
-                    skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03314",
-                                     "%s: Layout for %s aspectMask include VK_IMAGE_ASPECT_COLOR_BIT but the layout is %s.",
-                                     function_name, error_type, string_VkImageLayout(reference.layout));
-                } else if ((reference.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) ==
-                           (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                    if (reference.layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                        reference.layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
-                        const auto *attachment_reference_stencil_layout =
-                            lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(reference.pNext);
-                        if (attachment_reference_stencil_layout) {
-                            const VkImageLayout stencilLayout = attachment_reference_stencil_layout->stencilLayout;
-                            // clang-format off
-                            if (stencilLayout == VK_IMAGE_LAYOUT_UNDEFINED ||
-                                stencilLayout == VK_IMAGE_LAYOUT_PREINITIALIZED ||
-                                stencilLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
-                                stencilLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                                stencilLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                                stencilLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-                                stencilLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
-                                stencilLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
-                                stencilLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
-                                stencilLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-                                skip |= LogError(device, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318",
-                                                    "%s: In %s with pNext chain instance VkAttachmentReferenceStencilLayoutKHR, "
-                                                    "the stencilLayout (%s) must not be "
-                                                    "VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, "
-                                                    "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
-                                                    "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
-                                                    "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
-                                                    "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
-                                                    "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
-                                                    "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "
-                                                    "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                                    "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR.",
-                                                    function_name, error_type, string_VkImageLayout(stencilLayout));
-                            }
-                            // clang-format on
-                        } else {
-                            skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03315",
-                                             "%s: The layout for %s is %s but the pNext chain does not include a valid "
-                                             "VkAttachmentReferenceStencilLayout instance.",
-                                             function_name, error_type, string_VkImageLayout(reference.layout));
-                        }
+                // This check doesn't rely on the aspect mask value
+                if (attachment_reference_stencil_layout) {
+                    const VkImageLayout stencilLayout = attachment_reference_stencil_layout->stencilLayout;
+                    // clang-format off
+                    if (stencilLayout == VK_IMAGE_LAYOUT_UNDEFINED ||
+                        stencilLayout == VK_IMAGE_LAYOUT_PREINITIALIZED ||
+                        stencilLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
+                        stencilLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                        stencilLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
+                        stencilLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+                        stencilLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
+                        stencilLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
+                        stencilLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
+                        stencilLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+                        skip |= LogError(device, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318",
+                                            "%s: In %s with pNext chain instance VkAttachmentReferenceStencilLayoutKHR, "
+                                            "the stencilLayout (%s) must not be "
+                                            "VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, "
+                                            "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
+                                            "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
+                                            "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
+                                            "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
+                                            "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
+                                            "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "
+                                            "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, or "
+                                            "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR.",
+                                            function_name, error_type, string_VkImageLayout(stencilLayout));
                     }
-                } else if (reference.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                    if (reference.layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                        reference.layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
-                        skip |=
-                            LogError(device, "VUID-VkAttachmentReference2-attachment-03316",
-                                     "%s: The aspectMask for %s is only VK_IMAGE_ASPECT_DEPTH_BIT so the layout (%s) must not be "
-                                     "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                     function_name, error_type, string_VkImageLayout(reference.layout));
-                    }
-                } else if (reference.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-                    if (reference.layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                        reference.layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+                }
+                // clang-format on
+
+                if (input == true) {
+                    if ((!attachment_reference_stencil_layout) &&
+                        ((reference.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) ==
+                         (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+                        skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03315",
+                                         "%s: The layout for %s is %s but the pNext chain does not include a valid "
+                                         "VkAttachmentReferenceStencilLayout instance.",
+                                         function_name, error_type, string_VkImageLayout(reference.layout));
+                    } else if ((reference.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
                         skip |=
                             LogError(device, "VUID-VkAttachmentReference2-attachment-03317",
                                      "%s: The aspectMask for %s is only VK_IMAGE_ASPECT_STENCIL_BIT so the layout (%s) must not be "
@@ -9110,7 +9087,41 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                                      function_name, error_type, string_VkImageLayout(reference.layout));
                     }
                 }
+                break;
 
+            case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
+            case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
+                if ((input == true) && ((reference.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0)) {
+                    skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03316",
+                                     "%s: The aspectMask for %s is only VK_IMAGE_ASPECT_DEPTH_BIT so the layout (%s) must not be "
+                                     "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
+                                     function_name, error_type, string_VkImageLayout(reference.layout));
+                }
+                break;
+
+            default:
+                break;
+        }
+
+        // Extra case to check for all 4 seperate depth/stencil layout
+        // This makes the above switch case much easier to read
+        switch (reference.layout) {
+            case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
+            case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
+            case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
+            case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
+                if (!enabled_features.core12.separateDepthStencilLayouts) {
+                    skip |= LogError(device, "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
+                                     "%s: Layout for %s is %s but without separateDepthStencilLayouts enabled the layout must not "
+                                     "be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
+                                     "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
+                                     function_name, error_type, string_VkImageLayout(reference.layout));
+                }
+                if ((input == true) && ((reference.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0)) {
+                    skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03314",
+                                     "%s: Layout for %s aspectMask include VK_IMAGE_ASPECT_COLOR_BIT but the layout is %s.",
+                                     function_name, error_type, string_VkImageLayout(reference.layout));
+                }
             default:
                 break;
         }
@@ -9175,7 +9186,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 input_attachments.insert(attachment_index);
                 std::string error_type = "pSubpasses[" + std::to_string(i) + "].pInputAttachments[" + std::to_string(j) + "]";
-                skip |= ValidateAttachmentReference(rp_version, attachment_ref, error_type.c_str(), function_name);
+                skip |= ValidateAttachmentReference(rp_version, attachment_ref, true, error_type.c_str(), function_name);
                 skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
 
@@ -9304,7 +9315,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                 std::string error_type = "pSubpasses[" + std::to_string(i) + "].pResolveAttachments[" + std::to_string(j) + "]";
                 auto const &attachment_ref = subpass.pResolveAttachments[j];
                 if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, error_type.c_str(), function_name);
+                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, false, error_type.c_str(), function_name);
                     skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount,
                                                     error_type.c_str(), function_name);
 
@@ -9345,8 +9356,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             const uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
             const VkImageLayout imageLayout = subpass.pDepthStencilAttachment->layout;
             if (attachment != VK_ATTACHMENT_UNUSED) {
-                skip |=
-                    ValidateAttachmentReference(rp_version, *subpass.pDepthStencilAttachment, error_type.c_str(), function_name);
+                skip |= ValidateAttachmentReference(rp_version, *subpass.pDepthStencilAttachment, false, error_type.c_str(),
+                                                    function_name);
                 skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
                 if (attachment < pCreateInfo->attachmentCount) {
@@ -9420,7 +9431,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             auto const &attachment_ref = subpass.pColorAttachments[j];
             const uint32_t attachment_index = attachment_ref.attachment;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                skip |= ValidateAttachmentReference(rp_version, attachment_ref, error_type.c_str(), function_name);
+                skip |= ValidateAttachmentReference(rp_version, attachment_ref, false, error_type.c_str(), function_name);
                 skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
 
