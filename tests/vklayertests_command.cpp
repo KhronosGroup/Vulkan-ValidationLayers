@@ -7786,3 +7786,38 @@ TEST_F(VkLayerTest, VerifyVertextBinding) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, VerifyDynamicStateSettingCommands) {
+    TEST_DESCRIPTION("Verify if pipeline doesn't setup dynamic state, but set dynamic commands");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+
+    std::vector<VkDynamicState> dyn_states = {VK_DYNAMIC_STATE_VIEWPORT};
+
+    auto dyn_state_ci = lvl_init_struct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = static_cast<uint32_t>(dyn_states.size());
+    dyn_state_ci.pDynamicStates = dyn_states.data();
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdSetLineWidth(m_commandBuffer->handle(), 1);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02859");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
