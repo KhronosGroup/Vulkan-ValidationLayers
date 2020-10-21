@@ -6797,6 +6797,8 @@ TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
     pipe.AddDefaultColorAttachment();
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
+    pipe.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
