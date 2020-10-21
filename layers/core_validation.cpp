@@ -13374,6 +13374,20 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     return skip;
 }
 
+uint32_t CoreChecks::CalcTotalShaderGroupCount(const PIPELINE_STATE *pipelineState) const {
+    uint32_t total = pipelineState->raytracingPipelineCI.groupCount;
+
+    if (pipelineState->raytracingPipelineCI.pLibraryInfo) {
+        for (uint32_t i = 0; i < pipelineState->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
+            const PIPELINE_STATE *library_pipeline_state =
+                GetPipelineState(pipelineState->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
+            total += CalcTotalShaderGroupCount(library_pipeline_state);
+        }
+    }
+
+    return total;
+}
+
 bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                                    uint32_t groupCount, size_t dataSize, void *pData) const {
     bool skip = false;
@@ -13389,12 +13403,15 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleSize * groupCount.",
                          dataSize);
     }
-    if (firstGroup >= pipeline_state->raytracingPipelineCI.groupCount) {
+
+    uint32_t total_group_count = CalcTotalShaderGroupCount(pipeline_state);
+
+    if (firstGroup >= total_group_count) {
         skip |=
             LogError(device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-04050",
                      "vkGetRayTracingShaderGroupHandlesKHR: firstGroup must be less than the number of shader groups in pipeline.");
     }
-    if ((firstGroup + groupCount) > pipeline_state->raytracingPipelineCI.groupCount) {
+    if ((firstGroup + groupCount) > total_group_count) {
         skip |= LogError(
             device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-02419",
             "vkGetRayTracingShaderGroupHandlesKHR: The sum of firstGroup and groupCount must be less than or equal the number "

@@ -3869,6 +3869,26 @@ bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) co
     return ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[0], module, entrypoint, false);
 }
 
+uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE *pipeline, VkShaderStageFlagBits stageBit) const {
+    uint32_t total = 0;
+
+    const auto *stages = pipeline->raytracingPipelineCI.ptr()->pStages;
+    for (uint32_t stage_index = 0; stage_index < pipeline->raytracingPipelineCI.stageCount; stage_index++) {
+        if (stages[stage_index].stage == stageBit) {
+            total++;
+        }
+    }
+
+    if (pipeline->raytracingPipelineCI.pLibraryInfo) {
+        for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
+            const PIPELINE_STATE *library_pipeline = GetPipelineState(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
+            total += CalcShaderStageCount(library_pipeline, stageBit);
+        }
+    }
+
+    return total;
+}
+
 bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipelineCreateFlags flags, bool isKHR) const {
     bool skip = false;
 
@@ -3927,7 +3947,6 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
     const auto *stages = pipeline->raytracingPipelineCI.ptr()->pStages;
     const auto *groups = pipeline->raytracingPipelineCI.ptr()->pGroups;
 
-    uint32_t raygen_stages_found = 0;
     for (uint32_t stage_index = 0; stage_index < pipeline->raytracingPipelineCI.stageCount; stage_index++) {
         const auto &stage = stages[stage_index];
 
@@ -3935,16 +3954,16 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         const spirv_inst_iter entrypoint = FindEntrypoint(module, stage.pName, stage.stage);
 
         skip |= ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[stage_index], module, entrypoint, false);
-
-        if (stage.stage == VK_SHADER_STAGE_RAYGEN_BIT_NV) {
-            raygen_stages_found++;
-        }
     }
-    if (raygen_stages_found == 0) {
-        skip |= LogError(
-            device,
-            isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425" : "VUID-VkRayTracingPipelineCreateInfoNV-stage-03425",
-            " : The stage member of at least one element of pStages must be VK_SHADER_STAGE_RAYGEN_BIT_KHR.");
+
+    if ((pipeline->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
+        const uint32_t raygen_stages_count = CalcShaderStageCount(pipeline, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+        if (raygen_stages_count == 0) {
+            skip |= LogError(
+                device,
+                isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425" : "VUID-VkRayTracingPipelineCreateInfoNV-stage-03425",
+                " : The stage member of at least one element of pStages must be VK_SHADER_STAGE_RAYGEN_BIT_KHR.");
+        }
     }
 
     for (uint32_t group_index = 0; group_index < pipeline->raytracingPipelineCI.groupCount; group_index++) {
