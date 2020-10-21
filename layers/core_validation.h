@@ -434,6 +434,7 @@ class CoreChecks : public ValidationStateTracker {
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
+    uint32_t CalcShaderStageCount(const PIPELINE_STATE* pipeline, VkShaderStageFlagBits stageBit) const;
     bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, VkPipelineCreateFlags flags, bool isKHR) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const;
@@ -1334,6 +1335,9 @@ class CoreChecks : public ValidationStateTracker {
                                                                     const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                     VkQueryType queryType, VkQueryPool queryPool,
                                                                     uint32_t firstQuery) const;
+
+    // Calculates the total number of shader groups taking libraries into account.
+    uint32_t CalcTotalShaderGroupCount(const PIPELINE_STATE* pipelineState) const;
 
     bool PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                            uint32_t groupCount, size_t dataSize, void* pData) const;
