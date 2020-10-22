@@ -981,11 +981,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, "
                                  "samples must be VK_SAMPLE_COUNT_1_BIT.");
             }
-            if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
-                skip |= LogError(device, "VUID-VkImageCreateInfo-tiling-02084",
-                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, "
-                                 "tiling must be VK_IMAGE_TILING_OPTIMAL.");
-            }
         }
         if (pCreateInfo->flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
             if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
