@@ -596,6 +596,32 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     }
 }
 
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayPlanePropertiesKHR*                pProperties,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties) {
+        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+            CreateObject(pProperties[i].currentDisplay);
+        }
+    }
+}
+
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayPlaneProperties2KHR*               pProperties,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties) {
+        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+            CreateObject(pProperties[i].displayPlaneProperties.currentDisplay);
+        }
+    }
+}
+
 void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
