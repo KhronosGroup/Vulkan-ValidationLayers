@@ -745,45 +745,29 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
     return proxy;
 }
 
-class ResolvePreviousAccessFunctor {
-  public:
-    ResolvePreviousAccessFunctor(const AccessContext &context, AccessContext::AddressType address_type,
-                                 ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state)
-        : context_(context), address_type_(address_type), descent_map_(descent_map), infill_state_(infill_state) {}
-    ResolvePreviousAccessFunctor() = delete;
-    void operator()(const ResourceAccessRange &range) const {
-        context_.ResolvePreviousAccess(address_type_, range, descent_map_, infill_state_);
-    }
-
-  protected:
-    const AccessContext &context_;
-    const AccessContext::AddressType address_type_;
-    ResourceAccessRangeMap *const descent_map_;
-    const ResourceAccessState *infill_state_;
-};
-
 template <typename BarrierAction>
-class ResolveAccessRangeFunctor : public ResolvePreviousAccessFunctor {
+class ResolveAccessRangeFunctor {
   public:
     ResolveAccessRangeFunctor(const AccessContext &context, AccessContext::AddressType address_type,
                               ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state,
                               BarrierAction &barrier_action)
-        : ResolvePreviousAccessFunctor(context, address_type, descent_map, infill_state), barrier_action_(barrier_action) {}
+        : context_(context),
+          address_type_(address_type),
+          descent_map_(descent_map),
+          infill_state_(infill_state),
+          barrier_action_(barrier_action) {}
     ResolveAccessRangeFunctor() = delete;
     void operator()(const ResourceAccessRange &range) const {
         context_.ResolveAccessRange(address_type_, range, barrier_action_, descent_map_, infill_state_);
     }
 
   private:
+    const AccessContext &context_;
+    const AccessContext::AddressType address_type_;
+    ResourceAccessRangeMap *const descent_map_;
+    const ResourceAccessState *infill_state_;
     BarrierAction &barrier_action_;
 };
-
-void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
-                                          AddressType address_type, ResourceAccessRangeMap *descent_map,
-                                          const ResourceAccessState *infill_state) const {
-    const ResolvePreviousAccessFunctor action(*this, address_type, descent_map, infill_state);
-    ApplyOverImageRange(image_state, subresource_range, action);
-}
 
 template <typename BarrierAction>
 void AccessContext::ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
@@ -2599,8 +2583,6 @@ inline bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlagBits usage_stage
     //      the current read will be also not be a hazard, thus reporting a hazard here adds no needed information.
     return (0 != last_write) && (0 == (read_execution_barriers & usage_stage)) && IsWriteHazard(usage);
 }
-
-bool ResourceAccessState::IsWARHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const { return false; }
 
 VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const SyncOrderingBarrier &ordering) const {
     // Whether the stage are in the ordering scope only matters if the current write is ordered

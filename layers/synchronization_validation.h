@@ -204,7 +204,6 @@ class ResourceAccessState : public SyncStageAccess {
     static constexpr VkPipelineStageFlags kInvalidAttachmentStage = ~VkPipelineStageFlags(0);
     bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
     bool IsRAWHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const;
-    bool IsWARHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const;
     bool InSourceScopeOrChain(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope) const {
         return (src_access_scope & last_write) || (write_dependency_chain & src_exec_scope);
     }
@@ -327,9 +326,6 @@ class AccessContext {
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
     void ResolvePreviousAccess(AddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                               const ResourceAccessState *infill_state) const;
-    void ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
-                               AddressType address_type, ResourceAccessRangeMap *descent_map,
                                const ResourceAccessState *infill_state) const;
     template <typename BarrierAction>
     void ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
