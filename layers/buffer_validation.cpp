@@ -6146,56 +6146,56 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
 
 // Validates the image is allowed to be protected
 bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state, const char *cmd_name,
-                                        const char *vuid) const {
+                                        const char *vuid, const char *more_message) const {
     bool skip = false;
     if ((cb_state->unprotected == true) && (image_state->unprotected == false)) {
         LogObjectList objlist(cb_state->commandBuffer);
         objlist.add(image_state->image);
-        skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while image %s is a protected image", cmd_name,
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while image %s is a protected image.%s", cmd_name,
                          report_data->FormatHandle(cb_state->commandBuffer).c_str(),
-                         report_data->FormatHandle(image_state->image).c_str());
+                         report_data->FormatHandle(image_state->image).c_str(), more_message);
     }
     return skip;
 }
 
 // Validates the image is allowed to be unprotected
 bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state, const char *cmd_name,
-                                          const char *vuid) const {
+                                          const char *vuid, const char *more_message) const {
     bool skip = false;
     if ((cb_state->unprotected == false) && (image_state->unprotected == true)) {
         LogObjectList objlist(cb_state->commandBuffer);
         objlist.add(image_state->image);
-        skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while image %s is an unprotected image", cmd_name,
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while image %s is an unprotected image.%s", cmd_name,
                          report_data->FormatHandle(cb_state->commandBuffer).c_str(),
-                         report_data->FormatHandle(image_state->image).c_str());
+                         report_data->FormatHandle(image_state->image).c_str(), more_message);
     }
     return skip;
 }
 
 // Validates the buffer is allowed to be protected
 bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE *cb_state, const BUFFER_STATE *buffer_state, const char *cmd_name,
-                                         const char *vuid) const {
+                                         const char *vuid, const char *more_message) const {
     bool skip = false;
     if ((cb_state->unprotected == true) && (buffer_state->unprotected == false)) {
         LogObjectList objlist(cb_state->commandBuffer);
         objlist.add(buffer_state->buffer);
-        skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer", cmd_name,
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer.%s", cmd_name,
                          report_data->FormatHandle(cb_state->commandBuffer).c_str(),
-                         report_data->FormatHandle(buffer_state->buffer).c_str());
+                         report_data->FormatHandle(buffer_state->buffer).c_str(), more_message);
     }
     return skip;
 }
 
 // Validates the buffer is allowed to be unprotected
 bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE *cb_state, const BUFFER_STATE *buffer_state, const char *cmd_name,
-                                           const char *vuid) const {
+                                           const char *vuid, const char *more_message) const {
     bool skip = false;
     if ((cb_state->unprotected == false) && (buffer_state->unprotected == true)) {
         LogObjectList objlist(cb_state->commandBuffer);
         objlist.add(buffer_state->buffer);
-        skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer", cmd_name,
+        skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer.%s", cmd_name,
                          report_data->FormatHandle(cb_state->commandBuffer).c_str(),
-                         report_data->FormatHandle(buffer_state->buffer).c_str());
+                         report_data->FormatHandle(buffer_state->buffer).c_str(), more_message);
     }
     return skip;
 }

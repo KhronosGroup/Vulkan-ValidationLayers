@@ -875,6 +875,17 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                                 }
                             }
                         }
+                        if (enabled_features.core11.protectedMemory == VK_TRUE) {
+                            if (ValidateProtectedBuffer(cb_node, buffer_node, caller, vuids.unprotected_command_buffer,
+                                                        "Buffer is in a descriptorSet")) {
+                                return true;
+                            }
+                            if (binding_info.second.is_writable &&
+                                ValidateUnprotectedBuffer(cb_node, buffer_node, caller, vuids.protected_command_buffer,
+                                                          "Buffer is in a descriptorSet")) {
+                                return true;
+                            }
+                        }
                     }
                 } else if (descriptor_class == DescriptorClass::ImageSampler || descriptor_class == DescriptorClass::Image) {
                     VkImageView image_view;
@@ -1047,6 +1058,17 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                                 }
                                 ++view_index;
                             }
+                            if (enabled_features.core11.protectedMemory == VK_TRUE) {
+                                if (ValidateProtectedImage(cb_node, image_view_state->image_state.get(), caller,
+                                                           vuids.unprotected_command_buffer, "Image is in a descriptorSet")) {
+                                    return true;
+                                }
+                                if (binding_info.second.is_writable &&
+                                    ValidateUnprotectedImage(cb_node, image_view_state->image_state.get(), caller,
+                                                             vuids.protected_command_buffer, "Image is in a descriptorSet")) {
+                                    return true;
+                                }
+                            }
                         }
 
                         // Here is some unnormalizedCoordinates sampler validations. But because it might take long time to find out
@@ -1182,6 +1204,17 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                                 report_data->FormatHandle(set).c_str(), caller, binding, index,
                                 report_data->FormatHandle(buffer_view).c_str(),
                                 string_VkFormat(buffer_view_state->create_info.format));
+                        }
+                        if (enabled_features.core11.protectedMemory == VK_TRUE) {
+                            if (ValidateProtectedBuffer(cb_node, buffer_view_state->buffer_state.get(), caller,
+                                                        vuids.unprotected_command_buffer, "Buffer is in a descriptorSet")) {
+                                return true;
+                            }
+                            if (binding_info.second.is_writable &&
+                                ValidateUnprotectedBuffer(cb_node, buffer_view_state->buffer_state.get(), caller,
+                                                          vuids.protected_command_buffer, "Buffer is in a descriptorSet")) {
+                                return true;
+                            }
                         }
                     }
                 } else if (descriptor_class == DescriptorClass::AccelerationStructure) {

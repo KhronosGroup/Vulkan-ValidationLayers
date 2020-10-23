@@ -725,6 +725,26 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
 
+    // Verify vertex & index buffer for unprotected command buffer.
+    // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
+    if (enabled_features.core11.protectedMemory == VK_TRUE){
+        for (const auto &buffer_binding : current_vtx_bfr_binding_info) {
+            if (buffer_binding.buffer != VK_NULL_HANDLE) {
+                const auto *buf_state = Get<BUFFER_STATE>(buffer_binding.buffer);
+                if (buf_state) {
+                    skip |=
+                        ValidateProtectedBuffer(pCB, buf_state, caller, vuid.unprotected_command_buffer, "Buffer is vertex buffer");
+                }
+            }
+        }
+        if (pCB->index_buffer_binding.buffer != VK_NULL_HANDLE) {
+            const auto *buf_state = Get<BUFFER_STATE>(pCB->index_buffer_binding.buffer);
+            if (buf_state) {
+                skip |= ValidateProtectedBuffer(pCB, buf_state, caller, vuid.unprotected_command_buffer, "Buffer is index buffer");
+            }
+        }
+    }
+
     // Verify if using dynamic state setting commands that it doesn't set up in pipeline
     CBStatusFlags invalid_status = CBSTATUS_ALL_STATE_SET & ~(pCB->dynamic_status | pCB->static_status);
     if (invalid_status) {
@@ -1081,6 +1101,26 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         if (cb_node->activeRenderPass && cb_node->activeFramebuffer) {
             const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
             attachments = cb_node->activeFramebuffer->GetUsedAttachments(subpass, cb_node->imagelessFramebufferAttachments);
+
+            // Verify attachments for unprotected/protected command buffer.
+            if (enabled_features.core11.protectedMemory == VK_TRUE) {
+                for (const auto &att : attachments) {
+                    if (att.view != VK_NULL_HANDLE) {
+                        const auto *view_state = Get<IMAGE_VIEW_STATE>(att.view);
+                        if (view_state) {
+                            std::string image_desc = "Image is ";
+                            image_desc.append(string_VkImageUsageFlagBits(att.usage));
+                            // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
+                            if (att.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
+                                result |= ValidateUnprotectedImage(cb_node, view_state->image_state.get(), function,
+                                                                   vuid.protected_command_buffer, image_desc.c_str());
+                            }
+                            result |= ValidateProtectedImage(cb_node, view_state->image_state.get(), function,
+                                                             vuid.unprotected_command_buffer, image_desc.c_str());
+                        }
+                    }
+                }
+            }
         }
     }
     // Now complete other state checks

@@ -73,6 +73,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-None-02704",
         "VUID-vkCmdDraw-None-02721",
         "VUID-vkCmdDraw-None-02859",
+        "VUID-vkCmdDraw-commandBuffer-02707",
+        "VUID-vkCmdDraw-commandBuffer-02712",
+        "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDraw-filterCubic-02694",
+        "VUID-vkCmdDraw-filterCubicMinmax-02695",
     }},
     {CMD_DRAWINDEXED, {
         "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
@@ -105,6 +110,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexed-None-02704",
         "VUID-vkCmdDrawIndexed-None-02721",
         "VUID-vkCmdDrawIndexed-None-02859",
+        "VUID-vkCmdDrawIndexed-commandBuffer-02707",
+        "VUID-vkCmdDrawIndexed-commandBuffer-02712",
+        "VUID-vkCmdDrawIndexed-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawIndexed-filterCubic-02694",
+        "VUID-vkCmdDrawIndexed-filterCubicMinmax-02695",
     }},
     {CMD_DRAWINDIRECT, {
         "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
@@ -137,6 +147,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirect-None-02704",
         "VUID-vkCmdDrawIndirect-None-02721",
         "VUID-vkCmdDrawIndirect-None-02859",
+        "VUID-vkCmdDrawIndirect-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawIndirect-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawIndirect-filterCubic-02694",
+        "VUID-vkCmdDrawIndirect-filterCubicMinmax-02695",
     }},
     {CMD_DRAWINDEXEDINDIRECT, {
         "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool",
@@ -169,6 +184,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirect-None-02704",
         "VUID-vkCmdDrawIndexedIndirect-None-02721",
         "VUID-vkCmdDrawIndexedIndirect-None-02859",
+        "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawIndexedIndirect-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawIndexedIndirect-filterCubic-02694",
+        "VUID-vkCmdDrawIndexedIndirect-filterCubicMinmax-02695",
     }},
     {CMD_DISPATCH, {
         "VUID-vkCmdDispatch-commandBuffer-cmdpool",
@@ -201,6 +221,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatch-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdDispatch-None-02859",
+        "VUID-vkCmdDispatch-commandBuffer-02707",
+        "VUID-vkCmdDispatch-commandBuffer-02712",
+        kVUIDUndefined, // maxMultiviewInstanceIndex
+        "VUID-vkCmdDispatch-filterCubic-02694",
+        "VUID-vkCmdDispatch-filterCubicMinmax-02695",
     }},
     {CMD_DISPATCHINDIRECT, {
         "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
@@ -233,6 +258,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatchIndirect-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdDispatchIndirect-None-02859",
+        "VUID-vkCmdDispatchIndirect-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        kVUIDUndefined, // maxMultiviewInstanceIndex
+        "VUID-vkCmdDispatchIndirect-filterCubic-02694",
+        "VUID-vkCmdDispatchIndirect-filterCubicMinmax-02695",
     }},
     {CMD_DRAWINDIRECTCOUNT, {
         "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool",
@@ -265,6 +295,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectCount-None-02704",
         "VUID-vkCmdDrawIndirectCount-None-02721",
         "VUID-vkCmdDrawIndirectCount-None-02859",
+        "VUID-vkCmdDrawIndirectCount-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawIndirectCount-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawIndirectCount-filterCubic-02694",
+        "VUID-vkCmdDrawIndirectCount-filterCubicMinmax-02695",
     }},
     {CMD_DRAWINDEXEDINDIRECTCOUNT,{
         "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool",
@@ -297,6 +332,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndexedIndirectCount-None-02704",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02721",
         "VUID-vkCmdDrawIndexedIndirectCount-None-02859",
+        "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawIndexedIndirectCount-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawIndexedIndirectCount-filterCubic-02694",
+        "VUID-vkCmdDrawIndexedIndirectCount-filterCubicMinmax-02695",
     }},
     {CMD_TRACERAYSNV, {
         "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool",
@@ -322,13 +362,18 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // subpass_input
         "VUID-vkCmdTraceRaysNV-None-02691",
         "VUID-vkCmdTraceRaysNV-None-02698",
-         kVUIDUndefined, // image_subresources
+        kVUIDUndefined, // image_subresources
         "VUID-vkCmdTraceRaysNV-None-02699",
         "VUID-vkCmdTraceRaysNV-None-02702",
         "VUID-vkCmdTraceRaysNV-None-02703",
         "VUID-vkCmdTraceRaysNV-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdTraceRaysNV-None-02859",
+        "VUID-vkCmdTraceRaysNV-commandBuffer-02707",
+        "VUID-vkCmdTraceRaysNV-commandBuffer-02712",
+        kVUIDUndefined, // maxMultiviewInstanceIndex
+        "VUID-vkCmdTraceRaysNV-filterCubic-02694",
+        "VUID-vkCmdTraceRaysNV-filterCubicMinmax-02695",
     }},
     {CMD_TRACERAYSKHR, {
         "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
@@ -353,7 +398,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysKHR-flags-02696",
         kVUIDUndefined, // subpass_input
         "VUID-vkCmdTraceRaysKHR-None-02691",
-		"VUID-vkCmdTraceRaysKHR-None-02698",
+        "VUID-vkCmdTraceRaysKHR-None-02698",
         kVUIDUndefined, // image_subresources
         "VUID-vkCmdTraceRaysKHR-None-02699",
         "VUID-vkCmdTraceRaysKHR-None-02702",
@@ -361,6 +406,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysKHR-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdTraceRaysKHR-None-02859",
+        "VUID-vkCmdTraceRaysKHR-commandBuffer-02707",
+        "VUID-vkCmdTraceRaysKHR-commandBuffer-02712",
+        kVUIDUndefined, // maxMultiviewInstanceIndex
+        "VUID-vkCmdTraceRaysKHR-filterCubic-02694",
+        "VUID-vkCmdTraceRaysKHR-filterCubicMinmax-02695",
     }},
     {CMD_TRACERAYSINDIRECTKHR, {
         "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
@@ -393,6 +443,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdTraceRaysIndirectKHR-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdTraceRaysIndirectKHR-None-02859",
+        "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        kVUIDUndefined, // maxMultiviewInstanceIndex
+        "VUID-vkCmdTraceRaysIndirectKHR-filterCubic-02694",
+        "VUID-vkCmdTraceRaysIndirectKHR-filterCubicMinmax-02695",
     }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
@@ -425,6 +480,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksNV-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdDrawMeshTasksNV-None-02859",
+        "VUID-vkCmdDrawMeshTasksNV-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawMeshTasksNV-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawMeshTasksNV-filterCubic-02694",
+        "VUID-vkCmdDrawMeshTasksNV-filterCubicMinmax-02695",
     }},
     {CMD_DRAWMESHTASKSINDIRECTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
@@ -457,6 +517,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdDrawMeshTasksIndirectNV-None-02859",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawMeshTasksIndirectNV-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubic-02694",
+        "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubicMinmax-02695",
     }},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool",
@@ -489,6 +554,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02859",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubic-02694",
+        "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubicMinmax-02695",
     }},
     {CMD_DRAWINDIRECTBYTECOUNTEXT, {
         "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-cmdpool",
@@ -521,6 +591,11 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02704",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02721",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02859",
+        "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        "VUID-vkCmdDrawIndirectByteCountEXT-maxMultiviewInstanceIndex-02688",
+        "VUID-vkCmdDrawIndirectByteCountEXT-filterCubic-02694",
+        "VUID-vkCmdDrawIndirectByteCountEXT-filterCubicMinmax-02695",
     }},
     {CMD_DISPATCHBASE, {
         "VUID-vkCmdDispatchBase-commandBuffer-cmdpool",
@@ -553,9 +628,19 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatchBase-None-02704",
         kVUIDUndefined, // vertex_binding_attribute
         "VUID-vkCmdDispatchBase-None-02859",
+        "VUID-vkCmdDispatchBase-commandBuffer-02707",
+        kVUIDUndefined, // protected_command_buffer
+        kVUIDUndefined, // maxMultiviewInstanceIndex
+        "VUID-vkCmdDispatchBase-filterCubic-02694",
+        "VUID-vkCmdDispatchBase-filterCubicMinmax-02695",
     }},
     // Used if invalid cmd_type is used
     {CMD_NONE, {
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
+        kVUIDUndefined,
         kVUIDUndefined,
         kVUIDUndefined,
         kVUIDUndefined,
