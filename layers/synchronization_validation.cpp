@@ -1454,6 +1454,7 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
                                             const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
                                             const ResourceUsageTag &tag) {
     const auto &transitions = rp_state.subpass_transitions[subpass];
+    const ResourceAccessState empty_infill;
     for (const auto &transition : transitions) {
         const auto prev_pass = transition.prev_pass;
         const auto attachment_view = attachment_views[transition.attachment];
@@ -1472,7 +1473,7 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
         auto &target_map = GetAccessStateMap(address_type);
         ApplySubpassTransitionBarriersAction barrier_action(trackback->barriers);
         prev_context->ResolveAccessRange(*image, attachment_view->normalized_subresource_range, barrier_action, address_type,
-                                         &target_map, nullptr);
+                                         &target_map, &empty_infill);
     }
 
     // If there were no transitions skip this global map walk
