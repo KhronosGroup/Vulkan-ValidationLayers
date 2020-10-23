@@ -14151,17 +14151,13 @@ TEST_F(VkSyncValTest, RenderPassLoadHazardVsInitialLayout) {
 
     m_commandBuffer->begin();
 
-    // If we have no accesses, then we have no accesses to validate against, so create an access record the barriers can
-    // be applied against.
-    VkClearColorValue black = {};
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdClearColorImage(m_commandBuffer->handle(), image_input.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &black, 1,
-                           &full_subresource_range);
     m_renderPassBeginInfo.renderArea = {{0, 0}, {32, 32}};
     m_renderPassBeginInfo.renderPass = rp;
     m_renderPassBeginInfo.framebuffer = fb;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    // Even though we have no accesses prior, the layout transition *is* an access, so load can be validated vs. layout transition
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 }
