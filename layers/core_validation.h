@@ -493,7 +493,7 @@ class CoreChecks : public ValidationStateTracker {
                                                               const char* variable_name) const;
     template <typename RegionType>
     bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE* cb_node, uint32_t regionCount, const RegionType* pRegions,
-                                     const IMAGE_STATE* image_state, const char* function, CopyCommandVersion version) const;
+                                     const IMAGE_STATE* image_state, const char* function, CopyCommandVersion version, bool image_to_buffer) const;
     bool ValidateBufferViewRange(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
                                  const VkPhysicalDeviceLimits* device_limits) const;
     bool ValidateBufferViewBuffer(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo) const;
