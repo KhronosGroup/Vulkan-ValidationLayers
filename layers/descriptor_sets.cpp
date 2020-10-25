@@ -697,10 +697,10 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 //  This includes validating that all descriptors in the given bindings are updated,
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
-bool CoreChecks::ValidateDrawState(VkPipelineBindPoint bind_point, const DescriptorSet *descriptor_set,
-                                   const BindingReqMap &bindings, const std::vector<uint32_t> &dynamic_offsets,
-                                   const CMD_BUFFER_STATE *cb_node, const std::vector<ATTACHMENT_INFO> &attachments,
-                                   const char *caller, const DrawDispatchVuid &vuids) const {
+bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const BindingReqMap &bindings,
+                                   const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
+                                   const std::vector<ATTACHMENT_INFO> &attachments, const char *caller,
+                                   const DrawDispatchVuid &vuids) const {
     bool result = false;
     VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer : VK_NULL_HANDLE;
     for (auto binding_pair : bindings) {

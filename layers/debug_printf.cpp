@@ -836,10 +836,10 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     desc_writes[0].dstBinding = 3;
     DispatchUpdateDescriptorSets(device, desc_count, desc_writes, 0, NULL);
 
-    auto iter = cb_node->lastBound.find(bind_point);  // find() allows read-only access to cb_state
-    if (iter != cb_node->lastBound.end()) {
-        auto pipeline_state = iter->second.pipeline_state;
-        if (pipeline_state && (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index)) {
+    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
+    const auto *pipeline_state = cb_node->lastBound[lv_bind_point].pipeline_state;
+    if (pipeline_state) {
+        if (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
