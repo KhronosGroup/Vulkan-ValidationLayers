@@ -386,12 +386,11 @@ class CoreChecks : public ValidationStateTracker {
     VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
                                                 void* pData);
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
-    bool ValidateDrawState(VkPipelineBindPoint bind_point, const cvdescriptorset::DescriptorSet* descriptor_set,
-                           const BindingReqMap& bindings, const std::vector<uint32_t>& dynamic_offsets,
-                           const CMD_BUFFER_STATE* cb_node, const std::vector<ATTACHMENT_INFO>& attachments, const char* caller,
+    bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const BindingReqMap& bindings,
+                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node,
+                           const std::vector<ATTACHMENT_INFO>& attachments, const char* caller,
                            const DrawDispatchVuid& vuids) const;
-    bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node,
-                                          const cvdescriptorset::DescriptorSet* descriptor_set,
+    bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets,
                                           std::pair<const uint32_t, DescriptorRequirement>& binding_info, VkFramebuffer framebuffer,
                                           const std::vector<ATTACHMENT_INFO>& attachments, const char* caller,

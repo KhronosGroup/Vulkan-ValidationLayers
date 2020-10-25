@@ -1337,12 +1337,10 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
     bool skip = false;
     const CMD_BUFFER_STATE* cb_state = GetCBState(cmd_buffer);
     if (cb_state) {
-        const auto last_bound_it = cb_state->lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        const PIPELINE_STATE* pipeline_state = nullptr;
-        if (last_bound_it != cb_state->lastBound.cend()) {
-            pipeline_state = last_bound_it->second.pipeline_state;
-        }
+        const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        const auto* pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
         const auto& current_vtx_bfr_binding_info = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings;
+
         // Verify vertex binding
         if (pipeline_state->vertex_binding_descriptions_.size() <= 0) {
             if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
@@ -1437,16 +1435,15 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
     const void* ib_mem = ib_mem_state.p_driver_data;
     bool primitive_restart_enable = false;
 
-    const auto& pipeline_binding_iter = cmd_state->lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto& pipeline_binding_iter = cmd_state->lastBound[lv_bind_point];
+    const auto* pipeline_state = pipeline_binding_iter.pipeline_state;
 
-    if (pipeline_binding_iter != cmd_state->lastBound.end()) {
-        const auto* pipeline_state = pipeline_binding_iter->second.pipeline_state;
-        if (pipeline_state != nullptr && pipeline_state->graphicsPipelineCI.pInputAssemblyState != nullptr)
-            primitive_restart_enable = pipeline_state->graphicsPipelineCI.pInputAssemblyState->primitiveRestartEnable == VK_TRUE;
-    }
+    if (pipeline_state != nullptr && pipeline_state->graphicsPipelineCI.pInputAssemblyState != nullptr)
+        primitive_restart_enable = pipeline_state->graphicsPipelineCI.pInputAssemblyState->primitiveRestartEnable == VK_TRUE;
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
-    if (ib_mem && pipeline_binding_iter != cmd_state->lastBound.end()) {
+    if (ib_mem && pipeline_binding_iter.IsUsing()) {
         uint32_t scan_stride;
         if (ib_type == VK_INDEX_TYPE_UINT8_EXT) {
             scan_stride = sizeof(uint8_t);

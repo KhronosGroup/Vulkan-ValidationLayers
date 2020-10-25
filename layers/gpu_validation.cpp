@@ -695,8 +695,9 @@ struct GPUAV_RESTORABLE_PIPELINE_STATE {
 
     void Create(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
         pipeline_bind_point = bind_point;
+        const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
 
-        LAST_BOUND_STATE &last_bound = cb_state->lastBound[bind_point];
+        LAST_BOUND_STATE &last_bound = cb_state->lastBound[lv_bind_point];
         if (last_bound.pipeline_state) {
             pipeline = last_bound.pipeline_state->pipeline;
             pipeline_layout = last_bound.pipeline_layout;
@@ -1592,7 +1593,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
     VkWriteDescriptorSet desc_writes[3] = {};
     uint32_t desc_count = 1;
-    auto const &state = cb_node->lastBound[bind_point];
+    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
+    auto const &state = cb_node->lastBound[lv_bind_point];
     uint32_t number_of_sets = (uint32_t)state.per_set.size();
 
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
@@ -1790,15 +1792,14 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     desc_writes[0].dstSet = desc_sets[0];
     DispatchUpdateDescriptorSets(device, desc_count, desc_writes, 0, NULL);
 
-    auto iter = cb_node->lastBound.find(bind_point);  // find() allows read-only access to cb_state
-    if (iter != cb_node->lastBound.end()) {
-        auto pipeline_state = iter->second.pipeline_state;
-        if (pipeline_state && (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
+    const auto *pipeline_state = state.pipeline_state;
+    if (pipeline_state) {
+        if ((pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
             !pipeline_state->pipeline_layout->destroyed) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
-        if (pipeline_state && pipeline_state->pipeline_layout->destroyed) {
+        if (pipeline_state->pipeline_layout->destroyed) {
             ReportSetupProblem(device, "Pipeline layout has been destroyed, aborting GPU-AV");
             aborted = true;
         } else {
