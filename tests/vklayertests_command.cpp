@@ -836,6 +836,48 @@ TEST_F(VkLayerTest, ClearColorAttachmentsZeroExtent) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ClearAttachmentsInvalidAspectMasks) {
+    TEST_DESCRIPTION("Check VkClearAttachment invalid aspect masks.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+
+    VkClearAttachment attachment;
+    attachment.clearValue.color.float32[0] = 0;
+    attachment.clearValue.color.float32[1] = 0;
+    attachment.clearValue.color.float32[2] = 0;
+    attachment.clearValue.color.float32[3] = 0;
+    attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = {1, 1};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00020");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00020");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-02246");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-02246");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ClearAttachmentsImplicitCheck) {
     TEST_DESCRIPTION("Check VkClearAttachment implicit VUs.");
 
@@ -4150,6 +4192,16 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceLayers-aspectMask-00168");
+    // These aspect/format mismatches are redundant but unavoidable here
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_errorMonitor->VerifyFound();
+
+    // Aspect Memory Plane mask is illegal
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceLayers-aspectMask-02247");
     // These aspect/format mismatches are redundant but unavoidable here
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
     vk::CmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
