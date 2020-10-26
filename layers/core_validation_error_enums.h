@@ -85,7 +85,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidSecondaryCommandB
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidSet = "UNASSIGNED-CoreValidation-DrawState-InvalidSet";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_MismatchedImageFormat = "UNASSIGNED-CoreValidation-DrawState-MismatchedImageFormat";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_MismatchedImageType = "UNASSIGNED-CoreValidation-DrawState-MismatchedImageType";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_MissingAttachmentReference = "UNASSIGNED-CoreValidation-DrawState-MissingAttachmentReference";
+// static const char DECORATE_UNUSED *kVUID_Core_DrawState_MissingAttachmentReference = "UNASSIGNED-CoreValidation-DrawState-MissingAttachmentReference";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_NoActiveRenderpass = "UNASSIGNED-CoreValidation-DrawState-NoActiveRenderpass";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_NoEndCommandBuffer = "UNASSIGNED-CoreValidation-DrawState-NoEndCommandBuffer";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_NumSamplesMismatch = "UNASSIGNED-CoreValidation-DrawState-NumSamplesMismatch";
