@@ -5694,6 +5694,10 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    auto tf_properties = lvl_init_struct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    auto pd_properties = lvl_init_struct<VkPhysicalDeviceProperties2>(&tf_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &pd_properties);
+
     PFN_vkCmdDrawIndirectByteCountEXT fpvkCmdDrawIndirectByteCountEXT =
         (PFN_vkCmdDrawIndirectByteCountEXT)vk::GetDeviceProcAddr(device(), "vkCmdDrawIndirectByteCountEXT");
 
@@ -5705,10 +5709,18 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     VkBufferObj counter_buffer;
     counter_buffer.init(*m_device, buffer_create_info);
 
-    // VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289
+    // Greater stride than maxTransformFeedbackBufferDataStride
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289");
-    fpvkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 1, 0xCADECADE);
+    fpvkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 0, 0xCADECADE);
     m_errorMonitor->VerifyFound();
+
+    // some mock ICD json files are missing a valid stride value
+    if (tf_properties.maxTransformFeedbackBufferDataStride > 0) {
+        // non-4 multiple stride
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-offset");
+        fpvkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 1, 4);
+        m_errorMonitor->VerifyFound();
+    }
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();

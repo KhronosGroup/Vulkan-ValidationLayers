@@ -5044,6 +5044,12 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCo
             vertexStride, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
     }
 
+    if ((counterOffset % 4) != 0) {
+        // TODO - Update when header are updated
+        skip |= LogError(commandBuffer, "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-offset",
+                         "vkCmdDrawIndirectByteCountEXT(): offset (%" PRIu64 ") must be a multiple of 4.", counterOffset);
+    }
+
     return skip;
 }
 
