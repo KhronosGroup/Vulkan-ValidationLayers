@@ -1792,28 +1792,41 @@ std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, s
     return ids;
 }
 
-// return: 0: pass, 1: not set, 2: not update
-int CoreChecks::ValidatePushConstantSetUpdate(const std::vector<int8_t> &push_constant_data_update,
-                                              const shader_struct_member &push_constant_used_in_shader,
-                                              uint32_t &out_issue_index) const {
+PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vector<uint8_t> &push_constant_data_update,
+                                                                const shader_struct_member &push_constant_used_in_shader,
+                                                                uint32_t &out_issue_index) const {
     const auto *used_bytes = push_constant_used_in_shader.GetUsedbytes();
-    if (used_bytes->size() == 0) {
-        return 0;
+    const auto used_bytes_size = used_bytes->size();
+    if (used_bytes_size == 0) return PC_Byte_Updated;
+
+    const auto push_constant_data_update_size = push_constant_data_update.size();
+    const auto *data = push_constant_data_update.data();
+    if ((*data == PC_Byte_Updated) && std::memcmp(data, data + 1, push_constant_data_update_size - 1) == 0) {
+        if (used_bytes_size <= push_constant_data_update_size) {
+            return PC_Byte_Updated;
+        }
+        const auto used_bytes_size1 = used_bytes_size - push_constant_data_update_size;
+
+        const auto *used_bytes_data1 = used_bytes->data() + push_constant_data_update_size;
+        if ((*used_bytes_data1 == 0) && std::memcmp(used_bytes_data1, used_bytes_data1 + 1, used_bytes_size1 - 1) == 0) {
+            return PC_Byte_Updated;
+        }
     }
+
     uint32_t i = 0;
     for (const auto used : *used_bytes) {
         if (used) {
-            if (i >= push_constant_data_update.size() || push_constant_data_update[i] == -1) {
+            if (i >= push_constant_data_update.size() || push_constant_data_update[i] == PC_Byte_Not_Set) {
                 out_issue_index = i;
-                return 1;  // not set
-            } else if (push_constant_data_update[i] == 0) {
+                return PC_Byte_Not_Set;
+            } else if (push_constant_data_update[i] == PC_Byte_Not_Updated) {
                 out_issue_index = i;
-                return 2;  // not update
+                return PC_Byte_Not_Updated;
             }
         }
         ++i;
     }
-    return 0;  // pass
+    return PC_Byte_Updated;
 }
 
 bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADER_MODULE_STATE const *src,
@@ -1831,16 +1844,16 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
         if (range.stageFlags & pStage->stage) {
             found_stage = true;
             std::string location_desc;
-            std::vector<int8_t> push_constant_bytes_set;
+            std::vector<uint8_t> push_constant_bytes_set;
             if (range.offset > 0) {
-                push_constant_bytes_set.resize(range.offset, -1);
+                push_constant_bytes_set.resize(range.offset, PC_Byte_Not_Set);
             }
-            push_constant_bytes_set.resize(range.offset + range.size, 1);
+            push_constant_bytes_set.resize(range.offset + range.size, PC_Byte_Updated);
             uint32_t issue_index = 0;
-            int ret = ValidatePushConstantSetUpdate(push_constant_bytes_set, entrypoint->push_constant_used_in_shader, issue_index);
+            const auto ret =
+                ValidatePushConstantSetUpdate(push_constant_bytes_set, entrypoint->push_constant_used_in_shader, issue_index);
 
-            // "not set" error has been printed in ValidatePushConstantUsage.
-            if (ret == 1) {
+            if (ret == PC_Byte_Not_Set) {
                 const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
                 LogObjectList objlist(src->vk_shader_module);
                 objlist.add(pipeline.pipeline_layout->layout);

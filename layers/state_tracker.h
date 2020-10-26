@@ -340,6 +340,12 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const BufferImageCopyRegio
     return buffer_size;
 }
 
+enum PushConstantByteState {
+    PC_Byte_Updated = 0,
+    PC_Byte_Not_Set = 1,
+    PC_Byte_Not_Updated = 2,
+};
+
 struct SHADER_MODULE_STATE;
 
 class ValidationStateTracker : public ValidationObject {

@@ -4066,7 +4066,7 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
                 const auto it = cb_state->push_constant_data_update.find(flag);
 
                 if (it != cb_state->push_constant_data_update.end()) {
-                    std::memset(it->second.data() + offset, 1, static_cast<std::size_t>(size));
+                    std::memset(it->second.data() + offset, PC_Byte_Updated, static_cast<std::size_t>(size));
                 }
             }
             flags = flags >> 1;
@@ -5931,15 +5931,15 @@ void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CM
 
                     if (it != cb_state->push_constant_data_update.end()) {
                         if (it->second.size() < push_constant_range.offset) {
-                            it->second.resize(push_constant_range.offset, -1);
+                            it->second.resize(push_constant_range.offset, PC_Byte_Not_Set);
                         }
                         if (it->second.size() < size) {
-                            it->second.resize(size, 0);
+                            it->second.resize(size, PC_Byte_Not_Updated);
                         }
                     } else {
-                        std::vector<int8_t> bytes;
-                        bytes.resize(push_constant_range.offset, -1);
-                        bytes.resize(size, 0);
+                        std::vector<uint8_t> bytes;
+                        bytes.resize(push_constant_range.offset, PC_Byte_Not_Set);
+                        bytes.resize(size, PC_Byte_Not_Updated);
                         cb_state->push_constant_data_update[flag] = bytes;
                     }
                 }
