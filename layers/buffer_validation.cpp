@@ -3245,10 +3245,19 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
             auto clear_desc = &pAttachments[attachment_index];
             uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
+            const VkImageAspectFlags aspect_mask = clear_desc->aspectMask;
 
-            if (clear_desc->aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
-                skip |= LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-00020", " ");
-            } else if (clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+            if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
+                skip |= LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-00020",
+                                 "vkCmdClearAttachments() pAttachments[%u] mask contains VK_IMAGE_ASPECT_METADATA_BIT",
+                                 attachment_index);
+            } else if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
+                                      VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
+                skip |=
+                    LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-02246",
+                             "vkCmdClearAttachments() pAttachments[%u] mask contains a VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT bit",
+                             attachment_index);
+            } else if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
                 uint32_t color_attachment = VK_ATTACHMENT_UNUSED;
                 if (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount) {
                     color_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
@@ -3273,8 +3282,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 }
                 fb_attachment = color_attachment;
 
-                if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) ||
-                    (clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) || (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
                     char const str[] =
                         "vkCmdClearAttachments() aspectMask [%d] must set only VK_IMAGE_ASPECT_COLOR_BIT of a color attachment.";
                     skip |= LogError(commandBuffer, "VUID-VkClearAttachment-aspectMask-00019", str, attachment_index);
@@ -4275,23 +4283,30 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state,
 bool CoreChecks::ValidateImageSubresourceLayers(const CMD_BUFFER_STATE *cb_node, const VkImageSubresourceLayers *subresource_layers,
                                                 char const *func_name, char const *member, uint32_t i) const {
     bool skip = false;
+    const VkImageAspectFlags apsect_mask = subresource_layers->aspectMask;
     // layerCount must not be zero
     if (subresource_layers->layerCount == 0) {
         skip |= LogError(cb_node->commandBuffer, "VUID-VkImageSubresourceLayers-layerCount-01700",
                          "In %s, pRegions[%u].%s.layerCount must not be zero.", func_name, i, member);
     }
     // aspectMask must not contain VK_IMAGE_ASPECT_METADATA_BIT
-    if (subresource_layers->aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+    if (apsect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
         skip |= LogError(cb_node->commandBuffer, "VUID-VkImageSubresourceLayers-aspectMask-00168",
                          "In %s, pRegions[%u].%s.aspectMask has VK_IMAGE_ASPECT_METADATA_BIT set.", func_name, i, member);
     }
     // if aspectMask contains COLOR, it must not contain either DEPTH or STENCIL
-    if ((subresource_layers->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
-        (subresource_layers->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+    if ((apsect_mask & VK_IMAGE_ASPECT_COLOR_BIT) && (apsect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
         skip |= LogError(cb_node->commandBuffer, "VUID-VkImageSubresourceLayers-aspectMask-00167",
                          "In %s, pRegions[%u].%s.aspectMask has VK_IMAGE_ASPECT_COLOR_BIT and either VK_IMAGE_ASPECT_DEPTH_BIT or "
                          "VK_IMAGE_ASPECT_STENCIL_BIT set.",
                          func_name, i, member);
+    }
+    // aspectMask must not contain VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT
+    if (apsect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
+                       VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
+        skip |= LogError(cb_node->commandBuffer, "VUID-VkImageSubresourceLayers-aspectMask-02247",
+                         "In %s, pRegions[%u].%s.aspectMask has a VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT bit set.", func_name, i,
+                         member);
     }
     return skip;
 }
