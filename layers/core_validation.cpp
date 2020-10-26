@@ -9207,6 +9207,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pInputAttachments[j];
             const uint32_t attachment_index = attachment_ref.attachment;
+            const VkImageAspectFlags aspect_mask = attachment_ref.aspectMask;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 input_attachments.insert(attachment_index);
                 std::string error_type = "pSubpasses[" + std::to_string(i) + "].pInputAttachments[" + std::to_string(j) + "]";
@@ -9214,13 +9215,22 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                 skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
 
-                if (attachment_ref.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+                if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
                     vuid = use_rp2 ? "VUID-VkSubpassDescription2-attachment-02801"
                                    : "VUID-VkInputAttachmentAspectReference-aspectMask-01964";
                     skip |= LogError(
                         device, vuid,
                         "%s: Aspect mask for input attachment reference %d in subpass %d includes VK_IMAGE_ASPECT_METADATA_BIT.",
                         function_name, j, i);
+                } else if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
+                                          VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
+                    // TODO - Add VUID when new headers are added
+                    vuid = use_rp2 ? "UNASSIGNED-VkSubpassDescription2-attachment"
+                                   : "VUID-VkInputAttachmentAspectReference-aspectMask-02250";
+                    skip |= LogError(device, vuid,
+                                     "%s: Aspect mask for input attachment reference %d in subpass %d includes "
+                                     "VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT bit.",
+                                     function_name, j, i);
                 }
 
                 if (attachment_index < pCreateInfo->attachmentCount) {
@@ -9228,8 +9238,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                              attachment_ref.layout);
 
                     vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-attachment-02525" : "VUID-VkRenderPassCreateInfo-pNext-01963";
-                    skip |= ValidateImageAspectMask(VK_NULL_HANDLE, pCreateInfo->pAttachments[attachment_index].format,
-                                                    attachment_ref.aspectMask, function_name, vuid);
+                    skip |= ValidateImageAspectMask(VK_NULL_HANDLE, pCreateInfo->pAttachments[attachment_index].format, aspect_mask,
+                                                    function_name, vuid);
 
                     if (attach_first_use[attachment_index]) {
                         skip |=
@@ -9259,7 +9269,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     // as they are in a struct that only applies to input attachments - not so for v2.
 
                     // Check for 0
-                    if (attachment_ref.aspectMask == 0) {
+                    if (aspect_mask == 0) {
                         skip |= LogError(device, "VUID-VkSubpassDescription2-attachment-02800",
                                          "%s: Input attachment %s aspect mask must not be 0.", function_name, error_type.c_str());
                     } else {
@@ -9271,10 +9281,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                              VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT);
 
                         // Check for valid aspect mask bits
-                        if (attachment_ref.aspectMask & ~valid_bits) {
+                        if (aspect_mask & ~valid_bits) {
                             skip |= LogError(device, "VUID-VkSubpassDescription2-attachment-02799",
                                              "%s: Input attachment %s aspect mask (0x%" PRIx32 ")is invalid.", function_name,
-                                             error_type.c_str(), attachment_ref.aspectMask);
+                                             error_type.c_str(), aspect_mask);
                         }
                     }
                 }
