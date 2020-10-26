@@ -1340,7 +1340,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<uint8_t> push_constant_data;
     PushConstantRangesId push_constant_data_ranges;
 
-    std::map<VkShaderStageFlagBits, std::vector<int8_t>> push_constant_data_update;  // -1: not set, 0: not update, 1: update,
+    std::map<VkShaderStageFlagBits, std::vector<uint8_t>>
+        push_constant_data_update;  // vector's value is enum PushConstantByteState.
     VkPipelineLayout push_constant_pipeline_layout_set;
 
     // Used for Best Practices tracking

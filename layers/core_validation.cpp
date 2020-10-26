@@ -1187,11 +1187,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                         state.per_set[setIndex].validated_set_binding_req_map.begin(),
                                         state.per_set[setIndex].validated_set_binding_req_map.end(),
                                         std::inserter(delta_reqs, delta_reqs.begin()));
-                    result |= ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets,
-                                                cb_node, attachments, function, vuid);
+                    result |= ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
+                                                attachments, function, vuid);
                 } else {
-                    result |= ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets,
-                                                cb_node, attachments, function, vuid);
+                    result |= ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
+                                                attachments, function, vuid);
                 }
             }
         }
@@ -1226,10 +1226,10 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 }
 
                 uint32_t issue_index = 0;
-                int ret = ValidatePushConstantSetUpdate(it->second, entrypoint->push_constant_used_in_shader, issue_index);
+                const auto ret = ValidatePushConstantSetUpdate(it->second, entrypoint->push_constant_used_in_shader, issue_index);
 
                 // "not set" error has been printed in ValidatePushConstantUsage.
-                if (ret == 2) {
+                if (ret == PC_Byte_Not_Updated) {
                     const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
                     LogObjectList objlist(cb_node->commandBuffer);
                     objlist.add(pipeline_layout->layout);
@@ -2826,8 +2826,8 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::string error;
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets,
-                                                                     binding_info, cmd_info.framebuffer, cmd_info.attachments,
+                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding_info,
+                                                                     cmd_info.framebuffer, cmd_info.attachments,
                                                                      function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }
@@ -12623,14 +12623,14 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
         const safe_VkPipelineMultisampleStateCreateInfo *multisample_state = pPipe->graphicsPipelineCI.pMultisampleState;
         if (multisample_state == nullptr) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529",
-                                "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel must be equal to "
-                                "rasterizationSamples, but the bound graphics pipeline was created without a multisample state");
+                             "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel must be equal to "
+                             "rasterizationSamples, but the bound graphics pipeline was created without a multisample state");
         } else if (multisample_state->rasterizationSamples != pSampleLocationsInfo->sampleLocationsPerPixel) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529",
-                                "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel (%s) is not equal to "
-                                "the last bound pipeline's rasterizationSamples (%s)",
-                                string_VkSampleCountFlagBits(pSampleLocationsInfo->sampleLocationsPerPixel),
-                                string_VkSampleCountFlagBits(multisample_state->rasterizationSamples));
+                             "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel (%s) is not equal to "
+                             "the last bound pipeline's rasterizationSamples (%s)",
+                             string_VkSampleCountFlagBits(pSampleLocationsInfo->sampleLocationsPerPixel),
+                             string_VkSampleCountFlagBits(multisample_state->rasterizationSamples));
         }
     }
 
