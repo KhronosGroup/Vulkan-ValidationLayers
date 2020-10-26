@@ -450,6 +450,8 @@ class CoreChecks : public ValidationStateTracker {
                                    VkPipelineShaderStageCreateInfo const* pStage) const;
     int ValidatePushConstantSetUpdate(const std::vector<int8_t>& push_constant_data_update,
                                       const shader_struct_member& push_constant_used_in_shader, uint32_t& out_issue_index) const;
+    bool ValidateBuiltinLimits(SHADER_MODULE_STATE const* src, const std::unordered_set<uint32_t>& accessible_ids,
+                               VkShaderStageFlagBits stage) const;
     bool ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo const* info) const;
     bool RequirePropertyFlag(VkBool32 check, char const* flag, char const* structure) const;
     bool RequireFeature(VkBool32 feature, char const* feature_name) const;
