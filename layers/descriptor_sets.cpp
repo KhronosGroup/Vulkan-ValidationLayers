@@ -2427,11 +2427,11 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     auto layout_handle = p_layout_->GetDescriptorSetLayout();
     if (IsPushDescriptor()) {
         std::ostringstream str;
-        str << "Push Descriptors defined with VkDescriptorSetLayout " << state_data_->report_data->FormatHandle(layout_handle);
+        str << "Push Descriptors defined with " << state_data_->report_data->FormatHandle(layout_handle);
         out = str.str();
     } else {
         std::ostringstream str;
-        str << "VkDescriptorSet " << state_data_->report_data->FormatHandle(set_) << " allocated with VkDescriptorSetLayout "
+        str << state_data_->report_data->FormatHandle(set_) << " allocated with "
             << state_data_->report_data->FormatHandle(layout_handle);
         out = str.str();
     }
