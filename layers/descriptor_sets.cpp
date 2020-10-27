@@ -1091,22 +1091,58 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                 report_data->FormatHandle(image_view_state->image_view).c_str(),
                                                 string_VkFormat(image_view_state->create_info.format));
                             }
-                            if ((sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) &&
-                                !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
-                                auto set = descriptor_set->GetSet();
-                                LogObjectList objlist(set);
-                                objlist.add(sampler_state->sampler);
-                                objlist.add(image_view_state->image_view);
-                                return LogError(
-                                    objlist, vuids.cubic_sampler,
-                                    "sampler (%s) in descriptor set (%s) "
-                                    "is set to use VK_FILTER_CUBIC_EXT, then image view's (%s"
-                                    ") format (%s) MUST "
-                                    "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in its format features.",
-                                    report_data->FormatHandle(sampler_state->sampler).c_str(),
-                                    report_data->FormatHandle(set).c_str(),
-                                    report_data->FormatHandle(image_view_state->image_view).c_str(),
-                                    string_VkFormat(image_view_state->create_info.format));
+                            if (sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) {
+                                if (!(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
+                                    auto set = descriptor_set->GetSet();
+                                    LogObjectList objlist(set);
+                                    objlist.add(sampler_state->sampler);
+                                    objlist.add(image_view_state->image_view);
+                                    return LogError(objlist, vuids.cubic_sampler,
+                                                    "sampler (%s) in descriptor set (%s) "
+                                                    "is set to use VK_FILTER_CUBIC_EXT, then image view's (%s"
+                                                    ") format (%s) MUST "
+                                                    "contain "
+                                                    "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in "
+                                                    "its format features.",
+                                                    report_data->FormatHandle(sampler_state->sampler).c_str(),
+                                                    report_data->FormatHandle(set).c_str(),
+                                                    report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                                    string_VkFormat(image_view_state->create_info.format));
+                                }
+
+                                const auto reduction_mode_info =
+                                    lvl_find_in_chain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
+                                if (reduction_mode_info &&
+                                    (reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
+                                     reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
+                                    !image_view_state->filter_cubic_props.filterCubicMinmax) {
+                                    auto set = descriptor_set->GetSet();
+                                    LogObjectList objlist(set);
+                                    objlist.add(sampler_state->sampler);
+                                    objlist.add(image_view_state->image_view);
+                                    return LogError(objlist, vuids.filter_cubic_min_max,
+                                                    "sampler (%s) in descriptor set (%s) "
+                                                    "is set to use VK_FILTER_CUBIC_EXT & %s, but image view (%s) doesn't "
+                                                    "support filterCubicMinmax.",
+                                                    report_data->FormatHandle(sampler_state->sampler).c_str(),
+                                                    string_VkSamplerReductionMode(reduction_mode_info->reductionMode),
+                                                    report_data->FormatHandle(set).c_str(),
+                                                    report_data->FormatHandle(image_view_state->image_view).c_str());
+                                }
+
+                                if (!image_view_state->filter_cubic_props.filterCubic) {
+                                    auto set = descriptor_set->GetSet();
+                                    LogObjectList objlist(set);
+                                    objlist.add(sampler_state->sampler);
+                                    objlist.add(image_view_state->image_view);
+                                    return LogError(
+                                        objlist, vuids.filter_cubic,
+                                        "sampler (%s) in descriptor set (%s) "
+                                        "is set to use VK_FILTER_CUBIC_EXT, but image view (%s) doesn't support filterCubic.",
+                                        report_data->FormatHandle(sampler_state->sampler).c_str(),
+                                        report_data->FormatHandle(set).c_str(),
+                                        report_data->FormatHandle(image_view_state->image_view).c_str());
+                                }
                             }
 
                             if ((image_state->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
@@ -1114,15 +1150,16 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                  sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
                                  sampler_state->createInfo.addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)) {
                                 std::string address_mode_letter =
-                                    (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)   ? "U"
-                                    : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ? "V"
-                                                                                                                        : "W";
+                                    (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                        ? "U"
+                                        : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ? "V"
+                                                                                                                            : "W";
                                 VkSamplerAddressMode address_mode =
                                     (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
                                         ? sampler_state->createInfo.addressModeU
-                                    : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-                                        ? sampler_state->createInfo.addressModeV
-                                        : sampler_state->createInfo.addressModeW;
+                                        : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                                              ? sampler_state->createInfo.addressModeV
+                                              : sampler_state->createInfo.addressModeW;
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
                                 objlist.add(sampler_state->sampler);
@@ -1293,8 +1330,8 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                 }
 
                 // If the validation is related to both of image and sampler,
-                // please leave it in (descriptor_class == DescriptorClass::ImageSampler || descriptor_class == DescriptorClass::Image)
-                // Here is to validate for only sampler.
+                // please leave it in (descriptor_class == DescriptorClass::ImageSampler || descriptor_class ==
+                // DescriptorClass::Image) Here is to validate for only sampler.
                 if (descriptor_class == DescriptorClass::ImageSampler || descriptor_class == DescriptorClass::PlainSampler) {
                     // Verify Sampler still valid
                     VkSampler sampler;
