@@ -145,7 +145,7 @@ class StatelessValidation : public ValidationObject {
 
         if (value <= lower_bound) {
             std::ostringstream ss;
-            ss << api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is greater than " << lower_bound;
+            ss << api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is not greater than " << lower_bound;
             skip_call |= LogError(device, vuid, "%s", ss.str().c_str());
         }
 
