@@ -541,7 +541,10 @@ void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint
             }
         }
         if (!found_opstring) {
-            filename_stream << "Unable to find SPIR-V OpString for file id " << reported_file_id << " from OpLine instruction.";
+            filename_stream << "Unable to find SPIR-V OpString for file id " << reported_file_id << " from OpLine instruction."
+                            << std::endl;
+            filename_stream << "File ID = " << reported_file_id << ", Line Number = " << reported_line_number
+                            << ", Column = " << reported_column_number << std::endl;
         }
     }
     filename_msg = filename_stream.str();
