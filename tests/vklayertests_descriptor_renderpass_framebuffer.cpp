@@ -7113,11 +7113,11 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
         err = vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
         ASSERT_VK_SUCCESS(err);
 
-        pool_size = {binding.descriptorType, binding.descriptorCount};
+        pool_size = {binding.descriptorType, 3};
         dspci = lvl_init_struct<VkDescriptorPoolCreateInfo>();
         dspci.poolSizeCount = 1;
         dspci.pPoolSizes = &pool_size;
-        dspci.maxSets = 1;
+        dspci.maxSets = 2;
         err = vk::CreateDescriptorPool(m_device->handle(), &dspci, nullptr, &pool);
         ASSERT_VK_SUCCESS(err);
 
@@ -7138,6 +7138,33 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
         vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
         m_errorMonitor->VerifyFound();
 
+        vk::DestroyDescriptorSetLayout(m_device->handle(), ds_layout, nullptr);
+
+        // Now update descriptor set with a size that falls within the descriptor set layout size but that is more than the
+        // descriptor set size
+        binding.descriptorCount = 3;
+        err = vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
+        ASSERT_VK_SUCCESS(err);
+        vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
+        VkBufferObj buffer;
+        VkMemoryPropertyFlags reqs = 0;
+        buffer.init_as_dst(*m_device, 128 * 128, reqs);
+        VkDescriptorBufferInfo buffer_info[3] = {};
+        for (int i = 0; i < 3; i++) {
+            buffer_info[i].buffer = buffer.handle();
+            buffer_info[i].offset = 0;
+            buffer_info[i].range = 128 * 128;
+        }
+        VkWriteDescriptorSet descriptor_writes[1] = {};
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = ds;
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].descriptorCount = 3;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].pBufferInfo = buffer_info;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+        vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+        m_errorMonitor->VerifyFound();
         vk::DestroyDescriptorSetLayout(m_device->handle(), ds_layout, nullptr);
         vk::DestroyDescriptorPool(m_device->handle(), pool, nullptr);
     }
