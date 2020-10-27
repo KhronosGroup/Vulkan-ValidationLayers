@@ -3076,6 +3076,18 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         *error_code = "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
         return false;
     }
+    // Verify write to variable descriptor
+    if (dest_set->IsVariableDescriptorCount(update->dstBinding)) {
+        if ((update->dstArrayElement + update->descriptorCount) > dest_set->GetVariableDescriptorCount()) {
+            std::stringstream error_str;
+            *error_code = "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
+            error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding index #"
+                      << update->dstBinding << " array element " << update->dstArrayElement << " with " << update->descriptorCount
+                      << " writes but variable descriptor size is " << dest_set->GetVariableDescriptorCount();
+            *error_msg = error_str.str();
+            return false;
+        }
+    }
     // Update is within bounds and consistent so last step is to validate update contents
     if (!VerifyWriteUpdateContents(dest_set, update, start_idx, func_name, error_code, error_msg)) {
         std::stringstream error_str;
