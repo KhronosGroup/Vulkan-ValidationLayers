@@ -640,6 +640,22 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
                                                                                      : format_properties.optimalTilingFeatures;
     }
 
+    // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
+    image_view_state->filter_cubic_props = lvl_init_struct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
+    if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
+        auto imageview_format_info = lvl_init_struct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
+        imageview_format_info.imageViewType = pCreateInfo->viewType;
+        auto image_format_info = lvl_init_struct<VkPhysicalDeviceImageFormatInfo2>(&imageview_format_info);
+        image_format_info.type = image_state->createInfo.imageType;
+        image_format_info.format = image_state->createInfo.format;
+        image_format_info.tiling = image_state->createInfo.tiling;
+        image_format_info.usage = image_state->createInfo.usage;
+        image_format_info.flags = image_state->createInfo.flags;
+
+        auto image_format_properties = lvl_init_struct<VkImageFormatProperties2>(&image_view_state->filter_cubic_props);
+
+        DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
+    }
     imageViewMap.insert(std::make_pair(*pView, std::move(image_view_state)));
 }
 
