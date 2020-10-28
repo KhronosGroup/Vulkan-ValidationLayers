@@ -1308,12 +1308,15 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     auto acc_node =
                         static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureStateKHR();
                     if (!acc_node || acc_node->destroyed) {
-                        auto set = descriptor_set->GetSet();
-                        return LogError(
-                            set, vuids.descriptor_valid,
-                            "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
-                            " index %" PRIu32 " is using acceleration structure %s that is invalid or has been destroyed.",
-                            report_data->FormatHandle(set).c_str(), caller, binding, index, report_data->FormatHandle(acc).c_str());
+                        if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
+                            auto set = descriptor_set->GetSet();
+                            return LogError(
+                                set, vuids.descriptor_valid,
+                                "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
+                                " index %" PRIu32 " is using acceleration structure %s that is invalid or has been destroyed.",
+                                report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                report_data->FormatHandle(acc).c_str());
+                        }
                     } else {
                         for (auto mem_binding : acc_node->GetBoundMemory()) {
                             if (mem_binding->destroyed) {
