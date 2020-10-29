@@ -53,7 +53,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-renderPass-02684",
         "VUID-vkCmdDraw-subpass-02685",
         "VUID-vkCmdDraw-sampleLocationsEnable-02689",
-        "VUID-vkCmdDraw-None-02690",
+        "VUID-vkCmdDraw-magFilter-04553",
         "VUID-vkCmdDraw-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;

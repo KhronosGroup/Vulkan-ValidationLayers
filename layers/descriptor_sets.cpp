@@ -1249,7 +1249,9 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                             }
                             VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
                             VkFilter sampler_min_filter = sampler_state->createInfo.minFilter;
+                            VkBool32 sampler_compare_enable = sampler_state->createInfo.compareEnable;
                             if ((sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) &&
+                                (sampler_compare_enable == VK_FALSE) &&
                                 !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
