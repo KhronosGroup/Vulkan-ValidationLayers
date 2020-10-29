@@ -3765,7 +3765,8 @@ bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUE
 }
 
 bool CoreChecks::ValidateGetQueryPoolPerformanceResults(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                                        void *pData, VkDeviceSize stride, VkQueryResultFlags flags) const {
+                                                        void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                                        const char *apiName) const {
     bool skip = false;
     const auto query_pool_state = GetQueryPoolState(queryPool);
 
@@ -3774,13 +3775,13 @@ bool CoreChecks::ValidateGetQueryPoolPerformanceResults(VkQueryPool queryPool, u
     if (((((uintptr_t)pData) % sizeof(VkPerformanceCounterResultKHR)) != 0 ||
          (stride % sizeof(VkPerformanceCounterResultKHR)) != 0)) {
         skip |= LogError(queryPool, "VUID-vkGetQueryPoolResults-queryType-03229",
-                         "QueryPool %s was created with a queryType of "
+                         "%s(): QueryPool %s was created with a queryType of "
                          "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but pData & stride are not multiple of the "
                          "size of VkPerformanceCounterResultKHR.",
-                         report_data->FormatHandle(queryPool).c_str());
+                         apiName, report_data->FormatHandle(queryPool).c_str());
     }
 
-    skip |= ValidatePerformanceQueryResults("vkGetQueryPoolResults", query_pool_state, firstQuery, queryCount, flags);
+    skip |= ValidatePerformanceQueryResults(apiName, query_pool_state, firstQuery, queryCount, flags);
 
     return skip;
 }
@@ -3794,7 +3795,8 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                                     "dataSize", dataSize, flags);
     skip |= ValidateQueryPoolIndex(queryPool, firstQuery, queryCount, "vkGetQueryPoolResults()",
                                    "VUID-vkGetQueryPoolResults-firstQuery-00813", "VUID-vkGetQueryPoolResults-firstQuery-00816");
-    skip |= ValidateGetQueryPoolPerformanceResults(queryPool, firstQuery, queryCount, pData, stride, flags);
+    skip |=
+        ValidateGetQueryPoolPerformanceResults(queryPool, firstQuery, queryCount, pData, stride, flags, "vkGetQueryPoolResults");
 
     const auto query_pool_state = GetQueryPoolState(queryPool);
     if (query_pool_state) {
@@ -12727,9 +12729,10 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
     bool skip = false;
 
     if (samplerMap.size() >= phys_dev_props.limits.maxSamplerAllocationCount) {
-        skip |= LogError(device, kVUIDUndefined,
-                         "vkCreateSampler(): Number of currently valid sampler objects is not less than the maximum allowed (%u).",
-                         phys_dev_props.limits.maxSamplerAllocationCount);
+        skip |= LogError(
+            device, kVUIDUndefined,
+            "vkCreateSampler(): Number of currently valid sampler objects (%zu) is not less than the maximum allowed (%u).",
+            samplerMap.size(), phys_dev_props.limits.maxSamplerAllocationCount);
     }
 
     if (enabled_features.core11.samplerYcbcrConversion == VK_TRUE) {
@@ -12774,23 +12777,24 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
         pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
         if (!enabled_features.custom_border_color_features.customBorderColors) {
-            skip |= LogError(device, "VUID-VkSamplerCreateInfo-customBorderColors-04085",
-                             "A custom border color was specified without enabling the custom border color feature");
+            skip |=
+                LogError(device, "VUID-VkSamplerCreateInfo-customBorderColors-04085",
+                         "vkCreateSampler(): A custom border color was specified without enabling the custom border color feature");
         }
         auto custom_create_info = lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
         if (custom_create_info) {
             if (custom_create_info->format == VK_FORMAT_UNDEFINED &&
                 !enabled_features.custom_border_color_features.customBorderColorWithoutFormat) {
                 skip |= LogError(device, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014",
-                                 "A custom border color was specified as VK_FORMAT_UNDEFINED without the "
+                                 "vkCreateSampler(): A custom border color was specified as VK_FORMAT_UNDEFINED without the "
                                  "customBorderColorWithoutFormat feature being enabled");
             }
         }
         if (custom_border_color_sampler_count >= phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers) {
-            skip |=
-                LogError(device, "VUID-VkSamplerCreateInfo-None-04012",
-                         "Creating a sampler with a custom border color will exceed the maxCustomBorderColorSamplers limit of %d",
-                         phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers);
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-None-04012",
+                             "vkCreateSampler(): Creating a sampler with a custom border color will exceed the "
+                             "maxCustomBorderColorSamplers limit of %d",
+                             phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers);
         }
     }
 
@@ -13068,9 +13072,9 @@ bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
     bool skip = false;
 
     if (!performance_lock_acquired) {
-        skip |= LogError(
-            device, "VUID-vkReleaseProfilingLockKHR-device-03235",
-            "The profiling lock of device must have been held via a previous successful call to vkAcquireProfilingLockKHR.");
+        skip |= LogError(device, "VUID-vkReleaseProfilingLockKHR-device-03235",
+                         "vkReleaseProfilingLockKHR(): The profiling lock of device must have been held via a previous successful "
+                         "call to vkAcquireProfilingLockKHR.");
     }
 
     return skip;
