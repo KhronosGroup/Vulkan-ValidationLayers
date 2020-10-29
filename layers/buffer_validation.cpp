@@ -3419,19 +3419,28 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                      attachment_index);
                 }
             } else {  // Must be depth and/or stencil
+                bool subpass_depth = false;
+                bool subpass_stencil = false;
+                if (subpass_desc->pDepthStencilAttachment &&
+                    (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
+                    auto index = subpass_desc->pDepthStencilAttachment->attachment;
+                    subpass_depth = FormatHasDepth(renderpass_create_info->pAttachments[index].format);
+                    subpass_stencil = FormatHasStencil(renderpass_create_info->pAttachments[index].format);
+                }
                 if (!subpass_desc->pDepthStencilAttachment ||
-                    (subpass_desc->pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED)) {
-                    if (clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                    (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
+                    if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) && !subpass_depth) {
                         skip |= LogError(
                             commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02502",
                             "vkCmdClearAttachments() pAttachments[%u] aspectMask has VK_IMAGE_ASPECT_DEPTH_BIT but there is no "
-                            "depth/stencil attachment in subpass",
+                            "depth attachment in subpass",
                             attachment_index);
-                    } else if (clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                    }
+                    if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) && !subpass_stencil) {
                         skip |= LogError(
                             commandBuffer, "VUID-vkCmdClearAttachments-aspectMask-02503",
                             "vkCmdClearAttachments() pAttachments[%u] aspectMask has VK_IMAGE_ASPECT_STENCIL_BIT but there is no "
-                            "depth/stencil attachment in subpass",
+                            "stencil attachment in subpass",
                             attachment_index);
                     }
                 } else {
