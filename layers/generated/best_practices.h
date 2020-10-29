@@ -956,6 +956,13 @@ void PostCallRecordSignalSemaphoreKHR(
     VkResult                                    result);
 
 
+void PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pFragmentShadingRateCount,
+    VkPhysicalDeviceFragmentShadingRateKHR*     pFragmentShadingRates,
+    VkResult                                    result);
+
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PostCallRecordCreateDeferredOperationKHR(

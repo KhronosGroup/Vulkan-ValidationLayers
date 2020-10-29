@@ -596,6 +596,32 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     }
 }
 
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayPlanePropertiesKHR*                pProperties,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties) {
+        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+            CreateObject(pProperties[i].currentDisplay);
+        }
+    }
+}
+
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayPlaneProperties2KHR*               pProperties,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties) {
+        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+            CreateObject(pProperties[i].displayPlaneProperties.currentDisplay);
+        }
+    }
+}
+
 void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
@@ -4627,6 +4653,22 @@ void ThreadSafety::PostCallRecordSignalSemaphoreKHR(
     const VkSemaphoreSignalInfo*                pSignalInfo,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkSignalSemaphoreKHR");
+}
+
+void ThreadSafety::PreCallRecordCmdSetFragmentShadingRateKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkExtent2D*                           pFragmentSize,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    StartWriteObject(commandBuffer, "vkCmdSetFragmentShadingRateKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkExtent2D*                           pFragmentSize,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    FinishWriteObject(commandBuffer, "vkCmdSetFragmentShadingRateKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressKHR(

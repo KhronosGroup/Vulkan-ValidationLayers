@@ -40,6 +40,135 @@ const char *CommandTypeString(CMD_TYPE type) {
     return command_name_list[type];
 }
 
+VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
+    switch (flag) {
+        case CBSTATUS_LINE_WIDTH_SET:
+            return VK_DYNAMIC_STATE_LINE_WIDTH;
+        case CBSTATUS_DEPTH_BIAS_SET:
+            return VK_DYNAMIC_STATE_DEPTH_BIAS;
+        case CBSTATUS_BLEND_CONSTANTS_SET:
+            return VK_DYNAMIC_STATE_BLEND_CONSTANTS;
+        case CBSTATUS_DEPTH_BOUNDS_SET:
+            return VK_DYNAMIC_STATE_DEPTH_BOUNDS;
+        case CBSTATUS_STENCIL_READ_MASK_SET:
+            return VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK;
+        case CBSTATUS_STENCIL_WRITE_MASK_SET:
+            return VK_DYNAMIC_STATE_STENCIL_WRITE_MASK;
+        case CBSTATUS_STENCIL_REFERENCE_SET:
+            return VK_DYNAMIC_STATE_STENCIL_REFERENCE;
+        case CBSTATUS_VIEWPORT_SET:
+            return VK_DYNAMIC_STATE_VIEWPORT;
+        case CBSTATUS_SCISSOR_SET:
+            return VK_DYNAMIC_STATE_SCISSOR;
+        case CBSTATUS_EXCLUSIVE_SCISSOR_SET:
+            return VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV;
+        case CBSTATUS_SHADING_RATE_PALETTE_SET:
+            return VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV;
+        case CBSTATUS_LINE_STIPPLE_SET:
+            return VK_DYNAMIC_STATE_LINE_STIPPLE_EXT;
+        case CBSTATUS_VIEWPORT_W_SCALING_SET:
+            return VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV;
+        case CBSTATUS_CULL_MODE_SET:
+            return VK_DYNAMIC_STATE_CULL_MODE_EXT;
+        case CBSTATUS_FRONT_FACE_SET:
+            return VK_DYNAMIC_STATE_FRONT_FACE_EXT;
+        case CBSTATUS_PRIMITIVE_TOPOLOGY_SET:
+            return VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT;
+        case CBSTATUS_VIEWPORT_WITH_COUNT_SET:
+            return VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT;
+        case CBSTATUS_SCISSOR_WITH_COUNT_SET:
+            return VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT;
+        case CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET:
+            return VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT;
+        case CBSTATUS_DEPTH_TEST_ENABLE_SET:
+            return VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT;
+        case CBSTATUS_DEPTH_WRITE_ENABLE_SET:
+            return VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT;
+        case CBSTATUS_DEPTH_COMPARE_OP_SET:
+            return VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT;
+        case CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET:
+            return VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT;
+        case CBSTATUS_STENCIL_TEST_ENABLE_SET:
+            return VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT;
+        case CBSTATUS_STENCIL_OP_SET:
+            return VK_DYNAMIC_STATE_STENCIL_OP_EXT;
+        case CBSTATUS_DISCARD_RECTANGLE_SET:
+            return VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT;
+        case CBSTATUS_SAMPLE_LOCATIONS_SET:
+            return VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT;
+        case CBSTATUS_COARSE_SAMPLE_ORDER_SET:
+            return VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV;
+        default:
+            // CBSTATUS_INDEX_BUFFER_BOUND is not in VkDynamicState
+            return VK_DYNAMIC_STATE_MAX_ENUM;
+    }
+    return VK_DYNAMIC_STATE_MAX_ENUM;
+}
+
+CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state) {
+    switch (state) {
+        case VK_DYNAMIC_STATE_VIEWPORT:
+            return CBSTATUS_VIEWPORT_SET;
+        case VK_DYNAMIC_STATE_SCISSOR:
+            return CBSTATUS_SCISSOR_SET;
+        case VK_DYNAMIC_STATE_LINE_WIDTH:
+            return CBSTATUS_LINE_WIDTH_SET;
+        case VK_DYNAMIC_STATE_DEPTH_BIAS:
+            return CBSTATUS_DEPTH_BIAS_SET;
+        case VK_DYNAMIC_STATE_BLEND_CONSTANTS:
+            return CBSTATUS_BLEND_CONSTANTS_SET;
+        case VK_DYNAMIC_STATE_DEPTH_BOUNDS:
+            return CBSTATUS_DEPTH_BOUNDS_SET;
+        case VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK:
+            return CBSTATUS_STENCIL_READ_MASK_SET;
+        case VK_DYNAMIC_STATE_STENCIL_WRITE_MASK:
+            return CBSTATUS_STENCIL_WRITE_MASK_SET;
+        case VK_DYNAMIC_STATE_STENCIL_REFERENCE:
+            return CBSTATUS_STENCIL_REFERENCE_SET;
+        case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
+            return CBSTATUS_VIEWPORT_W_SCALING_SET;
+        case VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT:
+            return CBSTATUS_DISCARD_RECTANGLE_SET;
+        case VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
+            return CBSTATUS_SAMPLE_LOCATIONS_SET;
+        case VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
+            return CBSTATUS_SHADING_RATE_PALETTE_SET;
+        case VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
+            return CBSTATUS_COARSE_SAMPLE_ORDER_SET;
+        case VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
+            return CBSTATUS_EXCLUSIVE_SCISSOR_SET;
+        case VK_DYNAMIC_STATE_LINE_STIPPLE_EXT:
+            return CBSTATUS_LINE_STIPPLE_SET;
+        case VK_DYNAMIC_STATE_CULL_MODE_EXT:
+            return CBSTATUS_CULL_MODE_SET;
+        case VK_DYNAMIC_STATE_FRONT_FACE_EXT:
+            return CBSTATUS_FRONT_FACE_SET;
+        case VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT:
+            return CBSTATUS_PRIMITIVE_TOPOLOGY_SET;
+        case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT:
+            return CBSTATUS_VIEWPORT_WITH_COUNT_SET;
+        case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT:
+            return CBSTATUS_SCISSOR_WITH_COUNT_SET;
+        case VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT:
+            return CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
+        case VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT:
+            return CBSTATUS_DEPTH_TEST_ENABLE_SET;
+        case VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT:
+            return CBSTATUS_DEPTH_WRITE_ENABLE_SET;
+        case VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT:
+            return CBSTATUS_DEPTH_COMPARE_OP_SET;
+        case VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT:
+            return CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET;
+        case VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT:
+            return CBSTATUS_STENCIL_TEST_ENABLE_SET;
+        case VK_DYNAMIC_STATE_STENCIL_OP_EXT:
+            return CBSTATUS_STENCIL_OP_SET;
+        default:
+            return CBSTATUS_NONE;
+    }
+    return CBSTATUS_NONE;
+}
+
 void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
     if (add_obj) {
         instance_state = reinterpret_cast<ValidationStateTracker *>(GetValidationObject(inst_obj->object_dispatch, container_type));
@@ -3371,88 +3500,9 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
 
     if (ds) {
         for (uint32_t i = 0; i < ds->dynamicStateCount; i++) {
-            switch (ds->pDynamicStates[i]) {
-                case VK_DYNAMIC_STATE_LINE_WIDTH:
-                    flags &= ~CBSTATUS_LINE_WIDTH_SET;
-                    break;
-                case VK_DYNAMIC_STATE_DEPTH_BIAS:
-                    flags &= ~CBSTATUS_DEPTH_BIAS_SET;
-                    break;
-                case VK_DYNAMIC_STATE_BLEND_CONSTANTS:
-                    flags &= ~CBSTATUS_BLEND_CONSTANTS_SET;
-                    break;
-                case VK_DYNAMIC_STATE_DEPTH_BOUNDS:
-                    flags &= ~CBSTATUS_DEPTH_BOUNDS_SET;
-                    break;
-                case VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK:
-                    flags &= ~CBSTATUS_STENCIL_READ_MASK_SET;
-                    break;
-                case VK_DYNAMIC_STATE_STENCIL_WRITE_MASK:
-                    flags &= ~CBSTATUS_STENCIL_WRITE_MASK_SET;
-                    break;
-                case VK_DYNAMIC_STATE_STENCIL_REFERENCE:
-                    flags &= ~CBSTATUS_STENCIL_REFERENCE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_SCISSOR:
-                    flags &= ~CBSTATUS_SCISSOR_SET;
-                    break;
-                case VK_DYNAMIC_STATE_VIEWPORT:
-                    flags &= ~CBSTATUS_VIEWPORT_SET;
-                    break;
-                case VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
-                    flags &= ~CBSTATUS_EXCLUSIVE_SCISSOR_SET;
-                    break;
-                case VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
-                    flags &= ~CBSTATUS_SHADING_RATE_PALETTE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_LINE_STIPPLE_EXT:
-                    flags &= ~CBSTATUS_LINE_STIPPLE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
-                    flags &= ~CBSTATUS_VIEWPORT_W_SCALING_SET;
-                    break;
-                case VK_DYNAMIC_STATE_CULL_MODE_EXT:
-                    flags &= ~CBSTATUS_CULL_MODE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_FRONT_FACE_EXT:
-                    flags &= ~CBSTATUS_FRONT_FACE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT:
-                    flags &= ~CBSTATUS_PRIMITIVE_TOPOLOGY_SET;
-                    break;
-                case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT:
-                    flags &= ~CBSTATUS_VIEWPORT_WITH_COUNT_SET;
-                    break;
-                case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT:
-                    flags &= ~CBSTATUS_SCISSOR_WITH_COUNT_SET;
-                    break;
-                case VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT:
-                    flags &= ~CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT:
-                    flags &= ~CBSTATUS_DEPTH_TEST_ENABLE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT:
-                    flags &= ~CBSTATUS_DEPTH_WRITE_ENABLE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT:
-                    flags &= ~CBSTATUS_DEPTH_COMPARE_OP_SET;
-                    break;
-                case VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT:
-                    flags &= ~CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT:
-                    flags &= ~CBSTATUS_STENCIL_TEST_ENABLE_SET;
-                    break;
-                case VK_DYNAMIC_STATE_STENCIL_OP_EXT:
-                    flags &= ~CBSTATUS_STENCIL_OP_SET;
-                    break;
-                default:
-                    break;
-            }
+            flags &= ~ConvertToCBStatusFlagBits(ds->pDynamicStates[i]);
         }
     }
-
     return flags;
 }
 
@@ -3497,6 +3547,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         cb_state->status &= ~cb_state->static_status;
         cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
         cb_state->status |= cb_state->static_status;
+        cb_state->dynamic_status = CBSTATUS_ALL_STATE_SET & (~cb_state->static_status);
     }
     ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout->layout);
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
@@ -5783,8 +5834,18 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
 
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
         if (use.second.samplers_used_by_image.size()) {
-            pipeline->active_slots[slot][use.first.second].samplers_used_by_image[stage_state->stage_flag] =
-                &use.second.samplers_used_by_image;
+            auto &samplers_used_by_image = pipeline->active_slots[slot][use.first.second].samplers_used_by_image;
+            if (use.second.samplers_used_by_image.size() > samplers_used_by_image.size()) {
+                samplers_used_by_image.resize(use.second.samplers_used_by_image.size());
+            }
+            std::map<VkDescriptorSet, const cvdescriptorset::Descriptor *> sampler_descriptors;
+            uint32_t image_index = 0;
+            for (const auto &samplers : use.second.samplers_used_by_image) {
+                for (const auto &sampler : samplers) {
+                    samplers_used_by_image[image_index].emplace(sampler, sampler_descriptors);
+                }
+                ++image_index;
+            }
         }
     }
 
@@ -6038,4 +6099,28 @@ void ValidationStateTracker::PreCallRecordCmdSetStencilOpEXT(VkCommandBuffer com
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_OP_SET;
     cb_state->static_status &= ~CBSTATUS_STENCIL_OP_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                                                    uint32_t discardRectangleCount,
+                                                                    const VkRect2D *pDiscardRectangles) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_DISCARD_RECTANGLE_SET;
+    cb_state->static_status &= ~CBSTATUS_DISCARD_RECTANGLE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
+                                                                   const VkSampleLocationsInfoEXT *pSampleLocationsInfo) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_SAMPLE_LOCATIONS_SET;
+    cb_state->static_status &= ~CBSTATUS_SAMPLE_LOCATIONS_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer,
+                                                                    VkCoarseSampleOrderTypeNV sampleOrderType,
+                                                                    uint32_t customSampleOrderCount,
+                                                                    const VkCoarseSampleOrderCustomNV *pCustomSampleOrders) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_COARSE_SAMPLE_ORDER_SET;
+    cb_state->static_status &= ~CBSTATUS_COARSE_SAMPLE_ORDER_SET;
 }

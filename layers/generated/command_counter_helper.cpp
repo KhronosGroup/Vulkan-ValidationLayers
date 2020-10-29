@@ -207,6 +207,9 @@ void CommandCounter::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer comman
 void CommandCounter::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
+void CommandCounter::PreCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer           commandBuffer, const VkExtent2D*                           pFragmentSize, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
 void CommandCounter::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }

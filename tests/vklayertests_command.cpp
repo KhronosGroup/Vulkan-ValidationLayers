@@ -836,6 +836,118 @@ TEST_F(VkLayerTest, ClearColorAttachmentsZeroExtent) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ClearAttachmentsInvalidAspectMasks) {
+    TEST_DESCRIPTION("Check VkClearAttachment invalid aspect masks.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+
+    VkClearAttachment attachment;
+    attachment.clearValue.color.float32[0] = 0;
+    attachment.clearValue.color.float32[1] = 0;
+    attachment.clearValue.color.float32[2] = 0;
+    attachment.clearValue.color.float32[3] = 0;
+    attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = {1, 1};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00020");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00020");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-02246");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-02246");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ClearAttachmentsImplicitCheck) {
+    TEST_DESCRIPTION("Check VkClearAttachment implicit VUs.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+
+    VkClearAttachment color_attachment;
+    color_attachment.clearValue.color.float32[0] = 0;
+    color_attachment.clearValue.color.float32[1] = 0;
+    color_attachment.clearValue.color.float32[2] = 0;
+    color_attachment.clearValue.color.float32[3] = 0;
+    color_attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = {1, 1};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    color_attachment.aspectMask = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-requiredbitmask");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    color_attachment.aspectMask = 0xffffffff;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-parameter");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ClearColorAttachmentsDepthStencil) {
+    TEST_DESCRIPTION("Call CmdClearAttachments with invalid depth/stencil aspect masks.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    // Creates a color attachment
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+
+    VkClearAttachment attachment;
+    attachment.clearValue.color.float32[0] = 0;
+    attachment.clearValue.color.float32[1] = 0;
+    attachment.clearValue.color.float32[2] = 0;
+    attachment.clearValue.color.float32[3] = 0;
+    attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = {1, 1};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    m_errorMonitor->ExpectSuccess();
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-02502");
+    attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-02503");
+    attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a primary command buffer (should only be secondary)");
 
@@ -1358,12 +1470,9 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdCopyBufferToImage2KHR vkCmdCopyBufferToImage2Function = nullptr;
-    PFN_vkCmdCopyImageToBuffer2KHR vkCmdCopyImageToBuffer2Function = nullptr;
     if (copy_commands2) {
         vkCmdCopyBufferToImage2Function =
             (PFN_vkCmdCopyBufferToImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBufferToImage2KHR");
-        vkCmdCopyImageToBuffer2Function =
-            (PFN_vkCmdCopyImageToBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImageToBuffer2KHR");
     }
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -1513,61 +1622,11 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyImageToBuffer2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyImageToBufferInfo2KHR copy_image_to_buffer_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR,
-                                                                        NULL,
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        buffer_16.handle(),
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00207" : "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00207";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // width not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794");  // image transfer granularity
-        vkCmdCopyImageToBuffer2Function(m_commandBuffer->handle(), &copy_image_to_buffer_info2);
-        m_errorMonitor->VerifyFound();
-    }
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // width not a multiple of compressed block width
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyBufferToImage-imageOffset-01793");  // image transfer granularity
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyBufferToImageInfo2KHR copy_buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                                        NULL,
-                                                                        buffer_16.handle(),
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00207" : "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00207";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // width not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-01793");  // image transfer granularity
-        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy_buffer_to_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     // Copy height < compressed block size but not the full mip height
     region.imageExtent = {2, 1, 1};
@@ -1578,61 +1637,11 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyImageToBuffer2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyImageToBufferInfo2KHR copy_image_to_buffer_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR,
-                                                                        NULL,
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        buffer_16.handle(),
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00208" : "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00208";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // height not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794");  // image transfer granularity
-        vkCmdCopyImageToBuffer2Function(m_commandBuffer->handle(), &copy_image_to_buffer_info2);
-        m_errorMonitor->VerifyFound();
-    }
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // height not a multiple of compressed block width
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyBufferToImage-imageOffset-01793");  // image transfer granularity
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyBufferToImageInfo2KHR copy_buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                                        NULL,
-                                                                        buffer_16.handle(),
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00208" : "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00208";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // height not a multiple of compressed block width
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-01793");  // image transfer granularity
-        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy_buffer_to_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     // Offsets must be multiple of compressed block size
     region.imageOffset = {1, 1, 0};
@@ -1643,31 +1652,6 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
                                          "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");  // image transfer granularity
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyImageToBuffer2Function) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyImageToBufferInfo2KHR copy_image_to_buffer_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2_KHR,
-                                                                        NULL,
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        buffer_16.handle(),
-                                                                        1,
-                                                                        &region2};
-        vuid2 = ycbcr ? "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00205" : "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00205";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // imageOffset not a multiple of block size
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-01794");  // image transfer granularity
-        vkCmdCopyImageToBuffer2Function(m_commandBuffer->handle(), &copy_image_to_buffer_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);  // imageOffset not a multiple of block size
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -4118,6 +4102,16 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceLayers-aspectMask-00168");
+    // These aspect/format mismatches are redundant but unavoidable here
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_errorMonitor->VerifyFound();
+
+    // Aspect Memory Plane mask is illegal
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceLayers-aspectMask-02247");
     // These aspect/format mismatches are redundant but unavoidable here
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
     vk::CmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
@@ -7739,6 +7733,84 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
                          68, dummy_values);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkLayerTest, VerifyVertextBinding) {
+    TEST_DESCRIPTION("Verify if VkPipelineVertexInputStateCreateInfo matches vkCmdBindVertexBuffers");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBufferObj vtx_buf;
+    auto info = vtx_buf.create_info(32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vtx_buf.init(*m_device, info);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    // CmdBindVertexBuffers only has binding:1. It causes 04007 & 04008 desired fail.
+    VkVertexInputBindingDescription vtx_binding_des[3] = {
+        {0, 64, VK_VERTEX_INPUT_RATE_VERTEX}, {1, 64, VK_VERTEX_INPUT_RATE_VERTEX}, {2, 64, VK_VERTEX_INPUT_RATE_VERTEX}};
+
+    // CmdBindVertexBuffers only has binding:1. It causes twice 02721 desired fail.
+    // Plus, binding:1's offset is wrong. It causes 02721 desired fail, again.
+    VkVertexInputAttributeDescription vtx_attri_des[3] = {{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 10},
+                                                          {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 10},
+                                                          {2, 2, VK_FORMAT_R32G32B32A32_SFLOAT, 10}};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 3;
+    pipe.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
+    pipe.vi_ci_.pVertexAttributeDescriptions = vtx_attri_des;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    VkDeviceSize offset = 0;
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vtx_buf.handle(), &offset);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-04008");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-04007");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, VerifyDynamicStateSettingCommands) {
+    TEST_DESCRIPTION("Verify if pipeline doesn't setup dynamic state, but set dynamic commands");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+
+    std::vector<VkDynamicState> dyn_states = {VK_DYNAMIC_STATE_VIEWPORT};
+
+    auto dyn_state_ci = lvl_init_struct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = static_cast<uint32_t>(dyn_states.size());
+    dyn_state_ci.pDynamicStates = dyn_states.data();
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdSetLineWidth(m_commandBuffer->handle(), 1);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02859");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();

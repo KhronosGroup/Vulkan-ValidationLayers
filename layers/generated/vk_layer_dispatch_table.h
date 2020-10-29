@@ -154,6 +154,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetDisplayModeProperties2KHR GetDisplayModeProperties2KHR;
     PFN_vkGetDisplayPlaneCapabilities2KHR GetDisplayPlaneCapabilities2KHR;
 
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
+
     // ---- VK_EXT_debug_report extension commands
     PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
     PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
@@ -505,6 +508,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetSemaphoreCounterValueKHR GetSemaphoreCounterValueKHR;
     PFN_vkWaitSemaphoresKHR WaitSemaphoresKHR;
     PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
+
+    // ---- VK_KHR_fragment_shading_rate extension commands
+    PFN_vkCmdSetFragmentShadingRateKHR CmdSetFragmentShadingRateKHR;
 
     // ---- VK_KHR_buffer_device_address extension commands
     PFN_vkGetBufferDeviceAddressKHR GetBufferDeviceAddressKHR;

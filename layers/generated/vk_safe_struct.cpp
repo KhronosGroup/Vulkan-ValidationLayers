@@ -18601,6 +18601,454 @@ void safe_VkPhysicalDeviceShaderClockFeaturesKHR::initialize(const safe_VkPhysic
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR::safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR(const VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    shaderTerminateInvocation(in_struct->shaderTerminateInvocation)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR::safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR::safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR(const safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    shaderTerminateInvocation = copy_src.shaderTerminateInvocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR& safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR::operator=(const safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderTerminateInvocation = copy_src.shaderTerminateInvocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR::~safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR::initialize(const VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    shaderTerminateInvocation = in_struct->shaderTerminateInvocation;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR::initialize(const safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    shaderTerminateInvocation = copy_src->shaderTerminateInvocation;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkFragmentShadingRateAttachmentInfoKHR::safe_VkFragmentShadingRateAttachmentInfoKHR(const VkFragmentShadingRateAttachmentInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    pFragmentShadingRateAttachment(nullptr),
+    shadingRateAttachmentTexelSize(in_struct->shadingRateAttachmentTexelSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFragmentShadingRateAttachment)
+        pFragmentShadingRateAttachment = new safe_VkAttachmentReference2(in_struct->pFragmentShadingRateAttachment);
+}
+
+safe_VkFragmentShadingRateAttachmentInfoKHR::safe_VkFragmentShadingRateAttachmentInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR),
+    pNext(nullptr),
+    pFragmentShadingRateAttachment(nullptr)
+{}
+
+safe_VkFragmentShadingRateAttachmentInfoKHR::safe_VkFragmentShadingRateAttachmentInfoKHR(const safe_VkFragmentShadingRateAttachmentInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    pFragmentShadingRateAttachment = nullptr;
+    shadingRateAttachmentTexelSize = copy_src.shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFragmentShadingRateAttachment)
+        pFragmentShadingRateAttachment = new safe_VkAttachmentReference2(*copy_src.pFragmentShadingRateAttachment);
+}
+
+safe_VkFragmentShadingRateAttachmentInfoKHR& safe_VkFragmentShadingRateAttachmentInfoKHR::operator=(const safe_VkFragmentShadingRateAttachmentInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pFragmentShadingRateAttachment)
+        delete pFragmentShadingRateAttachment;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pFragmentShadingRateAttachment = nullptr;
+    shadingRateAttachmentTexelSize = copy_src.shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFragmentShadingRateAttachment)
+        pFragmentShadingRateAttachment = new safe_VkAttachmentReference2(*copy_src.pFragmentShadingRateAttachment);
+
+    return *this;
+}
+
+safe_VkFragmentShadingRateAttachmentInfoKHR::~safe_VkFragmentShadingRateAttachmentInfoKHR()
+{
+    if (pFragmentShadingRateAttachment)
+        delete pFragmentShadingRateAttachment;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkFragmentShadingRateAttachmentInfoKHR::initialize(const VkFragmentShadingRateAttachmentInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    pFragmentShadingRateAttachment = nullptr;
+    shadingRateAttachmentTexelSize = in_struct->shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFragmentShadingRateAttachment)
+        pFragmentShadingRateAttachment = new safe_VkAttachmentReference2(in_struct->pFragmentShadingRateAttachment);
+}
+
+void safe_VkFragmentShadingRateAttachmentInfoKHR::initialize(const safe_VkFragmentShadingRateAttachmentInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    pFragmentShadingRateAttachment = nullptr;
+    shadingRateAttachmentTexelSize = copy_src->shadingRateAttachmentTexelSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pFragmentShadingRateAttachment)
+        pFragmentShadingRateAttachment = new safe_VkAttachmentReference2(*copy_src->pFragmentShadingRateAttachment);
+}
+
+safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::safe_VkPipelineFragmentShadingRateStateCreateInfoKHR(const VkPipelineFragmentShadingRateStateCreateInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    fragmentSize(in_struct->fragmentSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = in_struct->combinerOps[i];
+    }
+}
+
+safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::safe_VkPipelineFragmentShadingRateStateCreateInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::safe_VkPipelineFragmentShadingRateStateCreateInfoKHR(const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentSize = copy_src.fragmentSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src.combinerOps[i];
+    }
+}
+
+safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::operator=(const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentSize = copy_src.fragmentSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src.combinerOps[i];
+    }
+
+    return *this;
+}
+
+safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::~safe_VkPipelineFragmentShadingRateStateCreateInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::initialize(const VkPipelineFragmentShadingRateStateCreateInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    fragmentSize = in_struct->fragmentSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = in_struct->combinerOps[i];
+    }
+}
+
+void safe_VkPipelineFragmentShadingRateStateCreateInfoKHR::initialize(const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentSize = copy_src->fragmentSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src->combinerOps[i];
+    }
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(const VkPhysicalDeviceFragmentShadingRateFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    pipelineFragmentShadingRate(in_struct->pipelineFragmentShadingRate),
+    primitiveFragmentShadingRate(in_struct->primitiveFragmentShadingRate),
+    attachmentFragmentShadingRate(in_struct->attachmentFragmentShadingRate)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    pipelineFragmentShadingRate = copy_src.pipelineFragmentShadingRate;
+    primitiveFragmentShadingRate = copy_src.primitiveFragmentShadingRate;
+    attachmentFragmentShadingRate = copy_src.attachmentFragmentShadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::operator=(const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pipelineFragmentShadingRate = copy_src.pipelineFragmentShadingRate;
+    primitiveFragmentShadingRate = copy_src.primitiveFragmentShadingRate;
+    attachmentFragmentShadingRate = copy_src.attachmentFragmentShadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::~safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::initialize(const VkPhysicalDeviceFragmentShadingRateFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    pipelineFragmentShadingRate = in_struct->pipelineFragmentShadingRate;
+    primitiveFragmentShadingRate = in_struct->primitiveFragmentShadingRate;
+    attachmentFragmentShadingRate = in_struct->attachmentFragmentShadingRate;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR::initialize(const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    pipelineFragmentShadingRate = copy_src->pipelineFragmentShadingRate;
+    primitiveFragmentShadingRate = copy_src->primitiveFragmentShadingRate;
+    attachmentFragmentShadingRate = copy_src->attachmentFragmentShadingRate;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR(const VkPhysicalDeviceFragmentShadingRatePropertiesKHR* in_struct) :
+    sType(in_struct->sType),
+    minFragmentShadingRateAttachmentTexelSize(in_struct->minFragmentShadingRateAttachmentTexelSize),
+    maxFragmentShadingRateAttachmentTexelSize(in_struct->maxFragmentShadingRateAttachmentTexelSize),
+    maxFragmentShadingRateAttachmentTexelSizeAspectRatio(in_struct->maxFragmentShadingRateAttachmentTexelSizeAspectRatio),
+    primitiveFragmentShadingRateWithMultipleViewports(in_struct->primitiveFragmentShadingRateWithMultipleViewports),
+    layeredShadingRateAttachments(in_struct->layeredShadingRateAttachments),
+    fragmentShadingRateNonTrivialCombinerOps(in_struct->fragmentShadingRateNonTrivialCombinerOps),
+    maxFragmentSize(in_struct->maxFragmentSize),
+    maxFragmentSizeAspectRatio(in_struct->maxFragmentSizeAspectRatio),
+    maxFragmentShadingRateCoverageSamples(in_struct->maxFragmentShadingRateCoverageSamples),
+    maxFragmentShadingRateRasterizationSamples(in_struct->maxFragmentShadingRateRasterizationSamples),
+    fragmentShadingRateWithShaderDepthStencilWrites(in_struct->fragmentShadingRateWithShaderDepthStencilWrites),
+    fragmentShadingRateWithSampleMask(in_struct->fragmentShadingRateWithSampleMask),
+    fragmentShadingRateWithShaderSampleMask(in_struct->fragmentShadingRateWithShaderSampleMask),
+    fragmentShadingRateWithConservativeRasterization(in_struct->fragmentShadingRateWithConservativeRasterization),
+    fragmentShadingRateWithFragmentShaderInterlock(in_struct->fragmentShadingRateWithFragmentShaderInterlock),
+    fragmentShadingRateWithCustomSampleLocations(in_struct->fragmentShadingRateWithCustomSampleLocations),
+    fragmentShadingRateStrictMultiplyCombiner(in_struct->fragmentShadingRateStrictMultiplyCombiner)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR(const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    minFragmentShadingRateAttachmentTexelSize = copy_src.minFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSize = copy_src.maxFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSizeAspectRatio = copy_src.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
+    primitiveFragmentShadingRateWithMultipleViewports = copy_src.primitiveFragmentShadingRateWithMultipleViewports;
+    layeredShadingRateAttachments = copy_src.layeredShadingRateAttachments;
+    fragmentShadingRateNonTrivialCombinerOps = copy_src.fragmentShadingRateNonTrivialCombinerOps;
+    maxFragmentSize = copy_src.maxFragmentSize;
+    maxFragmentSizeAspectRatio = copy_src.maxFragmentSizeAspectRatio;
+    maxFragmentShadingRateCoverageSamples = copy_src.maxFragmentShadingRateCoverageSamples;
+    maxFragmentShadingRateRasterizationSamples = copy_src.maxFragmentShadingRateRasterizationSamples;
+    fragmentShadingRateWithShaderDepthStencilWrites = copy_src.fragmentShadingRateWithShaderDepthStencilWrites;
+    fragmentShadingRateWithSampleMask = copy_src.fragmentShadingRateWithSampleMask;
+    fragmentShadingRateWithShaderSampleMask = copy_src.fragmentShadingRateWithShaderSampleMask;
+    fragmentShadingRateWithConservativeRasterization = copy_src.fragmentShadingRateWithConservativeRasterization;
+    fragmentShadingRateWithFragmentShaderInterlock = copy_src.fragmentShadingRateWithFragmentShaderInterlock;
+    fragmentShadingRateWithCustomSampleLocations = copy_src.fragmentShadingRateWithCustomSampleLocations;
+    fragmentShadingRateStrictMultiplyCombiner = copy_src.fragmentShadingRateStrictMultiplyCombiner;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::operator=(const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    minFragmentShadingRateAttachmentTexelSize = copy_src.minFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSize = copy_src.maxFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSizeAspectRatio = copy_src.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
+    primitiveFragmentShadingRateWithMultipleViewports = copy_src.primitiveFragmentShadingRateWithMultipleViewports;
+    layeredShadingRateAttachments = copy_src.layeredShadingRateAttachments;
+    fragmentShadingRateNonTrivialCombinerOps = copy_src.fragmentShadingRateNonTrivialCombinerOps;
+    maxFragmentSize = copy_src.maxFragmentSize;
+    maxFragmentSizeAspectRatio = copy_src.maxFragmentSizeAspectRatio;
+    maxFragmentShadingRateCoverageSamples = copy_src.maxFragmentShadingRateCoverageSamples;
+    maxFragmentShadingRateRasterizationSamples = copy_src.maxFragmentShadingRateRasterizationSamples;
+    fragmentShadingRateWithShaderDepthStencilWrites = copy_src.fragmentShadingRateWithShaderDepthStencilWrites;
+    fragmentShadingRateWithSampleMask = copy_src.fragmentShadingRateWithSampleMask;
+    fragmentShadingRateWithShaderSampleMask = copy_src.fragmentShadingRateWithShaderSampleMask;
+    fragmentShadingRateWithConservativeRasterization = copy_src.fragmentShadingRateWithConservativeRasterization;
+    fragmentShadingRateWithFragmentShaderInterlock = copy_src.fragmentShadingRateWithFragmentShaderInterlock;
+    fragmentShadingRateWithCustomSampleLocations = copy_src.fragmentShadingRateWithCustomSampleLocations;
+    fragmentShadingRateStrictMultiplyCombiner = copy_src.fragmentShadingRateStrictMultiplyCombiner;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::~safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::initialize(const VkPhysicalDeviceFragmentShadingRatePropertiesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    minFragmentShadingRateAttachmentTexelSize = in_struct->minFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSize = in_struct->maxFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSizeAspectRatio = in_struct->maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
+    primitiveFragmentShadingRateWithMultipleViewports = in_struct->primitiveFragmentShadingRateWithMultipleViewports;
+    layeredShadingRateAttachments = in_struct->layeredShadingRateAttachments;
+    fragmentShadingRateNonTrivialCombinerOps = in_struct->fragmentShadingRateNonTrivialCombinerOps;
+    maxFragmentSize = in_struct->maxFragmentSize;
+    maxFragmentSizeAspectRatio = in_struct->maxFragmentSizeAspectRatio;
+    maxFragmentShadingRateCoverageSamples = in_struct->maxFragmentShadingRateCoverageSamples;
+    maxFragmentShadingRateRasterizationSamples = in_struct->maxFragmentShadingRateRasterizationSamples;
+    fragmentShadingRateWithShaderDepthStencilWrites = in_struct->fragmentShadingRateWithShaderDepthStencilWrites;
+    fragmentShadingRateWithSampleMask = in_struct->fragmentShadingRateWithSampleMask;
+    fragmentShadingRateWithShaderSampleMask = in_struct->fragmentShadingRateWithShaderSampleMask;
+    fragmentShadingRateWithConservativeRasterization = in_struct->fragmentShadingRateWithConservativeRasterization;
+    fragmentShadingRateWithFragmentShaderInterlock = in_struct->fragmentShadingRateWithFragmentShaderInterlock;
+    fragmentShadingRateWithCustomSampleLocations = in_struct->fragmentShadingRateWithCustomSampleLocations;
+    fragmentShadingRateStrictMultiplyCombiner = in_struct->fragmentShadingRateStrictMultiplyCombiner;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR::initialize(const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    minFragmentShadingRateAttachmentTexelSize = copy_src->minFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSize = copy_src->maxFragmentShadingRateAttachmentTexelSize;
+    maxFragmentShadingRateAttachmentTexelSizeAspectRatio = copy_src->maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
+    primitiveFragmentShadingRateWithMultipleViewports = copy_src->primitiveFragmentShadingRateWithMultipleViewports;
+    layeredShadingRateAttachments = copy_src->layeredShadingRateAttachments;
+    fragmentShadingRateNonTrivialCombinerOps = copy_src->fragmentShadingRateNonTrivialCombinerOps;
+    maxFragmentSize = copy_src->maxFragmentSize;
+    maxFragmentSizeAspectRatio = copy_src->maxFragmentSizeAspectRatio;
+    maxFragmentShadingRateCoverageSamples = copy_src->maxFragmentShadingRateCoverageSamples;
+    maxFragmentShadingRateRasterizationSamples = copy_src->maxFragmentShadingRateRasterizationSamples;
+    fragmentShadingRateWithShaderDepthStencilWrites = copy_src->fragmentShadingRateWithShaderDepthStencilWrites;
+    fragmentShadingRateWithSampleMask = copy_src->fragmentShadingRateWithSampleMask;
+    fragmentShadingRateWithShaderSampleMask = copy_src->fragmentShadingRateWithShaderSampleMask;
+    fragmentShadingRateWithConservativeRasterization = copy_src->fragmentShadingRateWithConservativeRasterization;
+    fragmentShadingRateWithFragmentShaderInterlock = copy_src->fragmentShadingRateWithFragmentShaderInterlock;
+    fragmentShadingRateWithCustomSampleLocations = copy_src->fragmentShadingRateWithCustomSampleLocations;
+    fragmentShadingRateStrictMultiplyCombiner = copy_src->fragmentShadingRateStrictMultiplyCombiner;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateKHR::safe_VkPhysicalDeviceFragmentShadingRateKHR(const VkPhysicalDeviceFragmentShadingRateKHR* in_struct) :
+    sType(in_struct->sType),
+    sampleCounts(in_struct->sampleCounts),
+    fragmentSize(in_struct->fragmentSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateKHR::safe_VkPhysicalDeviceFragmentShadingRateKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentShadingRateKHR::safe_VkPhysicalDeviceFragmentShadingRateKHR(const safe_VkPhysicalDeviceFragmentShadingRateKHR& copy_src)
+{
+    sType = copy_src.sType;
+    sampleCounts = copy_src.sampleCounts;
+    fragmentSize = copy_src.fragmentSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateKHR& safe_VkPhysicalDeviceFragmentShadingRateKHR::operator=(const safe_VkPhysicalDeviceFragmentShadingRateKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    sampleCounts = copy_src.sampleCounts;
+    fragmentSize = copy_src.fragmentSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateKHR::~safe_VkPhysicalDeviceFragmentShadingRateKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateKHR::initialize(const VkPhysicalDeviceFragmentShadingRateKHR* in_struct)
+{
+    sType = in_struct->sType;
+    sampleCounts = in_struct->sampleCounts;
+    fragmentSize = in_struct->fragmentSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateKHR::initialize(const safe_VkPhysicalDeviceFragmentShadingRateKHR* copy_src)
+{
+    sType = copy_src->sType;
+    sampleCounts = copy_src->sampleCounts;
+    fragmentSize = copy_src->fragmentSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkSurfaceProtectedCapabilitiesKHR::safe_VkSurfaceProtectedCapabilitiesKHR(const VkSurfaceProtectedCapabilitiesKHR* in_struct) :
     sType(in_struct->sType),
     supportsProtected(in_struct->supportsProtected)
@@ -36256,6 +36704,21 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDeviceShaderClockFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceShaderClockFeaturesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
+            safe_pNext = new safe_VkFragmentShadingRateAttachmentInfoKHR(reinterpret_cast<const VkFragmentShadingRateAttachmentInfoKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR:
+            safe_pNext = new safe_VkPipelineFragmentShadingRateStateCreateInfoKHR(reinterpret_cast<const VkPipelineFragmentShadingRateStateCreateInfoKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR(reinterpret_cast<const VkPhysicalDeviceFragmentShadingRatePropertiesKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR:
             safe_pNext = new safe_VkSurfaceProtectedCapabilitiesKHR(reinterpret_cast<const VkSurfaceProtectedCapabilitiesKHR *>(pNext));
             break;
@@ -37051,6 +37514,21 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceShaderClockFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderTerminateInvocationFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
+            delete reinterpret_cast<const safe_VkFragmentShadingRateAttachmentInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkPipelineFragmentShadingRateStateCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentShadingRateFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentShadingRatePropertiesKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR:
             delete reinterpret_cast<const safe_VkSurfaceProtectedCapabilitiesKHR *>(header);

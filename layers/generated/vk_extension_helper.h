@@ -438,6 +438,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_external_semaphore{kNotEnabled};
     ExtEnabled vk_khr_external_semaphore_fd{kNotEnabled};
     ExtEnabled vk_khr_external_semaphore_win32{kNotEnabled};
+    ExtEnabled vk_khr_fragment_shading_rate{kNotEnabled};
     ExtEnabled vk_khr_get_memory_requirements_2{kNotEnabled};
     ExtEnabled vk_khr_image_format_list{kNotEnabled};
     ExtEnabled vk_khr_imageless_framebuffer{kNotEnabled};
@@ -463,6 +464,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_float_controls{kNotEnabled};
     ExtEnabled vk_khr_shader_non_semantic_info{kNotEnabled};
     ExtEnabled vk_khr_shader_subgroup_extended_types{kNotEnabled};
+    ExtEnabled vk_khr_shader_terminate_invocation{kNotEnabled};
     ExtEnabled vk_khr_shared_presentable_image{kNotEnabled};
     ExtEnabled vk_khr_spirv_1_4{kNotEnabled};
     ExtEnabled vk_khr_storage_buffer_storage_class{kNotEnabled};
@@ -735,6 +737,9 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_external_semaphore_win32, {{
                            {&DeviceExtensions::vk_khr_external_semaphore, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}})),
 #endif
+            std::make_pair(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_fragment_shading_rate, {{
+                           {&DeviceExtensions::vk_khr_create_renderpass_2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_get_memory_requirements_2, {})),
             std::make_pair(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_image_format_list, {})),
             std::make_pair(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_imageless_framebuffer, {{
@@ -792,6 +797,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_non_semantic_info, {})),
             std::make_pair(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types, {{
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
+            std::make_pair(VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_terminate_invocation, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shared_presentable_image, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
@@ -1107,6 +1114,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
 #endif
+    VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
     VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
     VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
     VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
@@ -1138,6 +1146,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
     VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
     VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
+    VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
     VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
     VK_KHR_SPIRV_1_4_EXTENSION_NAME,
     VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,

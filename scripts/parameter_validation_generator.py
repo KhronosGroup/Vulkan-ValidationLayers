@@ -895,7 +895,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Retrieve the value of the len tag
     def getLen(self, param):
         result = None
-        len = param.attrib.get('len')
+        # Default to altlen when available to avoid LaTeX markup
+        if 'altlen' in param.attrib:
+            len = param.attrib.get('altlen')
+        else:
+            len = param.attrib.get('len')
         if len and len != 'null-terminated':
             # For string arrays, 'len' can look like 'count,null-terminated', indicating that we have a null terminated array of
             # strings.  We strip the null-terminated from the 'len' field and only return the parameter specifying the string count
@@ -904,6 +908,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             else:
                 result = len
             result = str(result).replace('::', '->')
+        elif self.paramIsStaticArray(param):
+            # For static arrays get length from inside []
+            array_match = re.search(r'\[(\d+)\]', param.find('name').tail)
+            if array_match:
+                result = array_match.group(1)
         return result
     #
     # Retrieve the type and name for a parameter
@@ -924,27 +933,20 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 return param
         return None
     #
-    # Get the length paramater record for the specified parameter name
-    def getLenParam(self, params, name):
-        lenParam = None
-        if name:
-            if '->' in name:
-                # The count is obtained by dereferencing a member of a struct parameter
-                lenParam = self.CommandParam(name=name, iscount=True, ispointer=False, isbool=False, israngedenum=False, isconst=False,
-                                             isstaticarray=None, isoptional=False, type=None, noautovalidity=False,
-                                             len=None, extstructs=None, condition=None, cdecl=None)
-            elif 'latexmath' in name:
-                # Filter list of params to those whose name appears in the LaTeX markup
-                len_candidates = [p for p in params if re.search(r'\b{}\b'.format(p.name), name)]
-                # 0 or 1 matches are expected, >1 would require a special case and/or explicit validation
-                if len(len_candidates) == 0:
-                    lenParam = None
-                elif len(len_candidates) == 1:
-                    lenParam = len_candidates[0]
-                else:
-                    raise Exception('Cannot determine length parameter for len attribute value {}'.format(name))
+    # Get the length paramater record for the specified length expression
+    def getLenParam(self, params, length):
+        # First check if any element of params matches length exactly
+        lenParam = self.getParamByName(params, length)
+        if not lenParam:
+            # Otherwise, look for any elements of params that appear within length
+            len_candidates = [p for p in params if re.search(r'\b{}\b'.format(p.name), length)]
+            # 0 or 1 matches are expected, >1 would require a special case and/or explicit validation
+            if len(len_candidates) == 0:
+                lenParam = None
+            elif len(len_candidates) == 1:
+                lenParam = len_candidates[0]
             else:
-                lenParam = self.getParamByName(params, name)
+                raise Exception('Cannot determine length parameter for len attribute value {}'.format(length))
         return lenParam
     #
     # Convert a vulkan.h command declaration into a parameter_validation.h definition
@@ -1015,17 +1017,17 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         param_vuid = self.GetVuid(vuid_name, "%s-parameter" % value.name)
 
         if lenValue:
-            count_required_vuid = self.GetVuid(vuid_name, "%s-arraylength" % lenValue.name)
+            count_required_vuid = self.GetVuid(vuid_name, "%s-arraylength" % value.len)
 
             # This is an array with a pointer to a count value
             if lenValue.ispointer:
                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
                 checkExpr.append('skip |= validate_struct_type_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {}, {});\n'.format(
-                    funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, stype_vuid, param_vuid, count_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
+                    funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, stype_vuid, param_vuid, count_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
             # This is an array with an integer count value
             else:
                 checkExpr.append('skip |= validate_struct_type_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {});\n'.format(
-                    funcPrintName, lenValueRequired, valueRequired, stype_vuid, param_vuid, count_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
+                    funcPrintName, lenValueRequired, valueRequired, stype_vuid, param_vuid, count_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
         # This is an individual struct
         else:
             checkExpr.append('skip |= validate_struct_type("{}", {ppp}"{}"{pps}, "{sv}", {}{vn}, {sv}, {}, {}, {});\n'.format(
@@ -1042,7 +1044,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             else:
                 # This is an array with an integer count value
                 checkExpr.append('skip |= validate_handle_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {});\n'.format(
-                    funcPrintName, lenValueRequired, valueRequired, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
+                    funcPrintName, lenValueRequired, valueRequired, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
         else:
             # This is assumed to be an output handle pointer
             raise('Unsupported parameter validation case: Output handles are not NULL checked')
@@ -1056,7 +1058,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             raise('Unsupported parameter validation case: array of reserved VkFlags')
         else:
             allFlags = 'All' + flagBitsName
-            checkExpr.append('skip |= validate_flags_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcPrintName, lenPrintName, valuePrintName, flagBitsName, allFlags, lenValue.name, value.name, lenValueRequired, valueRequired, pf=prefix, **postProcSpec))
+            checkExpr.append('skip |= validate_flags_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcPrintName, lenPrintName, valuePrintName, flagBitsName, allFlags, value.len, value.name, lenValueRequired, valueRequired, pf=prefix, **postProcSpec))
         return checkExpr
     #
     # Generate pNext check string
@@ -1082,33 +1084,34 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         checkExpr = []
         vuid_tag_name = struct_type_name if struct_type_name is not None else funcPrintName
         if lenValue:
-            count_required_vuid = self.GetVuid(vuid_tag_name, "%s-arraylength" % (lenValue.name))
+            length_deref = '->' in value.len
+            count_required_vuid = self.GetVuid(vuid_tag_name, "%s-arraylength" % (value.len))
             array_required_vuid = self.GetVuid(vuid_tag_name, "%s-parameter" % (value.name))
             # TODO: Remove workaround for missing optional tag in vk.xml
             if array_required_vuid == '"VUID-VkFramebufferCreateInfo-pAttachments-parameter"':
                 return []
             # This is an array with a pointer to a count value
-            if lenValue.ispointer:
+            if lenValue.ispointer and not length_deref:
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenPtrRequired == 'true' or lenValueRequired == 'true':
                     # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
                     checkExpr.append('skip |= validate_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {}, {});\n'.format(
-                        funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
+                        funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
             # This is an array with an integer count value
             else:
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenValueRequired == 'true':
                     if value.type != 'char':
                         checkExpr.append('skip |= validate_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {});\n'.format(
-                            funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
+                            funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
                     else:
                         # Arrays of strings receive special processing
                         checkExpr.append('skip |= validate_string_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {}, {});\n'.format(
-                            funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
+                            funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
             if checkExpr:
-                if lenValue and ('->' in lenValue.name):
+                if lenValue and length_deref:
                     # Add checks to ensure the validation call does not dereference a NULL pointer to obtain the count
-                    checkExpr = self.genCheckedLengthCall(lenValue.name, checkExpr)
+                    checkExpr = self.genCheckedLengthCall(value.len, checkExpr)
         # This is an individual struct that is not allowed to be NULL
         elif not value.isoptional:
             # Function pointers need a reinterpret_cast to void*
@@ -1229,13 +1232,13 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         indent = self.incIndent(None)
         if lenValue:
             # Need to process all elements in the array
-            indexName = lenValue.name.replace('Count', 'Index')
+            indexName = value.len.replace('Count', 'Index')
             expr[-1] += '\n'
             if lenValue.ispointer:
                 # If the length value is a pointer, de-reference it for the count.
-                expr.append(indent + 'for (uint32_t {iname} = 0; {iname} < *{}{}; ++{iname})\n'.format(prefix, lenValue.name, iname=indexName))
+                expr.append(indent + 'for (uint32_t {iname} = 0; {iname} < *{}{}; ++{iname})\n'.format(prefix, value.len, iname=indexName))
             else:
-                expr.append(indent + 'for (uint32_t {iname} = 0; {iname} < {}{}; ++{iname})\n'.format(prefix, lenValue.name, iname=indexName))
+                expr.append(indent + 'for (uint32_t {iname} = 0; {iname} < {}{}; ++{iname})\n'.format(prefix, value.len, iname=indexName))
             expr.append(indent + '{')
             indent = self.incIndent(indent)
             # Prefix for value name to display in error message
@@ -1289,7 +1292,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     # The parameter is an array with an explicit count parameter
                     lenParam = self.getLenParam(values, value.len)
                     if lenParam:
-                        lenDisplayName = '{}{}'.format(displayNamePrefix, lenParam.name)
+                        lenDisplayName = value.len.replace(lenParam.name, displayNamePrefix + lenParam.name)
                         if lenParam.ispointer:
                             # Count parameters that are pointers are inout
                             if type(lenParam.isoptional) is list:
@@ -1303,6 +1306,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         else:
                             if lenParam.isoptional:
                                 cvReq = 'false'
+                    else:
+                        # Do not generate length checks for constant sized arrays
+                        cpReq = 'false'
+                        cvReq = 'false'
+
                 #
                 # The parameter will not be processed when tagged as 'noautovalidity'
                 # For the pointer to struct case, the struct pointer will not be validated, but any
@@ -1322,10 +1330,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     elif value.type in self.flags and value.isconst:
                         usedLines += self.makeFlagsArrayCheck(valuePrefix, value, lenParam, req, cvReq, funcName, lenDisplayName, valueDisplayName, postProcSpec)
                     elif value.isbool and value.isconst:
-                        usedLines.append('skip |= validate_bool32_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
+                        usedLines.append('skip |= validate_bool32_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.len, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.israngedenum and value.isconst:
                         enum_value_list = 'All%sEnums' % value.type
-                        usedLines.append('skip |= validate_ranged_enum_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
+                        usedLines.append('skip |= validate_ranged_enum_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, value.len, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.name == 'pNext':
                         usedLines += self.makeStructNextCheck(valuePrefix, value, funcName, valueDisplayName, postProcSpec, structTypeName)
                     else:

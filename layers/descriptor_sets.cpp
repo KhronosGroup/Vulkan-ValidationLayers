@@ -697,7 +697,8 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 //  This includes validating that all descriptors in the given bindings are updated,
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
-bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const std::map<uint32_t, DescriptorReqirement> &bindings,
+bool CoreChecks::ValidateDrawState(VkPipelineBindPoint bind_point, const DescriptorSet *descriptor_set,
+                                   const std::map<uint32_t, DescriptorReqirement> &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
                                    const std::vector<VkImageView> &attachment_views, const char *caller,
                                    const DrawDispatchVuid &vuids) const {
@@ -721,17 +722,62 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
             // or the view could have been destroyed
             continue;
         }
-        result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer,
+        result |= ValidateDescriptorSetBindingData(bind_point, cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer,
                                                    attachment_views, caller, vuids);
     }
     return result;
 }
 
-bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
-                                                  const std::vector<uint32_t> &dynamic_offsets,
-                                                  std::pair<uint32_t, DescriptorReqirement> binding_info, VkFramebuffer framebuffer,
-                                                  const std::vector<VkImageView> &attachment_views, const char *caller,
-                                                  const DrawDispatchVuid &vuids) const {
+std::vector<const SAMPLER_STATE *> GetUnnormalizedCoordinatesSamplerStatesFromDescriptorSet(
+    VkPipelineBindPoint bind_point, const cvdescriptorset::DescriptorClass descriptor_class,
+    const cvdescriptorset::Descriptor &descriptor, const CMD_BUFFER_STATE &cb_node,
+    std::pair<const uint32_t, DescriptorReqirement> &binding_info, uint32_t image_index) {
+    std::vector<const SAMPLER_STATE *> sampler_states;
+
+    if (descriptor_class == cvdescriptorset::DescriptorClass::ImageSampler) {
+        const cvdescriptorset::ImageSamplerDescriptor *image_descriptor =
+            static_cast<const cvdescriptorset::ImageSamplerDescriptor *>(&descriptor);
+        const auto *sampler_state = image_descriptor->GetSamplerState();
+
+        if (sampler_state->createInfo.unnormalizedCoordinates) sampler_states.emplace_back(sampler_state);
+
+    } else if (descriptor_class == cvdescriptorset::DescriptorClass::Image &&
+               binding_info.second.samplers_used_by_image.size() > image_index) {
+        for (auto &sampler : binding_info.second.samplers_used_by_image[image_index]) {
+            auto *descriptorset = cb_node.GetDescriptorSet(bind_point, sampler.first.sampler_slot.first);
+            if (!descriptorset) {
+                continue;
+            }
+            const auto key = descriptorset->GetSet();
+            auto it = sampler.second.find(key);
+            if (it != sampler.second.end()) {
+                const auto *sampler_state = static_cast<const cvdescriptorset::SamplerDescriptor *>(it->second)->GetSamplerState();
+                if (sampler_state->createInfo.unnormalizedCoordinates) {
+                    sampler_states.emplace_back(sampler_state);
+                }
+                continue;
+            }
+
+            const auto *descriptor2 =
+                descriptorset->GetDescriptorFromBinding(sampler.first.sampler_slot.second, sampler.first.sampler_index);
+            if (descriptor2->GetClass() == cvdescriptorset::DescriptorClass::PlainSampler) {
+                sampler.second.emplace(key, descriptor2);
+
+                const auto *sampler_state = static_cast<const cvdescriptorset::SamplerDescriptor *>(descriptor2)->GetSamplerState();
+                if (sampler_state->createInfo.unnormalizedCoordinates) {
+                    sampler_states.emplace_back(sampler_state);
+                }
+            }
+        }
+    }
+    return sampler_states;
+}
+
+bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point, const CMD_BUFFER_STATE *cb_node,
+                                                  const DescriptorSet *descriptor_set, const std::vector<uint32_t> &dynamic_offsets,
+                                                  std::pair<const uint32_t, DescriptorReqirement> &binding_info,
+                                                  VkFramebuffer framebuffer, const std::vector<VkImageView> &attachment_views,
+                                                  const char *caller, const DrawDispatchVuid &vuids) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -833,33 +879,17 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     VkImageView image_view;
                     VkImageLayout image_layout;
                     const IMAGE_VIEW_STATE *image_view_state;
-                    std::vector<const SAMPLER_STATE *> sampler_states;
 
                     if (descriptor_class == DescriptorClass::ImageSampler) {
                         const ImageSamplerDescriptor *image_descriptor = static_cast<const ImageSamplerDescriptor *>(descriptor);
                         image_view = image_descriptor->GetImageView();
                         image_view_state = image_descriptor->GetImageViewState();
                         image_layout = image_descriptor->GetImageLayout();
-                        sampler_states.emplace_back(image_descriptor->GetSamplerState());
                     } else {
                         const ImageDescriptor *image_descriptor = static_cast<const ImageDescriptor *>(descriptor);
                         image_view = image_descriptor->GetImageView();
                         image_view_state = image_descriptor->GetImageViewState();
                         image_layout = image_descriptor->GetImageLayout();
-
-                        for (const auto &stage_samples : binding_info.second.samplers_used_by_image) {
-                            for (const auto &sampler : *(stage_samples.second)) {
-                                if (sampler.image_index == index) {
-                                    const auto *descriptor2 =
-                                        cb_node->GetDescriptor(stage_samples.first, sampler.sampler_slot.first,
-                                                               sampler.sampler_slot.second, sampler.sampler_index);
-                                    if (descriptor2->GetClass() == DescriptorClass::PlainSampler) {
-                                        sampler_states.emplace_back(
-                                            static_cast<const SamplerDescriptor *>(descriptor2)->GetSamplerState());
-                                    }
-                                }
-                            }
-                        }
                     }
 
                     if (image_view) {
@@ -998,16 +1028,21 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             }
                         }
 
-                        for (const auto &sampler_state : sampler_states) {
-                            if (!sampler_state || !sampler_state->createInfo.unnormalizedCoordinates) {
-                                continue;
-                            }
-                            // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
-                            if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D ||
-                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
-                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY ||
-                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
-                                image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+                        // Here is some unnormalizedCoordinates sampler validations. But because it might take long time to find out
+                        // samplers, it will look for them when it needs.
+                        std::vector<const SAMPLER_STATE *> unnormalizedCoordinates_sampler_states;
+                        bool update_unnormalizedCoordinates_sampler_states = false;
+
+                        // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
+                        if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
+                            image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY ||
+                            image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
+                            image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+                            update_unnormalizedCoordinates_sampler_states = true;
+                            unnormalizedCoordinates_sampler_states = GetUnnormalizedCoordinatesSamplerStatesFromDescriptorSet(
+                                bind_point, descriptor_class, *descriptor, *cb_node, binding_info, index);
+
+                            for (const auto *sampler_state : unnormalizedCoordinates_sampler_states) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
                                 objlist.add(image_view);
@@ -1020,9 +1055,18 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                 string_VkImageViewType(image_view_ci.viewType), binding, index,
                                                 report_data->FormatHandle(sampler_state->sampler).c_str());
                             }
-                            // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample* instructions
-                            // with ImplicitLod, Dref or Proj in their name
-                            if (reqs & DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ) {
+                        }
+
+                        // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample* instructions
+                        // with ImplicitLod, Dref or Proj in their name
+                        if (reqs & DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ) {
+                            if (!update_unnormalizedCoordinates_sampler_states) {
+                                update_unnormalizedCoordinates_sampler_states = true;
+                                unnormalizedCoordinates_sampler_states = GetUnnormalizedCoordinatesSamplerStatesFromDescriptorSet(
+                                    bind_point, descriptor_class, *descriptor, *cb_node, binding_info, index);
+                            }
+
+                            for (const auto *sampler_state : unnormalizedCoordinates_sampler_states) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
                                 objlist.add(image_view);
@@ -1035,9 +1079,18 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                 report_data->FormatHandle(image_view).c_str(), binding, index,
                                                 report_data->FormatHandle(sampler_state->sampler).c_str());
                             }
-                            // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample* instructions
-                            // that includes a LOD bias or any offset values
-                            if (reqs & DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET) {
+                        }
+
+                        // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample* instructions
+                        // that includes a LOD bias or any offset values
+                        if (reqs & DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET) {
+                            if (!update_unnormalizedCoordinates_sampler_states) {
+                                update_unnormalizedCoordinates_sampler_states = true;
+                                unnormalizedCoordinates_sampler_states = GetUnnormalizedCoordinatesSamplerStatesFromDescriptorSet(
+                                    bind_point, descriptor_class, *descriptor, *cb_node, binding_info, index);
+                            }
+
+                            for (const auto *sampler_state : unnormalizedCoordinates_sampler_states) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
                                 objlist.add(image_view);
@@ -1594,6 +1647,14 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
     CMD_BUFFER_STATE::CmdDrawDispatchInfo cmd_info = {};
+    if (pipe->graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO) {
+        cmd_info.bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    } else if (pipe->computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO) {
+        cmd_info.bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+    } else if (pipe->raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR ||
+               pipe->raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) {
+        cmd_info.bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+    }
 
     for (auto binding_req_pair : binding_req_map) {
         auto index = p_layout_->GetIndexFromBinding(binding_req_pair.first);

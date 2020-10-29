@@ -917,6 +917,30 @@ void ObjectLifetimes::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevic
     }
 }
 
+void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t *pPropertyCount,
+                                                                               VkDisplayPlanePropertiesKHR *pProperties,
+                                                                               VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties) {
+        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+            CreateObject(pProperties[index].currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr);
+        }
+    }
+}
+
+void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                                uint32_t *pPropertyCount,
+                                                                                VkDisplayPlaneProperties2KHR *pProperties,
+                                                                                VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    if (pProperties) {
+        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+            CreateObject(pProperties[index].displayPlaneProperties.currentDisplay, kVulkanObjectTypeDisplayKHR, nullptr);
+        }
+    }
+}
+
 bool ObjectLifetimes::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) const {
     bool skip = false;

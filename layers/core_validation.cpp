@@ -703,12 +703,38 @@ static void ListBits(std::ostream &s, uint32_t bits) {
     }
 }
 
+std::string DynamicStateString(CBStatusFlags input_value) {
+    std::string ret;
+    int index = 0;
+    while (input_value) {
+        if (input_value & 1) {
+            if (!ret.empty()) ret.append("|");
+            ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(1 << index))));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(0))));
+    return ret;
+}
+
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
                                                const PIPELINE_STATE *pPipeline, const char *caller) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+
+    // Verify if using dynamic state setting commands that it doesn't set up in pipeline
+    CBStatusFlags invalid_status = CBSTATUS_ALL_STATE_SET & ~(pCB->dynamic_status | pCB->static_status);
+    if (invalid_status) {
+        std::string dynamic_states = DynamicStateString(invalid_status);
+        LogObjectList objlist(pCB->commandBuffer);
+        objlist.add(pPipeline->pipeline);
+        skip |= LogError(objlist, vuid.dynamic_state_setting_commands,
+                         "%s: %s doesn't set up %s, but it calls the related dynamic state setting commands", caller,
+                         report_data->FormatHandle(state.pipeline_state->pipeline).c_str(), dynamic_states.c_str());
+    }
 
     // Verify vertex binding
     if (pPipeline->vertex_binding_descriptions_.size() > 0) {
@@ -766,12 +792,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer);
                     objlist.add(state.pipeline_state->pipeline);
-                    skip |= LogError(objlist, kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
+                    skip |= LogError(objlist, vuid.vertex_binding_attribute,
                                      "%s: Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
-                                     " from %s and vertex %s.",
-                                     caller, i, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                                     ", %s,from of %s and vertex %s.",
+                                     caller, i, string_VkFormat(attribute_description.format),
+                                     report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
                                      report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer).c_str());
                 }
+            } else {
+                LogObjectList objlist(pCB->commandBuffer);
+                objlist.add(state.pipeline_state->pipeline);
+                skip |= LogError(objlist, vuid.vertex_binding_attribute,
+                                 "%s: binding #%" PRIu32
+                                 " in pVertexAttributeDescriptions of %s is invalid in vkCmdBindVertexBuffers of %s.",
+                                 caller, vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                                 report_data->FormatHandle(pCB->commandBuffer).c_str());
             }
         }
     }
@@ -1121,11 +1156,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                         state.per_set[setIndex].validated_set_binding_req_map.begin(),
                                         state.per_set[setIndex].validated_set_binding_req_map.end(),
                                         std::inserter(delta_reqs, delta_reqs.begin()));
-                    result |= ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                attachment_views, function, vuid);
+                    result |= ValidateDrawState(bind_point, descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets,
+                                                cb_node, attachment_views, function, vuid);
                 } else {
-                    result |= ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                attachment_views, function, vuid);
+                    result |= ValidateDrawState(bind_point, descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets,
+                                                cb_node, attachment_views, function, vuid);
                 }
             }
         }
@@ -2760,8 +2795,8 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::string error;
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding_info,
-                                                                     cmd_info.framebuffer, cmd_info.attachment_views,
+                            skip |= ValidateDescriptorSetBindingData(cmd_info.bind_point, cb_node, set_node, dynamicOffsets,
+                                                                     binding_info, cmd_info.framebuffer, cmd_info.attachment_views,
                                                                      function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }
@@ -3810,6 +3845,14 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                     // Performance queries store results in a tightly packed array of VkPerformanceCounterResultsKHR
                     query_items = query_pool_state->perf_counter_index_count;
                     query_size = sizeof(VkPerformanceCounterResultKHR) * query_items;
+                    if (query_size > stride) {
+                        skip |= LogError(queryPool, "VUID-vkGetQueryPoolResults-queryType-04519",
+                                         "vkGetQueryPoolResults() on querypool %s specified stride %" PRIu64
+                                         " which must be at least counterIndexCount (%d) "
+                                         "multiplied by sizeof(VkPerformanceCounterResultKHR) (%d).",
+                                         report_data->FormatHandle(queryPool).c_str(), stride, query_items,
+                                         sizeof(VkPerformanceCounterResultKHR));
+                    }
                     break;
 
                 // These cases intentionally fall through to the default
@@ -3820,7 +3863,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                     query_size = 0;
                     break;
             }
-            // TODO: Add new VU for stride check
+
             if (query_size && (((queryCount - 1) * stride + query_size) > dataSize)) {
                 skip |= LogError(queryPool, "VUID-vkGetQueryPoolResults-dataSize-00817",
                                  "vkGetQueryPoolResults() on querypool %s specified dataSize %zu which is "
@@ -9172,6 +9215,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pInputAttachments[j];
             const uint32_t attachment_index = attachment_ref.attachment;
+            const VkImageAspectFlags aspect_mask = attachment_ref.aspectMask;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 input_attachments.insert(attachment_index);
                 std::string error_type = "pSubpasses[" + std::to_string(i) + "].pInputAttachments[" + std::to_string(j) + "]";
@@ -9179,13 +9223,22 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                 skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
 
-                if (attachment_ref.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+                if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
                     vuid = use_rp2 ? "VUID-VkSubpassDescription2-attachment-02801"
                                    : "VUID-VkInputAttachmentAspectReference-aspectMask-01964";
                     skip |= LogError(
                         device, vuid,
                         "%s: Aspect mask for input attachment reference %d in subpass %d includes VK_IMAGE_ASPECT_METADATA_BIT.",
                         function_name, j, i);
+                } else if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
+                                          VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
+                    // TODO - Add VUID when new headers are added
+                    vuid = use_rp2 ? "UNASSIGNED-VkSubpassDescription2-attachment"
+                                   : "VUID-VkInputAttachmentAspectReference-aspectMask-02250";
+                    skip |= LogError(device, vuid,
+                                     "%s: Aspect mask for input attachment reference %d in subpass %d includes "
+                                     "VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT bit.",
+                                     function_name, j, i);
                 }
 
                 if (attachment_index < pCreateInfo->attachmentCount) {
@@ -9193,8 +9246,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                              attachment_ref.layout);
 
                     vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-attachment-02525" : "VUID-VkRenderPassCreateInfo-pNext-01963";
-                    skip |= ValidateImageAspectMask(VK_NULL_HANDLE, pCreateInfo->pAttachments[attachment_index].format,
-                                                    attachment_ref.aspectMask, function_name, vuid);
+                    skip |= ValidateImageAspectMask(VK_NULL_HANDLE, pCreateInfo->pAttachments[attachment_index].format, aspect_mask,
+                                                    function_name, vuid);
 
                     if (attach_first_use[attachment_index]) {
                         skip |=
@@ -9224,7 +9277,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     // as they are in a struct that only applies to input attachments - not so for v2.
 
                     // Check for 0
-                    if (attachment_ref.aspectMask == 0) {
+                    if (aspect_mask == 0) {
                         skip |= LogError(device, "VUID-VkSubpassDescription2-attachment-02800",
                                          "%s: Input attachment %s aspect mask must not be 0.", function_name, error_type.c_str());
                     } else {
@@ -9236,10 +9289,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                              VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT);
 
                         // Check for valid aspect mask bits
-                        if (attachment_ref.aspectMask & ~valid_bits) {
+                        if (aspect_mask & ~valid_bits) {
                             skip |= LogError(device, "VUID-VkSubpassDescription2-attachment-02799",
                                              "%s: Input attachment %s aspect mask (0x%" PRIx32 ")is invalid.", function_name,
-                                             error_type.c_str(), attachment_ref.aspectMask);
+                                             error_type.c_str(), aspect_mask);
                         }
                     }
                 }

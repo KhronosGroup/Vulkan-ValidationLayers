@@ -104,6 +104,7 @@ class ImageSubresourceLayoutMap {
             Increment();
             return *this;
         }
+        void IncrementInterval();
         const SubresourceLayout* operator->() const { return &pos_; }
         const SubresourceLayout& operator*() const { return pos_; }
 

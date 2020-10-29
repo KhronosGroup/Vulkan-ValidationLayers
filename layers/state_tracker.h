@@ -1316,6 +1316,12 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable);
     void PreCallRecordCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                          VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp);
+    void PreCallRecordCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                                uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles);
+    void PreCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo);
+    void PreCallRecordCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
+                                                uint32_t customSampleOrderCount,
+                                                const VkCoarseSampleOrderCustomNV* pCustomSampleOrders);
 
     DeviceFeatures enabled_features = {};
     // Device specific data
