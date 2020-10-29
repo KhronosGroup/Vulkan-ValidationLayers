@@ -2715,8 +2715,7 @@ TEST_F(VkLayerTest, ExceedSamplerAllocationCount) {
         fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "Number of currently valid sampler objects is not less than the maximum allowed");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
 
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
 
