@@ -855,17 +855,19 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
             auto hazard_range = view.normalized_subresource_range;
             bool checked_stencil = false;
             if (is_color) {
-                hazard = DetectHazard(*image, load_index, view.normalized_subresource_range, offset, extent);
+                hazard = DetectHazard(*image, load_index, view.normalized_subresource_range, kColorAttachmentRasterOrder, offset,
+                                      extent);
                 aspect = "color";
             } else {
                 if (has_depth) {
                     hazard_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    hazard = DetectHazard(*image, load_index, hazard_range, offset, extent);
+                    hazard = DetectHazard(*image, load_index, hazard_range, kDepthStencilAttachmentRasterOrder, offset, extent);
                     aspect = "depth";
                 }
                 if (!hazard.hazard && has_stencil) {
                     hazard_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                    hazard = DetectHazard(*image, stencil_load_index, hazard_range, offset, extent);
+                    hazard =
+                        DetectHazard(*image, stencil_load_index, hazard_range, kDepthStencilAttachmentRasterOrder, offset, extent);
                     aspect = "stencil";
                     checked_stencil = true;
                 }
