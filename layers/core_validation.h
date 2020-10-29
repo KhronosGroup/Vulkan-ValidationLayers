@@ -915,7 +915,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePerformanceQueryResults(const char* cmd_name, const QUERY_POOL_STATE* query_pool_state, uint32_t firstQuery,
                                          uint32_t queryCount, VkQueryResultFlags flags) const;
     bool ValidateGetQueryPoolPerformanceResults(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, void* pData,
-                                                VkDeviceSize stride, VkQueryResultFlags flags) const;
+                                                VkDeviceSize stride, VkQueryResultFlags flags, const char* apiName) const;
     bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                             size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags) const;
     bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
