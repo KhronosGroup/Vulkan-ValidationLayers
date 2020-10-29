@@ -3232,6 +3232,12 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device
     return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_1);
 }
 
+bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                                  const VkAllocationCallbacks *pAllocator,
+                                                                  VkRenderPass *pRenderPass) const {
+    return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkRenderPass *pRenderPass) const {

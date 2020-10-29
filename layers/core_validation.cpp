@@ -3656,22 +3656,23 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
 }
 
 bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo, uint64_t timeout) const {
-    return ValidateWaitSemaphores(device, pWaitInfo, timeout);
+    return ValidateWaitSemaphores(device, pWaitInfo, timeout, "VkWaitSemaphores");
 }
 
 bool CoreChecks::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo,
                                                   uint64_t timeout) const {
-    return ValidateWaitSemaphores(device, pWaitInfo, timeout);
+    return ValidateWaitSemaphores(device, pWaitInfo, timeout, "VkWaitSemaphoresKHR");
 }
 
-bool CoreChecks::ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo, uint64_t timeout) const {
+bool CoreChecks::ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo, uint64_t timeout,
+                                        const char *apiName) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
         auto *pSemaphore = GetSemaphoreState(pWaitInfo->pSemaphores[i]);
         if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
             skip |= LogError(pWaitInfo->pSemaphores[i], "VUID-VkSemaphoreWaitInfo-pSemaphores-03256",
-                             "VkWaitSemaphoresKHR: all semaphores in pWaitInfo must be timeline semaphores, but %s is not",
+                             "%s(): all semaphores in pWaitInfo must be timeline semaphores, but %s is not", apiName,
                              report_data->FormatHandle(pWaitInfo->pSemaphores[i]).c_str());
         }
     }
@@ -11419,18 +11420,18 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     return skip;
 }
 
-bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo) const {
+bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo, const char *api_name) const {
     bool skip = false;
     const auto pSemaphore = GetSemaphoreState(pSignalInfo->semaphore);
     if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
         skip |= LogError(pSignalInfo->semaphore, "VUID-VkSemaphoreSignalInfo-semaphore-03257",
-                         "VkSignalSemaphoreKHR: semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE_KHR type",
+                         "%s(): semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE_KHR type", api_name,
                          report_data->FormatHandle(pSignalInfo->semaphore).c_str());
         return skip;
     }
     if (pSemaphore && pSemaphore->payload >= pSignalInfo->value) {
         skip |= LogError(pSignalInfo->semaphore, "VUID-VkSemaphoreSignalInfo-value-03258",
-                         "VkSignalSemaphoreKHR: value must be greater than current semaphore %s value",
+                         "%s(): value must be greater than current semaphore %s value", api_name,
                          report_data->FormatHandle(pSignalInfo->semaphore).c_str());
     }
     for (auto &pair : queueMap) {
@@ -11439,9 +11440,9 @@ bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSema
             for (const auto &signalSemaphore : submission.signalSemaphores) {
                 if (signalSemaphore.semaphore == pSignalInfo->semaphore && pSignalInfo->value >= signalSemaphore.payload) {
                     skip |= LogError(pSignalInfo->semaphore, "VUID-VkSemaphoreSignalInfo-value-03259",
-                                     "VkSignalSemaphoreKHR: value must be greater than value of pending signal operation "
+                                     "%s(): value must be greater than value of pending signal operation "
                                      "for semaphore %s",
-                                     report_data->FormatHandle(pSignalInfo->semaphore).c_str());
+                                     api_name, report_data->FormatHandle(pSignalInfo->semaphore).c_str());
                 }
             }
         }
@@ -11453,6 +11454,14 @@ bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSema
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo) const {
+    return ValidateSignalSemaphore(device, pSignalInfo, "vkSignalSemaphore");
+}
+
+bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo) const {
+    return ValidateSignalSemaphore(device, pSignalInfo, "vkSignalSemaphoreKHR");
 }
 
 bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) const {
@@ -12840,50 +12849,60 @@ bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferD
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "GetBufferDeviceAddressEXT");
+    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "vkGetBufferDeviceAddressEXT");
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "GetBufferDeviceAddressKHR");
+    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "vkGetBufferDeviceAddressKHR");
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "GetBufferDeviceAddress");
+    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "vkGetBufferDeviceAddress");
 }
 
-bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo) const {
+bool CoreChecks::ValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo,
+                                                       const char *apiName) const {
     bool skip = false;
 
     if (!enabled_features.core12.bufferDeviceAddress) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferOpaqueCaptureAddress-None-03326",
-                         "The bufferDeviceAddress feature must: be enabled.");
+                         "%s(): The bufferDeviceAddress feature must: be enabled.", apiName);
     }
 
     if (physical_device_count > 1 && !enabled_features.core12.bufferDeviceAddressMultiDevice) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferOpaqueCaptureAddress-device-03327",
-                         "If device was created with multiple physical devices, then the "
-                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
+                         "%s(): If device was created with multiple physical devices, then the "
+                         "bufferDeviceAddressMultiDevice feature must: be enabled.",
+                         apiName);
     }
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return PreCallValidateGetBufferOpaqueCaptureAddressKHR(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo));
+bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo) const {
+    return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo),
+                                                 "vkGetBufferOpaqueCaptureAddressKHR");
 }
 
-bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
-    VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *pInfo) const {
+bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
+    return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo),
+                                                 "vkGetBufferOpaqueCaptureAddress");
+}
+
+bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
+                                                             const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *pInfo,
+                                                             const char *apiName) const {
     bool skip = false;
 
     if (!enabled_features.core12.bufferDeviceAddress) {
         skip |= LogError(pInfo->memory, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-None-03334",
-                         "The bufferDeviceAddress feature must: be enabled.");
+                         "%s(): The bufferDeviceAddress feature must: be enabled.", apiName);
     }
 
     if (physical_device_count > 1 && !enabled_features.core12.bufferDeviceAddressMultiDevice) {
         skip |= LogError(pInfo->memory, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-device-03335",
-                         "If device was created with multiple physical devices, then the "
-                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
+                         "%s(): If device was created with multiple physical devices, then the "
+                         "bufferDeviceAddressMultiDevice feature must: be enabled.",
+                         apiName);
     }
 
     const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(pInfo->memory);
@@ -12891,51 +12910,59 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
         auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
         if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR)) {
             skip |= LogError(pInfo->memory, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336",
-                             "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.");
+                             "%s(): memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.", apiName);
         }
     }
 
     return skip;
 }
 
+bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *pInfo) const {
+    return ValidateGetDeviceMemoryOpaqueCaptureAddress(
+        device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *>(pInfo), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
+}
+
 bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
                                                                     const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo) const {
-    return PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
-        device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *>(pInfo));
+    return ValidateGetDeviceMemoryOpaqueCaptureAddress(
+        device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *>(pInfo), "vkGetDeviceMemoryOpaqueCaptureAddress");
 }
 
 bool CoreChecks::ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery,
-                                    uint32_t queryCount, const char *vuid_badfirst, const char *vuid_badrange) const {
+                                    uint32_t queryCount, const char *vuid_badfirst, const char *vuid_badrange,
+                                    const char *apiName) const {
     bool skip = false;
 
     if (firstQuery >= totalCount) {
         skip |= LogError(device, vuid_badfirst,
-                         "firstQuery (%" PRIu32 ") greater than or equal to query pool count (%" PRIu32 ") for %s", firstQuery,
-                         totalCount, report_data->FormatHandle(queryPool).c_str());
+                         "%s(): firstQuery (%" PRIu32 ") greater than or equal to query pool count (%" PRIu32 ") for %s", apiName,
+                         firstQuery, totalCount, report_data->FormatHandle(queryPool).c_str());
     }
 
     if ((firstQuery + queryCount) > totalCount) {
         skip |= LogError(device, vuid_badrange,
-                         "Query range [%" PRIu32 ", %" PRIu32 ") goes beyond query pool count (%" PRIu32 ") for %s", firstQuery,
-                         firstQuery + queryCount, totalCount, report_data->FormatHandle(queryPool).c_str());
+                         "%s(): Query range [%" PRIu32 ", %" PRIu32 ") goes beyond query pool count (%" PRIu32 ") for %s", apiName,
+                         firstQuery, firstQuery + queryCount, totalCount, report_data->FormatHandle(queryPool).c_str());
     }
 
     return skip;
 }
 
-bool CoreChecks::ValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) const {
+bool CoreChecks::ValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                        const char *apiName) const {
     if (disabled[query_validation]) return false;
 
     bool skip = false;
 
     if (!enabled_features.core12.hostQueryReset) {
-        skip |= LogError(device, "VUID-vkResetQueryPool-None-02665", "Host query reset not enabled for device");
+        skip |= LogError(device, "VUID-vkResetQueryPool-None-02665", "%s(): Host query reset not enabled for device", apiName);
     }
 
     const auto query_pool_state = GetQueryPoolState(queryPool);
     if (query_pool_state) {
         skip |= ValidateQueryRange(device, queryPool, query_pool_state->createInfo.queryCount, firstQuery, queryCount,
-                                   "VUID-vkResetQueryPool-firstQuery-02666", "VUID-vkResetQueryPool-firstQuery-02667");
+                                   "VUID-vkResetQueryPool-firstQuery-02666", "VUID-vkResetQueryPool-firstQuery-02667", apiName);
     }
 
     return skip;
@@ -12943,12 +12970,12 @@ bool CoreChecks::ValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, 
 
 bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount) const {
-    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount);
+    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount, "vkResetQueryPoolEXT");
 }
 
 bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                uint32_t queryCount) const {
-    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount);
+    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount, "vkResetQueryPool");
 }
 
 VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
@@ -13018,17 +13045,17 @@ bool CoreChecks::ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore s
     const auto *pSemaphore = GetSemaphoreState(semaphore);
     if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
         skip |= LogError(semaphore, "VUID-vkGetSemaphoreCounterValue-semaphore-03255",
-                         "%s: semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE type", apiName,
+                         "%s(): semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE type", apiName,
                          report_data->FormatHandle(semaphore).c_str());
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
-    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "PreCallValidateGetSemaphoreCounterValueKHR");
+    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "vkGetSemaphoreCounterValueKHR");
 }
 bool CoreChecks::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
-    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "PreCallValidateGetSemaphoreCounterValue");
+    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "vkGetSemaphoreCounterValue");
 }
 bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const std::string &vuid_64, const VkDeviceSize stride,
                                          const char *parameter_name, const uint64_t parameter_value,
