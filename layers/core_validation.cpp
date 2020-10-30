@@ -9022,7 +9022,7 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
 
 // Handles attachment references regardless of type (input, color, depth, etc)
 bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version, VkAttachmentReference2 reference,
-                                             const char *error_type, const char *function_name) const {
+                                             bool is_input_attachment, const char *error_type, const char *function_name) const {
     bool skip = false;
 
     // Currently all VUs require attachment to not be UNUSED
@@ -9071,7 +9071,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                 break;
 
             case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-                if ((reference.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) == 0) {
+                if (is_input_attachment && (reference.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) == 0) {
                     skip |= LogError(device, "VUID-VkAttachmentReference2-attachment-03312",
                                      "%s: Layout for %s can't be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL because the current "
                                      "aspectMask (%x) does not include VK_IMAGE_ASPECT_COLOR_BIT.",
@@ -9219,7 +9219,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 input_attachments.insert(attachment_index);
                 std::string error_type = "pSubpasses[" + std::to_string(i) + "].pInputAttachments[" + std::to_string(j) + "]";
-                skip |= ValidateAttachmentReference(rp_version, attachment_ref, error_type.c_str(), function_name);
+                skip |= ValidateAttachmentReference(rp_version, attachment_ref, true, error_type.c_str(), function_name);
                 skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
 
@@ -9357,7 +9357,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                 std::string error_type = "pSubpasses[" + std::to_string(i) + "].pResolveAttachments[" + std::to_string(j) + "]";
                 auto const &attachment_ref = subpass.pResolveAttachments[j];
                 if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, error_type.c_str(), function_name);
+                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, false, error_type.c_str(), function_name);
                     skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount,
                                                     error_type.c_str(), function_name);
 
@@ -9398,8 +9398,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             const uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
             const VkImageLayout imageLayout = subpass.pDepthStencilAttachment->layout;
             if (attachment != VK_ATTACHMENT_UNUSED) {
-                skip |=
-                    ValidateAttachmentReference(rp_version, *subpass.pDepthStencilAttachment, error_type.c_str(), function_name);
+                skip |= ValidateAttachmentReference(rp_version, *subpass.pDepthStencilAttachment, false, error_type.c_str(),
+                                                    function_name);
                 skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
                 if (attachment < pCreateInfo->attachmentCount) {
@@ -9473,7 +9473,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             auto const &attachment_ref = subpass.pColorAttachments[j];
             const uint32_t attachment_index = attachment_ref.attachment;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                skip |= ValidateAttachmentReference(rp_version, attachment_ref, error_type.c_str(), function_name);
+                skip |= ValidateAttachmentReference(rp_version, attachment_ref, false, error_type.c_str(), function_name);
                 skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
 
