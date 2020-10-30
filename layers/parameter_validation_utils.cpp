@@ -3441,7 +3441,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer 
     bool skip = false;
 
     if (!physical_device_features.multiDrawIndirect && ((count > 1))) {
-        skip |= LogError(device, kVUID_PVError_DeviceFeature,
+        skip |= LogError(device, "VUID-vkCmdDrawIndirect-drawCount-02718",
                          "CmdDrawIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", count);
     }
     return skip;
@@ -3452,7 +3452,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommand
     bool skip = false;
     if (!physical_device_features.multiDrawIndirect && ((count > 1))) {
         skip |=
-            LogError(device, kVUID_PVError_DeviceFeature,
+            LogError(device, "VUID-vkCmdDrawIndexedIndirect-drawCount-02718",
                      "CmdDrawIndexedIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", count);
     }
     return skip;
