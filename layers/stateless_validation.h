@@ -145,7 +145,8 @@ class StatelessValidation : public ValidationObject {
 
         if (value <= lower_bound) {
             std::ostringstream ss;
-            ss << api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is not greater than " << lower_bound;
+            ss << api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is not greater than "
+               << lower_bound;
             skip_call |= LogError(device, vuid, "%s", ss.str().c_str());
         }
 
@@ -463,8 +464,8 @@ class StatelessValidation : public ValidationObject {
             // Verify that strings in the array are not NULL
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i] == NULL) {
-                    skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s[%d] specified as NULL",
-                                 apiName, arrayName.get_name().c_str(), i);
+                    skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s[%d] specified as NULL", apiName,
+                                          arrayName.get_name().c_str(), i);
                 }
             }
         }
@@ -525,7 +526,6 @@ class StatelessValidation : public ValidationObject {
                          (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
                         ((strncmp(api_name, "vkCreateDevice", strlen(api_name)) != 0) ||
                          (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
-
                         std::string type_name = string_VkStructureType(current->sType);
                         if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
                             // stype_vuid will only be null if there are no listed pNext and will hit disclaimer check
