@@ -1164,11 +1164,6 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
         skip |= LogError(object, "VUID-VkViewport-width-01771",
                          "%s: %s.width (=%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (=%" PRIu32 ").", fn_name,
                          parameter_name.get_name().c_str(), viewport.width, max_w);
-    } else if (!f_lte_u32_exact(viewport.width, max_w) && f_lte_u32_direct(viewport.width, max_w)) {
-        skip |= LogWarning(object, kVUID_PVError_NONE,
-                           "%s: %s.width (=%f) technically exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (=%" PRIu32
-                           "), but it is within the static_cast<float>(maxViewportDimensions[0]) limit.",
-                           fn_name, parameter_name.get_name().c_str(), viewport.width, max_w);
     }
 
     // height
@@ -1187,14 +1182,6 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
                          "%s: Absolute value of %s.height (=%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[1] (=%" PRIu32
                          ").",
                          fn_name, parameter_name.get_name().c_str(), viewport.height, max_h);
-    } else if (!f_lte_u32_exact(fabsf(viewport.height), max_h) && f_lte_u32_direct(fabsf(viewport.height), max_h)) {
-        height_healthy = false;
-
-        skip |= LogWarning(
-            object, kVUID_PVError_NONE,
-            "%s: Absolute value of %s.height (=%f) technically exceeds VkPhysicalDeviceLimits::maxViewportDimensions[1] (=%" PRIu32
-            "), but it is within the static_cast<float>(maxViewportDimensions[1]) limit.",
-            fn_name, parameter_name.get_name().c_str(), viewport.height, max_h);
     }
 
     // x
