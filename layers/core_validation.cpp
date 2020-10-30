@@ -3986,7 +3986,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             }
 
             // Validate dedicated allocation
-            if (mem_info->is_dedicated && ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
+            if (mem_info->is_dedicated && (mem_info->dedicated_buffer != VK_NULL_HANDLE) &&
+                ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01508" : "VUID-vkBindBufferMemory-memory-01508";
                 LogObjectList objlist(buffer);
@@ -11025,7 +11026,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 report_data->FormatHandle(bindInfo.image).c_str(), bindInfo.memoryOffset);
                         }
                     } else {
-                        if ((bindInfo.memoryOffset != 0) || (mem_info->dedicated_image != bindInfo.image)) {
+                        if ((mem_info->dedicated_image != VK_NULL_HANDLE) &&
+                            ((bindInfo.memoryOffset != 0) || (mem_info->dedicated_image != bindInfo.image))) {
                             const char *validation_error;
                             if (bind_image_mem_2 == false) {
                                 validation_error = "VUID-vkBindImageMemory-memory-01509";
