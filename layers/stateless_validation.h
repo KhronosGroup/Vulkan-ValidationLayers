@@ -462,8 +462,7 @@ class StatelessValidation : public ValidationObject {
             // Verify that strings in the array are not NULL
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i] == NULL) {
-                    skip_call |=
-                        LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as NULL",
+                    skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s[%d] specified as NULL",
                                  apiName, arrayName.get_name().c_str(), i);
                 }
             }
