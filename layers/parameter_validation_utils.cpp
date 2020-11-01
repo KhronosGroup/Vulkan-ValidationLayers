@@ -55,8 +55,8 @@ bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t ef
     bool skip = false;
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
     if (api_version_nopatch != effective_api_version) {
-        if (api_version_nopatch < VK_API_VERSION_1_0) {
-            skip |= LogError(instance, kVUIDUndefined,
+        if ((api_version_nopatch < VK_API_VERSION_1_0) && (api_version != 0)) {
+            skip |= LogError(instance, "VUID-VkApplicationInfo-apiVersion-04010",
                              "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                              "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
                              api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
