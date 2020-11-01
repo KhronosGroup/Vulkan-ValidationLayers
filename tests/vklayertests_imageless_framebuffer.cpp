@@ -1144,3 +1144,150 @@ TEST_F(VkLayerTest, ImagelessFramebufferDepthStencilResolveAttachmentTests) {
 
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
 }
+
+TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageView3D) {
+    TEST_DESCRIPTION("Misuse of VK_IMAGE_VIEW_TYPE_3D.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    } else {
+        printf("%s test requires VK_KHR_imageless_framebuffer, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures = {};
+    physicalDeviceImagelessFramebufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES_KHR;
+    physicalDeviceImagelessFramebufferFeatures.imagelessFramebuffer = VK_TRUE;
+    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
+    physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    physicalDeviceFeatures2.pNext = &physicalDeviceImagelessFramebufferFeatures;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &physicalDeviceFeatures2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    uint32_t attachmentWidth = 512;
+    uint32_t attachmentHeight = 512;
+    VkFormat attachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};
+    VkFormat framebufferAttachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};
+
+    // Create a renderPass with a single attachment
+    VkAttachmentDescription attachmentDescription = {};
+    attachmentDescription.format = attachmentFormats[0];
+    attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkAttachmentReference attachmentReference = {};
+    attachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    VkSubpassDescription subpassDescription = {};
+    subpassDescription.colorAttachmentCount = 1;
+    subpassDescription.pColorAttachments = &attachmentReference;
+    VkRenderPassCreateInfo renderPassCreateInfo = {};
+    renderPassCreateInfo.subpassCount = 1;
+    renderPassCreateInfo.pSubpasses = &subpassDescription;
+    renderPassCreateInfo.attachmentCount = 1;
+    renderPassCreateInfo.pAttachments = &attachmentDescription;
+    renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPass renderPass;
+    vk::CreateRenderPass(m_device->device(), &renderPassCreateInfo, NULL, &renderPass);
+
+    // Create Attachments
+    VkImageCreateInfo imageCreateInfo = {};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.pNext = nullptr;
+    imageCreateInfo.flags = 0;
+    imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    imageCreateInfo.extent.width = attachmentWidth;
+    imageCreateInfo.extent.height = attachmentHeight;
+    imageCreateInfo.extent.depth = 1;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.mipLevels = 1;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_3D;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.format = attachmentFormats[0];
+
+    VkImageObj image3D(m_device);
+    image3D.init(&imageCreateInfo);
+
+    VkImageViewCreateInfo imageViewCreateInfo = {};
+    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.image = image3D.handle();
+    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    imageViewCreateInfo.format = attachmentFormats[0];
+    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
+    VkImageView imageView3D;
+    vk::CreateImageView(m_device->device(), &imageViewCreateInfo, NULL, &imageView3D);
+
+    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = {};
+    framebufferAttachmentImageInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR;
+    framebufferAttachmentImageInfo.flags = 0;
+    framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    framebufferAttachmentImageInfo.width = attachmentWidth;
+    framebufferAttachmentImageInfo.height = attachmentHeight;
+    framebufferAttachmentImageInfo.layerCount = 1;
+    framebufferAttachmentImageInfo.viewFormatCount = 1;
+    framebufferAttachmentImageInfo.pViewFormats = framebufferAttachmentFormats;
+    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = {};
+    framebufferAttachmentsCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO_KHR;
+    framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
+    framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
+
+    VkFramebuffer framebuffer;
+    VkFramebufferCreateInfo framebufferCreateInfo = {};
+    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.width = attachmentWidth;
+    framebufferCreateInfo.height = attachmentHeight;
+    framebufferCreateInfo.layers = 1;
+    framebufferCreateInfo.attachmentCount = 1;
+    framebufferCreateInfo.renderPass = renderPass;
+
+    // Try to use 3D Image View without imageless flag
+    framebufferCreateInfo.pNext = nullptr;
+    framebufferCreateInfo.flags = 0;
+    framebufferCreateInfo.pAttachments = &imageView3D;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04113");
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    m_errorMonitor->VerifyFound();
+
+    framebufferCreateInfo.pNext = &framebufferAttachmentsCreateInfo;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.pAttachments = nullptr;
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    m_errorMonitor->VerifyNotFound();
+
+    VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {};
+    renderPassAttachmentBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR;
+    renderPassAttachmentBeginInfo.pNext = nullptr;
+    renderPassAttachmentBeginInfo.attachmentCount = 1;
+    renderPassAttachmentBeginInfo.pAttachments = &imageView3D;
+    VkRenderPassBeginInfo renderPassBeginInfo = {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.pNext = &renderPassAttachmentBeginInfo;
+    renderPassBeginInfo.renderPass = renderPass;
+    renderPassBeginInfo.renderArea.extent.width = attachmentWidth;
+    renderPassBeginInfo.renderArea.extent.height = attachmentHeight;
+    renderPassBeginInfo.framebuffer = framebuffer;
+
+    // Try to use 3D Image View with imageless flag
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &renderPassBeginInfo, rp2Supported,
+                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114",
+                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114");
+
+    vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+    vk::DestroyImageView(m_device->device(), imageView3D, nullptr);
+}
