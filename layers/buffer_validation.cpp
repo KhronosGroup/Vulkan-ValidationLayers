@@ -39,112 +39,112 @@
 #include "buffer_validation.h"
 
 // All VUID from copy_bufferimage_to_imagebuffer_common.txt
-static const char* GetBufferImageCopyCommandVUID(size_t id, bool image_to_buffer, bool copy2) {
+static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_buffer, bool copy2) {
     // clang-format off
-    static const std::map<size_t, std::array<const char *, 4>> copy_imagebuffer_vuid = {
-        {193, {
+    static const std::map<std::string, std::array<const char *, 4>> copy_imagebuffer_vuid = {
+        {"00193", {
             "VUID-vkCmdCopyBufferToImage-bufferOffset-00193",      // !copy2 & !image_to_buffer
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-00193",      // !copy2 &  image_to_buffer
             "VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-00193", //  copy2 & !image_to_buffer
             "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-00193", //  copy2 &  image_to_buffer
         }},
-        {1558, {
+        {"01558", {
             "VUID-vkCmdCopyBufferToImage-bufferOffset-01558",
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-01558",
             "VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-01558",
             "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-01558",
         }},
-        {1559, {
+        {"01559", {
             "VUID-vkCmdCopyBufferToImage-bufferOffset-01559",
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-01559",
             "VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-01559",
             "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-01559",
         }},
-        {197, {
+        {"00197", {
             "VUID-vkCmdCopyBufferToImage-imageOffset-00197",
             "VUID-vkCmdCopyImageToBuffer-imageOffset-00197",
             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00197",
             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00197",
         }},
-        {198, {
+        {"00198", {
             "VUID-vkCmdCopyBufferToImage-imageOffset-00198",
             "VUID-vkCmdCopyImageToBuffer-imageOffset-00198",
             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00198",
             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00198",
         }},
-        {199, {
+        {"00199", {
             "VUID-vkCmdCopyBufferToImage-srcImage-00199",
             "VUID-vkCmdCopyImageToBuffer-srcImage-00199",
             "VUID-VkCopyBufferToImageInfo2KHR-srcImage-00199",
             "VUID-VkCopyImageToBufferInfo2KHR-srcImage-00199",
         }},
-        {200, {
+        {"00200", {
             "VUID-vkCmdCopyBufferToImage-imageOffset-00200",
             "VUID-vkCmdCopyImageToBuffer-imageOffset-00200",
             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00200",
             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00200",
         }},
-        {201, {
+        {"00201", {
             "VUID-vkCmdCopyBufferToImage-srcImage-00201",
             "VUID-vkCmdCopyImageToBuffer-srcImage-00201",
             "VUID-VkCopyBufferToImageInfo2KHR-srcImage-00201",
             "VUID-VkCopyImageToBufferInfo2KHR-srcImage-00201",
         }},
-        {203, {
+        {"00203", {
             "VUID-vkCmdCopyBufferToImage-bufferRowLength-00203",
             "VUID-vkCmdCopyImageToBuffer-bufferRowLength-00203",
             "VUID-VkCopyBufferToImageInfo2KHR-bufferRowLength-00203",
             "VUID-VkCopyImageToBufferInfo2KHR-bufferRowLength-00203",
         }},
-        {204, {
+        {"00204", {
             "VUID-vkCmdCopyBufferToImage-bufferImageHeight-00204",
             "VUID-vkCmdCopyImageToBuffer-bufferImageHeight-00204",
             "VUID-VkCopyBufferToImageInfo2KHR-bufferImageHeight-00204",
             "VUID-VkCopyImageToBufferInfo2KHR-bufferImageHeight-00204",
         }},
-        {205, {
+        {"00205", {
             "VUID-vkCmdCopyBufferToImage-imageOffset-00205",
             "VUID-vkCmdCopyImageToBuffer-imageOffset-00205",
             "VUID-VkCopyBufferToImageInfo2KHR-imageOffset-00205",
             "VUID-VkCopyImageToBufferInfo2KHR-imageOffset-00205",
         }},
-        {206, {
+        {"00206", {
             "VUID-vkCmdCopyBufferToImage-bufferOffset-00206",
             "VUID-vkCmdCopyImageToBuffer-bufferOffset-00206",
             "VUID-VkCopyBufferToImageInfo2KHR-bufferOffset-00206",
             "VUID-VkCopyImageToBufferInfo2KHR-bufferOffset-00206",
         }},
-        {207, {
+        {"00207", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00207",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00207",
             "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00207",
             "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00207",
         }},
-        {208, {
+        {"00208", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00208",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00208",
             "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00208",
             "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00208",
         }},
-        {209, {
+        {"00209", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00209",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00209",
             "VUID-VkCopyBufferToImageInfo2KHR-imageExtent-00209",
             "VUID-VkCopyImageToBufferInfo2KHR-imageExtent-00209",
         }},
-        {211, {
+        {"00211", {
             "VUID-vkCmdCopyBufferToImage-aspectMask-00211",
             "VUID-vkCmdCopyImageToBuffer-aspectMask-00211",
             "VUID-VkCopyBufferToImageInfo2KHR-aspectMask-00211",
             "VUID-VkCopyImageToBufferInfo2KHR-aspectMask-00211",
         }},
-        {1560, {
+        {"01560", {
             "VUID-vkCmdCopyBufferToImage-aspectMask-01560",
             "VUID-vkCmdCopyImageToBuffer-aspectMask-01560",
             "VUID-VkCopyBufferToImageInfo2KHR-aspectMask-01560",
             "VUID-VkCopyImageToBufferInfo2KHR-aspectMask-01560",
         }},
-        {213, {
+        {"00213", {
             "VUID-vkCmdCopyBufferToImage-baseArrayLayer-00213",
             "VUID-vkCmdCopyImageToBuffer-baseArrayLayer-00213",
             "VUID-VkCopyBufferToImageInfo2KHR-baseArrayLayer-00213",
@@ -5476,7 +5476,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         const VkImageAspectFlags region_aspect_mask = pRegions[i].imageSubresource.aspectMask;
         if (image_state->createInfo.imageType == VK_IMAGE_TYPE_1D) {
             if ((pRegions[i].imageOffset.y != 0) || (pRegions[i].imageExtent.height != 1)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(199, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00199", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] imageOffset.y is %d and imageExtent.height is %d. For 1D images these must be 0 "
                                  "and 1, respectively.",
                                  function, i, pRegions[i].imageOffset.y, pRegions[i].imageExtent.height);
@@ -5485,7 +5485,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
 
         if ((image_state->createInfo.imageType == VK_IMAGE_TYPE_1D) || (image_state->createInfo.imageType == VK_IMAGE_TYPE_2D)) {
             if ((pRegions[i].imageOffset.z != 0) || (pRegions[i].imageExtent.depth != 1)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(201, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00201", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] imageOffset.z is %d and imageExtent.depth is %d. For 1D and 2D images these "
                                  "must be 0 and 1, respectively.",
                                  function, i, pRegions[i].imageOffset.z, pRegions[i].imageExtent.depth);
@@ -5494,7 +5494,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
 
         if (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
             if ((0 != pRegions[i].imageSubresource.baseArrayLayer) || (1 != pRegions[i].imageSubresource.layerCount)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(213, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00213", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] imageSubresource.baseArrayLayer is %d and imageSubresource.layerCount is %d. "
                                  "For 3D images these must be 0 and 1, respectively.",
                                  function, i, pRegions[i].imageSubresource.baseArrayLayer, pRegions[i].imageSubresource.layerCount);
@@ -5508,8 +5508,9 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         // If not depth/stencil and not multi-plane
         if ((!FormatIsDepthAndStencil(image_format) && !FormatIsMultiplane(image_format)) &&
             SafeModulo(pRegions[i].bufferOffset, element_size) != 0) {
-            vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? GetBufferImageCopyCommandVUID(1558, image_to_buffer, is_2khr)
-                                                                       : GetBufferImageCopyCommandVUID(193, image_to_buffer, is_2khr);
+            vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+                       ? GetBufferImageCopyCommandVUID("01558", image_to_buffer, is_2khr)
+                       : GetBufferImageCopyCommandVUID("00193", image_to_buffer, is_2khr);
             skip |= LogError(image_state->image, vuid,
                              "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
                              " must be a multiple of this format's texel size (%" PRIu32 ").",
@@ -5541,7 +5542,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         if ((pRegions[i].imageOffset.x < 0) || (pRegions[i].imageOffset.x > static_cast<int32_t>(adjusted_image_extent.width)) ||
             ((pRegions[i].imageOffset.x + static_cast<int32_t>(pRegions[i].imageExtent.width)) >
              static_cast<int32_t>(adjusted_image_extent.width))) {
-            skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(197, image_to_buffer, is_2khr),
+            skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00197", image_to_buffer, is_2khr),
                              "%s: Both pRegion[%d] imageoffset.x (%d) and (imageExtent.width + imageOffset.x) (%d) must be >= "
                              "zero or <= image subresource width (%d).",
                              function, i, pRegions[i].imageOffset.x, (pRegions[i].imageOffset.x + pRegions[i].imageExtent.width),
@@ -5552,7 +5553,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         if ((pRegions[i].imageOffset.y < 0) || (pRegions[i].imageOffset.y > static_cast<int32_t>(adjusted_image_extent.height)) ||
             ((pRegions[i].imageOffset.y + static_cast<int32_t>(pRegions[i].imageExtent.height)) >
              static_cast<int32_t>(adjusted_image_extent.height))) {
-            skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(198, image_to_buffer, is_2khr),
+            skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00198", image_to_buffer, is_2khr),
                              "%s: Both pRegion[%d] imageoffset.y (%d) and (imageExtent.height + imageOffset.y) (%d) must be >= "
                              "zero or <= image subresource height (%d).",
                              function, i, pRegions[i].imageOffset.y, (pRegions[i].imageOffset.y + pRegions[i].imageExtent.height),
@@ -5563,7 +5564,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         if ((pRegions[i].imageOffset.z < 0) || (pRegions[i].imageOffset.z > static_cast<int32_t>(adjusted_image_extent.depth)) ||
             ((pRegions[i].imageOffset.z + static_cast<int32_t>(pRegions[i].imageExtent.depth)) >
              static_cast<int32_t>(adjusted_image_extent.depth))) {
-            skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(200, image_to_buffer, is_2khr),
+            skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00200", image_to_buffer, is_2khr),
                              "%s: Both pRegion[%d] imageoffset.z (%d) and (imageExtent.depth + imageOffset.z) (%d) must be >= "
                              "zero or <= image subresource depth (%d).",
                              function, i, pRegions[i].imageOffset.z, (pRegions[i].imageOffset.z + pRegions[i].imageExtent.depth),
@@ -5582,7 +5583,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         // image subresource aspect bit must match format
         if (!VerifyAspectsPresent(region_aspect_mask, image_format)) {
             skip |=
-                LogError(image_state->image, GetBufferImageCopyCommandVUID(211, image_to_buffer, is_2khr),
+                LogError(image_state->image, GetBufferImageCopyCommandVUID("00211", image_to_buffer, is_2khr),
                          "%s: pRegion[%d] subresource aspectMask 0x%x specifies aspects that are not present in image format 0x%x.",
                          function, i, region_aspect_mask, image_format);
         }
@@ -5594,7 +5595,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             //  BufferRowLength must be a multiple of block width
             if (SafeModulo(pRegions[i].bufferRowLength, block_size.width) != 0) {
                 skip |=
-                    LogError(image_state->image, GetBufferImageCopyCommandVUID(203, image_to_buffer, is_2khr),
+                    LogError(image_state->image, GetBufferImageCopyCommandVUID("00203", image_to_buffer, is_2khr),
                              "%s: pRegion[%d] bufferRowLength (%d) must be a multiple of the compressed image's texel width (%d)..",
                              function, i, pRegions[i].bufferRowLength, block_size.width);
             }
@@ -5602,7 +5603,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             //  BufferRowHeight must be a multiple of block height
             if (SafeModulo(pRegions[i].bufferImageHeight, block_size.height) != 0) {
                 skip |= LogError(
-                    image_state->image, GetBufferImageCopyCommandVUID(204, image_to_buffer, is_2khr),
+                    image_state->image, GetBufferImageCopyCommandVUID("00204", image_to_buffer, is_2khr),
                     "%s: pRegion[%d] bufferImageHeight (%d) must be a multiple of the compressed image's texel height (%d)..",
                     function, i, pRegions[i].bufferImageHeight, block_size.height);
             }
@@ -5611,7 +5612,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if ((SafeModulo(pRegions[i].imageOffset.x, block_size.width) != 0) ||
                 (SafeModulo(pRegions[i].imageOffset.y, block_size.height) != 0) ||
                 (SafeModulo(pRegions[i].imageOffset.z, block_size.depth) != 0)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(205, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00205", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] imageOffset(x,y) (%d, %d) must be multiples of the compressed image's texel "
                                  "width & height (%d, %d)..",
                                  function, i, pRegions[i].imageOffset.x, pRegions[i].imageOffset.y, block_size.width,
@@ -5621,7 +5622,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             // bufferOffset must be a multiple of block size (linear bytes)
             uint32_t block_size_in_bytes = FormatElementSize(image_format);
             if (SafeModulo(pRegions[i].bufferOffset, block_size_in_bytes) != 0) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(206, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00206", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] bufferOffset (0x%" PRIxLEAST64
                                  ") must be a multiple of the compressed image's texel block size (%" PRIu32 ")..",
                                  function, i, pRegions[i].bufferOffset, block_size_in_bytes);
@@ -5631,7 +5632,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             VkExtent3D mip_extent = GetImageSubresourceExtent(image_state, &(pRegions[i].imageSubresource));
             if ((SafeModulo(pRegions[i].imageExtent.width, block_size.width) != 0) &&
                 (pRegions[i].imageExtent.width + pRegions[i].imageOffset.x != mip_extent.width)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(207, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00207", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block width "
                                  "(%d), or when added to offset.x (%d) must equal the image subresource width (%d)..",
                                  function, i, pRegions[i].imageExtent.width, block_size.width, pRegions[i].imageOffset.x,
@@ -5641,7 +5642,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             // imageExtent height must be a multiple of block height, or extent+offset height must equal subresource height
             if ((SafeModulo(pRegions[i].imageExtent.height, block_size.height) != 0) &&
                 (pRegions[i].imageExtent.height + pRegions[i].imageOffset.y != mip_extent.height)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(208, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00208", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] extent height (%d) must be a multiple of the compressed texture block height "
                                  "(%d), or when added to offset.y (%d) must equal the image subresource height (%d)..",
                                  function, i, pRegions[i].imageExtent.height, block_size.height, pRegions[i].imageOffset.y,
@@ -5651,7 +5652,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             // imageExtent depth must be a multiple of block depth, or extent+offset depth must equal subresource depth
             if ((SafeModulo(pRegions[i].imageExtent.depth, block_size.depth) != 0) &&
                 (pRegions[i].imageExtent.depth + pRegions[i].imageOffset.z != mip_extent.depth)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(209, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00209", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block depth "
                                  "(%d), or when added to offset.z (%d) must equal the image subresource depth (%d)..",
                                  function, i, pRegions[i].imageExtent.depth, block_size.depth, pRegions[i].imageOffset.z,
@@ -5663,7 +5664,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         if (FormatIsMultiplane(image_format)) {
             // VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes
             if ((FormatPlaneCount(image_format) < 3) && (region_aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(1560, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("01560", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] subresource aspectMask cannot be VK_IMAGE_ASPECT_PLANE_2_BIT unless image "
                                  "format has three planes.",
                                  function, i);
@@ -5672,7 +5673,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             // image subresource aspectMask must be VK_IMAGE_ASPECT_PLANE_*_BIT
             if (0 ==
                 (region_aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
-                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID(1560, image_to_buffer, is_2khr),
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("01560", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] subresource aspectMask for multi-plane image formats must have a "
                                  "VK_IMAGE_ASPECT_PLANE_*_BIT when copying to or from.",
                                  function, i);
@@ -5682,7 +5683,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 const uint32_t compatible_size = FormatElementSize(compatible_format);
                 if (SafeModulo(pRegions[i].bufferOffset, compatible_size) != 0) {
                     skip |= LogError(
-                        image_state->image, GetBufferImageCopyCommandVUID(1559, image_to_buffer, is_2khr),
+                        image_state->image, GetBufferImageCopyCommandVUID("01559", image_to_buffer, is_2khr),
                         "%s: pRegion[%d]->bufferOffset is 0x%" PRIxLEAST64
                         " but must be a multiple of the multi-plane compatible format's texel size (%u) for plane %u (%s).",
                         function, i, pRegions[i].bufferOffset, element_size, GetPlaneIndex(region_aspect_mask),
