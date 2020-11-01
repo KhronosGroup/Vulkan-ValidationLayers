@@ -3415,7 +3415,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const {
     bool skip = false;
     if (memObjMap.size() >= phys_dev_props.limits.maxMemoryAllocationCount) {
-        skip |= LogError(device, kVUIDUndefined,
+        skip |= LogError(device, "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101",
                          "vkAllocateMemory: Number of currently valid memory objects is not less than the maximum allowed (%u).",
                          phys_dev_props.limits.maxMemoryAllocationCount);
     }
