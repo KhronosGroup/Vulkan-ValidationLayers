@@ -8383,6 +8383,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 }
                             }
                         }
+                        if (ivci.viewType == VK_IMAGE_VIEW_TYPE_3D) {
+                            LogObjectList objlist(device);
+                            objlist.add(image_views[i]);
+                            skip |= LogError(objlist, "VUID-VkFramebufferCreateInfo-flags-04113",
+                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has an image view type "
+                                             "of VK_IMAGE_VIEW_TYPE_3D",
+                                             i);
+                        }
                     }
                 }
             } else if (pFramebufferAttachmentsCreateInfo) {
@@ -10007,7 +10015,8 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
     return skip;
 }
 
-bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo *pRenderPassBeginInfo) const {
+bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo *pRenderPassBeginInfo,
+                                                          const char *func_name) const {
     bool skip = false;
     const VkRenderPassAttachmentBeginInfoKHR *pRenderPassAttachmentBeginInfo =
         lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBeginInfo->pNext);
@@ -10019,14 +10028,15 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
             lvl_find_in_chain<VkFramebufferAttachmentsCreateInfoKHR>(pFramebufferCreateInfo->pNext);
         if ((pFramebufferCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
             skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03207",
-                             "VkRenderPassBeginInfo: Image views specified at render pass begin, but framebuffer not created with "
-                             "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR");
+                             "%s: Image views specified at render pass begin, but framebuffer not created with "
+                             "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR",
+                             func_name);
         } else if (pFramebufferAttachmentsCreateInfo) {
             if (pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount != pRenderPassAttachmentBeginInfo->attachmentCount) {
                 skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03208",
-                                 "VkRenderPassBeginInfo: %u image views specified at render pass begin, but framebuffer "
+                                 "%s: %u image views specified at render pass begin, but framebuffer "
                                  "created expecting %u attachments",
-                                 pRenderPassAttachmentBeginInfo->attachmentCount,
+                                 func_name, pRenderPassAttachmentBeginInfo->attachmentCount,
                                  pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount);
             } else {
                 const safe_VkRenderPassCreateInfo2 *pRenderPassCreateInfo =
@@ -10040,38 +10050,38 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
                     if (pFramebufferAttachmentImageInfo->flags != pImageCreateInfo->flags) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03209",
-                                         "VkRenderPassBeginInfo: Image view #%u created from an image with flags set as 0x%X, "
+                                         "%s: Image view #%u created from an image with flags set as 0x%X, "
                                          "but image info #%u used to create the framebuffer had flags set as 0x%X",
-                                         i, pImageCreateInfo->flags, i, pFramebufferAttachmentImageInfo->flags);
+                                         func_name, i, pImageCreateInfo->flags, i, pFramebufferAttachmentImageInfo->flags);
                     }
 
                     if (pFramebufferAttachmentImageInfo->usage != pImageCreateInfo->usage) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03210",
-                                         "VkRenderPassBeginInfo: Image view #%u created from an image with usage set as 0x%X, "
+                                         "%s: Image view #%u created from an image with usage set as 0x%X, "
                                          "but image info #%u used to create the framebuffer had usage set as 0x%X",
-                                         i, pImageCreateInfo->usage, i, pFramebufferAttachmentImageInfo->usage);
+                                         func_name, i, pImageCreateInfo->usage, i, pFramebufferAttachmentImageInfo->usage);
                     }
 
                     if (pFramebufferAttachmentImageInfo->width != pImageCreateInfo->extent.width) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03211",
-                                         "VkRenderPassBeginInfo: Image view #%u created from an image with width set as %u, "
+                                         "%s: Image view #%u created from an image with width set as %u, "
                                          "but image info #%u used to create the framebuffer had width set as %u",
-                                         i, pImageCreateInfo->extent.width, i, pFramebufferAttachmentImageInfo->width);
+                                         func_name, i, pImageCreateInfo->extent.width, i, pFramebufferAttachmentImageInfo->width);
                     }
 
                     if (pFramebufferAttachmentImageInfo->height != pImageCreateInfo->extent.height) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03212",
-                                         "VkRenderPassBeginInfo: Image view #%u created from an image with height set as %u, "
+                                         "%s: Image view #%u created from an image with height set as %u, "
                                          "but image info #%u used to create the framebuffer had height set as %u",
-                                         i, pImageCreateInfo->extent.height, i, pFramebufferAttachmentImageInfo->height);
+                                         func_name, i, pImageCreateInfo->extent.height, i, pFramebufferAttachmentImageInfo->height);
                     }
 
                     if (pFramebufferAttachmentImageInfo->layerCount != pImageViewCreateInfo->subresourceRange.layerCount) {
-                        skip |= LogError(
-                            pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03213",
-                            "VkRenderPassBeginInfo: Image view #%u created with a subresource range with a layerCount of %u, "
-                            "but image info #%u used to create the framebuffer had layerCount set as %u",
-                            i, pImageViewCreateInfo->subresourceRange.layerCount, i, pFramebufferAttachmentImageInfo->layerCount);
+                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03213",
+                                         "%s: Image view #%u created with a subresource range with a layerCount of %u, "
+                                         "but image info #%u used to create the framebuffer had layerCount set as %u",
+                                         func_name, i, pImageViewCreateInfo->subresourceRange.layerCount, i,
+                                         pFramebufferAttachmentImageInfo->layerCount);
                     }
 
                     const VkImageFormatListCreateInfoKHR *pImageFormatListCreateInfo =
@@ -10106,42 +10116,48 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
                     if (pRenderPassCreateInfo->pAttachments[i].format != pImageViewCreateInfo->format) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03216",
-                                         "VkRenderPassBeginInfo: Image view #%u created with a format of %s, "
+                                         "%s: Image view #%u created with a format of %s, "
                                          "but render pass attachment description #%u created with a format of %s",
-                                         i, string_VkFormat(pImageViewCreateInfo->format), i,
+                                         func_name, i, string_VkFormat(pImageViewCreateInfo->format), i,
                                          string_VkFormat(pRenderPassCreateInfo->pAttachments[i].format));
                     }
 
                     if (pRenderPassCreateInfo->pAttachments[i].samples != pImageCreateInfo->samples) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03217",
-                                         "VkRenderPassBeginInfo: Image view #%u created with an image with %s samples, "
+                                         "%s: Image view #%u created with an image with %s samples, "
                                          "but render pass attachment description #%u created with %s samples",
-                                         i, string_VkSampleCountFlagBits(pImageCreateInfo->samples), i,
+                                         func_name, i, string_VkSampleCountFlagBits(pImageCreateInfo->samples), i,
                                          string_VkSampleCountFlagBits(pRenderPassCreateInfo->pAttachments[i].samples));
                     }
 
                     if (pImageViewCreateInfo->subresourceRange.levelCount != 1) {
                         skip |= LogError(pRenderPassAttachmentBeginInfo->pAttachments[i],
                                          "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218",
-                                         "VkRenderPassAttachmentBeginInfo: Image view #%u created with multiple (%u) mip levels.",
-                                         i, pImageViewCreateInfo->subresourceRange.levelCount);
+                                         "%s: Image view #%u created with multiple (%u) mip levels.", func_name, i,
+                                         pImageViewCreateInfo->subresourceRange.levelCount);
                     }
 
                     if (IsIdentitySwizzle(pImageViewCreateInfo->components) == false) {
                         skip |= LogError(
                             pRenderPassAttachmentBeginInfo->pAttachments[i],
                             "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219",
-                            "VkRenderPassAttachmentBeginInfo: Image view #%u created with non-identity swizzle. All "
+                            "%s: Image view #%u created with non-identity swizzle. All "
                             "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
                             "swizzle values:\n"
                             "r swizzle = %s\n"
                             "g swizzle = %s\n"
                             "b swizzle = %s\n"
                             "a swizzle = %s\n",
-                            i, string_VkComponentSwizzle(pImageViewCreateInfo->components.r),
+                            func_name, i, string_VkComponentSwizzle(pImageViewCreateInfo->components.r),
                             string_VkComponentSwizzle(pImageViewCreateInfo->components.g),
                             string_VkComponentSwizzle(pImageViewCreateInfo->components.b),
                             string_VkComponentSwizzle(pImageViewCreateInfo->components.a));
+                    }
+
+                    if (pImageViewCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_3D) {
+                        skip |= LogError(pRenderPassAttachmentBeginInfo->pAttachments[i],
+                                         "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114",
+                                         "%s: Image view #%u created with type VK_IMAGE_VIEW_TYPE_3D", func_name, i);
                     }
                 }
             }
@@ -10228,7 +10244,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                              function_name, pRenderPassBegin->clearValueCount, clear_op_size,
                              report_data->FormatHandle(render_pass_state->renderPass).c_str(), clear_op_size, clear_op_size - 1);
         }
-        skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin);
+        skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin, function_name);
         skip |= VerifyRenderAreaBounds(pRenderPassBegin);
         skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, cb_state, pRenderPassBegin,
                                                       GetFramebufferState(pRenderPassBegin->framebuffer));
