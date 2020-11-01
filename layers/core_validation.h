@@ -215,7 +215,7 @@ class CoreChecks : public ValidationStateTracker {
                                   VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name,
                                   const char* semaphore_type_vuid) const;
     bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin) const;
-    bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo* pRenderPassBeginInfo) const;
+    bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo* pRenderPassBeginInfo, const char* func_name) const;
     bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE* pCB, char const* cmd_name, const char* error_code) const;
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
     bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const;
