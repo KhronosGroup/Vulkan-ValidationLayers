@@ -5628,10 +5628,34 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
     }
 }
 
-TEST_F(VkLayerTest, DrawIndirect) {
-    TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirect");
+TEST_F(VkLayerTest, IndirectDrawTests) {
+    TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirect and vkCmdDrawIndexedIndirect");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device and ensure multiDrawIndirect is disabled
+    auto mesh_shader_features = lvl_init_struct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    features2.features.multiDrawIndirect = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -5666,6 +5690,16 @@ TEST_F(VkLayerTest, DrawIndirect) {
     // VUID-vkCmdDrawIndirect-buffer-02709
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-buffer-02709");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndirect-drawCount-02718
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-02718");
+    vk::CmdDrawIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 2, sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndexedIndirect-drawCount-02718
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-drawCount-02718");
+    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), draw_buffer.handle(), 0, 2, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
