@@ -8032,6 +8032,21 @@ struct safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT {
     VkPhysicalDeviceFragmentDensityMap2PropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT const *>(this); }
 };
 
+struct safe_VkCopyCommandTransformInfoQCOM {
+    VkStructureType sType;
+    const void* pNext;
+    VkSurfaceTransformFlagBitsKHR transform;
+    safe_VkCopyCommandTransformInfoQCOM(const VkCopyCommandTransformInfoQCOM* in_struct);
+    safe_VkCopyCommandTransformInfoQCOM(const safe_VkCopyCommandTransformInfoQCOM& copy_src);
+    safe_VkCopyCommandTransformInfoQCOM& operator=(const safe_VkCopyCommandTransformInfoQCOM& copy_src);
+    safe_VkCopyCommandTransformInfoQCOM();
+    ~safe_VkCopyCommandTransformInfoQCOM();
+    void initialize(const VkCopyCommandTransformInfoQCOM* in_struct);
+    void initialize(const safe_VkCopyCommandTransformInfoQCOM* copy_src);
+    VkCopyCommandTransformInfoQCOM *ptr() { return reinterpret_cast<VkCopyCommandTransformInfoQCOM *>(this); }
+    VkCopyCommandTransformInfoQCOM const *ptr() const { return reinterpret_cast<VkCopyCommandTransformInfoQCOM const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceImageRobustnessFeaturesEXT {
     VkStructureType sType;
     void* pNext;

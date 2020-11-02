@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 158;
+const uint32_t GeneratedVulkanHeaderVersion = 159;
 
 const DECORATE_UNUSED VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV;
 const DECORATE_UNUSED VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -97,14 +97,14 @@ const DECORATE_UNUSED VkSemaphoreImportFlagsKHR AllVkSemaphoreImportFlagBitsKHR 
 const DECORATE_UNUSED VkExternalFenceFeatureFlagsKHR AllVkExternalFenceFeatureFlagBitsKHR = VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT|VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT|VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR|VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR;
 const DECORATE_UNUSED VkExternalFenceHandleTypeFlagsKHR AllVkExternalFenceHandleTypeFlagBitsKHR = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT|VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT|VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT|VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT|VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR|VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR|VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR|VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
 const DECORATE_UNUSED VkFenceImportFlagsKHR AllVkFenceImportFlagBitsKHR = VK_FENCE_IMPORT_TEMPORARY_BIT|VK_FENCE_IMPORT_TEMPORARY_BIT_KHR;
-const DECORATE_UNUSED VkPerformanceCounterDescriptionFlagsKHR AllVkPerformanceCounterDescriptionFlagBitsKHR = VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_KHR|VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_KHR;
+const DECORATE_UNUSED VkPerformanceCounterDescriptionFlagsKHR AllVkPerformanceCounterDescriptionFlagBitsKHR = VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_BIT_KHR|VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_KHR|VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_BIT_KHR|VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_KHR;
 const DECORATE_UNUSED VkResolveModeFlagsKHR AllVkResolveModeFlagBitsKHR = VK_RESOLVE_MODE_NONE|VK_RESOLVE_MODE_SAMPLE_ZERO_BIT|VK_RESOLVE_MODE_AVERAGE_BIT|VK_RESOLVE_MODE_MIN_BIT|VK_RESOLVE_MODE_MAX_BIT|VK_RESOLVE_MODE_NONE_KHR|VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR|VK_RESOLVE_MODE_AVERAGE_BIT_KHR|VK_RESOLVE_MODE_MIN_BIT_KHR|VK_RESOLVE_MODE_MAX_BIT_KHR;
 const DECORATE_UNUSED VkSemaphoreWaitFlagsKHR AllVkSemaphoreWaitFlagBitsKHR = VK_SEMAPHORE_WAIT_ANY_BIT|VK_SEMAPHORE_WAIT_ANY_BIT_KHR;
 const DECORATE_UNUSED VkDebugReportFlagsEXT AllVkDebugReportFlagBitsEXT = VK_DEBUG_REPORT_INFORMATION_BIT_EXT|VK_DEBUG_REPORT_WARNING_BIT_EXT|VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT|VK_DEBUG_REPORT_ERROR_BIT_EXT|VK_DEBUG_REPORT_DEBUG_BIT_EXT;
 const DECORATE_UNUSED VkExternalMemoryFeatureFlagsNV AllVkExternalMemoryFeatureFlagBitsNV = VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT_NV|VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV|VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_NV;
 const DECORATE_UNUSED VkExternalMemoryHandleTypeFlagsNV AllVkExternalMemoryHandleTypeFlagBitsNV = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_BIT_NV|VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_KMT_BIT_NV;
 const DECORATE_UNUSED VkConditionalRenderingFlagsEXT AllVkConditionalRenderingFlagBitsEXT = VK_CONDITIONAL_RENDERING_INVERTED_BIT_EXT;
-const DECORATE_UNUSED VkSurfaceCounterFlagsEXT AllVkSurfaceCounterFlagBitsEXT = VK_SURFACE_COUNTER_VBLANK_EXT;
+const DECORATE_UNUSED VkSurfaceCounterFlagsEXT AllVkSurfaceCounterFlagBitsEXT = VK_SURFACE_COUNTER_VBLANK_BIT_EXT|VK_SURFACE_COUNTER_VBLANK_EXT;
 const DECORATE_UNUSED VkDebugUtilsMessageSeverityFlagsEXT AllVkDebugUtilsMessageSeverityFlagBitsEXT = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 const DECORATE_UNUSED VkDebugUtilsMessageTypeFlagsEXT AllVkDebugUtilsMessageTypeFlagBitsEXT = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 const DECORATE_UNUSED VkDescriptorBindingFlagsEXT AllVkDescriptorBindingFlagBitsEXT = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT|VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT|VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT|VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT|VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT|VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT|VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT|VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
@@ -2825,6 +2825,8 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         } break;
 
         // No Validation code for VkPhysicalDeviceFragmentDensityMap2PropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceFragmentDensityMap2PropertiesEXT-sType-sType
+
+        // No Validation code for VkCopyCommandTransformInfoQCOM structure members  -- Covers VUID-VkCopyCommandTransformInfoQCOM-sType-sType
 
         // Validation code for VkPhysicalDeviceImageRobustnessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceImageRobustnessFeaturesEXT-sType-sType
@@ -6863,6 +6865,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
         {
             for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex)
             {
+                const VkStructureType allowed_structs_VkAttachmentDescription2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT };
+
+                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pAttachments[%i].pNext", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionStencilLayout", pCreateInfo->pAttachments[attachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentDescription2), allowed_structs_VkAttachmentDescription2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentDescription2-pNext-pNext", "VUID-VkAttachmentDescription2-sType-unique");
+
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pAttachments[%i].flags", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionFlagBits", AllVkAttachmentDescriptionFlagBits, pCreateInfo->pAttachments[attachmentIndex].flags, kOptionalFlags, "VUID-VkAttachmentDescription2-flags-parameter");
 
                 skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pAttachments[%i].format", ParameterName::IndexVector{ attachmentIndex }), "VkFormat", AllVkFormatEnums, pCreateInfo->pAttachments[attachmentIndex].format, "VUID-VkAttachmentDescription2-format-parameter");
@@ -6889,6 +6895,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
         {
             for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex)
             {
+                const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
+
+                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique");
+
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].flags", ParameterName::IndexVector{ subpassIndex }), "VkSubpassDescriptionFlagBits", AllVkSubpassDescriptionFlagBits, pCreateInfo->pSubpasses[subpassIndex].flags, kOptionalFlags, "VUID-VkSubpassDescription2-flags-parameter");
 
                 skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pipelineBindPoint", ParameterName::IndexVector{ subpassIndex }), "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pCreateInfo->pSubpasses[subpassIndex].pipelineBindPoint, "VUID-VkSubpassDescription2-pipelineBindPoint-parameter");
@@ -6899,6 +6909,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
                 {
                     for (uint32_t inputAttachmentIndex = 0; inputAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].inputAttachmentCount; ++inputAttachmentIndex)
                     {
+                        const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                         skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
                 }
@@ -6909,6 +6923,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
                 {
                     for (uint32_t colorAttachmentIndex = 0; colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount; ++colorAttachmentIndex)
                     {
+                        const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                         skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
                 }
@@ -6919,6 +6937,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
                 {
                     for (uint32_t colorAttachmentIndex = 0; colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount; ++colorAttachmentIndex)
                     {
+                        const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                        skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                         skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
                 }
@@ -6927,6 +6949,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment != NULL)
                 {
+                    const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                    skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->pNext", ParameterName::IndexVector{ subpassIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                     skip |= validate_ranged_enum("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->layout", ParameterName::IndexVector{ subpassIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
                 }
 
@@ -6940,6 +6966,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
         {
             for (uint32_t dependencyIndex = 0; dependencyIndex < pCreateInfo->dependencyCount; ++dependencyIndex)
             {
+                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), NULL, pCreateInfo->pDependencies[dependencyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", kVUIDUndefined);
+
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kRequiredFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter", "VUID-VkSubpassDependency2-srcStageMask-requiredbitmask");
 
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kRequiredFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter", "VUID-VkSubpassDependency2-dstStageMask-requiredbitmask");
@@ -8569,6 +8597,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
         {
             for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex)
             {
+                const VkStructureType allowed_structs_VkAttachmentDescription2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT };
+
+                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pAttachments[%i].pNext", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionStencilLayout", pCreateInfo->pAttachments[attachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentDescription2), allowed_structs_VkAttachmentDescription2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentDescription2-pNext-pNext", "VUID-VkAttachmentDescription2-sType-unique");
+
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pAttachments[%i].flags", ParameterName::IndexVector{ attachmentIndex }), "VkAttachmentDescriptionFlagBits", AllVkAttachmentDescriptionFlagBits, pCreateInfo->pAttachments[attachmentIndex].flags, kOptionalFlags, "VUID-VkAttachmentDescription2-flags-parameter");
 
                 skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pAttachments[%i].format", ParameterName::IndexVector{ attachmentIndex }), "VkFormat", AllVkFormatEnums, pCreateInfo->pAttachments[attachmentIndex].format, "VUID-VkAttachmentDescription2-format-parameter");
@@ -8595,6 +8627,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
         {
             for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex)
             {
+                const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
+
+                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique");
+
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].flags", ParameterName::IndexVector{ subpassIndex }), "VkSubpassDescriptionFlagBits", AllVkSubpassDescriptionFlagBits, pCreateInfo->pSubpasses[subpassIndex].flags, kOptionalFlags, "VUID-VkSubpassDescription2-flags-parameter");
 
                 skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pipelineBindPoint", ParameterName::IndexVector{ subpassIndex }), "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pCreateInfo->pSubpasses[subpassIndex].pipelineBindPoint, "VUID-VkSubpassDescription2-pipelineBindPoint-parameter");
@@ -8605,6 +8641,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
                 {
                     for (uint32_t inputAttachmentIndex = 0; inputAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].inputAttachmentCount; ++inputAttachmentIndex)
                     {
+                        const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                         skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pInputAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, inputAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pInputAttachments[inputAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
                 }
@@ -8615,6 +8655,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
                 {
                     for (uint32_t colorAttachmentIndex = 0; colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount; ++colorAttachmentIndex)
                     {
+                        const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                         skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pColorAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pColorAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
                 }
@@ -8625,6 +8669,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
                 {
                     for (uint32_t colorAttachmentIndex = 0; colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount; ++colorAttachmentIndex)
                     {
+                        const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].pNext", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                         skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pResolveAttachments[%i].layout", ParameterName::IndexVector{ subpassIndex, colorAttachmentIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments[colorAttachmentIndex].layout, "VUID-VkAttachmentReference2-layout-parameter");
                     }
                 }
@@ -8633,6 +8681,10 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment != NULL)
                 {
+                    const VkStructureType allowed_structs_VkAttachmentReference2[] = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+
+                    skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->pNext", ParameterName::IndexVector{ subpassIndex }), "VkAttachmentReferenceStencilLayout", pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->pNext, ARRAY_SIZE(allowed_structs_VkAttachmentReference2), allowed_structs_VkAttachmentReference2, GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext", "VUID-VkAttachmentReference2-sType-unique");
+
                     skip |= validate_ranged_enum("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pDepthStencilAttachment->layout", ParameterName::IndexVector{ subpassIndex }), "VkImageLayout", AllVkImageLayoutEnums, pCreateInfo->pSubpasses[subpassIndex].pDepthStencilAttachment->layout, "VUID-VkAttachmentReference2-layout-parameter");
                 }
 
@@ -8646,6 +8698,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
         {
             for (uint32_t dependencyIndex = 0; dependencyIndex < pCreateInfo->dependencyCount; ++dependencyIndex)
             {
+                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), NULL, pCreateInfo->pDependencies[dependencyIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", kVUIDUndefined);
+
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kRequiredFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter", "VUID-VkSubpassDependency2-srcStageMask-requiredbitmask");
 
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kRequiredFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter", "VUID-VkSubpassDependency2-dstStageMask-requiredbitmask");
@@ -9841,7 +9895,9 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyBufferToImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyBufferToImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", kVUIDUndefined);
+                const VkStructureType allowed_structs_VkBufferImageCopy2KHR[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyBufferToImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2KHR), allowed_structs_VkBufferImageCopy2KHR, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", "VUID-VkBufferImageCopy2KHR-sType-unique");
 
                 skip |= validate_flags("vkCmdCopyBufferToImage2KHR", ParameterName("pCopyBufferToImageInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyBufferToImageInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -9876,7 +9932,9 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pCopyImageToBufferInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pCopyImageToBufferInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", kVUIDUndefined);
+                const VkStructureType allowed_structs_VkBufferImageCopy2KHR[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pCopyImageToBufferInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkBufferImageCopy2KHR), allowed_structs_VkBufferImageCopy2KHR, GeneratedVulkanHeaderVersion, "VUID-VkBufferImageCopy2KHR-pNext-pNext", "VUID-VkBufferImageCopy2KHR-sType-unique");
 
                 skip |= validate_flags("vkCmdCopyImageToBuffer2KHR", ParameterName("pCopyImageToBufferInfo->pRegions[%i].imageSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pCopyImageToBufferInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -9913,7 +9971,9 @@ bool StatelessValidation::PreCallValidateCmdBlitImage2KHR(
         {
             for (uint32_t regionIndex = 0; regionIndex < pBlitImageInfo->regionCount; ++regionIndex)
             {
-                skip |= validate_struct_pnext("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), NULL, pBlitImageInfo->pRegions[regionIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2KHR-pNext-pNext", kVUIDUndefined);
+                const VkStructureType allowed_structs_VkImageBlit2KHR[] = { VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM };
+
+                skip |= validate_struct_pnext("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].pNext", ParameterName::IndexVector{ regionIndex }), "VkCopyCommandTransformInfoQCOM", pBlitImageInfo->pRegions[regionIndex].pNext, ARRAY_SIZE(allowed_structs_VkImageBlit2KHR), allowed_structs_VkImageBlit2KHR, GeneratedVulkanHeaderVersion, "VUID-VkImageBlit2KHR-pNext-pNext", "VUID-VkImageBlit2KHR-sType-unique");
 
                 skip |= validate_flags("vkCmdBlitImage2KHR", ParameterName("pBlitImageInfo->pRegions[%i].srcSubresource.aspectMask", ParameterName::IndexVector{ regionIndex }), "VkImageAspectFlagBits", AllVkImageAspectFlagBits, pBlitImageInfo->pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags, "VUID-VkImageSubresourceLayers-aspectMask-parameter", "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
 
@@ -13020,6 +13080,8 @@ bool StatelessValidation::PreCallValidateGetPrivateDataEXT(
     skip |= validate_required_pointer("vkGetPrivateDataEXT", "pData", pData, "VUID-vkGetPrivateDataEXT-pData-parameter");
     return skip;
 }
+
+
 
 
 

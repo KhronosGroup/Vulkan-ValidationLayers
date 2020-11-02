@@ -244,6 +244,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR";
         case VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR:
             return "VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR";
+        case VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM:
+            return "VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM";
         case VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET:
             return "VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET";
         case VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR:
@@ -5222,10 +5224,10 @@ static inline const char* string_VkPerformanceCounterDescriptionFlagBitsKHR(VkPe
 {
     switch ((VkPerformanceCounterDescriptionFlagBitsKHR)input_value)
     {
-        case VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_KHR:
-            return "VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_KHR";
-        case VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_KHR:
-            return "VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_KHR";
+        case VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_BIT_KHR:
+            return "VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_BIT_KHR";
+        case VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_BIT_KHR:
+            return "VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_BIT_KHR";
         default:
             return "Unhandled VkPerformanceCounterDescriptionFlagBitsKHR";
     }
@@ -5731,8 +5733,8 @@ static inline const char* string_VkSurfaceCounterFlagBitsEXT(VkSurfaceCounterFla
 {
     switch ((VkSurfaceCounterFlagBitsEXT)input_value)
     {
-        case VK_SURFACE_COUNTER_VBLANK_EXT:
-            return "VK_SURFACE_COUNTER_VBLANK_EXT";
+        case VK_SURFACE_COUNTER_VBLANK_BIT_EXT:
+            return "VK_SURFACE_COUNTER_VBLANK_BIT_EXT";
         default:
             return "Unhandled VkSurfaceCounterFlagBitsEXT";
     }

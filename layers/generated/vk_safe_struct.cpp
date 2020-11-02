@@ -34493,6 +34493,59 @@ void safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT::initialize(const saf
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkCopyCommandTransformInfoQCOM::safe_VkCopyCommandTransformInfoQCOM(const VkCopyCommandTransformInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    transform(in_struct->transform)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCopyCommandTransformInfoQCOM::safe_VkCopyCommandTransformInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM),
+    pNext(nullptr)
+{}
+
+safe_VkCopyCommandTransformInfoQCOM::safe_VkCopyCommandTransformInfoQCOM(const safe_VkCopyCommandTransformInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCopyCommandTransformInfoQCOM& safe_VkCopyCommandTransformInfoQCOM::operator=(const safe_VkCopyCommandTransformInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCopyCommandTransformInfoQCOM::~safe_VkCopyCommandTransformInfoQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCopyCommandTransformInfoQCOM::initialize(const VkCopyCommandTransformInfoQCOM* in_struct)
+{
+    sType = in_struct->sType;
+    transform = in_struct->transform;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCopyCommandTransformInfoQCOM::initialize(const safe_VkCopyCommandTransformInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    transform = copy_src->transform;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceImageRobustnessFeaturesEXT::safe_VkPhysicalDeviceImageRobustnessFeaturesEXT(const VkPhysicalDeviceImageRobustnessFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     robustImageAccess(in_struct->robustImageAccess)
@@ -37124,6 +37177,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM:
+            safe_pNext = new safe_VkCopyCommandTransformInfoQCOM(reinterpret_cast<const VkCopyCommandTransformInfoQCOM *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceImageRobustnessFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceImageRobustnessFeaturesEXT *>(pNext));
             break;
@@ -37934,6 +37990,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM:
+            delete reinterpret_cast<const safe_VkCopyCommandTransformInfoQCOM *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceImageRobustnessFeaturesEXT *>(header);

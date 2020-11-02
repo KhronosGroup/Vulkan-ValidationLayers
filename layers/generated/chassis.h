@@ -2681,6 +2681,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 
 
 
+
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(
