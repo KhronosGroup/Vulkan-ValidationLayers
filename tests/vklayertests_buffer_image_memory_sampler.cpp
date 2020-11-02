@@ -11273,6 +11273,13 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     }
+
+    bool drm_format_modifier = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+        drm_format_modifier = true;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     if (!mp_extensions) {
@@ -11370,8 +11377,10 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
             mem_req_info2.image = image;
 
             // Disjoint bit isn't set as likely not even supported by non-planar format
+            const char *vuid = drm_format_modifier ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
+                                                   : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
             m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryRequirementsInfo2-image-01590");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-02280");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
             vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
             m_errorMonitor->VerifyFound();
 

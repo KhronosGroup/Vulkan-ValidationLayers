@@ -4174,7 +4174,9 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
 
     if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) &&
         (image_plane_info != nullptr)) {
-        skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-02280",
+        const char *vuid = device_extensions.vk_ext_image_drm_format_modifier ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
+                                                                              : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
+        skip |= LogError(pInfo->image, vuid,
                          "%s: %s image is a single-plane format (%s) and does not have tiling of "
                          "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
                          "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
