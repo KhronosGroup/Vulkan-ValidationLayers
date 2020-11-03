@@ -118,11 +118,14 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
                         -fvisibility=hidden)
 
     # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
-    if((CMAKE_COMPILER_IS_GNUCXX AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.3.0)) OR
-       (("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") AND
-        (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0) AND
-        (CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 7.0.0)))
-        add_compile_options(-Werror)
+    option(BUILD_WERROR "Build with -Werror" ON)
+    if(BUILD_WERROR)
+        if((CMAKE_COMPILER_IS_GNUCXX AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.3.0)) OR
+           (("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") AND
+            (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0) AND
+            (CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 7.0.0)))
+            add_compile_options(-Werror)
+        endif()
     endif()
 
     set(CMAKE_C_STANDARD 99)
