@@ -6975,6 +6975,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
         }
     }
     skip |= validate_required_pointer("vkCreateRenderPass2", "pRenderPass", pRenderPass, "VUID-vkCreateRenderPass2-pRenderPass-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
     return skip;
 }
 

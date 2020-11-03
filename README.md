@@ -5,7 +5,7 @@ This project provides the Khronos official Vulkan validation layers for Windows,
 ## CI Build Status
 | Platform | Build Status |
 |:--------:|:------------:|
-| Linux/Android | [![Build Status](https://travis-ci.org/KhronosGroup/Vulkan-ValidationLayers.svg?branch=master)](https://travis-ci.org/KhronosGroup/Vulkan-ValidationLayers) |
+| Linux/Android | [![Build Status](https://travis-ci.com/KhronosGroup/Vulkan-ValidationLayers.svg?branch=master)](https://travis-ci.com/KhronosGroup/Vulkan-ValidationLayers) |
 | Windows |[![Build status](https://ci.appveyor.com/api/projects/status/8wduq4r5d9j8nhdv?svg=true)](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-validationlayers/branch/master) |
 
 

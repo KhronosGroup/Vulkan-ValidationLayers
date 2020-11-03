@@ -1249,7 +1249,9 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                             }
                             VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
                             VkFilter sampler_min_filter = sampler_state->createInfo.minFilter;
+                            VkBool32 sampler_compare_enable = sampler_state->createInfo.compareEnable;
                             if ((sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) &&
+                                (sampler_compare_enable == VK_FALSE) &&
                                 !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
                                 auto set = descriptor_set->GetSet();
                                 LogObjectList objlist(set);
@@ -2427,11 +2429,11 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     auto layout_handle = p_layout_->GetDescriptorSetLayout();
     if (IsPushDescriptor()) {
         std::ostringstream str;
-        str << "Push Descriptors defined with VkDescriptorSetLayout " << state_data_->report_data->FormatHandle(layout_handle);
+        str << "Push Descriptors defined with " << state_data_->report_data->FormatHandle(layout_handle);
         out = str.str();
     } else {
         std::ostringstream str;
-        str << "VkDescriptorSet " << state_data_->report_data->FormatHandle(set_) << " allocated with VkDescriptorSetLayout "
+        str << state_data_->report_data->FormatHandle(set_) << " allocated with "
             << state_data_->report_data->FormatHandle(layout_handle);
         out = str.str();
     }
@@ -3073,6 +3075,18 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         // TODO : Should break out "consecutive binding updates" language into valid usage statements
         *error_code = "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
         return false;
+    }
+    // Verify write to variable descriptor
+    if (dest_set->IsVariableDescriptorCount(update->dstBinding)) {
+        if ((update->dstArrayElement + update->descriptorCount) > dest_set->GetVariableDescriptorCount()) {
+            std::stringstream error_str;
+            *error_code = "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
+            error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding index #"
+                      << update->dstBinding << " array element " << update->dstArrayElement << " with " << update->descriptorCount
+                      << " writes but variable descriptor size is " << dest_set->GetVariableDescriptorCount();
+            *error_msg = error_str.str();
+            return false;
+        }
     }
     // Update is within bounds and consistent so last step is to validate update contents
     if (!VerifyWriteUpdateContents(dest_set, update, start_idx, func_name, error_code, error_msg)) {

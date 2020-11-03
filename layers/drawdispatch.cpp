@@ -53,7 +53,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDraw-renderPass-02684",
         "VUID-vkCmdDraw-subpass-02685",
         "VUID-vkCmdDraw-sampleLocationsEnable-02689",
-        "VUID-vkCmdDraw-None-02690",
+        "VUID-vkCmdDraw-magFilter-04553",
         "VUID-vkCmdDraw-None-02692",
         kVUIDUndefined, // indirect_protected_cb
         kVUIDUndefined, // indirect_contiguous_memory;
@@ -503,6 +503,9 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-02689",
         "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553",
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02692",
+        "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646",
+        "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-buffer", // TODO - Update when header are updated
+        "VUID-vkCmdDrawIndirectByteCountEXT-buffer-02290",
         "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03417",
         "VUID-vkCmdDrawIndirectByteCountEXT-scissorCount-03418",
         "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419",
@@ -803,8 +806,11 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
                                                             uint32_t firstInstance, VkBuffer counterBuffer,
                                                             VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                             uint32_t vertexStride) const {
-    return ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTBYTECOUNTEXT,
-                               "vkCmdDrawIndirectByteCountEXT()", VK_QUEUE_GRAPHICS_BIT);
+    bool skip = false;
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTBYTECOUNTEXT,
+                                "vkCmdDrawIndirectByteCountEXT()", VK_QUEUE_GRAPHICS_BIT);
+    skip |= ValidateIndirectCmd(commandBuffer, counterBuffer, CMD_DRAWINDIRECTBYTECOUNTEXT, "vkCmdDrawIndirectByteCountEXT()");
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,

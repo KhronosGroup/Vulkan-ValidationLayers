@@ -741,6 +741,8 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
 void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
                                   bool rp2_supported);
+void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device,
+                                      const VkRenderPassCreateInfo2KHR *create_info);
 void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
                               const char *rp2_vuid);
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,

@@ -2715,8 +2715,7 @@ TEST_F(VkLayerTest, ExceedSamplerAllocationCount) {
         fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "Number of currently valid sampler objects is not less than the maximum allowed");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
 
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
 
@@ -8681,7 +8680,7 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
                                                                     {VK_FORMAT_R64G64B64A64_UINT, UINT}});
 
     std::vector<struct TestFilterType> tests(2);
-    tests[0].err_msg = "VUID-vkCmdDraw-None-02690";
+    tests[0].err_msg = "VUID-vkCmdDraw-magFilter-04553";
 
     tests[1].filter = VK_FILTER_CUBIC_IMG;
     tests[1].required_format_feature = VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG;
@@ -8740,6 +8739,7 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
 
         sci.magFilter = test_struct.filter;
         sci.minFilter = test_struct.filter;
+        sci.compareEnable = VK_FALSE;
 
         if (test_struct.filter == VK_FILTER_CUBIC_IMG) {
             if (cubic_support) {
@@ -11801,8 +11801,7 @@ TEST_F(VkLayerTest, CustomBorderColor) {
         // Still have one custom border color sampler from above, so this should exceed max
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-None-04012");
         if (prop2.properties.limits.maxSamplerAllocationCount <= custom_properties.maxCustomBorderColorSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                                 "Number of currently valid sampler objects is not less than the maximum allowed");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
         }
         for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers; i++) {
             vk::CreateSampler(m_device->device(), &sampler_info, NULL, &samplers[i]);

@@ -311,6 +311,19 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     }
 }
 
+void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device,
+                                      const VkRenderPassCreateInfo2KHR *create_info) {
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    VkResult err;
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+
+    error_monitor->ExpectSuccess();
+    err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
+    if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+    error_monitor->VerifyNotFound();
+}
+
 void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
                               const char *rp2_vuid) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
