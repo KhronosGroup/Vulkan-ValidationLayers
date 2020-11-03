@@ -68,15 +68,16 @@ Debug Printf is an object in the KHRONOS_validation layer, so the VK_LAYER_KHRON
 See the LAYER_CONFIGURATION document for information on enabling the VK_LAYER_KHRONOS_validation layer.
 Validation itself is not necessary for Debug Printf and can be disabled without affecting Debug Printf functionality.
 
-Debug Printf can be enabled either through a vk_layer_settings.txt file that must be in the program's working directory, or by setting an environment variable  Within a settings file, specify:
+Debug Printf can be enabled either through a vk_layer_settings.txt file that must be in the program's working directory, or by setting an environment variable. Within a settings file, specify:
 khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT or set VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT as an environment variable.
+It can be programmatically enabled by setting VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT as an enable in pEnabledValidationFeatures in a VkValidationFeaturesEXT struct in VkInstanceCreateInfo.pNext.
 
 Debug Printf has been implemented as a state tracker validation object, as a peer to GPU Assisted Validation.
 Because of this, and coupled with the philosophy that validation objects will not communicate with each other, one should never enable both GPU Assisted Validation and Debug Printf at the same time.
 Debug Printf will be disabled if GPU Assisted Validation is enabled.
 
 The strings resulting from a Debug Printf will be sent to the debug callback which is either specified by the app, or by default sent to stdout.
-It is sent at the INFO or DEBUG level
+It is sent at the VK_DEBUG_REPORT_INFORMATION_BIT_EXT or VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT level.
 
 When using Debug Printf with the debug callback, it is recommended to disable validation, as the debug level of INFO or DEBUG causes the validation layers to produce many messages unrelated to Debug Printf, making it difficult to find the desired output.
 
