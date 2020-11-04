@@ -1,4 +1,4 @@
-Kinda tough, this.  d HEY!  This is just getting silly now.
+Kinda tough, this.  d HEY!  This is silly now.
 
 
 # Vulkan Ecosystem Components
