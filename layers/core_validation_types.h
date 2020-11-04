@@ -52,9 +52,7 @@
 #include <memory>
 #include <list>
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "android_ndk_types.h"
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {

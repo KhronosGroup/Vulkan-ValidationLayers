@@ -2920,7 +2920,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     return skip;
 }
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#ifdef AHB_VALIDATION_SUPPORT
 // Android-specific validation that uses types defined only on Android and only for NDK versions
 // that support the VK_ANDROID_external_memory_android_hardware_buffer extension.
 // This chunk could move into a seperate core_validation_android.cpp file... ?
@@ -3375,7 +3375,20 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
     return skip;
 }
 
-#else  // !VK_USE_PLATFORM_ANDROID_KHR
+#else  // !AHB_VALIDATION_SUPPORT
+
+// Case building for Android without AHB Validation
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
+    VkDevice device, const struct AHardwareBuffer *buffer, VkAndroidHardwareBufferPropertiesANDROID *pProperties) const {
+    return false;
+}
+bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
+                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
+                                                                      struct AHardwareBuffer **pBuffer) const {
+    return false;
+}
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) const { return false; }
 
@@ -3396,7 +3409,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
     return false;
 }
 
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#endif  // AHB_VALIDATION_SUPPORT
 
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const {
@@ -3459,14 +3472,14 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     }
 
     bool imported_ahb = false;
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#ifdef AHB_VALIDATION_SUPPORT
     //  "memory is not an imported Android Hardware Buffer" refers to VkImportAndroidHardwareBufferInfoANDROID with a non-NULL
     //  buffer value. Memory imported has another VUID to check size and allocationSize match up
     auto imported_ahb_info = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
     if (imported_ahb_info != nullptr) {
         imported_ahb = imported_ahb_info->buffer != nullptr;
     }
-#endif
+#endif  // AHB_VALIDATION_SUPPORT
     auto dedicated_allocate_info = lvl_find_in_chain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated_allocate_info) {
         if ((dedicated_allocate_info->buffer != VK_NULL_HANDLE) && (dedicated_allocate_info->image != VK_NULL_HANDLE)) {
@@ -10856,7 +10869,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             const auto plane_info = lvl_find_in_chain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
             const auto mem_info = GetDevMemState(bindInfo.memory);
 
-            // Need extra check for disjoint flag incase called without bindImage2 and don't want false postive errors
+            // Need extra check for disjoint flag incase called without bindImage2 and don't want false positive errors
             // no 'else' case as if that happens another VUID is already being triggered for it being invalid
             if ((plane_info == nullptr) && (image_state->disjoint == false)) {
                 // Check non-disjoint images VkMemoryRequirements
@@ -12645,7 +12658,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
                             func_name);
         }
     }
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     if ((external_format == false) && (FormatIsUNorm(conversion_format) == false)) {
         const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
@@ -12670,7 +12683,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
                 format_features = it->second;
             }
         }
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
     } else {
         format_features = GetPotentialFormatFeatures(conversion_format);
     }

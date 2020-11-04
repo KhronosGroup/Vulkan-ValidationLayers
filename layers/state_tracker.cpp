@@ -966,7 +966,7 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
         mem_info->is_import = true;
         mem_info->import_handle_type_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     }
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     const VkMemoryType memory_type = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex];
     mem_info->unprotected = ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0);

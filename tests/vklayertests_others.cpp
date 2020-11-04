@@ -4876,8 +4876,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     vk::DestroyImageView(m_device->device(), view, NULL);
 }
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "android_ndk_types.h"
+#ifdef AHB_VALIDATION_SUPPORT
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image create info.");
@@ -6216,7 +6216,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
 
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#endif  // AHB_VALIDATION_SUPPORT
 
 TEST_F(VkLayerTest, ValidateStride) {
     TEST_DESCRIPTION("Validate Stride.");

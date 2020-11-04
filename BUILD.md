@@ -655,6 +655,15 @@ level 3.
   - SDK Tools > Android SDK Tools
   - SDK Tools > NDK
 
+#### Android Hardware Buffer support
+
+The Validation Layers by default build and release for Android 26 (Android Oreo). While Vulkan is supported in Android 24 and 25, there is no AHardwareBuffer support. To build a version of the Validation Layers for use with Android that will not require AHB support, simply addjust the `APP_PLATFORM` in [build-android/jni/Application.mk](build-android/jni/Application.mk)
+
+```patch
+-APP_PLATFORM := android-26
++APP_PLATFORM := android-24
+```
+
 #### Add Android specifics to environment
 
 For each of the below, you may need to specify a different build-tools

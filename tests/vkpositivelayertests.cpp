@@ -9783,8 +9783,8 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
 }
 
 // Android Hardware Buffer Positive Tests
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "android_ndk_types.h"
+#ifdef AHB_VALIDATION_SUPPORT
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer doesn't conflict with memory requirements.");
 
@@ -10299,4 +10299,4 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
     vk::DestroyImage(device(), image, nullptr);
 }
 
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#endif  // AHB_VALIDATION_SUPPORT
