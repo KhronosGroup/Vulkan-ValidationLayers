@@ -576,7 +576,7 @@ WRAPPER_PARENT_INSTANCE(uint64_t)
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
             // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and vkDestroyCommandPool
-            // while *not* establishing a read guard against the command pool counter itself to avoid false postives for
+            // while *not* establishing a read guard against the command pool counter itself to avoid false positive for
             // non-externally sync'd command buffers
             c_VkCommandPoolContents.StartRead(pool, api_name);
         }
@@ -1530,7 +1530,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
             return paramdecl
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
-        
+
         # Initialize members that require the tree
         self.handle_types = GetHandleTypes(self.registry.tree)
         self.is_aliased_type = GetHandleAliased(self.registry.tree)

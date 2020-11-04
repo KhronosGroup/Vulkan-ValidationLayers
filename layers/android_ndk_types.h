@@ -21,20 +21,33 @@
 #ifndef ANDROID_NDK_TYPES_H_
 #define ANDROID_NDK_TYPES_H_
 
+// Everyone should be able to include this file and ignore it if not building for Android
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 // All eums referenced by VK_ANDROID_external_memory_android_hardware_buffer are present in
 // the platform-29 (Android Q) versions of the header files.  A partial set exists in the
 // platform-26 (O) headers, where hardware_buffer.h first appears in the NDK.
 //
-// Building Vulkan validation with NDK header files prior to platform-26 is not supported due to
-// Android 24 and 25 devices do not support Android Hardware Buffers.
-//
 // Decoder ring for Android compile symbols found here: https://github.com/android-ndk/ndk/issues/407
 
 #ifdef __ANDROID__  // Compiling for Android
 #include <android/api-level.h>
 #include <android/hardware_buffer.h>  // First appearance in Android O (platform-26)
+
+// Building Vulkan validation with NDK header files prior to platform-26 is supported, but will remove
+// all validation checks for Android Hardware Buffers.
+// This is due to AHB not being introduced until Android 26 (Android Oreo)
+//
+// NOTE: VK_USE_PLATFORM_ANDROID_KHR != Android Hardware Buffer
+//       AHB is all things not found in the Vulkan Spec
+#if __ANDROID_API__ < 24
+#error "Vulkan not supported on Android 23 and below"
+#elif __ANDROID_API__ < 26
+#pragma message("Building for Android without Android Hardward Buffer support")
+#else
+// This is used to allow building for Android without AHB support
+#define AHB_VALIDATION_SUPPORT
+#endif  // __ANDROID_API__
 
 // If NDK is O (platform-26 or -27), supplement the missing enums with pre-processor defined literals
 // If Android P or later, then all required enums are already defined
@@ -56,7 +69,7 @@
 // should use GPU_FRAMEBUFFER, but need to define here for older NDK versions
 #ifndef AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
 #define AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT
-#endif
+#endif  // AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
 
 #else  // Not __ANDROID__, but VK_USE_PLATFORM_ANDROID_KHR
 // This combination should not be seen in the wild, but can be used to allow testing

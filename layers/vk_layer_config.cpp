@@ -83,6 +83,23 @@ string GetEnvironment(const char *variable) {
     string output = buffer;
     delete[] buffer;
     return output;
+#elif defined(__ANDROID__)
+    string command = "getprop " + string(variable);
+    FILE *pPipe = popen(command.c_str(), "r");
+    if (pPipe != nullptr) {
+        char value[256];
+        fgets(value, 256, pPipe);
+        pclose(pPipe);
+
+        // Make sure its not an empty line
+        if (strcspn(value, "\r\n") == 0) {
+            return "";
+        } else {
+            return string(value);
+        }
+    } else {
+        return "";
+    }
 #else
     return "";
 #endif
@@ -395,3 +412,24 @@ VK_LAYER_EXPORT void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
         strcat(msg_flags, "PERF");
     }
 }
+
+// This catches before dlopen fails if the default Android-26 layers are being used and attempted to be ran on Android 25 or below
+#if defined(__ANDROID__)
+#include "android_ndk_types.h"  // get AHB_VALIDATION_SUPPORT macro
+void __attribute__((constructor)) CheckAndroidVersion();
+void CheckAndroidVersion() {
+#ifdef AHB_VALIDATION_SUPPORT
+    string version_env = GetEnvironment("ro.build.version.sdk");
+    int target_version = atoi(version_env.c_str());
+
+    // atoi returns 0 if GetEnvironment fails and don't want false positive errors
+    if ((target_version != 0) && (target_version < 26)) {
+        LOGCONSOLE(
+            "ERROR - Targeted Android version is %d and needs to be 26 or above. Please read "
+            "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/BUILD.md for how to build the Validation Layers "
+            "for Android 25 and below",
+            target_version);
+    }
+#endif  // AHB_VALIDATION_SUPPORT
+}
+#endif  // defined(__ANDROID__)
