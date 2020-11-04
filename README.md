@@ -1,4 +1,4 @@
-Kinda tough, this.  d HEY!~
+Kinda tough, this.  d HEY!
 
 
 # Vulkan Ecosystem Components
