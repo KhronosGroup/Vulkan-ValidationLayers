@@ -1,6 +1,5 @@
 Kinda tough, this.  d HEY!  This is silly now.
-Kinda tough, this.  d HEY!  This is silly now.
-Kinda tough, this.  d HEY!  This is silly now.
+tough, this.  d HEY!  This is silly now.
 Kinda tough, this.  d HEY!  This is silly now.
 
 
