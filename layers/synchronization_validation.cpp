@@ -1900,6 +1900,38 @@ void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &re
     current_renderpass_context_ = nullptr;
 }
 
+bool CommandBufferAccessContext::ValidateSetEvent(VkCommandBuffer commandBuffer, VkEvent event,
+                                                  VkPipelineStageFlags stageMask) const {
+    return false;
+}
+
+void CommandBufferAccessContext::RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {}
+
+bool CommandBufferAccessContext::ValidateResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
+                                                    VkPipelineStageFlags stageMask) const {
+    return false;
+}
+
+void CommandBufferAccessContext::RecordResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {}
+
+bool CommandBufferAccessContext::ValidateWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                    VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                                    uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                    uint32_t bufferMemoryBarrierCount,
+                                                    const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                    uint32_t imageMemoryBarrierCount,
+                                                    const VkImageMemoryBarrier *pImageMemoryBarriers) const {
+    return false;
+}
+
+void CommandBufferAccessContext::RecordWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                  VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                                  uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                  uint32_t bufferMemoryBarrierCount,
+                                                  const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                  uint32_t imageMemoryBarrierCount,
+                                                  const VkImageMemoryBarrier *pImageMemoryBarriers) const {}
+
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator &sync_state, const CMD_BUFFER_STATE &cmd,
                                                             const VkRect2D &render_area, const char *func_name) const {
     bool skip = false;
@@ -4477,4 +4509,78 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range, tag);
     }
+}
+
+bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const {
+    bool skip = false;
+    const auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return skip;
+
+    return cb_context->ValidateSetEvent(commandBuffer, event, stageMask);
+}
+
+void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    StateTracker::PostCallRecordCmdSetEvent(commandBuffer, event, stageMask);
+    auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return;
+
+    cb_context->RecordSetEvent(commandBuffer, event, stageMask);
+}
+
+bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
+                                                 VkPipelineStageFlags stageMask) const {
+    bool skip = false;
+    const auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return skip;
+
+    return cb_context->ValidateResetEvent(commandBuffer, event, stageMask);
+}
+
+void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    StateTracker::PostCallRecordCmdResetEvent(commandBuffer, event, stageMask);
+    auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return;
+
+    cb_context->RecordResetEvent(commandBuffer, event, stageMask);
+}
+
+bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                 VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                                 uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                 uint32_t bufferMemoryBarrierCount,
+                                                 const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                 uint32_t imageMemoryBarrierCount,
+                                                 const VkImageMemoryBarrier *pImageMemoryBarriers) const {
+    bool skip = false;
+    const auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return skip;
+
+    return cb_context->ValidateWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
+                                          pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                          pImageMemoryBarriers);
+}
+
+void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                                uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                uint32_t bufferMemoryBarrierCount,
+                                                const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                uint32_t imageMemoryBarrierCount,
+                                                const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    StateTracker::PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
+                                              pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                              imageMemoryBarrierCount, pImageMemoryBarriers);
+
+    auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    if (!cb_context) return;
+
+    cb_context->RecordWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
+                                 pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                 pImageMemoryBarriers);
 }
