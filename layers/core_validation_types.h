@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +22,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
@@ -1307,6 +1309,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     uint32_t viewportMask;
     uint32_t viewportWithCountMask;
+    uint32_t viewportWithCountCount;
     uint32_t scissorMask;
     uint32_t scissorWithCountMask;
     uint32_t initial_device_mask;
@@ -1489,6 +1492,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features;
     VkPhysicalDeviceMultiviewFeatures multiview_features;
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features;
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

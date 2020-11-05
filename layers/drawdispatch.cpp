@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +36,7 @@
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  * Author: Nathaniel Cesario <nathaniel@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include "chassis.h"
@@ -75,6 +77,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDraw-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDraw-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDraw-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -112,6 +115,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexed-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawIndexed-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexed-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexed-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -151,6 +155,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirect-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawIndirect-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirect-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirect-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -190,6 +195,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirect-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawIndexedIndirect-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexedIndirect-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexedIndirect-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -277,6 +283,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectCount-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawIndirectCount-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirectCount-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirectCount-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -316,6 +323,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirectCount-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawIndexedIndirectCount-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexedIndirectCount-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexedIndirectCount-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -423,6 +431,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksNV-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksNV-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -459,6 +468,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectNV-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -495,6 +505,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 
@@ -534,6 +545,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectByteCountEXT-maxMultiviewInstanceIndex-02688";
         filter_cubic                       = "VUID-vkCmdDrawIndirectByteCountEXT-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirectByteCountEXT-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveFragmentShadingRateWithMultipleViewports-04552";
     }
 };
 

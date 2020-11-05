@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +22,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #pragma once
@@ -69,6 +71,7 @@ struct DrawDispatchVuid {
     const char* max_multiview_instance_index = kVUIDUndefined;
     const char* filter_cubic = kVUIDUndefined;
     const char* filter_cubic_min_max = kVUIDUndefined;
+    const char* viewport_count_primitive_shading_rate = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
@@ -232,6 +235,7 @@ class CoreChecks : public ValidationStateTracker {
     bool MatchUsage(uint32_t count, const VkAttachmentReference2KHR* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* error_code) const;
     bool IsImageLayoutReadOnly(VkImageLayout layout) const;
+    bool IsDynamic(const PIPELINE_STATE* pPipeline, const VkDynamicState state) const;
     bool CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
                                const std::vector<SubpassLayout>& dependent_subpasses, const std::vector<DAGNode>& subpass_to_node,
                                bool& skip) const;
@@ -433,6 +437,8 @@ class CoreChecks : public ValidationStateTracker {
 
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
+    bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE* pPipeline, const CMD_BUFFER_STATE* pCB,
+                                                    const char* caller, const DrawDispatchVuid& vuid) const;
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
     uint32_t CalcShaderStageCount(const PIPELINE_STATE* pipeline, VkShaderStageFlagBits stageBit) const;
     bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, VkPipelineCreateFlags flags, bool isKHR) const;
@@ -443,6 +449,8 @@ class CoreChecks : public ValidationStateTracker {
                                      const spirv_inst_iter& entrypoint, bool check_point_size) const;
     bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint,
                                       VkShaderStageFlagBits stage) const;
+    bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src,
+                                          spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateShaderCapabilities(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage) const;
     bool ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
                                                        bool has_atomic_descriptor) const;
@@ -1136,6 +1144,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) const;
     bool PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize* pCommittedMem) const;
+
+    bool ValidateFragmentShadingRateAttachments(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo) const;
     bool ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                    const char* function_name) const;
@@ -1377,9 +1387,10 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) const;
     bool PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                            VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) const;
-
     bool PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkEvent* pEvent) const;
+    bool PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
+                                                     const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) const;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,

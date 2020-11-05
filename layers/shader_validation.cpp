@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@
  *
  * Author: Chris Forbes <chrisf@ijw.co.nz>
  * Author: Dave Houlton <daveh@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include "shader_validation.h"
@@ -1603,9 +1605,9 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
     return skip;
 }
 
-// For PointSize analysis we need to know if the variable decorated with the PointSize built-in was actually written to.
+// For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
 // This function examines instructions in the static call tree for a write to this variable.
-static bool IsPointSizeWritten(SHADER_MODULE_STATE const *src, spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint) {
+static bool IsBuiltInWritten(SHADER_MODULE_STATE const *src, spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint) {
     auto type = builtin_instr.opcode();
     uint32_t target_id = builtin_instr.word(1);
     bool init_complete = false;
@@ -3489,13 +3491,13 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
         if (insn.opcode() == spv::OpMemberDecorate) {
             if (insn.word(3) == spv::DecorationBuiltIn) {
                 if (insn.word(4) == spv::BuiltInPointSize) {
-                    pointsize_written = IsPointSizeWritten(src, insn, entrypoint);
+                    pointsize_written = IsBuiltInWritten(src, insn, entrypoint);
                 }
             }
         } else if (insn.opcode() == spv::OpDecorate) {
             if (insn.word(2) == spv::DecorationBuiltIn) {
                 if (insn.word(3) == spv::BuiltInPointSize) {
-                    pointsize_written = IsPointSizeWritten(src, insn, entrypoint);
+                    pointsize_written = IsBuiltInWritten(src, insn, entrypoint);
                 }
             }
         }
@@ -3515,6 +3517,72 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
             LogError(pipeline->pipeline, kVUID_Core_Shader_MissingPointSizeBuiltIn,
                      "Pipeline topology is set to POINT_LIST, but PointSize is not written to in the shader corresponding to %s.",
                      string_VkShaderStageFlagBits(stage));
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline, SHADER_MODULE_STATE const *src,
+                                                  spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const {
+    bool primitiverate_written = false;
+    bool viewportindex_written = false;
+    bool viewportmask_written = false;
+    bool skip = false;
+
+    // Check if the primitive shading rate is written
+    spirv_inst_iter insn = entrypoint;
+    while (!(primitiverate_written && viewportindex_written && viewportmask_written) && insn.opcode() != spv::OpFunction) {
+        if (insn.opcode() == spv::OpMemberDecorate) {
+            if (insn.word(3) == spv::DecorationBuiltIn) {
+                if (insn.word(4) == spv::BuiltInPrimitiveShadingRateKHR) {
+                    primitiverate_written = IsBuiltInWritten(src, insn, entrypoint);
+                } else if (insn.word(4) == spv::BuiltInViewportIndex) {
+                    viewportindex_written = IsBuiltInWritten(src, insn, entrypoint);
+                } else if (insn.word(4) == spv::BuiltInViewportMaskNV) {
+                    viewportmask_written = IsBuiltInWritten(src, insn, entrypoint);
+                }
+            }
+        } else if (insn.opcode() == spv::OpDecorate) {
+            if (insn.word(2) == spv::DecorationBuiltIn) {
+                if (insn.word(3) == spv::BuiltInPrimitiveShadingRateKHR) {
+                    primitiverate_written = IsBuiltInWritten(src, insn, entrypoint);
+                } else if (insn.word(3) == spv::BuiltInViewportIndex) {
+                    viewportindex_written = IsBuiltInWritten(src, insn, entrypoint);
+                } else if (insn.word(3) == spv::BuiltInViewportMaskNV) {
+                    viewportmask_written = IsBuiltInWritten(src, insn, entrypoint);
+                }
+            }
+        }
+
+        insn++;
+    }
+
+    if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
+        if (!IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
+            pipeline->graphicsPipelineCI.pViewportState->viewportCount > 1 && primitiverate_written) {
+            skip |= LogError(
+                pipeline->pipeline, "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
+                "vkCreateGraphicsPipelines: %s shader statically writes to PrimitiveShadingRateKHR built-in, but multiple viewports "
+                "are used and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                string_VkShaderStageFlagBits(stage));
+        }
+
+        if (primitiverate_written && viewportindex_written) {
+            skip |= LogError(pipeline->pipeline,
+                             "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04504",
+                             "vkCreateGraphicsPipelines: %s shader statically writes to both PrimitiveShadingRateKHR and "
+                             "ViewportIndex built-ins,"
+                             "but the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                             string_VkShaderStageFlagBits(stage));
+        }
+
+        if (primitiverate_written && viewportmask_written) {
+            skip |= LogError(pipeline->pipeline,
+                             "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04505",
+                             "vkCreateGraphicsPipelines: %s shader statically writes to both PrimitiveShadingRateKHR and "
+                             "ViewportMaskNV built-ins,"
+                             "but the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                             string_VkShaderStageFlagBits(stage));
+        }
     }
     return skip;
 }
@@ -3615,6 +3683,9 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     }
     skip |= ValidateBuiltinLimits(module, accessible_ids, pStage->stage);
     skip |= ValidateCooperativeMatrix(module, pStage, pipeline);
+    if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
+        skip |= ValidatePrimitiveRateShaderState(pipeline, module, entrypoint, pStage->stage);
+    }
 
     std::string vuid_layout_mismatch;
     if (pipeline->graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO) {
@@ -3854,6 +3925,62 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     if (shaders[fragment_stage] && shaders[fragment_stage]->has_valid_spirv) {
         skip |= ValidateFsOutputsAgainstRenderPass(shaders[fragment_stage], entrypoints[fragment_stage], pipeline,
                                                    pCreateInfo->subpass);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE *pipeline, const CMD_BUFFER_STATE *pCB,
+                                                            const char *caller, const DrawDispatchVuid &vuid) const {
+    auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
+
+    const SHADER_MODULE_STATE *shaders[32];
+    memset(shaders, 0, sizeof(shaders));
+    spirv_inst_iter entrypoints[32];
+    memset(entrypoints, 0, sizeof(entrypoints));
+    bool skip = false;
+
+    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
+        auto pStage = &pCreateInfo->pStages[i];
+        auto stage_id = GetShaderStageId(pStage->stage);
+        shaders[stage_id] = GetShaderModuleState(pStage->module);
+        entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], pStage->pName, pStage->stage);
+
+        if (pStage->stage == VK_SHADER_STAGE_VERTEX_BIT || pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
+            pStage->stage == VK_SHADER_STAGE_MESH_BIT_NV) {
+            if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
+                IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
+                spirv_inst_iter insn = entrypoints[stage_id];
+                bool primitiverate_written = false;
+
+                while (!primitiverate_written && (insn.opcode() != spv::OpFunction)) {
+                    if (insn.opcode() == spv::OpMemberDecorate) {
+                        if (insn.word(3) == spv::DecorationBuiltIn) {
+                            if (insn.word(4) == spv::BuiltInPrimitiveShadingRateKHR) {
+                                primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
+                            }
+                        }
+                    } else if (insn.opcode() == spv::OpDecorate) {
+                        if (insn.word(2) == spv::DecorationBuiltIn) {
+                            if (insn.word(3) == spv::BuiltInPrimitiveShadingRateKHR) {
+                                primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
+                            }
+                        }
+                    }
+
+                    insn++;
+                }
+
+                if (primitiverate_written) {
+                    skip |=
+                        LogError(pipeline->pipeline, vuid.viewport_count_primitive_shading_rate,
+                                 "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
+                                 "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
+                                 "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                                 caller, string_VkShaderStageFlagBits(pStage->stage));
+                }
+            }
+        }
     }
 
     return skip;

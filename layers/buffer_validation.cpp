@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Shannon McPherson <shannon@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include <cmath>
@@ -4860,6 +4862,14 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
                          "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
                          "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
                          string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+    } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) &&
+               !(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+            skip |= LogError(image_state->image, "VUID-VkImageViewCreateInfo-usage-04550",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        }
     }
 
     return skip;
@@ -5064,18 +5074,35 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
         skip |= ValidateImageViewFormatFeatures(image_state, view_format, image_usage);
 
-        if (image_usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
-            if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02086",
-                                 "vkCreateImageView() If image was created with usage containing "
-                                 "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, viewType must be "
-                                 "VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.");
+        if (enabled_features.shading_rate_image.shadingRateImage) {
+            if (image_usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
+                if (view_format != VK_FORMAT_R8_UINT) {
+                    skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02087",
+                                     "vkCreateImageView() If image was created with usage containing "
+                                     "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, format must be VK_FORMAT_R8_UINT.");
+                }
             }
-            if (view_format != VK_FORMAT_R8_UINT) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02087",
-                                 "vkCreateImageView() If image was created with usage containing "
-                                 "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, format must be VK_FORMAT_R8_UINT.");
+        }
+
+        if (enabled_features.shading_rate_image.shadingRateImage ||
+            enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+            if (image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) {
+                if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                    skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02086",
+                                     "vkCreateImageView() If image was created with usage containing "
+                                     "VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, viewType must be "
+                                     "VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.");
+                }
             }
+        }
+
+        if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
+            !phys_dev_ext_props.fragment_shading_rate_props.layeredShadingRateAttachments &&
+            image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR &&
+            pCreateInfo->subresourceRange.layerCount != 1) {
+            skip |= LogError(device, "VUID-VkImageViewCreateInfo-usage-04551",
+                             "vkCreateImageView(): subresourceRange.layerCount is %u for a shading rate attachment image view.",
+                             pCreateInfo->subresourceRange.layerCount);
         }
 
         if (pCreateInfo->subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
