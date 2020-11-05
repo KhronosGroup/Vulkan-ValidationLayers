@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Shannon McPherson <shannon@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include <cmath>
@@ -1435,6 +1437,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->static_status = 0;
         pCB->viewportMask = 0;
         pCB->viewportWithCountMask = 0;
+        pCB->viewportWithCountCount = 0;
         pCB->scissorMask = 0;
         pCB->scissorWithCountMask = 0;
         pCB->primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
@@ -1874,6 +1877,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.pipeline_creation_cache_control_features = *pipeline_creation_cache_control_features;
     }
 
+    const auto *fragment_shading_rate_features =
+        lvl_find_in_chain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+    if (fragment_shading_rate_features) {
+        state_tracker->enabled_features.fragment_shading_rate_features = *fragment_shading_rate_features;
+    }
+
     const auto *extended_dynamic_state_features =
         lvl_find_in_chain<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>(pCreateInfo->pNext);
     if (extended_dynamic_state_features) {
@@ -2043,6 +2052,8 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->phys_dev_props_core11.subgroupSupportedOperations = subgroup_prop.supportedOperations;
         state_tracker->phys_dev_props_core11.subgroupQuadOperationsInAllStages = subgroup_prop.quadOperationsInAllStages;
     }
+
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_fragment_shading_rate, &phys_dev_props->fragment_shading_rate_props);
 
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
@@ -6210,6 +6221,7 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportWithCountEXT(VkCommandBu
                                                                      const VkViewport *pViewports) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->viewportWithCountMask |= (1u << viewportCount) - 1u;
+    cb_state->viewportWithCountCount = viewportCount;
     cb_state->status |= CBSTATUS_VIEWPORT_WITH_COUNT_SET;
     cb_state->static_status &= ~CBSTATUS_VIEWPORT_WITH_COUNT_SET;
 }

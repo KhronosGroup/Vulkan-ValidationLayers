@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@
  * Author: Chris Forbes <chrisf@ijw.co.nz>
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #pragma once
@@ -1368,6 +1370,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props;
         VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_border_color_props;
         VkPhysicalDeviceMultiviewProperties multiview_props;
+        VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;

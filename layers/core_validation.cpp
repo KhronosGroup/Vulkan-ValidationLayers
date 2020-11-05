@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +35,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include <algorithm>
@@ -440,7 +442,7 @@ bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatusFlags sta
 }
 
 // Return true if for a given PSO, the given state enum is dynamic, else return false
-static bool IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState state) {
+bool CoreChecks::IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState state) const {
     if (pPipeline && pPipeline->graphicsPipelineCI.pDynamicState) {
         for (uint32_t i = 0; i < pPipeline->graphicsPipelineCI.pDynamicState->dynamicStateCount; i++) {
             if (state == pPipeline->graphicsPipelineCI.pDynamicState->pDynamicStates[i]) return true;
@@ -1052,6 +1054,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                              caller, string_VkPrimitiveTopology(pCB->primitiveTopology),
                              string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
         }
+    }
+
+    if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
+        skip |= ValidateGraphicsPipelineShaderDynamicState(pPipeline, pCB, caller, vuid);
     }
 
     return skip;
@@ -1915,6 +1921,99 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                          "Extended dynamic state used by the extendedDynamicState feature is not enabled");
     }
 
+    const VkPipelineFragmentShadingRateStateCreateInfoKHR *pFragmentShadingRateState =
+        lvl_find_in_chain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pPipeline->graphicsPipelineCI.pNext);
+
+    if (pFragmentShadingRateState && !IsDynamic(pPipeline, VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
+        const char *struct_name = "VkPipelineFragmentShadingRateStateCreateInfoKHR";
+
+        if (pFragmentShadingRateState->fragmentSize.width == 0) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04494",
+                             "vkCreateGraphicsPipelines: Fragment width of %u has been specified in %s.",
+                             pFragmentShadingRateState->fragmentSize.width, struct_name);
+        }
+
+        if (pFragmentShadingRateState->fragmentSize.height == 0) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04495",
+                             "vkCreateGraphicsPipelines: Fragment height of %u has been specified in %s.",
+                             pFragmentShadingRateState->fragmentSize.height, struct_name);
+        }
+
+        if (pFragmentShadingRateState->fragmentSize.width != 0 && !IsPowerOfTwo(pFragmentShadingRateState->fragmentSize.width)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04496",
+                             "vkCreateGraphicsPipelines: Non-power-of-two fragment width of %u has been specified in %s.",
+                             pFragmentShadingRateState->fragmentSize.width, struct_name);
+        }
+
+        if (pFragmentShadingRateState->fragmentSize.height != 0 && !IsPowerOfTwo(pFragmentShadingRateState->fragmentSize.height)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04497",
+                             "vkCreateGraphicsPipelines: Non-power-of-two fragment height of %u has been specified in %s.",
+                             pFragmentShadingRateState->fragmentSize.height, struct_name);
+        }
+
+        if (pFragmentShadingRateState->fragmentSize.width > 4) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04498",
+                             "vkCreateGraphicsPipelines: Fragment width of %u specified in %s is too large.",
+                             pFragmentShadingRateState->fragmentSize.width, struct_name);
+        }
+
+        if (pFragmentShadingRateState->fragmentSize.height > 4) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04499",
+                             "vkCreateGraphicsPipelines: Fragment height of %u specified in %s is too large",
+                             pFragmentShadingRateState->fragmentSize.height, struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate &&
+            pFragmentShadingRateState->fragmentSize.width != 1) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500",
+                             "vkCreateGraphicsPipelines: Pipeline fragment width of %u has been specified in %s, but "
+                             "pipelineFragmentShadingRate is not enabled",
+                             pFragmentShadingRateState->fragmentSize.width, struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate &&
+            pFragmentShadingRateState->fragmentSize.height != 1) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500",
+                             "vkCreateGraphicsPipelines: Pipeline fragment height of %u has been specified in %s, but "
+                             "pipelineFragmentShadingRate is not enabled",
+                             pFragmentShadingRateState->fragmentSize.height, struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate &&
+            pFragmentShadingRateState->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04501",
+                             "vkCreateGraphicsPipelines: First combiner operation of %s has been specified in %s, but "
+                             "primitiveFragmentShadingRate is not enabled",
+                             string_VkFragmentShadingRateCombinerOpKHR(pFragmentShadingRateState->combinerOps[0]), struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
+            pFragmentShadingRateState->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04502",
+                             "vkCreateGraphicsPipelines: Second combiner operation of %s has been specified in %s, but "
+                             "attachmentFragmentShadingRate is not enabled",
+                             string_VkFragmentShadingRateCombinerOpKHR(pFragmentShadingRateState->combinerOps[1]), struct_name);
+        }
+
+        if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
+            (pFragmentShadingRateState->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+             pFragmentShadingRateState->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506",
+                             "vkCreateGraphicsPipelines: First combiner operation of %s has been specified in %s, but "
+                             "fragmentShadingRateNonTrivialCombinerOps is not supported",
+                             string_VkFragmentShadingRateCombinerOpKHR(pFragmentShadingRateState->combinerOps[0]), struct_name);
+        }
+
+        if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
+            (pFragmentShadingRateState->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+             pFragmentShadingRateState->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506",
+                             "vkCreateGraphicsPipelines: Second combiner operation of %s has been specified in %s, but "
+                             "fragmentShadingRateNonTrivialCombinerOps is not supported",
+                             string_VkFragmentShadingRateCombinerOpKHR(pFragmentShadingRateState->combinerOps[1]), struct_name);
+        }
+    }
+
     return skip;
 }
 
@@ -2333,6 +2432,53 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                          "Invalid call to vkCreateDevice() w/o first calling vkEnumeratePhysicalDevices().");
     } else {
         skip |= ValidateDeviceQueueCreateInfos(pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
+
+        const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *fragment_shading_rate_features =
+            lvl_find_in_chain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+
+        if (fragment_shading_rate_features) {
+            const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
+                lvl_find_in_chain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
+
+            if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
+                if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
+                    skip |= LogError(
+                        pd_state->phys_device, "VUID-VkDeviceCreateInfo-shadingRateImage-04478",
+                        "vkCreateDevice: Cannot enable shadingRateImage and pipelineFragmentShadingRate features simultaneously.");
+                }
+                if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
+                    skip |= LogError(
+                        pd_state->phys_device, "VUID-VkDeviceCreateInfo-shadingRateImage-04479",
+                        "vkCreateDevice: Cannot enable shadingRateImage and primitiveFragmentShadingRate features simultaneously.");
+                }
+                if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
+                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-shadingRateImage-04480",
+                                     "vkCreateDevice: Cannot enable shadingRateImage and attachmentFragmentShadingRate features "
+                                     "simultaneously.");
+                }
+            }
+
+            const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *fragment_density_map_features =
+                lvl_find_in_chain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
+
+            if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
+                if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
+                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04481",
+                                     "vkCreateDevice: Cannot enable fragmentDensityMap and pipelineFragmentShadingRate features "
+                                     "simultaneously.");
+                }
+                if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
+                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04482",
+                                     "vkCreateDevice: Cannot enable fragmentDensityMap and primitiveFragmentShadingRate features "
+                                     "simultaneously.");
+                }
+                if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
+                    skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04483",
+                                     "vkCreateDevice: Cannot enable fragmentDensityMap and attachmentFragmentShadingRate features "
+                                     "simultaneously.");
+                }
+            }
+        }
     }
     return skip;
 }
@@ -8503,23 +8649,96 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         const uint32_t mip_level = ivci.subresourceRange.baseMipLevel;
                         uint32_t mip_width = max(1u, ici->extent.width >> mip_level);
                         uint32_t mip_height = max(1u, ici->extent.height >> mip_level);
-                        if (!(rpci->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
-                              rpci->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT)) {
-                            if ((ivci.subresourceRange.layerCount < pCreateInfo->layers) || (mip_width < pCreateInfo->width) ||
-                                (mip_height < pCreateInfo->height)) {
-                                skip |= LogError(
-                                    device, "VUID-VkFramebufferCreateInfo-pAttachments-00882",
-                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has dimensions "
-                                    "smaller than the corresponding framebuffer dimensions. Here are the respective dimensions for "
-                                    "attachment #%u, framebuffer:\n"
-                                    "width: %u, %u\n"
-                                    "height: %u, %u\n"
-                                    "layerCount: %u, %u\n",
-                                    i, ivci.subresourceRange.baseMipLevel, i, mip_width, pCreateInfo->width, mip_height,
-                                    pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                        bool usedAsInputColorResolveDepthStencilAttachment = false;
+                        bool usedAsFragmentShadingRateAttachment = false;
+                        bool fsrNonZeroViewMasks = false;
+
+                        for (uint32_t j = 0; j < rpci->subpassCount; ++j) {
+                            const VkSubpassDescription2 &subpass = rpci->pSubpasses[j];
+
+                            uint32_t highest_view_bit = 0;
+                            for (uint32_t k = 0; k < 32; ++k) {
+                                if (((subpass.viewMask >> k) & 1) != 0) {
+                                    highest_view_bit = k;
+                                }
                             }
-                        } else {
-                            if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map_2) {
+
+                            for (uint32_t k = 0; k < rpci->pSubpasses[j].inputAttachmentCount; ++k) {
+                                if (subpass.pInputAttachments[k].attachment == i) {
+                                    usedAsInputColorResolveDepthStencilAttachment = true;
+                                    break;
+                                }
+                            }
+
+                            for (uint32_t k = 0; k < rpci->pSubpasses[j].colorAttachmentCount; ++k) {
+                                if (subpass.pColorAttachments[k].attachment == i ||
+                                    (subpass.pResolveAttachments && subpass.pResolveAttachments[k].attachment == i)) {
+                                    usedAsInputColorResolveDepthStencilAttachment = true;
+                                    break;
+                                }
+                            }
+
+                            if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment == i) {
+                                usedAsInputColorResolveDepthStencilAttachment = true;
+                            }
+
+                            if (usedAsInputColorResolveDepthStencilAttachment) {
+                                if (ivci.subresourceRange.layerCount <= highest_view_bit) {
+                                    skip |= LogError(
+                                        device, "VUID-VkFramebufferCreateInfo-renderPass-04536",
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
+                                        "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
+                                        i, ivci.subresourceRange.layerCount, highest_view_bit, j);
+                                }
+                            }
+
+                            if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+                                const VkFragmentShadingRateAttachmentInfoKHR *fsr_attachment;
+                                fsr_attachment = lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
+                                if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
+                                    usedAsFragmentShadingRateAttachment = true;
+                                    if ((mip_width * fsr_attachment->shadingRateAttachmentTexelSize.width) < pCreateInfo->width) {
+                                        skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-04539",
+                                                         "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level "
+                                                         "%u is used as a "
+                                                         "fragment shading rate attachment in subpass %u, but the product of its "
+                                                         "width (%u) and the "
+                                                         "specified shading rate texel width (%u) are smaller than the "
+                                                         "corresponding framebuffer width (%u).",
+                                                         i, ivci.subresourceRange.baseMipLevel, j, mip_width,
+                                                         fsr_attachment->shadingRateAttachmentTexelSize.width, pCreateInfo->width);
+                                    }
+                                    if ((mip_height * fsr_attachment->shadingRateAttachmentTexelSize.height) <
+                                        pCreateInfo->height) {
+                                        skip |=
+                                            LogError(device, "VUID-VkFramebufferCreateInfo-flags-04540",
+                                                     "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u "
+                                                     "is used as a "
+                                                     "fragment shading rate attachment in subpass %u, but the product of its "
+                                                     "height (%u) and the "
+                                                     "specified shading rate texel height (%u) are smaller than the corresponding "
+                                                     "framebuffer height (%u).",
+                                                     i, ivci.subresourceRange.baseMipLevel, j, mip_height,
+                                                     fsr_attachment->shadingRateAttachmentTexelSize.height, pCreateInfo->height);
+                                    }
+                                    if (highest_view_bit != 0) {
+                                        fsrNonZeroViewMasks = true;
+                                    }
+                                    if (ivci.subresourceRange.layerCount <= highest_view_bit) {
+                                        skip |= LogError(
+                                            device, "VUID-VkFramebufferCreateInfo-flags-04537",
+                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
+                                            "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
+                                            i, ivci.subresourceRange.layerCount, highest_view_bit, j);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (enabled_features.fragment_density_map_features.fragmentDensityMap) {
+                            const VkRenderPassFragmentDensityMapCreateInfoEXT *fdm_attachment;
+                            fdm_attachment = lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
+                            if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
                                 uint32_t ceiling_width = (uint32_t)ceil(
                                     (float)pCreateInfo->width /
                                     std::max((float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width,
@@ -8553,6 +8772,41 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 }
                             }
                         }
+
+                        if (usedAsInputColorResolveDepthStencilAttachment) {
+                            if (mip_width < pCreateInfo->width) {
+                                skip |=
+                                    LogError(device, "VUID-VkFramebufferCreateInfo-flags-04533",
+                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has width "
+                                             "smaller than the corresponding framebuffer width (%u).",
+                                             i, mip_width, pCreateInfo->width);
+                            }
+                            if (mip_height < pCreateInfo->height) {
+                                skip |= LogError(
+                                    device, "VUID-VkFramebufferCreateInfo-flags-04534",
+                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has height "
+                                    "smaller than the corresponding framebuffer height (%u).",
+                                    i, mip_height, pCreateInfo->height);
+                            }
+                            if (ivci.subresourceRange.layerCount < pCreateInfo->layers) {
+                                skip |=
+                                    LogError(device, "VUID-VkFramebufferCreateInfo-flags-04535",
+                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
+                                             "smaller than the corresponding framebuffer layer count (%u).",
+                                             i, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                            }
+                        }
+
+                        if (usedAsFragmentShadingRateAttachment && !fsrNonZeroViewMasks) {
+                            if (ivci.subresourceRange.layerCount != 1 && ivci.subresourceRange.layerCount < pCreateInfo->layers) {
+                                skip |=
+                                    LogError(device, "VUID-VkFramebufferCreateInfo-flags-04538",
+                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
+                                             "smaller than the corresponding framebuffer layer count (%u).",
+                                             i, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                            }
+                        }
+
                         if (IsIdentitySwizzle(ivci.components) == false) {
                             skip |= LogError(
                                 device, "VUID-VkFramebufferCreateInfo-pAttachments-00884",
@@ -8612,23 +8866,81 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                          report_data->FormatHandle(pCreateInfo->renderPass).c_str());
                     }
 
-                    const char *mismatchedLayersNoMultiviewVuid = device_extensions.vk_khr_multiview
-                                                                      ? "VUID-VkFramebufferCreateInfo-renderPass-03199"
-                                                                      : "VUID-VkFramebufferCreateInfo-flags-03200";
-                    if ((rpci->subpassCount == 0) || (rpci->pSubpasses[0].viewMask == 0)) {
-                        if (aii.layerCount < pCreateInfo->layers) {
-                            skip |=
-                                LogError(device, mismatchedLayersNoMultiviewVuid,
-                                         "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has only #%u layers, "
-                                         "but framebuffer has #%u layers.",
-                                         i, aii.layerCount, pCreateInfo->layers);
+                    bool usedAsInputColorResolveDepthStencilAttachment = false;
+                    bool usedAsFragmentShadingRateAttachment = false;
+                    bool fsrNonZeroViewMasks = false;
+
+                    for (uint32_t j = 0; j < rpci->subpassCount; ++j) {
+                        const VkSubpassDescription2 &subpass = rpci->pSubpasses[j];
+
+                        uint32_t highest_view_bit = 0;
+                        for (int k = 0; k < 32; ++k) {
+                            if (((subpass.viewMask >> k) & 1) != 0) {
+                                highest_view_bit = k;
+                            }
+                        }
+
+                        for (uint32_t k = 0; k < rpci->pSubpasses[j].inputAttachmentCount; ++k) {
+                            if (subpass.pInputAttachments[k].attachment == i) {
+                                usedAsInputColorResolveDepthStencilAttachment = true;
+                                break;
+                            }
+                        }
+
+                        for (uint32_t k = 0; k < rpci->pSubpasses[j].colorAttachmentCount; ++k) {
+                            if (subpass.pColorAttachments[k].attachment == i ||
+                                (subpass.pResolveAttachments && subpass.pResolveAttachments[k].attachment == i)) {
+                                usedAsInputColorResolveDepthStencilAttachment = true;
+                                break;
+                            }
+                        }
+
+                        if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment == i) {
+                            usedAsInputColorResolveDepthStencilAttachment = true;
+                        }
+
+                        if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+                            const VkFragmentShadingRateAttachmentInfoKHR *fsr_attachment;
+                            fsr_attachment = lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
+                            if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
+                                usedAsFragmentShadingRateAttachment = true;
+                                if ((aii.width * fsr_attachment->shadingRateAttachmentTexelSize.width) < pCreateInfo->width) {
+                                    skip |= LogError(
+                                        device, "VUID-VkFramebufferCreateInfo-flags-04543",
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u is used as a "
+                                        "fragment shading rate attachment in subpass %u, but the product of its width (%u) and the "
+                                        "specified shading rate texel width (%u) are smaller than the corresponding framebuffer "
+                                        "width (%u).",
+                                        i, j, aii.width, fsr_attachment->shadingRateAttachmentTexelSize.width, pCreateInfo->width);
+                                }
+                                if ((aii.height * fsr_attachment->shadingRateAttachmentTexelSize.height) < pCreateInfo->height) {
+                                    skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-04544",
+                                                     "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u is used as a "
+                                                     "fragment shading rate attachment in subpass %u, but the product of its "
+                                                     "height (%u) and the "
+                                                     "specified shading rate texel height (%u) are smaller than the corresponding "
+                                                     "framebuffer height (%u).",
+                                                     i, j, aii.height, fsr_attachment->shadingRateAttachmentTexelSize.height,
+                                                     pCreateInfo->height);
+                                }
+                                if (highest_view_bit != 0) {
+                                    fsrNonZeroViewMasks = true;
+                                }
+                                if (aii.layerCount != 1 && aii.layerCount <= highest_view_bit) {
+                                    skip |= LogError(
+                                        device, kVUIDUndefined,
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
+                                        "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
+                                        i, aii.layerCount, highest_view_bit, j);
+                                }
+                            }
                         }
                     }
 
-                    if (!device_extensions.vk_ext_fragment_density_map && !device_extensions.vk_ext_fragment_density_map_2) {
+                    if (usedAsInputColorResolveDepthStencilAttachment) {
                         if (aii.width < pCreateInfo->width) {
                             skip |= LogError(
-                                device, "VUID-VkFramebufferCreateInfo-flags-03192",
+                                device, "VUID-VkFramebufferCreateInfo-flags-04541",
                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a width of only #%u, "
                                 "but framebuffer has a width of #%u.",
                                 i, aii.width, pCreateInfo->width);
@@ -8636,10 +8948,32 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
                         if (aii.height < pCreateInfo->height) {
                             skip |= LogError(
-                                device, "VUID-VkFramebufferCreateInfo-flags-03193",
+                                device, "VUID-VkFramebufferCreateInfo-flags-04542",
                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a height of only #%u, "
                                 "but framebuffer has a height of #%u.",
                                 i, aii.height, pCreateInfo->height);
+                        }
+
+                        const char *mismatchedLayersNoMultiviewVuid = device_extensions.vk_khr_multiview
+                                                                          ? "VUID-VkFramebufferCreateInfo-renderPass-04546"
+                                                                          : "VUID-VkFramebufferCreateInfo-flags-04547";
+                        if ((rpci->subpassCount == 0) || (rpci->pSubpasses[0].viewMask == 0)) {
+                            if (aii.layerCount < pCreateInfo->layers) {
+                                skip |= LogError(
+                                    device, mismatchedLayersNoMultiviewVuid,
+                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has only #%u layers, "
+                                    "but framebuffer has #%u layers.",
+                                    i, aii.layerCount, pCreateInfo->layers);
+                            }
+                        }
+                    }
+
+                    if (usedAsFragmentShadingRateAttachment && !fsrNonZeroViewMasks) {
+                        if (aii.layerCount != 1 && aii.layerCount < pCreateInfo->layers) {
+                            skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-04545",
+                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
+                                             "smaller than the corresponding framebuffer layer count (%u).",
+                                             i, aii.layerCount, pCreateInfo->layers);
                         }
                     }
                 }
@@ -8662,6 +8996,15 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     if (device_extensions.vk_khr_depth_stencil_resolve && pDepthStencilResolve != nullptr) {
                         skip |= MatchUsage(1, pDepthStencilResolve->pDepthStencilResolveAttachment, pCreateInfo,
                                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03203");
+                    }
+
+                    const VkFragmentShadingRateAttachmentInfoKHR *pFragmentShadingRateAttachmentInfo =
+                        lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(rpci->pSubpasses[i].pNext);
+                    if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
+                        pFragmentShadingRateAttachmentInfo != nullptr) {
+                        skip |= MatchUsage(1, pFragmentShadingRateAttachmentInfo->pFragmentShadingRateAttachment, pCreateInfo,
+                                           VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
+                                           "VUID-VkFramebufferCreateInfo-flags-04549");
                     }
                 }
 
@@ -8791,6 +9134,17 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             skip |= MatchUsage(1, ds_resolve->pDepthStencilResolveAttachment, pCreateInfo,
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                                "VUID-VkFramebufferCreateInfo-pAttachments-02634");
+                        }
+                    }
+
+                    // Verify fragment shading rate attachments
+                    if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+                        const VkFragmentShadingRateAttachmentInfoKHR *pFragmentShadingRateAttachmentInfo =
+                            lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(subpass_description.pNext);
+                        if (pFragmentShadingRateAttachmentInfo) {
+                            skip |= MatchUsage(1, pFragmentShadingRateAttachmentInfo->pFragmentShadingRateAttachment, pCreateInfo,
+                                               VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
+                                               "VUID-VkFramebufferCreateInfo-flags-04548");
                         }
                     }
                 }
@@ -10120,8 +10474,219 @@ bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCr
         skip |= ValidateDepthStencilResolve(phys_dev_props_core12, pCreateInfo, function_name);
     }
 
+    skip |= ValidateFragmentShadingRateAttachments(device, pCreateInfo);
+
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, create_info_2.ptr(), function_name);
+
+    return skip;
+}
+
+bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo) const {
+    bool skip = false;
+
+    if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+        for (uint32_t attachmentDescription = 0; attachmentDescription < pCreateInfo->attachmentCount; ++attachmentDescription) {
+            std::vector<uint32_t> usedAsFragmentShadingRateAttachment;
+
+            // Prepass to find any use as a fragment shading rate attachment structures and validate them independently
+            for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
+                const VkFragmentShadingRateAttachmentInfoKHR *pFragmentShadingRateAttachment =
+                    lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(pCreateInfo->pSubpasses[subpass].pNext);
+
+                if (pFragmentShadingRateAttachment && pFragmentShadingRateAttachment->pFragmentShadingRateAttachment) {
+                    const VkAttachmentReference2 &attachmentReference =
+                        *(pFragmentShadingRateAttachment->pFragmentShadingRateAttachment);
+                    if (attachmentReference.attachment == attachmentDescription) {
+                        usedAsFragmentShadingRateAttachment.push_back(subpass);
+                    }
+
+                    if (((pCreateInfo->flags & VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM) != 0) &&
+                        (attachmentReference.attachment != VK_ATTACHMENT_UNUSED)) {
+                        skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-flags-04521",
+                                         "vkCreateRenderPass2: Render pass includes VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM but "
+                                         "a fragment shading rate attachment is specified in subpass %u.",
+                                         subpass);
+                    }
+
+                    if (attachmentReference.attachment != VK_ATTACHMENT_UNUSED) {
+                        const VkFormatFeatureFlags potential_format_features =
+                            GetPotentialFormatFeatures(pCreateInfo->pAttachments[attachmentReference.attachment].format);
+
+                        if (!(potential_format_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                            skip |=
+                                LogError(device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04523",
+                                         "vkCreateRenderPass2: Attachment description %u is used in subpass %u as a fragment "
+                                         "shading rate attachment, but specifies format %s, which does not support "
+                                         "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
+                                         attachmentReference.attachment, subpass,
+                                         string_VkFormat(pCreateInfo->pAttachments[attachmentReference.attachment].format));
+                        }
+
+                        if (attachmentReference.layout != VK_IMAGE_LAYOUT_GENERAL &&
+                            attachmentReference.layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
+                            skip |= LogError(
+                                device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524",
+                                "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u specifies a layout of %s.",
+                                subpass, string_VkImageLayout(attachmentReference.layout));
+                        }
+
+                        if (!IsPowerOfTwo(pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width)) {
+                            skip |=
+                                LogError(device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525",
+                                         "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a "
+                                         "non-power-of-two texel width of %u.",
+                                         subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width);
+                        }
+                        if (pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width <
+                            phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
+                            LogError(
+                                device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526",
+                                "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel width of %u which "
+                                "is lower than the advertised minimum width %u.",
+                                subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width,
+                                phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width);
+                        }
+                        if (pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width >
+                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
+                            LogError(
+                                device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527",
+                                "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel width of %u which "
+                                "is higher than the advertised maximum width %u.",
+                                subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width,
+                                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width);
+                        }
+                        if (!IsPowerOfTwo(pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height)) {
+                            skip |=
+                                LogError(device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528",
+                                         "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a "
+                                         "non-power-of-two texel height of %u.",
+                                         subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height);
+                        }
+                        if (pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height <
+                            phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
+                            LogError(
+                                device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529",
+                                "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel height of %u "
+                                "which is lower than the advertised minimum height %u.",
+                                subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height,
+                                phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height);
+                        }
+                        if (pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height >
+                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
+                            LogError(
+                                device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530",
+                                "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel height of %u "
+                                "which is higher than the advertised maximum height %u.",
+                                subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height,
+                                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
+                        }
+                        uint32_t aspectRatio = pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width /
+                                               pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height;
+                        uint32_t inverseAspectRatio = pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height /
+                                                      pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width;
+                        if (aspectRatio >
+                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+                            LogError(
+                                device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531",
+                                "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel size of %u by %u, "
+                                "which has an aspect ratio %u, which is higher than the advertised maximum aspect ratio %u.",
+                                subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width,
+                                pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height, aspectRatio,
+                                phys_dev_ext_props.fragment_shading_rate_props
+                                    .maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
+                        }
+                        if (inverseAspectRatio >
+                            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+                            LogError(
+                                device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532",
+                                "vkCreateRenderPass2: Fragment shading rate attachment in subpass %u has a texel size of %u by %u, "
+                                "which has an inverse aspect ratio of %u, which is higher than the advertised maximum aspect ratio "
+                                "%u.",
+                                subpass, pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.width,
+                                pFragmentShadingRateAttachment->shadingRateAttachmentTexelSize.height, inverseAspectRatio,
+                                phys_dev_ext_props.fragment_shading_rate_props
+                                    .maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
+                        }
+                    }
+                }
+            }
+
+            // Lambda function turning a vector of integers into a string
+            auto vectorToString = [&](std::vector<uint32_t> vector) {
+                std::stringstream ss;
+                size_t size = vector.size();
+                for (size_t i = 0; i < usedAsFragmentShadingRateAttachment.size(); i++) {
+                    if (size == 2 && i == 1)
+                        ss << " and ";
+                    else if (size > 2 && i == size - 2)
+                        ss << ", and ";
+                    else if (i != 0)
+                        ss << ", ";
+                    ss << vector[i];
+                }
+                return ss.str();
+            };
+
+            // Search for other uses of the same attachment
+            if (!usedAsFragmentShadingRateAttachment.empty()) {
+                for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
+                    const VkSubpassDescription2 &subpassInfo = pCreateInfo->pSubpasses[subpass];
+                    const VkSubpassDescriptionDepthStencilResolve *pDepthStencilResolveAttachment =
+                        lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpassInfo.pNext);
+
+                    std::string fsrAttachmentSubpassesString = vectorToString(usedAsFragmentShadingRateAttachment);
+
+                    for (uint32_t attachment = 0; attachment < subpassInfo.colorAttachmentCount; ++attachment) {
+                        if (subpassInfo.pColorAttachments[attachment].attachment == attachmentDescription) {
+                            skip |= LogError(
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
+                                "subpass(es) %s but also as color attachment %u in subpass %u",
+                                attachmentDescription, fsrAttachmentSubpassesString.c_str(), attachment, subpass);
+                        }
+                    }
+                    for (uint32_t attachment = 0; attachment < subpassInfo.colorAttachmentCount; ++attachment) {
+                        if (subpassInfo.pResolveAttachments &&
+                            subpassInfo.pResolveAttachments[attachment].attachment == attachmentDescription) {
+                            skip |= LogError(
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
+                                "subpass(es) %s but also as color resolve attachment %u in subpass %u",
+                                attachmentDescription, fsrAttachmentSubpassesString.c_str(), attachment, subpass);
+                        }
+                    }
+                    for (uint32_t attachment = 0; attachment < subpassInfo.inputAttachmentCount; ++attachment) {
+                        if (subpassInfo.pInputAttachments[attachment].attachment == attachmentDescription) {
+                            skip |= LogError(
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
+                                "subpass(es) %s but also as input attachment %u in subpass %u",
+                                attachmentDescription, fsrAttachmentSubpassesString.c_str(), attachment, subpass);
+                        }
+                    }
+                    if (subpassInfo.pDepthStencilAttachment) {
+                        if (subpassInfo.pDepthStencilAttachment->attachment == attachmentDescription) {
+                            skip |= LogError(
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
+                                "subpass(es) %s but also as the depth/stencil attachment in subpass %u",
+                                attachmentDescription, fsrAttachmentSubpassesString.c_str(), subpass);
+                        }
+                    }
+                    if (pDepthStencilResolveAttachment && pDepthStencilResolveAttachment->pDepthStencilResolveAttachment) {
+                        if (pDepthStencilResolveAttachment->pDepthStencilResolveAttachment->attachment == attachmentDescription) {
+                            skip |= LogError(
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
+                                "subpass(es) %s but also as the depth/stencil resolve attachment in subpass %u",
+                                attachmentDescription, fsrAttachmentSubpassesString.c_str(), subpass);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     return skip;
 }
@@ -14092,3 +14657,109 @@ template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracke
                                                      const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
 template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data,
                                                      const VkRayTracingPipelineCreateInfoKHR *pCreateInfo);
+
+bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D *pFragmentSize,
+                                                             const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    assert(cb_state);
+    const char *cmd_name = "vkCmdSetFragmentShadingRateKHR()";
+    bool skip = ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetFragmentShadingRateKHR-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETFRAGMENTSHADINGRATEKHR, cmd_name);
+
+    if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate &&
+        !enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate &&
+        !enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
+        skip |= LogError(
+            cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04509",
+            "vkCmdSetFragmentShadingRateKHR: Application called %s, but no fragment shading rate features have been enabled.",
+            cmd_name);
+    }
+
+    if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate && pFragmentSize->width != 1) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04507",
+                         "vkCmdSetFragmentShadingRateKHR: Pipeline fragment width of %u has been specified in %s, but "
+                         "pipelineFragmentShadingRate is not enabled",
+                         pFragmentSize->width, cmd_name);
+    }
+
+    if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate && pFragmentSize->height != 1) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04508",
+                         "vkCmdSetFragmentShadingRateKHR: Pipeline fragment height of %u has been specified in %s, but "
+                         "pipelineFragmentShadingRate is not enabled",
+                         pFragmentSize->height, cmd_name);
+    }
+
+    if (!enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate &&
+        combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-primitiveFragmentShadingRate-04510",
+                         "vkCmdSetFragmentShadingRateKHR: First combiner operation of %s has been specified in %s, but "
+                         "primitiveFragmentShadingRate is not enabled",
+                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[0]), cmd_name);
+    }
+
+    if (!enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
+        combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-attachmentFragmentShadingRate-04511",
+                         "vkCmdSetFragmentShadingRateKHR: Second combiner operation of %s has been specified in %s, but "
+                         "attachmentFragmentShadingRate is not enabled",
+                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[1]), cmd_name);
+    }
+
+    if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
+        (combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+         combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512",
+                         "vkCmdSetFragmentShadingRateKHR: First combiner operation of %s has been specified in %s, but "
+                         "fragmentShadingRateNonTrivialCombinerOps is "
+                         "not supported",
+                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[0]), cmd_name);
+    }
+
+    if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
+        (combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+         combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512",
+                         "vkCmdSetFragmentShadingRateKHR: Second combiner operation of %s has been specified in %s, but "
+                         "fragmentShadingRateNonTrivialCombinerOps "
+                         "is not supported",
+                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[1]), cmd_name);
+    }
+
+    if (pFragmentSize->width == 0) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04513",
+                         "vkCmdSetFragmentShadingRateKHR: Fragment width of %u has been specified in %s.", pFragmentSize->width,
+                         cmd_name);
+    }
+
+    if (pFragmentSize->height == 0) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04514",
+                         "vkCmdSetFragmentShadingRateKHR: Fragment height of %u has been specified in %s.", pFragmentSize->height,
+                         cmd_name);
+    }
+
+    if (pFragmentSize->width != 0 && !IsPowerOfTwo(pFragmentSize->width)) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04515",
+                         "vkCmdSetFragmentShadingRateKHR: Non-power-of-two fragment width of %u has been specified in %s.",
+                         pFragmentSize->width, cmd_name);
+    }
+
+    if (pFragmentSize->height != 0 && !IsPowerOfTwo(pFragmentSize->height)) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04516",
+                         "vkCmdSetFragmentShadingRateKHR: Non-power-of-two fragment height of %u has been specified in %s.",
+                         pFragmentSize->height, cmd_name);
+    }
+
+    if (pFragmentSize->width > 4) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04517",
+                         "vkCmdSetFragmentShadingRateKHR: Fragment width of %u specified in %s is too large.", pFragmentSize->width,
+                         cmd_name);
+    }
+
+    if (pFragmentSize->height > 4) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04518",
+                         "vkCmdSetFragmentShadingRateKHR: Fragment height of %u specified in %s is too large",
+                         pFragmentSize->height, cmd_name);
+    }
+    return skip;
+}
