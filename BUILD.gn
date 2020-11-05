@@ -191,7 +191,20 @@ if (!is_android) {
       sources += [ "layers/json/$json_name.in" ]
       outputs += [ "$vulkan_data_dir/$json_name" ]
     }
+
+    if (is_linux) {
+      _platform = "Linux"
+    } else if (is_win) {
+      _platform = "Windows"
+    } else if (is_mac) {
+      _platform = "Darwin"
+    } else {
+      _platform = "Other"
+    }
+
     args = [
+             "--platform",
+             _platform,
              rebase_path("layers/json", root_build_dir),
              rebase_path(vulkan_data_dir, root_build_dir),
            ] + rebase_path(sources, root_build_dir)

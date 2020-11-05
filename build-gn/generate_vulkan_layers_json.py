@@ -35,6 +35,9 @@ def glob_slash(dirname):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--icd', action='store_true')
+    parser.add_argument('--platform', type=str, default=platform.system(),
+        help='Target platform to build validation layers for: '
+             'Linux|Darwin|Windows|...')
     parser.add_argument('source_dir')
     parser.add_argument('target_dir')
     parser.add_argument('version_header', help='path to vulkan_core.h')
@@ -97,10 +100,10 @@ def main():
     # Set json file prefix and suffix for generating files, default to Linux.
     relative_path_prefix = '../lib'
     file_type_suffix = '.so'
-    if platform.system() == 'Windows':
+    if args.platform == 'Windows':
         relative_path_prefix = r'..\\'  # json-escaped, hence two backslashes.
         file_type_suffix = '.dll'
-    elif platform.system() == 'Darwin':
+    elif args.platform == 'Darwin':
         file_type_suffix = '.dylib'
 
     # For each *.json.in template files in source dir generate actual json file
