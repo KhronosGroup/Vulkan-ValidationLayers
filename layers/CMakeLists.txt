@@ -72,7 +72,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
         generated/vk_object_types.h
         generated/vk_extension_helper.h
         generated/vk_typemap_helper.h)
-    install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
 endif()
 
 set(TARGET_NAMES
