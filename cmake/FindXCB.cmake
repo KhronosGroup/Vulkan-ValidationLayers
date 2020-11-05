@@ -35,15 +35,15 @@ foreach(comp ${XCB_FIND_COMPONENTS})
         ${PC_${comp}_LIBRARY_DIRS}
         )
 
-    find_package_handle_standard_args(${comp}
-        FOUND_VAR ${comp}_FOUND
+    find_package_handle_standard_args(${compname}
+        FOUND_VAR ${compname}_FOUND
         REQUIRED_VARS ${compname}_INCLUDE_DIR ${compname}_LIBRARY)
     mark_as_advanced(${compname}_INCLUDE_DIR ${compname}_LIBRARY)
 
     list(APPEND XCB_INCLUDE_DIRS ${${compname}_INCLUDE_DIR})
     list(APPEND XCB_LIBRARIES ${${compname}_LIBRARY})
 
-    if(NOT ${comp}_FOUND)
+    if(NOT ${compname}_FOUND)
         set(XCB_FOUND false)
     endif()
 endforeach()

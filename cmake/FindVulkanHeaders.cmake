@@ -79,8 +79,10 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(VulkanHeaders
     DEFAULT_MSG
     VulkanHeaders_INCLUDE_DIR)
+set(FPHSA_NAME_MISMATCHED TRUE)
 find_package_handle_standard_args(VulkanRegistry
     DEFAULT_MSG
     VulkanRegistry_DIR)
+unset(FPHSA_NAME_MISMATCHED)
 
 mark_as_advanced(VulkanHeaders_INCLUDE_DIR VulkanRegistry_DIR)
