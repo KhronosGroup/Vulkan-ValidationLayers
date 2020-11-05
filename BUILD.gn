@@ -210,6 +210,7 @@ source_set("vulkan_layer_utils") {
     "$vulkan_headers_dir/include/vulkan/vk_layer.h",
     "$vulkan_headers_dir/include/vulkan/vk_sdk_platform.h",
     "$vulkan_headers_dir/include/vulkan/vulkan.h",
+    "layers/android_ndk_types.h",
     "layers/cast_utils.h",
     "layers/generated/vk_enum_string_helper.h",
     "layers/generated/vk_layer_dispatch_table.h",
