@@ -768,7 +768,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto &vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(vertex_binding);
             if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
                 (vertex_binding < current_vtx_bfr_binding_info.size()) &&
-                (current_vtx_bfr_binding_info[vertex_binding].buffer != VK_NULL_HANDLE)) {
+                ((current_vtx_bfr_binding_info[vertex_binding].buffer != VK_NULL_HANDLE) ||
+                 enabled_features.robustness2_features.nullDescriptor)) {
                 auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
                 if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
                     vertex_buffer_stride = (uint32_t)current_vtx_bfr_binding_info[vertex_binding].stride;
