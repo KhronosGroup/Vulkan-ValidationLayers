@@ -5817,6 +5817,52 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+
+    if (!tf_properties.maxTransformFeedbackBufferDataStride) {
+        printf("%s , maxTransformFeedbackBufferDataStride is zero, skipping subtests\n", kSkipPrefix);
+        return;
+    }
+
+    std::vector<const char *> device_extension_names;
+    device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    VkDeviceObj test_device(0, gpu(), device_extension_names);
+    VkCommandPoolObj commandPool(&test_device, 0);
+    VkCommandBufferObj commandBuffer(&test_device, &commandPool);
+    VkBufferObj counter_buffer2;
+    counter_buffer2.init(test_device, buffer_create_info);
+    VkPipelineLayoutObj pipelineLayout(&test_device);
+    VkRenderPass renderpass;
+    VkRenderPassCreateInfo rp_info = {};
+    VkSubpassDescription subpass = {};
+    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info.pSubpasses = &subpass;
+    rp_info.subpassCount = 1;
+    vk::CreateRenderPass(test_device.handle(), &rp_info, nullptr, &renderpass);
+    VkPipelineObj pipeline(&test_device);
+    VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    pipeline.AddShader(&vs);
+    pipeline.CreateVKPipeline(pipelineLayout.handle(), renderpass);
+    m_renderPassBeginInfo.renderPass = renderpass;
+    VkFramebuffer fb;
+    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, renderpass, 0, nullptr, 256, 256, 1};
+    vk::CreateFramebuffer(test_device.handle(), &fbci, nullptr, &fb);
+    m_renderPassBeginInfo.framebuffer = fb;
+    m_renderPassBeginInfo.renderPass = renderpass;
+    commandBuffer.begin();
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(commandBuffer.handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(commandBuffer.handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
+    commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+    if (!tf_properties.transformFeedbackDraw) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02288");
+    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287");
+    fpvkCmdDrawIndirectByteCountEXT(commandBuffer.handle(), 1, 0, counter_buffer2.handle(), 0, 0, 1);
+    m_errorMonitor->VerifyFound();
+    vk::DestroyRenderPass(test_device.handle(), renderpass, nullptr);
+    vk::DestroyFramebuffer(test_device.handle(), fb, nullptr);
 }
 
 TEST_F(VkLayerTest, DrawIndirectCountKHR) {
