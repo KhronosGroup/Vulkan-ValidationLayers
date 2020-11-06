@@ -8,8 +8,6 @@ language: cpp
 matrix:
   # Show final status immediately if a test fails.
   fast_finish: true
-  allow_failures:
-    - env: CHECK_COMMIT_FORMAT=ON
   include:
     # Android build.
     - os: linux
@@ -28,10 +26,8 @@ matrix:
     # Linux GN debug build.
     - os: linux
       env: VULKAN_BUILD_TARGET=GN
-    # Check for proper clang formatting in the pull request.
+    # Check for proper formatting in the pull request.
     - env: CHECK_FORMAT=ON
-    # Check for proper commit message formatting for commits in PR
-    - env: CHECK_COMMIT_FORMAT=ON
 
 cache: ccache
 
@@ -177,19 +173,11 @@ script:
   - |
     if [[ "$CHECK_FORMAT" == "ON" ]]; then
       if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-        # Run the clang format check only for pull request builds because the
-        # master branch is needed to do the git diff.
-        echo "Checking clang-format between TRAVIS_BRANCH=$TRAVIS_BRANCH and TRAVIS_PULL_REQUEST_BRANCH=$TRAVIS_PULL_REQUEST_BRANCH"
+        # Run the format checks only for pull request builds because the master branch is needed to do the git diff
+        echo "Checking source code and commit formats between TRAVIS_BRANCH=$TRAVIS_BRANCH and TRAVIS_PULL_REQUEST_BRANCH=$TRAVIS_PULL_REQUEST_BRANCH"
         ./scripts/check_code_format.sh
       else
-        echo "Skipping clang-format check since this is not a pull request."
-      fi
-    fi
-  - |
-    if [[ "$CHECK_COMMIT_FORMAT" == "ON" ]]; then
-      if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-        echo "Checking commit message formats:  See CONTRIBUTING.md"
-        ./scripts/check_commit_message_format.sh
+        echo "Skipping format check since this is not a pull request."
       fi
     fi
   - |
@@ -207,7 +195,6 @@ notifications:
   email:
     recipients:
       - cnorthrop@google.com
-      - tobine@google.com
       - chrisforbes@google.com
       - shannon@lunarg.com
       - mikes@lunarg.com
