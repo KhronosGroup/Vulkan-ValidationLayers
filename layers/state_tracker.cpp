@@ -2059,6 +2059,7 @@ void ValidationStateTracker::DecrementBoundResources(CMD_BUFFER_STATE const *cb_
 
 void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
     std::unordered_map<VkQueue, uint64_t> otherQueueSeqs;
+    std::unordered_map<VkSemaphore, uint64_t> timelineSemaphoreCounters;
 
     // Roll this queue forward, one submission at a time.
     while (pQueue->seq < seq) {
@@ -2069,8 +2070,13 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             if (pSemaphore) {
                 pSemaphore->in_use.fetch_sub(1);
             }
-            auto &lastSeq = otherQueueSeqs[wait.queue];
-            lastSeq = std::max(lastSeq, wait.seq);
+            if (wait.type == VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
+                auto &lastCounter = timelineSemaphoreCounters[wait.semaphore];
+                lastCounter = std::max(lastCounter, wait.payload);
+            } else {
+                auto &lastSeq = otherQueueSeqs[wait.queue];
+                lastSeq = std::max(lastSeq, wait.seq);
+            }
         }
 
         for (auto &signal : submission.signalSemaphores) {
@@ -2130,6 +2136,9 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
     for (auto qs : otherQueueSeqs) {
         RetireWorkOnQueue(GetQueueState(qs.first), qs.second);
     }
+    for (auto sc : timelineSemaphoreCounters) {
+        RetireTimelineSemaphore(sc.first, sc.second);
+    }
 }
 
 // Submit a fence to a queue, delimiting previous fences and previous untracked
@@ -2180,6 +2189,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     SEMAPHORE_WAIT wait;
                     wait.semaphore = semaphore;
+                    wait.type = pSemaphore->type;
                     if (pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
                         if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
                             wait.queue = pSemaphore->signaler.first;
@@ -2385,7 +2395,8 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
-                        semaphore_waits.push_back({semaphore, pSemaphore->signaler.first, pSemaphore->signaler.second});
+                        semaphore_waits.push_back(
+                            {semaphore, pSemaphore->type, pSemaphore->signaler.first, pSemaphore->signaler.second});
                         pSemaphore->in_use.fetch_add(1);
                     }
                     pSemaphore->signaler.first = VK_NULL_HANDLE;
