@@ -190,12 +190,29 @@ class BestPracticesOutputGenerator(OutputGenerator):
                 self.otwrite('both', prot)
             else:
                 self.otwrite('both', '\n')
+
+            # Output data structure containing extension deprecation data
             ext_deprecation_data = 'const std::unordered_map<std::string, DeprecationData>  deprecated_extensions = {\n'
             for ext in sorted(self.extension_info):
                 ext_data = self.extension_info[ext]
-                ext_deprecation_data += '    {"%s", {kExt%s, "%s"}},\n' % (ext, ext_data[0], ext_data[1])
+                reason = ext_data[0]
+                target = ext_data[1]
+                if reason is not None:
+                    ext_deprecation_data += '    {"%s", {kExt%s, "%s"}},\n' % (ext, reason, target)
             ext_deprecation_data += '};\n'
             self.otwrite('hdr', ext_deprecation_data)
+
+            # Output data structure containing extension special use data
+            ext_specialuse_data = 'const std::unordered_map<std::string, std::string> special_use_extensions = {\n'
+            for ext in sorted(self.extension_info):
+                spec_use_data = self.extension_info[ext]
+                special_uses = spec_use_data[2]
+                if special_uses is not None:
+                    special_uses = special_uses.replace(',', ', ')
+                    ext_specialuse_data += '    {"%s", "%s"},\n' % (ext, special_uses)
+            ext_specialuse_data += '};\n'
+            self.otwrite('hdr', ext_specialuse_data)
+
         OutputGenerator.endFile(self)
     #
     # Processing point at beginning of each extension definition
@@ -203,6 +220,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
         OutputGenerator.beginFeature(self, interface, emit)
         self.featureExtraProtect = GetFeatureProtect(interface)
         ext_name = interface.attrib.get('name')
+        ext_special_use = interface.attrib.get('specialuse')
         ext_promoted = (interface.attrib.get('promotedto'))
         ext_obsoleted = interface.attrib.get('obsoletedby')
         ext_deprecated = interface.attrib.get('deprecatedby')
@@ -216,8 +234,11 @@ class BestPracticesOutputGenerator(OutputGenerator):
            reason = 'Deprecated'
            target = ext_deprecated
         else:
-            return
-        self.extension_info[ext_name] = [reason, target]
+            reason = None
+            target = None
+        if reason is not None or ext_special_use is not None:
+            self.extension_info[ext_name] = [reason, target, ext_special_use]
+
     #
     # Retrieve the type and name for a parameter
     def getTypeNameTuple(self, param):
