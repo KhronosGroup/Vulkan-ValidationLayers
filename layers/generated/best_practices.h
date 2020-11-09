@@ -1708,3 +1708,21 @@ const std::unordered_map<std::string, DeprecationData>  deprecated_extensions = 
     {"VK_NV_win32_keyed_mutex", {kExtPromoted, "VK_KHR_win32_keyed_mutex"}},
 };
 
+const std::unordered_map<std::string, std::string> special_use_extensions = {
+    {"VK_AMD_buffer_marker", "devtools"},
+    {"VK_AMD_shader_info", "devtools"},
+    {"VK_EXT_debug_marker", "debugging"},
+    {"VK_EXT_debug_report", "debugging"},
+    {"VK_EXT_debug_utils", "debugging"},
+    {"VK_EXT_depth_clip_enable", "d3demulation"},
+    {"VK_EXT_device_memory_report", "devtools"},
+    {"VK_EXT_line_rasterization", "cadsupport"},
+    {"VK_EXT_pipeline_creation_feedback", "devtools"},
+    {"VK_EXT_transform_feedback", "glemulation, d3demulation, devtools"},
+    {"VK_EXT_validation_features", "debugging"},
+    {"VK_EXT_validation_flags", "debugging"},
+    {"VK_INTEL_performance_query", "devtools"},
+    {"VK_KHR_performance_query", "devtools"},
+    {"VK_KHR_pipeline_executable_properties", "devtools"},
+};
+
