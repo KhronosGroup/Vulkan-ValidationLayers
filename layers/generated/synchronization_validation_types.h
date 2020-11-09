@@ -226,7 +226,7 @@ struct SyncStageAccessInfoType {
 };
 
 // Array of text names and component masks for each stage/access index
-static std::array<SyncStageAccessInfoType, 55> syncStageAccessInfoByStageAccessIndex = { {
+static const std::array<SyncStageAccessInfoType, 55> syncStageAccessInfoByStageAccessIndex { {
     {
         "SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ",
         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
@@ -670,7 +670,7 @@ static std::array<SyncStageAccessInfoType, 55> syncStageAccessInfoByStageAccessI
 } };
 
 // Constants defining the mask of all read and write stage_access states
-static SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read StageAccess bits
+static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read StageAccess bits
     SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT |
     SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT |
     SYNC_VERTEX_INPUT_INDEX_READ_BIT |
@@ -708,7 +708,7 @@ static SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read Sta
     SYNC_HOST_HOST_READ_BIT
 );
 
-static SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all write StageAccess bits
+static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all write StageAccess bits
     SYNC_VERTEX_SHADER_SHADER_WRITE_BIT |
     SYNC_TESSELLATION_CONTROL_SHADER_SHADER_WRITE_BIT |
     SYNC_TESSELLATION_EVALUATION_SHADER_SHADER_WRITE_BIT |
@@ -732,7 +732,7 @@ static SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all write S
 );
 
 // Bit order mask of stage_access bit for each stage
-static std::map<VkPipelineStageFlags, SyncStageAccessFlags> syncStageAccessMaskByStageBit = {
+static const std::map<VkPipelineStageFlags, SyncStageAccessFlags> syncStageAccessMaskByStageBit  {
     { VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, (
         SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT |
         SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT
@@ -827,7 +827,7 @@ static std::map<VkPipelineStageFlags, SyncStageAccessFlags> syncStageAccessMaskB
 };
 
 // Bit order mask of stage_access bit for each access
-static std::map<VkAccessFlags, SyncStageAccessFlags> syncStageAccessMaskByAccessBit = {
+static const std::map<VkAccessFlags, SyncStageAccessFlags> syncStageAccessMaskByAccessBit  {
     { VK_ACCESS_INDIRECT_COMMAND_READ_BIT, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT},
     { VK_ACCESS_INDEX_READ_BIT, SYNC_VERTEX_INPUT_INDEX_READ_BIT},
     { VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ_BIT},
@@ -898,7 +898,7 @@ static std::map<VkAccessFlags, SyncStageAccessFlags> syncStageAccessMaskByAccess
 };
 
 // stage_access index for each stage and access
-static std::map<VkPipelineStageFlags, std::map<VkAccessFlags, SyncStageAccessIndex>> syncStageAccessIndexByStageAndAccess = {
+static const std::map<VkPipelineStageFlags, std::map<VkAccessFlags, SyncStageAccessIndex>> syncStageAccessIndexByStageAndAccess {
     { VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, {
         { VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR, SYNC_ACCELERATION_STRUCTURE_BUILD_KHR_ACCELERATION_STRUCTURE_READ_KHR },
         { VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, SYNC_ACCELERATION_STRUCTURE_BUILD_KHR_ACCELERATION_STRUCTURE_WRITE_KHR }
@@ -999,7 +999,7 @@ static std::map<VkPipelineStageFlags, std::map<VkAccessFlags, SyncStageAccessInd
 };
 
 // Pipeline stages corresponding to VK_PIPELINE_STAGE_ALL_COMMANDS_BIT for each VkQueueFlagBits
-static std::map<VkQueueFlagBits, VkPipelineStageFlags> syncAllCommandStagesByQueueFlags = {
+static const std::map<VkQueueFlagBits, VkPipelineStageFlags> syncAllCommandStagesByQueueFlags  {
     { VK_QUEUE_COMPUTE_BIT, (
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
@@ -1044,7 +1044,7 @@ static std::map<VkQueueFlagBits, VkPipelineStageFlags> syncAllCommandStagesByQue
 };
 
 // Masks of logically earlier stage flags for a given stage flag
-static std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> syncLogicallyEarlierStages = {
+static const std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> syncLogicallyEarlierStages  {
     { VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT},
     { VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT},
     { VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, (
@@ -1207,7 +1207,7 @@ static std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> syncLogicallyEarl
 };
 
 // Masks of logically later stage flags for a given stage flag
-static std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> syncLogicallyLaterStages = {
+static const std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> syncLogicallyLaterStages  {
     { VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, (
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
@@ -1375,7 +1375,7 @@ struct SyncShaderStageAccess {
     SyncStageAccessIndex uniform_read;
 };
 
-static std::map<VkShaderStageFlagBits, SyncShaderStageAccess> syncStageAccessMaskByShaderStage = {
+static const std::map<VkShaderStageFlagBits, SyncShaderStageAccess> syncStageAccessMaskByShaderStage {
     {VK_SHADER_STAGE_VERTEX_BIT, {
         SYNC_VERTEX_SHADER_SHADER_READ, SYNC_VERTEX_SHADER_SHADER_WRITE, SYNC_VERTEX_SHADER_UNIFORM_READ}},
     {VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, {
