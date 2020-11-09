@@ -644,16 +644,13 @@ def StageAccessEnums(stage_accesses, config):
     output.append('')
 
     # The stage/access combinations as bit mask
-    bits_name = config['bits_name']
     output.append('// Unique bit for each  stage/access combination')
-    output.append('enum {} : {} {{'.format(bits_name, sync_mask_name))
-    output.extend([ '{}{} = {}(1) << {},'.format(indent, e['stage_access_bit'], sync_mask_name, e['stage_access'])  for e in stage_accesses])
-    output.append('};')
+    output.extend([ '{}static const {} {} = ({}(1) << {});'.format('', sync_mask_name, e['stage_access_bit'], sync_mask_name, e['stage_access'])  for e in stage_accesses])
     output.append('')
 
     map_name = var_prefix + 'StageAccessIndexByStageAccessBit'
     output.append('// Map of the StageAccessIndices from the StageAccess Bit')
-    output.append('static std::map<{}, {}> {}  = {{'.format(sync_mask_name, ordinal_name, map_name))
+    output.append('static std::unordered_map<{}, {}> {}  = {{'.format(sync_mask_name, ordinal_name, map_name))
     output.extend([ '{}{{ {}, {} }},'.format(indent, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses])
     output.append('};')
     output.append('')
@@ -665,7 +662,7 @@ def StageAccessEnums(stage_accesses, config):
     output.append('{}VkPipelineStageFlagBits stage_mask;'.format(indent))
     output.append('{}VkAccessFlagBits access_mask;'.format(indent))
     output.append('{}{} stage_access_index;'.format(indent, ordinal_name))
-    output.append('{}{} stage_access_bit;'.format(indent, bits_name))
+    output.append('{}{} stage_access_bit;'.format(indent, sync_mask_name))
     output.append('};\n')
 
     sa_info_var = '{}StageAccessInfoByStageAccessIndex'.format(config['var_prefix'])
@@ -863,16 +860,16 @@ def GenSyncTypeHelper(gen) :
         'type_prefix': 'Sync',
         'enum_prefix': 'SYNC_',
         'indent': '    ',
-        'sync_mask_base_type': 'uint64_t',
+        'sync_mask_base_type': 'std::bitset<64>',
         'vk_stage_flags': 'VkPipelineStageFlags',
         'vk_stage_bits': 'VkPipelineStageFlagBits',
         'vk_access_flags': 'VkAccessFlags',
         'vk_access_bits': 'VkAccessFlagBits'}
     config['sync_mask_name'] = '{}StageAccessFlags'.format(config['type_prefix'])
     config['ordinal_name'] = '{}StageAccessIndex'.format(config['type_prefix'])
-    config['bits_name'] = '{}StageAccessFlagBits'.format(config['type_prefix'])
+    config['bits_name'] = '{}StageAccessFlags'.format(config['type_prefix'])
 
-    lines = ['#pragma once', '', '#include <array>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>', '']
+    lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <unordered_map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>', '']
     lines.extend(['// clang-format off', ''])
     lines.extend(("using {} = {};".format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
 
