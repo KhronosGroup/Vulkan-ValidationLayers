@@ -1082,13 +1082,13 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
 void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                       VkImage *pSwapchainImages) {
     StartReadObjectParentInstance(device, "vkGetSwapchainImagesKHR");
-    StartReadObject(swapchain, "vkGetSwapchainImagesKHR");
+    StartReadObjectParentInstance(swapchain, "vkGetSwapchainImagesKHR");
 }
 
 void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                        VkImage *pSwapchainImages, VkResult result) {
     FinishReadObjectParentInstance(device, "vkGetSwapchainImagesKHR");
-    FinishReadObject(swapchain, "vkGetSwapchainImagesKHR");
+    FinishReadObjectParentInstance(swapchain, "vkGetSwapchainImagesKHR");
     if (pSwapchainImages != NULL) {
         auto lock = write_lock_guard_t(thread_safety_lock);
         auto &wrapped_swapchain_image_handles = swapchain_wrapped_image_handle_map[swapchain];
@@ -1104,7 +1104,7 @@ void ThreadSafety::PreCallRecordDestroySwapchainKHR(
     VkSwapchainKHR                              swapchain,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroySwapchainKHR");
-    StartWriteObject(swapchain, "vkDestroySwapchainKHR");
+    StartWriteObjectParentInstance(swapchain, "vkDestroySwapchainKHR");
     // Host access to swapchain must be externally synchronized
     auto lock = read_lock_guard_t(thread_safety_lock);
     for (auto &image_handle : swapchain_wrapped_image_handle_map[swapchain]) {
@@ -1117,8 +1117,8 @@ void ThreadSafety::PostCallRecordDestroySwapchainKHR(
     VkSwapchainKHR                              swapchain,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroySwapchainKHR");
-    FinishWriteObject(swapchain, "vkDestroySwapchainKHR");
-    DestroyObject(swapchain);
+    FinishWriteObjectParentInstance(swapchain, "vkDestroySwapchainKHR");
+    DestroyObjectParentInstance(swapchain);
     // Host access to swapchain must be externally synchronized
     auto lock = write_lock_guard_t(thread_safety_lock);
     for (auto &image_handle : swapchain_wrapped_image_handle_map[swapchain]) {
@@ -1370,7 +1370,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
         # Use 'in' to check the types, to handle suffixes and pointers, except for VkDevice
         # which can be confused with VkDeviceMemory
         suffix = ''
-        if 'VkSurface' in paramtype or 'VkDebugReportCallback' in paramtype or 'VkDebugUtilsMessenger' in paramtype or 'VkDevice' == paramtype or 'VkDevice*' == paramtype or 'VkInstance' in paramtype:
+        if 'VkSurface' in paramtype or 'VkSwapchainKHR' in paramtype or 'VkDebugReportCallback' in paramtype or 'VkDebugUtilsMessenger' in paramtype or 'VkDevice' == paramtype or 'VkDevice*' == paramtype or 'VkInstance' in paramtype:
             suffix = 'ParentInstance'
         return suffix
 
@@ -1408,7 +1408,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
 
                             # XXX TODO: Can we do better to lookup types of externsync members?
                             suffix = ''
-                            if 'surface' in member:
+                            if 'surface' in member or 'swapchain' in member.lower():
                                 suffix = 'ParentInstance'
 
                             if '[]' in element:
@@ -1439,7 +1439,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
                             member = str(member).replace(".", "->")
                             # XXX TODO: Can we do better to lookup types of externsync members?
                             suffix = ''
-                            if 'surface' in member:
+                            if 'surface' in member or 'swapchain' in member.lower():
                                 suffix = 'ParentInstance'
                             paramdecl += '    ' + functionprefix + 'WriteObject' + suffix + '(' + member + ', "' + name + '");\n'
                 elif self.paramIsPointer(param) and ('Create' in name or 'Allocate' in name or 'AcquirePerformanceConfigurationINTEL' in name) and functionprefix == 'Finish':
@@ -1565,7 +1565,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
                 counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
                 obj_type = 'kVulkanObjectType' + obj[2:]
                 counter_class_instances += '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type)
-                if 'VkSurface' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
+                if 'VkSurface' in obj or 'VkSwapchainKHR' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
                     counter_class_bodies += 'WRAPPER_PARENT_INSTANCE(%s)\n' % obj
                 else:
                     counter_class_bodies += 'WRAPPER(%s)\n' % obj

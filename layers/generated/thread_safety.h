@@ -496,7 +496,7 @@ WRAPPER(VkSamplerYcbcrConversion)
 WRAPPER(VkSemaphore)
 WRAPPER(VkShaderModule)
 WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
-WRAPPER(VkSwapchainKHR)
+WRAPPER_PARENT_INSTANCE(VkSwapchainKHR)
 WRAPPER(VkValidationCacheEXT)
 
 
