@@ -1851,6 +1851,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.multiview_features = *multiview_features;
     }
 
+    const auto *portability_features = lvl_find_in_chain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(pCreateInfo->pNext);
+    if (portability_features) {
+        state_tracker->enabled_features.portability_subset_features = *portability_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);

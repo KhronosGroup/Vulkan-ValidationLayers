@@ -13727,6 +13727,18 @@ bool CoreChecks::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent) const {
+    bool skip = false;
+    if (device_extensions.vk_khr_portability_subset != ExtEnabled::kNotEnabled) {
+        if (VK_FALSE == enabled_features.portability_subset_features.events) {
+            skip |= LogError(device, "VUID-vkCreateEvent-events-04468",
+                             "vkCreateEvent: events are not supported via VK_KHR_portability_subset");
+        }
+    }
+    return skip;
+}
+
 void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                           std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
     reset();
