@@ -43,18 +43,22 @@ enum SyncHazard {
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
-    static inline SyncStageAccessFlagBits FlagBit(SyncStageAccessIndex stage_access) {
+    static inline SyncStageAccessFlags FlagBit(SyncStageAccessIndex stage_access) {
         return syncStageAccessInfoByStageAccessIndex[stage_access].stage_access_bit;
     }
     static inline SyncStageAccessFlags Flags(SyncStageAccessIndex stage_access) {
         return static_cast<SyncStageAccessFlags>(FlagBit(stage_access));
     }
 
-    static bool IsRead(SyncStageAccessFlagBits stage_access_bit) { return 0 != (stage_access_bit & syncStageAccessReadMask); }
+    static bool IsRead(const SyncStageAccessFlags &stage_access_bit) { return (stage_access_bit & syncStageAccessReadMask).any(); }
     static bool IsRead(SyncStageAccessIndex stage_access_index) { return IsRead(FlagBit(stage_access_index)); }
 
-    static bool IsWrite(SyncStageAccessFlagBits stage_access_bit) { return 0 != (stage_access_bit & syncStageAccessWriteMask); }
-    static bool HasWrite(SyncStageAccessFlags stage_access_mask) { return 0 != (stage_access_mask & syncStageAccessWriteMask); }
+    static bool IsWrite(const SyncStageAccessFlags &stage_access_bit) {
+        return (stage_access_bit & syncStageAccessWriteMask).any();
+    }
+    static bool HasWrite(const SyncStageAccessFlags &stage_access_mask) {
+        return (stage_access_mask & syncStageAccessWriteMask).any();
+    }
     static bool IsWrite(SyncStageAccessIndex stage_access_index) { return IsWrite(FlagBit(stage_access_index)); }
     static VkPipelineStageFlagBits PipelineStageBit(SyncStageAccessIndex stage_access_index) {
         return syncStageAccessInfoByStageAccessIndex[stage_access_index].stage_mask;
@@ -62,7 +66,7 @@ struct SyncStageAccess {
     static SyncStageAccessFlags AccessScopeByStage(VkPipelineStageFlags stages);
     static SyncStageAccessFlags AccessScopeByAccess(VkAccessFlags access);
     static SyncStageAccessFlags AccessScope(VkPipelineStageFlags stages, VkAccessFlags access);
-    static SyncStageAccessFlags AccessScope(SyncStageAccessFlags stage_scope, VkAccessFlags accesses) {
+    static SyncStageAccessFlags AccessScope(const SyncStageAccessFlags &stage_scope, VkAccessFlags accesses) {
         return stage_scope & AccessScopeByAccess(accesses);
     }
 };
@@ -89,7 +93,7 @@ struct HazardResult {
     SyncStageAccessFlags prior_access = 0U;  // TODO -- change to a NONE enum in ...Bits
     ResourceUsageTag tag = ResourceUsageTag();
     void Set(const ResourceAccessState *access_state_, SyncStageAccessIndex usage_index_, SyncHazard hazard_,
-             SyncStageAccessFlags prior_, const ResourceUsageTag &tag_);
+             const SyncStageAccessFlags &prior_, const ResourceUsageTag &tag_);
 };
 
 struct SyncBarrier {
@@ -106,8 +110,8 @@ struct SyncBarrier {
         dst_exec_scope |= other.dst_exec_scope;
         dst_access_scope |= other.dst_access_scope;
     }
-    SyncBarrier(VkPipelineStageFlags src_exec_scope_, SyncStageAccessFlags src_access_scope_, VkPipelineStageFlags dst_exec_scope_,
-                SyncStageAccessFlags dst_access_scope_)
+    SyncBarrier(VkPipelineStageFlags src_exec_scope_, const SyncStageAccessFlags &src_access_scope_,
+                VkPipelineStageFlags dst_exec_scope_, const SyncStageAccessFlags &dst_access_scope_)
         : src_exec_scope(src_exec_scope_),
           src_access_scope(src_access_scope_),
           dst_exec_scope(dst_exec_scope_),
@@ -158,11 +162,11 @@ class ResourceAccessState : public SyncStageAccess {
     HazardResult DetectHazard(SyncStageAccessIndex usage_index, const SyncOrderingBarrier &ordering) const;
 
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags source_exec_scope,
-                                     SyncStageAccessFlags source_access_scope) const;
+                                     const SyncStageAccessFlags &source_access_scope) const;
     HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index) const;
 
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
-    void SetWrite(SyncStageAccessFlagBits usage_bit, const ResourceUsageTag &tag);
+    void SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag &tag);
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, const ResourceUsageTag &tag);
@@ -183,7 +187,7 @@ class ResourceAccessState : public SyncStageAccess {
           pending_write_barriers(0) {}
 
     bool HasPendingState() const {
-        return (0 != pending_layout_transition) || (0 != pending_write_barriers) || (0 != pending_write_dep_chain);
+        return (0 != pending_layout_transition) || pending_write_barriers.any() || (0 != pending_write_dep_chain);
     }
     bool HasWriteOp() const { return last_write != 0; }
     bool operator==(const ResourceAccessState &rhs) const {
@@ -197,15 +201,15 @@ class ResourceAccessState : public SyncStageAccess {
         return same;
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
-    VkPipelineStageFlags GetReadBarriers(SyncStageAccessFlags usage) const;
+    VkPipelineStageFlags GetReadBarriers(const SyncStageAccessFlags &usage) const;
     SyncStageAccessFlags GetWriteBarriers() const { return write_barriers; }
 
   private:
     static constexpr VkPipelineStageFlags kInvalidAttachmentStage = ~VkPipelineStageFlags(0);
-    bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
-    bool IsRAWHazard(VkPipelineStageFlagBits usage_stage, SyncStageAccessFlagBits usage) const;
+    bool IsWriteHazard(SyncStageAccessFlags usage) const { return (usage & ~write_barriers).any(); }
+    bool IsRAWHazard(VkPipelineStageFlagBits usage_stage, const SyncStageAccessFlags &usage) const;
     bool InSourceScopeOrChain(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope) const {
-        return (src_access_scope & last_write) || (write_dependency_chain & src_exec_scope);
+        return (src_access_scope & last_write).any() || (write_dependency_chain & src_exec_scope);
     }
 
     static bool IsReadHazard(VkPipelineStageFlagBits stage, const VkPipelineStageFlags barriers) {
@@ -224,7 +228,7 @@ class ResourceAccessState : public SyncStageAccess {
     VkPipelineStageFlags GetOrderedStages(const SyncOrderingBarrier &ordering) const;
     ReadState *GetReadStateForStage(VkPipelineStageFlagBits stage, uint32_t search_limit = kStageCount);
 
-    // TODO: Add a NONE (zero) enum to SyncStageAccessFlagBits for input_attachment_read and last_write
+    // TODO: Add a NONE (zero) enum to SyncStageAccessFlags for input_attachment_read and last_write
 
     // With reads, each must be "safe" relative to it's prior write, so we need only
     // save the most recent write operation (as anything *transitively* unsafe would arleady
@@ -300,10 +304,11 @@ class AccessContext {
     HazardResult DetectHazard(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const SyncOrderingBarrier &ordering,
                               const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0U) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
-                                          SyncStageAccessFlags src_access_scope, const VkImageSubresourceRange &subresource_range,
-                                          DetectOptions options) const;
+                                          const SyncStageAccessFlags &src_access_scope,
+                                          const VkImageSubresourceRange &subresource_range, DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
-                                          SyncStageAccessFlags src_stage_accesses, const VkImageMemoryBarrier &barrier) const;
+                                          const SyncStageAccessFlags &src_stage_accesses,
+                                          const VkImageMemoryBarrier &barrier) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const IMAGE_VIEW_STATE *attach_view) const;
 
     void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
@@ -407,7 +412,7 @@ class AccessContext {
   private:
     HazardResult DetectHazard(AddressType type, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
     HazardResult DetectBarrierHazard(AddressType type, SyncStageAccessIndex current_usage, VkPipelineStageFlags src_exec_scope,
-                                     SyncStageAccessFlags src_access_scope, const ResourceAccessRange &range,
+                                     const SyncStageAccessFlags &src_access_scope, const ResourceAccessRange &range,
                                      DetectOptions options) const;
 
     template <typename Detector>
@@ -569,11 +574,13 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void ApplyGlobalBarriers(AccessContext *context, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                              SyncStageAccessFlags src_stage_scope, SyncStageAccessFlags dst_stage_scope,
                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag);
-    void ApplyBufferBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_stage_scope,
-                             VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
+    void ApplyBufferBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask,
+                             const SyncStageAccessFlags &src_stage_scope, VkPipelineStageFlags dst_stage_mask,
+                             const SyncStageAccessFlags &dst_stage_scope, uint32_t barrier_count,
                              const VkBufferMemoryBarrier *barriers);
-    void ApplyImageBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_stage_scope,
-                            VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
+    void ApplyImageBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask,
+                            const SyncStageAccessFlags &src_stage_scope, VkPipelineStageFlags dst_stage_mask,
+                            const SyncStageAccessFlags &dst_stage_scope, uint32_t barrier_count,
                             const VkImageMemoryBarrier *barriers, const ResourceUsageTag &tag);
 
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
