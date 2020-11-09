@@ -248,7 +248,7 @@ VkPipelineStageFlags ExpandPipelineStages(VkQueueFlags queue_flags, VkPipelineSt
 }
 
 VkPipelineStageFlags RelatedPipelineStages(VkPipelineStageFlags stage_mask,
-                                           std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> &map) {
+                                           const std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> &map) {
     VkPipelineStageFlags unscanned = stage_mask;
     VkPipelineStageFlags related = 0;
     for (const auto &entry : map) {
