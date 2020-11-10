@@ -112,6 +112,8 @@ class BestPractices : public ValidationStateTracker {
 
     bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version, const char* vuid) const;
 
+    bool ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const char* vuid) const;
+
     bool PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                     uint32_t stride) const;
