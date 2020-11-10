@@ -379,13 +379,13 @@ class CoreChecks : public ValidationStateTracker {
                                                 void* pData);
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(VkPipelineBindPoint bind_point, const cvdescriptorset::DescriptorSet* descriptor_set,
-                           const std::map<uint32_t, DescriptorReqirement>& bindings, const std::vector<uint32_t>& dynamic_offsets,
+                           const BindingReqMap& bindings, const std::vector<uint32_t>& dynamic_offsets,
                            const CMD_BUFFER_STATE* cb_node, const std::vector<VkImageView>& attachment_views, const char* caller,
                            const DrawDispatchVuid& vuids) const;
     bool ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point, const CMD_BUFFER_STATE* cb_node,
                                           const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets,
-                                          std::pair<const uint32_t, DescriptorReqirement>& binding_info, VkFramebuffer framebuffer,
+                                          std::pair<const uint32_t, DescriptorRequirement>& binding_info, VkFramebuffer framebuffer,
                                           const std::vector<VkImageView>& attachment_views, const char* caller,
                                           const DrawDispatchVuid& vuids) const;
 

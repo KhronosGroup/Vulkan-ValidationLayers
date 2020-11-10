@@ -178,19 +178,19 @@ struct less<SamplerUsedByImage> {
 };
 }  // namespace std
 
-struct DescriptorReqirement {
+struct DescriptorRequirement {
     descriptor_req reqs;
     std::vector<std::map<SamplerUsedByImage, std::map<VkDescriptorSet, const cvdescriptorset::Descriptor *>>>
         samplers_used_by_image;  // Copy from StageState.interface_var. BUT it combines from plural shader stages.
                                  // The index of array is index of image.
-    DescriptorReqirement() : reqs(descriptor_req(0)) {}
+    DescriptorRequirement() : reqs(descriptor_req(0)) {}
 };
 
-inline bool operator==(const DescriptorReqirement &a, const DescriptorReqirement &b) NOEXCEPT { return a.reqs == b.reqs; }
+inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) NOEXCEPT { return a.reqs == b.reqs; }
 
-inline bool operator<(const DescriptorReqirement &a, const DescriptorReqirement &b) NOEXCEPT { return a.reqs < b.reqs; }
+inline bool operator<(const DescriptorRequirement &a, const DescriptorRequirement &b) NOEXCEPT { return a.reqs < b.reqs; }
 
-typedef std::map<uint32_t, DescriptorReqirement> BindingReqMap;
+typedef std::map<uint32_t, DescriptorRequirement> BindingReqMap;
 
 struct DESCRIPTOR_POOL_STATE : BASE_NODE {
     VkDescriptorPool pool;
@@ -1242,7 +1242,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
         VkPipelineBindPoint bind_point;
         CMD_TYPE cmd_type;
         std::string function;
-        std::vector<std::pair<const uint32_t, DescriptorReqirement>> binding_infos;
+        std::vector<std::pair<const uint32_t, DescriptorRequirement>> binding_infos;
         VkFramebuffer framebuffer;
         std::vector<VkImageView> attachment_views;  // vector index is attachment index. If the value is VK_NULL_HANDLE(0),
                                                     // it means the attachment isn't used in this command.
