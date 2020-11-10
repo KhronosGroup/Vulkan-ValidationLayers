@@ -163,6 +163,8 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
             (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
         skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i], specified_version,
                                              kVUID_BestPractices_CreateInstance_DeprecatedExtension);
+        skip |= ValidateSpecialUseExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
+                                             kVUID_BestPractices_CreateInstance_SpecialUseExtension);
     }
 
     return skip;
@@ -205,6 +207,8 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         }
         skip |= ValidateDeprecatedExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], instance_api_version,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
+        skip |= ValidateSpecialUseExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
+                                             kVUID_BestPractices_CreateDevice_SpecialUseExtension);
     }
 
     const auto bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
