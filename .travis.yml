@@ -8,8 +8,6 @@ language: cpp
 matrix:
   # Show final status immediately if a test fails.
   fast_finish: true
-  allow_failures:
-    - env: CHECK_COMMIT_FORMAT=ON
   include:
     # Android build.
     - os: linux
@@ -28,10 +26,8 @@ matrix:
     # Linux GN debug build.
     - os: linux
       env: VULKAN_BUILD_TARGET=GN
-    # Check for proper clang formatting in the pull request.
+    # Check for proper formatting in the pull request.
     - env: CHECK_FORMAT=ON
-    # Check for proper commit message formatting for commits in PR
-    - env: CHECK_COMMIT_FORMAT=ON
 
 cache: ccache
 
@@ -72,12 +68,6 @@ before_install:
       export ANDROID_NDK_HOME=`pwd`/android-ndk-${ANDROID_NDK}
       export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
       export PATH="$ANDROID_NDK_HOME:$PATH"
-    fi
-  - |
-    if [[ "$CHECK_FORMAT" == "ON" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-      # Install the clang format diff tool, but only for pull requests.
-      curl -L http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py \
-           -o scripts/clang-format-diff.py;
     fi
   # Misc setup
   - export core_count=$(nproc || echo 4) && echo core_count = $core_count
@@ -177,19 +167,11 @@ script:
   - |
     if [[ "$CHECK_FORMAT" == "ON" ]]; then
       if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-        # Run the clang format check only for pull request builds because the
-        # master branch is needed to do the git diff.
-        echo "Checking clang-format between TRAVIS_BRANCH=$TRAVIS_BRANCH and TRAVIS_PULL_REQUEST_BRANCH=$TRAVIS_PULL_REQUEST_BRANCH"
-        ./scripts/check_code_format.sh
+        # Run the format checks only for pull request builds because the master branch is needed to do the git diff
+        echo "Checking source code and commit formats between TRAVIS_BRANCH=$TRAVIS_BRANCH and TRAVIS_PULL_REQUEST_BRANCH=$TRAVIS_PULL_REQUEST_BRANCH"
+        python3 ./scripts/check_code_format.py
       else
-        echo "Skipping clang-format check since this is not a pull request."
-      fi
-    fi
-  - |
-    if [[ "$CHECK_COMMIT_FORMAT" == "ON" ]]; then
-      if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-        echo "Checking commit message formats:  See CONTRIBUTING.md"
-        ./scripts/check_commit_message_format.sh
+        echo "Skipping format check since this is not a pull request."
       fi
     fi
   - |
@@ -207,7 +189,6 @@ notifications:
   email:
     recipients:
       - cnorthrop@google.com
-      - tobine@google.com
       - chrisforbes@google.com
       - shannon@lunarg.com
       - mikes@lunarg.com
