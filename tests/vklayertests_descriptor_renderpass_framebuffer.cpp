@@ -3940,6 +3940,70 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
+// This is similar to the InvalidCmdBufferDescriptorSetBufferDestroyed test above except that the buffer
+// is destroyed before recording the Draw cmd.
+TEST_F(VkLayerTest, InvalidDrawDescriptorSetBufferDestroyed) {
+    TEST_DESCRIPTION("Attempt to bind a descriptor set that is invalid at Draw time due to its buffer dependency being destroyed.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    {
+        // Create a buffer to update the descriptor with
+        uint32_t qfi = 0;
+        VkBufferCreateInfo buffCI = {};
+        buffCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffCI.size = 1024;
+        buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        buffCI.queueFamilyIndexCount = 1;
+        buffCI.pQueueFamilyIndices = &qfi;
+
+        VkBufferObj buffer;
+        buffer.init(*m_device, buffCI);
+
+        // Create PSO to be used for draw-time errors below
+        char const *fsSource =
+            "#version 450\n"
+            "\n"
+            "layout(location=0) out vec4 x;\n"
+            "layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;\n"
+            "void main(){\n"
+            "   x = vec4(bar.y);\n"
+            "}\n";
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+        dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dyn_state_ci.dynamicStateCount = size(dyn_states);
+        dyn_state_ci.pDynamicStates = dyn_states;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        // Correctly update descriptor to avoid "NOT_UPDATED" error
+        pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 1024);
+        pipe.descriptor_set_->UpdateDescriptorSets();
+    }
+
+    // The buffer has now been destroyed, but it has been written into the descriptor set.
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &m_viewports[0]);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &m_scissors[0]);
+
+    // Invalid VkBuffer - The check is made at Draw time.
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "that is invalid or has been destroyed");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor sets with a combined image sampler having "
