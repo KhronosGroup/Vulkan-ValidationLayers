@@ -391,12 +391,12 @@ class SamplerDescriptor : public Descriptor {
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
-    VkSampler GetSampler() const { return sampler_; }
+    VkSampler GetSampler() const { return sampler_state_ ? sampler_state_->sampler : VK_NULL_HANDLE; }
     const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
     SAMPLER_STATE *GetSamplerState() { return sampler_state_.get(); }
+    std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
 
   private:
-    VkSampler sampler_;
     bool immutable_;
     std::shared_ptr<SAMPLER_STATE> sampler_state_;
 };
@@ -408,20 +408,20 @@ class ImageSamplerDescriptor : public Descriptor {
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
-    VkSampler GetSampler() const { return sampler_; }
-    VkImageView GetImageView() const { return image_view_; }
+    VkSampler GetSampler() const { return sampler_state_ ? sampler_state_->sampler : VK_NULL_HANDLE; }
+    VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->image_view : VK_NULL_HANDLE; }
     const IMAGE_VIEW_STATE *GetImageViewState() const { return image_view_state_.get(); }
     IMAGE_VIEW_STATE *GetImageViewState() { return image_view_state_.get(); }
+    std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
     const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
     SAMPLER_STATE *GetSamplerState() { return sampler_state_.get(); }
+    std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
 
   private:
     std::shared_ptr<SAMPLER_STATE> sampler_state_;
-    VkSampler sampler_;
     bool immutable_;
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
-    VkImageView image_view_;
     VkImageLayout image_layout_;
 };
 
@@ -432,15 +432,15 @@ class ImageDescriptor : public Descriptor {
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsStorage() const override { return storage_; }
-    VkImageView GetImageView() const { return image_view_; }
+    VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->image_view : VK_NULL_HANDLE; }
     const IMAGE_VIEW_STATE *GetImageViewState() const { return image_view_state_.get(); }
     IMAGE_VIEW_STATE *GetImageViewState() { return image_view_state_.get(); }
+    std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
 
   private:
     bool storage_;
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
-    VkImageView image_view_;
     VkImageLayout image_layout_;
 };
 
@@ -451,12 +451,12 @@ class TexelDescriptor : public Descriptor {
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsStorage() const override { return storage_; }
-    VkBufferView GetBufferView() const { return buffer_view_; }
+    VkBufferView GetBufferView() const { return buffer_view_state_ ? buffer_view_state_->buffer_view : VK_NULL_HANDLE; }
     const BUFFER_VIEW_STATE *GetBufferViewState() const { return buffer_view_state_.get(); }
     BUFFER_VIEW_STATE *GetBufferViewState() { return buffer_view_state_.get(); }
+    std::shared_ptr<BUFFER_VIEW_STATE> GetSharedBufferViewState() const { return buffer_view_state_; }
 
   private:
-    VkBufferView buffer_view_;
     bool storage_;
     std::shared_ptr<BUFFER_VIEW_STATE> buffer_view_state_;
 };
@@ -469,16 +469,16 @@ class BufferDescriptor : public Descriptor {
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsDynamic() const override { return dynamic_; }
     virtual bool IsStorage() const override { return storage_; }
-    VkBuffer GetBuffer() const { return buffer_; }
+    VkBuffer GetBuffer() const { return buffer_state_ ? buffer_state_->buffer : VK_NULL_HANDLE; }
     const BUFFER_STATE *GetBufferState() const { return buffer_state_.get(); }
     BUFFER_STATE *GetBufferState() { return buffer_state_.get(); }
+    std::shared_ptr<BUFFER_STATE> GetSharedBufferState() const { return buffer_state_; }
     VkDeviceSize GetOffset() const { return offset_; }
     VkDeviceSize GetRange() const { return range_; }
 
   private:
     bool storage_;
     bool dynamic_;
-    VkBuffer buffer_;
     VkDeviceSize offset_;
     VkDeviceSize range_;
     std::shared_ptr<BUFFER_STATE> buffer_state_;

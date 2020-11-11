@@ -817,16 +817,18 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                     // Verify that buffers are valid
                     auto buffer = static_cast<const BufferDescriptor *>(descriptor)->GetBuffer();
                     auto buffer_node = static_cast<const BufferDescriptor *>(descriptor)->GetBufferState();
+                    if ((!buffer_node && !enabled_features.robustness2_features.nullDescriptor) ||
+                        (buffer_node && buffer_node->destroyed)) {
+                        auto set = descriptor_set->GetSet();
+                        return LogError(set, vuids.descriptor_valid,
+                                        "%s encountered the following validation error at %s time: Descriptor in "
+                                        "binding #%" PRIu32 " index %" PRIu32
+                                        " is using buffer %s that is invalid or has been destroyed.",
+                                        report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                        report_data->FormatHandle(buffer).c_str());
+                    }
                     if (buffer) {
-                        if (!buffer_node || buffer_node->destroyed) {
-                            auto set = descriptor_set->GetSet();
-                            return LogError(set, vuids.descriptor_valid,
-                                            "%s encountered the following validation error at %s time: Descriptor in "
-                                            "binding #%" PRIu32 " index %" PRIu32
-                                            " is using buffer %s that is invalid or has been destroyed.",
-                                            report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                            report_data->FormatHandle(buffer).c_str());
-                        } else if (!buffer_node->sparse) {
+                        if (!buffer_node->sparse) {
                             for (auto mem_binding : buffer_node->GetBoundMemory()) {
                                 if (mem_binding->destroyed) {
                                     auto set = descriptor_set->GetSet();
@@ -891,21 +893,21 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                         image_layout = image_descriptor->GetImageLayout();
                     }
 
+                    if ((!image_view_state && !enabled_features.robustness2_features.nullDescriptor) ||
+                        (image_view_state && image_view_state->destroyed)) {
+                        // Image view must have been destroyed since initial update. Could potentially flag the descriptor
+                        //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
+
+                        auto set = descriptor_set->GetSet();
+                        return LogError(set, vuids.descriptor_valid,
+                                        "%s encountered the following validation error at %s time: Descriptor in "
+                                        "binding #%" PRIu32 " index %" PRIu32
+                                        " is using imageView %s that is invalid or has been destroyed.",
+                                        report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                        report_data->FormatHandle(image_view).c_str());
+                    }
                     if (image_view) {
-                        if (!image_view_state || image_view_state->destroyed) {
-                            // Image view must have been destroyed since initial update. Could potentially flag the descriptor
-                            //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
-
-                            auto set = descriptor_set->GetSet();
-                            return LogError(set, vuids.descriptor_valid,
-                                            "%s encountered the following validation error at %s time: Descriptor in "
-                                            "binding #%" PRIu32 " index %" PRIu32
-                                            " is using imageView %s that is invalid or has been destroyed.",
-                                            report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                            report_data->FormatHandle(image_view).c_str());
-                        }
                         const auto &image_view_ci = image_view_state->create_info;
-
                         if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
                             if (~reqs & (1 << image_view_ci.viewType)) {
                                 auto set = descriptor_set->GetSet();
@@ -1109,16 +1111,17 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                     auto buffer_view = texel_buffer->GetBufferView();
                     auto buffer_view_state = texel_buffer->GetBufferViewState();
 
+                    if ((!buffer_view_state && !enabled_features.robustness2_features.nullDescriptor) ||
+                        (buffer_view_state && buffer_view_state->destroyed)) {
+                        auto set = descriptor_set->GetSet();
+                        return LogError(set, vuids.descriptor_valid,
+                                        "%s encountered the following validation error at %s time: Descriptor in "
+                                        "binding #%" PRIu32 " index %" PRIu32
+                                        " is using bufferView %s that is invalid or has been destroyed.",
+                                        report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                        report_data->FormatHandle(buffer_view).c_str());
+                    }
                     if (buffer_view) {
-                        if (!buffer_view_state || buffer_view_state->destroyed) {
-                            auto set = descriptor_set->GetSet();
-                            return LogError(set, vuids.descriptor_valid,
-                                            "%s encountered the following validation error at %s time: Descriptor in "
-                                            "binding #%" PRIu32 " index %" PRIu32
-                                            " is using bufferView %s that is invalid or has been destroyed.",
-                                            report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                            report_data->FormatHandle(buffer_view).c_str());
-                        }
                         auto buffer = buffer_view_state->create_info.buffer;
                         auto buffer_state = buffer_view_state->buffer_state.get();
                         if (buffer_state->destroyed) {
@@ -1774,12 +1777,11 @@ void cvdescriptorset::DescriptorSet::UpdateValidationCache(const CMD_BUFFER_STAT
 }
 
 cvdescriptorset::SamplerDescriptor::SamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *immut)
-    : sampler_(VK_NULL_HANDLE), immutable_(false) {
+    : immutable_(false) {
     updated = false;
     descriptor_class = PlainSampler;
     if (immut) {
-        sampler_ = *immut;
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(sampler_);
+        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(*immut);
         immutable_ = true;
         updated = true;
     }
@@ -2041,17 +2043,14 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
 void cvdescriptorset::SamplerDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                      const uint32_t index) {
     if (!immutable_) {
-        sampler_ = update->pImageInfo[index].sampler;
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(sampler_);
+        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(update->pImageInfo[index].sampler);
     }
     updated = true;
 }
 
 void cvdescriptorset::SamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     if (!immutable_) {
-        auto update_sampler = static_cast<const SamplerDescriptor *>(src)->sampler_;
-        sampler_ = update_sampler;
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(sampler_);
+        sampler_state_ = static_cast<const SamplerDescriptor *>(src)->sampler_state_;
     }
     updated = true;
 }
@@ -2064,12 +2063,11 @@ void cvdescriptorset::SamplerDescriptor::UpdateDrawState(ValidationStateTracker 
 }
 
 cvdescriptorset::ImageSamplerDescriptor::ImageSamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *immut)
-    : sampler_(VK_NULL_HANDLE), immutable_(false), image_view_(VK_NULL_HANDLE), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {
+    : immutable_(false), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {
     updated = false;
     descriptor_class = ImageSampler;
     if (immut) {
-        sampler_ = *immut;
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(sampler_);
+        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(*immut);
         immutable_ = true;
     }
 }
@@ -2079,26 +2077,19 @@ void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(const ValidationStateT
     updated = true;
     const auto &image_info = update->pImageInfo[index];
     if (!immutable_) {
-        sampler_ = image_info.sampler;
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(sampler_);
+        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(image_info.sampler);
     }
-    image_view_ = image_info.imageView;
     image_layout_ = image_info.imageLayout;
-    image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_view_);
+    image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView);
 }
 
 void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     if (!immutable_) {
-        auto update_sampler = static_cast<const ImageSamplerDescriptor *>(src)->sampler_;
-        sampler_ = update_sampler;
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(sampler_);
+        sampler_state_ = static_cast<const ImageSamplerDescriptor *>(src)->sampler_state_;
     }
-    auto image_view = static_cast<const ImageSamplerDescriptor *>(src)->image_view_;
-    auto image_layout = static_cast<const ImageSamplerDescriptor *>(src)->image_layout_;
     updated = true;
-    image_view_ = image_view;
-    image_layout_ = image_layout;
-    image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_view_);
+    image_layout_ = static_cast<const ImageSamplerDescriptor *>(src)->image_layout_;
+    image_view_state_ = static_cast<const ImageSamplerDescriptor *>(src)->image_view_state_;
 }
 
 void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
@@ -2116,7 +2107,7 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(ValidationStateTra
 }
 
 cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
-    : storage_(false), image_view_(VK_NULL_HANDLE), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {
+    : storage_(false), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {
     updated = false;
     descriptor_class = Image;
     if (VK_DESCRIPTOR_TYPE_STORAGE_IMAGE == type) storage_ = true;
@@ -2126,18 +2117,14 @@ void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker 
                                                    const uint32_t index) {
     updated = true;
     const auto &image_info = update->pImageInfo[index];
-    image_view_ = image_info.imageView;
     image_layout_ = image_info.imageLayout;
-    image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_view_);
+    image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView);
 }
 
 void cvdescriptorset::ImageDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
-    auto image_view = static_cast<const ImageDescriptor *>(src)->image_view_;
-    auto image_layout = static_cast<const ImageDescriptor *>(src)->image_layout_;
     updated = true;
-    image_view_ = image_view;
-    image_layout_ = image_layout;
-    image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_view_);
+    image_layout_ = static_cast<const ImageDescriptor *>(src)->image_layout_;
+    image_view_state_ = static_cast<const ImageDescriptor *>(src)->image_view_state_;
 }
 
 void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
@@ -2150,7 +2137,7 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *d
 }
 
 cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type)
-    : storage_(false), dynamic_(false), buffer_(VK_NULL_HANDLE), offset_(0), range_(0) {
+    : storage_(false), dynamic_(false), offset_(0), range_(0) {
     updated = false;
     descriptor_class = GeneralBuffer;
     if (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC == type) {
@@ -2166,19 +2153,17 @@ void cvdescriptorset::BufferDescriptor::WriteUpdate(const ValidationStateTracker
                                                     const uint32_t index) {
     updated = true;
     const auto &buffer_info = update->pBufferInfo[index];
-    buffer_ = buffer_info.buffer;
     offset_ = buffer_info.offset;
     range_ = buffer_info.range;
-    buffer_state_ = dev_data->GetConstCastShared<BUFFER_STATE>(buffer_);
+    buffer_state_ = dev_data->GetConstCastShared<BUFFER_STATE>(buffer_info.buffer);
 }
 
 void cvdescriptorset::BufferDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
-    auto buff_desc = static_cast<const BufferDescriptor *>(src);
     updated = true;
-    buffer_ = buff_desc->buffer_;
+    const auto buff_desc = static_cast<const BufferDescriptor *>(src);
     offset_ = buff_desc->offset_;
     range_ = buff_desc->range_;
-    buffer_state_ = dev_data->GetConstCastShared<BUFFER_STATE>(buffer_);
+    buffer_state_ = buff_desc->buffer_state_;
 }
 
 void cvdescriptorset::BufferDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
@@ -2186,7 +2171,7 @@ void cvdescriptorset::BufferDescriptor::UpdateDrawState(ValidationStateTracker *
     if (buffer_node) dev_data->AddCommandBufferBindingBuffer(cb_node, buffer_node);
 }
 
-cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) : buffer_view_(VK_NULL_HANDLE), storage_(false) {
+cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) : storage_(false) {
     updated = false;
     descriptor_class = TexelBuffer;
     if (VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER == type) storage_ = true;
@@ -2195,14 +2180,12 @@ cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) :
 void cvdescriptorset::TexelDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                    const uint32_t index) {
     updated = true;
-    buffer_view_ = update->pTexelBufferView[index];
-    buffer_view_state_ = dev_data->GetConstCastShared<BUFFER_VIEW_STATE>(buffer_view_);
+    buffer_view_state_ = dev_data->GetConstCastShared<BUFFER_VIEW_STATE>(update->pTexelBufferView[index]);
 }
 
 void cvdescriptorset::TexelDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     updated = true;
-    buffer_view_ = static_cast<const TexelDescriptor *>(src)->buffer_view_;
-    buffer_view_state_ = dev_data->GetConstCastShared<BUFFER_VIEW_STATE>(buffer_view_);
+    buffer_view_state_ = static_cast<const TexelDescriptor *>(src)->buffer_view_state_;
 }
 
 void cvdescriptorset::TexelDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
