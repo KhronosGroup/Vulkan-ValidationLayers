@@ -40,6 +40,14 @@
 #include "core_validation.h"
 
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
+
+DrawDispatchVuid cmd_draw_vuids;
+
+
+
+
+
+
 // clang-format off
 static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
     {CMD_DRAW, {
