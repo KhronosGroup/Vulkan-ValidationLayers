@@ -7497,367 +7497,371 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkWriteAccelerationStructuresPropertiesKHR-rayTracingHostAccelerationStructureCommands-03454", "the VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingHostAccelerationStructureCommands feature must be enabled", "1.2-extensions"},
 };
 
-// Defines to allow creating "must be recording" meta data
-#define VUID_CMD_ENUM_LIST(prefix)\
-    prefix##NONE = 0,\
-    prefix##BEGINCONDITIONALRENDERINGEXT = 1,\
-    prefix##BEGINDEBUGUTILSLABELEXT = 2,\
-    prefix##BEGINQUERY = 3,\
-    prefix##BEGINQUERYINDEXEDEXT = 4,\
-    prefix##BEGINRENDERPASS = 5,\
-    prefix##BEGINRENDERPASS2 = 6,\
-    prefix##BEGINTRANSFORMFEEDBACKEXT = 7,\
-    prefix##BINDDESCRIPTORSETS = 8,\
-    prefix##BINDINDEXBUFFER = 9,\
-    prefix##BINDPIPELINE = 10,\
-    prefix##BINDPIPELINESHADERGROUPNV = 11,\
-    prefix##BINDSHADINGRATEIMAGENV = 12,\
-    prefix##BINDTRANSFORMFEEDBACKBUFFERSEXT = 13,\
-    prefix##BINDVERTEXBUFFERS = 14,\
-    prefix##BINDVERTEXBUFFERS2EXT = 15,\
-    prefix##BLITIMAGE = 16,\
-    prefix##BLITIMAGE2KHR = 17,\
-    prefix##BUILDACCELERATIONSTRUCTUREINDIRECTKHR = 18,\
-    prefix##BUILDACCELERATIONSTRUCTUREKHR = 19,\
-    prefix##BUILDACCELERATIONSTRUCTURENV = 20,\
-    prefix##CLEARATTACHMENTS = 21,\
-    prefix##CLEARCOLORIMAGE = 22,\
-    prefix##CLEARDEPTHSTENCILIMAGE = 23,\
-    prefix##COPYACCELERATIONSTRUCTUREKHR = 24,\
-    prefix##COPYACCELERATIONSTRUCTURENV = 25,\
-    prefix##COPYACCELERATIONSTRUCTURETOMEMORYKHR = 26,\
-    prefix##COPYBUFFER = 27,\
-    prefix##COPYBUFFER2KHR = 28,\
-    prefix##COPYBUFFERTOIMAGE = 29,\
-    prefix##COPYBUFFERTOIMAGE2KHR = 30,\
-    prefix##COPYIMAGE = 31,\
-    prefix##COPYIMAGE2KHR = 32,\
-    prefix##COPYIMAGETOBUFFER = 33,\
-    prefix##COPYIMAGETOBUFFER2KHR = 34,\
-    prefix##COPYMEMORYTOACCELERATIONSTRUCTUREKHR = 35,\
-    prefix##COPYQUERYPOOLRESULTS = 36,\
-    prefix##DEBUGMARKERBEGINEXT = 37,\
-    prefix##DEBUGMARKERENDEXT = 38,\
-    prefix##DEBUGMARKERINSERTEXT = 39,\
-    prefix##DISPATCH = 40,\
-    prefix##DISPATCHBASE = 41,\
-    prefix##DISPATCHINDIRECT = 42,\
-    prefix##DRAW = 43,\
-    prefix##DRAWINDEXED = 44,\
-    prefix##DRAWINDEXEDINDIRECT = 45,\
-    prefix##DRAWINDEXEDINDIRECTCOUNT = 46,\
-    prefix##DRAWINDIRECT = 47,\
-    prefix##DRAWINDIRECTBYTECOUNTEXT = 48,\
-    prefix##DRAWINDIRECTCOUNT = 49,\
-    prefix##DRAWMESHTASKSINDIRECTCOUNTNV = 50,\
-    prefix##DRAWMESHTASKSINDIRECTNV = 51,\
-    prefix##DRAWMESHTASKSNV = 52,\
-    prefix##ENDCONDITIONALRENDERINGEXT = 53,\
-    prefix##ENDDEBUGUTILSLABELEXT = 54,\
-    prefix##ENDQUERY = 55,\
-    prefix##ENDQUERYINDEXEDEXT = 56,\
-    prefix##ENDRENDERPASS = 57,\
-    prefix##ENDRENDERPASS2 = 58,\
-    prefix##ENDTRANSFORMFEEDBACKEXT = 59,\
-    prefix##EXECUTECOMMANDS = 60,\
-    prefix##EXECUTEGENERATEDCOMMANDSNV = 61,\
-    prefix##FILLBUFFER = 62,\
-    prefix##INSERTDEBUGUTILSLABELEXT = 63,\
-    prefix##NEXTSUBPASS = 64,\
-    prefix##NEXTSUBPASS2 = 65,\
-    prefix##PIPELINEBARRIER = 66,\
-    prefix##PREPROCESSGENERATEDCOMMANDSNV = 67,\
-    prefix##PUSHCONSTANTS = 68,\
-    prefix##PUSHDESCRIPTORSETKHR = 69,\
-    prefix##PUSHDESCRIPTORSETWITHTEMPLATEKHR = 70,\
-    prefix##RESETEVENT = 71,\
-    prefix##RESETQUERYPOOL = 72,\
-    prefix##RESOLVEIMAGE = 73,\
-    prefix##RESOLVEIMAGE2KHR = 74,\
-    prefix##SETBLENDCONSTANTS = 75,\
-    prefix##SETCHECKPOINTNV = 76,\
-    prefix##SETCOARSESAMPLEORDERNV = 77,\
-    prefix##SETCULLMODEEXT = 78,\
-    prefix##SETDEPTHBIAS = 79,\
-    prefix##SETDEPTHBOUNDS = 80,\
-    prefix##SETDEPTHBOUNDSTESTENABLEEXT = 81,\
-    prefix##SETDEPTHCOMPAREOPEXT = 82,\
-    prefix##SETDEPTHTESTENABLEEXT = 83,\
-    prefix##SETDEPTHWRITEENABLEEXT = 84,\
-    prefix##SETDEVICEMASK = 85,\
-    prefix##SETDISCARDRECTANGLEEXT = 86,\
-    prefix##SETEVENT = 87,\
-    prefix##SETEXCLUSIVESCISSORNV = 88,\
-    prefix##SETFRAGMENTSHADINGRATEENUMNV = 89,\
-    prefix##SETFRAGMENTSHADINGRATEKHR = 90,\
-    prefix##SETFRONTFACEEXT = 91,\
-    prefix##SETLINESTIPPLEEXT = 92,\
-    prefix##SETLINEWIDTH = 93,\
-    prefix##SETPERFORMANCEMARKERINTEL = 94,\
-    prefix##SETPERFORMANCEOVERRIDEINTEL = 95,\
-    prefix##SETPERFORMANCESTREAMMARKERINTEL = 96,\
-    prefix##SETPRIMITIVETOPOLOGYEXT = 97,\
-    prefix##SETSAMPLELOCATIONSEXT = 98,\
-    prefix##SETSCISSOR = 99,\
-    prefix##SETSCISSORWITHCOUNTEXT = 100,\
-    prefix##SETSTENCILCOMPAREMASK = 101,\
-    prefix##SETSTENCILOPEXT = 102,\
-    prefix##SETSTENCILREFERENCE = 103,\
-    prefix##SETSTENCILTESTENABLEEXT = 104,\
-    prefix##SETSTENCILWRITEMASK = 105,\
-    prefix##SETVIEWPORT = 106,\
-    prefix##SETVIEWPORTSHADINGRATEPALETTENV = 107,\
-    prefix##SETVIEWPORTWSCALINGNV = 108,\
-    prefix##SETVIEWPORTWITHCOUNTEXT = 109,\
-    prefix##TRACERAYSINDIRECTKHR = 110,\
-    prefix##TRACERAYSKHR = 111,\
-    prefix##TRACERAYSNV = 112,\
-    prefix##UPDATEBUFFER = 113,\
-    prefix##WAITEVENTS = 114,\
-    prefix##WRITEACCELERATIONSTRUCTURESPROPERTIESKHR = 115,\
-    prefix##WRITEBUFFERMARKERAMD = 116,\
-    prefix##WRITETIMESTAMP = 117,\
-    prefix##ENDCOMMANDBUFFER = 118,\
-    prefix##RANGE_SIZE = 119
+// CmdDraw "must be recording" meta data
+typedef enum CMD_TYPE {
+    CMD_NONE = 0,
+    CMD_BEGINCONDITIONALRENDERINGEXT = 1,
+    CMD_BEGINDEBUGUTILSLABELEXT = 2,
+    CMD_BEGINQUERY = 3,
+    CMD_BEGINQUERYINDEXEDEXT = 4,
+    CMD_BEGINRENDERPASS = 5,
+    CMD_BEGINRENDERPASS2 = 6,
+    CMD_BEGINTRANSFORMFEEDBACKEXT = 7,
+    CMD_BINDDESCRIPTORSETS = 8,
+    CMD_BINDINDEXBUFFER = 9,
+    CMD_BINDPIPELINE = 10,
+    CMD_BINDPIPELINESHADERGROUPNV = 11,
+    CMD_BINDSHADINGRATEIMAGENV = 12,
+    CMD_BINDTRANSFORMFEEDBACKBUFFERSEXT = 13,
+    CMD_BINDVERTEXBUFFERS = 14,
+    CMD_BINDVERTEXBUFFERS2EXT = 15,
+    CMD_BLITIMAGE = 16,
+    CMD_BLITIMAGE2KHR = 17,
+    CMD_BUILDACCELERATIONSTRUCTUREINDIRECTKHR = 18,
+    CMD_BUILDACCELERATIONSTRUCTUREKHR = 19,
+    CMD_BUILDACCELERATIONSTRUCTURENV = 20,
+    CMD_CLEARATTACHMENTS = 21,
+    CMD_CLEARCOLORIMAGE = 22,
+    CMD_CLEARDEPTHSTENCILIMAGE = 23,
+    CMD_COPYACCELERATIONSTRUCTUREKHR = 24,
+    CMD_COPYACCELERATIONSTRUCTURENV = 25,
+    CMD_COPYACCELERATIONSTRUCTURETOMEMORYKHR = 26,
+    CMD_COPYBUFFER = 27,
+    CMD_COPYBUFFER2KHR = 28,
+    CMD_COPYBUFFERTOIMAGE = 29,
+    CMD_COPYBUFFERTOIMAGE2KHR = 30,
+    CMD_COPYIMAGE = 31,
+    CMD_COPYIMAGE2KHR = 32,
+    CMD_COPYIMAGETOBUFFER = 33,
+    CMD_COPYIMAGETOBUFFER2KHR = 34,
+    CMD_COPYMEMORYTOACCELERATIONSTRUCTUREKHR = 35,
+    CMD_COPYQUERYPOOLRESULTS = 36,
+    CMD_DEBUGMARKERBEGINEXT = 37,
+    CMD_DEBUGMARKERENDEXT = 38,
+    CMD_DEBUGMARKERINSERTEXT = 39,
+    CMD_DISPATCH = 40,
+    CMD_DISPATCHBASE = 41,
+    CMD_DISPATCHINDIRECT = 42,
+    CMD_DRAW = 43,
+    CMD_DRAWINDEXED = 44,
+    CMD_DRAWINDEXEDINDIRECT = 45,
+    CMD_DRAWINDEXEDINDIRECTCOUNT = 46,
+    CMD_DRAWINDIRECT = 47,
+    CMD_DRAWINDIRECTBYTECOUNTEXT = 48,
+    CMD_DRAWINDIRECTCOUNT = 49,
+    CMD_DRAWMESHTASKSINDIRECTCOUNTNV = 50,
+    CMD_DRAWMESHTASKSINDIRECTNV = 51,
+    CMD_DRAWMESHTASKSNV = 52,
+    CMD_ENDCONDITIONALRENDERINGEXT = 53,
+    CMD_ENDDEBUGUTILSLABELEXT = 54,
+    CMD_ENDQUERY = 55,
+    CMD_ENDQUERYINDEXEDEXT = 56,
+    CMD_ENDRENDERPASS = 57,
+    CMD_ENDRENDERPASS2 = 58,
+    CMD_ENDTRANSFORMFEEDBACKEXT = 59,
+    CMD_EXECUTECOMMANDS = 60,
+    CMD_EXECUTEGENERATEDCOMMANDSNV = 61,
+    CMD_FILLBUFFER = 62,
+    CMD_INSERTDEBUGUTILSLABELEXT = 63,
+    CMD_NEXTSUBPASS = 64,
+    CMD_NEXTSUBPASS2 = 65,
+    CMD_PIPELINEBARRIER = 66,
+    CMD_PREPROCESSGENERATEDCOMMANDSNV = 67,
+    CMD_PUSHCONSTANTS = 68,
+    CMD_PUSHDESCRIPTORSETKHR = 69,
+    CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR = 70,
+    CMD_RESETEVENT = 71,
+    CMD_RESETQUERYPOOL = 72,
+    CMD_RESOLVEIMAGE = 73,
+    CMD_RESOLVEIMAGE2KHR = 74,
+    CMD_SETBLENDCONSTANTS = 75,
+    CMD_SETCHECKPOINTNV = 76,
+    CMD_SETCOARSESAMPLEORDERNV = 77,
+    CMD_SETCULLMODEEXT = 78,
+    CMD_SETDEPTHBIAS = 79,
+    CMD_SETDEPTHBOUNDS = 80,
+    CMD_SETDEPTHBOUNDSTESTENABLEEXT = 81,
+    CMD_SETDEPTHCOMPAREOPEXT = 82,
+    CMD_SETDEPTHTESTENABLEEXT = 83,
+    CMD_SETDEPTHWRITEENABLEEXT = 84,
+    CMD_SETDEVICEMASK = 85,
+    CMD_SETDISCARDRECTANGLEEXT = 86,
+    CMD_SETEVENT = 87,
+    CMD_SETEXCLUSIVESCISSORNV = 88,
+    CMD_SETFRAGMENTSHADINGRATEENUMNV = 89,
+    CMD_SETFRAGMENTSHADINGRATEKHR = 90,
+    CMD_SETFRONTFACEEXT = 91,
+    CMD_SETLINESTIPPLEEXT = 92,
+    CMD_SETLINEWIDTH = 93,
+    CMD_SETPERFORMANCEMARKERINTEL = 94,
+    CMD_SETPERFORMANCEOVERRIDEINTEL = 95,
+    CMD_SETPERFORMANCESTREAMMARKERINTEL = 96,
+    CMD_SETPRIMITIVETOPOLOGYEXT = 97,
+    CMD_SETSAMPLELOCATIONSEXT = 98,
+    CMD_SETSCISSOR = 99,
+    CMD_SETSCISSORWITHCOUNTEXT = 100,
+    CMD_SETSTENCILCOMPAREMASK = 101,
+    CMD_SETSTENCILOPEXT = 102,
+    CMD_SETSTENCILREFERENCE = 103,
+    CMD_SETSTENCILTESTENABLEEXT = 104,
+    CMD_SETSTENCILWRITEMASK = 105,
+    CMD_SETVIEWPORT = 106,
+    CMD_SETVIEWPORTSHADINGRATEPALETTENV = 107,
+    CMD_SETVIEWPORTWSCALINGNV = 108,
+    CMD_SETVIEWPORTWITHCOUNTEXT = 109,
+    CMD_TRACERAYSINDIRECTKHR = 110,
+    CMD_TRACERAYSKHR = 111,
+    CMD_TRACERAYSNV = 112,
+    CMD_UPDATEBUFFER = 113,
+    CMD_WAITEVENTS = 114,
+    CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESKHR = 115,
+    CMD_WRITEBUFFERMARKERAMD = 116,
+    CMD_WRITETIMESTAMP = 117,
+    CMD_ENDCOMMANDBUFFER = 118,
+    CMD_RANGE_SIZE = 119
+} CMD_TYPE;
 
-#define VUID_CMD_NAME_LIST\
-    "Command_Undefined",\
-    "vkCmdBeginConditionalRenderingEXT",\
-    "vkCmdBeginDebugUtilsLabelEXT",\
-    "vkCmdBeginQuery",\
-    "vkCmdBeginQueryIndexedEXT",\
-    "vkCmdBeginRenderPass",\
-    "vkCmdBeginRenderPass2",\
-    "vkCmdBeginTransformFeedbackEXT",\
-    "vkCmdBindDescriptorSets",\
-    "vkCmdBindIndexBuffer",\
-    "vkCmdBindPipeline",\
-    "vkCmdBindPipelineShaderGroupNV",\
-    "vkCmdBindShadingRateImageNV",\
-    "vkCmdBindTransformFeedbackBuffersEXT",\
-    "vkCmdBindVertexBuffers",\
-    "vkCmdBindVertexBuffers2EXT",\
-    "vkCmdBlitImage",\
-    "vkCmdBlitImage2KHR",\
-    "vkCmdBuildAccelerationStructureIndirectKHR",\
-    "vkCmdBuildAccelerationStructureKHR",\
-    "vkCmdBuildAccelerationStructureNV",\
-    "vkCmdClearAttachments",\
-    "vkCmdClearColorImage",\
-    "vkCmdClearDepthStencilImage",\
-    "vkCmdCopyAccelerationStructureKHR",\
-    "vkCmdCopyAccelerationStructureNV",\
-    "vkCmdCopyAccelerationStructureToMemoryKHR",\
-    "vkCmdCopyBuffer",\
-    "vkCmdCopyBuffer2KHR",\
-    "vkCmdCopyBufferToImage",\
-    "vkCmdCopyBufferToImage2KHR",\
-    "vkCmdCopyImage",\
-    "vkCmdCopyImage2KHR",\
-    "vkCmdCopyImageToBuffer",\
-    "vkCmdCopyImageToBuffer2KHR",\
-    "vkCmdCopyMemoryToAccelerationStructureKHR",\
-    "vkCmdCopyQueryPoolResults",\
-    "vkCmdDebugMarkerBeginEXT",\
-    "vkCmdDebugMarkerEndEXT",\
-    "vkCmdDebugMarkerInsertEXT",\
-    "vkCmdDispatch",\
-    "vkCmdDispatchBase",\
-    "vkCmdDispatchIndirect",\
-    "vkCmdDraw",\
-    "vkCmdDrawIndexed",\
-    "vkCmdDrawIndexedIndirect",\
-    "vkCmdDrawIndexedIndirectCount",\
-    "vkCmdDrawIndirect",\
-    "vkCmdDrawIndirectByteCountEXT",\
-    "vkCmdDrawIndirectCount",\
-    "vkCmdDrawMeshTasksIndirectCountNV",\
-    "vkCmdDrawMeshTasksIndirectNV",\
-    "vkCmdDrawMeshTasksNV",\
-    "vkCmdEndConditionalRenderingEXT",\
-    "vkCmdEndDebugUtilsLabelEXT",\
-    "vkCmdEndQuery",\
-    "vkCmdEndQueryIndexedEXT",\
-    "vkCmdEndRenderPass",\
-    "vkCmdEndRenderPass2",\
-    "vkCmdEndTransformFeedbackEXT",\
-    "vkCmdExecuteCommands",\
-    "vkCmdExecuteGeneratedCommandsNV",\
-    "vkCmdFillBuffer",\
-    "vkCmdInsertDebugUtilsLabelEXT",\
-    "vkCmdNextSubpass",\
-    "vkCmdNextSubpass2",\
-    "vkCmdPipelineBarrier",\
-    "vkCmdPreprocessGeneratedCommandsNV",\
-    "vkCmdPushConstants",\
-    "vkCmdPushDescriptorSetKHR",\
-    "vkCmdPushDescriptorSetWithTemplateKHR",\
-    "vkCmdResetEvent",\
-    "vkCmdResetQueryPool",\
-    "vkCmdResolveImage",\
-    "vkCmdResolveImage2KHR",\
-    "vkCmdSetBlendConstants",\
-    "vkCmdSetCheckpointNV",\
-    "vkCmdSetCoarseSampleOrderNV",\
-    "vkCmdSetCullModeEXT",\
-    "vkCmdSetDepthBias",\
-    "vkCmdSetDepthBounds",\
-    "vkCmdSetDepthBoundsTestEnableEXT",\
-    "vkCmdSetDepthCompareOpEXT",\
-    "vkCmdSetDepthTestEnableEXT",\
-    "vkCmdSetDepthWriteEnableEXT",\
-    "vkCmdSetDeviceMask",\
-    "vkCmdSetDiscardRectangleEXT",\
-    "vkCmdSetEvent",\
-    "vkCmdSetExclusiveScissorNV",\
-    "vkCmdSetFragmentShadingRateEnumNV",\
-    "vkCmdSetFragmentShadingRateKHR",\
-    "vkCmdSetFrontFaceEXT",\
-    "vkCmdSetLineStippleEXT",\
-    "vkCmdSetLineWidth",\
-    "vkCmdSetPerformanceMarkerINTEL",\
-    "vkCmdSetPerformanceOverrideINTEL",\
-    "vkCmdSetPerformanceStreamMarkerINTEL",\
-    "vkCmdSetPrimitiveTopologyEXT",\
-    "vkCmdSetSampleLocationsEXT",\
-    "vkCmdSetScissor",\
-    "vkCmdSetScissorWithCountEXT",\
-    "vkCmdSetStencilCompareMask",\
-    "vkCmdSetStencilOpEXT",\
-    "vkCmdSetStencilReference",\
-    "vkCmdSetStencilTestEnableEXT",\
-    "vkCmdSetStencilWriteMask",\
-    "vkCmdSetViewport",\
-    "vkCmdSetViewportShadingRatePaletteNV",\
-    "vkCmdSetViewportWScalingNV",\
-    "vkCmdSetViewportWithCountEXT",\
-    "vkCmdTraceRaysIndirectKHR",\
-    "vkCmdTraceRaysKHR",\
-    "vkCmdTraceRaysNV",\
-    "vkCmdUpdateBuffer",\
-    "vkCmdWaitEvents",\
-    "vkCmdWriteAccelerationStructuresPropertiesKHR",\
-    "vkCmdWriteBufferMarkerAMD",\
-    "vkCmdWriteTimestamp",\
+static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList = {{
+    "Command_Undefined",
+    "vkCmdBeginConditionalRenderingEXT",
+    "vkCmdBeginDebugUtilsLabelEXT",
+    "vkCmdBeginQuery",
+    "vkCmdBeginQueryIndexedEXT",
+    "vkCmdBeginRenderPass",
+    "vkCmdBeginRenderPass2",
+    "vkCmdBeginTransformFeedbackEXT",
+    "vkCmdBindDescriptorSets",
+    "vkCmdBindIndexBuffer",
+    "vkCmdBindPipeline",
+    "vkCmdBindPipelineShaderGroupNV",
+    "vkCmdBindShadingRateImageNV",
+    "vkCmdBindTransformFeedbackBuffersEXT",
+    "vkCmdBindVertexBuffers",
+    "vkCmdBindVertexBuffers2EXT",
+    "vkCmdBlitImage",
+    "vkCmdBlitImage2KHR",
+    "vkCmdBuildAccelerationStructureIndirectKHR",
+    "vkCmdBuildAccelerationStructureKHR",
+    "vkCmdBuildAccelerationStructureNV",
+    "vkCmdClearAttachments",
+    "vkCmdClearColorImage",
+    "vkCmdClearDepthStencilImage",
+    "vkCmdCopyAccelerationStructureKHR",
+    "vkCmdCopyAccelerationStructureNV",
+    "vkCmdCopyAccelerationStructureToMemoryKHR",
+    "vkCmdCopyBuffer",
+    "vkCmdCopyBuffer2KHR",
+    "vkCmdCopyBufferToImage",
+    "vkCmdCopyBufferToImage2KHR",
+    "vkCmdCopyImage",
+    "vkCmdCopyImage2KHR",
+    "vkCmdCopyImageToBuffer",
+    "vkCmdCopyImageToBuffer2KHR",
+    "vkCmdCopyMemoryToAccelerationStructureKHR",
+    "vkCmdCopyQueryPoolResults",
+    "vkCmdDebugMarkerBeginEXT",
+    "vkCmdDebugMarkerEndEXT",
+    "vkCmdDebugMarkerInsertEXT",
+    "vkCmdDispatch",
+    "vkCmdDispatchBase",
+    "vkCmdDispatchIndirect",
+    "vkCmdDraw",
+    "vkCmdDrawIndexed",
+    "vkCmdDrawIndexedIndirect",
+    "vkCmdDrawIndexedIndirectCount",
+    "vkCmdDrawIndirect",
+    "vkCmdDrawIndirectByteCountEXT",
+    "vkCmdDrawIndirectCount",
+    "vkCmdDrawMeshTasksIndirectCountNV",
+    "vkCmdDrawMeshTasksIndirectNV",
+    "vkCmdDrawMeshTasksNV",
+    "vkCmdEndConditionalRenderingEXT",
+    "vkCmdEndDebugUtilsLabelEXT",
+    "vkCmdEndQuery",
+    "vkCmdEndQueryIndexedEXT",
+    "vkCmdEndRenderPass",
+    "vkCmdEndRenderPass2",
+    "vkCmdEndTransformFeedbackEXT",
+    "vkCmdExecuteCommands",
+    "vkCmdExecuteGeneratedCommandsNV",
+    "vkCmdFillBuffer",
+    "vkCmdInsertDebugUtilsLabelEXT",
+    "vkCmdNextSubpass",
+    "vkCmdNextSubpass2",
+    "vkCmdPipelineBarrier",
+    "vkCmdPreprocessGeneratedCommandsNV",
+    "vkCmdPushConstants",
+    "vkCmdPushDescriptorSetKHR",
+    "vkCmdPushDescriptorSetWithTemplateKHR",
+    "vkCmdResetEvent",
+    "vkCmdResetQueryPool",
+    "vkCmdResolveImage",
+    "vkCmdResolveImage2KHR",
+    "vkCmdSetBlendConstants",
+    "vkCmdSetCheckpointNV",
+    "vkCmdSetCoarseSampleOrderNV",
+    "vkCmdSetCullModeEXT",
+    "vkCmdSetDepthBias",
+    "vkCmdSetDepthBounds",
+    "vkCmdSetDepthBoundsTestEnableEXT",
+    "vkCmdSetDepthCompareOpEXT",
+    "vkCmdSetDepthTestEnableEXT",
+    "vkCmdSetDepthWriteEnableEXT",
+    "vkCmdSetDeviceMask",
+    "vkCmdSetDiscardRectangleEXT",
+    "vkCmdSetEvent",
+    "vkCmdSetExclusiveScissorNV",
+    "vkCmdSetFragmentShadingRateEnumNV",
+    "vkCmdSetFragmentShadingRateKHR",
+    "vkCmdSetFrontFaceEXT",
+    "vkCmdSetLineStippleEXT",
+    "vkCmdSetLineWidth",
+    "vkCmdSetPerformanceMarkerINTEL",
+    "vkCmdSetPerformanceOverrideINTEL",
+    "vkCmdSetPerformanceStreamMarkerINTEL",
+    "vkCmdSetPrimitiveTopologyEXT",
+    "vkCmdSetSampleLocationsEXT",
+    "vkCmdSetScissor",
+    "vkCmdSetScissorWithCountEXT",
+    "vkCmdSetStencilCompareMask",
+    "vkCmdSetStencilOpEXT",
+    "vkCmdSetStencilReference",
+    "vkCmdSetStencilTestEnableEXT",
+    "vkCmdSetStencilWriteMask",
+    "vkCmdSetViewport",
+    "vkCmdSetViewportShadingRatePaletteNV",
+    "vkCmdSetViewportWScalingNV",
+    "vkCmdSetViewportWithCountEXT",
+    "vkCmdTraceRaysIndirectKHR",
+    "vkCmdTraceRaysKHR",
+    "vkCmdTraceRaysNV",
+    "vkCmdUpdateBuffer",
+    "vkCmdWaitEvents",
+    "vkCmdWriteAccelerationStructuresPropertiesKHR",
+    "vkCmdWriteBufferMarkerAMD",
+    "vkCmdWriteTimestamp",
     "vkEndCommandBuffer"
+}};
 
-#define VUID_MUST_BE_RECORDING_LIST\
-    "VUID_Undefined",\
-    "VUID-vkCmdBeginConditionalRenderingEXT-commandBuffer-recording",\
-    "VUID-vkCmdBeginDebugUtilsLabelEXT-commandBuffer-recording",\
-    "VUID-vkCmdBeginQuery-commandBuffer-recording",\
-    "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-recording",\
-    "VUID-vkCmdBeginRenderPass-commandBuffer-recording",\
-    "VUID-vkCmdBeginRenderPass2-commandBuffer-recording",\
-    "VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-recording",\
-    "VUID-vkCmdBindDescriptorSets-commandBuffer-recording",\
-    "VUID-vkCmdBindIndexBuffer-commandBuffer-recording",\
-    "VUID-vkCmdBindPipeline-commandBuffer-recording",\
-    "VUID-vkCmdBindPipelineShaderGroupNV-commandBuffer-recording",\
-    "VUID-vkCmdBindShadingRateImageNV-commandBuffer-recording",\
-    "VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-recording",\
-    "VUID-vkCmdBindVertexBuffers-commandBuffer-recording",\
-    "VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-recording",\
-    "VUID-vkCmdBlitImage-commandBuffer-recording",\
-    "VUID-vkCmdBlitImage2KHR-commandBuffer-recording",\
-    "VUID-vkCmdBuildAccelerationStructureIndirectKHR-commandBuffer-recording",\
-    "VUID-vkCmdBuildAccelerationStructureKHR-commandBuffer-recording",\
-    "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording",\
-    "VUID-vkCmdClearAttachments-commandBuffer-recording",\
-    "VUID-vkCmdClearColorImage-commandBuffer-recording",\
-    "VUID-vkCmdClearDepthStencilImage-commandBuffer-recording",\
-    "VUID-vkCmdCopyAccelerationStructureKHR-commandBuffer-recording",\
-    "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording",\
-    "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-commandBuffer-recording",\
-    "VUID-vkCmdCopyBuffer-commandBuffer-recording",\
-    "VUID-vkCmdCopyBuffer2KHR-commandBuffer-recording",\
-    "VUID-vkCmdCopyBufferToImage-commandBuffer-recording",\
-    "VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-recording",\
-    "VUID-vkCmdCopyImage-commandBuffer-recording",\
-    "VUID-vkCmdCopyImage2KHR-commandBuffer-recording",\
-    "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording",\
-    "VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-recording",\
-    "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-commandBuffer-recording",\
-    "VUID-vkCmdCopyQueryPoolResults-commandBuffer-recording",\
-    "VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording",\
-    "VUID-vkCmdDebugMarkerEndEXT-commandBuffer-recording",\
-    "VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-recording",\
-    "VUID-vkCmdDispatch-commandBuffer-recording",\
-    "VUID-vkCmdDispatchBase-commandBuffer-recording",\
-    "VUID-vkCmdDispatchIndirect-commandBuffer-recording",\
-    "VUID-vkCmdDraw-commandBuffer-recording",\
-    "VUID-vkCmdDrawIndexed-commandBuffer-recording",\
-    "VUID-vkCmdDrawIndexedIndirect-commandBuffer-recording",\
-    "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-recording",\
-    "VUID-vkCmdDrawIndirect-commandBuffer-recording",\
-    "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-recording",\
-    "VUID-vkCmdDrawIndirectCount-commandBuffer-recording",\
-    "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-recording",\
-    "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-recording",\
-    "VUID-vkCmdDrawMeshTasksNV-commandBuffer-recording",\
-    "VUID-vkCmdEndConditionalRenderingEXT-commandBuffer-recording",\
-    "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-recording",\
-    "VUID-vkCmdEndQuery-commandBuffer-recording",\
-    "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-recording",\
-    "VUID-vkCmdEndRenderPass-commandBuffer-recording",\
-    "VUID-vkCmdEndRenderPass2-commandBuffer-recording",\
-    "VUID-vkCmdEndTransformFeedbackEXT-commandBuffer-recording",\
-    "VUID-vkCmdExecuteCommands-commandBuffer-recording",\
-    "VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-recording",\
-    "VUID-vkCmdFillBuffer-commandBuffer-recording",\
-    "VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-recording",\
-    "VUID-vkCmdNextSubpass-commandBuffer-recording",\
-    "VUID-vkCmdNextSubpass2-commandBuffer-recording",\
-    "VUID-vkCmdPipelineBarrier-commandBuffer-recording",\
-    "VUID-vkCmdPreprocessGeneratedCommandsNV-commandBuffer-recording",\
-    "VUID-vkCmdPushConstants-commandBuffer-recording",\
-    "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording",\
-    "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-recording",\
-    "VUID-vkCmdResetEvent-commandBuffer-recording",\
-    "VUID-vkCmdResetQueryPool-commandBuffer-recording",\
-    "VUID-vkCmdResolveImage-commandBuffer-recording",\
-    "VUID-vkCmdResolveImage2KHR-commandBuffer-recording",\
-    "VUID-vkCmdSetBlendConstants-commandBuffer-recording",\
-    "VUID-vkCmdSetCheckpointNV-commandBuffer-recording",\
-    "VUID-vkCmdSetCoarseSampleOrderNV-commandBuffer-recording",\
-    "VUID-vkCmdSetCullModeEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetDepthBias-commandBuffer-recording",\
-    "VUID-vkCmdSetDepthBounds-commandBuffer-recording",\
-    "VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetDeviceMask-commandBuffer-recording",\
-    "VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetEvent-commandBuffer-recording",\
-    "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-recording",\
-    "VUID-vkCmdSetFragmentShadingRateEnumNV-commandBuffer-recording",\
-    "VUID-vkCmdSetFragmentShadingRateKHR-commandBuffer-recording",\
-    "VUID-vkCmdSetFrontFaceEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetLineStippleEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetLineWidth-commandBuffer-recording",\
-    "VUID-vkCmdSetPerformanceMarkerINTEL-commandBuffer-recording",\
-    "VUID-vkCmdSetPerformanceOverrideINTEL-commandBuffer-recording",\
-    "VUID-vkCmdSetPerformanceStreamMarkerINTEL-commandBuffer-recording",\
-    "VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetScissor-commandBuffer-recording",\
-    "VUID-vkCmdSetScissorWithCountEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetStencilCompareMask-commandBuffer-recording",\
-    "VUID-vkCmdSetStencilOpEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetStencilReference-commandBuffer-recording",\
-    "VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-recording",\
-    "VUID-vkCmdSetStencilWriteMask-commandBuffer-recording",\
-    "VUID-vkCmdSetViewport-commandBuffer-recording",\
-    "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-recording",\
-    "VUID-vkCmdSetViewportWScalingNV-commandBuffer-recording",\
-    "VUID-vkCmdSetViewportWithCountEXT-commandBuffer-recording",\
-    "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-recording",\
-    "VUID-vkCmdTraceRaysKHR-commandBuffer-recording",\
-    "VUID-vkCmdTraceRaysNV-commandBuffer-recording",\
-    "VUID-vkCmdUpdateBuffer-commandBuffer-recording",\
-    "VUID-vkCmdWaitEvents-commandBuffer-recording",\
-    "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-commandBuffer-recording",\
-    "VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-recording",\
-    "VUID-vkCmdWriteTimestamp-commandBuffer-recording",\
+static const std::array<const char *, CMD_RANGE_SIZE> KGeneratedMustBeRecordingList = {{
+    "VUID_Undefined",
+    "VUID-vkCmdBeginConditionalRenderingEXT-commandBuffer-recording",
+    "VUID-vkCmdBeginDebugUtilsLabelEXT-commandBuffer-recording",
+    "VUID-vkCmdBeginQuery-commandBuffer-recording",
+    "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-recording",
+    "VUID-vkCmdBeginRenderPass-commandBuffer-recording",
+    "VUID-vkCmdBeginRenderPass2-commandBuffer-recording",
+    "VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-recording",
+    "VUID-vkCmdBindDescriptorSets-commandBuffer-recording",
+    "VUID-vkCmdBindIndexBuffer-commandBuffer-recording",
+    "VUID-vkCmdBindPipeline-commandBuffer-recording",
+    "VUID-vkCmdBindPipelineShaderGroupNV-commandBuffer-recording",
+    "VUID-vkCmdBindShadingRateImageNV-commandBuffer-recording",
+    "VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-recording",
+    "VUID-vkCmdBindVertexBuffers-commandBuffer-recording",
+    "VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-recording",
+    "VUID-vkCmdBlitImage-commandBuffer-recording",
+    "VUID-vkCmdBlitImage2KHR-commandBuffer-recording",
+    "VUID-vkCmdBuildAccelerationStructureIndirectKHR-commandBuffer-recording",
+    "VUID-vkCmdBuildAccelerationStructureKHR-commandBuffer-recording",
+    "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording",
+    "VUID-vkCmdClearAttachments-commandBuffer-recording",
+    "VUID-vkCmdClearColorImage-commandBuffer-recording",
+    "VUID-vkCmdClearDepthStencilImage-commandBuffer-recording",
+    "VUID-vkCmdCopyAccelerationStructureKHR-commandBuffer-recording",
+    "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording",
+    "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-commandBuffer-recording",
+    "VUID-vkCmdCopyBuffer-commandBuffer-recording",
+    "VUID-vkCmdCopyBuffer2KHR-commandBuffer-recording",
+    "VUID-vkCmdCopyBufferToImage-commandBuffer-recording",
+    "VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-recording",
+    "VUID-vkCmdCopyImage-commandBuffer-recording",
+    "VUID-vkCmdCopyImage2KHR-commandBuffer-recording",
+    "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording",
+    "VUID-vkCmdCopyImageToBuffer2KHR-commandBuffer-recording",
+    "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-commandBuffer-recording",
+    "VUID-vkCmdCopyQueryPoolResults-commandBuffer-recording",
+    "VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording",
+    "VUID-vkCmdDebugMarkerEndEXT-commandBuffer-recording",
+    "VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-recording",
+    "VUID-vkCmdDispatch-commandBuffer-recording",
+    "VUID-vkCmdDispatchBase-commandBuffer-recording",
+    "VUID-vkCmdDispatchIndirect-commandBuffer-recording",
+    "VUID-vkCmdDraw-commandBuffer-recording",
+    "VUID-vkCmdDrawIndexed-commandBuffer-recording",
+    "VUID-vkCmdDrawIndexedIndirect-commandBuffer-recording",
+    "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-recording",
+    "VUID-vkCmdDrawIndirect-commandBuffer-recording",
+    "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-recording",
+    "VUID-vkCmdDrawIndirectCount-commandBuffer-recording",
+    "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-recording",
+    "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-recording",
+    "VUID-vkCmdDrawMeshTasksNV-commandBuffer-recording",
+    "VUID-vkCmdEndConditionalRenderingEXT-commandBuffer-recording",
+    "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-recording",
+    "VUID-vkCmdEndQuery-commandBuffer-recording",
+    "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-recording",
+    "VUID-vkCmdEndRenderPass-commandBuffer-recording",
+    "VUID-vkCmdEndRenderPass2-commandBuffer-recording",
+    "VUID-vkCmdEndTransformFeedbackEXT-commandBuffer-recording",
+    "VUID-vkCmdExecuteCommands-commandBuffer-recording",
+    "VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-recording",
+    "VUID-vkCmdFillBuffer-commandBuffer-recording",
+    "VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-recording",
+    "VUID-vkCmdNextSubpass-commandBuffer-recording",
+    "VUID-vkCmdNextSubpass2-commandBuffer-recording",
+    "VUID-vkCmdPipelineBarrier-commandBuffer-recording",
+    "VUID-vkCmdPreprocessGeneratedCommandsNV-commandBuffer-recording",
+    "VUID-vkCmdPushConstants-commandBuffer-recording",
+    "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording",
+    "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-recording",
+    "VUID-vkCmdResetEvent-commandBuffer-recording",
+    "VUID-vkCmdResetQueryPool-commandBuffer-recording",
+    "VUID-vkCmdResolveImage-commandBuffer-recording",
+    "VUID-vkCmdResolveImage2KHR-commandBuffer-recording",
+    "VUID-vkCmdSetBlendConstants-commandBuffer-recording",
+    "VUID-vkCmdSetCheckpointNV-commandBuffer-recording",
+    "VUID-vkCmdSetCoarseSampleOrderNV-commandBuffer-recording",
+    "VUID-vkCmdSetCullModeEXT-commandBuffer-recording",
+    "VUID-vkCmdSetDepthBias-commandBuffer-recording",
+    "VUID-vkCmdSetDepthBounds-commandBuffer-recording",
+    "VUID-vkCmdSetDepthBoundsTestEnableEXT-commandBuffer-recording",
+    "VUID-vkCmdSetDepthCompareOpEXT-commandBuffer-recording",
+    "VUID-vkCmdSetDepthTestEnableEXT-commandBuffer-recording",
+    "VUID-vkCmdSetDepthWriteEnableEXT-commandBuffer-recording",
+    "VUID-vkCmdSetDeviceMask-commandBuffer-recording",
+    "VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-recording",
+    "VUID-vkCmdSetEvent-commandBuffer-recording",
+    "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-recording",
+    "VUID-vkCmdSetFragmentShadingRateEnumNV-commandBuffer-recording",
+    "VUID-vkCmdSetFragmentShadingRateKHR-commandBuffer-recording",
+    "VUID-vkCmdSetFrontFaceEXT-commandBuffer-recording",
+    "VUID-vkCmdSetLineStippleEXT-commandBuffer-recording",
+    "VUID-vkCmdSetLineWidth-commandBuffer-recording",
+    "VUID-vkCmdSetPerformanceMarkerINTEL-commandBuffer-recording",
+    "VUID-vkCmdSetPerformanceOverrideINTEL-commandBuffer-recording",
+    "VUID-vkCmdSetPerformanceStreamMarkerINTEL-commandBuffer-recording",
+    "VUID-vkCmdSetPrimitiveTopologyEXT-commandBuffer-recording",
+    "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording",
+    "VUID-vkCmdSetScissor-commandBuffer-recording",
+    "VUID-vkCmdSetScissorWithCountEXT-commandBuffer-recording",
+    "VUID-vkCmdSetStencilCompareMask-commandBuffer-recording",
+    "VUID-vkCmdSetStencilOpEXT-commandBuffer-recording",
+    "VUID-vkCmdSetStencilReference-commandBuffer-recording",
+    "VUID-vkCmdSetStencilTestEnableEXT-commandBuffer-recording",
+    "VUID-vkCmdSetStencilWriteMask-commandBuffer-recording",
+    "VUID-vkCmdSetViewport-commandBuffer-recording",
+    "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-recording",
+    "VUID-vkCmdSetViewportWScalingNV-commandBuffer-recording",
+    "VUID-vkCmdSetViewportWithCountEXT-commandBuffer-recording",
+    "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-recording",
+    "VUID-vkCmdTraceRaysKHR-commandBuffer-recording",
+    "VUID-vkCmdTraceRaysNV-commandBuffer-recording",
+    "VUID-vkCmdUpdateBuffer-commandBuffer-recording",
+    "VUID-vkCmdWaitEvents-commandBuffer-recording",
+    "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-commandBuffer-recording",
+    "VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-recording",
+    "VUID-vkCmdWriteTimestamp-commandBuffer-recording",
     "VUID-vkEndCommandBuffer-commandBuffer-00059"
+}};
+
