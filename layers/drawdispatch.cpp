@@ -601,27 +601,27 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDispatchBase-commandBuffer-cmdpool",
         "VUID-vkCmdDispatchBase-renderpass",
         "VUID-vkCmdDispatchBase-None-02700",
-         kVUIDUndefined, // dynamic_state
-         kVUIDUndefined, // vertex_binding
-         kVUIDUndefined, // vertex_binding_null
-         "VUID-vkCmdDispatchBase-None-02697",
-         kVUIDUndefined, // render_pass_compatible
-         kVUIDUndefined, // subpass_index
-         kVUIDUndefined, // sample_location
-         "VUID-vkCmdDispatchBase-magFilter-04553",
-         "VUID-vkCmdDispatchBase-None-02692",
-         kVUIDUndefined, // indirect_protected_cb
-         kVUIDUndefined, // indirect_contiguous_memory;
-         kVUIDUndefined, // indirect_buffer_bit
-         kVUIDUndefined, // viewport_count
-         kVUIDUndefined, // scissor_count
-         kVUIDUndefined, // viewport_scissor_count
-         kVUIDUndefined, // primitive_topology
-         "VUID-vkCmdDispatchBase-flags-02696",
-         kVUIDUndefined, // subpass_input
-         "VUID-vkCmdDispatchBase-None-02691",
-         "VUID-vkCmdDispatchBase-None-02698",
-         kVUIDUndefined, // image_subresources
+        kVUIDUndefined, // dynamic_state
+        kVUIDUndefined, // vertex_binding
+        kVUIDUndefined, // vertex_binding_null
+        "VUID-vkCmdDispatchBase-None-02697",
+        kVUIDUndefined, // render_pass_compatible
+        kVUIDUndefined, // subpass_index
+        kVUIDUndefined, // sample_location
+        "VUID-vkCmdDispatchBase-magFilter-04553",
+        "VUID-vkCmdDispatchBase-None-02692",
+        kVUIDUndefined, // indirect_protected_cb
+        kVUIDUndefined, // indirect_contiguous_memory;
+        kVUIDUndefined, // indirect_buffer_bit
+        kVUIDUndefined, // viewport_count
+        kVUIDUndefined, // scissor_count
+        kVUIDUndefined, // viewport_scissor_count
+        kVUIDUndefined, // primitive_topology
+        "VUID-vkCmdDispatchBase-flags-02696",
+        kVUIDUndefined, // subpass_input
+        "VUID-vkCmdDispatchBase-None-02691",
+        "VUID-vkCmdDispatchBase-None-02698",
+        kVUIDUndefined, // image_subresources
         "VUID-vkCmdDispatchBase-None-02699",
         "VUID-vkCmdDispatchBase-None-02702",
         "VUID-vkCmdDispatchBase-None-02703",
