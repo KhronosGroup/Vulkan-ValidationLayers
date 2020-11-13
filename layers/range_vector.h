@@ -141,9 +141,6 @@ class range_view {
     const Range &range_;
 };
 
-template <typename Container>
-using const_correct_iterator = decltype(std::declval<Container>().begin());
-
 // Type parameters for the range_map(s)
 struct insert_range_no_split_bounds {
     const static bool split_boundaries = false;
