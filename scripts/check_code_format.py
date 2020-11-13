@@ -70,13 +70,14 @@ def VerifyClangFormatSource():
     diff_files_list = [item for item in target_files if good_file_pattern.search(item)]
     diff_files = ' '.join([str(elem) for elem in diff_files_list])
     retval = 0
-    git_diff = subprocess.Popen(('git', 'diff', '-U0', 'origin/master', '--', diff_files), stdout=subprocess.PIPE)
-    diff_files_data = subprocess.check_output(('python3', './scripts/clang-format-diff.py', '-p1', '-style=file'), stdin=git_diff.stdout)
-    diff_files_data = diff_files_data.decode('utf-8')
-    if diff_files_data != '':
-        CPrint('ERR_MSG', "\nFound formatting errors!")
-        CPrint('CONTENT', "\n" + diff_files_data)
-        retval = 1
+    if diff_files != '':
+        git_diff = subprocess.Popen(('git', 'diff', '-U0', 'origin/master', '--', diff_files), stdout=subprocess.PIPE)
+        diff_files_data = subprocess.check_output(('python3', './scripts/clang-format-diff.py', '-p1', '-style=file'), stdin=git_diff.stdout)
+        diff_files_data = diff_files_data.decode('utf-8')
+        if diff_files_data != '':
+            CPrint('ERR_MSG', "\nFound formatting errors!")
+            CPrint('CONTENT', "\n" + diff_files_data)
+            retval = 1
     else:
         CPrint('SUCCESS_MSG', "\nThe modified source code in PR has been properly clang-formatted.\n\n")
     return retval
