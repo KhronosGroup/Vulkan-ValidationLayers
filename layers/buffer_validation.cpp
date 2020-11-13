@@ -1954,6 +1954,21 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
     skip |= ValidateImageFormatFeatures(pCreateInfo);
 
+    // Check compatibility with VK_KHR_portability_subset
+    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+        if (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT & pCreateInfo->flags &&
+            VK_FALSE == enabled_features.portability_subset_features.imageView2DOn3DImage) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-imageView2DOn3DImage-04459",
+                             "vkCreateImage (portability error): VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT is not supported.");
+        }
+        if ((VK_SAMPLE_COUNT_1_BIT != pCreateInfo->samples) && (1 != pCreateInfo->arrayLayers) &&
+            (VK_FALSE == enabled_features.portability_subset_features.multisampleArrayImage)) {
+            skip |=
+                LogError(device, "VUID-VkImageCreateInfo-multisampleArrayImage-04460",
+                         "vkCreateImage (portability error): Cannot create an image with samples/texel > 1 && arrayLayers != 1");
+        }
+    }
+
     return skip;
 }
 
