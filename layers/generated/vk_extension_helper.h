@@ -492,6 +492,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_fill_rectangle{kNotEnabled};
     ExtEnabled vk_nv_fragment_coverage_to_color{kNotEnabled};
     ExtEnabled vk_nv_fragment_shader_barycentric{kNotEnabled};
+    ExtEnabled vk_nv_fragment_shading_rate_enums{kNotEnabled};
     ExtEnabled vk_nv_framebuffer_mixed_samples{kNotEnabled};
     ExtEnabled vk_nv_geometry_shader_passthrough{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
@@ -857,6 +858,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_fragment_coverage_to_color, {})),
             std::make_pair(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_fragment_shader_barycentric, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_fragment_shading_rate_enums, {{
+                           {&DeviceExtensions::vk_khr_fragment_shading_rate, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME}}})),
             std::make_pair(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_framebuffer_mixed_samples, {})),
             std::make_pair(VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_geometry_shader_passthrough, {})),
             std::make_pair(VK_NV_GLSL_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})),
@@ -1182,6 +1185,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_FILL_RECTANGLE_EXTENSION_NAME,
     VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME,
     VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME,
+    VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME,
     VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME,
     VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME,
     VK_NV_GLSL_SHADER_EXTENSION_NAME,

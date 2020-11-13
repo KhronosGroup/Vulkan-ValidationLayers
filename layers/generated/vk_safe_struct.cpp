@@ -34372,6 +34372,195 @@ void safe_VkDeviceDiagnosticsConfigCreateInfoNV::initialize(const safe_VkDeviceD
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    fragmentShadingRateEnums(in_struct->fragmentShadingRateEnums),
+    supersampleFragmentShadingRates(in_struct->supersampleFragmentShadingRates),
+    noInvocationFragmentShadingRates(in_struct->noInvocationFragmentShadingRates)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentShadingRateEnums = copy_src.fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = copy_src.supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = copy_src.noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::operator=(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentShadingRateEnums = copy_src.fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = copy_src.supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = copy_src.noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::~safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::initialize(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct)
+{
+    sType = in_struct->sType;
+    fragmentShadingRateEnums = in_struct->fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = in_struct->supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = in_struct->noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::initialize(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentShadingRateEnums = copy_src->fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = copy_src->supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = copy_src->noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    maxFragmentShadingRateInvocationCount(in_struct->maxFragmentShadingRateInvocationCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    maxFragmentShadingRateInvocationCount = copy_src.maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::operator=(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxFragmentShadingRateInvocationCount = copy_src.maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::~safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::initialize(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct)
+{
+    sType = in_struct->sType;
+    maxFragmentShadingRateInvocationCount = in_struct->maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::initialize(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    maxFragmentShadingRateInvocationCount = copy_src->maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    shadingRateType(in_struct->shadingRateType),
+    shadingRate(in_struct->shadingRate)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = in_struct->combinerOps[i];
+    }
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV),
+    pNext(nullptr)
+{}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    shadingRateType = copy_src.shadingRateType;
+    shadingRate = copy_src.shadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src.combinerOps[i];
+    }
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::operator=(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shadingRateType = copy_src.shadingRateType;
+    shadingRate = copy_src.shadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src.combinerOps[i];
+    }
+
+    return *this;
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::~safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct)
+{
+    sType = in_struct->sType;
+    shadingRateType = in_struct->shadingRateType;
+    shadingRate = in_struct->shadingRate;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = in_struct->combinerOps[i];
+    }
+}
+
+void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    shadingRateType = copy_src->shadingRateType;
+    shadingRate = copy_src->shadingRate;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src->combinerOps[i];
+    }
+}
+
 safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* in_struct) :
     sType(in_struct->sType),
     fragmentDensityMapDeferred(in_struct->fragmentDensityMapDeferred)
@@ -37171,6 +37360,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
             safe_pNext = new safe_VkDeviceDiagnosticsConfigCreateInfoNV(reinterpret_cast<const VkDeviceDiagnosticsConfigCreateInfoNV *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV:
+            safe_pNext = new safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(reinterpret_cast<const VkPipelineFragmentShadingRateEnumStateCreateInfoNV *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *>(pNext));
             break;
@@ -37984,6 +38182,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
             delete reinterpret_cast<const safe_VkDeviceDiagnosticsConfigCreateInfoNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV:
+            delete reinterpret_cast<const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *>(header);

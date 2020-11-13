@@ -4902,6 +4902,16 @@ void PostCallRecordGetPrivateDataEXT(
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t*                                   pData);
 
+void PreCallRecordCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]);
+
+void PostCallRecordCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]);
+
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 void PreCallRecordCreateDirectFBSurfaceEXT(

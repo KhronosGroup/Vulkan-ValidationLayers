@@ -2019,6 +2019,10 @@ void DispatchGetPrivateDataEXT(
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t*                                   pData);
+void DispatchCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]);
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 VkResult DispatchCreateDirectFBSurfaceEXT(
     VkInstance                                  instance,

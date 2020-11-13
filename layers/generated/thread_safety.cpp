@@ -7223,6 +7223,22 @@ void ThreadSafety::PostCallRecordGetPrivateDataEXT(
     FinishReadObject(privateDataSlot, "vkGetPrivateDataEXT");
 }
 
+void ThreadSafety::PreCallRecordCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    StartWriteObject(commandBuffer, "vkCmdSetFragmentShadingRateEnumNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    FinishWriteObject(commandBuffer, "vkCmdSetFragmentShadingRateEnumNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 void ThreadSafety::PreCallRecordCreateDirectFBSurfaceEXT(

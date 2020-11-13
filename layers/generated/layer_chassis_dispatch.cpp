@@ -7850,6 +7850,16 @@ void DispatchDestroyPrivateDataSlotEXT(
 
 // Skip vkGetPrivateDataEXT dispatch, manually generated
 
+void DispatchCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2])
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+
+}
+
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 VkResult DispatchCreateDirectFBSurfaceEXT(

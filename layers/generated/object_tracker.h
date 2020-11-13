@@ -2560,6 +2560,10 @@ bool PreCallValidateGetPrivateDataEXT(
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t*                                   pData) const;
+bool PreCallValidateCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) const;
 
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 bool PreCallValidateCreateDirectFBSurfaceEXT(

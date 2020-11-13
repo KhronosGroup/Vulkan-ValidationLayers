@@ -387,6 +387,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreatePrivateDataSlotEXT(VkDevice devi
 static VKAPI_ATTR void VKAPI_CALL StubDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlotEXT privateDataSlot, const VkAllocationCallbacks* pAllocator) {  };
 static VKAPI_ATTR VkResult VKAPI_CALL StubSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t data) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {  };
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) { return VK_SUCCESS; };
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
@@ -526,6 +527,7 @@ const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkCmdSetDeviceMaskKHR", "VK_KHR_device_group"},
     {"vkCmdSetDiscardRectangleEXT", "VK_EXT_discard_rectangles"},
     {"vkCmdSetExclusiveScissorNV", "VK_NV_scissor_exclusive"},
+    {"vkCmdSetFragmentShadingRateEnumNV", "VK_NV_fragment_shading_rate_enums"},
     {"vkCmdSetFragmentShadingRateKHR", "VK_KHR_fragment_shading_rate"},
     {"vkCmdSetFrontFaceEXT", "VK_EXT_extended_dynamic_state"},
     {"vkCmdSetLineStippleEXT", "VK_EXT_line_rasterization"},
@@ -1273,6 +1275,8 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->SetPrivateDataEXT == nullptr) { table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)StubSetPrivateDataEXT; }
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT) gpa(device, "vkGetPrivateDataEXT");
     if (table->GetPrivateDataEXT == nullptr) { table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)StubGetPrivateDataEXT; }
+    table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV) gpa(device, "vkCmdSetFragmentShadingRateEnumNV");
+    if (table->CmdSetFragmentShadingRateEnumNV == nullptr) { table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)StubCmdSetFragmentShadingRateEnumNV; }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR) gpa(device, "vkCreateAccelerationStructureKHR");
     if (table->CreateAccelerationStructureKHR == nullptr) { table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)StubCreateAccelerationStructureKHR; }

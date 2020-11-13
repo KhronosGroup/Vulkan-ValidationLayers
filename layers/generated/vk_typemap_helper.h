@@ -4079,6 +4079,33 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREAT
     typedef VkDeviceDiagnosticsConfigCreateInfoNV Type;
 };
 
+// Map type VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV> {
+    typedef VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV Type;
+};
+
+// Map type VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV> {
+    typedef VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV Type;
+};
+
+// Map type VkPipelineFragmentShadingRateEnumStateCreateInfoNV to id VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV
+template <> struct LvlTypeMap<VkPipelineFragmentShadingRateEnumStateCreateInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV> {
+    typedef VkPipelineFragmentShadingRateEnumStateCreateInfoNV Type;
+};
+
 // Map type VkPhysicalDeviceFragmentDensityMap2FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT;

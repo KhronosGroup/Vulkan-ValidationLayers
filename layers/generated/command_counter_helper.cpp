@@ -384,6 +384,9 @@ void CommandCounter::PreCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer 
 void CommandCounter::PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline, uint32_t groupIndex) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
+void CommandCounter::PreCallRecordCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void CommandCounter::PreCallRecordCmdBuildAccelerationStructureKHR(VkCommandBuffer                                    commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {
     coreChecks->IncrementCommandCount(commandBuffer);

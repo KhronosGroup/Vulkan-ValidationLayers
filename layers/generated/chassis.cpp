@@ -10377,6 +10377,29 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 
 
 
+VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+    }
+    DispatchCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+    }
+}
+
+
 
 
 
@@ -11325,6 +11348,7 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkDestroyPrivateDataSlotEXT", {kFuncTypeDev, (void*)DestroyPrivateDataSlotEXT}},
     {"vkSetPrivateDataEXT", {kFuncTypeDev, (void*)SetPrivateDataEXT}},
     {"vkGetPrivateDataEXT", {kFuncTypeDev, (void*)GetPrivateDataEXT}},
+    {"vkCmdSetFragmentShadingRateEnumNV", {kFuncTypeDev, (void*)CmdSetFragmentShadingRateEnumNV}},
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     {"vkCreateDirectFBSurfaceEXT", {kFuncTypeInst, (void*)CreateDirectFBSurfaceEXT}},
 #endif

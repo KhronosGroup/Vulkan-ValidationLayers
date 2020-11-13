@@ -7999,6 +7999,55 @@ struct safe_VkDeviceDiagnosticsConfigCreateInfoNV {
     VkDeviceDiagnosticsConfigCreateInfoNV const *ptr() const { return reinterpret_cast<VkDeviceDiagnosticsConfigCreateInfoNV const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 fragmentShadingRateEnums;
+    VkBool32 supersampleFragmentShadingRates;
+    VkBool32 noInvocationFragmentShadingRates;
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct);
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& operator=(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV();
+    ~safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV();
+    void initialize(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* copy_src);
+    VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *>(this); }
+    VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV {
+    VkStructureType sType;
+    void* pNext;
+    VkSampleCountFlagBits maxFragmentShadingRateInvocationCount;
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct);
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& operator=(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& copy_src);
+    safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV();
+    ~safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV();
+    void initialize(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* copy_src);
+    VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV *>(this); }
+    VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV const *>(this); }
+};
+
+struct safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkFragmentShadingRateTypeNV shadingRateType;
+    VkFragmentShadingRateNV shadingRate;
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2];
+    safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct);
+    safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& copy_src);
+    safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& operator=(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& copy_src);
+    safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV();
+    ~safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV();
+    void initialize(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct);
+    void initialize(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV* copy_src);
+    VkPipelineFragmentShadingRateEnumStateCreateInfoNV *ptr() { return reinterpret_cast<VkPipelineFragmentShadingRateEnumStateCreateInfoNV *>(this); }
+    VkPipelineFragmentShadingRateEnumStateCreateInfoNV const *ptr() const { return reinterpret_cast<VkPipelineFragmentShadingRateEnumStateCreateInfoNV const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT {
     VkStructureType sType;
     void* pNext;

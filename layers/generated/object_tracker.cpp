@@ -5810,6 +5810,16 @@ bool ObjectLifetimes::PreCallValidateGetPrivateDataEXT(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateCmdSetFragmentShadingRateEnumNV(
+    VkCommandBuffer                             commandBuffer,
+    VkFragmentShadingRateNV                     shadingRate,
+    const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdSetFragmentShadingRateEnumNV-commandBuffer-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 bool ObjectLifetimes::PreCallValidateCreateDirectFBSurfaceEXT(
