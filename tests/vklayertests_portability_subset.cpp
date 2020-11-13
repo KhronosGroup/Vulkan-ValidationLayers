@@ -213,3 +213,28 @@ TEST_F(VkPortabilitySubsetTest, CreateImageView) {
     ci.format = VK_FORMAT_R12X4G12X4_UNORM_2PACK16;  // Wrong number of bits per component
     CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466");
 }
+
+TEST_F(VkPortabilitySubsetTest, CreateSampler) {
+    TEST_DESCRIPTION("Portability: CreateSampler - VUID 04467");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    // Make sure image features are disabled via portability extension
+    portability_feature.samplerMipLodBias = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.mipLodBias = 1.0f;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-samplerMipLodBias-04467");
+}

@@ -13015,6 +13015,13 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
         }
     }
 
+    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+        if ((VK_FALSE == enabled_features.portability_subset_features.samplerMipLodBias) && pCreateInfo->mipLodBias != 0) {
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-samplerMipLodBias-04467",
+                             "vkCreateSampler (portability error): mip LOD bias not supported.");
+        }
+    }
+
     return skip;
 }
 
