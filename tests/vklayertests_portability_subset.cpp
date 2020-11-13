@@ -141,3 +141,75 @@ TEST_F(VkPortabilitySubsetTest, CreateImage) {
     ci.arrayLayers = 2;
     CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-multisampleArrayImage-04460");
 }
+
+TEST_F(VkPortabilitySubsetTest, CreateImageView) {
+    TEST_DESCRIPTION("Portability: CreateImageView - VUIDs 04465, 04466");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    // Make sure image features are disabled via portability extension
+    portability_feature.imageViewFormatSwizzle = VK_FALSE;
+    portability_feature.imageViewFormatReinterpretation = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageCreateInfo imageCI;
+    imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCI.pNext = NULL;
+    imageCI.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    imageCI.imageType = VK_IMAGE_TYPE_2D;
+    imageCI.format = VK_FORMAT_R4G4B4A4_UNORM_PACK16;
+    imageCI.extent.width = 512;
+    imageCI.extent.height = 64;
+    imageCI.extent.depth = 1;
+    imageCI.mipLevels = 1;
+    imageCI.arrayLayers = 1;
+    imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCI.queueFamilyIndexCount = 0;
+    imageCI.pQueueFamilyIndices = nullptr;
+    imageCI.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    VkImageObj image(m_device);
+    image.init(&imageCI);
+
+    VkImageViewCreateInfo ci;
+    ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ci.pNext = nullptr;
+    ci.flags = 0;
+    ci.image = image.image();
+    ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ci.format = VK_FORMAT_R4G4B4A4_UNORM_PACK16;
+    // Incorrect swizzling due to portability
+    ci.components.r = VK_COMPONENT_SWIZZLE_G;
+    ci.components.g = VK_COMPONENT_SWIZZLE_G;
+    ci.components.b = VK_COMPONENT_SWIZZLE_R;
+    ci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ci.subresourceRange.baseMipLevel = 0;
+    ci.subresourceRange.levelCount = 1;
+    ci.subresourceRange.baseArrayLayer = 0;
+    ci.subresourceRange.layerCount = 1;
+    CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465");
+
+    ci.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    ci.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    ci.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    ci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    ci.format = VK_FORMAT_R5G6B5_UNORM_PACK16;  // Wrong number of components
+    CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466");
+
+    ci.format = VK_FORMAT_R12X4G12X4_UNORM_2PACK16;  // Wrong number of bits per component
+    CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466");
+}

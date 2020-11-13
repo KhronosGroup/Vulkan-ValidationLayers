@@ -5156,6 +5156,32 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                  "VkImageViewASTCDecodeModeEXT::decodeMode is VK_FORMAT_E5B9G9R9_UFLOAT_PACK32.");
             }
         }
+
+        if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+            // If swizzling is disabled, make sure it isn't used
+            if ((VK_FALSE == enabled_features.portability_subset_features.imageViewFormatSwizzle) &&
+                (pCreateInfo->components.r != VK_COMPONENT_SWIZZLE_IDENTITY ||
+                 pCreateInfo->components.g != VK_COMPONENT_SWIZZLE_IDENTITY ||
+                 pCreateInfo->components.b != VK_COMPONENT_SWIZZLE_IDENTITY ||
+                 pCreateInfo->components.a != VK_COMPONENT_SWIZZLE_IDENTITY)) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465",
+                                 "vkCreateImageView (portability error): swizzle is disabled for this device.");
+            }
+
+            // Ensure ImageView's format has the same number of bits and components as Image's format if format reinterpretation is
+            // disabled
+            // TODO (ncesario): This is not correct for some cases (e.g., VK_FORMAT_B10G11R11_UFLOAT_PACK32 and
+            // VK_FORMAT_E5B9G9R9_UFLOAT_PACK32), but requires additional information that should probably be generated from the
+            // spec. See Github issue #2361.
+            if ((VK_FALSE == enabled_features.portability_subset_features.imageViewFormatReinterpretation) &&
+                ((FormatElementSize(pCreateInfo->format, VK_IMAGE_ASPECT_COLOR_BIT) !=
+                  FormatElementSize(image_state->createInfo.format, VK_IMAGE_ASPECT_COLOR_BIT)) ||
+                 (FormatChannelCount(pCreateInfo->format) != FormatChannelCount(image_state->createInfo.format)))) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466",
+                                 "vkCreateImageView (portability error): ImageView format must have"
+                                 " the same number of components and bits per component as the Image's format");
+            }
+        }
     }
     return skip;
 }
