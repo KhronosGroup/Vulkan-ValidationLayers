@@ -260,9 +260,6 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
-        // aspectMasks might never get set in ConvertVkRenderPassCreateInfoToV2KHR
-        error_monitor->SetUnexpectedError("VUID-VkAttachmentReference2-attachment-03311");
-        error_monitor->SetUnexpectedError("VUID-VkAttachmentReference2-attachment-03312");
         // Some tests mismatch attachment type with layout
         error_monitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
 
@@ -274,9 +271,6 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         // For api version >= 1.2, try core entrypoint
         PFN_vkCreateRenderPass2 vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2");
         if (vkCreateRenderPass2) {
-            // aspectMasks might never get set in ConvertVkRenderPassCreateInfoToV2KHR
-            error_monitor->SetUnexpectedError("VUID-VkAttachmentReference2-attachment-03311");
-            error_monitor->SetUnexpectedError("VUID-VkAttachmentReference2-attachment-03312");
             // Some tests mismatch attachment type with layout
             error_monitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
 

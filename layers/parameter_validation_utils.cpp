@@ -3880,13 +3880,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
         }
     }
 
-    if (firstExclusiveScissor >= device_limits.maxViewports) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02033",
-                         "vkCmdSetExclusiveScissorNV: firstExclusiveScissor (=%" PRIu32
-                         ") must be less than maxViewports (=%" PRIu32 ").",
-                         firstExclusiveScissor, device_limits.maxViewports);
-    }
-
     if (pExclusiveScissors) {
         for (uint32_t scissor_i = 0; scissor_i < exclusiveScissorCount; ++scissor_i) {
             const auto &scissor = pExclusiveScissors[scissor_i];  // will crash on invalid ptr
@@ -3928,18 +3921,12 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkComma
                                                                          uint32_t viewportCount,
                                                                          const VkViewportWScalingNV *pViewportWScalings) const {
     bool skip = false;
-    if (firstViewport >= device_limits.maxViewports) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01323",
-                         "vkCmdSetViewportWScalingNV: firstViewport (=%" PRIu32 ") must be less than maxViewports (=%" PRIu32 ").",
-                         firstViewport, device_limits.maxViewports);
-    } else {
-        const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
-        if ((sum < 1) || (sum > device_limits.maxViewports)) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324",
-                             "vkCmdSetViewportWScalingNV: firstViewport + viewportCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
-                             ") must be between 1 and VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 "), inculsive.",
-                             firstViewport, viewportCount, sum, device_limits.maxViewports);
-        }
+    const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
+    if ((sum < 1) || (sum > device_limits.maxViewports)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324",
+                         "vkCmdSetViewportWScalingNV: firstViewport + viewportCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
+                         ") must be between 1 and VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 "), inculsive.",
+                         firstViewport, viewportCount, sum, device_limits.maxViewports);
     }
 
     return skip;
@@ -3965,13 +3952,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePalette
                          ") is not 1.",
                          viewportCount);
         }
-    }
-
-    if (firstViewport >= device_limits.maxViewports) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02066",
-                         "vkCmdSetViewportShadingRatePaletteNV: firstViewport (=%" PRIu32
-                         ") must be less than maxViewports (=%" PRIu32 ").",
-                         firstViewport, device_limits.maxViewports);
     }
 
     const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);

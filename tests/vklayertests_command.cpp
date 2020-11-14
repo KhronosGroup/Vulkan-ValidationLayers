@@ -6537,10 +6537,6 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
 
     const auto max_vps = m_device->props.limits.maxViewports;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01323");
-    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), max_vps, vp_count, scale.data());
-    m_errorMonitor->VerifyFound();
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324");
     vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), 1, max_vps, scale.data());
     m_errorMonitor->VerifyFound();

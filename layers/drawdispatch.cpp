@@ -505,7 +505,7 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawIndirectByteCountEXT-None-02692",
         "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646",
         "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-buffer", // TODO - Update when header are updated
-        "VUID-vkCmdDrawIndirectByteCountEXT-buffer-02290",
+        "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-02290",
         "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03417",
         "VUID-vkCmdDrawIndirectByteCountEXT-scissorCount-03418",
         "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419",
