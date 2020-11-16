@@ -392,7 +392,7 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
 
         if (aspect_mask) {
             action(aspect_string, "resolve read", src_at, dst_at, attachment_views[src_at],
-                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kDepthStencilAttachmentRasterOrder, offset, extent,
+                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kAttachmentRasterOrder, offset, extent,
                    aspect_mask);
             action(aspect_string, "resolve write", src_at, dst_at, attachment_views[dst_at],
                    SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kAttachmentRasterOrder, offset, extent, aspect_mask);
