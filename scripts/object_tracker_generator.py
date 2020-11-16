@@ -776,11 +776,25 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         param_vuid = self.GetVuid(parent_name, param_suffix)
         parent_vuid = self.GetVuid(parent_name, parent_suffix)
 
-        # If no parent VUID for this member, look for a commonparent VUID
-        if parent_vuid == 'kVUIDUndefined':
-            parent_vuid = self.GetVuid(parent_name, 'commonparent')
-        if obj_count is not None:
+        # TODO: Revise object 'parent' handling.  Each object definition in the XML specifies a parent, this should
+        #       all be handled in codegen (or at least called out)
+        # These objects do not have a VkDevice as their (ultimate) parent objecs, so skip the current code-gen'd parent checks
+        parent_exception_list = [
+            'VkPhysicalDevice',
+            'VkSwapchainKHR',
+            'VkDisplayKHR',
+            'VkSurfaceKHR',
+            'VkDisplayModeKHR',
+            'VkDebugReportCallbackEXT',
+            'VkDebugUtilsMessengerEXT']
+        if obj_type in parent_exception_list:
+             parent_vuid = 'kVUIDUndefined'
+        else:
+            # If no parent VUID for this member, look for a commonparent VUID
+            if parent_vuid == 'kVUIDUndefined':
+                parent_vuid = self.GetVuid(parent_name, 'commonparent')
 
+        if obj_count is not None:
             pre_call_code += '%sif (%s%s) {\n' % (indent, prefix, obj_name)
             indent = self.incIndent(indent)
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
