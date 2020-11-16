@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Information to assist in triage and disposition
+about: Request attention for validation layer bugs or incorrect behavior
 title: ''
 labels: ''
 assignees: ''
