@@ -1984,6 +1984,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_sample_locations, &phys_dev_props->sample_locations_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_custom_border_color, &phys_dev_props->custom_border_color_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_multiview, &phys_dev_props->multiview_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_portability_subset, &phys_dev_props->portability_props);
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_timeline_semaphore) {
         VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;

@@ -1293,6 +1293,54 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
         }
     }
 
+    // Check for portability errors
+    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+        if ((VK_FALSE == enabled_features.portability_subset_features.triangleFans) &&
+            (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN == pPipeline->topology_at_rasterizer)) {
+            skip |=
+                LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452",
+                         "Invalid Pipeline CreateInfo[%d] (portability error): VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN is not supported",
+                         pipelineIndex);
+        }
+
+        // Validate vertex inputs
+        for (const auto desc : pPipeline->vertex_binding_descriptions_) {
+            if ((desc.stride < phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) ||
+                ((desc.stride % phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) != 0)) {
+                skip |= LogError(
+                    device, "VUID-VkVertexInputBindingDescription-stride-04456",
+                    "Invalid Pipeline CreateInfo[%d] (portability error): Vertex input stride must be at least as large as and a "
+                    "multiple of VkPhysicalDevicePortabilitySubsetPropertiesKHR::minVertexInputBindingStrideAlignment.",
+                    pipelineIndex);
+            }
+        }
+
+        // Validate vertex attributes
+        if (VK_FALSE == enabled_features.portability_subset_features.vertexAttributeAccessBeyondStride) {
+            for (const auto attrib : pPipeline->vertex_attribute_descriptions_) {
+                const auto vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(attrib.binding);
+                if (vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) {
+                    const auto desc = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second];
+                    if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
+                        skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
+                                         "Invalid Pipeline CreateInfo[%d] (portability error): (attribute.offset + "
+                                         "sizeof(vertex_description.format)) is larger than the vertex stride",
+                                         pipelineIndex);
+                    }
+                }
+            }
+        }
+
+        // Validate polygon mode
+        auto raster_state_ci = pPipeline->graphicsPipelineCI.pRasterizationState;
+        if ((VK_FALSE == enabled_features.portability_subset_features.pointPolygons) && raster_state_ci &&
+            (VK_FALSE == raster_state_ci->rasterizerDiscardEnable) && (VK_POLYGON_MODE_POINT == raster_state_ci->polygonMode)) {
+            skip |=
+                LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458",
+                         "Invalid Pipeline CreateInfo[%d] (portability error): point polygons are not supported", pipelineIndex);
+        }
+    }
+
     return skip;
 }
 
@@ -4600,6 +4648,48 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
 
     if (device_extensions.vk_ext_vertex_attribute_divisor) {
         skip |= ValidatePipelineVertexDivisors(cgpl_state->pipe_state, count, pCreateInfos);
+    }
+
+    if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+        for (uint32_t i = 0; i < count; ++i) {
+            // Validate depth-stencil state
+            auto raster_state_ci = pCreateInfos[i].pRasterizationState;
+            if ((VK_FALSE == enabled_features.portability_subset_features.separateStencilMaskRef) && raster_state_ci &&
+                (VK_CULL_MODE_NONE == raster_state_ci->cullMode)) {
+                auto depth_stencil_ci = pCreateInfos[i].pDepthStencilState;
+                if ((VK_TRUE == depth_stencil_ci->stencilTestEnable) &&
+                    (depth_stencil_ci->front.reference != depth_stencil_ci->back.reference)) {
+                    skip |= LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453",
+                                     "Invalid Pipeline CreateInfo[%d] (portability error): VkStencilOpState::reference must be the "
+                                     "same for front and back",
+                                     i);
+                }
+            }
+
+            // Validate color attachments
+            auto color_blend_state = pCreateInfos[i].pColorBlendState;
+            if ((VK_FALSE == enabled_features.portability_subset_features.constantAlphaColorBlendFactors) && color_blend_state) {
+                const auto attachments = color_blend_state->pAttachments;
+                for (uint32_t colorAttachmentIndex = 0; i < color_blend_state->attachmentCount; ++i) {
+                    if ((VK_BLEND_FACTOR_CONSTANT_ALPHA == attachments[colorAttachmentIndex].srcColorBlendFactor) ||
+                        (VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA == attachments[colorAttachmentIndex].srcColorBlendFactor)) {
+                        skip |= LogError(
+                            device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454",
+                            "Invalid Pipeline CreateInfo[%d] (portability error): srcColorBlendFactor for color attachment %d must "
+                            "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
+                            i, colorAttachmentIndex);
+                    }
+                    if ((VK_BLEND_FACTOR_CONSTANT_ALPHA == attachments[colorAttachmentIndex].dstColorBlendFactor) ||
+                        (VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA == attachments[colorAttachmentIndex].dstColorBlendFactor)) {
+                        skip |= LogError(
+                            device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455",
+                            "Invalid Pipeline CreateInfo[%d] (portability error): dstColorBlendFactor for color attachment %d must "
+                            "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
+                            i, colorAttachmentIndex);
+                    }
+                }
+            }
+        }
     }
 
     return skip;
