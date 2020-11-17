@@ -121,6 +121,36 @@ struct SyncBarrier {
 
 enum class AccessAddressType : uint32_t { kLinear = 0, kIdealized = 1, kMaxType = 1, kTypeCount = kMaxType + 1 };
 
+struct SyncEventState {
+    enum IgnoreReason { NotIgnored = 0, ResetWaitRace, SetRace, MissingStageBits };
+    using EventPointer = std::shared_ptr<EVENT_STATE>;
+    using ScopeMap = sparse_container::range_map<VkDeviceSize, bool>;
+    EventPointer event;
+    CMD_TYPE last_command;  // Only Event commands are valid here.
+    CMD_TYPE unsynchronized_set;
+    VkPipelineStageFlags barriers;
+    VkPipelineStageFlags stage_mask_param;
+    VkPipelineStageFlags stage_mask;
+    VkPipelineStageFlags exec_scope;
+    SyncStageAccessFlags stage_accesses;
+    ResourceUsageTag first_scope_tag;
+    std::array<ScopeMap, static_cast<size_t>(AccessAddressType::kTypeCount)> first_scope;
+    SyncEventState(const EventPointer &event_state)
+        : event(event_state),
+          last_command(CMD_NONE),
+          unsynchronized_set(CMD_NONE),
+          barriers(0U),
+          stage_mask_param(0U),
+          stage_mask(0U),
+          exec_scope(0U),
+          stage_accesses() {}
+    SyncEventState() : SyncEventState(EventPointer()) {}
+    void ResetFirstScope();
+    const ScopeMap &FirstScope(AccessAddressType address_type) const { return first_scope[static_cast<size_t>(address_type)]; }
+    IgnoreReason IsIgnoredByWait(VkPipelineStageFlags srcStageMask) const;
+    bool HasBarrier(VkPipelineStageFlags stageMask, VkPipelineStageFlags exec_scope) const;
+};
+
 // To represent ordering guarantees such as rasterization and store
 struct SyncOrderingBarrier {
     VkPipelineStageFlags exec_scope;
@@ -148,6 +178,13 @@ class ResourceAccessState : public SyncStageAccess {
             bool same = (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) && (tag == rhs.tag);
             return same;
         }
+        bool IsReadBarrierHazard(VkPipelineStageFlags src_exec_scope) const {
+            // If the read stage is not in the src sync scope
+            // *AND* not execution chained with an existing sync barrier (that's the or)
+            // then the barrier access is unsafe (R/W after R)
+            return (src_exec_scope & (stage | barriers)) == 0;
+        }
+
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
         inline void Set(VkPipelineStageFlagBits stage_, SyncStageAccessFlags access_, VkPipelineStageFlags barriers_,
                         const ResourceUsageTag &tag_) {
@@ -166,6 +203,8 @@ class ResourceAccessState : public SyncStageAccess {
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope) const;
     HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index, const ResourceUsageTag &start_tag) const;
+    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags source_exec_scope,
+                                     const SyncStageAccessFlags &source_access_scope, const ResourceUsageTag &event_tag) const;
 
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
     void SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag &tag);
@@ -173,6 +212,7 @@ class ResourceAccessState : public SyncStageAccess {
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, const ResourceUsageTag &tag);
     void ApplyBarrier(const SyncBarrier &barrier, bool layout_transition);
+    void ApplyBarrier(const ResourceUsageTag &scope_tag, const SyncBarrier &barrier, bool layout_transition);
     void ApplyPendingBarriers(const ResourceUsageTag &tag);
 
     ResourceAccessState()
@@ -205,12 +245,25 @@ class ResourceAccessState : public SyncStageAccess {
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
     VkPipelineStageFlags GetReadBarriers(const SyncStageAccessFlags &usage) const;
     SyncStageAccessFlags GetWriteBarriers() const { return write_barriers; }
+    bool InSourceScopeOrChain(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope) const {
+        return ReadInSourceScopeOrChain(src_exec_scope) || WriteInSourceScopeOrChain(src_exec_scope, src_access_scope);
+    }
 
   private:
     static constexpr VkPipelineStageFlags kInvalidAttachmentStage = ~VkPipelineStageFlags(0);
     bool IsWriteHazard(SyncStageAccessFlags usage) const { return (usage & ~write_barriers).any(); }
     bool IsRAWHazard(VkPipelineStageFlagBits usage_stage, const SyncStageAccessFlags &usage) const;
-    bool InSourceScopeOrChain(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope) const {
+    bool IsWriteBarrierHazard(VkPipelineStageFlags src_exec_scope, const SyncStageAccessFlags &src_access_scope) const {
+        // If the previous write is *not* in the 1st access scope
+        // *AND* the current barrier is not in the dependency chain
+        // *AND* the there is no prior memory barrier for the previous write in the dependency chain
+        // then the barrier access is unsafe (R/W after W)
+        return ((last_write & src_access_scope) == 0) && ((src_exec_scope & write_dependency_chain) == 0) && (write_barriers == 0);
+    }
+    bool ReadInSourceScopeOrChain(VkPipelineStageFlags src_exec_scope) const {
+        return (0 != (src_exec_scope & (last_read_stages | read_execution_barriers)));
+    }
+    bool WriteInSourceScopeOrChain(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope) const {
         return (src_access_scope & last_write).any() || (write_dependency_chain & src_exec_scope);
     }
 
@@ -304,6 +357,10 @@ class AccessContext {
                               const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0U) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                           const SyncStageAccessFlags &src_access_scope,
+                                          const VkImageSubresourceRange &subresource_range, const SyncEventState &sync_event,
+                                          DetectOptions options) const;
+    HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
+                                          const SyncStageAccessFlags &src_access_scope,
                                           const VkImageSubresourceRange &subresource_range, DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                           const SyncStageAccessFlags &src_stage_accesses,
@@ -332,6 +389,7 @@ class AccessContext {
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
     void ResolvePreviousAccess(AccessAddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
                                const ResourceAccessState *infill_state) const;
+    void ResolvePreviousAccesses();
     template <typename BarrierAction>
     void ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
                             BarrierAction &barrier_action, AccessAddressType address_type, ResourceAccessRangeMap *descent_map,
@@ -367,7 +425,6 @@ class AccessContext {
 
     template <typename Action>
     void ApplyGlobalBarriers(const Action &barrier_action);
-
     static AccessAddressType ImageAddressType(const IMAGE_STATE &image);
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
@@ -412,6 +469,8 @@ class AccessContext {
                                    uint32_t subpass) const;
 
     void SetStartTag(const ResourceUsageTag &tag) { start_tag_ = tag; }
+    template <typename Action>
+    void ForAll(Action &&action);
 
   private:
     template <typename Detector>
@@ -491,11 +550,23 @@ class CommandBufferAccessContext {
         render_pass_contexts_.clear();
         current_context_ = &cb_access_context_;
         current_renderpass_context_ = nullptr;
+        event_state_.clear();
     }
 
     AccessContext *GetCurrentAccessContext() { return current_context_; }
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
+    void ApplyBufferBarriers(const SyncEventState &sync_event, VkPipelineStageFlags dst_exec_scope,
+                             const SyncStageAccessFlags &dst_stage_accesses, uint32_t barrier_count,
+                             const VkBufferMemoryBarrier *barriers);
+    void ApplyGlobalBarriers(SyncEventState &sync_event, VkPipelineStageFlags dstStageMask, VkPipelineStageFlags dst_exec_scope,
+                             const SyncStageAccessFlags &dst_stage_accesses, uint32_t memory_barrier_count,
+                             const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag);
+    void ApplyGlobalBarriersToEvents(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags src_exec_scope,
+                                     VkPipelineStageFlags dstStageMask, VkPipelineStageFlags dst_exec_scope);
+    void ApplyImageBarriers(const SyncEventState &sync_event, VkPipelineStageFlags dst_exec_scope,
+                            const SyncStageAccessFlags &dst_stage_accesses, uint32_t barrier_count,
+                            const VkImageMemoryBarrier *barriers, const ResourceUsageTag &tag);
     bool ValidateBeginRenderPass(const RENDER_PASS_STATE &render_pass, const VkRenderPassBeginInfo *pRenderPassBegin,
                                  const VkSubpassBeginInfoKHR *pSubpassBeginInfo, const char *func_name) const;
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
@@ -512,19 +583,19 @@ class CommandBufferAccessContext {
     void RecordEndRenderPass(const RENDER_PASS_STATE &render_pass, const ResourceUsageTag &tag);
 
     bool ValidateSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
-    void RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+    void RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask, const ResourceUsageTag &tag);
     bool ValidateResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
     void RecordResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
-    bool ValidateWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                            const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                            const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                            const VkImageMemoryBarrier *pImageMemoryBarriers) const;
+    bool ValidateWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
+                            VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                            uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) const;
     void RecordWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                           VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
                           const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                           const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                          const VkImageMemoryBarrier *pImageMemoryBarriers) const;
+                          const VkImageMemoryBarrier *pImageMemoryBarriers, const ResourceUsageTag &tag);
+    void RecordDestroyEvent(VkEvent event);
 
     CMD_BUFFER_STATE *GetCommandBufferState() { return cb_state_.get(); }
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
@@ -541,6 +612,8 @@ class CommandBufferAccessContext {
     }
 
   private:
+    SyncEventState *GetEventState(VkEvent);
+    const SyncEventState *GetEventState(VkEvent) const;
     uint32_t command_number_;
     uint32_t reset_count_;
     std::vector<RenderPassAccessContext> render_pass_contexts_;
@@ -551,6 +624,7 @@ class CommandBufferAccessContext {
     SyncValidator *sync_state_;
 
     VkQueueFlags queue_flags_;
+    std::unordered_map<VkEvent, std::unique_ptr<SyncEventState>> event_state_;
 };
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
@@ -633,6 +707,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                     const VkBufferCopy *pRegions) override;
 
+    void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) override;
     bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos) const override;
 
     void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos) override;
