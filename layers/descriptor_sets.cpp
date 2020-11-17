@@ -1304,30 +1304,61 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     }
                 } else if (descriptor_class == DescriptorClass::AccelerationStructure) {
                     // Verify that acceleration structures are valid
-                    auto acc = static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructure();
-                    auto acc_node =
-                        static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureStateKHR();
-                    if (!acc_node || acc_node->destroyed) {
-                        if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
-                            auto set = descriptor_set->GetSet();
-                            return LogError(
-                                set, vuids.descriptor_valid,
-                                "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
-                                " index %" PRIu32 " is using acceleration structure %s that is invalid or has been destroyed.",
-                                report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                report_data->FormatHandle(acc).c_str());
+                    bool is_khr = (*((cvdescriptorset::AccelerationStructureDescriptor *)(descriptor))).is_khr();
+                    if (is_khr) {
+                        auto acc = static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructure();
+                        auto acc_node =
+                            static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureStateKHR();
+                        if (!acc_node || acc_node->destroyed) {
+                            if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
+                                auto set = descriptor_set->GetSet();
+                                return LogError(
+                                    set, vuids.descriptor_valid,
+                                    "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
+                                    " index %" PRIu32 " is using acceleration structure %s that is invalid or has been destroyed.",
+                                    report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                    report_data->FormatHandle(acc).c_str());
+                            }
+                        } else {
+                            for (auto mem_binding : acc_node->GetBoundMemory()) {
+                                if (mem_binding->destroyed) {
+                                    auto set = descriptor_set->GetSet();
+                                    return LogError(set, vuids.descriptor_valid,
+                                                    "%s encountered the following validation error at %s time: Descriptor in "
+                                                    "binding #%" PRIu32 " index %" PRIu32
+                                                    " is using acceleration structure %s that references invalid memory %s.",
+                                                    report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                                    report_data->FormatHandle(acc).c_str(),
+                                                    report_data->FormatHandle(mem_binding->mem).c_str());
+                                }
+                            }
                         }
                     } else {
-                        for (auto mem_binding : acc_node->GetBoundMemory()) {
-                            if (mem_binding->destroyed) {
+                        auto acc = static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureNV();
+                        auto acc_node =
+                            static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureStateNV();
+                        if (!acc_node || acc_node->destroyed) {
+                            if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
                                 auto set = descriptor_set->GetSet();
-                                return LogError(set, vuids.descriptor_valid,
-                                                "%s encountered the following validation error at %s time: Descriptor in "
-                                                "binding #%" PRIu32 " index %" PRIu32
-                                                " is using acceleration structure %s that references invalid memory %s.",
-                                                report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                                report_data->FormatHandle(acc).c_str(),
-                                                report_data->FormatHandle(mem_binding->mem).c_str());
+                                return LogError(
+                                    set, vuids.descriptor_valid,
+                                    "%s encountered the following validation error at %s time: Descriptor in binding #%" PRIu32
+                                    " index %" PRIu32 " is using acceleration structure %s that is invalid or has been destroyed.",
+                                    report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                    report_data->FormatHandle(acc).c_str());
+                            }
+                        } else {
+                            for (auto mem_binding : acc_node->GetBoundMemory()) {
+                                if (mem_binding->destroyed) {
+                                    auto set = descriptor_set->GetSet();
+                                    return LogError(set, vuids.descriptor_valid,
+                                                    "%s encountered the following validation error at %s time: Descriptor in "
+                                                    "binding #%" PRIu32 " index %" PRIu32
+                                                    " is using acceleration structure %s that references invalid memory %s.",
+                                                    report_data->FormatHandle(set).c_str(), caller, binding, index,
+                                                    report_data->FormatHandle(acc).c_str(),
+                                                    report_data->FormatHandle(mem_binding->mem).c_str());
+                                }
                             }
                         }
                     }
