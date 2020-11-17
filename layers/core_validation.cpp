@@ -7768,11 +7768,21 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     QueryObject query_obj(queryPool, slot);
-    ValidateBeginQueryVuids vuids = {"VUID-vkCmdBeginQuery-commandBuffer-cmdpool", "VUID-vkCmdBeginQuery-queryType-02327",
-                                     "VUID-vkCmdBeginQuery-queryType-00803",       "VUID-vkCmdBeginQuery-queryType-00800",
-                                     "VUID-vkCmdBeginQuery-query-00802",           "VUID-vkCmdBeginQuery-queryPool-03223",
-                                     "VUID-vkCmdBeginQuery-queryPool-03224",       "VUID-vkCmdBeginQuery-queryPool-03225",
-                                     "VUID-vkCmdBeginQuery-queryPool-01922",       "VUID-vkCmdBeginQuery-commandBuffer-01885"};
+    struct BeginQueryVuids : ValidateBeginQueryVuids {
+        BeginQueryVuids() : ValidateBeginQueryVuids() {
+            vuid_queue_flags = "VUID-vkCmdBeginQuery-commandBuffer-cmdpool";
+            vuid_queue_feedback = "VUID-vkCmdBeginQuery-queryType-02338";
+            vuid_queue_occlusion = "VUID-vkCmdBeginQuery-queryType-00803";
+            vuid_precise = "VUID-vkCmdBeginQuery-queryType-00800";
+            vuid_query_count = "VUID-vkCmdBeginQuery-query-00802";
+            vuid_profile_lock = "VUID-vkCmdBeginQuery-queryPool-03223";
+            vuid_scope_not_first = "VUID-vkCmdBeginQuery-queryPool-03224";
+            vuid_scope_in_rp = "VUID-vkCmdBeginQuery-queryPool-03225";
+            vuid_dup_query_type = "VUID-vkCmdBeginQuery-queryPool-01922";
+            vuid_protected_cb = "VUID-vkCmdBeginQuery-commandBuffer-01885";
+        }
+    };
+    BeginQueryVuids vuids;
     return ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERY, "vkCmdBeginQuery()", &vuids);
 }
 
@@ -7941,9 +7951,6 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
-    ValidateEndQueryVuids vuids = {"VUID-vkCmdEndQuery-commandBuffer-cmdpool", "VUID-vkCmdEndQuery-None-01923",
-                                   "VUID-vkCmdEndQuery-commandBuffer-01886"};
-
     const QUERY_POOL_STATE *query_pool_state = GetQueryPoolState(queryPool);
     if (query_pool_state) {
         const uint32_t available_query_count = query_pool_state->createInfo.queryCount;
@@ -7953,6 +7960,14 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
                              "vkCmdEndQuery(): query index (%u) is greater or equal to the queryPool size (%u).", slot,
                              available_query_count);
         } else {
+            struct EndQueryVuids : ValidateEndQueryVuids {
+                EndQueryVuids() : ValidateEndQueryVuids() {
+                    vuid_queue_flags = "VUID-vkCmdEndQuery-commandBuffer-cmdpool";
+                    vuid_active_queries = "VUID-vkCmdEndQuery-None-01923";
+                    vuid_protected_cb = "VUID-vkCmdEndQuery-commandBuffer-01886";
+                }
+            };
+            EndQueryVuids vuids;
             skip |= ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERY, "vkCmdEndQuery()", &vuids);
         }
     }
@@ -12566,13 +12581,21 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     assert(cb_state);
     QueryObject query_obj(queryPool, query, index);
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
-    ValidateBeginQueryVuids vuids = {
-        "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool", "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803",       "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800",
-        "VUID-vkCmdBeginQueryIndexedEXT-query-00802",           "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03223",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224",       "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-01922",       "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-01885"};
-
+    struct BeginQueryIndexedVuids : ValidateBeginQueryVuids {
+        BeginQueryIndexedVuids() : ValidateBeginQueryVuids() {
+            vuid_queue_flags = "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool";
+            vuid_queue_feedback = "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338";
+            vuid_queue_occlusion = "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803";
+            vuid_precise = "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800";
+            vuid_query_count = "VUID-vkCmdBeginQueryIndexedEXT-query-00802";
+            vuid_profile_lock = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03223";
+            vuid_scope_not_first = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224";
+            vuid_scope_in_rp = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225";
+            vuid_dup_query_type = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-01922";
+            vuid_protected_cb = "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-01885";
+        }
+    };
+    BeginQueryIndexedVuids vuids;
     bool skip = ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERYINDEXEDEXT, cmd_name, &vuids);
 
     // Extension specific VU's
@@ -12617,9 +12640,14 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
     QueryObject query_obj = {queryPool, query, index};
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
-    ValidateEndQueryVuids vuids = {"VUID-vkCmdEndQueryIndexedEXT-commandBuffer-cmdpool", "VUID-vkCmdEndQueryIndexedEXT-None-02342",
-                                   "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-02344"};
-
+    struct EndQueryIndexedVuids : ValidateEndQueryVuids {
+        EndQueryIndexedVuids() : ValidateEndQueryVuids() {
+            vuid_queue_flags = "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-cmdpool";
+            vuid_active_queries = "VUID-vkCmdEndQueryIndexedEXT-None-02342";
+            vuid_protected_cb = "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-02344";
+        }
+    };
+    EndQueryIndexedVuids vuids;
     return ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERYINDEXEDEXT, "vkCmdEndQueryIndexedEXT()", &vuids);
 }
 
