@@ -3264,6 +3264,18 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                             return false;
                         }
                     }
+
+                    // Verify portability
+                    auto sampler_state = GetSamplerState(sampler);
+                    if (sampler_state) {
+                        if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
+                            if ((VK_FALSE == enabled_features.portability_subset_features.mutableComparisonSamplers) &&
+                                (VK_FALSE != sampler_state->createInfo.compareEnable)) {
+                                LogError(device, "VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450",
+                                         "%s (portability error): sampler comparison not available.", func_name);
+                            }
+                        }
+                    }
                 }
             }
         }
