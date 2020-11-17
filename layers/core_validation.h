@@ -32,42 +32,43 @@
 
 // Set of VUID that need to go between core_validation.cpp and drawdispatch.cpp
 struct DrawDispatchVuid {
-    const char* queue_flag;
-    const char* inside_renderpass;
-    const char* pipeline_bound;
-    const char* dynamic_state;
-    const char* vertex_binding;
-    const char* vertex_binding_null;
-    const char* compatible_pipeline;
-    const char* render_pass_compatible;
-    const char* subpass_index;
-    const char* sample_location;
-    const char* linear_sampler;
-    const char* cubic_sampler;
-    const char* indirect_protected_cb;
-    const char* indirect_contiguous_memory;
-    const char* indirect_buffer_bit;
-    const char* viewport_count;
-    const char* scissor_count;
-    const char* viewport_scissor_count;
-    const char* primitive_topology;
-    const char* corner_sampled_address_mode;
-    const char* subpass_input;  // It doesn't validate anything because those stuff have done in ValidateCreateGraphicsPipelines.
-    const char* imageview_atomic;
-    const char* push_constants_set;
-    const char* image_subresources;
-    const char* descriptor_valid;
-    const char* sampler_imageview_type;
-    const char* sampler_implicitLod_dref_proj;
-    const char* sampler_bias_offset;
-    const char* vertex_binding_attribute;
-    const char* dynamic_state_setting_commands;
-    const char* unprotected_command_buffer;
-    const char* protected_command_buffer;
-    const char*
-        max_multiview_instance_index;  // TODO: Some instance values are in VkBuffer.The validation in those Cmds is skipped.
-    const char* filter_cubic;
-    const char* filter_cubic_min_max;
+    const char* queue_flag = kVUIDUndefined;
+    const char* inside_renderpass = kVUIDUndefined;
+    const char* pipeline_bound = kVUIDUndefined;
+    const char* dynamic_state = kVUIDUndefined;
+    const char* vertex_binding = kVUIDUndefined;
+    const char* vertex_binding_null = kVUIDUndefined;
+    const char* compatible_pipeline = kVUIDUndefined;
+    const char* render_pass_compatible = kVUIDUndefined;
+    const char* subpass_index = kVUIDUndefined;
+    const char* sample_location = kVUIDUndefined;
+    const char* linear_sampler = kVUIDUndefined;
+    const char* cubic_sampler = kVUIDUndefined;
+    const char* indirect_protected_cb = kVUIDUndefined;
+    const char* indirect_contiguous_memory = kVUIDUndefined;
+    const char* indirect_buffer_bit = kVUIDUndefined;
+    const char* viewport_count = kVUIDUndefined;
+    const char* scissor_count = kVUIDUndefined;
+    const char* viewport_scissor_count = kVUIDUndefined;
+    const char* primitive_topology = kVUIDUndefined;
+    const char* corner_sampled_address_mode = kVUIDUndefined;
+    // subpass input doesn't validate anything because those checks were done in ValidateCreateGraphicsPipelines
+    const char* subpass_input = kVUIDUndefined;
+    const char* imageview_atomic = kVUIDUndefined;
+    const char* push_constants_set = kVUIDUndefined;
+    const char* image_subresources = kVUIDUndefined;
+    const char* descriptor_valid = kVUIDUndefined;
+    const char* sampler_imageview_type = kVUIDUndefined;
+    const char* sampler_implicitLod_dref_proj = kVUIDUndefined;
+    const char* sampler_bias_offset = kVUIDUndefined;
+    const char* vertex_binding_attribute = kVUIDUndefined;
+    const char* dynamic_state_setting_commands = kVUIDUndefined;
+    const char* unprotected_command_buffer = kVUIDUndefined;
+    const char* protected_command_buffer = kVUIDUndefined;
+    // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
+    const char* max_multiview_instance_index = kVUIDUndefined;
+    const char* filter_cubic = kVUIDUndefined;
+    const char* filter_cubic_min_max = kVUIDUndefined;
 };
 
 typedef struct {
