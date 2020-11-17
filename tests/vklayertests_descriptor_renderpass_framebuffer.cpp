@@ -8355,13 +8355,23 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    if (ds_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+    VkDepthStencilObj ds_image(m_device);
+    ds_image.Init(m_device, 64, 64, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ASSERT_TRUE(ds_image.initialized());
+    VkImageView ds_view = *ds_image.BindInfo();
+
     VkImageUsageFlags usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
     auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.Init(image_ci);
     VkImageView view_input = image.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1);
-    VkImageView attachments[] = {view_input};
+    VkImageView attachments[] = {view_input, ds_view};
 
     VkImageViewCreateInfo createView = {};
     createView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -8402,6 +8412,19 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     std::vector<VkAttachmentReference> inputAttachments;
     inputAttachments.push_back(inputRef);
 
+    const VkAttachmentDescription depthStencilAttachment = {0,
+                                                            ds_format,
+                                                            VK_SAMPLE_COUNT_1_BIT,
+                                                            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                            VK_IMAGE_LAYOUT_GENERAL,
+                                                            VK_IMAGE_LAYOUT_GENERAL};
+    attachmentDescs.push_back(depthStencilAttachment);
+
+    VkAttachmentReference depthStencilRef = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
+
     const VkSubpassDescription subpass = {
         0u,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -8409,8 +8432,8 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
         inputAttachments.data(),
         0,
         nullptr,
-        0u,
         nullptr,
+        &depthStencilRef,
         0u,
         nullptr,
     };
@@ -8431,7 +8454,7 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     ASSERT_VK_SUCCESS(vk::CreateRenderPass(device(), &renderPassInfo, nullptr, &rp));
 
     const VkFramebufferCreateInfo fbci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0u, rp, 1u, attachments, 64, 64, 1u,
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0u, rp, 2u, attachments, 64, 64, 1u,
     };
     VkFramebuffer fb;
     ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &fbci, nullptr, &fb));
@@ -8446,11 +8469,13 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
         "layout(set=0, binding=1) uniform sampler2D ci1;\n"
         "layout(set=0, binding=2) uniform sampler2D ci2;\n"
         "layout(set=0, binding=3) uniform sampler2D ci3;\n"
+        "layout(set=0, binding=4) uniform sampler2D ci4;\n"
         "void main() {\n"
         "   vec4 color = subpassLoad(ia0);\n"
         "   color = texture(ci1, vec2(0));\n"
         "   color = texture(ci2, vec2(0));\n"
         "   color = texture(ci3, vec2(0));\n"
+        "   color = texture(ci4, vec2(0));\n"
         "}\n";
 
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -8461,7 +8486,16 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                            {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+                            {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                            {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+
+    VkPipelineDepthStencilStateCreateInfo pipe_ds_state_ci = {};
+    pipe_ds_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    pipe_ds_state_ci.pNext = nullptr;
+    pipe_ds_state_ci.depthTestEnable = VK_TRUE;
+    pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
+
+    g_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
     g_pipe.gp_ci_.renderPass = rp;
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
@@ -8474,6 +8508,9 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     // image subresource of input attachment and combined image sampler don't overlap. It should not cause failure.
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(3, view_sampler_not_overlap, sampler,
                                                      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    // Both image subresource and depth stencil attachment are read only. It should not cause failure.
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(4, ds_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -8486,8 +8523,8 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02687");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02687");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-04584");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-04584");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
