@@ -1209,6 +1209,7 @@ typedef ImageSubresourceLayoutMap::LayoutMap GlobalImageLayoutRangeMap;
 typedef std::unordered_map<VkImage, std::unique_ptr<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
 
+struct ATTACHMENT_INFO;
 class FRAMEBUFFER_STATE;
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct CMD_BUFFER_STATE : public BASE_NODE {
@@ -1244,8 +1245,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
         std::string function;
         std::vector<std::pair<const uint32_t, DescriptorRequirement>> binding_infos;
         VkFramebuffer framebuffer;
-        std::vector<VkImageView> attachment_views;  // vector index is attachment index. If the value is VK_NULL_HANDLE(0),
-                                                    // it means the attachment isn't used in this command.
+        std::vector<ATTACHMENT_INFO> attachments;  // vector index is attachment index. If the view is VK_NULL_HANDLE(0),
+                                                   // it means the attachment isn't used in this command.
     };
     std::unordered_map<VkDescriptorSet, std::vector<CmdDrawDispatchInfo>> validate_descriptorsets_in_queuesubmit;
 
@@ -1381,6 +1382,14 @@ struct MT_FB_ATTACHMENT_INFO {
     VkImage image;
 };
 
+struct ATTACHMENT_INFO {
+    VkImageUsageFlagBits usage;
+    VkImageLayout layout;
+    VkImageView view;
+
+    ATTACHMENT_INFO() : usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), view(VK_NULL_HANDLE) {}
+};
+
 class FRAMEBUFFER_STATE : public BASE_NODE {
   public:
     VkFramebuffer framebuffer;
@@ -1389,9 +1398,9 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 
-    // vector index is attachment index. If the value is VK_NULL_HANDLE(0), it means the attachment isn't used in this command.
-    std::vector<VkImageView> GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses,
-                                                const std::vector<IMAGE_VIEW_STATE *> &imagelessFramebufferAttachments);
+    // vector index is attachment index. If view is VK_NULL_HANDLE(0), it means the attachment isn't used in this command.
+    std::vector<ATTACHMENT_INFO> GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses,
+                                                    const std::vector<IMAGE_VIEW_STATE *> &imagelessFramebufferAttachments);
 };
 
 struct SHADER_MODULE_STATE;

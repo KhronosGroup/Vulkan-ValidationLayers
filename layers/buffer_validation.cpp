@@ -190,38 +190,44 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     return NormalizeSubresourceRange(create_info, init_range);
 }
 
-std::vector<VkImageView> FRAMEBUFFER_STATE::GetUsedAttachments(
+std::vector<ATTACHMENT_INFO> FRAMEBUFFER_STATE::GetUsedAttachments(
     const safe_VkSubpassDescription2 &subpasses, const std::vector<IMAGE_VIEW_STATE *> &imagelessFramebufferAttachments) {
-    std::vector<VkImageView> attachment_views(createInfo.attachmentCount, VK_NULL_HANDLE);
+    std::vector<ATTACHMENT_INFO> attachment_views(createInfo.attachmentCount);
 
     const bool imageless = (createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) ? true : false;
 
     for (uint32_t index = 0; index < subpasses.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpasses.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            attachment_views[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+            attachment_views[attachment_index].layout = subpasses.pInputAttachments[index].layout;
             if (imageless) {
-                attachment_views[attachment_index] = imagelessFramebufferAttachments[attachment_index]->image_view;
+                attachment_views[attachment_index].view = imagelessFramebufferAttachments[attachment_index]->image_view;
             } else {
-                attachment_views[attachment_index] = createInfo.pAttachments[attachment_index];
+                attachment_views[attachment_index].view = createInfo.pAttachments[attachment_index];
             }
         }
     }
     for (uint32_t index = 0; index < subpasses.colorAttachmentCount; ++index) {
         const uint32_t attachment_index = subpasses.pColorAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            attachment_views[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            attachment_views[attachment_index].layout = subpasses.pColorAttachments[index].layout;
             if (imageless) {
-                attachment_views[attachment_index] = imagelessFramebufferAttachments[attachment_index]->image_view;
+                attachment_views[attachment_index].view = imagelessFramebufferAttachments[attachment_index]->image_view;
             } else {
-                attachment_views[attachment_index] = createInfo.pAttachments[attachment_index];
+                attachment_views[attachment_index].view = createInfo.pAttachments[attachment_index];
             }
         }
         if (subpasses.pResolveAttachments) {
             const uint32_t attachment_index2 = subpasses.pResolveAttachments[index].attachment;
             if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
+                attachment_views[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                attachment_views[attachment_index2].layout = subpasses.pResolveAttachments[index].layout;
                 if (imageless) {
-                    attachment_views[attachment_index2] = imagelessFramebufferAttachments[attachment_index2]->image_view;
+                    attachment_views[attachment_index2].view = imagelessFramebufferAttachments[attachment_index2]->image_view;
                 } else {
-                    attachment_views[attachment_index2] = createInfo.pAttachments[attachment_index2];
+                    attachment_views[attachment_index2].view = createInfo.pAttachments[attachment_index2];
                 }
             }
         }
@@ -229,10 +235,12 @@ std::vector<VkImageView> FRAMEBUFFER_STATE::GetUsedAttachments(
     if (subpasses.pDepthStencilAttachment) {
         const uint32_t attachment_index = subpasses.pDepthStencilAttachment->attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            attachment_views[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            attachment_views[attachment_index].layout = subpasses.pDepthStencilAttachment->layout;
             if (imageless) {
-                attachment_views[attachment_index] = imagelessFramebufferAttachments[attachment_index]->image_view;
+                attachment_views[attachment_index].view = imagelessFramebufferAttachments[attachment_index]->image_view;
             } else {
-                attachment_views[attachment_index] = createInfo.pAttachments[attachment_index];
+                attachment_views[attachment_index].view = createInfo.pAttachments[attachment_index];
             }
         }
     }
