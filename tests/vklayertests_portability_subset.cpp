@@ -238,3 +238,288 @@ TEST_F(VkPortabilitySubsetTest, CreateSampler) {
     sampler_info.mipLodBias = 1.0f;
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-samplerMipLodBias-04467");
 }
+
+TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
+    TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04452");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    // Make sure image features are disabled via portability extension
+    portability_feature.triangleFans = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(m_depth_stencil_fmt != 0);
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_FALSE};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
+    TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04456");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+
+    // Get the current vertex stride to ensure we pass an incorrect value when creating the graphics pipeline
+    auto portability_properties = lvl_init_struct<VkPhysicalDevicePortabilitySubsetPropertiesKHR>();
+    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&portability_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    ASSERT_TRUE(portability_properties.minVertexInputBindingStrideAlignment > 0);
+    auto vertex_stride = portability_properties.minVertexInputBindingStrideAlignment - 1;
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(m_depth_stencil_fmt != 0);
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    VkVertexInputBindingDescription vertex_desc{
+        0,                            // binding
+        vertex_stride,                // stride
+        VK_VERTEX_INPUT_RATE_VERTEX,  // inputRate
+    };
+    pipe.vi_ci_ = VkPipelineVertexInputStateCreateInfo{
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 0, nullptr};
+    pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription-stride-04456");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
+    TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04457");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    // Make sure image features are disabled via portability extension
+    portability_feature.vertexAttributeAccessBeyondStride = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(m_depth_stencil_fmt != 0);
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    VkVertexInputBindingDescription vertex_desc{
+        0,                            // binding
+        4,                            // stride
+        VK_VERTEX_INPUT_RATE_VERTEX,  // inputRate
+    };
+    VkVertexInputAttributeDescription vertex_attrib{
+        0,                     // location
+        0,                     // binding
+        VK_FORMAT_R32_SFLOAT,  // format; size == 4
+        4,                     // offset; size(format) + offset > description.stride, so this should trigger 04457
+    };
+    pipe.vi_ci_ = VkPipelineVertexInputStateCreateInfo{
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 1, &vertex_attrib};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
+    TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04458");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    // Make sure point polygons are disabled
+    portability_feature.pointPolygons = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.format = VK_FORMAT_B8G8R8A8_SRGB;
+
+    VkAttachmentReference color_ref{};
+    color_ref.attachment = 0;
+    color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_ref;
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkRenderPassCreateInfo rp_info{};
+    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &subpass;
+
+    vk::CreateRenderPass(device(), &rp_info, nullptr, &m_renderPass);
+    m_renderPass_info = rp_info;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.rs_state_ci_.polygonMode = VK_POLYGON_MODE_POINT;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
+    TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04453");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    portability_feature.separateStencilMaskRef = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(m_depth_stencil_fmt != 0);
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    auto depth_stencil_ci = lvl_init_struct<VkPipelineDepthStencilStateCreateInfo>();
+    depth_stencil_ci.stencilTestEnable = VK_TRUE;
+    depth_stencil_ci.front.reference = 1;
+    depth_stencil_ci.back.reference = depth_stencil_ci.front.reference + 1;
+    //  front.reference != back.reference should trigger 04453
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
+    pipe.rs_state_ci_.cullMode = VK_CULL_MODE_NONE;
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState) {
+    TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUIDs 04454, 04455");
+
+    ASSERT_NO_FATAL_FAILURE(InitPortabilitySubsetFramework());
+
+    bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!portability_supported) {
+        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    auto portability_feature = lvl_init_struct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    portability_feature.constantAlphaColorBlendFactors = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(m_depth_stencil_fmt != 0);
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
