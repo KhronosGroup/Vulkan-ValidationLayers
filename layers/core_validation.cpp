@@ -1072,7 +1072,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     bool result = false;
     auto const &state = last_bound_it->second;
-    std::vector<VkImageView> attachment_views;
+    std::vector<ATTACHMENT_INFO> attachments;
 
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
         // First check flag states
@@ -1080,7 +1080,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
         if (cb_node->activeRenderPass && cb_node->activeFramebuffer) {
             const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
-            attachment_views = cb_node->activeFramebuffer->GetUsedAttachments(subpass, cb_node->imagelessFramebufferAttachments);
+            attachments = cb_node->activeFramebuffer->GetUsedAttachments(subpass, cb_node->imagelessFramebufferAttachments);
         }
     }
     // Now complete other state checks
@@ -1158,10 +1158,10 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                         state.per_set[setIndex].validated_set_binding_req_map.end(),
                                         std::inserter(delta_reqs, delta_reqs.begin()));
                     result |= ValidateDrawState(bind_point, descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets,
-                                                cb_node, attachment_views, function, vuid);
+                                                cb_node, attachments, function, vuid);
                 } else {
                     result |= ValidateDrawState(bind_point, descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets,
-                                                cb_node, attachment_views, function, vuid);
+                                                cb_node, attachments, function, vuid);
                 }
             }
         }
@@ -2797,7 +2797,7 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
                             skip |= ValidateDescriptorSetBindingData(cmd_info.bind_point, cb_node, set_node, dynamicOffsets,
-                                                                     binding_info, cmd_info.framebuffer, cmd_info.attachment_views,
+                                                                     binding_info, cmd_info.framebuffer, cmd_info.attachments,
                                                                      function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }
