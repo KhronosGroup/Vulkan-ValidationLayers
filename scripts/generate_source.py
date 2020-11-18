@@ -101,7 +101,11 @@ def main(argv):
     # optional post-generation steps
     if args.verify:
         # compare contents of temp dir and repo
-        temp_files = set(os.listdir(temp_dir))
+        temp_files = []
+        for (_p, _d, _f) in os.walk(temp_dir):
+            for f in _f:
+                temp_files.append(os.path.join(_p, f))
+        temp_files = set(temp_files)
         repo_files = set(os.listdir(repo_dir))
         files_match = True
         for filename in sorted((temp_files | repo_files) - set(verify_exclude)):
