@@ -285,8 +285,9 @@ struct MEM_BINDING {
     VkDeviceSize size;
 };
 
+class BUFFER_STATE;
 struct BufferBinding {
-    VkBuffer buffer;
+    std::shared_ptr<BUFFER_STATE> buffer_state;
     VkDeviceSize size;
     VkDeviceSize offset;
     VkDeviceSize stride;
@@ -1387,9 +1388,9 @@ struct MT_FB_ATTACHMENT_INFO {
 struct ATTACHMENT_INFO {
     VkImageUsageFlagBits usage;
     VkImageLayout layout;
-    VkImageView view;
+    IMAGE_VIEW_STATE* view_state;
 
-    ATTACHMENT_INFO() : usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), view(VK_NULL_HANDLE) {}
+    ATTACHMENT_INFO() : usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), view_state(nullptr) {}
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {
@@ -1397,6 +1398,7 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
     VkFramebuffer framebuffer;
     safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
+    std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_state;
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 

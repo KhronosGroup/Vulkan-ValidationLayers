@@ -1751,9 +1751,9 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
         const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (binding_buffer.buffer == VK_NULL_HANDLE) continue;
+            if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->destroyed) continue;
 
-            auto *buf_state = sync_state_->Get<BUFFER_STATE>(binding_buffer.buffer);
+            auto *buf_state = binding_buffer.buffer_state.get();
             const ResourceAccessRange range = GetBufferRange(binding_buffer.offset, buf_state->createInfo.size, firstVertex,
                                                              vertexCount, binding_description.stride);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range);
@@ -1781,9 +1781,9 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
         const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (binding_buffer.buffer == VK_NULL_HANDLE) continue;
+            if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->destroyed) continue;
 
-            auto *buf_state = sync_state_->Get<BUFFER_STATE>(binding_buffer.buffer);
+            auto *buf_state = binding_buffer.buffer_state.get();
             const ResourceAccessRange range = GetBufferRange(binding_buffer.offset, buf_state->createInfo.size, firstVertex,
                                                              vertexCount, binding_description.stride);
             current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range, tag);
@@ -1793,9 +1793,10 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
 
 bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const char *func_name) const {
     bool skip = false;
-    if (cb_state_->index_buffer_binding.buffer == VK_NULL_HANDLE) return skip;
+    if (cb_state_->index_buffer_binding.buffer_state == nullptr || cb_state_->index_buffer_binding.buffer_state->destroyed)
+        return skip;
 
-    auto *index_buf_state = sync_state_->Get<BUFFER_STATE>(cb_state_->index_buffer_binding.buffer);
+    auto *index_buf_state = cb_state_->index_buffer_binding.buffer_state.get();
     const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
     const ResourceAccessRange range = GetBufferRange(cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size,
                                                      firstIndex, indexCount, index_size);
@@ -1814,9 +1815,9 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
 }
 
 void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag &tag) {
-    if (cb_state_->index_buffer_binding.buffer == VK_NULL_HANDLE) return;
+    if (cb_state_->index_buffer_binding.buffer_state == nullptr || cb_state_->index_buffer_binding.buffer_state->destroyed) return;
 
-    auto *index_buf_state = sync_state_->Get<BUFFER_STATE>(cb_state_->index_buffer_binding.buffer);
+    auto *index_buf_state = cb_state_->index_buffer_binding.buffer_state.get();
     const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
     const ResourceAccessRange range = GetBufferRange(cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size,
                                                      firstIndex, indexCount, index_size);

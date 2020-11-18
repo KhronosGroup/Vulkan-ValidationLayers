@@ -1009,6 +1009,11 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                                                  ? true
                                                  : false;
                             for (const auto &att : attachments) {
+                                // Even though in FRAMEBUFFER_STATE::GetUsedAttachments, it has checked lifetime,
+                                // but for VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, it still has a chance to destroy the object.
+                                if (!att.view_state || att.view_state->destroyed) {
+                                    continue;
+                                }
                                 if (ds_aspect && att.usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
                                     if ((image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                                          image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
@@ -1025,7 +1030,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                                         continue;
                                     }
                                 }
-                                if (att.view == image_view) {
+                                if (att.view_state->image_view == image_view) {
                                     auto set = descriptor_set->GetSet();
                                     LogObjectList objlist(set);
                                     objlist.add(image_view);
@@ -1037,14 +1042,13 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                                                     report_data->FormatHandle(set).c_str(), caller,
                                                     report_data->FormatHandle(image_view).c_str(), binding, index,
                                                     report_data->FormatHandle(framebuffer).c_str(), view_index);
-                                } else if (att.view != VK_NULL_HANDLE) {
-                                    const auto *view_state = Get<IMAGE_VIEW_STATE>(att.view);
-                                    if (image_view_state->OverlapSubresource(*view_state)) {
+                                } else if (att.view_state) {
+                                    if (image_view_state->OverlapSubresource(*att.view_state)) {
                                         auto set = descriptor_set->GetSet();
                                         LogObjectList objlist(set);
                                         objlist.add(image_view);
                                         objlist.add(framebuffer);
-                                        objlist.add(att.view);
+                                        objlist.add(att.view_state->image_view);
                                         return LogError(
                                             objlist, vuids.image_subresources,
                                             "%s encountered the following validation error at %s time: Image subresources of %s in "
@@ -1052,7 +1056,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(VkPipelineBindPoint bind_point
                                             " and %s in %s attachment # %" PRIu32 " overlap.",
                                             report_data->FormatHandle(set).c_str(), caller,
                                             report_data->FormatHandle(image_view).c_str(), binding, index,
-                                            report_data->FormatHandle(att.view).c_str(),
+                                            report_data->FormatHandle(att.view_state->image_view).c_str(),
                                             report_data->FormatHandle(framebuffer).c_str(), view_index);
                                     }
                                 }
