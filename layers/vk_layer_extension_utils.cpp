@@ -19,7 +19,7 @@
  */
 
 #include <string.h>
-#include "vk_layer_extension_utils.h"
+#include "vulkan/vk_layer_extension_utils.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 

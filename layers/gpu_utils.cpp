@@ -17,10 +17,10 @@
  * Author: Tony Barbour <tony@lunarg.com>
  */
 
-#include "chassis.h"
-#include "layer_chassis_dispatch.h"
-#include "state_tracker.h"
-#include "shader_validation.h"
+#include "vulkan/chassis.h"
+#include "vulkan/layer_chassis_dispatch.h"
+#include "vulkan/state_tracker.h"
+#include "vulkan/shader_validation.h"
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"

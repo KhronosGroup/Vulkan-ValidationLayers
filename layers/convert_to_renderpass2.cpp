@@ -22,8 +22,8 @@
 
 #include <vector>
 
-#include "vk_format_utils.h"
-#include "vk_typemap_helper.h"
+#include "vulkan/vk_format_utils.h"
+#include "vulkan/vk_typemap_helper.h"
 
 static safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_struct) {
     safe_VkAttachmentDescription2 v2;

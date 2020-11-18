@@ -22,7 +22,7 @@
  * Author: Tobin Ehlis <tobin@lunarg.com>
  * Author: Mark Lobodzinski <mark@lunarg.com>
  **************************************************************************/
-#include "vk_layer_config.h"
+#include "vulkan/vk_layer_config.h"
 
 #include <string.h>
 #include <fstream>
@@ -36,7 +36,7 @@
 // sdk_platform header redefines NOMINMAX
 #undef NOMINMAX
 #include <vulkan/vk_sdk_platform.h>
-#include "vk_layer_utils.h"
+#include "vulkan/vk_layer_utils.h"
 
 #if defined(_WIN32)
 #include <windows.h>

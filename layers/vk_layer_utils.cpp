@@ -19,7 +19,7 @@
  *
  */
 
-#include "vk_layer_utils.h"
+#include "vulkan/vk_layer_utils.h"
 
 #include <string.h>
 #include <string>
@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "vulkan/vulkan.h"
-#include "vk_layer_config.h"
+#include "vulkan/vk_layer_config.h"
 
 static const uint8_t UTF8_ONE_BYTE_CODE = 0xC0;
 static const uint8_t UTF8_ONE_BYTE_MASK = 0xE0;

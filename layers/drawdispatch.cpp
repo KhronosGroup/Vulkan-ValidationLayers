@@ -36,8 +36,8 @@
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  */
 
-#include "chassis.h"
-#include "core_validation.h"
+#include "vulkan/chassis.h"
+#include "vulkan/core_validation.h"
 
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
 // clang-format off

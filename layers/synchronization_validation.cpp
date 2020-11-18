@@ -21,7 +21,7 @@
 #include <vector>
 #include <memory>
 #include <bitset>
-#include "synchronization_validation.h"
+#include "vulkan/synchronization_validation.h"
 
 static const char *string_SyncHazardVUID(SyncHazard hazard) {
     switch (hazard) {

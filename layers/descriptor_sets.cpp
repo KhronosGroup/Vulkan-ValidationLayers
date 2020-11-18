@@ -20,15 +20,15 @@
  *         Jeremy Kniager <jeremyk@lunarg.com>
  */
 
-#include "chassis.h"
-#include "core_validation_error_enums.h"
-#include "core_validation.h"
-#include "descriptor_sets.h"
-#include "hash_vk_types.h"
-#include "vk_enum_string_helper.h"
-#include "vk_safe_struct.h"
-#include "vk_typemap_helper.h"
-#include "buffer_validation.h"
+#include "vulkan/chassis.h"
+#include "vulkan/core_validation_error_enums.h"
+#include "vulkan/core_validation.h"
+#include "vulkan/descriptor_sets.h"
+#include "vulkan/hash_vk_types.h"
+#include "vulkan/vk_enum_string_helper.h"
+#include "vulkan/vk_safe_struct.h"
+#include "vulkan/vk_typemap_helper.h"
+#include "vulkan/buffer_validation.h"
 #include <sstream>
 #include <algorithm>
 #include <array>

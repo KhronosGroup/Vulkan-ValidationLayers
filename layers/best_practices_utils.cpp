@@ -17,10 +17,10 @@
  * Author: Camden Stocker <camden@lunarg.com>
  */
 
-#include "best_practices_validation.h"
-#include "layer_chassis_dispatch.h"
-#include "best_practices_error_enums.h"
-#include "shader_validation.h"
+#include "vulkan/best_practices_validation.h"
+#include "vulkan/layer_chassis_dispatch.h"
+#include "vulkan/best_practices_error_enums.h"
+#include "vulkan/shader_validation.h"
 
 #include <string>
 #include <bitset>

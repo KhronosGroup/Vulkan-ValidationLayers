@@ -20,9 +20,9 @@
  * Author: Tobin Ehlis <tobin@lunarg.com>
  */
 
-#include "chassis.h"
+#include "vulkan/chassis.h"
 
-#include "object_lifetime_validation.h"
+#include "vulkan/object_lifetime_validation.h"
 
 uint64_t object_track_index = 0;
 

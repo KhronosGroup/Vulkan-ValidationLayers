@@ -25,18 +25,18 @@
 #include <sstream>
 #include <string>
 
-#include "vk_enum_string_helper.h"
-#include "vk_format_utils.h"
-#include "vk_layer_data.h"
-#include "vk_layer_utils.h"
-#include "vk_layer_logging.h"
-#include "vk_typemap_helper.h"
+#include "vulkan/vk_enum_string_helper.h"
+#include "vulkan/vk_format_utils.h"
+#include "vulkan/vk_layer_data.h"
+#include "vulkan/vk_layer_utils.h"
+#include "vulkan/vk_layer_logging.h"
+#include "vulkan/vk_typemap_helper.h"
 
-#include "chassis.h"
-#include "core_validation.h"
-#include "shader_validation.h"
-#include "descriptor_sets.h"
-#include "buffer_validation.h"
+#include "vulkan/chassis.h"
+#include "vulkan/core_validation.h"
+#include "vulkan/shader_validation.h"
+#include "vulkan/descriptor_sets.h"
+#include "vulkan/buffer_validation.h"
 
 // All VUID from copy_bufferimage_to_imagebuffer_common.txt
 static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_buffer, bool copy2) {

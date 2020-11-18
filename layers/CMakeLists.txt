@@ -47,31 +47,31 @@ endif()
 # Configure installation of source files that are dependencies of other repos.
 if(BUILD_LAYER_SUPPORT_FILES)
     set(LAYER_UTIL_FILES
-        cast_utils.h
-        hash_util.h
-        hash_vk_types.h
-        vk_format_utils.h
-        vk_format_utils.cpp
-        vk_layer_config.h
-        vk_layer_config.cpp
-        vk_layer_data.h
-        vk_layer_extension_utils.h
-        vk_layer_extension_utils.cpp
-        vk_layer_logging.h
-        vk_layer_utils.h
-        vk_layer_utils.cpp
-        vk_loader_platform.h
-        xxhash.h
-        xxhash.c
-        generated/vk_validation_error_messages.h
-        generated/vk_layer_dispatch_table.h
-        generated/vk_dispatch_table_helper.h
-        generated/vk_safe_struct.h
-        generated/vk_safe_struct.cpp
-        generated/vk_enum_string_helper.h
-        generated/vk_object_types.h
-        generated/vk_extension_helper.h
-        generated/vk_typemap_helper.h)
+        include/vulkan/cast_utils.h
+        include/vulkan/hash_util.h
+        include/vulkan/hash_vk_types.h
+        include/vulkan/vk_format_utils.h
+        include/vulkan/vk_format_utils.cpp
+        include/vulkan/vk_layer_config.h
+        include/vulkan/vk_layer_config.cpp
+        include/vulkan/vk_layer_data.h
+        include/vulkan/vk_layer_extension_utils.h
+        include/vulkan/vk_layer_extension_utils.cpp
+        include/vulkan/vk_layer_logging.h
+        include/vulkan/vk_layer_utils.h
+        include/vulkan/vk_layer_utils.cpp
+        include/vulkan/vk_loader_platform.h
+        include/vulkan/xxhash.h
+        include/vulkan/xxhash.c
+        generated/include/vulkan/vk_validation_error_messages.h
+        generated/include/vulkan/vk_layer_dispatch_table.h
+        generated/include/vulkan/vk_dispatch_table_helper.h
+        generated/include/vulkan/vk_safe_struct.h
+        generated/include/vulkan/vk_safe_struct.cpp
+        generated/include/vulkan/vk_enum_string_helper.h
+        generated/include/vulkan/vk_object_types.h
+        generated/include/vulkan/vk_extension_helper.h
+        generated/include/vulkan/vk_typemap_helper.h)
     install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
 endif()
 
@@ -137,7 +137,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
     endmacro()
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${VulkanHeaders_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/generated/include ${VulkanHeaders_INCLUDE_DIR})
 
 if(MSVC)
     # Applies to all configurations

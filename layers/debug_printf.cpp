@@ -17,11 +17,11 @@
  * Author: Tony Barbour <tony@lunarg.com>
  */
 
-#include "debug_printf.h"
+#include "vulkan/debug_printf.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
-#include "layer_chassis_dispatch.h"
+#include "vulkan/layer_chassis_dispatch.h"
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |

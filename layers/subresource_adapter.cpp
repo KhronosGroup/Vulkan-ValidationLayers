@@ -19,10 +19,10 @@
  *
  */
 #include <cassert>
-#include "subresource_adapter.h"
-#include "vk_format_utils.h"
-#include "state_tracker.h"
-#include "core_validation_types.h"
+#include "vulkan/subresource_adapter.h"
+#include "vulkan/vk_format_utils.h"
+#include "vulkan/state_tracker.h"
+#include "vulkan/core_validation_types.h"
 #include <cmath>
 
 namespace subresource_adapter {

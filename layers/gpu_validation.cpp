@@ -18,10 +18,10 @@
  * Author: Tony Barbour <tony@lunarg.com>
  */
 
-#include "gpu_validation.h"
+#include "vulkan/gpu_validation.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
-#include "layer_chassis_dispatch.h"
+#include "vulkan/layer_chassis_dispatch.h"
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |

@@ -18,7 +18,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
-#include "layer_options.h"
+#include "vulkan/layer_options.h"
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {

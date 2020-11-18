@@ -53,15 +53,15 @@
 #include <string>
 #include <valarray>
 
-#include "vk_loader_platform.h"
-#include "vk_enum_string_helper.h"
-#include "chassis.h"
-#include "convert_to_renderpass2.h"
-#include "core_validation.h"
-#include "buffer_validation.h"
-#include "shader_validation.h"
-#include "vk_layer_utils.h"
-#include "command_counter.h"
+#include "vulkan/vk_loader_platform.h"
+#include "vulkan/vk_enum_string_helper.h"
+#include "vulkan/chassis.h"
+#include "vulkan/convert_to_renderpass2.h"
+#include "vulkan/core_validation.h"
+#include "vulkan/buffer_validation.h"
+#include "vulkan/shader_validation.h"
+#include "vulkan/vk_layer_utils.h"
+#include "vulkan/command_counter.h"
 
 static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
     return (layout == non_normal) ? normal : layout;

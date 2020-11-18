@@ -21,9 +21,9 @@
 
 #include <cmath>
 
-#include "chassis.h"
-#include "stateless_validation.h"
-#include "layer_chassis_dispatch.h"
+#include "vulkan/chassis.h"
+#include "vulkan/stateless_validation.h"
+#include "vulkan/layer_chassis_dispatch.h"
 
 static const int MaxParamCheckerStringLength = 256;
 

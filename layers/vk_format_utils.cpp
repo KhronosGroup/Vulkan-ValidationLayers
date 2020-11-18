@@ -25,7 +25,7 @@
 #include <map>
 #include <set>
 #include "vulkan/vulkan.h"
-#include "vk_format_utils.h"
+#include "vulkan/vk_format_utils.h"
 
 struct VULKAN_FORMAT_INFO {
     uint32_t size;

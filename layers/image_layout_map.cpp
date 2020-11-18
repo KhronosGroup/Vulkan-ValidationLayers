@@ -19,11 +19,11 @@
  *
  */
 #ifdef SPARSE_CONTAINER_UNIT_TEST
-#include "image_layout_map.h"
+#include "vulkan/image_layout_map.h"
 #else
-#include "core_validation_types.h"
-#include "chassis.h"
-#include "descriptor_sets.h"
+#include "vulkan/core_validation_types.h"
+#include "vulkan/chassis.h"
+#include "vulkan/descriptor_sets.h"
 #endif
 
 namespace image_layout_map {

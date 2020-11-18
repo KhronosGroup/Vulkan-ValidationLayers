@@ -19,7 +19,7 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  */
 
-#include "shader_validation.h"
+#include "vulkan/shader_validation.h"
 
 #include <cassert>
 #include <chrono>
@@ -32,16 +32,16 @@
 #include <vector>
 
 #include <spirv/unified1/spirv.hpp>
-#include "vk_loader_platform.h"
-#include "vk_enum_string_helper.h"
-#include "vk_layer_data.h"
-#include "vk_layer_extension_utils.h"
-#include "vk_layer_utils.h"
-#include "chassis.h"
-#include "core_validation.h"
+#include "vulkan/vk_loader_platform.h"
+#include "vulkan/vk_enum_string_helper.h"
+#include "vulkan/vk_layer_data.h"
+#include "vulkan/vk_layer_extension_utils.h"
+#include "vulkan/vk_layer_utils.h"
+#include "vulkan/chassis.h"
+#include "vulkan/core_validation.h"
 
 #include "spirv-tools/libspirv.h"
-#include "xxhash.h"
+#include "vulkan/xxhash.h"
 
 void decoration_set::add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
