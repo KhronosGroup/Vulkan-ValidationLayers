@@ -67,6 +67,7 @@ def makeGenOpts(args):
 
     # Output target directory
     directory = args.directory
+    include_directory = os.path.join(directory, 'include', 'vulkan')
 
     # Path to generated files, particularly api.py
     genpath = args.genpath
@@ -124,7 +125,7 @@ def makeGenOpts(args):
           ThreadGeneratorOptions(
             conventions       = conventions,
             filename          = 'thread_safety.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -199,7 +200,7 @@ def makeGenOpts(args):
           ParameterValidationGeneratorOptions(
             conventions       = conventions,
             filename          = 'parameter_validation.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -250,7 +251,7 @@ def makeGenOpts(args):
           ObjectTrackerGeneratorOptions(
             conventions       = conventions,
             filename          = 'object_tracker.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -276,7 +277,7 @@ def makeGenOpts(args):
           DispatchTableHelperOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_dispatch_table_helper.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -300,7 +301,7 @@ def makeGenOpts(args):
           LvtFileOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'lvt_function_pointers.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -350,7 +351,7 @@ def makeGenOpts(args):
           LayerDispatchTableGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_layer_dispatch_table.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -374,7 +375,7 @@ def makeGenOpts(args):
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_enum_string_helper.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -399,7 +400,7 @@ def makeGenOpts(args):
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_safe_struct.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -449,7 +450,7 @@ def makeGenOpts(args):
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_object_types.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -474,7 +475,7 @@ def makeGenOpts(args):
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_extension_helper.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -499,7 +500,7 @@ def makeGenOpts(args):
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'vk_typemap_helper.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -526,7 +527,7 @@ def makeGenOpts(args):
           LayerChassisGeneratorOptions(
             conventions       = conventions,
             filename          = 'chassis.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -601,7 +602,7 @@ def makeGenOpts(args):
           LayerChassisDispatchGeneratorOptions(
             conventions       = conventions,
             filename          = 'layer_chassis_dispatch.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -626,7 +627,7 @@ def makeGenOpts(args):
           CommandCounterOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'command_counter_helper.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -701,7 +702,7 @@ def makeGenOpts(args):
           BestPracticesOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'best_practices.h',
-            directory         = directory,
+            directory         = include_directory,
             genpath           = None,
             apiname           = 'vulkan',
             profile           = None,
@@ -728,7 +729,7 @@ def makeGenOpts(args):
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
             filename          = 'synchronization_validation_types.h',
-            directory         = directory,
+            directory         = include_directory,
             apiname           = 'vulkan',
             profile           = None,
             versions          = featuresPat,
