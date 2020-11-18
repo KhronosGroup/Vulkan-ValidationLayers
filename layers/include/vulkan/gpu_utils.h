@@ -17,8 +17,8 @@
  * Author: Tony Barbour <tony@lunarg.com>
  */
 #pragma once
-#include "chassis.h"
-#include "shader_validation.h"
+#include "vulkan/chassis.h"
+#include "vulkan/shader_validation.h"
 class UtilDescriptorSetManager {
   public:
     UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);

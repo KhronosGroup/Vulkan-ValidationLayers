@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include "chassis.h"
-#include "state_tracker.h"
+#include "vulkan/chassis.h"
+#include "vulkan/state_tracker.h"
 #include <string>
 
 static const uint32_t kMemoryObjectWarningLimit = 250;

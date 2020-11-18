@@ -18,7 +18,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
-#include "chassis.h"
+#include "vulkan/chassis.h"
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 

@@ -25,10 +25,10 @@
 
 #pragma once
 
-#include "state_tracker.h"
-#include "image_layout_map.h"
-#include "gpu_validation.h"
-#include "shader_validation.h"
+#include "vulkan/state_tracker.h"
+#include "vulkan/image_layout_map.h"
+#include "vulkan/gpu_validation.h"
+#include "vulkan/shader_validation.h"
 
 // Set of VUID that need to go between core_validation.cpp and drawdispatch.cpp
 struct DrawDispatchVuid {

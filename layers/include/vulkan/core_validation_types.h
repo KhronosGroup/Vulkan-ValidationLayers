@@ -25,18 +25,18 @@
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
 
-#include "cast_utils.h"
-#include "hash_vk_types.h"
-#include "sparse_containers.h"
-#include "vk_safe_struct.h"
+#include "vulkan/cast_utils.h"
+#include "vulkan/hash_vk_types.h"
+#include "vulkan/sparse_containers.h"
+#include "vulkan/vk_safe_struct.h"
 #include "vulkan/vulkan.h"
-#include "vk_layer_logging.h"
-#include "vk_object_types.h"
-#include "vk_extension_helper.h"
-#include "vk_typemap_helper.h"
-#include "convert_to_renderpass2.h"
-#include "layer_chassis_dispatch.h"
-#include "image_layout_map.h"
+#include "vulkan/vk_layer_logging.h"
+#include "vulkan/vk_object_types.h"
+#include "vulkan/vk_extension_helper.h"
+#include "vulkan/vk_typemap_helper.h"
+#include "vulkan/convert_to_renderpass2.h"
+#include "vulkan/layer_chassis_dispatch.h"
+#include "ivulkan/mage_layout_map.h"
 
 #include <array>
 #include <atomic>
@@ -52,7 +52,7 @@
 #include <memory>
 #include <list>
 
-#include "android_ndk_types.h"
+#include "vulkan/android_ndk_types.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {

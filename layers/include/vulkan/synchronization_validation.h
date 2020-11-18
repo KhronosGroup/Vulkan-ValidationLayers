@@ -25,8 +25,8 @@
 #include <unordered_map>
 #include <vulkan/vulkan.h>
 
-#include "synchronization_validation_types.h"
-#include "state_tracker.h"
+#include "vulkan/synchronization_validation_types.h"
+#include "vulkan/state_tracker.h"
 
 class SyncValidator;
 class ResourceAccessState;

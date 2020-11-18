@@ -20,10 +20,10 @@
 
 #pragma once
 
-#include "chassis.h"
-#include "state_tracker.h"
-#include "vk_mem_alloc.h"
-#include "gpu_utils.h"
+#include "vulkan/chassis.h"
+#include "vulkan/state_tracker.h"
+#include "vulkan/vk_mem_alloc.h"
+#include "vulkan/gpu_utils.h"
 class GpuAssisted;
 
 struct GpuAssistedDeviceMemoryBlock {

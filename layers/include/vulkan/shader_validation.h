@@ -30,8 +30,8 @@
 #include "vulkan/vulkan.h"
 #include <spirv/unified1/spirv.hpp>
 #include <generated/spirv_tools_commit_id.h>
-#include "spirv-tools/optimizer.hpp"
-#include "core_validation_types.h"
+#include "vulkan/spirv-tools/optimizer.hpp"
+#include "vulkan/core_validation_types.h"
 
 // A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
 // without the caller needing to care too much about the physical SPIRV module layout.

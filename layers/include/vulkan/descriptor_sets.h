@@ -21,12 +21,12 @@
 #ifndef CORE_VALIDATION_DESCRIPTOR_SETS_H_
 #define CORE_VALIDATION_DESCRIPTOR_SETS_H_
 
-#include "hash_vk_types.h"
-#include "vk_layer_logging.h"
-#include "vk_layer_utils.h"
-#include "vk_safe_struct.h"
-#include "vulkan/vk_layer.h"
-#include "vk_object_types.h"
+#include "vulkan/hash_vk_types.h"
+#include "vulkan/vk_layer_logging.h"
+#include "vulkan/vk_layer_utils.h"
+#include "vulkan/vk_safe_struct.h"
+#include "vulkan/vulkan/vk_layer.h"
+#include "vulkan/vk_object_types.h"
 #include <map>
 #include <memory>
 #include <set>

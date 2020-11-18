@@ -26,11 +26,11 @@
 #include <algorithm>
 #include <array>
 #include <vector>
-#include "range_vector.h"
+#include "vulkan/range_vector.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
 #else
-#include "vk_snippets.h"
+#include "vulkan/vk_snippets.h"
 #endif
 
 class IMAGE_STATE;

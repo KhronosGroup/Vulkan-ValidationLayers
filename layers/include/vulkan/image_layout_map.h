@@ -26,11 +26,11 @@
 #include <memory>
 #include <vector>
 
-#include "range_vector.h"
-#include "subresource_adapter.h"
+#include "vulkan/range_vector.h"
+#include "vulkan/subresource_adapter.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
-#include "vk_layer_logging.h"
+#include "vulkan/vk_layer_logging.h"
 
 // Forward declarations...
 struct CMD_BUFFER_STATE;

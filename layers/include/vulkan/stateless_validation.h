@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include "parameter_name.h"
-#include "vk_typemap_helper.h"
+#include "vulkan/parameter_name.h"
+#include "vulkan/vk_typemap_helper.h"
 
 // Suppress unused warning on Linux
 #if defined(__GNUC__)

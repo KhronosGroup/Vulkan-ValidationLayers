@@ -16,7 +16,7 @@
  */
 
 #pragma once
-#include "core_validation.h"
+#include "vulkan/core_validation.h"
 
 class CommandCounter : public ValidationObject {
   public:

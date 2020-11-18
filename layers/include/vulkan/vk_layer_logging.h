@@ -41,18 +41,18 @@
 #include <utility>
 #include <cstring>
 
-#include "vk_typemap_helper.h"
-#include "vk_layer_config.h"
-#include "vk_layer_data.h"
-#include "vk_loader_platform.h"
+#include "vulkan/vk_typemap_helper.h"
+#include "vulkan/vk_layer_config.h"
+#include "vulkan/vk_layer_data.h"
+#include "vulkan/vk_loader_platform.h"
 #include "vulkan/vk_layer.h"
-#include "vk_object_types.h"
-#include "vk_enum_string_helper.h"
-#include "cast_utils.h"
-#include "vk_validation_error_messages.h"
-#include "vk_layer_dispatch_table.h"
-#include "vk_safe_struct.h"
-#include "xxhash.h"
+#include "vulkan/vk_object_types.h"
+#include "vulkan/vk_enum_string_helper.h"
+#include "vulkan/cast_utils.h"
+#include "vulkan/vk_validation_error_messages.h"
+#include "vulkan/vk_layer_dispatch_table.h"
+#include "vulkan/vk_safe_struct.h"
+#include "vulkan/xxhash.h"
 
 // Suppress unused warning on Linux
 #if defined(__GNUC__)

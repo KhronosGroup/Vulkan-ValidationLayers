@@ -23,14 +23,14 @@
  */
 
 #pragma once
-#include "chassis.h"
-#include "core_validation_error_enums.h"
-#include "core_validation_types.h"
-#include "descriptor_sets.h"
-#include "vk_layer_logging.h"
+#include "vulkan/chassis.h"
+#include "vulkan/core_validation_error_enums.h"
+#include "vulkan/core_validation_types.h"
+#include "vulkan/descriptor_sets.h"
+#include "vulkan/vk_layer_logging.h"
 #include "vulkan/vk_layer.h"
-#include "vk_typemap_helper.h"
-#include "vk_layer_data.h"
+#include "vulkan/vk_typemap_helper.h"
+#include "vulkan/vk_layer_data.h"
 #include <atomic>
 #include <functional>
 #include <memory>

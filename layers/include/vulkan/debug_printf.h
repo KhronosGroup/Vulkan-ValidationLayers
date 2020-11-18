@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include "chassis.h"
-#include "vk_mem_alloc.h"
-#include "state_tracker.h"
-#include "gpu_utils.h"
+#include "vulkan/chassis.h"
+#include "vulkan/vk_mem_alloc.h"
+#include "vulkan/state_tracker.h"
+#include "vulkan/gpu_utils.h"
 #include <map>
 class DebugPrintf;
 

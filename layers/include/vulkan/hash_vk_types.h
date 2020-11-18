@@ -20,10 +20,10 @@
 #define HASH_VK_TYPES_H_
 
 // Includes everything needed for overloading std::hash
-#include "hash_util.h"
+#include "vulkan/hash_util.h"
 
 #include <vulkan/vulkan.h>
-#include "vk_safe_struct.h"
+#include "vulkan/vk_safe_struct.h"
 #include <vector>
 
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)
