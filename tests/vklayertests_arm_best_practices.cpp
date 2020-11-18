@@ -12,7 +12,7 @@
  * Author: Nathaniel Cesario <nathaniel@lunarg.com>
  */
 
-#include "cast_utils.h"
+#include "vulkan/cast_utils.h"
 #include "layer_validation_tests.h"
 
 // Tests for Arm-specific best practices

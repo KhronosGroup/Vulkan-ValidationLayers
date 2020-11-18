@@ -32,7 +32,7 @@
 #include <mutex>
 #include <thread>
 
-#include "cast_utils.h"
+#include "vulkan/cast_utils.h"
 
 //
 // POSITIVE VALIDATION TESTS

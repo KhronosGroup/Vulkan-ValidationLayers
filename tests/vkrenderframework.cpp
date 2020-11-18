@@ -29,7 +29,7 @@
 #include <utility>
 #include <vector>
 
-#include "vk_format_utils.h"
+#include "vulkan/vk_format_utils.h"
 
 using std::string;
 using std::strncmp;

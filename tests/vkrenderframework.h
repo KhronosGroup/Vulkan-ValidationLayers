@@ -22,7 +22,7 @@
 #ifndef VKRENDERFRAMEWORK_H
 #define VKRENDERFRAMEWORK_H
 
-#include "lvt_function_pointers.h"
+#include "vulkan/lvt_function_pointers.h"
 
 #ifdef ANDROID
 #include "vktestframeworkandroid.h"

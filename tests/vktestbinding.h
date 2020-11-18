@@ -29,7 +29,7 @@
 #include <memory>
 #include <vector>
 
-#include "lvt_function_pointers.h"
+#include "vulkan/lvt_function_pointers.h"
 #include "test_common.h"
 
 namespace vk_testing {

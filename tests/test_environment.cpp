@@ -25,7 +25,7 @@
  */
 
 #include "test_common.h"
-#include "lvt_function_pointers.h"
+#include "vulkan/lvt_function_pointers.h"
 #include "test_environment.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))

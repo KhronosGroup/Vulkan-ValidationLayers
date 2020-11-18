@@ -23,7 +23,7 @@
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
-#include "cast_utils.h"
+#include "vulkan/cast_utils.h"
 #include "layer_validation_tests.h"
 
 // Global list of sType,size identifiers

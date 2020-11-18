@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "test_common.h"
-#include "vk_typemap_helper.h"
+#include "vulkan/vk_typemap_helper.h"
 
 namespace {
 

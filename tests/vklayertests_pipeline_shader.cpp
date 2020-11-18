@@ -24,7 +24,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
-#include "cast_utils.h"
+#include "vulkan/cast_utils.h"
 #include "layer_validation_tests.h"
 
 TEST_F(VkLayerTest, PSOPolygonModeInvalid) {

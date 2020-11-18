@@ -34,7 +34,7 @@
 #endif
 
 #include "layers/vk_device_profile_api_layer.h"
-#include "vk_layer_settings_ext.h"
+#include "vulkan/vk_layer_settings_ext.h"
 
 #if defined(ANDROID)
 #include <android/log.h>
@@ -45,11 +45,11 @@
 
 #include "icd-spv.h"
 #include "test_common.h"
-#include "vk_layer_config.h"
-#include "vk_format_utils.h"
+#include "vulkan/vk_layer_config.h"
+#include "vulkan/vk_format_utils.h"
 #include "vkrenderframework.h"
-#include "vk_typemap_helper.h"
-#include "convert_to_renderpass2.h"
+#include "vulkan/vk_typemap_helper.h"
+#include "vulkan/convert_to_renderpass2.h"
 
 #include <algorithm>
 #include <cmath>

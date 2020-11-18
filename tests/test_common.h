@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vk_layer_logging.h"
+#include "vulkan/vk_layer_logging.h"
 
 #ifdef _WIN32
 // WinSock2.h must be included *BEFORE* windows.h
