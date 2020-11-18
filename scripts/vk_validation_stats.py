@@ -43,7 +43,7 @@ html_db = False
 txt_filename = "validation_error_database.txt"
 csv_filename = "validation_error_database.csv"
 html_filename = "validation_error_database.html"
-header_filename = "vk_validation_error_messages.h"
+header_filename = "include/vulkan/vk_validation_error_messages.h"
 vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
 spirvtools_path = None # default is to not search for repo
 
@@ -58,7 +58,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/parameter_validation_utils.cpp',
     'layers/object_tracker_utils.cpp',
     'layers/shader_validation.cpp',
-    'layers/stateless_validation.h',
+    'layers/include/vulkan/stateless_validation.h',
     'layers/generated/parameter_validation.cpp',
     'layers/generated/object_tracker.cpp',
 ]]
@@ -66,9 +66,9 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
 test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
 
 unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
-    'layers/stateless_validation.h',
-    'layers/core_validation_error_enums.h',
-    'layers/object_lifetime_validation.h'
+    'layers/include/vulkan/stateless_validation.h',
+    'layers/include/vulkan/core_validation_error_enums.h',
+    'layers/include/vulkan/object_lifetime_validation.h'
 ]]
 
 # These files should not change unless event there is a major refactoring in SPIR-V Tools
