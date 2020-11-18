@@ -202,9 +202,11 @@ std::vector<ATTACHMENT_INFO> FRAMEBUFFER_STATE::GetUsedAttachments(
             attachment_views[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
             attachment_views[attachment_index].layout = subpasses.pInputAttachments[index].layout;
             if (imageless) {
-                attachment_views[attachment_index].view = imagelessFramebufferAttachments[attachment_index]->image_view;
+                if (!imagelessFramebufferAttachments[attachment_index]->destroyed)
+                    attachment_views[attachment_index].view_state = imagelessFramebufferAttachments[attachment_index];
             } else {
-                attachment_views[attachment_index].view = createInfo.pAttachments[attachment_index];
+                if (!attachments_view_state[attachment_index]->destroyed)
+                    attachment_views[attachment_index].view_state = attachments_view_state[attachment_index].get();
             }
         }
     }
@@ -214,9 +216,11 @@ std::vector<ATTACHMENT_INFO> FRAMEBUFFER_STATE::GetUsedAttachments(
             attachment_views[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             attachment_views[attachment_index].layout = subpasses.pColorAttachments[index].layout;
             if (imageless) {
-                attachment_views[attachment_index].view = imagelessFramebufferAttachments[attachment_index]->image_view;
+                if (!imagelessFramebufferAttachments[attachment_index]->destroyed)
+                    attachment_views[attachment_index].view_state = imagelessFramebufferAttachments[attachment_index];
             } else {
-                attachment_views[attachment_index].view = createInfo.pAttachments[attachment_index];
+                if (!attachments_view_state[attachment_index]->destroyed)
+                    attachment_views[attachment_index].view_state = attachments_view_state[attachment_index].get();
             }
         }
         if (subpasses.pResolveAttachments) {
@@ -225,9 +229,11 @@ std::vector<ATTACHMENT_INFO> FRAMEBUFFER_STATE::GetUsedAttachments(
                 attachment_views[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                 attachment_views[attachment_index2].layout = subpasses.pResolveAttachments[index].layout;
                 if (imageless) {
-                    attachment_views[attachment_index2].view = imagelessFramebufferAttachments[attachment_index2]->image_view;
+                    if (!imagelessFramebufferAttachments[attachment_index2]->destroyed)
+                        attachment_views[attachment_index2].view_state = imagelessFramebufferAttachments[attachment_index2];
                 } else {
-                    attachment_views[attachment_index2].view = createInfo.pAttachments[attachment_index2];
+                    if (!attachments_view_state[attachment_index2]->destroyed)
+                        attachment_views[attachment_index2].view_state = attachments_view_state[attachment_index2].get();
                 }
             }
         }
@@ -238,9 +244,11 @@ std::vector<ATTACHMENT_INFO> FRAMEBUFFER_STATE::GetUsedAttachments(
             attachment_views[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             attachment_views[attachment_index].layout = subpasses.pDepthStencilAttachment->layout;
             if (imageless) {
-                attachment_views[attachment_index].view = imagelessFramebufferAttachments[attachment_index]->image_view;
+                if (!imagelessFramebufferAttachments[attachment_index]->destroyed)
+                    attachment_views[attachment_index].view_state = imagelessFramebufferAttachments[attachment_index];
             } else {
-                attachment_views[attachment_index].view = createInfo.pAttachments[attachment_index];
+                if (!attachments_view_state[attachment_index]->destroyed)
+                    attachment_views[attachment_index].view_state = attachments_view_state[attachment_index].get();
             }
         }
     }

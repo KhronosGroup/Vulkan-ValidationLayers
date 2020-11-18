@@ -4036,17 +4036,16 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
 
 void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                              VkIndexType indexType) {
-    auto buffer_state = GetBufferState(buffer);
     auto cb_state = GetCBState(commandBuffer);
 
     cb_state->status |= CBSTATUS_INDEX_BUFFER_BOUND;
     cb_state->static_status &= ~CBSTATUS_INDEX_BUFFER_BOUND;
-    cb_state->index_buffer_binding.buffer = buffer;
-    cb_state->index_buffer_binding.size = buffer_state->createInfo.size;
+    cb_state->index_buffer_binding.buffer_state = GetShared<BUFFER_STATE>(buffer);
+    cb_state->index_buffer_binding.size = cb_state->index_buffer_binding.buffer_state->createInfo.size;
     cb_state->index_buffer_binding.offset = offset;
     cb_state->index_buffer_binding.index_type = indexType;
     // Add binding for this index buffer to this commandbuffer
-    AddCommandBufferBindingBuffer(cb_state, buffer_state);
+    AddCommandBufferBindingBuffer(cb_state, cb_state->index_buffer_binding.buffer_state.get());
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
@@ -4061,13 +4060,13 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding.buffer = pBuffers[i];
+        vertex_buffer_binding.buffer_state = GetShared<BUFFER_STATE>(pBuffers[i]);
         vertex_buffer_binding.offset = pOffsets[i];
         vertex_buffer_binding.size = VK_WHOLE_SIZE;
         vertex_buffer_binding.stride = 0;
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i]) {
-            AddCommandBufferBindingBuffer(cb_state, GetBufferState(pBuffers[i]));
+            AddCommandBufferBindingBuffer(cb_state, vertex_buffer_binding.buffer_state.get());
         }
     }
 }
@@ -4265,12 +4264,10 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
     auto fb_state = std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, GetRenderPassShared(pCreateInfo->renderPass));
 
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+        fb_state->attachments_view_state.resize(pCreateInfo->attachmentCount);
+
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-            VkImageView view = pCreateInfo->pAttachments[i];
-            auto view_state = GetImageViewState(view);
-            if (!view_state) {
-                continue;
-            }
+            fb_state->attachments_view_state[i] = GetShared<IMAGE_VIEW_STATE>(pCreateInfo->pAttachments[i]);
         }
     }
     frameBufferMap[*pFramebuffer] = std::move(fb_state);
@@ -6064,13 +6061,13 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuff
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding.buffer = pBuffers[i];
+        vertex_buffer_binding.buffer_state = GetShared<BUFFER_STATE>(pBuffers[i]);
         vertex_buffer_binding.offset = pOffsets[i];
         vertex_buffer_binding.size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
         vertex_buffer_binding.stride = (pStrides) ? pStrides[i] : 0;
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i]) {
-            AddCommandBufferBindingBuffer(cb_state, GetBufferState(pBuffers[i]));
+            AddCommandBufferBindingBuffer(cb_state, vertex_buffer_binding.buffer_state.get());
         }
     }
 }

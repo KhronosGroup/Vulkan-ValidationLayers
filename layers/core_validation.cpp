@@ -729,19 +729,14 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
     if (enabled_features.core11.protectedMemory == VK_TRUE){
         for (const auto &buffer_binding : current_vtx_bfr_binding_info) {
-            if (buffer_binding.buffer != VK_NULL_HANDLE) {
-                const auto *buf_state = Get<BUFFER_STATE>(buffer_binding.buffer);
-                if (buf_state) {
-                    skip |=
-                        ValidateProtectedBuffer(pCB, buf_state, caller, vuid.unprotected_command_buffer, "Buffer is vertex buffer");
-                }
+            if (buffer_binding.buffer_state && !buffer_binding.buffer_state->destroyed) {
+                    skip |= ValidateProtectedBuffer(pCB, buffer_binding.buffer_state.get(), caller, vuid.unprotected_command_buffer,
+                                                "Buffer is vertex buffer");
             }
         }
-        if (pCB->index_buffer_binding.buffer != VK_NULL_HANDLE) {
-            const auto *buf_state = Get<BUFFER_STATE>(pCB->index_buffer_binding.buffer);
-            if (buf_state) {
-                skip |= ValidateProtectedBuffer(pCB, buf_state, caller, vuid.unprotected_command_buffer, "Buffer is index buffer");
-            }
+        if (pCB->index_buffer_binding.buffer_state && !pCB->index_buffer_binding.buffer_state->destroyed) {
+            skip |= ValidateProtectedBuffer(pCB, pCB->index_buffer_binding.buffer_state.get(), caller,
+                                            vuid.unprotected_command_buffer, "Buffer is index buffer");
         }
     }
 
@@ -767,7 +762,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                  "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(), vertex_binding, i,
                                  vertex_binding);
-            } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer == VK_NULL_HANDLE) &&
+            } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer_state == nullptr) &&
                        !enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(pCB->commandBuffer, vuid.vertex_binding_null,
                                  "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
@@ -788,7 +783,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto &vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(vertex_binding);
             if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
                 (vertex_binding < current_vtx_bfr_binding_info.size()) &&
-                ((current_vtx_bfr_binding_info[vertex_binding].buffer != VK_NULL_HANDLE) ||
+                ((current_vtx_bfr_binding_info[vertex_binding].buffer_state) ||
                  enabled_features.robustness2_features.nullDescriptor)) {
                 auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
                 if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
@@ -811,14 +806,15 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 VkDeviceSize vtx_attrib_req_alignment = pPipeline->vertex_attribute_alignments_[i];
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
-                    LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer);
+                    LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer);
                     objlist.add(state.pipeline_state->pipeline);
-                    skip |= LogError(objlist, vuid.vertex_binding_attribute,
-                                     "%s: Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
-                                     ", %s,from of %s and vertex %s.",
-                                     caller, i, string_VkFormat(attribute_description.format),
-                                     report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
-                                     report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer).c_str());
+                    skip |= LogError(
+                        objlist, vuid.vertex_binding_attribute,
+                        "%s: Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
+                        ", %s,from of %s and vertex %s.",
+                        caller, i, string_VkFormat(attribute_description.format),
+                        report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                        report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer).c_str());
                 }
             } else {
                 LogObjectList objlist(pCB->commandBuffer);
@@ -1105,19 +1101,16 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             // Verify attachments for unprotected/protected command buffer.
             if (enabled_features.core11.protectedMemory == VK_TRUE) {
                 for (const auto &att : attachments) {
-                    if (att.view != VK_NULL_HANDLE) {
-                        const auto *view_state = Get<IMAGE_VIEW_STATE>(att.view);
-                        if (view_state) {
-                            std::string image_desc = "Image is ";
-                            image_desc.append(string_VkImageUsageFlagBits(att.usage));
-                            // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
-                            if (att.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
-                                result |= ValidateUnprotectedImage(cb_node, view_state->image_state.get(), function,
-                                                                   vuid.protected_command_buffer, image_desc.c_str());
-                            }
-                            result |= ValidateProtectedImage(cb_node, view_state->image_state.get(), function,
-                                                             vuid.unprotected_command_buffer, image_desc.c_str());
+                    if (att.view_state) {
+                        std::string image_desc = "Image is ";
+                        image_desc.append(string_VkImageUsageFlagBits(att.usage));
+                        // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
+                        if (att.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
+                            result |= ValidateUnprotectedImage(cb_node, att.view_state->image_state.get(), function,
+                                                                vuid.protected_command_buffer, image_desc.c_str());
                         }
+                        result |= ValidateProtectedImage(cb_node, att.view_state->image_state.get(), function,
+                                                            vuid.unprotected_command_buffer, image_desc.c_str());
                     }
                 }
             }
