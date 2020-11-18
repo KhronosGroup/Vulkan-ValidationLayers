@@ -558,36 +558,77 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     }
     features2.features.robustBufferAccess = VK_FALSE;
     robustness2_features.robustBufferAccess2 = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkBufferObj offset_buffer;
     VkBufferObj write_buffer;
+    VkBufferObj uniform_texel_buffer;
+    VkBufferObj storage_texel_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     offset_buffer.init(*m_device, 4, reqs);
     write_buffer.init_as_storage(*m_device, 16, reqs);
 
+    VkBufferCreateInfo buffer_create_info = {};
+    uint32_t queue_family_index = 0;
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.size = 16;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    uniform_texel_buffer.init(*m_device, buffer_create_info, reqs);
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    storage_texel_buffer.init(*m_device, buffer_create_info, reqs);
+    VkBufferView uniform_buffer_view;
+    VkBufferView storage_buffer_view;
+    VkBufferViewCreateInfo bvci = {};
+    bvci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+    bvci.buffer = uniform_texel_buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+    vk::CreateBufferView(m_device->device(), &bvci, NULL, &uniform_buffer_view);
+    bvci.buffer = storage_texel_buffer.handle();
+    vk::CreateBufferView(m_device->device(), &bvci, NULL, &storage_buffer_view);
+
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {3, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 4);
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+    descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
     static const char vertshader[] =
         "#version 450\n"
         "layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;\n"      // index[1]
         "layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;\n"  // data[4]
         "layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;\n"     // VK_NULL_HANDLE
+        "layout(set = 0, binding = 3) uniform samplerBuffer u_buffer;\n"              // texel_buffer[4]
+        "layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;\n"          // texel_buffer[4]
         "void main() {\n"
-        "   if (u_index.index[0] == 8)"
-        "       Data.data[u_index.index[0]] = 0xdeadca71;\n"
-        "   else if (u_index.index[0] == 0)\n"
-        "       Data.data[0] = u_index.index[4];\n"
-        "   else\n"
-        "       Data.data[0] = Null.data[40];\n"  // No error
+        "    vec4 x;\n"
+        "    if (u_index.index[0] == 8)\n"
+        "        Data.data[u_index.index[0]] = 0xdeadca71;\n"
+        "    else if (u_index.index[0] == 0)\n"
+        "        Data.data[0] = u_index.index[4];\n"
+        "    else if (u_index.index[0] == 1)\n"
+        "        Data.data[0] = Null.data[40];\n"  // No error
+        "    else if (u_index.index[0] == 2)\n"
+        "        x = texelFetch(u_buffer, 5);\n"
+        "    else if (u_index.index[0] == 3)\n"
+        "        x = imageLoad(s_buffer, 5);\n"
+        "    else if (u_index.index[0] == 4)\n"
+        "        imageStore(s_buffer, 5, x);\n"
+        "    else if (u_index.index[0] == 5)\n"  // No Error
+        "        imageStore(s_buffer, 0, x);\n"
+        "    else if (u_index.index[0] == 6)\n"  // No Error
+        "        x = imageLoad(s_buffer, 0);\n"
         "}\n";
 
     VkShaderObj vs(m_device, vertshader, VK_SHADER_STAGE_VERTEX_BIT, this);
@@ -595,8 +636,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
-
-    m_commandBuffer->begin();
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    m_commandBuffer->begin(&begin_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -608,34 +650,45 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    uint32_t index = 8;
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
-    *data = index;  // write buffer 4 uints, so 8 is OOB
-    offset_buffer.memory().unmap();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Descriptor size is 16 and highest byte accessed was 35");
-    m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyFound();
-    vk::QueueWaitIdle(m_device->m_queue);
-
-    data = (uint32_t *)offset_buffer.memory().map();
-    *data = 0;  // Now try OOB read
-    offset_buffer.memory().unmap();
-
+    struct TestCase {
+        bool positive;
+        uint32_t index;
+        char const *expected_error;
+    };
+    std::vector<TestCase> tests;
+    tests.push_back({false, 8, "Descriptor size is 16 units (bytes or texels) and highest unit accessed was 35"});
     // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
     // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Descriptor size is 4 and highest byte accessed was 67");
-    m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyFound();
+    tests.push_back({false, 0, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 67"});
+    tests.push_back({true, 1, ""});
+    tests.push_back({false, 2, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 5"});
+    tests.push_back({false, 3, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 5"});
+    tests.push_back({false, 4, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 5"});
+    tests.push_back({true, 5, ""});
+    tests.push_back({true, 6, ""});
 
-    data = (uint32_t *)offset_buffer.memory().map();
-    *data = 1;  // Now try NULL read
-    offset_buffer.memory().unmap();
+    for (const auto &test : tests) {
+        uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+        *data = test.index;
+        offset_buffer.memory().unmap();
+        if (test.positive) {
+            m_errorMonitor->ExpectSuccess();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
+        }
+        m_commandBuffer->QueueCommandBuffer();
+        if (test.positive) {
+            m_errorMonitor->VerifyNotFound();
+        } else {
+            m_errorMonitor->VerifyFound();
+        }
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
 
-    m_errorMonitor->ExpectSuccess();
-    m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyNotFound();
+    vk::DestroyBufferView(m_device->handle(), uniform_buffer_view, nullptr);
+    vk::DestroyBufferView(m_device->handle(), storage_buffer_view, nullptr);
 }
+
 void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                                                   VkDescriptorType descriptor_type, const char *fragment_shader,
                                                   const char *expected_error) {
@@ -743,7 +796,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 4 and highest byte accessed was 7");
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
 }
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
@@ -760,7 +813,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
-                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource, "Descriptor size is 4 and highest byte accessed was 7");
+                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
 }
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
@@ -783,7 +836,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
     ShaderBufferSizeTest(64,  // buffer size
                          0,   // binding offset
                          64,  // binding range
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 64 and highest byte accessed was 67");
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 64 units (bytes or texels) and highest unit accessed was 67");
 }
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) {
@@ -807,7 +860,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
     ShaderBufferSizeTest(8,  // buffer size
                          0,  // binding offset
                          8,  // binding range
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 8 and highest byte accessed was 19");
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 8 units (bytes or texels) and highest unit accessed was 19");
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
