@@ -73,96 +73,96 @@ config("vulkan_internal_config") {
 
 config("vulkan_layer_config") {
   include_dirs = [
-    "layers",
-    "layers/generated",
+    "layers/include",
+    "layers/generated/include",
   ]
 }
 
 core_validation_sources = [
-  "layers/android_ndk_types.h",
+  "layers/include/vulkan/android_ndk_types.h",
   "layers/buffer_validation.cpp",
-  "layers/buffer_validation.h",
+  "layers/include/vulkan/buffer_validation.h",
   "layers/convert_to_renderpass2.cpp",
-  "layers/convert_to_renderpass2.h",
+  "layers/include/vulkan/convert_to_renderpass2.h",
   "layers/core_validation.cpp",
-  "layers/core_validation.h",
-  "layers/core_validation_error_enums.h",
-  "layers/core_validation_types.h",
+  "layers/include/vulkan/core_validation.h",
+  "layers/include/vulkan/core_validation_error_enums.h",
+  "layers/include/vulkan/core_validation_types.h",
   "layers/descriptor_sets.cpp",
-  "layers/descriptor_sets.h",
+  "layers/include/vulkan/descriptor_sets.h",
   "layers/drawdispatch.cpp",
-  "layers/generated/synchronization_validation_types.h",
+  "layers/include/vulkan/generated/synchronization_validation_types.h",
   "layers/gpu_utils.cpp",
-  "layers/gpu_utils.h",
+  "layers/include/vulkan/gpu_utils.h",
   "layers/gpu_validation.cpp",
-  "layers/gpu_validation.h",
+  "layers/include/vulkan/gpu_validation.h",
   "layers/image_layout_map.cpp",
-  "layers/image_layout_map.h",
-  "layers/range_vector.h",
+  "layers/include/vulkan/image_layout_map.h",
+  "layers/include/vulkan/range_vector.h",
   "layers/shader_validation.cpp",
-  "layers/shader_validation.h",
+  "layers/include/vulkan/shader_validation.h",
   "layers/state_tracker.cpp",
-  "layers/state_tracker.h",
+  "layers/include/vulkan/state_tracker.h",
   "layers/subresource_adapter.cpp",
-  "layers/subresource_adapter.h",
+  "layers/include/vulkan/subresource_adapter.h",
   "layers/synchronization_validation.cpp",
-  "layers/synchronization_validation.h",
+  "layers/include/vulkan/synchronization_validation.h",
 ]
 
 object_lifetimes_sources = [
   "layers/generated/object_tracker.cpp",
-  "layers/generated/object_tracker.h",
-  "layers/object_lifetime_validation.h",
+  "layers/generated/include/vulkan/object_tracker.h",
+  "layers/include/vulkan/object_lifetime_validation.h",
   "layers/object_tracker_utils.cpp",
 ]
 
 stateless_validation_sources = [
   "layers/generated/parameter_validation.cpp",
-  "layers/generated/parameter_validation.h",
-  "layers/parameter_name.h",
+  "layers/generated/include/vulkan/parameter_validation.h",
+  "layers/include/vulkan/parameter_name.h",
   "layers/parameter_validation_utils.cpp",
-  "layers/stateless_validation.h",
+  "layers/include/vulkan/stateless_validation.h",
 ]
 
 thread_safety_sources = [
   "layers/generated/thread_safety.cpp",
-  "layers/generated/thread_safety.h",
+  "layers/generated/include/vulkan/thread_safety.h",
 ]
 
 unique_objects_sources = []
 
 best_practices_sources = [
-  "layers/best_practices_error_enums.h",
+  "layers/include/vulkan/best_practices_error_enums.h",
   "layers/best_practices_utils.cpp",
-  "layers/best_practices_validation.h",
+  "layers/include/vulkan/best_practices_validation.h",
   "layers/generated/best_practices.cpp",
-  "layers/generated/best_practices.h",
+  "layers/generated/include/vulkan/best_practices.h",
 ]
 
 debug_printf_sources = [
   "layers/debug_printf.cpp",
-  "layers/debug_printf.h",
+  "layers/include/vulkan/debug_printf.h",
 ]
 
 command_counter_sources = [
-  "layers/command_counter.h",
+  "layers/include/vulkan/command_counter.h",
   "layers/generated/command_counter_helper.cpp",
-  "layers/generated/command_counter_helper.h",
+  "layers/generated/include/vulkan/command_counter_helper.h",
 ]
 
 chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
   "layers/generated/chassis.cpp",
-  "layers/generated/chassis.h",
+  "layers/generated/include/vulkan/chassis.h",
   "layers/generated/layer_chassis_dispatch.cpp",
-  "layers/generated/layer_chassis_dispatch.h",
-  "layers/generated/vk_dispatch_table_helper.h",
-  "layers/generated/vk_extension_helper.h",
+  "layers/generated/include/vulkan/layer_chassis_dispatch.h",
+  "layers/generated/include/vulkan/vk_dispatch_table_helper.h",
+  "layers/generated/include/vulkan/vk_extension_helper.h",
   "layers/generated/vk_safe_struct.cpp",
   "layers/layer_options.cpp",
-  "layers/layer_options.h",
-  "layers/vk_layer_settings_ext.h",
+  "layers/include/vulkan/layer_options.h",
+  "layers/include/vulkan/vk_layer_settings_ext.h",
 ]
 
 layers = [ [
@@ -223,31 +223,31 @@ source_set("vulkan_layer_utils") {
     "$vulkan_headers_dir/include/vulkan/vk_layer.h",
     "$vulkan_headers_dir/include/vulkan/vk_sdk_platform.h",
     "$vulkan_headers_dir/include/vulkan/vulkan.h",
-    "layers/android_ndk_types.h",
-    "layers/cast_utils.h",
-    "layers/generated/vk_enum_string_helper.h",
-    "layers/generated/vk_layer_dispatch_table.h",
-    "layers/generated/vk_object_types.h",
-    "layers/generated/vk_safe_struct.h",
-    "layers/generated/vk_typemap_helper.h",
-    "layers/generated/vk_validation_error_messages.h",
-    "layers/hash_util.h",
-    "layers/hash_vk_types.h",
-    "layers/sparse_containers.h",
+    "layers/include/vulkan/android_ndk_types.h",
+    "layers/include/vulkan/cast_utils.h",
+    "layers/generated/include/vulkan/vk_enum_string_helper.h",
+    "layers/generated/include/vulkan/vk_layer_dispatch_table.h",
+    "layers/generated/include/vulkan/vk_object_types.h",
+    "layers/generated/include/vulkan/vk_safe_struct.h",
+    "layers/generated/include/vulkan/vk_typemap_helper.h",
+    "layers/generated/include/vulkan/vk_validation_error_messages.h",
+    "layers/include/vulkan/hash_util.h",
+    "layers/include/vulkan/hash_vk_types.h",
+    "layers/include/vulkan/sparse_containers.h",
     "layers/vk_format_utils.cpp",
-    "layers/vk_format_utils.h",
+    "layers/include/vulkan/vk_format_utils.h",
     "layers/vk_layer_config.cpp",
-    "layers/vk_layer_config.h",
-    "layers/vk_layer_data.h",
+    "layers/include/vulkan/vk_layer_config.h",
+    "layers/include/vulkan/vk_layer_data.h",
     "layers/vk_layer_extension_utils.cpp",
-    "layers/vk_layer_extension_utils.h",
-    "layers/vk_layer_logging.h",
+    "layers/include/vulkan/vk_layer_extension_utils.h",
+    "layers/include/vulkan/vk_layer_logging.h",
     "layers/vk_layer_utils.cpp",
-    "layers/vk_layer_utils.h",
-    "layers/vk_loader_platform.h",
+    "layers/include/vulkan/vk_layer_utils.h",
+    "layers/include/vulkan/vk_loader_platform.h",
     "layers/vk_mem_alloc.h",
     "layers/xxhash.c",
-    "layers/xxhash.h",
+    "layers/include/vulkan/xxhash.h",
   ]
   public_configs = [ ":vulkan_internal_config" ]
   configs -= [ "//build/config/compiler:chromium_code" ]
