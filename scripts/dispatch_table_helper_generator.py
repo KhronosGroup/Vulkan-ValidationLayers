@@ -134,8 +134,8 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble += '#include <string>\n'
         preamble += '#include <unordered_set>\n'
         preamble += '#include <unordered_map>\n'
-        preamble += '#include "vk_layer_dispatch_table.h"\n'
-        preamble += '#include "vk_extension_helper.h"\n'
+        preamble += '#include "vulkan/vk_layer_dispatch_table.h"\n'
+        preamble += '#include "vulkan/vk_extension_helper.h"\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)

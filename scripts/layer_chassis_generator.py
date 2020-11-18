@@ -222,22 +222,22 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #include <algorithm>
 #include <memory>
 
-#include "vk_loader_platform.h"
+#include "vulkan/vk_loader_platform.h"
 #include "vulkan/vulkan.h"
-#include "vk_layer_settings_ext.h"
-#include "vk_layer_config.h"
-#include "vk_layer_data.h"
-#include "vk_layer_logging.h"
-#include "vk_object_types.h"
+#include "vulkan/vk_layer_settings_ext.h"
+#include "vulkan/vk_layer_config.h"
+#include "vulkan/vk_layer_data.h"
+#include "vulkan/vk_layer_logging.h"
+#include "vulkan/vk_object_types.h"
 #include "vulkan/vk_layer.h"
-#include "vk_enum_string_helper.h"
-#include "vk_layer_extension_utils.h"
-#include "vk_layer_utils.h"
+#include "vulkan/vk_enum_string_helper.h"
+#include "vulkan/vk_layer_extension_utils.h"
+#include "vulkan/vk_layer_utils.h"
 #include "vulkan/vk_layer.h"
-#include "vk_dispatch_table_helper.h"
-#include "vk_extension_helper.h"
-#include "vk_safe_struct.h"
-#include "vk_typemap_helper.h"
+#include "vulkan/vk_dispatch_table_helper.h"
+#include "vulkan/vk_extension_helper.h"
+#include "vulkan/vk_safe_struct.h"
+#include "vulkan/vk_typemap_helper.h"
 
 
 extern std::atomic<uint64_t> global_unique_id;
@@ -660,9 +660,9 @@ class ValidationObject {
 #include <string.h>
 #include <mutex>
 
-#include "chassis.h"
-#include "layer_options.h"
-#include "layer_chassis_dispatch.h"
+#include "vulkan/chassis.h"
+#include "vulkan/layer_options.h"
+#include "vulkan/layer_chassis_dispatch.h"
 
 small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 
@@ -678,14 +678,14 @@ bool wrap_handles = true;
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
 // Include layer validation object definitions
-#include "best_practices_validation.h"
-#include "core_validation.h"
-#include "gpu_validation.h"
-#include "object_lifetime_validation.h"
-#include "debug_printf.h"
-#include "stateless_validation.h"
-#include "synchronization_validation.h"
-#include "thread_safety.h"
+#include "vulkan/best_practices_validation.h"
+#include "vulkan/core_validation.h"
+#include "vulkan/gpu_validation.h"
+#include "vulkan/object_lifetime_validation.h"
+#include "vulkan/debug_printf.h"
+#include "vulkan/stateless_validation.h"
+#include "vulkan/synchronization_validation.h"
+#include "vulkan/thread_safety.h"
 
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};

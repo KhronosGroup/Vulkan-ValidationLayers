@@ -30,7 +30,7 @@
  ****************************************************************************/
 
 
-#include "vk_safe_struct.h"
+#include "vulkan/vk_safe_struct.h"
 
 #include <string.h>
 #include <cassert>

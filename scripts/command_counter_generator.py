@@ -173,9 +173,9 @@ class CommandCounterOutputGenerator(OutputGenerator):
         entries = []
         entries = self.dispatch_list
 
-        table = '#include "chassis.h"\n'
-        table += '#include "state_tracker.h"\n'
-        table += '#include "command_counter.h"\n'
+        table = '#include "vulkan/chassis.h"\n'
+        table += '#include "vulkan/state_tracker.h"\n'
+        table += '#include "vulkan/command_counter.h"\n'
         table += '\n'
 
         for item in entries:

@@ -23,9 +23,9 @@
  * Author: Lionel Landwerlin <lionel.g.landwerlin@intel.com>
  */
 
-#include "chassis.h"
-#include "state_tracker.h"
-#include "command_counter.h"
+#include "vulkan/chassis.h"
+#include "vulkan/state_tracker.h"
+#include "vulkan/command_counter.h"
 
 void CommandCounter::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) {
     coreChecks->IncrementCommandCount(commandBuffer);

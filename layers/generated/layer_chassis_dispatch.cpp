@@ -23,10 +23,10 @@
  */
 
 #include <mutex>
-#include "chassis.h"
-#include "layer_chassis_dispatch.h"
-#include "vk_layer_utils.h"
-#include "vk_safe_struct.h"
+#include "vulkan/chassis.h"
+#include "vulkan/layer_chassis_dispatch.h"
+#include "vulkan/vk_layer_utils.h"
+#include "vulkan/vk_safe_struct.h"
 
 ReadWriteLock dispatch_lock;
 

@@ -24,7 +24,7 @@
 
 
 #include <vulkan/vulkan.h>
-#include "vk_loader_platform.h"
+#include "vulkan/vk_loader_platform.h"
 
 namespace vk {
 

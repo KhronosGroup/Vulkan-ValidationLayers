@@ -22,7 +22,7 @@
  */
 
 
-#include "lvt_function_pointers.h"
+#include "vulkan/lvt_function_pointers.h"
 #include <stdio.h>
 
 namespace vk {

@@ -173,8 +173,8 @@ class BestPracticesOutputGenerator(OutputGenerator):
         copyright += ' ****************************************************************************/\n'
         self.otwrite('both', copyright)
         self.newline()
-        self.otwrite('cpp', '#include "chassis.h"')
-        self.otwrite('cpp', '#include "best_practices_validation.h"')
+        self.otwrite('cpp', '#include "vulkan/chassis.h"')
+        self.otwrite('cpp', '#include "vulkan/best_practices_validation.h"')
     #
     # Now that the data is all collected and complete, generate and output the object validation routines
     def endFile(self):

@@ -21,8 +21,8 @@
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
  */
-#include "chassis.h"
-#include "thread_safety.h"
+#include "vulkan/chassis.h"
+#include "vulkan/thread_safety.h"
 
 
 void ThreadSafety::PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,

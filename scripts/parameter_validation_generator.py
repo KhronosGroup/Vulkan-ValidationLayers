@@ -402,9 +402,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             self.valid_vuids.add(json_vuid_string)
         #
         # Headers
-        write('#include "chassis.h"', file=self.outFile)
+        write('#include "vulkan/chassis.h"', file=self.outFile)
         self.newline()
-        write('#include "stateless_validation.h"', file=self.outFile)
+        write('#include "vulkan/stateless_validation.h"', file=self.outFile)
         self.newline()
     #
     # Called at end-time for final content output

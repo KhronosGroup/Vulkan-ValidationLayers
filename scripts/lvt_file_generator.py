@@ -25,7 +25,7 @@ from collections import namedtuple
 from common_codegen import *
 
 funcptr_source_preamble = '''
-#include "lvt_function_pointers.h"
+#include "vulkan/lvt_function_pointers.h"
 #include <stdio.h>
 
 namespace vk {
@@ -34,7 +34,7 @@ namespace vk {
 
 funcptr_header_preamble = '''
 #include <vulkan/vulkan.h>
-#include "vk_loader_platform.h"
+#include "vulkan/vk_loader_platform.h"
 
 namespace vk {
 

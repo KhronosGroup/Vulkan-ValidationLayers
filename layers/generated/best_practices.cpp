@@ -25,8 +25,8 @@
  ****************************************************************************/
 
 
-#include "chassis.h"
-#include "best_practices_validation.h"
+#include "vulkan/chassis.h"
+#include "vulkan/best_practices_validation.h"
 void BestPractices::PostCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1680,19 +1680,6 @@ void BestPractices::PostCallRecordSignalSemaphoreKHR(
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {};
         ValidateReturnCodes("vkSignalSemaphoreKHR", result, error_codes, success_codes);
-    }
-}
-
-void BestPractices::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t*                                   pFragmentShadingRateCount,
-    VkPhysicalDeviceFragmentShadingRateKHR*     pFragmentShadingRates,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount, pFragmentShadingRates, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY};
-        static const std::vector<VkResult> success_codes = {VK_INCOMPLETE};
-        ValidateReturnCodes("vkGetPhysicalDeviceFragmentShadingRatesKHR", result, error_codes, success_codes);
     }
 }
 

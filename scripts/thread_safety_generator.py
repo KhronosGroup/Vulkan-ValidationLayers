@@ -1547,8 +1547,8 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
             sys.exit(1)
 
         if self.source_file:
-            write('#include "chassis.h"', file=self.outFile)
-            write('#include "thread_safety.h"', file=self.outFile)
+            write('#include "vulkan/chassis.h"', file=self.outFile)
+            write('#include "vulkan/thread_safety.h"', file=self.outFile)
             self.newline()
             write(self.inline_custom_source_preamble, file=self.outFile)
 

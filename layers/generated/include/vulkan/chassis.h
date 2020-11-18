@@ -35,22 +35,22 @@
 #include <algorithm>
 #include <memory>
 
-#include "vk_loader_platform.h"
+#include "vulkan/vk_loader_platform.h"
 #include "vulkan/vulkan.h"
-#include "vk_layer_settings_ext.h"
-#include "vk_layer_config.h"
-#include "vk_layer_data.h"
-#include "vk_layer_logging.h"
-#include "vk_object_types.h"
+#include "vulkan/vk_layer_settings_ext.h"
+#include "vulkan/vk_layer_config.h"
+#include "vulkan/vk_layer_data.h"
+#include "vulkan/vk_layer_logging.h"
+#include "vulkan/vk_object_types.h"
 #include "vulkan/vk_layer.h"
-#include "vk_enum_string_helper.h"
-#include "vk_layer_extension_utils.h"
-#include "vk_layer_utils.h"
+#include "vulkan/vk_enum_string_helper.h"
+#include "vulkan/vk_layer_extension_utils.h"
+#include "vulkan/vk_layer_utils.h"
 #include "vulkan/vk_layer.h"
-#include "vk_dispatch_table_helper.h"
-#include "vk_extension_helper.h"
-#include "vk_safe_struct.h"
-#include "vk_typemap_helper.h"
+#include "vulkan/vk_dispatch_table_helper.h"
+#include "vulkan/vk_extension_helper.h"
+#include "vulkan/vk_safe_struct.h"
+#include "vulkan/vk_typemap_helper.h"
 
 
 extern std::atomic<uint64_t> global_unique_id;

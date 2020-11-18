@@ -26,9 +26,9 @@
 #include <string.h>
 #include <mutex>
 
-#include "chassis.h"
-#include "layer_options.h"
-#include "layer_chassis_dispatch.h"
+#include "vulkan/chassis.h"
+#include "vulkan/layer_options.h"
+#include "vulkan/layer_chassis_dispatch.h"
 
 small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 
@@ -44,14 +44,14 @@ bool wrap_handles = true;
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
 // Include layer validation object definitions
-#include "best_practices_validation.h"
-#include "core_validation.h"
-#include "gpu_validation.h"
-#include "object_lifetime_validation.h"
-#include "debug_printf.h"
-#include "stateless_validation.h"
-#include "synchronization_validation.h"
-#include "thread_safety.h"
+#include "vulkan/best_practices_validation.h"
+#include "vulkan/core_validation.h"
+#include "vulkan/gpu_validation.h"
+#include "vulkan/object_lifetime_validation.h"
+#include "vulkan/debug_printf.h"
+#include "vulkan/stateless_validation.h"
+#include "vulkan/synchronization_validation.h"
+#include "vulkan/thread_safety.h"
 
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};

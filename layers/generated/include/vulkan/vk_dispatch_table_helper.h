@@ -30,8 +30,8 @@
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
-#include "vk_layer_dispatch_table.h"
-#include "vk_extension_helper.h"
+#include "vulkan/vk_layer_dispatch_table.h"
+#include "vulkan/vk_extension_helper.h"
 
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) { return VK_SUCCESS; };

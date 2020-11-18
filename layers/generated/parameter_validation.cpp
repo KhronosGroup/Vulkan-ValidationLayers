@@ -23,9 +23,9 @@
  */
 
 
-#include "chassis.h"
+#include "vulkan/chassis.h"
 
-#include "stateless_validation.h"
+#include "vulkan/stateless_validation.h"
 
 const uint32_t GeneratedVulkanHeaderVersion = 160;
 

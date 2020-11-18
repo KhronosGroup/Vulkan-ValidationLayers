@@ -792,7 +792,7 @@ class HelperFileOutputGenerator(OutputGenerator):
     #
     # Object types header: create object enum type header file
     def GenerateObjectTypesHeader(self):
-        object_types_header = '#include "cast_utils.h"\n'
+        object_types_header = '#include "vulkan/cast_utils.h"\n'
         object_types_header += '\n'
         object_types_header += '// Object Type enum for validation layer internal object handling\n'
         object_types_header += 'typedef enum VulkanObjectType {\n'
@@ -1129,7 +1129,7 @@ class HelperFileOutputGenerator(OutputGenerator):
     # Combine safe struct helper source file preamble with body text and return
     def GenerateSafeStructHelperSource(self):
         safe_struct_helper_source = '\n'
-        safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
+        safe_struct_helper_source += '#include "vulkan/vk_safe_struct.h"\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += '#include <string.h>\n'
         safe_struct_helper_source += '#include <cassert>\n'
