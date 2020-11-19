@@ -1910,7 +1910,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         uint64_t texel_count = (uint64_t)pCreateInfo->extent.width * (uint64_t)pCreateInfo->extent.height *
                                (uint64_t)pCreateInfo->extent.depth * (uint64_t)pCreateInfo->arrayLayers *
                                (uint64_t)pCreateInfo->samples;
-        uint64_t total_size = (uint64_t)std::ceil(FormatTexelSize(pCreateInfo->format) * texel_count);
+        uint64_t total_size = (uint64_t)std::ceil(FormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count));
 
         // Round up to imageGranularity boundary
         VkDeviceSize imageGranularity = phys_dev_props.limits.bufferImageGranularity;

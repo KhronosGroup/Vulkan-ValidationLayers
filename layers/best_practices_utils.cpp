@@ -1510,13 +1510,14 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
         if (max_index < min_index || max_index == min_index) return skip;
 
         if (max_index - min_index >= indexCount) {
-            skip |= LogPerformanceWarning(
-                device, kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer,
-                "%s The indices which were specified for the draw call only utilise approximately %.02f%% of "
-                "index buffer value range. Arm Mali architectures before G71 do not have IDVS (Index-Driven "
-                "Vertex Shading), meaning all vertices corresponding to indices between the minimum and "
-                "maximum would be loaded, and possibly shaded, whether or not they are used.",
-                VendorSpecificTag(kBPVendorArm), (static_cast<float>(indexCount) / (max_index - min_index)) * 100.0f);
+            skip |=
+                LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer,
+                                      "%s The indices which were specified for the draw call only utilise approximately %.02f%% of "
+                                      "index buffer value range. Arm Mali architectures before G71 do not have IDVS (Index-Driven "
+                                      "Vertex Shading), meaning all vertices corresponding to indices between the minimum and "
+                                      "maximum would be loaded, and possibly shaded, whether or not they are used.",
+                                      VendorSpecificTag(kBPVendorArm),
+                                      (static_cast<float>(indexCount) / static_cast<float>(max_index - min_index)) * 100.0f);
             return skip;
         }
 
@@ -1556,9 +1557,9 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
         }
 
         // low index buffer utilization implies that: of the vertices available to the draw call, not all are utilized
-        float utilization = static_cast<float>(vertex_reference_count) / (max_index - min_index + 1);
+        float utilization = static_cast<float>(vertex_reference_count) / static_cast<float>(max_index - min_index + 1);
         // low hit rate (high miss rate) implies the order of indices in the draw call may be possible to improve
-        float cache_hit_rate = static_cast<float>(vertex_reference_count) / vertex_shade_count;
+        float cache_hit_rate = static_cast<float>(vertex_reference_count) / static_cast<float>(vertex_shade_count);
 
         if (utilization < 0.5f) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer,

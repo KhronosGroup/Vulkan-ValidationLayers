@@ -31,6 +31,7 @@
 //    6/05/19 - Make changes to suppress warnings from clang 3.8.0
 //    6/05/19 - Make changes to suppress more warnings from GCC
 //    8/09/19 - Make changes to suppress dead code warnings (from upstream master branch)
+//   11/18/20 - Make changes to suppress warnings from clang
 //
 
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -3129,7 +3130,7 @@ std::pair, std::vector, std::list, std::unordered_map.
 Set it to 0 or undefined to make the library using its own implementation of
 the containers.
 */
-#if VMA_USE_STL_CONTAINERS
+#if defined(VMA_USE_STL_CONTAINERS) && VMA_USE_STL_CONTAINERS
    #define VMA_USE_STL_VECTOR 1
    #define VMA_USE_STL_UNORDERED_MAP 1
    #define VMA_USE_STL_LIST 1
@@ -3142,15 +3143,15 @@ the containers.
     #endif
 #endif
 
-#if VMA_USE_STL_VECTOR
+#if defined(VMA_USE_STL_VECTOR) && VMA_USE_STL_VECTOR
    #include <vector>
 #endif
 
-#if VMA_USE_STL_UNORDERED_MAP
+#if defined(VMA_USE_STL_UNORDERED_MAP) && VMA_USE_STL_UNORDERED_MAP
    #include <unordered_map>
 #endif
 
-#if VMA_USE_STL_LIST
+#if defined(VMA_USE_STL_LIST) && VMA_USE_STL_LIST
    #include <list>
 #endif
 
@@ -3306,7 +3307,7 @@ void *aligned_alloc(size_t alignment, size_t size)
 
 // Read-write mutex, where "read" is shared access, "write" is exclusive access.
 #ifndef VMA_RW_MUTEX
-    #if VMA_USE_STL_SHARED_MUTEX
+    #if defined(VMA_USE_STL_SHARED_MUTEX) && VMA_USE_STL_SHARED_MUTEX
         // Use std::shared_mutex from C++17.
         #include <shared_mutex>
         class VmaRWMutex
@@ -3926,7 +3927,7 @@ public:
     VmaStlAllocator& operator=(const VmaStlAllocator& x) = delete;
 };
 
-#if VMA_USE_STL_VECTOR
+#if defined(VMA_USE_STL_VECTOR) && VMA_USE_STL_VECTOR
 
 #define VmaVector std::vector
 
@@ -4334,7 +4335,7 @@ typename VmaPoolAllocator<T>::ItemBlock& VmaPoolAllocator<T>::CreateNewBlock()
 ////////////////////////////////////////////////////////////////////////////////
 // class VmaRawList, VmaList
 
-#if VMA_USE_STL_LIST
+#if defined(VMA_USE_STL_LIST) && VMA_USE_STL_LIST
 
 #define VmaList std::list
 

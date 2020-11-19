@@ -325,9 +325,10 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
 
 IndexType ImageRangeEncoder::Encode(const VkImageSubresource& subres, uint32_t layer, VkOffset3D offset) const {
     const auto& subres_layout = SubresourceLayout(subres);
-    return static_cast<IndexType>(floor(layer * subres_layout.arrayPitch + offset.z * subres_layout.depthPitch +
-                                        offset.y * subres_layout.rowPitch +
-                                        offset.x * texel_sizes_[LowerBoundFromMask(subres.aspectMask)] + subres_layout.offset));
+    return static_cast<IndexType>(floor(static_cast<double>(layer * subres_layout.arrayPitch + offset.z * subres_layout.depthPitch +
+                                                            offset.y * subres_layout.rowPitch) +
+                                        offset.x * texel_sizes_[LowerBoundFromMask(subres.aspectMask)] +
+                                        static_cast<double>(subres_layout.offset)));
 }
 
 void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer,
@@ -340,7 +341,7 @@ void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType
     decode -= (out_offset.z * subres_layout.depthPitch);
     out_offset.y = static_cast<int32_t>(decode / subres_layout.rowPitch);
     decode -= (out_offset.y * subres_layout.rowPitch);
-    out_offset.x = static_cast<int32_t>(decode / texel_sizes_[LowerBoundFromMask(subres.aspectMask)]);
+    out_offset.x = static_cast<int32_t>(static_cast<double>(decode) / texel_sizes_[LowerBoundFromMask(subres.aspectMask)]);
 }
 
 const VkSubresourceLayout& ImageRangeEncoder::SubresourceLayout(const VkImageSubresource& subres) const {
