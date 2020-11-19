@@ -966,8 +966,8 @@ When GPU-Assisted Validation is active, either the descriptor indexing input buf
 sizes is used to inform instrumented shaders of the size of each of the buffers the shader
 may access.  If the shader accesses a buffer beyond the declared length of the buffer, the
 instrumentation will return an error to the validation layer.  This checking applies to to
-all uniform and storage buffers, but not to texel buffers. If a buffer access is found to be
-out of bounds, it will not be performed.  Instead, writes will be skipped, and reads will return 0.
+all uniform and storage buffers. If a buffer access is found to be out of bounds, it will
+not be performed.  Instead, writes will be skipped, and reads will return 0.
 Note that this validation can be disabled by setting "khronos_validation.gpuav_buffer_oob = false" 
 in a vk_layer_settings.txt file.
 
