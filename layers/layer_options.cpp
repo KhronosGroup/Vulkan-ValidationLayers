@@ -212,9 +212,9 @@ void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter,
 uint32_t TokenToUint(std::string &token) {
     uint32_t int_id = 0;
     if ((token.find("0x") == 0) || token.find("0X") == 0) {  // Handle hex format
-        int_id = std::strtoul(token.c_str(), nullptr, 16);
+        int_id = static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 16));
     } else {
-        int_id = std::strtoul(token.c_str(), nullptr, 10);  // Decimal format
+        int_id = static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 10));  // Decimal format
     }
     return int_id;
 }
@@ -265,7 +265,7 @@ uint32_t SetMessageDuplicateLimit(std::string &config_message_limit, std::string
     auto GetNum = [](std::string &source_string) {
         uint32_t limit = 0;
         int radix = ((source_string.find("0x") == 0) ? 16 : 10);
-        limit = std::strtoul(source_string.c_str(), nullptr, radix);
+        limit = static_cast<uint32_t>(std::strtoul(source_string.c_str(), nullptr, radix));
         return limit;
     };
     // ENV var takes precedence over settings file
