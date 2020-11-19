@@ -81,6 +81,7 @@ set(COMMON_CPP
     vklayertests_imageless_framebuffer.cpp
     vklayertests_portability_subset.cpp
     vkpositivelayertests.cpp
+    vksyncvaltests.cpp
     vkrenderframework.cpp
     vktestbinding.cpp
     vktestframework.cpp
