@@ -699,8 +699,8 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 // Return true if state is acceptable, or false and write an error message into error string
 bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const BindingReqMap &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
-                                   const std::vector<ATTACHMENT_INFO> &attachments, const char *caller,
-                                   const DrawDispatchVuid &vuids) const {
+                                   const std::vector<IMAGE_VIEW_STATE *> *attachments, const std::vector<SUBPASS_INFO> &subpasses,
+                                   const char *caller, const DrawDispatchVuid &vuids) const {
     bool result = false;
     VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer : VK_NULL_HANDLE;
     for (auto binding_pair : bindings) {
@@ -721,8 +721,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
             // or the view could have been destroyed
             continue;
         }
-        result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer,
-                                                   attachments, caller, vuids);
+        result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer, attachments,
+                                                   subpasses, caller, vuids);
     }
     return result;
 }
@@ -730,8 +730,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
 bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
                                                   const std::vector<uint32_t> &dynamic_offsets,
                                                   std::pair<const uint32_t, DescriptorRequirement> &binding_info,
-                                                  VkFramebuffer framebuffer, const std::vector<ATTACHMENT_INFO> &attachments,
-                                                  const char *caller, const DrawDispatchVuid &vuids) const {
+                                                  VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*> *attachments,
+                                                  const std::vector<SUBPASS_INFO>& subpasses,const char *caller, const DrawDispatchVuid &vuids) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -971,35 +971,35 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         }
 
                         // Verify if attachments are used in DescriptorSet
-                        if (attachments.size() > 0 && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-                            uint32_t view_index = 0;
+                        if (attachments && attachments->size() > 0 && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
                             bool ds_aspect = (image_view_state->create_info.subresourceRange.aspectMask &
                                               (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
                                                  ? true
                                                  : false;
-                            for (const auto &att : attachments) {
-                                // Even though in FRAMEBUFFER_STATE::GetUsedAttachments, it has checked lifetime,
-                                // but for VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, it still has a chance to destroy the object.
-                                if (!att.view_state || att.view_state->destroyed) {
+                            uint32_t att_index = 0;
+                            for (const auto &view_state : *attachments) {
+                                if (!subpasses[att_index].used || !view_state || view_state->destroyed) {
                                     continue;
                                 }
-                                if (ds_aspect && att.usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+                                if (ds_aspect && subpasses[att_index].usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
                                     if ((image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                                          image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
                                          image_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) &&
-                                        (att.layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
-                                         att.layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                                         att.layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL)) {
+                                        (subpasses[att_index].layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
+                                         subpasses[att_index].layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
+                                         subpasses[att_index].layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL)) {
                                         continue;
                                     }
                                     if ((image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL &&
-                                         att.layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) ||
-                                        (att.layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL &&
+                                         subpasses[att_index].layout ==
+                                             VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) ||
+                                        (subpasses[att_index].layout ==
+                                             VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL &&
                                          image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)) {
                                         continue;
                                     }
                                 }
-                                if (att.view_state->image_view == image_view) {
+                                if (view_state->image_view == image_view) {
                                     auto set = descriptor_set->GetSet();
                                     LogObjectList objlist(set);
                                     objlist.add(image_view);
@@ -1010,14 +1010,14 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                     " and %s attachment # %" PRIu32 ".",
                                                     report_data->FormatHandle(set).c_str(), caller,
                                                     report_data->FormatHandle(image_view).c_str(), binding, index,
-                                                    report_data->FormatHandle(framebuffer).c_str(), view_index);
-                                } else if (att.view_state) {
-                                    if (image_view_state->OverlapSubresource(*att.view_state)) {
+                                                    report_data->FormatHandle(framebuffer).c_str(), att_index);
+                                } else {
+                                    if (image_view_state->OverlapSubresource(*view_state)) {
                                         auto set = descriptor_set->GetSet();
                                         LogObjectList objlist(set);
                                         objlist.add(image_view);
                                         objlist.add(framebuffer);
-                                        objlist.add(att.view_state->image_view);
+                                        objlist.add(view_state->image_view);
                                         return LogError(
                                             objlist, vuids.image_subresources,
                                             "%s encountered the following validation error at %s time: Image subresources of %s in "
@@ -1025,11 +1025,11 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                             " and %s in %s attachment # %" PRIu32 " overlap.",
                                             report_data->FormatHandle(set).c_str(), caller,
                                             report_data->FormatHandle(image_view).c_str(), binding, index,
-                                            report_data->FormatHandle(att.view_state->image_view).c_str(),
-                                            report_data->FormatHandle(framebuffer).c_str(), view_index);
+                                            report_data->FormatHandle(view_state->image_view).c_str(),
+                                            report_data->FormatHandle(framebuffer).c_str(), att_index);
                                     }
                                 }
-                                ++view_index;
+                                ++att_index;
                             }
                             if (enabled_features.core11.protectedMemory == VK_TRUE) {
                                 if (ValidateProtectedImage(cb_node, image_view_state->image_state.get(), caller,
@@ -1717,8 +1717,8 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         cmd_info.function = function;
         if (cb_node->activeFramebuffer) {
             cmd_info.framebuffer = cb_node->activeFramebuffer->framebuffer;
-            cmd_info.attachments = cb_node->activeFramebuffer->GetUsedAttachments(*cb_node->activeRenderPass->createInfo.pSubpasses,
-                                                                                  cb_node->imagelessFramebufferAttachments);
+            cmd_info.attachments = cb_node->active_attachments;
+            cmd_info.subpasses = cb_node->active_subpasses;
         }
         cb_node->validate_descriptorsets_in_queuesubmit[set_].emplace_back(cmd_info);
     }

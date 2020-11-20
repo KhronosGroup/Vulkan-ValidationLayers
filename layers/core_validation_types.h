@@ -1243,7 +1243,7 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkPipelineBindPoint bind_point)
     return LvlBindPoint(~0U);
 }
 
-struct ATTACHMENT_INFO;
+struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct CMD_BUFFER_STATE : public BASE_NODE {
@@ -1278,8 +1278,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
         std::string function;
         std::vector<std::pair<const uint32_t, DescriptorRequirement>> binding_infos;
         VkFramebuffer framebuffer;
-        std::vector<ATTACHMENT_INFO> attachments;  // vector index is attachment index. If the view is VK_NULL_HANDLE(0),
-                                                   // it means the attachment isn't used in this command.
+        std::shared_ptr<std::vector<SUBPASS_INFO>> subpasses;
+        std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> attachments;
     };
     std::unordered_map<VkDescriptorSet, std::vector<CmdDrawDispatchInfo>> validate_descriptorsets_in_queuesubmit;
 
@@ -1292,6 +1292,10 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
     std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
+    std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
+    std::shared_ptr<std::vector<IMAGE_VIEW_STATE*>> active_attachments;
+    std::set<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_states;
+
     VkSubpassContents activeSubpassContents;
     uint32_t active_render_pass_device_mask;
     uint32_t activeSubpass;
@@ -1347,8 +1351,6 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     // Used for Best Practices tracking
     uint32_t small_indexed_draw_call_count;
-
-    std::vector<IMAGE_VIEW_STATE *> imagelessFramebufferAttachments;
 
     bool transform_feedback_active{false};
 };
@@ -1408,12 +1410,12 @@ struct MT_FB_ATTACHMENT_INFO {
     VkImage image;
 };
 
-struct ATTACHMENT_INFO {
+struct SUBPASS_INFO {
+    bool used;
     VkImageUsageFlagBits usage;
     VkImageLayout layout;
-    IMAGE_VIEW_STATE* view_state;
 
-    ATTACHMENT_INFO() : usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), view_state(nullptr) {}
+    SUBPASS_INFO() : used(false), usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED) {}
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {
@@ -1424,10 +1426,6 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
     std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_state;
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
-
-    // vector index is attachment index. If view is VK_NULL_HANDLE(0), it means the attachment isn't used in this command.
-    std::vector<ATTACHMENT_INFO> GetUsedAttachments(const safe_VkSubpassDescription2 &subpasses,
-                                                    const std::vector<IMAGE_VIEW_STATE *> &imagelessFramebufferAttachments);
 };
 
 struct SHADER_MODULE_STATE;

@@ -176,7 +176,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageBarrierAttachment(const char* funcName, CMD_BUFFER_STATE const* cb_state,
                                         const FRAMEBUFFER_STATE* framebuffer, uint32_t active_subpass,
                                         const safe_VkSubpassDescription2& sub_desc, const VkRenderPass rp_handle,
-                                        uint32_t img_index, const VkImageMemoryBarrier& img_barrier) const;
+                                        uint32_t img_index, const VkImageMemoryBarrier& img_barrier,
+                                        const CMD_BUFFER_STATE* primary_cb_state = nullptr) const;
     static bool ValidateConcurrentBarrierAtSubmit(const ValidationStateTracker* state_data, const QUEUE_STATE* queue_data,
                                                   const char* func_name, const CMD_BUFFER_STATE* cb_state,
                                                   const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
@@ -388,12 +389,13 @@ class CoreChecks : public ValidationStateTracker {
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const BindingReqMap& bindings,
                            const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node,
-                           const std::vector<ATTACHMENT_INFO>& attachments, const char* caller,
-                           const DrawDispatchVuid& vuids) const;
+                           const std::vector<IMAGE_VIEW_STATE*>* attachments, const std::vector<SUBPASS_INFO>& subpasses,
+                           const char* caller, const DrawDispatchVuid& vuids) const;
     bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets,
                                           std::pair<const uint32_t, DescriptorRequirement>& binding_info, VkFramebuffer framebuffer,
-                                          const std::vector<ATTACHMENT_INFO>& attachments, const char* caller,
+                                          const std::vector<IMAGE_VIEW_STATE*>* attachments,
+                                          const std::vector<SUBPASS_INFO>& subpasses, const char* caller,
                                           const DrawDispatchVuid& vuids) const;
 
     // Validate contents of a CopyUpdate
@@ -526,7 +528,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
                                        const FRAMEBUFFER_STATE* framebuffer, uint32_t fb_attachment, const VkRect2D& render_area,
-                                       uint32_t rect_count, const VkClearRect* clear_rects) const;
+                                       uint32_t rect_count, const VkClearRect* clear_rects,
+                                       const CMD_BUFFER_STATE* primary_cb_state = nullptr) const;
 
     template <typename ImageCopyRegionType>
     bool ValidateImageCopyData(const uint32_t regionCount, const ImageCopyRegionType* ic_regions, const IMAGE_STATE* src_state,

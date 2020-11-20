@@ -962,7 +962,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if ((ds_attachment != nullptr) && (fb_state != nullptr)) {
                 const uint32_t attachment = ds_attachment->attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
-                    const IMAGE_VIEW_STATE *imageview_state = GetAttachmentImageViewState(pCB, fb_state, attachment);
+                    const auto *imageview_state = GetActiveAttachmentImageViewState(pCB, attachment);
                     if (imageview_state != nullptr) {
                         const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
                         if (image_state != nullptr) {
@@ -1085,30 +1085,31 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     }
 
     bool result = false;
-    std::vector<ATTACHMENT_INFO> attachments;
 
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
         // First check flag states
         result |= ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
 
         if (cb_node->activeRenderPass && cb_node->activeFramebuffer) {
-            const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
-            attachments = cb_node->activeFramebuffer->GetUsedAttachments(subpass, cb_node->imagelessFramebufferAttachments);
 
             // Verify attachments for unprotected/protected command buffer.
-            if (enabled_features.core11.protectedMemory == VK_TRUE) {
-                for (const auto &att : attachments) {
-                    if (att.view_state) {
+            if (enabled_features.core11.protectedMemory == VK_TRUE && cb_node->active_attachments) {
+                uint32_t i = 0;
+                for (const auto &view_state : *cb_node->active_attachments.get()) {
+                    const auto &subpass = cb_node->active_subpasses->at(i);
+                    if (subpass.used && view_state && !view_state->destroyed) {
+
                         std::string image_desc = "Image is ";
-                        image_desc.append(string_VkImageUsageFlagBits(att.usage));
+                        image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
                         // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
-                        if (att.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
-                            result |= ValidateUnprotectedImage(cb_node, att.view_state->image_state.get(), function,
+                        if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
+                            result |= ValidateUnprotectedImage(cb_node, view_state->image_state.get(), function,
                                                                 vuid.protected_command_buffer, image_desc.c_str());
                         }
-                        result |= ValidateProtectedImage(cb_node, att.view_state->image_state.get(), function,
+                        result |= ValidateProtectedImage(cb_node, view_state->image_state.get(), function,
                                                             vuid.unprotected_command_buffer, image_desc.c_str());
                     }
+                    ++i;
                 }
             }
         }
@@ -1187,11 +1188,13 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                         state.per_set[setIndex].validated_set_binding_req_map.begin(),
                                         state.per_set[setIndex].validated_set_binding_req_map.end(),
                                         std::inserter(delta_reqs, delta_reqs.begin()));
-                    result |= ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                attachments, function, vuid);
+                    result |=
+                        ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
+                                          cb_node->active_attachments.get(), *cb_node->active_subpasses.get(), function, vuid);
                 } else {
-                    result |= ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                attachments, function, vuid);
+                    result |=
+                        ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
+                                          cb_node->active_attachments.get(), *cb_node->active_subpasses.get(), function, vuid);
                 }
             }
         }
@@ -2826,9 +2829,9 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::string error;
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding_info,
-                                                                     cmd_info.framebuffer, cmd_info.attachments,
-                                                                     function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
+                            skip |= ValidateDescriptorSetBindingData(
+                                cb_node, set_node, dynamicOffsets, binding_info, cmd_info.framebuffer, cmd_info.attachments.get(),
+                                *cmd_info.subpasses.get(), function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }
                 }
@@ -5599,7 +5602,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             const auto attachment = subpass_desc->pColorAttachments[i].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
 
-            const IMAGE_VIEW_STATE *imageview_state = GetAttachmentImageViewState(cb_state, fb_state, attachment);
+            const auto *imageview_state = GetActiveAttachmentImageViewState(cb_state, attachment);
             if (!imageview_state) continue;
 
             const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
@@ -6712,7 +6715,8 @@ static VkPipelineStageFlagBits GetLogicallyLatestGraphicsPipelineStage(VkPipelin
 bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER_STATE const *cb_state,
                                                 const FRAMEBUFFER_STATE *framebuffer, uint32_t active_subpass,
                                                 const safe_VkSubpassDescription2 &sub_desc, const VkRenderPass rp_handle,
-                                                uint32_t img_index, const VkImageMemoryBarrier &img_barrier) const {
+                                                uint32_t img_index, const VkImageMemoryBarrier &img_barrier,
+                                                const CMD_BUFFER_STATE *primary_cb_state) const {
     bool skip = false;
     const auto *fb_state = framebuffer;
     assert(fb_state);
@@ -6724,7 +6728,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
     // Verify that a framebuffer image matches barrier image
     const auto attachmentCount = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
-        auto view_state = GetAttachmentImageViewState(cb_state, fb_state, attachment);
+        auto view_state = GetActiveAttachmentImageViewState(cb_state, attachment, primary_cb_state);
         if (view_state && (img_bar_image == view_state->create_info.image)) {
             image_match = true;
             attach_index = attachment;
@@ -7625,7 +7629,7 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const char *fun
             cb_state->cmd_execute_commands_functions.emplace_back(
                 [=](const CMD_BUFFER_STATE *primary_cb, const FRAMEBUFFER_STATE *fb) {
                     return ValidateImageBarrierAttachment(func_name, cb_state, fb, active_subpass, sub_desc, rp_state->renderPass,
-                                                          i, img_barrier);
+                                                          i, img_barrier, primary_cb);
                 });
         }
     }
