@@ -3531,23 +3531,33 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer 
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                                uint32_t count, uint32_t stride) const {
+                                                                uint32_t drawCount, uint32_t stride) const {
     bool skip = false;
 
-    if (!physical_device_features.multiDrawIndirect && ((count > 1))) {
+    if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError(device, "VUID-vkCmdDrawIndirect-drawCount-02718",
-                         "CmdDrawIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", count);
+                         "CmdDrawIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", drawCount);
+    }
+    if (drawCount > device_limits.maxDrawIndirectCount) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-02719",
+            "CmdDrawIndirect(): drawCount (%u) is not less than or equal to the maximum allowed (%u).", drawCount,
+            device_limits.maxDrawIndirectCount);
     }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                       VkDeviceSize offset, uint32_t count, uint32_t stride) const {
+                                                                       VkDeviceSize offset, uint32_t drawCount, uint32_t stride) const {
     bool skip = false;
-    if (!physical_device_features.multiDrawIndirect && ((count > 1))) {
+    if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |=
             LogError(device, "VUID-vkCmdDrawIndexedIndirect-drawCount-02718",
-                     "CmdDrawIndexedIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", count);
+                     "CmdDrawIndexedIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", drawCount);
+    }
+    if (drawCount > device_limits.maxDrawIndirectCount) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-02719",
+            "CmdDrawIndexedIndirect(): drawCount (%u) is not less than or equal to the maximum allowed (%u).", drawCount,
+            device_limits.maxDrawIndirectCount);
     }
     return skip;
 }
@@ -4144,7 +4154,11 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCom
             commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718",
             "vkCmdDrawMeshTasksIndirectNV(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", drawCount);
     }
-
+    if (drawCount > device_limits.maxDrawIndirectCount) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02719",
+            "vkCmdDrawMeshTasksIndirectNV: drawCount (%u) is not less than or equal to the maximum allowed (%u).", drawCount,
+            device_limits.maxDrawIndirectCount);
+    }
     return skip;
 }
 
