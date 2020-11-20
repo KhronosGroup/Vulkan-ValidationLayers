@@ -190,71 +190,6 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     return NormalizeSubresourceRange(create_info, init_range);
 }
 
-std::vector<ATTACHMENT_INFO> FRAMEBUFFER_STATE::GetUsedAttachments(
-    const safe_VkSubpassDescription2 &subpasses, const std::vector<IMAGE_VIEW_STATE *> &imagelessFramebufferAttachments) {
-    std::vector<ATTACHMENT_INFO> attachment_views(createInfo.attachmentCount);
-
-    const bool imageless = (createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) ? true : false;
-
-    for (uint32_t index = 0; index < subpasses.inputAttachmentCount; ++index) {
-        const uint32_t attachment_index = subpasses.pInputAttachments[index].attachment;
-        if (attachment_index != VK_ATTACHMENT_UNUSED) {
-            attachment_views[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-            attachment_views[attachment_index].layout = subpasses.pInputAttachments[index].layout;
-            if (imageless) {
-                if (!imagelessFramebufferAttachments[attachment_index]->destroyed)
-                    attachment_views[attachment_index].view_state = imagelessFramebufferAttachments[attachment_index];
-            } else {
-                if (!attachments_view_state[attachment_index]->destroyed)
-                    attachment_views[attachment_index].view_state = attachments_view_state[attachment_index].get();
-            }
-        }
-    }
-    for (uint32_t index = 0; index < subpasses.colorAttachmentCount; ++index) {
-        const uint32_t attachment_index = subpasses.pColorAttachments[index].attachment;
-        if (attachment_index != VK_ATTACHMENT_UNUSED) {
-            attachment_views[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            attachment_views[attachment_index].layout = subpasses.pColorAttachments[index].layout;
-            if (imageless) {
-                if (!imagelessFramebufferAttachments[attachment_index]->destroyed)
-                    attachment_views[attachment_index].view_state = imagelessFramebufferAttachments[attachment_index];
-            } else {
-                if (!attachments_view_state[attachment_index]->destroyed)
-                    attachment_views[attachment_index].view_state = attachments_view_state[attachment_index].get();
-            }
-        }
-        if (subpasses.pResolveAttachments) {
-            const uint32_t attachment_index2 = subpasses.pResolveAttachments[index].attachment;
-            if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
-                attachment_views[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-                attachment_views[attachment_index2].layout = subpasses.pResolveAttachments[index].layout;
-                if (imageless) {
-                    if (!imagelessFramebufferAttachments[attachment_index2]->destroyed)
-                        attachment_views[attachment_index2].view_state = imagelessFramebufferAttachments[attachment_index2];
-                } else {
-                    if (!attachments_view_state[attachment_index2]->destroyed)
-                        attachment_views[attachment_index2].view_state = attachments_view_state[attachment_index2].get();
-                }
-            }
-        }
-    }
-    if (subpasses.pDepthStencilAttachment) {
-        const uint32_t attachment_index = subpasses.pDepthStencilAttachment->attachment;
-        if (attachment_index != VK_ATTACHMENT_UNUSED) {
-            attachment_views[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            attachment_views[attachment_index].layout = subpasses.pDepthStencilAttachment->layout;
-            if (imageless) {
-                if (!imagelessFramebufferAttachments[attachment_index]->destroyed)
-                    attachment_views[attachment_index].view_state = imagelessFramebufferAttachments[attachment_index];
-            } else {
-                if (!attachments_view_state[attachment_index]->destroyed)
-                    attachment_views[attachment_index].view_state = attachments_view_state[attachment_index].get();
-            }
-        }
-    }
-    return attachment_views;
-}
-
 IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo)
     : image(img),
       safe_create_info(pCreateInfo),
@@ -819,14 +754,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                                const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        IMAGE_VIEW_STATE *image_view = nullptr;
-        if (pFramebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
-            const auto attachment_info =
-                lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pCB->activeRenderPassBeginInfo.pNext);
-            if (attachment_info) image_view = GetImageViewState(attachment_info->pAttachments[ref.attachment]);
-        } else {
-            image_view = GetAttachmentImageViewState(pCB, pFramebuffer, ref.attachment);
-        }
+        IMAGE_VIEW_STATE *
+            image_view = GetActiveAttachmentImageViewState(pCB, ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(ref.pNext);
@@ -865,14 +794,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        IMAGE_VIEW_STATE *view_state = nullptr;
-        if (framebuffer_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
-            const auto attachment_info =
-                lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(cb_state->activeRenderPassBeginInfo.pNext);
-            if (attachment_info) view_state = GetImageViewState(attachment_info->pAttachments[i]);
-        } else {
-            view_state = GetAttachmentImageViewState(cb_state, framebuffer_state, i);
-        }
+        auto *view_state = GetActiveAttachmentImageViewState(cb_state, i);
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
@@ -1494,14 +1416,8 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
 
     const VkRenderPassCreateInfo2KHR *pRenderPassInfo = renderPass->createInfo.ptr();
     if (framebuffer_state) {
-        IMAGE_VIEW_STATE *view_state = nullptr;
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
-            if (framebuffer_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
-                const auto attachment_info = lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBegin->pNext);
-                if (attachment_info) view_state = GetImageViewState(attachment_info->pAttachments[i]);
-            } else {
-                view_state = GetAttachmentImageViewState(pCB, framebuffer_state, i);
-            }
+            auto *view_state = GetActiveAttachmentImageViewState(pCB, i);
             if (view_state) {
                 VkImageLayout stencil_layout = kInvalidLayout;
                 const auto *attachment_description_stencil_layout =
@@ -3297,12 +3213,12 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
 
 bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
                                                const FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment,
-                                               const VkRect2D &render_area, uint32_t rect_count,
-                                               const VkClearRect *clear_rects) const {
+                                               const VkRect2D &render_area, uint32_t rect_count, const VkClearRect *clear_rects,
+                                               const CMD_BUFFER_STATE *primary_cb_state) const {
     bool skip = false;
     const IMAGE_VIEW_STATE *image_view_state = nullptr;
     if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
-        image_view_state = GetAttachmentImageViewState(GetCBState(command_buffer), framebuffer, fb_attachment);
+        image_view_state = GetActiveAttachmentImageViewState(GetCBState(command_buffer), fb_attachment, primary_cb_state);
     }
 
     for (uint32_t j = 0; j < rect_count; j++) {
@@ -3434,7 +3350,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) &&
                 (fb_attachment < framebuffer->createInfo.attachmentCount)) {
                 const IMAGE_VIEW_STATE *image_view_state =
-                    GetAttachmentImageViewState(GetCBState(commandBuffer), framebuffer, fb_attachment);
+                    GetActiveAttachmentImageViewState(GetCBState(commandBuffer), fb_attachment);
                 if (image_view_state != nullptr) {
                     skip |= ValidateProtectedImage(cb_node, image_view_state->image_state.get(), "vkCmdClearAttachments()",
                                                    "VUID-vkCmdClearAttachments-commandBuffer-02504");
@@ -3479,7 +3395,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                     const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
                     bool skip = false;
                     skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, fb, fb_attachment, render_area, rectCount,
-                                                         clear_rect_copy->data());
+                                                         clear_rect_copy->data(), prim_cb);
                     return skip;
                 };
                 cb_node->cmd_execute_commands_functions.emplace_back(val_fn);

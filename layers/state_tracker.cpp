@@ -772,28 +772,25 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuff
 }
 
 // Get the image viewstate for a given framebuffer attachment
-IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(CMD_BUFFER_STATE *cb, FRAMEBUFFER_STATE *framebuffer,
-                                                                      uint32_t index) {
-    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
-        assert(index < cb->imagelessFramebufferAttachments.size());
-        return cb->imagelessFramebufferAttachments[index];
+IMAGE_VIEW_STATE *ValidationStateTracker::GetActiveAttachmentImageViewState(const CMD_BUFFER_STATE *cb, uint32_t index,
+                                                                            const CMD_BUFFER_STATE *primary_cb) {
+    if (primary_cb) {
+        assert(primary_cb->active_attachments && index != VK_ATTACHMENT_UNUSED && (index < primary_cb->active_attachments->size()));
+        return primary_cb->active_attachments->at(index);
     }
-    assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
-    const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
-    return GetImageViewState(image_view);
+    assert(cb->active_attachments && index != VK_ATTACHMENT_UNUSED && (index < cb->active_attachments->size()));
+    return cb->active_attachments->at(index);
 }
 
 // Get the image viewstate for a given framebuffer attachment
-const IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(const CMD_BUFFER_STATE *cb,
-                                                                            const FRAMEBUFFER_STATE *framebuffer,
-                                                                            uint32_t index) const {
-    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
-        assert(index < cb->imagelessFramebufferAttachments.size());
-        return cb->imagelessFramebufferAttachments[index];
+const IMAGE_VIEW_STATE *ValidationStateTracker::GetActiveAttachmentImageViewState(const CMD_BUFFER_STATE *cb, uint32_t index,
+                                                                                  const CMD_BUFFER_STATE *primary_cb) const {
+    if (primary_cb) {
+        assert(primary_cb->active_attachments && index != VK_ATTACHMENT_UNUSED && (index < primary_cb->active_attachments->size()));
+        return primary_cb->active_attachments->at(index);
     }
-    assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
-    const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
-    return GetImageViewState(image_view);
+    assert(cb->active_attachments && index != VK_ATTACHMENT_UNUSED && (index < cb->active_attachments->size()));
+    return cb->active_attachments->at(index);
 }
 
 void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state) {
@@ -1427,6 +1424,9 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
 
         pCB->activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();
         pCB->activeRenderPass = nullptr;
+        pCB->active_attachments = nullptr;
+        pCB->active_subpasses = nullptr;
+        pCB->attachments_view_states.clear();
         pCB->activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
         pCB->activeSubpass = 0;
         pCB->broken_bindings.clear();
@@ -3447,12 +3447,70 @@ void ValidationStateTracker::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, F
     AddCommandBufferBinding(fb_state->cb_bindings, VulkanTypedHandle(fb_state->framebuffer, kVulkanObjectTypeFramebuffer, fb_state),
                             cb_state);
     // If imageless fb, skip fb binding
-    if (fb_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return;
+    if (!fb_state || fb_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return;
     const uint32_t attachmentCount = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
-        auto view_state = GetAttachmentImageViewState(cb_state, fb_state, attachment);
+        auto view_state = GetActiveAttachmentImageViewState(cb_state, attachment);
         if (view_state) {
             AddCommandBufferBindingImageView(cb_state, view_state);
+        }
+    }
+}
+
+void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses) {
+    for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
+        const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
+        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            subpasses[attachment_index].used = true;
+            subpasses[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+            subpasses[attachment_index].layout = subpass.pInputAttachments[index].layout;
+        }
+    }
+
+    for (uint32_t index = 0; index < subpass.colorAttachmentCount; ++index) {
+        const uint32_t attachment_index = subpass.pColorAttachments[index].attachment;
+        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            subpasses[attachment_index].used = true;
+            subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            subpasses[attachment_index].layout = subpass.pColorAttachments[index].layout;
+        }
+        if (subpass.pResolveAttachments) {
+            const uint32_t attachment_index2 = subpass.pResolveAttachments[index].attachment;
+            if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
+                subpasses[attachment_index2].used = true;
+                subpasses[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                subpasses[attachment_index2].layout = subpass.pResolveAttachments[index].layout;
+            }
+        }
+    }
+
+    if (subpass.pDepthStencilAttachment) {
+        const uint32_t attachment_index = subpass.pDepthStencilAttachment->attachment;
+        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            subpasses[attachment_index].used = true;
+            subpasses[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            subpasses[attachment_index].layout = subpass.pDepthStencilAttachment->layout;
+        }
+    }
+}
+
+void UpdateAttachmentsView(ValidationStateTracker &tracker, CMD_BUFFER_STATE &cb_state, const FRAMEBUFFER_STATE &framebuffer,
+                           const VkRenderPassBeginInfo *pRenderPassBegin) {
+    auto &attachments = *(cb_state.active_attachments.get());
+    const bool imageless = (framebuffer.createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) ? true : false;
+    const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
+    if (pRenderPassBegin) attachment_info_struct = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+
+    for (uint32_t i = 0; i < attachments.size(); ++i) {
+        if (imageless) {
+            if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
+                auto res = cb_state.attachments_view_states.insert(
+                    tracker.GetShared<IMAGE_VIEW_STATE>(attachment_info_struct->pAttachments[i]));
+                attachments[i] = res.first->get();
+            }
+        } else {
+            auto res = cb_state.attachments_view_states.insert(framebuffer.attachments_view_state[i]);
+            attachments[i] = res.first->get();
         }
     }
 }
@@ -3461,20 +3519,7 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
                                                              const VkCommandBufferBeginInfo *pBeginInfo) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return;
-    if (cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-        // Secondary Command Buffer
-        const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
-        if (pInfo) {
-            if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-                assert(pInfo->renderPass);
-                auto framebuffer = GetFramebufferState(pInfo->framebuffer);
-                if (framebuffer) {
-                    // Connect this framebuffer and its children to this cmdBuffer
-                    AddFramebufferBinding(cb_state, framebuffer);
-                }
-            }
-        }
-    }
+
     if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
         ResetCommandBufferState(commandBuffer);
     }
@@ -3489,9 +3534,29 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
             (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
             cb_state->activeRenderPass = GetShared<RENDER_PASS_STATE>(cb_state->beginInfo.pInheritanceInfo->renderPass);
             cb_state->activeSubpass = cb_state->beginInfo.pInheritanceInfo->subpass;
+
             if (cb_state->beginInfo.pInheritanceInfo->framebuffer) {
                 cb_state->activeFramebuffer = GetShared<FRAMEBUFFER_STATE>(cb_state->beginInfo.pInheritanceInfo->framebuffer);
-                if (cb_state->activeFramebuffer) cb_state->framebuffers.insert(cb_state->activeFramebuffer);
+                cb_state->active_subpasses = nullptr;
+                cb_state->active_attachments = nullptr;
+
+                if (cb_state->activeFramebuffer) {
+                    cb_state->framebuffers.insert(cb_state->activeFramebuffer);
+
+                    // Set cb_state->active_subpasses
+                    cb_state->active_subpasses =
+                        std::make_shared<std::vector<SUBPASS_INFO>>(cb_state->activeFramebuffer->createInfo.attachmentCount);
+                    const auto &subpass = cb_state->activeRenderPass->createInfo.pSubpasses[cb_state->activeSubpass];
+                    UpdateSubpassAttachments(subpass, *cb_state->active_subpasses);
+
+                    // Set cb_state->active_attachments & cb_state->attachments_view_states
+                    cb_state->active_attachments =
+                        std::make_shared<std::vector<IMAGE_VIEW_STATE *>>(cb_state->activeFramebuffer->createInfo.attachmentCount);
+                    UpdateAttachmentsView(*this, *cb_state, *cb_state->activeFramebuffer, nullptr);
+
+                    // Connect this framebuffer and its children to this cmdBuffer
+                    AddFramebufferBinding(cb_state, cb_state->activeFramebuffer.get());
+                }
             }
         }
     }
@@ -4594,9 +4659,7 @@ void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer comma
         cb_state->activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo(pRenderPassBegin);
         cb_state->activeSubpass = 0;
         cb_state->activeSubpassContents = contents;
-        if (framebuffer) cb_state->framebuffers.insert(framebuffer);
-        // Connect this framebuffer and its children to this cmdBuffer
-        AddFramebufferBinding(cb_state, framebuffer.get());
+
         // Connect this RP to cmdBuffer
         AddCommandBufferBinding(
             render_pass_state->cb_bindings,
@@ -4609,13 +4672,25 @@ void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer comma
             cb_state->active_render_pass_device_mask = cb_state->initial_device_mask;
         }
 
-        cb_state->imagelessFramebufferAttachments.clear();
-        auto attachment_info_struct = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
-        if (attachment_info_struct) {
-            for (uint32_t i = 0; i < attachment_info_struct->attachmentCount; i++) {
-                IMAGE_VIEW_STATE *img_view_state = GetImageViewState(attachment_info_struct->pAttachments[i]);
-                cb_state->imagelessFramebufferAttachments.push_back(img_view_state);
-            }
+        cb_state->active_subpasses = nullptr;
+        cb_state->active_attachments = nullptr;
+
+        if (framebuffer) {
+            cb_state->framebuffers.insert(framebuffer);
+
+            // Set cb_state->active_subpasses
+            cb_state->active_subpasses =
+                std::make_shared<std::vector<SUBPASS_INFO>>(cb_state->activeFramebuffer->createInfo.attachmentCount);
+            const auto &subpass = cb_state->activeRenderPass->createInfo.pSubpasses[cb_state->activeSubpass];
+            UpdateSubpassAttachments(subpass, *cb_state->active_subpasses);
+
+            // Set cb_state->active_attachments & cb_state->attachments_view_states
+            cb_state->active_attachments =
+                std::make_shared<std::vector<IMAGE_VIEW_STATE *>>(framebuffer->createInfo.attachmentCount);
+            UpdateAttachmentsView(*this, *cb_state, *cb_state->activeFramebuffer, pRenderPassBegin);
+
+            // Connect this framebuffer and its children to this cmdBuffer
+            AddFramebufferBinding(cb_state, framebuffer.get());
         }
     }
 }
@@ -4659,6 +4734,16 @@ void ValidationStateTracker::RecordCmdNextSubpass(VkCommandBuffer commandBuffer,
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->activeSubpass++;
     cb_state->activeSubpassContents = contents;
+
+    // Update cb_state->active_subpasses
+    if (cb_state->activeRenderPass && cb_state->activeFramebuffer) {
+        cb_state->active_subpasses = nullptr;
+        cb_state->active_subpasses =
+            std::make_shared<std::vector<SUBPASS_INFO>>(cb_state->activeFramebuffer->createInfo.attachmentCount);
+
+        const auto &subpass = cb_state->activeRenderPass->createInfo.pSubpasses[cb_state->activeSubpass];
+        UpdateSubpassAttachments(subpass, *cb_state->active_subpasses);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
@@ -4680,9 +4765,10 @@ void ValidationStateTracker::PostCallRecordCmdNextSubpass2(VkCommandBuffer comma
 void ValidationStateTracker::RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->activeRenderPass = nullptr;
+    cb_state->active_attachments = nullptr;
+    cb_state->active_subpasses = nullptr;
     cb_state->activeSubpass = 0;
     cb_state->activeFramebuffer = VK_NULL_HANDLE;
-    cb_state->imagelessFramebufferAttachments.clear();
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
