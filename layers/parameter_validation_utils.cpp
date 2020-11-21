@@ -692,14 +692,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "vkCreateImage(): if pCreateInfo->imageType is VK_IMAGE_TYPE_3D, pCreateInfo->arrayLayers must be 1.");
         }
 
-        // If multi-sample, validate type, usage, tiling and mip levels.
-        if ((pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) &&
-            ((pCreateInfo->imageType != VK_IMAGE_TYPE_2D) || (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
-             (pCreateInfo->mipLevels != 1) || (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL))) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02257",
-                             "vkCreateImage(): Multi-sample image with incompatible type, usage, tiling, or mips.");
-        }
-
         if (0 != (pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                              VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -950,6 +942,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "feature is not enabled, image samples must be VK_SAMPLE_COUNT_1_BIT");
         }
 
+        std::vector<uint64_t> image_create_drm_format_modifiers;
         if (device_extensions.vk_ext_image_drm_format_modifier) {
             const auto drm_format_mod_list = lvl_find_in_chain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
             const auto drm_format_mod_explict =
@@ -961,6 +954,12 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                      "vkCreateImage(): Tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext must have "
                                      "either VkImageDrmFormatModifierListCreateInfoEXT or "
                                      "VkImageDrmFormatModifierExplicitCreateInfoEXT in the pNext chain");
+                } else if (drm_format_mod_list != nullptr) {
+                    image_create_drm_format_modifiers.push_back(drm_format_mod_explict->drmFormatModifier);
+                } else if (drm_format_mod_list != nullptr) {
+                    for (uint32_t i = 0; i < drm_format_mod_list->drmFormatModifierCount; i++) {
+                        image_create_drm_format_modifiers.push_back(*drm_format_mod_list->pDrmFormatModifiers);
+                    }
                 }
             } else if ((drm_format_mod_list != nullptr) || (drm_format_mod_explict != nullptr)) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02262",
@@ -968,6 +967,33 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "VkImageDrmFormatModifierListCreateInfoEXT or VkImageDrmFormatModifierExplicitCreateInfoEXT "
                                  "in the pNext chain");
             }
+        }
+
+        static const uint64_t DRM_FORMAT_MOD_LINEAR = 0;
+        bool image_create_maybe_linear = false;
+        if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {
+            image_create_maybe_linear = true;
+        } else if (pCreateInfo->tiling == VK_IMAGE_TILING_OPTIMAL) {
+            image_create_maybe_linear = false;
+        } else if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            image_create_maybe_linear =
+                (std::find(image_create_drm_format_modifiers.begin(), image_create_drm_format_modifiers.end(),
+                           DRM_FORMAT_MOD_LINEAR) != image_create_drm_format_modifiers.end());
+        }
+
+        // If multi-sample, validate type, usage, tiling and mip levels.
+        if ((pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) &&
+            ((pCreateInfo->imageType != VK_IMAGE_TYPE_2D) || (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
+             (pCreateInfo->mipLevels != 1) || image_create_maybe_linear)) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02257",
+                             "vkCreateImage(): Multi-sample image with incompatible type, usage, tiling, or mips.");
+        }
+
+        if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) &&
+            ((pCreateInfo->mipLevels != 1) || (pCreateInfo->arrayLayers != 1) || (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) ||
+             image_create_maybe_linear)) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02259",
+                             "vkCreateImage(): Multi-device image with incompatible type, usage, tiling, or mips.");
         }
 
         if (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
