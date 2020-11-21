@@ -645,7 +645,8 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     alloc_info.memoryTypeIndex = 0;
 
     // Ensure memory is big enough for both bindings
-    static const VkDeviceSize allocation_size = 0x10000;
+    // Want to make sure entire allocation is aligned to atom size
+    static const VkDeviceSize allocation_size = atom_size * 64;
     alloc_info.allocationSize = allocation_size;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
@@ -728,6 +729,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         mmr.offset = 3;  // Not a multiple of atom_size
         mmr.size = VK_WHOLE_SIZE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-offset-00687");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01389");
         vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
         m_errorMonitor->VerifyFound();
 
