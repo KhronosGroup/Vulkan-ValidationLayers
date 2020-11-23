@@ -28,7 +28,7 @@
       "sub_dir": "SPIRV-Headers",
       "build_dir": "SPIRV-Headers/build",
       "install_dir": "SPIRV-Headers/build/install",
-      "commit": "master"
+      "commit": "5ab5c96198f30804a6a29961b8905f292a8ae600"
     }
   ],
   "install_names" : {
