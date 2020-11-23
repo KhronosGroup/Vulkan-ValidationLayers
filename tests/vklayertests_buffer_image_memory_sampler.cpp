@@ -8279,6 +8279,28 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
         image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
         image_ci.mipLevels = 2;
         CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
+
+        image_ci = safe_image_ci;
+        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+        image_ci.mipLevels = 1;
+        image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
+
+        image_ci = safe_image_ci;
+        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_ci.mipLevels = 2;
+        image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
+
+        image_ci = safe_image_ci;
+        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_ci.mipLevels = 1;
+        image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+        image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
     }
 
     {
