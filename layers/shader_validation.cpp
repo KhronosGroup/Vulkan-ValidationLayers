@@ -2227,9 +2227,9 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
         // Should be non-EXT token, but Android SPIRV-Headers are out of date, and the token value is the same anyway
         {spv::CapabilityPhysicalStorageBufferAddressesEXT, {"VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::bufferDeviceAddress", &VkPhysicalDeviceVulkan12Features::bufferDeviceAddress, &DeviceExtensions::vk_khr_buffer_device_address}},
 
-        {spv::CapabilityRayTracingProvisionalKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayTracing", &VkPhysicalDeviceRayTracingFeaturesKHR::rayTracing, &DeviceExtensions::vk_khr_ray_tracing}},
-        {spv::CapabilityRayQueryProvisionalKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayQuery", &VkPhysicalDeviceRayTracingFeaturesKHR::rayQuery, &DeviceExtensions::vk_khr_ray_tracing}},
-        {spv::CapabilityRayTraversalPrimitiveCullingProvisionalKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingPrimitiveCulling", &VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingPrimitiveCulling, &DeviceExtensions::vk_khr_ray_tracing}},
+        {spv::CapabilityRayTracingKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayTracing", &VkPhysicalDeviceRayTracingFeaturesKHR::rayTracing, &DeviceExtensions::vk_khr_ray_tracing}},
+        {spv::CapabilityRayQueryKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayQuery", &VkPhysicalDeviceRayTracingFeaturesKHR::rayQuery, &DeviceExtensions::vk_khr_ray_tracing}},
+        {spv::CapabilityRayTraversalPrimitiveCullingKHR, {"VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingPrimitiveCulling", &VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingPrimitiveCulling, &DeviceExtensions::vk_khr_ray_tracing}},
     };
     // clang-format on
 
