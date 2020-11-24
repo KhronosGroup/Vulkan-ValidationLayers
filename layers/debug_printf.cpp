@@ -484,7 +484,7 @@ void snprintf_with_malloc(std::stringstream &shader_message, DPFSubstring substr
     free(buffer);
 }
 
-void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, VkPipelineBindPoint pipeline_bind_point,
+void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                              uint32_t operation_index, uint32_t *const debug_output_buffer) {
     // Word         Content
     //    0         Size of output record, including this word
@@ -569,7 +569,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
             std::string source_message;
             UtilGenerateStageMessage(&debug_output_buffer[index], stage_message);
             UtilGenerateCommonMessage(report_data, command_buffer, &debug_output_buffer[index], shader_module_handle,
-                                      pipeline_handle, pipeline_bind_point, operation_index, common_message);
+                                      pipeline_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
             UtilGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
                 std::cout << "UNASSIGNED-DEBUG-PRINTF " << common_message.c_str() << " " << stage_message.c_str() << " "

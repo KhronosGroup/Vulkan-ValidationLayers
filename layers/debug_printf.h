@@ -163,7 +163,7 @@ class DebugPrintf : public ValidationStateTracker {
                                          void* csm_state_data) override;
     std::vector<DPFSubstring> ParseFormatString(std::string format_string);
     std::string FindFormatString(std::vector<unsigned int> pgm, uint32_t string_id);
-    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, VkPipelineBindPoint pipeline_bind_point,
+    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance) override;

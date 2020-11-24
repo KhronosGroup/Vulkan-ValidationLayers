@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020 The Khronos Group Inc.
- * Copyright (c) 2020 Valve Corporation
- * Copyright (c) 2020 LunarG, Inc.
- * Copyright (c) 2020 Google, Inc.
+ * Copyright (c) 2020-2021 The Khronos Group Inc.
+ * Copyright (c) 2020-2021 Valve Corporation
+ * Copyright (c) 2020-2021 LunarG, Inc.
+ * Copyright (c) 2020-2021 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -656,16 +656,19 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         char const *expected_error;
     };
     std::vector<TestCase> tests;
-    tests.push_back({false, 8, "Descriptor size is 16 units (bytes or texels) and highest unit accessed was 35"});
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
     // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
     // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    tests.push_back({false, 0, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 67"});
+    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
     tests.push_back({true, 1, ""});
-    tests.push_back({false, 2, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 5"});
-    tests.push_back({false, 3, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 5"});
-    tests.push_back({false, 4, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 5"});
-    tests.push_back({true, 5, ""});
-    tests.push_back({true, 6, ""});
+    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
 
     for (const auto &test : tests) {
         uint32_t *data = (uint32_t *)offset_buffer.memory().map();
@@ -797,7 +800,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
                          0,  // binding offset
                          4,  // binding range
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
-                         "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
+                         "Descriptor size is 4 and highest byte accessed was 7");
 }
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
@@ -815,7 +818,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
                          0,  // binding offset
                          4,  // binding range
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource,
-                         "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
+                         "Descriptor size is 4 and highest byte accessed was 7");
 }
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
@@ -839,7 +842,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
                          0,   // binding offset
                          64,  // binding range
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
-                         "Descriptor size is 64 units (bytes or texels) and highest unit accessed was 67");
+                         "Descriptor size is 64 and highest byte accessed was 67");
 }
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) {
@@ -864,7 +867,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
                          0,  // binding offset
                          8,  // binding range
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
-                         "Descriptor size is 8 units (bytes or texels) and highest unit accessed was 19");
+                         "Descriptor size is 8 and highest byte accessed was 19");
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {

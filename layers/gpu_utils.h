@@ -1,6 +1,6 @@
-/* Copyright (c) 2020 The Khronos Group Inc.
- * Copyright (c) 2020 Valve Corporation
- * Copyright (c) 2020 LunarG, Inc.
+/* Copyright (c) 2020-2021 The Khronos Group Inc.
+ * Copyright (c) 2020-2021 Valve Corporation
+ * Copyright (c) 2020-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -366,7 +366,7 @@ void UtilProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, 
 
             VkResult result = vmaMapMemory(object_ptr->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&pData);
             if (result == VK_SUCCESS) {
-                object_ptr->AnalyzeAndGenerateMessages(cb_node->commandBuffer, queue, buffer_info.pipeline_bind_point,
+                object_ptr->AnalyzeAndGenerateMessages(cb_node->commandBuffer, queue, buffer_info,
                                                        operation_index, (uint32_t *)pData);
                 vmaUnmapMemory(object_ptr->vmaAllocator, buffer_info.output_mem_block.allocation);
             }
