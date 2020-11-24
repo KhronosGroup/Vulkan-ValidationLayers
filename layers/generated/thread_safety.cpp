@@ -4714,8 +4714,6 @@ void ThreadSafety::PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     FinishReadObjectParentInstance(device, "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void ThreadSafety::PreCallRecordCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
@@ -4796,7 +4794,6 @@ void ThreadSafety::PostCallRecordDeferredOperationJoinKHR(
     FinishReadObjectParentInstance(device, "vkDeferredOperationJoinKHR");
     FinishReadObject(operation, "vkDeferredOperationJoinKHR");
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
@@ -4848,9 +4845,6 @@ void ThreadSafety::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetPipelineExecutableInternalRepresentationsKHR");
 }
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordCmdCopyBuffer2KHR(
     VkCommandBuffer                             commandBuffer,
@@ -5995,28 +5989,9 @@ void ThreadSafety::PostCallRecordCreateAccelerationStructureNV(
     }
 }
 
-void ThreadSafety::PreCallRecordDestroyAccelerationStructureKHR(
-    VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator) {
-    StartReadObjectParentInstance(device, "vkDestroyAccelerationStructureKHR");
-    StartWriteObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
-    // Host access to accelerationStructure must be externally synchronized
-}
-
-void ThreadSafety::PostCallRecordDestroyAccelerationStructureKHR(
-    VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator) {
-    FinishReadObjectParentInstance(device, "vkDestroyAccelerationStructureKHR");
-    FinishWriteObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
-    DestroyObject(accelerationStructure);
-    // Host access to accelerationStructure must be externally synchronized
-}
-
 void ThreadSafety::PreCallRecordDestroyAccelerationStructureNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroyAccelerationStructureNV");
     StartWriteObject(accelerationStructure, "vkDestroyAccelerationStructureNV");
@@ -6025,7 +6000,7 @@ void ThreadSafety::PreCallRecordDestroyAccelerationStructureNV(
 
 void ThreadSafety::PostCallRecordDestroyAccelerationStructureNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroyAccelerationStructureNV");
     FinishWriteObject(accelerationStructure, "vkDestroyAccelerationStructureNV");
@@ -6047,32 +6022,17 @@ void ThreadSafety::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     FinishReadObjectParentInstance(device, "vkGetAccelerationStructureMemoryRequirementsNV");
 }
 
-void ThreadSafety::PreCallRecordBindAccelerationStructureMemoryKHR(
-    VkDevice                                    device,
-    uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) {
-    StartReadObjectParentInstance(device, "vkBindAccelerationStructureMemoryKHR");
-}
-
-void ThreadSafety::PostCallRecordBindAccelerationStructureMemoryKHR(
-    VkDevice                                    device,
-    uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
-    VkResult                                    result) {
-    FinishReadObjectParentInstance(device, "vkBindAccelerationStructureMemoryKHR");
-}
-
 void ThreadSafety::PreCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) {
+    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
     StartReadObjectParentInstance(device, "vkBindAccelerationStructureMemoryNV");
 }
 
 void ThreadSafety::PostCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
+    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkBindAccelerationStructureMemoryNV");
 }
@@ -6083,8 +6043,8 @@ void ThreadSafety::PreCallRecordCmdBuildAccelerationStructureNV(
     VkBuffer                                    instanceData,
     VkDeviceSize                                instanceOffset,
     VkBool32                                    update,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkBuffer                                    scratch,
     VkDeviceSize                                scratchOffset) {
     StartWriteObject(commandBuffer, "vkCmdBuildAccelerationStructureNV");
@@ -6101,8 +6061,8 @@ void ThreadSafety::PostCallRecordCmdBuildAccelerationStructureNV(
     VkBuffer                                    instanceData,
     VkDeviceSize                                instanceOffset,
     VkBool32                                    update,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkBuffer                                    scratch,
     VkDeviceSize                                scratchOffset) {
     FinishWriteObject(commandBuffer, "vkCmdBuildAccelerationStructureNV");
@@ -6115,8 +6075,8 @@ void ThreadSafety::PostCallRecordCmdBuildAccelerationStructureNV(
 
 void ThreadSafety::PreCallRecordCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkCopyAccelerationStructureModeKHR          mode) {
     StartWriteObject(commandBuffer, "vkCmdCopyAccelerationStructureNV");
     StartReadObject(dst, "vkCmdCopyAccelerationStructureNV");
@@ -6126,8 +6086,8 @@ void ThreadSafety::PreCallRecordCmdCopyAccelerationStructureNV(
 
 void ThreadSafety::PostCallRecordCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkCopyAccelerationStructureModeKHR          mode) {
     FinishWriteObject(commandBuffer, "vkCmdCopyAccelerationStructureNV");
     FinishReadObject(dst, "vkCmdCopyAccelerationStructureNV");
@@ -6260,7 +6220,7 @@ void ThreadSafety::PostCallRecordGetRayTracingShaderGroupHandlesNV(
 
 void ThreadSafety::PreCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     size_t                                      dataSize,
     void*                                       pData) {
     StartReadObjectParentInstance(device, "vkGetAccelerationStructureHandleNV");
@@ -6269,7 +6229,7 @@ void ThreadSafety::PreCallRecordGetAccelerationStructureHandleNV(
 
 void ThreadSafety::PostCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     size_t                                      dataSize,
     void*                                       pData,
     VkResult                                    result) {
@@ -6277,44 +6237,10 @@ void ThreadSafety::PostCallRecordGetAccelerationStructureHandleNV(
     FinishReadObject(accelerationStructure, "vkGetAccelerationStructureHandleNV");
 }
 
-void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
-    VkQueryType                                 queryType,
-    VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery) {
-    StartWriteObject(commandBuffer, "vkCmdWriteAccelerationStructuresPropertiesKHR");
-    if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
-            StartReadObject(pAccelerationStructures[index], "vkCmdWriteAccelerationStructuresPropertiesKHR");
-        }
-    }
-    StartReadObject(queryPool, "vkCmdWriteAccelerationStructuresPropertiesKHR");
-    // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
-    VkQueryType                                 queryType,
-    VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery) {
-    FinishWriteObject(commandBuffer, "vkCmdWriteAccelerationStructuresPropertiesKHR");
-    if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
-            FinishReadObject(pAccelerationStructures[index], "vkCmdWriteAccelerationStructuresPropertiesKHR");
-        }
-    }
-    FinishReadObject(queryPool, "vkCmdWriteAccelerationStructuresPropertiesKHR");
-    // Host access to commandBuffer must be externally synchronized
-}
-
 void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    const VkAccelerationStructureNV*            pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery) {
@@ -6331,7 +6257,7 @@ void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
 void ThreadSafety::PostCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    const VkAccelerationStructureNV*            pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery) {
@@ -7268,8 +7194,6 @@ void ThreadSafety::PostCallRecordCreateDirectFBSurfaceEXT(
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -7290,114 +7214,135 @@ void ThreadSafety::PostCallRecordCreateAccelerationStructureKHR(
     }
 }
 
-void ThreadSafety::PreCallRecordGetAccelerationStructureMemoryRequirementsKHR(
+void ThreadSafety::PreCallRecordDestroyAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
-    StartReadObjectParentInstance(device, "vkGetAccelerationStructureMemoryRequirementsKHR");
+    VkAccelerationStructureKHR                  accelerationStructure,
+    const VkAllocationCallbacks*                pAllocator) {
+    StartReadObjectParentInstance(device, "vkDestroyAccelerationStructureKHR");
+    StartWriteObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
+    // Host access to accelerationStructure must be externally synchronized
 }
 
-void ThreadSafety::PostCallRecordGetAccelerationStructureMemoryRequirementsKHR(
+void ThreadSafety::PostCallRecordDestroyAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
-    FinishReadObjectParentInstance(device, "vkGetAccelerationStructureMemoryRequirementsKHR");
+    VkAccelerationStructureKHR                  accelerationStructure,
+    const VkAllocationCallbacks*                pAllocator) {
+    FinishReadObjectParentInstance(device, "vkDestroyAccelerationStructureKHR");
+    FinishWriteObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
+    DestroyObject(accelerationStructure);
+    // Host access to accelerationStructure must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordCmdBuildAccelerationStructureKHR(
+void ThreadSafety::PreCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {
-    StartWriteObject(commandBuffer, "vkCmdBuildAccelerationStructureKHR");
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
+    StartWriteObject(commandBuffer, "vkCmdBuildAccelerationStructuresKHR");
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PostCallRecordCmdBuildAccelerationStructureKHR(
+void ThreadSafety::PostCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {
-    FinishWriteObject(commandBuffer, "vkCmdBuildAccelerationStructureKHR");
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
+    FinishWriteObject(commandBuffer, "vkCmdBuildAccelerationStructuresKHR");
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordCmdBuildAccelerationStructureIndirectKHR(
+void ThreadSafety::PreCallRecordCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
-    VkBuffer                                    indirectBuffer,
-    VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride) {
-    StartWriteObject(commandBuffer, "vkCmdBuildAccelerationStructureIndirectKHR");
-    StartReadObject(indirectBuffer, "vkCmdBuildAccelerationStructureIndirectKHR");
+    uint32_t                                    infoCount,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkDeviceAddress*                      pIndirectDeviceAddresses,
+    const uint32_t*                             pIndirectStrides,
+    const uint32_t* const*                      ppMaxPrimitiveCounts) {
+    StartWriteObject(commandBuffer, "vkCmdBuildAccelerationStructuresIndirectKHR");
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PostCallRecordCmdBuildAccelerationStructureIndirectKHR(
+void ThreadSafety::PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
-    VkBuffer                                    indirectBuffer,
-    VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride) {
-    FinishWriteObject(commandBuffer, "vkCmdBuildAccelerationStructureIndirectKHR");
-    FinishReadObject(indirectBuffer, "vkCmdBuildAccelerationStructureIndirectKHR");
+    uint32_t                                    infoCount,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkDeviceAddress*                      pIndirectDeviceAddresses,
+    const uint32_t*                             pIndirectStrides,
+    const uint32_t* const*                      ppMaxPrimitiveCounts) {
+    FinishWriteObject(commandBuffer, "vkCmdBuildAccelerationStructuresIndirectKHR");
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordBuildAccelerationStructureKHR(
+void ThreadSafety::PreCallRecordBuildAccelerationStructuresKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {
-    StartReadObjectParentInstance(device, "vkBuildAccelerationStructureKHR");
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
+    StartReadObjectParentInstance(device, "vkBuildAccelerationStructuresKHR");
+    StartReadObject(deferredOperation, "vkBuildAccelerationStructuresKHR");
 }
 
-void ThreadSafety::PostCallRecordBuildAccelerationStructureKHR(
+void ThreadSafety::PostCallRecordBuildAccelerationStructuresKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
     VkResult                                    result) {
-    FinishReadObjectParentInstance(device, "vkBuildAccelerationStructureKHR");
+    FinishReadObjectParentInstance(device, "vkBuildAccelerationStructuresKHR");
+    FinishReadObject(deferredOperation, "vkBuildAccelerationStructuresKHR");
 }
 
 void ThreadSafety::PreCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureInfoKHR*   pInfo) {
     StartReadObjectParentInstance(device, "vkCopyAccelerationStructureKHR");
+    StartReadObject(deferredOperation, "vkCopyAccelerationStructureKHR");
 }
 
 void ThreadSafety::PostCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureInfoKHR*   pInfo,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkCopyAccelerationStructureKHR");
+    FinishReadObject(deferredOperation, "vkCopyAccelerationStructureKHR");
 }
 
 void ThreadSafety::PreCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     StartReadObjectParentInstance(device, "vkCopyAccelerationStructureToMemoryKHR");
+    StartReadObject(deferredOperation, "vkCopyAccelerationStructureToMemoryKHR");
 }
 
 void ThreadSafety::PostCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkCopyAccelerationStructureToMemoryKHR");
+    FinishReadObject(deferredOperation, "vkCopyAccelerationStructureToMemoryKHR");
 }
 
 void ThreadSafety::PreCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     StartReadObjectParentInstance(device, "vkCopyMemoryToAccelerationStructureKHR");
+    StartReadObject(deferredOperation, "vkCopyMemoryToAccelerationStructureKHR");
 }
 
 void ThreadSafety::PostCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkCopyMemoryToAccelerationStructureKHR");
+    FinishReadObject(deferredOperation, "vkCopyMemoryToAccelerationStructureKHR");
 }
 
 void ThreadSafety::PreCallRecordWriteAccelerationStructuresPropertiesKHR(
@@ -7475,61 +7420,6 @@ void ThreadSafety::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordCmdTraceRaysKHR(
-    VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    uint32_t                                    width,
-    uint32_t                                    height,
-    uint32_t                                    depth) {
-    StartWriteObject(commandBuffer, "vkCmdTraceRaysKHR");
-    // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PostCallRecordCmdTraceRaysKHR(
-    VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    uint32_t                                    width,
-    uint32_t                                    height,
-    uint32_t                                    depth) {
-    FinishWriteObject(commandBuffer, "vkCmdTraceRaysKHR");
-    // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PreCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
-    StartReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
-    StartReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
-}
-
-void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result) {
-    FinishReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
-    FinishReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            CreateObject(pPipelines[index]);
-        }
-    }
-}
-
 void ThreadSafety::PreCallRecordGetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
@@ -7541,6 +7431,131 @@ void ThreadSafety::PostCallRecordGetAccelerationStructureDeviceAddressKHR(
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
     VkDeviceAddress                             result) {
     FinishReadObjectParentInstance(device, "vkGetAccelerationStructureDeviceAddressKHR");
+}
+
+void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    accelerationStructureCount,
+    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery) {
+    StartWriteObject(commandBuffer, "vkCmdWriteAccelerationStructuresPropertiesKHR");
+    if (pAccelerationStructures) {
+        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+            StartReadObject(pAccelerationStructures[index], "vkCmdWriteAccelerationStructuresPropertiesKHR");
+        }
+    }
+    StartReadObject(queryPool, "vkCmdWriteAccelerationStructuresPropertiesKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    accelerationStructureCount,
+    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery) {
+    FinishWriteObject(commandBuffer, "vkCmdWriteAccelerationStructuresPropertiesKHR");
+    if (pAccelerationStructures) {
+        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+            FinishReadObject(pAccelerationStructures[index], "vkCmdWriteAccelerationStructuresPropertiesKHR");
+        }
+    }
+    FinishReadObject(queryPool, "vkCmdWriteAccelerationStructuresPropertiesKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+    VkDevice                                    device,
+    const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
+    VkAccelerationStructureCompatibilityKHR*    pCompatibility) {
+    StartReadObjectParentInstance(device, "vkGetDeviceAccelerationStructureCompatibilityKHR");
+}
+
+void ThreadSafety::PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+    VkDevice                                    device,
+    const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
+    VkAccelerationStructureCompatibilityKHR*    pCompatibility) {
+    FinishReadObjectParentInstance(device, "vkGetDeviceAccelerationStructureCompatibilityKHR");
+}
+
+void ThreadSafety::PreCallRecordGetAccelerationStructureBuildSizesKHR(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+    const uint32_t*                             pMaxPrimitiveCounts,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
+    StartReadObjectParentInstance(device, "vkGetAccelerationStructureBuildSizesKHR");
+}
+
+void ThreadSafety::PostCallRecordGetAccelerationStructureBuildSizesKHR(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+    const uint32_t*                             pMaxPrimitiveCounts,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
+    FinishReadObjectParentInstance(device, "vkGetAccelerationStructureBuildSizesKHR");
+}
+
+void ThreadSafety::PreCallRecordCmdTraceRaysKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    uint32_t                                    width,
+    uint32_t                                    height,
+    uint32_t                                    depth) {
+    StartWriteObject(commandBuffer, "vkCmdTraceRaysKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdTraceRaysKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    uint32_t                                    width,
+    uint32_t                                    height,
+    uint32_t                                    depth) {
+    FinishWriteObject(commandBuffer, "vkCmdTraceRaysKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) {
+    StartReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
+    StartReadObject(deferredOperation, "vkCreateRayTracingPipelinesKHR");
+    StartReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
+}
+
+void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCreateRayTracingPipelinesKHR");
+    FinishReadObject(deferredOperation, "vkCreateRayTracingPipelinesKHR");
+    FinishReadObject(pipelineCache, "vkCreateRayTracingPipelinesKHR");
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            CreateObject(pPipelines[index]);
+        }
+    }
 }
 
 void ThreadSafety::PreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
@@ -7568,40 +7583,54 @@ void ThreadSafety::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR
 
 void ThreadSafety::PreCallRecordCmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    VkBuffer                                    buffer,
-    VkDeviceSize                                offset) {
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    VkDeviceAddress                             indirectDeviceAddress) {
     StartWriteObject(commandBuffer, "vkCmdTraceRaysIndirectKHR");
-    StartReadObject(buffer, "vkCmdTraceRaysIndirectKHR");
     // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    VkBuffer                                    buffer,
-    VkDeviceSize                                offset) {
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    VkDeviceAddress                             indirectDeviceAddress) {
     FinishWriteObject(commandBuffer, "vkCmdTraceRaysIndirectKHR");
-    FinishReadObject(buffer, "vkCmdTraceRaysIndirectKHR");
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+void ThreadSafety::PreCallRecordGetRayTracingShaderGroupStackSizeKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version) {
-    StartReadObjectParentInstance(device, "vkGetDeviceAccelerationStructureCompatibilityKHR");
+    VkPipeline                                  pipeline,
+    uint32_t                                    group,
+    VkShaderGroupShaderKHR                      groupShader) {
+    StartReadObjectParentInstance(device, "vkGetRayTracingShaderGroupStackSizeKHR");
+    StartReadObject(pipeline, "vkGetRayTracingShaderGroupStackSizeKHR");
 }
 
-void ThreadSafety::PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+void ThreadSafety::PostCallRecordGetRayTracingShaderGroupStackSizeKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version,
-    VkResult                                    result) {
-    FinishReadObjectParentInstance(device, "vkGetDeviceAccelerationStructureCompatibilityKHR");
+    VkPipeline                                  pipeline,
+    uint32_t                                    group,
+    VkShaderGroupShaderKHR                      groupShader) {
+    FinishReadObjectParentInstance(device, "vkGetRayTracingShaderGroupStackSizeKHR");
+    FinishReadObject(pipeline, "vkGetRayTracingShaderGroupStackSizeKHR");
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
+
+void ThreadSafety::PreCallRecordCmdSetRayTracingPipelineStackSizeKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    pipelineStackSize) {
+    StartWriteObject(commandBuffer, "vkCmdSetRayTracingPipelineStackSizeKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    pipelineStackSize) {
+    FinishWriteObject(commandBuffer, "vkCmdSetRayTracingPipelineStackSizeKHR");
+    // Host access to commandBuffer must be externally synchronized
+}
