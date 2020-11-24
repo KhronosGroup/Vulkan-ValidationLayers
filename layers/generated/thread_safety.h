@@ -325,6 +325,7 @@ public:
     // Special entry to allow tracking of command pool Reset and Destroy
     counter<VkCommandPool> c_VkCommandPoolContents;
     counter<VkAccelerationStructureKHR> c_VkAccelerationStructureKHR;
+    counter<VkAccelerationStructureNV> c_VkAccelerationStructureNV;
     counter<VkBuffer> c_VkBuffer;
     counter<VkBufferView> c_VkBufferView;
     counter<VkCommandPool> c_VkCommandPool;
@@ -377,6 +378,7 @@ public:
 
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
           c_VkAccelerationStructureKHR("VkAccelerationStructureKHR", kVulkanObjectTypeAccelerationStructureKHR, this),
+          c_VkAccelerationStructureNV("VkAccelerationStructureNV", kVulkanObjectTypeAccelerationStructureNV, this),
           c_VkBuffer("VkBuffer", kVulkanObjectTypeBuffer, this),
           c_VkBufferView("VkBufferView", kVulkanObjectTypeBufferView, this),
           c_VkCommandPool("VkCommandPool", kVulkanObjectTypeCommandPool, this),
@@ -465,6 +467,7 @@ WRAPPER_PARENT_INSTANCE(VkInstance)
 WRAPPER(VkQueue)
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 WRAPPER(VkAccelerationStructureKHR)
+WRAPPER(VkAccelerationStructureNV)
 WRAPPER(VkBuffer)
 WRAPPER(VkBufferView)
 WRAPPER(VkCommandPool)
@@ -3313,8 +3316,6 @@ void PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
     const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PreCallRecordCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
@@ -3361,7 +3362,6 @@ void PostCallRecordDeferredOperationJoinKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
     VkResult                                    result);
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
@@ -3401,9 +3401,6 @@ void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     uint32_t*                                   pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations,
     VkResult                                    result);
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void PreCallRecordCmdCopyBuffer2KHR(
     VkCommandBuffer                             commandBuffer,
@@ -4125,24 +4122,14 @@ void PostCallRecordCreateAccelerationStructureNV(
     VkAccelerationStructureNV*                  pAccelerationStructure,
     VkResult                                    result);
 
-void PreCallRecordDestroyAccelerationStructureKHR(
-    VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator);
-
-void PostCallRecordDestroyAccelerationStructureKHR(
-    VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator);
-
 void PreCallRecordDestroyAccelerationStructureNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     const VkAllocationCallbacks*                pAllocator);
 
 void PostCallRecordDestroyAccelerationStructureNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     const VkAllocationCallbacks*                pAllocator);
 
 void PreCallRecordGetAccelerationStructureMemoryRequirementsNV(
@@ -4155,26 +4142,15 @@ void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
     VkMemoryRequirements2KHR*                   pMemoryRequirements);
 
-void PreCallRecordBindAccelerationStructureMemoryKHR(
-    VkDevice                                    device,
-    uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos);
-
-void PostCallRecordBindAccelerationStructureMemoryKHR(
-    VkDevice                                    device,
-    uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
-    VkResult                                    result);
-
 void PreCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos);
+    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos);
 
 void PostCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
+    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
     VkResult                                    result);
 
 void PreCallRecordCmdBuildAccelerationStructureNV(
@@ -4183,8 +4159,8 @@ void PreCallRecordCmdBuildAccelerationStructureNV(
     VkBuffer                                    instanceData,
     VkDeviceSize                                instanceOffset,
     VkBool32                                    update,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkBuffer                                    scratch,
     VkDeviceSize                                scratchOffset);
 
@@ -4194,21 +4170,21 @@ void PostCallRecordCmdBuildAccelerationStructureNV(
     VkBuffer                                    instanceData,
     VkDeviceSize                                instanceOffset,
     VkBool32                                    update,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkBuffer                                    scratch,
     VkDeviceSize                                scratchOffset);
 
 void PreCallRecordCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkCopyAccelerationStructureModeKHR          mode);
 
 void PostCallRecordCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkCopyAccelerationStructureModeKHR          mode);
 
 void PreCallRecordCmdTraceRaysNV(
@@ -4298,37 +4274,21 @@ void PostCallRecordGetRayTracingShaderGroupHandlesNV(
 
 void PreCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     size_t                                      dataSize,
     void*                                       pData);
 
 void PostCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     size_t                                      dataSize,
     void*                                       pData,
     VkResult                                    result);
 
-void PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
-    VkQueryType                                 queryType,
-    VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery);
-
-void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
-    VkQueryType                                 queryType,
-    VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery);
-
 void PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    const VkAccelerationStructureNV*            pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery);
@@ -4336,7 +4296,7 @@ void PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
 void PostCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    const VkAccelerationStructureNV*            pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery);
@@ -4928,8 +4888,6 @@ void PostCallRecordCreateDirectFBSurfaceEXT(
     VkResult                                    result);
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -4943,79 +4901,89 @@ void PostCallRecordCreateAccelerationStructureKHR(
     VkAccelerationStructureKHR*                 pAccelerationStructure,
     VkResult                                    result);
 
-void PreCallRecordGetAccelerationStructureMemoryRequirementsKHR(
+void PreCallRecordDestroyAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
+    VkAccelerationStructureKHR                  accelerationStructure,
+    const VkAllocationCallbacks*                pAllocator);
 
-void PostCallRecordGetAccelerationStructureMemoryRequirementsKHR(
+void PostCallRecordDestroyAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
+    VkAccelerationStructureKHR                  accelerationStructure,
+    const VkAllocationCallbacks*                pAllocator);
 
-void PreCallRecordCmdBuildAccelerationStructureKHR(
+void PreCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
 
-void PostCallRecordCmdBuildAccelerationStructureKHR(
+void PostCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
 
-void PreCallRecordCmdBuildAccelerationStructureIndirectKHR(
+void PreCallRecordCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
-    VkBuffer                                    indirectBuffer,
-    VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride);
+    uint32_t                                    infoCount,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkDeviceAddress*                      pIndirectDeviceAddresses,
+    const uint32_t*                             pIndirectStrides,
+    const uint32_t* const*                      ppMaxPrimitiveCounts);
 
-void PostCallRecordCmdBuildAccelerationStructureIndirectKHR(
+void PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
-    VkBuffer                                    indirectBuffer,
-    VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride);
+    uint32_t                                    infoCount,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkDeviceAddress*                      pIndirectDeviceAddresses,
+    const uint32_t*                             pIndirectStrides,
+    const uint32_t* const*                      ppMaxPrimitiveCounts);
 
-void PreCallRecordBuildAccelerationStructureKHR(
+void PreCallRecordBuildAccelerationStructuresKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
 
-void PostCallRecordBuildAccelerationStructureKHR(
+void PostCallRecordBuildAccelerationStructuresKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
     VkResult                                    result);
 
 void PreCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureInfoKHR*   pInfo);
 
 void PostCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureInfoKHR*   pInfo,
     VkResult                                    result);
 
 void PreCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo);
 
 void PostCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
     VkResult                                    result);
 
 void PreCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo);
 
 void PostCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
     VkResult                                    result);
 
@@ -5062,43 +5030,6 @@ void PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo);
 
-void PreCallRecordCmdTraceRaysKHR(
-    VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    uint32_t                                    width,
-    uint32_t                                    height,
-    uint32_t                                    depth);
-
-void PostCallRecordCmdTraceRaysKHR(
-    VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    uint32_t                                    width,
-    uint32_t                                    height,
-    uint32_t                                    depth);
-
-void PreCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines);
-
-void PostCallRecordCreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result);
-
 void PreCallRecordGetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo);
@@ -5107,6 +5038,85 @@ void PostCallRecordGetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
     VkDeviceAddress                             result);
+
+void PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    accelerationStructureCount,
+    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery);
+
+void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    accelerationStructureCount,
+    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery);
+
+void PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+    VkDevice                                    device,
+    const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
+    VkAccelerationStructureCompatibilityKHR*    pCompatibility);
+
+void PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+    VkDevice                                    device,
+    const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
+    VkAccelerationStructureCompatibilityKHR*    pCompatibility);
+
+void PreCallRecordGetAccelerationStructureBuildSizesKHR(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+    const uint32_t*                             pMaxPrimitiveCounts,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo);
+
+void PostCallRecordGetAccelerationStructureBuildSizesKHR(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+    const uint32_t*                             pMaxPrimitiveCounts,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo);
+
+void PreCallRecordCmdTraceRaysKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    uint32_t                                    width,
+    uint32_t                                    height,
+    uint32_t                                    depth);
+
+void PostCallRecordCmdTraceRaysKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    uint32_t                                    width,
+    uint32_t                                    height,
+    uint32_t                                    depth);
+
+void PreCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines);
+
+void PostCallRecordCreateRayTracingPipelinesKHR(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result);
 
 void PreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -5127,29 +5137,37 @@ void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
 
 void PreCallRecordCmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    VkBuffer                                    buffer,
-    VkDeviceSize                                offset);
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    VkDeviceAddress                             indirectDeviceAddress);
 
 void PostCallRecordCmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    VkBuffer                                    buffer,
-    VkDeviceSize                                offset);
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    VkDeviceAddress                             indirectDeviceAddress);
 
-void PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+void PreCallRecordGetRayTracingShaderGroupStackSizeKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version);
+    VkPipeline                                  pipeline,
+    uint32_t                                    group,
+    VkShaderGroupShaderKHR                      groupShader);
 
-void PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
+void PostCallRecordGetRayTracingShaderGroupStackSizeKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version,
-    VkResult                                    result);
-#endif // VK_ENABLE_BETA_EXTENSIONS
+    VkPipeline                                  pipeline,
+    uint32_t                                    group,
+    VkShaderGroupShaderKHR                      groupShader);
+
+void PreCallRecordCmdSetRayTracingPipelineStackSizeKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    pipelineStackSize);
+
+void PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    pipelineStackSize);
 };

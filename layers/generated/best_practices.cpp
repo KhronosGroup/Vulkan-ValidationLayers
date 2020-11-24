@@ -1696,8 +1696,6 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(
     }
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
@@ -1711,10 +1709,6 @@ void BestPractices::PostCallRecordCreateDeferredOperationKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordGetDeferredOperationResultKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
@@ -1727,10 +1721,6 @@ void BestPractices::PostCallRecordGetDeferredOperationResultKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordDeferredOperationJoinKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
@@ -1742,8 +1732,6 @@ void BestPractices::PostCallRecordDeferredOperationJoinKHR(
         ValidateReturnCodes("vkDeferredOperationJoinKHR", result, error_codes, success_codes);
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
@@ -2201,23 +2189,10 @@ void BestPractices::PostCallRecordCreateAccelerationStructureNV(
     }
 }
 
-void BestPractices::PostCallRecordBindAccelerationStructureMemoryKHR(
-    VkDevice                                    device,
-    uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryKHR(device, bindInfoCount, pBindInfos, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkBindAccelerationStructureMemoryKHR", result, error_codes, success_codes);
-    }
-}
-
 void BestPractices::PostCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
+    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, result);
     if (result != VK_SUCCESS) {
@@ -2278,7 +2253,7 @@ void BestPractices::PostCallRecordGetRayTracingShaderGroupHandlesNV(
 
 void BestPractices::PostCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     size_t                                      dataSize,
     void*                                       pData,
     VkResult                                    result) {
@@ -2660,8 +2635,6 @@ void BestPractices::PostCallRecordCreateDirectFBSurfaceEXT(
 
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -2676,33 +2649,27 @@ void BestPractices::PostCallRecordCreateAccelerationStructureKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
-void BestPractices::PostCallRecordBuildAccelerationStructureKHR(
+void BestPractices::PostCallRecordBuildAccelerationStructuresKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
     VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos, result);
+    ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {VK_OPERATION_DEFERRED_KHR,VK_OPERATION_NOT_DEFERRED_KHR};
-        ValidateReturnCodes("vkBuildAccelerationStructureKHR", result, error_codes, success_codes);
+        ValidateReturnCodes("vkBuildAccelerationStructuresKHR", result, error_codes, success_codes);
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureInfoKHR*   pInfo,
     VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(device, pInfo, result);
+    ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {VK_OPERATION_DEFERRED_KHR,VK_OPERATION_NOT_DEFERRED_KHR};
@@ -2710,15 +2677,12 @@ void BestPractices::PostCallRecordCopyAccelerationStructureKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
     VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCopyAccelerationStructureToMemoryKHR(device, pInfo, result);
+    ValidationStateTracker::PostCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {VK_OPERATION_DEFERRED_KHR,VK_OPERATION_NOT_DEFERRED_KHR};
@@ -2726,25 +2690,18 @@ void BestPractices::PostCallRecordCopyAccelerationStructureToMemoryKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
     VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCopyMemoryToAccelerationStructureKHR(device, pInfo, result);
+    ValidationStateTracker::PostCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {VK_OPERATION_DEFERRED_KHR,VK_OPERATION_NOT_DEFERRED_KHR};
         ValidateReturnCodes("vkCopyMemoryToAccelerationStructureKHR", result, error_codes, success_codes);
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     VkDevice                                    device,
@@ -2763,12 +2720,9 @@ void BestPractices::PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     VkPipelineCache                             pipelineCache,
     uint32_t                                    createInfoCount,
     const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
@@ -2776,17 +2730,13 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(
     VkPipeline*                                 pPipelines,
     VkResult                                    result,
     void*                                       state_data) {
-    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
+    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS};
         static const std::vector<VkResult> success_codes = {VK_OPERATION_DEFERRED_KHR,VK_OPERATION_NOT_DEFERRED_KHR,VK_PIPELINE_COMPILE_REQUIRED_EXT};
         ValidateReturnCodes("vkCreateRayTracingPipelinesKHR", result, error_codes, success_codes);
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -2803,24 +2753,6 @@ void BestPractices::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKH
         ValidateReturnCodes("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", result, error_codes, success_codes);
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
-void BestPractices::PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
-    VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, version, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_INCOMPATIBLE_VERSION_KHR};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkGetDeviceAccelerationStructureCompatibilityKHR", result, error_codes, success_codes);
-    }
-}
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 
 

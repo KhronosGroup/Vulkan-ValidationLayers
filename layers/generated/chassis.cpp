@@ -651,6 +651,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     VkPipelineCache                             pipelineCache,
     uint32_t                                    createInfoCount,
     const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
@@ -664,21 +665,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(
     for (auto intercept : layer_data->object_dispatch) {
         crtpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos,
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
                                                                       pAllocator, pPipelines, &(crtpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+        intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                             pPipelines, &(crtpl_state[intercept->container_type]));
     }
 
-    VkResult result = DispatchCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+        intercept->PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                              pPipelines, result, &(crtpl_state[intercept->container_type]));
     }
     return result;
@@ -6937,7 +6938,6 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(
     return result;
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDeferredOperationKHR(
     VkDevice                                    device,
@@ -7049,7 +7049,6 @@ VKAPI_ATTR VkResult VKAPI_CALL DeferredOperationJoinKHR(
     }
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(
@@ -7124,8 +7123,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
     return result;
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 
 
@@ -8736,31 +8733,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureNV(
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(
-    VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
-        if (skip) return;
-    }
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PreCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
-    }
-    DispatchDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PostCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
-    }
-}
-
 VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
@@ -8802,33 +8777,10 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsNV(
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL BindAccelerationStructureMemoryKHR(
-    VkDevice                                    device,
-    uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateBindAccelerationStructureMemoryKHR(device, bindInfoCount, pBindInfos);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PreCallRecordBindAccelerationStructureMemoryKHR(device, bindInfoCount, pBindInfos);
-    }
-    VkResult result = DispatchBindAccelerationStructureMemoryKHR(device, bindInfoCount, pBindInfos);
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PostCallRecordBindAccelerationStructureMemoryKHR(device, bindInfoCount, pBindInfos, result);
-    }
-    return result;
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL BindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) {
+    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
@@ -8854,8 +8806,8 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(
     VkBuffer                                    instanceData,
     VkDeviceSize                                instanceOffset,
     VkBool32                                    update,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkBuffer                                    scratch,
     VkDeviceSize                                scratchOffset) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -8878,8 +8830,8 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
-    VkAccelerationStructureKHR                  dst,
-    VkAccelerationStructureKHR                  src,
+    VkAccelerationStructureNV                   dst,
+    VkAccelerationStructureNV                   src,
     VkCopyAccelerationStructureModeKHR          mode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
@@ -8987,7 +8939,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesNV(
 
 VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureHandleNV(
     VkDevice                                    device,
-    VkAccelerationStructureKHR                  accelerationStructure,
+    VkAccelerationStructureNV                   accelerationStructure,
     size_t                                      dataSize,
     void*                                       pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -9009,35 +8961,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureHandleNV(
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
-    VkQueryType                                 queryType,
-    VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = false;
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
-        if (skip) return;
-    }
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
-    }
-    DispatchCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
-    }
-}
-
 VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    accelerationStructureCount,
-    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    const VkAccelerationStructureNV*            pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery) {
@@ -10453,7 +10380,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
@@ -10479,161 +10405,166 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsKHR(
+VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
+    VkAccelerationStructureKHR                  accelerationStructure,
+    const VkAllocationCallbacks*                pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetAccelerationStructureMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
         if (skip) return;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordGetAccelerationStructureMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+        intercept->PreCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
     }
-    DispatchGetAccelerationStructureMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+    DispatchDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordGetAccelerationStructureMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+        intercept->PostCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureKHR(
+VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdBuildAccelerationStructureKHR(commandBuffer, infoCount, pInfos, ppOffsetInfos);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
         if (skip) return;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCmdBuildAccelerationStructureKHR(commandBuffer, infoCount, pInfos, ppOffsetInfos);
+        intercept->PreCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
     }
-    DispatchCmdBuildAccelerationStructureKHR(commandBuffer, infoCount, pInfos, ppOffsetInfos);
+    DispatchCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCmdBuildAccelerationStructureKHR(commandBuffer, infoCount, pInfos, ppOffsetInfos);
+        intercept->PostCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureIndirectKHR(
+VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
-    VkBuffer                                    indirectBuffer,
-    VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride) {
+    uint32_t                                    infoCount,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkDeviceAddress*                      pIndirectDeviceAddresses,
+    const uint32_t*                             pIndirectStrides,
+    const uint32_t* const*                      ppMaxPrimitiveCounts) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdBuildAccelerationStructureIndirectKHR(commandBuffer, pInfo, indirectBuffer, indirectOffset, indirectStride);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
         if (skip) return;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCmdBuildAccelerationStructureIndirectKHR(commandBuffer, pInfo, indirectBuffer, indirectOffset, indirectStride);
+        intercept->PreCallRecordCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
     }
-    DispatchCmdBuildAccelerationStructureIndirectKHR(commandBuffer, pInfo, indirectBuffer, indirectOffset, indirectStride);
+    DispatchCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCmdBuildAccelerationStructureIndirectKHR(commandBuffer, pInfo, indirectBuffer, indirectOffset, indirectStride);
+        intercept->PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL BuildAccelerationStructureKHR(
+VKAPI_ATTR VkResult VKAPI_CALL BuildAccelerationStructuresKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos);
+        intercept->PreCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
     }
-    VkResult result = DispatchBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos);
+    VkResult result = DispatchBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos, result);
+        intercept->PostCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos, result);
     }
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureInfoKHR*   pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCopyAccelerationStructureKHR(device, pInfo);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCopyAccelerationStructureKHR(device, deferredOperation, pInfo);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCopyAccelerationStructureKHR(device, pInfo);
+        intercept->PreCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo);
     }
-    VkResult result = DispatchCopyAccelerationStructureKHR(device, pInfo);
+    VkResult result = DispatchCopyAccelerationStructureKHR(device, deferredOperation, pInfo);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCopyAccelerationStructureKHR(device, pInfo, result);
+        intercept->PostCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, result);
     }
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCopyAccelerationStructureToMemoryKHR(device, pInfo);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCopyAccelerationStructureToMemoryKHR(device, pInfo);
+        intercept->PreCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
     }
-    VkResult result = DispatchCopyAccelerationStructureToMemoryKHR(device, pInfo);
+    VkResult result = DispatchCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCopyAccelerationStructureToMemoryKHR(device, pInfo, result);
+        intercept->PostCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, result);
     }
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCopyMemoryToAccelerationStructureKHR(device, pInfo);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCopyMemoryToAccelerationStructureKHR(device, pInfo);
+        intercept->PreCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
     }
-    VkResult result = DispatchCopyMemoryToAccelerationStructureKHR(device, pInfo);
+    VkResult result = DispatchCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCopyMemoryToAccelerationStructureKHR(device, pInfo, result);
+        intercept->PostCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, result);
     }
     return result;
 }
@@ -10728,33 +10659,6 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToAccelerationStructureKHR(
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(
-    VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    uint32_t                                    width,
-    uint32_t                                    height,
-    uint32_t                                    depth) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = false;
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
-        if (skip) return;
-    }
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PreCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
-    }
-    DispatchCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PostCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
-    }
-}
-
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
@@ -10775,6 +10679,105 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetAccelerationStructureDeviceAddressKHR(
         intercept->PostCallRecordGetAccelerationStructureDeviceAddressKHR(device, pInfo, result);
     }
     return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    accelerationStructureCount,
+    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+    }
+    DispatchCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceAccelerationStructureCompatibilityKHR(
+    VkDevice                                    device,
+    const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
+    VkAccelerationStructureCompatibilityKHR*    pCompatibility) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
+    }
+    DispatchGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+    const uint32_t*                             pMaxPrimitiveCounts,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+    }
+    DispatchGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+    }
+}
+
+
+VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    uint32_t                                    width,
+    uint32_t                                    height,
+    uint32_t                                    depth) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+    }
+    DispatchCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(
@@ -10805,52 +10808,74 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkStridedBufferRegionKHR*             pRaygenShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pMissShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
-    const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
-    VkBuffer                                    buffer,
-    VkDeviceSize                                offset) {
+    const VkStridedDeviceAddressRegionKHR*      pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
+    VkDeviceAddress                             indirectDeviceAddress) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, buffer, offset);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
         if (skip) return;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, buffer, offset);
+        intercept->PreCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
     }
-    DispatchCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, buffer, offset);
+    DispatchCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, buffer, offset);
+        intercept->PostCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL GetDeviceAccelerationStructureCompatibilityKHR(
+VKAPI_ATTR VkDeviceSize VKAPI_CALL GetRayTracingShaderGroupStackSizeKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version) {
+    VkPipeline                                  pipeline,
+    uint32_t                                    group,
+    VkShaderGroupShaderKHR                      groupShader) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->read_lock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(device, version);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
+        if (skip) return 0;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, version);
+        intercept->PreCallRecordGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
     }
-    VkResult result = DispatchGetDeviceAccelerationStructureCompatibilityKHR(device, version);
+    VkDeviceSize result = DispatchGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, version, result);
+        intercept->PostCallRecordGetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
     }
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    pipelineStackSize) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
+    }
+    DispatchCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
+    }
+}
+
 
 // Map of intercepted ApiName to its associated function data
 #ifdef _MSC_VER
@@ -11160,21 +11185,11 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetBufferDeviceAddressKHR", {kFuncTypeDev, (void*)GetBufferDeviceAddressKHR}},
     {"vkGetBufferOpaqueCaptureAddressKHR", {kFuncTypeDev, (void*)GetBufferOpaqueCaptureAddressKHR}},
     {"vkGetDeviceMemoryOpaqueCaptureAddressKHR", {kFuncTypeDev, (void*)GetDeviceMemoryOpaqueCaptureAddressKHR}},
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCreateDeferredOperationKHR", {kFuncTypeDev, (void*)CreateDeferredOperationKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkDestroyDeferredOperationKHR", {kFuncTypeDev, (void*)DestroyDeferredOperationKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetDeferredOperationMaxConcurrencyKHR", {kFuncTypeDev, (void*)GetDeferredOperationMaxConcurrencyKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetDeferredOperationResultKHR", {kFuncTypeDev, (void*)GetDeferredOperationResultKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkDeferredOperationJoinKHR", {kFuncTypeDev, (void*)DeferredOperationJoinKHR}},
-#endif
     {"vkGetPipelineExecutablePropertiesKHR", {kFuncTypeDev, (void*)GetPipelineExecutablePropertiesKHR}},
     {"vkGetPipelineExecutableStatisticsKHR", {kFuncTypeDev, (void*)GetPipelineExecutableStatisticsKHR}},
     {"vkGetPipelineExecutableInternalRepresentationsKHR", {kFuncTypeDev, (void*)GetPipelineExecutableInternalRepresentationsKHR}},
@@ -11266,10 +11281,8 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdSetViewportShadingRatePaletteNV", {kFuncTypeDev, (void*)CmdSetViewportShadingRatePaletteNV}},
     {"vkCmdSetCoarseSampleOrderNV", {kFuncTypeDev, (void*)CmdSetCoarseSampleOrderNV}},
     {"vkCreateAccelerationStructureNV", {kFuncTypeDev, (void*)CreateAccelerationStructureNV}},
-    {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureNV", {kFuncTypeDev, (void*)DestroyAccelerationStructureNV}},
     {"vkGetAccelerationStructureMemoryRequirementsNV", {kFuncTypeDev, (void*)GetAccelerationStructureMemoryRequirementsNV}},
-    {"vkBindAccelerationStructureMemoryKHR", {kFuncTypeDev, (void*)BindAccelerationStructureMemoryKHR}},
     {"vkBindAccelerationStructureMemoryNV", {kFuncTypeDev, (void*)BindAccelerationStructureMemoryNV}},
     {"vkCmdBuildAccelerationStructureNV", {kFuncTypeDev, (void*)CmdBuildAccelerationStructureNV}},
     {"vkCmdCopyAccelerationStructureNV", {kFuncTypeDev, (void*)CmdCopyAccelerationStructureNV}},
@@ -11278,7 +11291,6 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetRayTracingShaderGroupHandlesKHR", {kFuncTypeDev, (void*)GetRayTracingShaderGroupHandlesKHR}},
     {"vkGetRayTracingShaderGroupHandlesNV", {kFuncTypeDev, (void*)GetRayTracingShaderGroupHandlesNV}},
     {"vkGetAccelerationStructureHandleNV", {kFuncTypeDev, (void*)GetAccelerationStructureHandleNV}},
-    {"vkCmdWriteAccelerationStructuresPropertiesKHR", {kFuncTypeDev, (void*)CmdWriteAccelerationStructuresPropertiesKHR}},
     {"vkCmdWriteAccelerationStructuresPropertiesNV", {kFuncTypeDev, (void*)CmdWriteAccelerationStructuresPropertiesNV}},
     {"vkCompileDeferredNV", {kFuncTypeDev, (void*)CompileDeferredNV}},
     {"vkGetMemoryHostPointerPropertiesEXT", {kFuncTypeDev, (void*)GetMemoryHostPointerPropertiesEXT}},
@@ -11355,60 +11367,28 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     {"vkGetPhysicalDeviceDirectFBPresentationSupportEXT", {kFuncTypePdev, (void*)GetPhysicalDeviceDirectFBPresentationSupportEXT}},
 #endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkGetAccelerationStructureMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetAccelerationStructureMemoryRequirementsKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkCmdBuildAccelerationStructureKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructureKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkCmdBuildAccelerationStructureIndirectKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructureIndirectKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkBuildAccelerationStructureKHR", {kFuncTypeDev, (void*)BuildAccelerationStructureKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
+    {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},
+    {"vkCmdBuildAccelerationStructuresIndirectKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresIndirectKHR}},
+    {"vkBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)BuildAccelerationStructuresKHR}},
     {"vkCopyAccelerationStructureKHR", {kFuncTypeDev, (void*)CopyAccelerationStructureKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCopyAccelerationStructureToMemoryKHR", {kFuncTypeDev, (void*)CopyAccelerationStructureToMemoryKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCopyMemoryToAccelerationStructureKHR", {kFuncTypeDev, (void*)CopyMemoryToAccelerationStructureKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkWriteAccelerationStructuresPropertiesKHR", {kFuncTypeDev, (void*)WriteAccelerationStructuresPropertiesKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdCopyAccelerationStructureKHR", {kFuncTypeDev, (void*)CmdCopyAccelerationStructureKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdCopyAccelerationStructureToMemoryKHR", {kFuncTypeDev, (void*)CmdCopyAccelerationStructureToMemoryKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdCopyMemoryToAccelerationStructureKHR", {kFuncTypeDev, (void*)CmdCopyMemoryToAccelerationStructureKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkCmdTraceRaysKHR", {kFuncTypeDev, (void*)CmdTraceRaysKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkCreateRayTracingPipelinesKHR", {kFuncTypeDev, (void*)CreateRayTracingPipelinesKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetAccelerationStructureDeviceAddressKHR", {kFuncTypeDev, (void*)GetAccelerationStructureDeviceAddressKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", {kFuncTypeDev, (void*)GetRayTracingCaptureReplayShaderGroupHandlesKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    {"vkCmdTraceRaysIndirectKHR", {kFuncTypeDev, (void*)CmdTraceRaysIndirectKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkCmdWriteAccelerationStructuresPropertiesKHR", {kFuncTypeDev, (void*)CmdWriteAccelerationStructuresPropertiesKHR}},
     {"vkGetDeviceAccelerationStructureCompatibilityKHR", {kFuncTypeDev, (void*)GetDeviceAccelerationStructureCompatibilityKHR}},
-#endif
+    {"vkGetAccelerationStructureBuildSizesKHR", {kFuncTypeDev, (void*)GetAccelerationStructureBuildSizesKHR}},
+    {"vkCmdTraceRaysKHR", {kFuncTypeDev, (void*)CmdTraceRaysKHR}},
+    {"vkCreateRayTracingPipelinesKHR", {kFuncTypeDev, (void*)CreateRayTracingPipelinesKHR}},
+    {"vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", {kFuncTypeDev, (void*)GetRayTracingCaptureReplayShaderGroupHandlesKHR}},
+    {"vkCmdTraceRaysIndirectKHR", {kFuncTypeDev, (void*)CmdTraceRaysIndirectKHR}},
+    {"vkGetRayTracingShaderGroupStackSizeKHR", {kFuncTypeDev, (void*)GetRayTracingShaderGroupStackSizeKHR}},
+    {"vkCmdSetRayTracingPipelineStackSizeKHR", {kFuncTypeDev, (void*)CmdSetRayTracingPipelineStackSizeKHR}},
 };
 
 
