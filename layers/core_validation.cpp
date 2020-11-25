@@ -10526,7 +10526,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
         LogObjectList objlist(pSubCB->commandBuffer);
         objlist.add(pCB->commandBuffer);
-        skip |= LogError(objlist, kVUID_Core_DrawState_InvalidQueueFamily,
+        skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00094",
                          "vkCmdExecuteCommands(): Primary %s created in queue family %d has secondary "
                          "%s created in queue family %d.",
                          report_data->FormatHandle(pCB->commandBuffer).c_str(), primary_pool->queueFamilyIndex,
