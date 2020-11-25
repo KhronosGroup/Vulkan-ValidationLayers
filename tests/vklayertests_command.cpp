@@ -5011,6 +5011,63 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
     }
 }
 
+TEST_F(VkLayerTest, ExecuteDiffertQueueFlagsSecondaryCB) {
+    TEST_DESCRIPTION("Allocate a command buffer from two different queues and try to use a secondary command buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (m_device->queue_props.size() < 2) {
+        printf("%s Need 2 different queues for testing skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    // First two queue families
+    uint32_t queue_index_A = 0;
+    uint32_t queue_index_B = 1;
+
+    VkCommandPoolCreateInfo pool_create_info = {};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.pNext = nullptr;
+    pool_create_info.flags = 0;
+
+    VkCommandPool command_pool_A;
+    pool_create_info.queueFamilyIndex = queue_index_A;
+    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool_A);
+
+    VkCommandPool command_pool_B;
+    pool_create_info.queueFamilyIndex = queue_index_B;
+    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool_B);
+
+    VkCommandBuffer command_buffer[2];  // [0] primary and [1] secondary
+    VkCommandBufferAllocateInfo command_buffer_allocate_info{};
+    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_allocate_info.commandBufferCount = 1;
+    command_buffer_allocate_info.commandPool = command_pool_A;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer[0]);
+
+    command_buffer_allocate_info.commandPool = command_pool_B;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer[1]);
+
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    // secondary
+    vk::BeginCommandBuffer(command_buffer[1], &begin_info);
+    vk::EndCommandBuffer(command_buffer[1]);
+
+    // Try using different pool's command buffer as secondary
+    vk::BeginCommandBuffer(command_buffer[0], &begin_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00094");
+    vk::CmdExecuteCommands(command_buffer[0], 1, &command_buffer[1]);
+    m_errorMonitor->VerifyFound();
+    vk::EndCommandBuffer(command_buffer[0]);
+
+    vk::DestroyCommandPool(m_device->device(), command_pool_A, NULL);
+    vk::DestroyCommandPool(m_device->device(), command_pool_B, NULL);
+}
+
 TEST_F(VkLayerTest, ExecuteUnrecordedSecondaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a CB in the initial state");
     ASSERT_NO_FATAL_FAILURE(Init());
