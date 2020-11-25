@@ -9288,8 +9288,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         function_name, j, i);
                 } else if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
                                           VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
-                    // TODO - Add VUID when new headers are added
-                    vuid = use_rp2 ? "UNASSIGNED-VkSubpassDescription2-attachment"
+                    vuid = use_rp2 ? "VUID-VkSubpassDescription2-attachment-04563"
                                    : "VUID-VkInputAttachmentAspectReference-aspectMask-02250";
                     skip |= LogError(device, vuid,
                                      "%s: Aspect mask for input attachment reference %d in subpass %d includes "
