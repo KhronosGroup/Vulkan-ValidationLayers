@@ -719,7 +719,26 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
+void ThreadSafety::PreCallRecordDeviceWaitIdle(
+    VkDevice                                    device) {
+    StartReadObjectParentInstance(device, "vkDeviceWaitIdle");
+    auto lock = write_lock_guard_t(thread_safety_lock);
+    const auto &queue_set = device_queues_map[device];
+    for (const auto &queue : queue_set) {
+        StartWriteObject(queue, "vkDeviceWaitIdle");
+    }
+}
 
+void ThreadSafety::PostCallRecordDeviceWaitIdle(
+    VkDevice                                    device,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkDeviceWaitIdle");
+    auto lock = write_lock_guard_t(thread_safety_lock);
+    const auto &queue_set = device_queues_map[device];
+    for (const auto &queue : queue_set) {
+        FinishWriteObject(queue, "vkDeviceWaitIdle");
+    }
+}
 
 
 void ThreadSafety::PreCallRecordCreateInstance(
@@ -848,19 +867,6 @@ void ThreadSafety::PostCallRecordQueueWaitIdle(
     VkResult                                    result) {
     FinishWriteObject(queue, "vkQueueWaitIdle");
     // Host access to queue must be externally synchronized
-}
-
-void ThreadSafety::PreCallRecordDeviceWaitIdle(
-    VkDevice                                    device) {
-    StartReadObjectParentInstance(device, "vkDeviceWaitIdle");
-    // all sname:VkQueue objects created from pname:device must be externally synchronized between host accesses
-}
-
-void ThreadSafety::PostCallRecordDeviceWaitIdle(
-    VkDevice                                    device,
-    VkResult                                    result) {
-    FinishReadObjectParentInstance(device, "vkDeviceWaitIdle");
-    // all sname:VkQueue objects created from pname:device must be externally synchronized between host accesses
 }
 
 void ThreadSafety::PreCallRecordAllocateMemory(
