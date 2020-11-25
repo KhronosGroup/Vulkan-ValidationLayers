@@ -196,6 +196,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     shader_validation.h
     generated/spirv_validation_helper.cpp
     gpu_validation.cpp
+    generated/corechecks_optick_instrumentation.cpp
     xxhash.c)
 
 set(OBJECT_LIFETIMES_LIBRARY_FILES
@@ -237,8 +238,38 @@ set(SYNC_VALIDATION_LIBRARY_FILES
     synchronization_validation.cpp
     synchronization_validation.h)
 
+# Validation Layer performance instrumentation support using Optick.
+# https://optick.dev/ https://github.com/bombomby/optick
+# To include Optick instrumentation:
+# 1) Download the Optick 1.3.1 release: https://github.com/bombomby/optick/releases/tag/1.3.1.0
+# 2) Copy the files from the src directory to external/optick.
+# 3) Run CMake configure with -DINSTRUMENT_OPTICK.
+set(OPTICK_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/optick")
+if(INSTRUMENT_OPTICK)
+    # Optick Instrumentation currently supported only on Microsoft toolchain.
+    if(MSVC)
+        if(IS_DIRECTORY "${OPTICK_SOURCE_DIR}")
+            file(GLOB OPTICK_SOURCE_FILES "${OPTICK_SOURCE_DIR}/*.*")
+            source_group("Optick Lib" FILES ${OPTICK_SOURCE_FILES})
+            # Disable GPU performance measurements (timestamp queries).
+            # Not needed for CPU Validation Layer measurements, but would be interesting to try someday.
+            # We'll need to map Vulkan API calls into the layer stack API entry points in order to build.
+            set(KHRONOS_LAYER_COMPILE_DEFINITIONS
+                -DINSTRUMENT_OPTICK
+                -DOPTICK_ENABLE_GPU_D3D12=0
+                -DOPTICK_ENABLE_GPU_VULKAN=0)
+        else()
+            message(WARNING "Optick sources not found at ${OPTICK_SOURCE_DIR} - continuing without instrumentation.")
+            set(INSTRUMENT_OPTICK OFF)
+        endif()
+    else()
+        message(WARNING "Optick instrumentation not supported on this platform - continuing without instrumentation.")
+        set(INSTRUMENT_OPTICK OFF)
+    endif()
+endif()
+
 if(BUILD_LAYERS)
-    AddVkLayer(khronos_validation ""
+    AddVkLayer(khronos_validation "${KHRONOS_LAYER_COMPILE_DEFINITIONS}"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
         ${OBJECT_LIFETIMES_LIBRARY_FILES}
@@ -248,12 +279,21 @@ if(BUILD_LAYERS)
         ${GPU_UTILITY_LIBRARY_FILES}
         ${GPU_ASSISTED_LIBRARY_FILES}
         ${DEBUG_PRINTF_LIBRARY_FILES}
-        ${SYNC_VALIDATION_LIBRARY_FILES})
+        ${SYNC_VALIDATION_LIBRARY_FILES}
+        ${OPTICK_SOURCE_FILES})
 
     # Khronos validation additional dependencies
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
+    if(INSTRUMENT_OPTICK)
+        target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
+        if(MSVC)
+            # Optick is more useful when we have a PDB file.
+            target_compile_options(VkLayer_khronos_validation PRIVATE "/Zi")
+            target_link_options(VkLayer_khronos_validation PRIVATE "/DEBUG:FULL")
+        endif()
+    endif()
     target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
 
     # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
