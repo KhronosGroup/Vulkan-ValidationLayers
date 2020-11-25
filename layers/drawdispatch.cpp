@@ -911,11 +911,8 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR,
                                     "vkCmdTraceRaysKHR()", VK_QUEUE_COMPUTE_BIT);
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    const auto last_bound_it = cb_state->lastBound.find(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    const PIPELINE_STATE *pipeline_state = nullptr;
-    if (last_bound_it != cb_state->lastBound.cend()) {
-        pipeline_state = last_bound_it->second.pipeline_state;
-    }
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
     if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
         skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-None-02700",
                          "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
@@ -989,11 +986,8 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR,
                                     "vkCmdTraceRaysIndirectKHR()", VK_QUEUE_COMPUTE_BIT);
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    const auto last_bound_it = cb_state->lastBound.find(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    const PIPELINE_STATE *pipeline_state = nullptr;
-    if (last_bound_it != cb_state->lastBound.cend()) {
-        pipeline_state = last_bound_it->second.pipeline_state;
-    }
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
     if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
         skip |=
             LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-None-02700",
