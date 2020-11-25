@@ -67,6 +67,8 @@ def main(argv):
                                               "best_practices.h",
                                               "best_practices.cpp",
                                               "spirv_validation_helper.cpp",
+                                              "corechecks_optick_instrumentation.cpp",
+                                              "corechecks_optick_instrumentation.h",
                                               "command_counter_helper.cpp",
                                               "command_counter_helper.h"]],
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),

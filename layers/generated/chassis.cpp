@@ -46,6 +46,7 @@ bool wrap_handles = true;
 // Include layer validation object definitions
 #include "best_practices_validation.h"
 #include "core_validation.h"
+#include "corechecks_optick_instrumentation.h"
 #include "gpu_validation.h"
 #include "object_lifetime_validation.h"
 #include "debug_printf.h"
@@ -55,6 +56,12 @@ bool wrap_handles = true;
 
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+
+#ifdef INSTRUMENT_OPTICK
+static const bool use_optick_instrumentation = true;
+#else
+static const bool use_optick_instrumentation = false;
+#endif
 
 namespace vulkan_layer_chassis {
 
@@ -284,7 +291,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     auto object_tracker_obj = new ObjectLifetimes;
     object_tracker_obj->RegisterValidationObject(!local_disables[object_tracking], api_version, report_data, local_object_dispatch);
 
-    auto core_checks_obj = new CoreChecks;
+    auto core_checks_obj = use_optick_instrumentation ? new CoreChecksOptickInstrumented : new CoreChecks;
     core_checks_obj->RegisterValidationObject(!local_disables[core_checks], api_version, report_data, local_object_dispatch);
 
     auto best_practices_obj = new BestPractices;
@@ -475,7 +482,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     auto object_tracker_obj = new ObjectLifetimes;
     object_tracker_obj->InitDeviceValidationObject(!disables[object_tracking], instance_interceptor, device_interceptor);
 
-    auto core_checks_obj = new CoreChecks;
+    auto core_checks_obj = use_optick_instrumentation ? new CoreChecksOptickInstrumented : new CoreChecks;
     core_checks_obj->InitDeviceValidationObject(!disables[core_checks], instance_interceptor, device_interceptor);
 
     auto best_practices_obj = new BestPractices;
