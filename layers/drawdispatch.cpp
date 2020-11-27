@@ -1047,13 +1047,11 @@ void CoreChecks::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBu
                                                        const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                                        const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                        const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                       VkBuffer buffer, VkDeviceSize offset) {
+                                                       VkDeviceAddress indirectDeviceAddress) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawDispatchType(cb_state, CMD_TRACERAYSINDIRECTKHR, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
                                    "vkCmdTraceRaysIndirectKHR()");
     cb_state->hasTraceRaysCmd = true;
-    AddCommandBufferBindingBuffer(cb_state, buffer_state);
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const {

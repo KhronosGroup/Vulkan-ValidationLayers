@@ -221,14 +221,14 @@ class DebugPrintf : public ValidationStateTracker {
                                               const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                               const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                               const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                                              const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
-                                              VkDeviceSize offset);
+                                              const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
+                                              VkDeviceAddress indirectDeviceAddress);
     void PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
                                                const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                                const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                                const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                                               const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
-                                               VkDeviceSize offset);
+                                               const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
+                                               VkDeviceAddress indirectDeviceAddress);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
