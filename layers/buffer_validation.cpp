@@ -159,6 +159,16 @@ static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_b
     return copy_imagebuffer_vuid.at(id).at(index);
 }
 
+// Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
+static VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
+    VkImageSubresourceLayers subresource_layers;
+    subresource_layers.aspectMask = subresource_range.aspectMask;
+    subresource_layers.baseArrayLayer = subresource_range.baseArrayLayer;
+    subresource_layers.layerCount = subresource_range.layerCount;
+    subresource_layers.mipLevel = subresource_range.baseMipLevel;
+    return subresource_layers;
+}
+
 // Transfer VkImageSubresourceLayers into VkImageSubresourceRange struct
 static VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &subresource_layers) {
     VkImageSubresourceRange subresource_range;
@@ -4717,7 +4727,16 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
                              (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR);
     bool is_3D_to_2D_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
 
-    const auto image_layer_count = is_3D_to_2D_map ? image_state->createInfo.extent.depth : image_state->createInfo.arrayLayers;
+    uint32_t image_layer_count;
+
+    if (is_3D_to_2D_map) {
+        const auto layers = LayersFromRange(subresourceRange);
+        const auto extent = GetImageSubresourceExtent(image_state, &layers);
+        image_layer_count = extent.depth;
+    } else {
+        image_layer_count = image_state->createInfo.arrayLayers;
+    }
+
     const auto image_layer_count_var_name = is_3D_to_2D_map ? "extent.depth" : "arrayLayers";
 
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
