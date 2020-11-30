@@ -75,6 +75,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         unprotected_command_buffer         = "VUID-vkCmdDraw-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDraw-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDraw-None-02693";
         filter_cubic                       = "VUID-vkCmdDraw-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDraw-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDraw-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -113,6 +114,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexed-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDrawIndexed-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexed-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawIndexed-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawIndexed-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexed-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexed-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -153,6 +155,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirect-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirect-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirect-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawIndirect-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawIndirect-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirect-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirect-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -193,6 +196,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexedIndirect-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirect-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawIndexedIndirect-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawIndexedIndirect-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexedIndirect-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexedIndirect-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -217,6 +221,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDispatch-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDispatch-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDispatch-commandBuffer-02712";
+        img_filter_cubic                   = "VUID-vkCmdDispatch-None-02693";
         filter_cubic                       = "VUID-vkCmdDispatch-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDispatch-filterCubicMinmax-02695";
     }
@@ -242,6 +247,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDispatchIndirect-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDispatchIndirect-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDispatchIndirect-commandBuffer-02707";
+        img_filter_cubic                   = "VUID-vkCmdDispatchIndirect-None-02693";
         filter_cubic                       = "VUID-vkCmdDispatchIndirect-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDispatchIndirect-filterCubicMinmax-02695";
     }
@@ -281,6 +287,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirectCount-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirectCount-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectCount-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawIndirectCount-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawIndirectCount-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirectCount-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirectCount-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -321,6 +328,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexedIndirectCount-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirectCount-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawIndexedIndirectCount-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawIndexedIndirectCount-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexedIndirectCount-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexedIndirectCount-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -346,6 +354,7 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysNV-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdTraceRaysNV-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdTraceRaysNV-commandBuffer-02712";
+        img_filter_cubic                   = "VUID-vkCmdTraceRaysNV-None-02693";
         filter_cubic                       = "VUID-vkCmdTraceRaysNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdTraceRaysNV-filterCubicMinmax-02695";
     }
@@ -370,6 +379,7 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysKHR-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdTraceRaysKHR-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdTraceRaysKHR-commandBuffer-02712";
+        img_filter_cubic                   = "VUID-vkCmdTraceRaysKHR-None-02693";
         filter_cubic                       = "VUID-vkCmdTraceRaysKHR-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdTraceRaysKHR-filterCubicMinmax-02695";
     }
@@ -396,6 +406,7 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdTraceRaysIndirectKHR-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysIndirectKHR-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02707";
+        img_filter_cubic                   = "VUID-vkCmdTraceRaysIndirectKHR-None-02693";
         filter_cubic                       = "VUID-vkCmdTraceRaysIndirectKHR-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdTraceRaysIndirectKHR-filterCubicMinmax-02695";
     }
@@ -429,6 +440,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksNV-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksNV-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksNV-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -466,6 +478,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectNV-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -503,6 +516,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -543,6 +557,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirectByteCountEXT-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectByteCountEXT-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-02693";
         filter_cubic                       = "VUID-vkCmdDrawIndirectByteCountEXT-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirectByteCountEXT-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveFragmentShadingRateWithMultipleViewports-04552";
@@ -566,6 +581,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDispatchBase-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDispatchBase-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDispatchBase-commandBuffer-02707";
+        img_filter_cubic                   = "VUID-vkCmdDispatchBase-None-02693";
         filter_cubic                       = "VUID-vkCmdDispatchBase-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDispatchBase-filterCubicMinmax-02695";
     }

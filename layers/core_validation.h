@@ -69,6 +69,7 @@ struct DrawDispatchVuid {
     const char* protected_command_buffer = kVUIDUndefined;
     // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
     const char* max_multiview_instance_index = kVUIDUndefined;
+    const char* img_filter_cubic = kVUIDUndefined;
     const char* filter_cubic = kVUIDUndefined;
     const char* filter_cubic_min_max = kVUIDUndefined;
     const char* viewport_count_primitive_shading_rate = kVUIDUndefined;
