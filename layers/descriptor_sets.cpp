@@ -1100,50 +1100,66 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                     objlist.add(sampler_state->sampler);
                                     objlist.add(image_view_state->image_view);
                                     return LogError(objlist, vuids.cubic_sampler,
-                                                    "sampler (%s) in descriptor set (%s) "
-                                                    "is set to use VK_FILTER_CUBIC_EXT, then image view's (%s"
-                                                    ") format (%s) MUST "
-                                                    "contain "
-                                                    "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in "
-                                                    "its format features.",
+                                                    "sampler (%s) in descriptor set (%s) is set to use VK_FILTER_CUBIC_EXT, then "
+                                                    "image view's (%s) format (%s) MUST contain "
+                                                    "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in its format features.",
                                                     report_data->FormatHandle(sampler_state->sampler).c_str(),
                                                     report_data->FormatHandle(set).c_str(),
                                                     report_data->FormatHandle(image_view_state->image_view).c_str(),
                                                     string_VkFormat(image_view_state->create_info.format));
                                 }
 
-                                const auto reduction_mode_info =
-                                    lvl_find_in_chain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
-                                if (reduction_mode_info &&
-                                    (reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
-                                     reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
-                                    !image_view_state->filter_cubic_props.filterCubicMinmax) {
-                                    auto set = descriptor_set->GetSet();
-                                    LogObjectList objlist(set);
-                                    objlist.add(sampler_state->sampler);
-                                    objlist.add(image_view_state->image_view);
-                                    return LogError(objlist, vuids.filter_cubic_min_max,
-                                                    "sampler (%s) in descriptor set (%s) "
-                                                    "is set to use VK_FILTER_CUBIC_EXT & %s, but image view (%s) doesn't "
-                                                    "support filterCubicMinmax.",
-                                                    report_data->FormatHandle(sampler_state->sampler).c_str(),
-                                                    string_VkSamplerReductionMode(reduction_mode_info->reductionMode),
-                                                    report_data->FormatHandle(set).c_str(),
-                                                    report_data->FormatHandle(image_view_state->image_view).c_str());
+                                if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
+                                    const auto reduction_mode_info =
+                                        lvl_find_in_chain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
+                                    if (reduction_mode_info &&
+                                        (reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
+                                         reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
+                                        !image_view_state->filter_cubic_props.filterCubicMinmax) {
+                                        auto set = descriptor_set->GetSet();
+                                        LogObjectList objlist(set);
+                                        objlist.add(sampler_state->sampler);
+                                        objlist.add(image_view_state->image_view);
+                                        return LogError(
+                                            objlist, vuids.filter_cubic_min_max,
+                                            "sampler (%s) in descriptor set (%s) is set to use VK_FILTER_CUBIC_EXT & %s, "
+                                            "but image view (%s) doesn't support filterCubicMinmax.",
+                                            report_data->FormatHandle(sampler_state->sampler).c_str(),
+                                            string_VkSamplerReductionMode(reduction_mode_info->reductionMode),
+                                            report_data->FormatHandle(set).c_str(),
+                                            report_data->FormatHandle(image_view_state->image_view).c_str());
+                                    }
+
+                                    if (!image_view_state->filter_cubic_props.filterCubic) {
+                                        auto set = descriptor_set->GetSet();
+                                        LogObjectList objlist(set);
+                                        objlist.add(sampler_state->sampler);
+                                        objlist.add(image_view_state->image_view);
+                                        return LogError(objlist, vuids.filter_cubic,
+                                                        "sampler (%s) in descriptor set (%s) is set to use VK_FILTER_CUBIC_EXT, "
+                                                        "but image view (%s) doesn't support filterCubic.",
+                                                        report_data->FormatHandle(sampler_state->sampler).c_str(),
+                                                        report_data->FormatHandle(set).c_str(),
+                                                        report_data->FormatHandle(image_view_state->image_view).c_str());
+                                    }
                                 }
 
-                                if (!image_view_state->filter_cubic_props.filterCubic) {
-                                    auto set = descriptor_set->GetSet();
-                                    LogObjectList objlist(set);
-                                    objlist.add(sampler_state->sampler);
-                                    objlist.add(image_view_state->image_view);
-                                    return LogError(
-                                        objlist, vuids.filter_cubic,
-                                        "sampler (%s) in descriptor set (%s) "
-                                        "is set to use VK_FILTER_CUBIC_EXT, but image view (%s) doesn't support filterCubic.",
-                                        report_data->FormatHandle(sampler_state->sampler).c_str(),
-                                        report_data->FormatHandle(set).c_str(),
-                                        report_data->FormatHandle(image_view_state->image_view).c_str());
+                                if (IsExtEnabled(device_extensions.vk_img_filter_cubic)) {
+                                    if (image_view_state->create_info.viewType &
+                                        (VK_IMAGE_VIEW_TYPE_3D | VK_IMAGE_VIEW_TYPE_CUBE | VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)) {
+                                        auto set = descriptor_set->GetSet();
+                                        LogObjectList objlist(set);
+                                        objlist.add(sampler_state->sampler);
+                                        objlist.add(image_view_state->image_view);
+                                        return LogError(objlist, vuids.img_filter_cubic,
+                                                        "sampler (%s) in descriptor set (%s) "
+                                                        "is set to use VK_FILTER_CUBIC_EXT while the VK_IMG_filter_cubic extension "
+                                                        "is enabled, but image view (%s) has an invalid imageViewType (%s).",
+                                                        report_data->FormatHandle(sampler_state->sampler).c_str(),
+                                                        report_data->FormatHandle(set).c_str(),
+                                                        report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                                        string_VkImageViewType(image_view_state->create_info.viewType));
+                                    }
                                 }
                             }
 
