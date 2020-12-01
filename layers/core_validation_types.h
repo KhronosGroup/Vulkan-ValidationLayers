@@ -292,10 +292,20 @@ struct BufferBinding {
     VkDeviceSize size;
     VkDeviceSize offset;
     VkDeviceSize stride;
+
+    BufferBinding() : buffer_state(), size(0), offset(0), stride(0) {}
+    virtual ~BufferBinding() {}
+
+    virtual void reset() { *this = BufferBinding(); }
 };
 
 struct IndexBufferBinding : BufferBinding {
     VkIndexType index_type;
+
+    IndexBufferBinding() : BufferBinding(), index_type(static_cast<VkIndexType>(0)) {}
+    virtual ~IndexBufferBinding() {}
+
+    virtual void reset() override { *this = IndexBufferBinding(); }
 };
 
 inline bool operator==(MEM_BINDING a, MEM_BINDING b) NOEXCEPT {

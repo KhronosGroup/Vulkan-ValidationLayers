@@ -3805,7 +3805,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     const SHADER_MODULE_STATE *shaders[32];
     memset(shaders, 0, sizeof(shaders));
     spirv_inst_iter entrypoints[32];
-    memset(entrypoints, 0, sizeof(entrypoints));
     bool skip = false;
 
     uint32_t pointlist_stage_mask = DetermineFinalGeomStage(pipeline, pCreateInfo);

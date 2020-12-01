@@ -1486,7 +1486,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         }
         pCB->framebuffers.clear();
         pCB->activeFramebuffer = VK_NULL_HANDLE;
-        memset(&pCB->index_buffer_binding, 0, sizeof(pCB->index_buffer_binding));
+        pCB->index_buffer_binding.reset();
 
         pCB->qfo_transfer_image_barriers.Reset();
         pCB->qfo_transfer_buffer_barriers.Reset();
