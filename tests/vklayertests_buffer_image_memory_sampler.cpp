@@ -756,6 +756,31 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
     m_errorMonitor->VerifyFound();
 
+    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::FreeMemory(m_device->device(), mem, NULL);
+
+    // device memory not atom size aligned
+    alloc_info.allocationSize = (atom_size * 4) + 1;
+    ASSERT_VK_SUCCESS(vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer));
+    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
+        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        return;
+    }
+    ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem));
+    ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData));
+    // Some platforms have an atomsize of 1 which makes the test meaningless
+    if (atom_size > 1) {
+        // Offset is atom size, but total memory range is not atom size
+        mmr.memory = mem;
+        mmr.offset = atom_size;
+        mmr.size = VK_WHOLE_SIZE;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01389");
+        vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+        m_errorMonitor->VerifyFound();
+    }
+
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     if (!pass) {
