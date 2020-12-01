@@ -8145,6 +8145,63 @@ TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
+    TEST_DESCRIPTION(
+        "Verify if sampler is filter cubic with the VK_IMG_filter cubic extension that it's a valid ImageViewType.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_IMG_FILTER_CUBIC_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+    VkImageView imageView = image.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                             VK_REMAINING_ARRAY_LAYERS, imageViewType);
+
+    auto sampler_ci = lvl_init_struct<VkSamplerCreateInfo>();
+    sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
+    sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
+    VkSampler sampler;
+    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+
+    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.InitState();
+    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, imageView, sampler);
+    g_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02693");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
     TEST_DESCRIPTION("Verify if instance index in CmdDraw is greater than maxMultiviewInstanceIndex.");
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
