@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (c) 2015-2020 Google, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,7 @@
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include <type_traits>
@@ -14842,4 +14844,115 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ_AFTER_WRITE");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidShadingRateUsage) {
+    TEST_DESCRIPTION("Specify invalid usage of the fragment shading rate image view usage.");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceImagelessFramebufferFeatures if_features = lvl_init_struct<VkPhysicalDeviceImagelessFramebufferFeatures>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(&if_features);
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
+        printf("%s requires attachmentFragmentShadingRate feature.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto format =
+        FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    if (!format) {
+        printf("%s No format found without shading rate attachment support. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageObj image(m_device);
+    // Initialize image with transfer source usage
+    image.Init(128, 128, 1, format, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageView imageview;
+    VkImageViewCreateInfo createinfo = {};
+    createinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createinfo.image = image.handle();
+    createinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    createinfo.format = format;
+    createinfo.subresourceRange.layerCount = 1;
+    createinfo.subresourceRange.baseMipLevel = 0;
+    createinfo.subresourceRange.levelCount = 1;
+    if (FormatIsColor(format)) {
+        createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    } else if (FormatHasDepth(format)) {
+        createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (FormatHasStencil(format)) {
+        createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+    // Create a view with the fragment shading rate attachment usage, but that doesn't support it
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-usage-04550");
+    vk::CreateImageView(m_device->device(), &createinfo, NULL, &imageview);
+    m_errorMonitor->VerifyFound();
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsrProperties = {};
+    fsrProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
+
+    VkPhysicalDeviceProperties2 properties = {};
+    properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    properties.pNext = &fsrProperties;
+
+    vk::GetPhysicalDeviceProperties2(gpu(), &properties);
+
+    if (!fsrProperties.layeredShadingRateAttachments) {
+        if (IsPlatform(kMockICD) || DeviceSimulation()) {
+            printf(
+                "%s DevSim doesn't correctly advertise format support for fragment shading rate attachments, skipping some "
+                "tests.\n",
+                kSkipPrefix);
+        } else {
+            VkImageObj image2(m_device);
+            image2.Init(VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_R8_UINT,
+                                                      VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
+                                                      VK_IMAGE_TILING_OPTIMAL));
+            ASSERT_TRUE(image2.initialized());
+
+            createinfo.image = image2.handle();
+            createinfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            createinfo.format = VK_FORMAT_R8_UINT;
+            createinfo.subresourceRange.layerCount = 2;
+            createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-usage-04551");
+            vk::CreateImageView(m_device->device(), &createinfo, NULL, &imageview);
+            m_errorMonitor->VerifyFound();
+        }
+    }
 }

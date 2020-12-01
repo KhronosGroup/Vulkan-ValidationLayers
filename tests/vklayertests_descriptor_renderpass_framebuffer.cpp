@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (c) 2015-2020 Google, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,7 @@
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include "cast_utils.h"
@@ -2685,7 +2687,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         m_device_extension_names.push_back(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     }
 
-    bool push_fragment_density_support = false;
+    bool push_fragment_density_support = true;
     if (push_physical_device_properties_2_support) {
         push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
         if (push_fragment_density_support) {
@@ -2699,7 +2701,13 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         }
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = lvl_init_struct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
+    VkPhysicalDeviceFeatures2 features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&fdm_features);
+    if (push_fragment_density_support) {
+        fdm_features.fragmentDensityMap = true;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, 0));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-attachmentCount-00876");
@@ -2864,7 +2872,9 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
 
         // Re-create renderpass to have matching sample count
         attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+        subpass.colorAttachmentCount = 1;
         err = vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+        subpass.colorAttachmentCount = 0;
         ASSERT_VK_SUCCESS(err);
 
         fb_info.renderPass = rp;
@@ -2881,16 +2891,32 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
 
     // Update view to original color buffer and grow FB dimensions too big
     fb_info.pAttachments = ivs;
-    fb_info.height = 1024;
     fb_info.width = 1024;
-    fb_info.layers = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00882");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04533");
     err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
-
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) {
         vk::DestroyFramebuffer(m_device->device(), fb, NULL);
     }
+    fb_info.width = 256;
+
+    fb_info.height = 1024;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04534");
+    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+    fb_info.height = 256;
+
+    fb_info.layers = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04535");
+    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+    fb_info.layers = 1;
 
     {
         if (!push_fragment_density_support || !imageless_framebuffer_support) {
@@ -2904,18 +2930,19 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             uint32_t frame_height = 512;
 
             // Create a renderPass with a single color attachment for fragment density map
-            VkAttachmentReference attach_fragment_density_map = {};
-            attach_fragment_density_map.layout = VK_IMAGE_LAYOUT_GENERAL;
-            VkSubpassDescription subpass_fragment_density_map = {};
-            subpass_fragment_density_map.pColorAttachments = &attach_fragment_density_map;
-            VkRenderPassCreateInfo rpci_fragment_density_map = {};
-            rpci_fragment_density_map.subpassCount = 1;
-            rpci_fragment_density_map.pSubpasses = &subpass_fragment_density_map;
-            rpci_fragment_density_map.attachmentCount = 1;
             VkAttachmentDescription attach_desc_fragment_density_map = {};
             attach_desc_fragment_density_map.format = attachment_format;
             attach_desc_fragment_density_map.samples = VK_SAMPLE_COUNT_1_BIT;
             attach_desc_fragment_density_map.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+            VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_create_info = {};
+            fragment_density_map_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT;
+            fragment_density_map_create_info.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+            VkSubpassDescription subpass_fragment_density_map = {};
+            VkRenderPassCreateInfo rpci_fragment_density_map = {};
+            rpci_fragment_density_map.pNext = &fragment_density_map_create_info;
+            rpci_fragment_density_map.subpassCount = 1;
+            rpci_fragment_density_map.pSubpasses = &subpass_fragment_density_map;
+            rpci_fragment_density_map.attachmentCount = 1;
             rpci_fragment_density_map.pAttachments = &attach_desc_fragment_density_map;
             rpci_fragment_density_map.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
             VkRenderPass rp_fragment_density_map;
@@ -3075,6 +3102,50 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             }
 
             vk::DestroyRenderPass(m_device->device(), rp_mv, NULL);
+
+            VkAttachmentDescription attach_desc_mv = {};
+            attach_desc_mv.format = VK_FORMAT_R8G8B8A8_UNORM;
+            attach_desc_mv.finalLayout = attach_desc_mv.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+            attach_desc_mv.samples = VK_SAMPLE_COUNT_1_BIT;
+            rpci_mv.attachmentCount = 1;
+            rpci_mv.pAttachments = &attach_desc_mv;
+            subpass.colorAttachmentCount = 1;
+            subpass.pColorAttachments = &attach;
+            err = vk::CreateRenderPass(m_device->device(), &rpci_mv, NULL, &rp_mv);
+            ASSERT_VK_SUCCESS(err);
+
+            // Create an image with 1 layer
+            VkImageObj image(m_device);
+            image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+            ASSERT_TRUE(image.initialized());
+
+            VkImageView view;
+            VkImageViewCreateInfo ivci = {};
+            ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            ivci.image = image.handle();
+            ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+            ivci.subresourceRange.layerCount = 1;
+            ivci.subresourceRange.baseMipLevel = 0;
+            ivci.subresourceRange.levelCount = 1;
+            ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            err = vk::CreateImageView(m_device->device(), &ivci, NULL, &view);
+            ASSERT_VK_SUCCESS(err);
+
+            fb_info_mv.renderPass = rp_mv;
+            fb_info_mv.layers = 1;
+            fb_info_mv.pAttachments = &view;
+            fb_info_mv.attachmentCount = 1;
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-04536");
+            err = vk::CreateFramebuffer(device(), &fb_info_mv, NULL, &fb);
+            m_errorMonitor->VerifyFound();
+            if (err == VK_SUCCESS) {
+                vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+            }
+
+            vk::DestroyRenderPass(m_device->device(), rp_mv, NULL);
+            vk::DestroyImageView(m_device->device(), view, NULL);
         }
     }
 
@@ -3086,7 +3157,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     fb_info.height = 100;
     fb_info.layers = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-width-00886");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00882");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04533");
     err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) {
@@ -3106,7 +3177,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     fb_info.height = m_device->props.limits.maxFramebufferHeight + 1;
     fb_info.layers = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-height-00888");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00882");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04534");
     err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) {
@@ -3126,7 +3197,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     fb_info.height = 100;
     fb_info.layers = m_device->props.limits.maxFramebufferLayers + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-layers-00890");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00882");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04535");
     err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) {
@@ -8407,4 +8478,571 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferUsage) {
+    TEST_DESCRIPTION("Specify a fragment shading rate attachment without the correct usage");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceProperties2KHR properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
+        printf("%s requires attachmentFragmentShadingRate feature.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkAttachmentReference2 attach = {};
+    attach.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attach.attachment = 0;
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = {};
+    fsr_attachment.sType = VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+    fsr_attachment.pFragmentShadingRateAttachment = &attach;
+
+    // Create a renderPass with a single fsr attachment
+    VkSubpassDescription2 subpass = {};
+    subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
+    subpass.pNext = &fsr_attachment;
+
+    VkAttachmentDescription2 attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8_UINT;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = {};
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    VkRenderPass rp;
+
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+    VkResult err = vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    ASSERT_VK_SUCCESS(err);
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8_UINT);
+
+    VkFramebufferCreateInfo fb_info = {};
+    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb_info.pNext = NULL;
+    fb_info.renderPass = rp;
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &imageView;
+    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
+    fb_info.layers = 1;
+
+    VkFramebuffer fb;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04548");
+    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+    vk::DestroyRenderPass(m_device->device(), rp, NULL);
+}
+
+TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferDimensions) {
+    TEST_DESCRIPTION("Specify a fragment shading rate attachment with too small dimensions");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceProperties2KHR properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
+        printf("%s requires attachmentFragmentShadingRate feature.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkAttachmentReference2 attach = {};
+    attach.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attach.attachment = 0;
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = {};
+    fsr_attachment.sType = VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+    fsr_attachment.pFragmentShadingRateAttachment = &attach;
+
+    // Create a renderPass with a single fsr attachment
+    VkSubpassDescription2 subpass = {};
+    subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
+    subpass.pNext = &fsr_attachment;
+
+    VkAttachmentDescription2 attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8_UINT;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = {};
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    VkRenderPass rp;
+
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+    VkResult err = vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    ASSERT_VK_SUCCESS(err);
+
+    VkImageObj image(m_device);
+    VkImageCreateInfo ici = VkImageObj::ImageCreateInfo2D(
+        1, 1, 1, 2, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.InitNoLayout(ici);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8_UINT, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1);
+
+    VkFramebufferCreateInfo fb_info = {};
+    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb_info.pNext = NULL;
+    fb_info.renderPass = rp;
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &imageView;
+    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
+    fb_info.layers = 1;
+
+    VkFramebuffer fb;
+
+    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width * 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04539");
+    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+
+    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height * 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04540");
+    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
+
+    VkImageView imageViewLayered = image.targetView(VK_FORMAT_R8_UINT, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2);
+    fb_info.pAttachments = &imageViewLayered;
+    fb_info.layers = 3;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04538");
+    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+
+    vk::DestroyRenderPass(m_device->device(), rp, NULL);
+
+    if (fsr_properties.layeredShadingRateAttachments == VK_TRUE) {
+        err = vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        ASSERT_VK_SUCCESS(err);
+
+        fb_info.renderPass = rp;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04538");
+        err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+        m_errorMonitor->VerifyFound();
+        if (err == VK_SUCCESS) {
+            vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+        }
+        vk::DestroyRenderPass(m_device->device(), rp, NULL);
+
+        subpass.viewMask = 0x4;
+        err = vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        ASSERT_VK_SUCCESS(err);
+        subpass.viewMask = 0;
+
+        fb_info.renderPass = rp;
+        fb_info.layers = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04537");
+        err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+        m_errorMonitor->VerifyFound();
+        if (err == VK_SUCCESS) {
+            vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+        }
+
+        vk::DestroyRenderPass(m_device->device(), rp, NULL);
+    }
+}
+
+TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
+    TEST_DESCRIPTION("Specify a fragment shading rate attachment with too small dimensions");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceProperties2KHR properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
+        printf("%s requires attachmentFragmentShadingRate feature.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkAttachmentReference2 attach = {};
+    attach.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attach.attachment = 0;
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = {};
+    fsr_attachment.sType = VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+    fsr_attachment.pFragmentShadingRateAttachment = &attach;
+
+    // Create a renderPass with a single fsr attachment
+    VkSubpassDescription2 subpass = {};
+    subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
+    subpass.pNext = &fsr_attachment;
+
+    VkAttachmentDescription2 attach_desc = {};
+    attach_desc.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
+    attach_desc.format = VK_FORMAT_R8_UINT;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = {};
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    VkRenderPass rp;
+
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+
+    rpci.flags = VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-flags-04521");
+    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+    rpci.flags = 0;
+
+    attach_desc.format =
+        FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    if (attach_desc.format) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04523");
+        vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        m_errorMonitor->VerifyFound();
+    }
+    attach_desc.format = VK_FORMAT_R8_UINT;
+
+    attach.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524");
+    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    fsr_attachment.shadingRateAttachmentTexelSize.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width + 1;
+    fsr_attachment.shadingRateAttachmentTexelSize.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528");
+    if (fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width ==
+        fsr_properties.minFragmentShadingRateAttachmentTexelSize.width) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527");
+    }
+    if (fsr_properties.maxFragmentShadingRateAttachmentTexelSize.height ==
+        fsr_properties.minFragmentShadingRateAttachmentTexelSize.height) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530");
+    }
+    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+    fsr_attachment.shadingRateAttachmentTexelSize.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width / 2;
+    fsr_attachment.shadingRateAttachmentTexelSize.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height / 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529");
+    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+    fsr_attachment.shadingRateAttachmentTexelSize.width = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width * 2;
+    fsr_attachment.shadingRateAttachmentTexelSize.height = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.height * 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530");
+    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+    if (fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width /
+            fsr_properties.minFragmentShadingRateAttachmentTexelSize.height >
+        fsr_properties.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+        fsr_attachment.shadingRateAttachmentTexelSize.width = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531");
+        vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        m_errorMonitor->VerifyFound();
+        fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+    }
+
+    if (fsr_properties.maxFragmentShadingRateAttachmentTexelSize.height /
+            fsr_properties.minFragmentShadingRateAttachmentTexelSize.width >
+        fsr_properties.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+        fsr_attachment.shadingRateAttachmentTexelSize.height = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.height;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532");
+        vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        m_errorMonitor->VerifyFound();
+        fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+    }
+}
+
+TEST_F(VkLayerTest, FramebufferDepthStencilResolveAttachmentTests) {
+    TEST_DESCRIPTION("Create a framebuffer against a render pass using depth stencil resolve, with mismatched information");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    if (!rp2Supported) {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t attachmentWidth = 512;
+    uint32_t attachmentHeight = 512;
+    VkFormat attachmentFormat = FindSupportedDepthStencilFormat(gpu());
+    if (attachmentFormat == VK_FORMAT_UNDEFINED) {
+        printf("%s Did not find a supported depth stencil format; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
+    // Depth/stencil attachment
+    attachmentDescriptions[0].sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+    attachmentDescriptions[0].format = attachmentFormat;
+    attachmentDescriptions[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    attachmentDescriptions[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    // Depth/stencil resolve attachment
+    attachmentDescriptions[1].sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+    attachmentDescriptions[1].format = attachmentFormat;
+    attachmentDescriptions[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentDescriptions[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference2KHR depthStencilAttachmentReference = {};
+    depthStencilAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+    depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depthStencilAttachmentReference.attachment = 0;
+    VkAttachmentReference2KHR depthStencilResolveAttachmentReference = {};
+    depthStencilResolveAttachmentReference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+    depthStencilResolveAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depthStencilResolveAttachmentReference.attachment = 1;
+    VkSubpassDescriptionDepthStencilResolveKHR subpassDescriptionDepthStencilResolve = {};
+    subpassDescriptionDepthStencilResolve.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE_KHR;
+    subpassDescriptionDepthStencilResolve.pDepthStencilResolveAttachment = &depthStencilResolveAttachmentReference;
+    subpassDescriptionDepthStencilResolve.depthResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
+    subpassDescriptionDepthStencilResolve.stencilResolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR;
+    VkSubpassDescription2KHR subpassDescription = {};
+    subpassDescription.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR;
+    subpassDescription.pNext = &subpassDescriptionDepthStencilResolve;
+    subpassDescription.pDepthStencilAttachment = &depthStencilAttachmentReference;
+
+    VkRenderPassCreateInfo2KHR renderPassCreateInfo = {};
+    renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
+    renderPassCreateInfo.pNext = nullptr;
+    renderPassCreateInfo.attachmentCount = 2;
+    renderPassCreateInfo.subpassCount = 1;
+    renderPassCreateInfo.pSubpasses = &subpassDescription;
+    renderPassCreateInfo.pAttachments = attachmentDescriptions;
+    VkRenderPass renderPass;
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+    vkCreateRenderPass2KHR(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+
+    // Depth resolve attachment, mismatched image usage
+    // Try creating Framebuffer with images, but with invalid image create usage flags
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = attachmentFormat;
+    image_create_info.extent.width = attachmentWidth;
+    image_create_info.extent.height = attachmentHeight;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_create_info.flags = 0;
+    VkImageObj ds_image(m_device);
+    ds_image.init(&image_create_info);
+    ASSERT_TRUE(ds_image.initialized());
+
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.usage = 0;
+    VkImageObj ds_resolve_image(m_device);
+    ds_resolve_image.init(&image_create_info);
+    ASSERT_TRUE(ds_resolve_image.initialized());
+
+    VkImageView image_views[2];
+    image_views[0] = ds_image.targetView(attachmentFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    image_views[1] = ds_resolve_image.targetView(attachmentFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkFramebufferCreateInfo framebufferCreateInfo = {};
+    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.width = attachmentWidth;
+    framebufferCreateInfo.height = attachmentHeight;
+    framebufferCreateInfo.layers = 1;
+    framebufferCreateInfo.renderPass = renderPass;
+    framebufferCreateInfo.attachmentCount = 2;
+    framebufferCreateInfo.pAttachments = image_views;
+    VkFramebuffer framebuffer = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-02634");
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    m_errorMonitor->VerifyFound();
+    if (framebuffer != VK_NULL_HANDLE) {
+        vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+    }
+
+    vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
 }

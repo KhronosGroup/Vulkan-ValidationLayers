@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (c) 2015-2020 Google, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,7 @@
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include "cast_utils.h"
@@ -10795,4 +10797,148 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
     m_errorMonitor->VerifyFound();
 
     commandBuffer.end();
+}
+
+TEST_F(VkLayerTest, InvalidFragmentShadingRateDeviceFeatureCombinations) {
+    TEST_DESCRIPTION(
+        "Specify invalid combinations of fragment shading rate, shading rate image, and fragment density map features");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    bool sri_extension = DeviceExtensionSupported(gpu(), nullptr, VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+    if (sri_extension) {
+        m_device_extension_names.push_back(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+    }
+
+    bool fdm_extension = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    if (fdm_extension) {
+        m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    }
+
+    if (!fdm_extension && !sri_extension) {
+        printf("%s requires VK_NV_shading_rate_image or VK_EXT_fragment_density_map.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_query_features =
+        lvl_init_struct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV sri_query_features = lvl_init_struct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_query_features =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+
+    if (fdm_extension) {
+        fsr_query_features.pNext = &fdm_query_features;
+    }
+    if (sri_extension) {
+        if (fdm_extension) {
+            fdm_query_features.pNext = &sri_query_features;
+        } else {
+            fsr_query_features.pNext = &sri_query_features;
+        }
+    }
+    VkPhysicalDeviceFeatures2KHR query_features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_query_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &query_features2);
+
+    // Workaround for overzealous layers checking even the guaranteed 0th queue family
+    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    ASSERT_TRUE(q_props.size() > 0);
+    ASSERT_TRUE(q_props[0].queueCount > 0);
+
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = {};
+    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = {};
+    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = lvl_init_struct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
+    VkPhysicalDeviceShadingRateImageFeaturesNV sri_features = lvl_init_struct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    device_ci.pNext = &features2;
+
+    VkDevice testDevice;
+
+    if (sri_query_features.shadingRateImage) {
+        sri_features.shadingRateImage = true;
+        fsr_features.pNext = &sri_features;
+        if (fsr_query_features.pipelineFragmentShadingRate) {
+            fsr_features.pipelineFragmentShadingRate = true;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-shadingRateImage-04478");
+            vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
+            m_errorMonitor->VerifyFound();
+            fsr_features.pipelineFragmentShadingRate = false;
+        }
+        if (fsr_query_features.primitiveFragmentShadingRate) {
+            fsr_features.primitiveFragmentShadingRate = true;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-shadingRateImage-04479");
+            vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
+            m_errorMonitor->VerifyFound();
+            fsr_features.primitiveFragmentShadingRate = false;
+        }
+        if (fsr_query_features.attachmentFragmentShadingRate) {
+            fsr_features.attachmentFragmentShadingRate = true;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-shadingRateImage-04480");
+            vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
+            m_errorMonitor->VerifyFound();
+            fsr_features.attachmentFragmentShadingRate = false;
+        }
+        fsr_features.pNext = nullptr;
+    }
+
+    if (fdm_query_features.fragmentDensityMap) {
+        fdm_features.fragmentDensityMap = true;
+        fsr_features.pNext = &fdm_features;
+        if (fsr_query_features.pipelineFragmentShadingRate) {
+            fsr_features.pipelineFragmentShadingRate = true;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04481");
+            vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
+            m_errorMonitor->VerifyFound();
+            fsr_features.pipelineFragmentShadingRate = false;
+        }
+        if (fsr_query_features.primitiveFragmentShadingRate) {
+            fsr_features.primitiveFragmentShadingRate = true;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04482");
+            vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
+            m_errorMonitor->VerifyFound();
+            fsr_features.primitiveFragmentShadingRate = false;
+        }
+        if (fsr_query_features.attachmentFragmentShadingRate) {
+            fsr_features.attachmentFragmentShadingRate = true;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-fragmentDensityMap-04483");
+            vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
+            m_errorMonitor->VerifyFound();
+            fsr_features.attachmentFragmentShadingRate = false;
+        }
+        fsr_features.pNext = nullptr;
+    }
 }

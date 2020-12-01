@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (c) 2015-2020 Google, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,7 @@
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include "cast_utils.h"
@@ -8150,6 +8152,465 @@ TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
     m_commandBuffer->Draw(1, multiview_props.maxMultiviewInstanceIndex + 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
+    TEST_DESCRIPTION("Specify invalid fragment shading rate values");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = {};
+    fsr_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR;
+    fsr_features.pipelineFragmentShadingRate = true;
+
+    VkPhysicalDeviceFeatures2 device_features = {};
+    device_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    device_features.pNext = &fsr_features;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &device_features));
+
+    // Find address of extension call and make the call
+    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
+        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
+    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
+
+    VkExtent2D fragmentSize = {1, 1};
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
+                                                         VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
+
+    m_commandBuffer->begin();
+    fragmentSize.width = 0;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04513");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.width = 1;
+
+    fragmentSize.height = 0;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04514");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.height = 1;
+
+    fragmentSize.width = 3;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04515");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.width = 1;
+
+    fragmentSize.height = 3;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04516");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.height = 1;
+
+    fragmentSize.width = 8;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04517");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.width = 1;
+
+    fragmentSize.height = 8;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04518");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.height = 1;
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
+    TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Find address of extension call and make the call
+    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
+        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
+    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
+
+    VkExtent2D fragmentSize = {1, 1};
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
+                                                         VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04509");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
+    TEST_DESCRIPTION("Specify combiner operations when only pipeline rate is supported");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+
+    fsr_features.pipelineFragmentShadingRate = VK_TRUE;
+    fsr_features.primitiveFragmentShadingRate = VK_FALSE;
+    fsr_features.attachmentFragmentShadingRate = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Find address of extension call and make the call
+    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
+        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
+    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
+
+    VkExtent2D fragmentSize = {1, 1};
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
+                                                         VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
+
+    m_commandBuffer->begin();
+
+    combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetFragmentShadingRateKHR-primitiveFragmentShadingRate-04510");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+
+    combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetFragmentShadingRateKHR-attachmentFragmentShadingRate-04511");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
+    TEST_DESCRIPTION("Specify pipeline rate when only attachment or primitive rate are supported");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (fsr_features.attachmentFragmentShadingRate == VK_FALSE && fsr_features.primitiveFragmentShadingRate == VK_FALSE) {
+        printf("%s requires attachmentFragmentShadingRate or primitiveFragmentShadingRate.\n", kSkipPrefix);
+        return;
+    }
+
+    fsr_features.pipelineFragmentShadingRate = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Find address of extension call and make the call
+    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
+        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
+    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
+
+    VkExtent2D fragmentSize = {1, 1};
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
+                                                         VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
+
+    m_commandBuffer->begin();
+    fragmentSize.width = 2;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04507");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.width = 1;
+
+    fragmentSize.height = 2;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04508");
+    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    m_errorMonitor->VerifyFound();
+    fragmentSize.height = 1;
+}
+
+TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
+    TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceProperties2KHR properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
+        printf("%s requires fragmentShadingRateNonTrivialCombinerOps to be unsupported.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (!fsr_features.primitiveFragmentShadingRate && !fsr_features.attachmentFragmentShadingRate) {
+        printf("%s requires primitiveFragmentShadingRate or attachmentFragmentShadingRate to be supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Find address of extension call and make the call
+    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
+        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
+    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
+
+    VkExtent2D fragmentSize = {1, 1};
+    VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
+                                                         VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
+
+    m_commandBuffer->begin();
+    if (fsr_features.primitiveFragmentShadingRate) {
+        combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
+        vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+        m_errorMonitor->VerifyFound();
+        combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+    }
+
+    if (fsr_features.attachmentFragmentShadingRate) {
+        combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
+        vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+        m_errorMonitor->VerifyFound();
+        combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+    }
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDynamic) {
+    TEST_DESCRIPTION("Test dynamic validation of the primitiveFragmentShadingRateWithMultipleViewports limit");
+
+    // Enable KHR_fragment_shading_rate and all of its required extensions
+    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    if (fsr_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
+        return;
+    }
+
+    bool eds_extension = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    if (eds_extension) {
+        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    } else {
+        printf("%s requires VK_EXT_extended_dynamic_state.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    VkPhysicalDeviceProperties2KHR properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    if (fsr_properties.primitiveFragmentShadingRateWithMultipleViewports) {
+        printf("%s requires primitiveFragmentShadingRateWithMultipleViewports to be unsupported.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features =
+        lvl_init_struct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features =
+        lvl_init_struct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(&eds_features);
+    VkPhysicalDeviceFeatures2KHR features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (!fsr_features.primitiveFragmentShadingRate) {
+        printf("%s requires primitiveFragmentShadingRate to be supported.\n", kSkipPrefix);
+        return;
+    }
+
+    if (!features2.features.multiViewport) {
+        printf("%s requires multiViewport to be supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource =
+        "#version 450\n"
+        "#extension GL_EXT_fragment_shading_rate : enable\n"
+        "void main() {\n"
+        "      gl_PrimitiveShadingRateEXT = gl_ShadingRateFlag4VerticalPixelsEXT | gl_ShadingRateFlag4HorizontalPixelsEXT;\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+
+    std::vector<VkRect2D> scissors = {{{0, 0}, {16, 16}}, {{1, 1}, {16, 16}}};
+    pipe.SetScissor(scissors);
+
+    const VkPipelineLayoutObj pl(m_device);
+
+    VkResult err = pipe.CreateVKPipeline(pl.handle(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+
+    VkViewport viewports[] = {{0, 0, 16, 16, 0, 1}, {1, 1, 16, 16, 0, 1}};
+    PFN_vkCmdSetViewportWithCountEXT vkCmdSetViewportWithCountEXT =
+        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(device(), "vkCmdSetViewportWithCountEXT");
+    vkCmdSetViewportWithCountEXT(m_commandBuffer->handle(), 2, viewports);
+
+    // error produced here.
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
