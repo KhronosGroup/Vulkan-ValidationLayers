@@ -1957,6 +1957,8 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineViewportWScalingStateCreateInfoNV-sType-sType
             VkPipelineViewportWScalingStateCreateInfoNV *structure = (VkPipelineViewportWScalingStateCreateInfoNV *) header;
             skip |= validate_bool32("VkPipelineViewportWScalingStateCreateInfoNV", "viewportWScalingEnable", structure->viewportWScalingEnable);
+
+            skip |= validate_array("VkPipelineViewportWScalingStateCreateInfoNV", "viewportCount", "", structure->viewportCount, &structure->pViewportWScalings, true, false, "VUID-VkPipelineViewportWScalingStateCreateInfoNV-viewportCount-arraylength", kVUIDUndefined);
         } break;
 
         // Validation code for VkSwapchainCounterCreateInfoEXT structure members
@@ -2243,6 +2245,8 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV: { // Covers VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-sType-sType
             VkPipelineViewportShadingRateImageStateCreateInfoNV *structure = (VkPipelineViewportShadingRateImageStateCreateInfoNV *) header;
             skip |= validate_bool32("VkPipelineViewportShadingRateImageStateCreateInfoNV", "shadingRateImageEnable", structure->shadingRateImageEnable);
+
+            skip |= validate_array("VkPipelineViewportShadingRateImageStateCreateInfoNV", "viewportCount", "", structure->viewportCount, &structure->pShadingRatePalettes, true, false, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-arraylength", kVUIDUndefined);
         } break;
 
         // Validation code for VkPhysicalDeviceShadingRateImageFeaturesNV structure members
@@ -3721,7 +3725,7 @@ bool StatelessValidation::PreCallValidateResetFences(
     uint32_t                                    fenceCount,
     const VkFence*                              pFences) const {
     bool skip = false;
-    skip |= validate_handle_array("vkResetFences", "fenceCount", "pFences", fenceCount, pFences, true, true);
+    skip |= validate_handle_array("vkResetFences", "fenceCount", "pFences", fenceCount, pFences, true, true, "VUID-vkResetFences-fenceCount-arraylength");
     return skip;
 }
 
@@ -3740,7 +3744,7 @@ bool StatelessValidation::PreCallValidateWaitForFences(
     VkBool32                                    waitAll,
     uint64_t                                    timeout) const {
     bool skip = false;
-    skip |= validate_handle_array("vkWaitForFences", "fenceCount", "pFences", fenceCount, pFences, true, true);
+    skip |= validate_handle_array("vkWaitForFences", "fenceCount", "pFences", fenceCount, pFences, true, true, "VUID-vkWaitForFences-fenceCount-arraylength");
     skip |= validate_bool32("vkWaitForFences", "waitAll", waitAll);
     return skip;
 }
@@ -4470,7 +4474,7 @@ bool StatelessValidation::PreCallValidateMergePipelineCaches(
     const VkPipelineCache*                      pSrcCaches) const {
     bool skip = false;
     skip |= validate_required_handle("vkMergePipelineCaches", "dstCache", dstCache);
-    skip |= validate_handle_array("vkMergePipelineCaches", "srcCacheCount", "pSrcCaches", srcCacheCount, pSrcCaches, true, true);
+    skip |= validate_handle_array("vkMergePipelineCaches", "srcCacheCount", "pSrcCaches", srcCacheCount, pSrcCaches, true, true, "VUID-vkMergePipelineCaches-srcCacheCount-arraylength");
     return skip;
 }
 
@@ -5039,10 +5043,10 @@ bool StatelessValidation::PreCallValidateAllocateDescriptorSets(
 
         skip |= validate_required_handle("vkAllocateDescriptorSets", "pAllocateInfo->descriptorPool", pAllocateInfo->descriptorPool);
 
-        skip |= validate_handle_array("vkAllocateDescriptorSets", "pAllocateInfo->descriptorSetCount", "pAllocateInfo->pSetLayouts", pAllocateInfo->descriptorSetCount, pAllocateInfo->pSetLayouts, true, true);
+        skip |= validate_handle_array("vkAllocateDescriptorSets", "pAllocateInfo->descriptorSetCount", "pAllocateInfo->pSetLayouts", pAllocateInfo->descriptorSetCount, pAllocateInfo->pSetLayouts, true, true, kVUIDUndefined);
     }
     if (pAllocateInfo != NULL) {
-        skip |= validate_array("vkAllocateDescriptorSets", "pAllocateInfo->descriptorSetCount", "pDescriptorSets", pAllocateInfo->descriptorSetCount, &pDescriptorSets, true, true, kVUIDUndefined, "VUID-vkAllocateDescriptorSets-pDescriptorSets-parameter");
+        skip |= validate_array("vkAllocateDescriptorSets", "pAllocateInfo->descriptorSetCount", "pDescriptorSets", pAllocateInfo->descriptorSetCount, &pDescriptorSets, true, true, "VUID-vkAllocateDescriptorSets-pAllocateInfo::descriptorSetCount-arraylength", "VUID-vkAllocateDescriptorSets-pDescriptorSets-parameter");
     }
     return skip;
 }
@@ -5054,6 +5058,7 @@ bool StatelessValidation::PreCallValidateFreeDescriptorSets(
     const VkDescriptorSet*                      pDescriptorSets) const {
     bool skip = false;
     skip |= validate_required_handle("vkFreeDescriptorSets", "descriptorPool", descriptorPool);
+    skip |= validate_array("vkFreeDescriptorSets", "descriptorSetCount", "", descriptorSetCount, &pDescriptorSets, true, false, "VUID-vkFreeDescriptorSets-descriptorSetCount-arraylength", kVUIDUndefined);
     if (!skip) skip |= manual_PreCallValidateFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
     return skip;
 }
@@ -5075,6 +5080,8 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(
             skip |= validate_struct_pnext("vkUpdateDescriptorSets", ParameterName("pDescriptorWrites[%i].pNext", ParameterName::IndexVector{ descriptorWriteIndex }), "VkWriteDescriptorSetAccelerationStructureKHR, VkWriteDescriptorSetAccelerationStructureNV, VkWriteDescriptorSetInlineUniformBlockEXT", pDescriptorWrites[descriptorWriteIndex].pNext, ARRAY_SIZE(allowed_structs_VkWriteDescriptorSet), allowed_structs_VkWriteDescriptorSet, GeneratedVulkanHeaderVersion, "VUID-VkWriteDescriptorSet-pNext-pNext", "VUID-VkWriteDescriptorSet-sType-unique");
 
             skip |= validate_ranged_enum("vkUpdateDescriptorSets", ParameterName("pDescriptorWrites[%i].descriptorType", ParameterName::IndexVector{ descriptorWriteIndex }), "VkDescriptorType", AllVkDescriptorTypeEnums, pDescriptorWrites[descriptorWriteIndex].descriptorType, "VUID-VkWriteDescriptorSet-descriptorType-parameter");
+
+            skip |= validate_array("vkUpdateDescriptorSets", ParameterName("pDescriptorWrites[%i].descriptorCount", ParameterName::IndexVector{ descriptorWriteIndex }), "", pDescriptorWrites[descriptorWriteIndex].descriptorCount, &pDescriptorWrites[descriptorWriteIndex].pImageInfo, true, false, "VUID-VkWriteDescriptorSet-descriptorCount-arraylength", kVUIDUndefined);
         }
     }
     skip |= validate_struct_type_array("vkUpdateDescriptorSets", "descriptorCopyCount", "pDescriptorCopies", "VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET", descriptorCopyCount, pDescriptorCopies, VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET, false, true, "VUID-VkCopyDescriptorSet-sType-sType", "VUID-vkUpdateDescriptorSets-pDescriptorCopies-parameter", kVUIDUndefined);
@@ -5422,7 +5429,7 @@ bool StatelessValidation::PreCallValidateAllocateCommandBuffers(
         skip |= validate_ranged_enum("vkAllocateCommandBuffers", "pAllocateInfo->level", "VkCommandBufferLevel", AllVkCommandBufferLevelEnums, pAllocateInfo->level, "VUID-VkCommandBufferAllocateInfo-level-parameter");
     }
     if (pAllocateInfo != NULL) {
-        skip |= validate_array("vkAllocateCommandBuffers", "pAllocateInfo->commandBufferCount", "pCommandBuffers", pAllocateInfo->commandBufferCount, &pCommandBuffers, true, true, kVUIDUndefined, "VUID-vkAllocateCommandBuffers-pCommandBuffers-parameter");
+        skip |= validate_array("vkAllocateCommandBuffers", "pAllocateInfo->commandBufferCount", "pCommandBuffers", pAllocateInfo->commandBufferCount, &pCommandBuffers, true, true, "VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength", "VUID-vkAllocateCommandBuffers-pCommandBuffers-parameter");
     }
     return skip;
 }
@@ -5434,6 +5441,7 @@ bool StatelessValidation::PreCallValidateFreeCommandBuffers(
     const VkCommandBuffer*                      pCommandBuffers) const {
     bool skip = false;
     skip |= validate_required_handle("vkFreeCommandBuffers", "commandPool", commandPool);
+    skip |= validate_array("vkFreeCommandBuffers", "commandBufferCount", "", commandBufferCount, &pCommandBuffers, true, false, "VUID-vkFreeCommandBuffers-commandBufferCount-arraylength", kVUIDUndefined);
     return skip;
 }
 
@@ -5592,7 +5600,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets(
     bool skip = false;
     skip |= validate_ranged_enum("vkCmdBindDescriptorSets", "pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pipelineBindPoint, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-parameter");
     skip |= validate_required_handle("vkCmdBindDescriptorSets", "layout", layout);
-    skip |= validate_handle_array("vkCmdBindDescriptorSets", "descriptorSetCount", "pDescriptorSets", descriptorSetCount, pDescriptorSets, true, true);
+    skip |= validate_handle_array("vkCmdBindDescriptorSets", "descriptorSetCount", "pDescriptorSets", descriptorSetCount, pDescriptorSets, true, true, "VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength");
     skip |= validate_array("vkCmdBindDescriptorSets", "dynamicOffsetCount", "pDynamicOffsets", dynamicOffsetCount, &pDynamicOffsets, false, true, kVUIDUndefined, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-parameter");
     return skip;
 }
@@ -5998,7 +6006,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
     uint32_t                                    imageMemoryBarrierCount,
     const VkImageMemoryBarrier*                 pImageMemoryBarriers) const {
     bool skip = false;
-    skip |= validate_handle_array("vkCmdWaitEvents", "eventCount", "pEvents", eventCount, pEvents, true, true);
+    skip |= validate_handle_array("vkCmdWaitEvents", "eventCount", "pEvents", eventCount, pEvents, true, true, "VUID-vkCmdWaitEvents-eventCount-arraylength");
     skip |= validate_flags("vkCmdWaitEvents", "srcStageMask", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, srcStageMask, kRequiredFlags, "VUID-vkCmdWaitEvents-srcStageMask-parameter", "VUID-vkCmdWaitEvents-srcStageMask-requiredbitmask");
     skip |= validate_flags("vkCmdWaitEvents", "dstStageMask", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, dstStageMask, kRequiredFlags, "VUID-vkCmdWaitEvents-dstStageMask-parameter", "VUID-vkCmdWaitEvents-dstStageMask-requiredbitmask");
     skip |= validate_struct_type_array("vkCmdWaitEvents", "memoryBarrierCount", "pMemoryBarriers", "VK_STRUCTURE_TYPE_MEMORY_BARRIER", memoryBarrierCount, pMemoryBarriers, VK_STRUCTURE_TYPE_MEMORY_BARRIER, false, true, "VUID-VkMemoryBarrier-sType-sType", "VUID-vkCmdWaitEvents-pMemoryBarriers-parameter", kVUIDUndefined);
@@ -6229,7 +6237,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteCommands(
     uint32_t                                    commandBufferCount,
     const VkCommandBuffer*                      pCommandBuffers) const {
     bool skip = false;
-    skip |= validate_handle_array("vkCmdExecuteCommands", "commandBufferCount", "pCommandBuffers", commandBufferCount, pCommandBuffers, true, true);
+    skip |= validate_handle_array("vkCmdExecuteCommands", "commandBufferCount", "pCommandBuffers", commandBufferCount, pCommandBuffers, true, true, "VUID-vkCmdExecuteCommands-commandBufferCount-arraylength");
     return skip;
 }
 
@@ -7144,7 +7152,7 @@ bool StatelessValidation::PreCallValidateWaitSemaphores(
 
         skip |= validate_flags("vkWaitSemaphores", "pWaitInfo->flags", "VkSemaphoreWaitFlagBits", AllVkSemaphoreWaitFlagBits, pWaitInfo->flags, kOptionalFlags, "VUID-VkSemaphoreWaitInfo-flags-parameter");
 
-        skip |= validate_handle_array("vkWaitSemaphores", "pWaitInfo->semaphoreCount", "pWaitInfo->pSemaphores", pWaitInfo->semaphoreCount, pWaitInfo->pSemaphores, true, true);
+        skip |= validate_handle_array("vkWaitSemaphores", "pWaitInfo->semaphoreCount", "pWaitInfo->pSemaphores", pWaitInfo->semaphoreCount, pWaitInfo->pSemaphores, true, true, kVUIDUndefined);
 
         skip |= validate_array("vkWaitSemaphores", "pWaitInfo->semaphoreCount", "pWaitInfo->pValues", pWaitInfo->semaphoreCount, &pWaitInfo->pValues, true, true, "VUID-VkSemaphoreWaitInfo-semaphoreCount-arraylength", "VUID-VkSemaphoreWaitInfo-pValues-parameter");
     }
@@ -7434,7 +7442,7 @@ bool StatelessValidation::PreCallValidateQueuePresentKHR(
 
         skip |= validate_array("vkQueuePresentKHR", "pPresentInfo->waitSemaphoreCount", "pPresentInfo->pWaitSemaphores", pPresentInfo->waitSemaphoreCount, &pPresentInfo->pWaitSemaphores, false, true, kVUIDUndefined, "VUID-VkPresentInfoKHR-pWaitSemaphores-parameter");
 
-        skip |= validate_handle_array("vkQueuePresentKHR", "pPresentInfo->swapchainCount", "pPresentInfo->pSwapchains", pPresentInfo->swapchainCount, pPresentInfo->pSwapchains, true, true);
+        skip |= validate_handle_array("vkQueuePresentKHR", "pPresentInfo->swapchainCount", "pPresentInfo->pSwapchains", pPresentInfo->swapchainCount, pPresentInfo->pSwapchains, true, true, kVUIDUndefined);
 
         skip |= validate_array("vkQueuePresentKHR", "pPresentInfo->swapchainCount", "pPresentInfo->pImageIndices", pPresentInfo->swapchainCount, &pPresentInfo->pImageIndices, true, true, "VUID-VkPresentInfoKHR-swapchainCount-arraylength", "VUID-VkPresentInfoKHR-pImageIndices-parameter");
 
@@ -8480,6 +8488,8 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetKHR(
             skip |= validate_struct_pnext("vkCmdPushDescriptorSetKHR", ParameterName("pDescriptorWrites[%i].pNext", ParameterName::IndexVector{ descriptorWriteIndex }), "VkWriteDescriptorSetAccelerationStructureKHR, VkWriteDescriptorSetAccelerationStructureNV, VkWriteDescriptorSetInlineUniformBlockEXT", pDescriptorWrites[descriptorWriteIndex].pNext, ARRAY_SIZE(allowed_structs_VkWriteDescriptorSet), allowed_structs_VkWriteDescriptorSet, GeneratedVulkanHeaderVersion, "VUID-VkWriteDescriptorSet-pNext-pNext", "VUID-VkWriteDescriptorSet-sType-unique");
 
             skip |= validate_ranged_enum("vkCmdPushDescriptorSetKHR", ParameterName("pDescriptorWrites[%i].descriptorType", ParameterName::IndexVector{ descriptorWriteIndex }), "VkDescriptorType", AllVkDescriptorTypeEnums, pDescriptorWrites[descriptorWriteIndex].descriptorType, "VUID-VkWriteDescriptorSet-descriptorType-parameter");
+
+            skip |= validate_array("vkCmdPushDescriptorSetKHR", ParameterName("pDescriptorWrites[%i].descriptorCount", ParameterName::IndexVector{ descriptorWriteIndex }), "", pDescriptorWrites[descriptorWriteIndex].descriptorCount, &pDescriptorWrites[descriptorWriteIndex].pImageInfo, true, false, "VUID-VkWriteDescriptorSet-descriptorCount-arraylength", kVUIDUndefined);
         }
     }
     if (!skip) skip |= manual_PreCallValidateCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
@@ -9537,7 +9547,7 @@ bool StatelessValidation::PreCallValidateWaitSemaphoresKHR(
 
         skip |= validate_flags("vkWaitSemaphoresKHR", "pWaitInfo->flags", "VkSemaphoreWaitFlagBits", AllVkSemaphoreWaitFlagBits, pWaitInfo->flags, kOptionalFlags, "VUID-VkSemaphoreWaitInfo-flags-parameter");
 
-        skip |= validate_handle_array("vkWaitSemaphoresKHR", "pWaitInfo->semaphoreCount", "pWaitInfo->pSemaphores", pWaitInfo->semaphoreCount, pWaitInfo->pSemaphores, true, true);
+        skip |= validate_handle_array("vkWaitSemaphoresKHR", "pWaitInfo->semaphoreCount", "pWaitInfo->pSemaphores", pWaitInfo->semaphoreCount, pWaitInfo->pSemaphores, true, true, kVUIDUndefined);
 
         skip |= validate_array("vkWaitSemaphoresKHR", "pWaitInfo->semaphoreCount", "pWaitInfo->pValues", pWaitInfo->semaphoreCount, &pWaitInfo->pValues, true, true, "VUID-VkSemaphoreWaitInfo-semaphoreCount-arraylength", "VUID-VkSemaphoreWaitInfo-pValues-parameter");
     }
@@ -10250,8 +10260,9 @@ bool StatelessValidation::PreCallValidateCmdBindTransformFeedbackBuffersEXT(
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBindTransformFeedbackBuffersEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdBindTransformFeedbackBuffersEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    skip |= validate_handle_array("vkCmdBindTransformFeedbackBuffersEXT", "bindingCount", "pBuffers", bindingCount, pBuffers, true, true);
+    skip |= validate_handle_array("vkCmdBindTransformFeedbackBuffersEXT", "bindingCount", "pBuffers", bindingCount, pBuffers, true, true, "VUID-vkCmdBindTransformFeedbackBuffersEXT-bindingCount-arraylength");
     skip |= validate_array("vkCmdBindTransformFeedbackBuffersEXT", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindTransformFeedbackBuffersEXT-bindingCount-arraylength", "VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-parameter");
+    skip |= validate_array("vkCmdBindTransformFeedbackBuffersEXT", "bindingCount", "", bindingCount, &pSizes, true, false, "VUID-vkCmdBindTransformFeedbackBuffersEXT-bindingCount-arraylength", kVUIDUndefined);
     if (!skip) skip |= manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes);
     return skip;
 }
@@ -10883,7 +10894,7 @@ bool StatelessValidation::PreCallValidateSetHdrMetadataEXT(
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkSetHdrMetadataEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_ext_hdr_metadata) skip |= OutputExtensionError("vkSetHdrMetadataEXT", VK_EXT_HDR_METADATA_EXTENSION_NAME);
-    skip |= validate_handle_array("vkSetHdrMetadataEXT", "swapchainCount", "pSwapchains", swapchainCount, pSwapchains, true, true);
+    skip |= validate_handle_array("vkSetHdrMetadataEXT", "swapchainCount", "pSwapchains", swapchainCount, pSwapchains, true, true, "VUID-vkSetHdrMetadataEXT-swapchainCount-arraylength");
     skip |= validate_struct_type_array("vkSetHdrMetadataEXT", "swapchainCount", "pMetadata", "VK_STRUCTURE_TYPE_HDR_METADATA_EXT", swapchainCount, pMetadata, VK_STRUCTURE_TYPE_HDR_METADATA_EXT, true, true, "VUID-VkHdrMetadataEXT-sType-sType", "VUID-vkSetHdrMetadataEXT-pMetadata-parameter", "VUID-vkSetHdrMetadataEXT-swapchainCount-arraylength");
     if (pMetadata != NULL)
     {
@@ -11441,7 +11452,7 @@ bool StatelessValidation::PreCallValidateMergeValidationCachesEXT(
     bool skip = false;
     if (!device_extensions.vk_ext_validation_cache) skip |= OutputExtensionError("vkMergeValidationCachesEXT", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     skip |= validate_required_handle("vkMergeValidationCachesEXT", "dstCache", dstCache);
-    skip |= validate_handle_array("vkMergeValidationCachesEXT", "srcCacheCount", "pSrcCaches", srcCacheCount, pSrcCaches, true, true);
+    skip |= validate_handle_array("vkMergeValidationCachesEXT", "srcCacheCount", "pSrcCaches", srcCacheCount, pSrcCaches, true, true, "VUID-vkMergeValidationCachesEXT-srcCacheCount-arraylength");
     return skip;
 }
 
@@ -11925,7 +11936,7 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_ray_tracing) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesNV", VK_NV_RAY_TRACING_EXTENSION_NAME);
-    skip |= validate_handle_array("vkCmdWriteAccelerationStructuresPropertiesNV", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true);
+    skip |= validate_handle_array("vkCmdWriteAccelerationStructuresPropertiesNV", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-accelerationStructureCount-arraylength");
     skip |= validate_ranged_enum("vkCmdWriteAccelerationStructuresPropertiesNV", "queryType", "VkQueryType", AllVkQueryTypeEnums, queryType, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryType-parameter");
     skip |= validate_required_handle("vkCmdWriteAccelerationStructuresPropertiesNV", "queryPool", queryPool);
     if (!skip) skip |= manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
@@ -12660,7 +12671,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2EXT(
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBindVertexBuffers2EXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_extended_dynamic_state) skip |= OutputExtensionError("vkCmdBindVertexBuffers2EXT", VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    skip |= validate_handle_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pBuffers", bindingCount, pBuffers, true, true);
+    skip |= validate_handle_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pBuffers", bindingCount, pBuffers, true, true, "VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength");
     skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2EXT-pOffsets-parameter");
     skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pSizes", bindingCount, &pSizes, true, false, "VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2EXT-pSizes-parameter");
     skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pStrides", bindingCount, &pStrides, true, false, "VUID-vkCmdBindVertexBuffers2EXT-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2EXT-pStrides-parameter");
@@ -13487,7 +13498,7 @@ bool StatelessValidation::PreCallValidateWriteAccelerationStructuresPropertiesKH
     if (!device_extensions.vk_khr_buffer_device_address) skip |= OutputExtensionError("vkWriteAccelerationStructuresPropertiesKHR", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     if (!device_extensions.vk_ext_descriptor_indexing) skip |= OutputExtensionError("vkWriteAccelerationStructuresPropertiesKHR", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     if (!device_extensions.vk_khr_acceleration_structure) skip |= OutputExtensionError("vkWriteAccelerationStructuresPropertiesKHR", VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    skip |= validate_handle_array("vkWriteAccelerationStructuresPropertiesKHR", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true);
+    skip |= validate_handle_array("vkWriteAccelerationStructuresPropertiesKHR", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true, "VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructureCount-arraylength");
     skip |= validate_ranged_enum("vkWriteAccelerationStructuresPropertiesKHR", "queryType", "VkQueryType", AllVkQueryTypeEnums, queryType, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-parameter");
     skip |= validate_array("vkWriteAccelerationStructuresPropertiesKHR", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkWriteAccelerationStructuresPropertiesKHR-dataSize-arraylength", "VUID-vkWriteAccelerationStructuresPropertiesKHR-pData-parameter");
     if (!skip) skip |= manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride);
@@ -13593,7 +13604,7 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
     if (!device_extensions.vk_khr_buffer_device_address) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesKHR", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     if (!device_extensions.vk_ext_descriptor_indexing) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesKHR", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     if (!device_extensions.vk_khr_acceleration_structure) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesKHR", VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    skip |= validate_handle_array("vkCmdWriteAccelerationStructuresPropertiesKHR", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true);
+    skip |= validate_handle_array("vkCmdWriteAccelerationStructuresPropertiesKHR", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructureCount-arraylength");
     skip |= validate_ranged_enum("vkCmdWriteAccelerationStructuresPropertiesKHR", "queryType", "VkQueryType", AllVkQueryTypeEnums, queryType, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-parameter");
     skip |= validate_required_handle("vkCmdWriteAccelerationStructuresPropertiesKHR", "queryPool", queryPool);
     if (!skip) skip |= manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);

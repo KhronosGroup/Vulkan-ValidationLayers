@@ -1052,9 +1052,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # This is assumed to be an output array with a pointer to a count value
                 raise('Unsupported parameter validation case: Output handle array elements are not NULL checked')
             else:
+                count_required_vuid = self.GetVuid(funcPrintName, "%s-arraylength" % (value.len))
                 # This is an array with an integer count value
-                checkExpr.append('skip |= validate_handle_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {});\n'.format(
-                    funcPrintName, lenValueRequired, valueRequired, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
+                checkExpr.append('skip |= validate_handle_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {});\n'.format(
+                    funcPrintName, lenValueRequired, valueRequired, count_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
         else:
             # This is assumed to be an output handle pointer
             raise('Unsupported parameter validation case: Output handles are not NULL checked')
@@ -1112,6 +1113,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenValueRequired == 'true':
                     if value.type != 'char':
+                        # A valid VU can't use '->' in the middle so the generated VUID from the spec uses '::' instead
+                        count_required_vuid = self.GetVuid(vuid_tag_name, "%s-arraylength" % (value.len.replace('->', '::')))
                         checkExpr.append('skip |= validate_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {});\n'.format(
                             funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
                     else:
@@ -1274,6 +1277,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     def genFuncBody(self, funcName, values, valuePrefix, displayNamePrefix, structTypeName):
         lines = []    # Generated lines of code
         unused = []   # Unused variable names
+        duplicateCountVuid = [] # prevent duplicate VUs being generated
         for value in values:
             usedLines = []
             lenParam = None
@@ -1295,6 +1299,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 cpReq = 'true'  # Count pointer cannot be NULL
                 cvReq = 'true'  # Count value cannot be 0
                 lenDisplayName = None # Name of length parameter to print with validation messages; parameter name with prefix applied
+                countRequiredVuid = None # If there is a count required VUID to check
                 # Generate required/optional parameter strings for the pointer and count values
                 if value.isoptional:
                     req = 'false'
@@ -1316,6 +1321,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         else:
                             if lenParam.isoptional:
                                 cvReq = 'false'
+                            elif value.noautovalidity:
+                                # Handle edge case where XML expresses a non-optional non-pointer value length with noautovalidity
+                                # ex: <param noautovalidity="true"len="commandBufferCount">
+                                vuidNameTag = structTypeName if structTypeName is not None else funcName
+                                countRequiredVuid = self.GetVuid(vuidNameTag, "%s-arraylength" % (lenParam.name))
+                                if countRequiredVuid in duplicateCountVuid:
+                                    countRequiredVuid = None
+                                else:
+                                    duplicateCountVuid.append(countRequiredVuid)
                     else:
                         # Do not generate length checks for constant sized arrays
                         cpReq = 'false'
@@ -1327,9 +1341,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # members not tagged as 'noautovalidity' will be validated
                 # We special-case the custom allocator checks, as they are explicit but can be auto-generated.
                 AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction', 'PFN_vkInternalAllocationNotification', 'PFN_vkInternalFreeNotification']
-                if value.noautovalidity and value.type not in AllocatorFunctions:
+                if value.noautovalidity and value.type not in AllocatorFunctions and not countRequiredVuid:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', 'ParameterValidation: No validation for {} {}'.format(structTypeName if structTypeName else funcName, value.name))
+                elif countRequiredVuid:
+                    usedLines.append('skip |= validate_array("{}", {ppp}"{ldn}"{pps}, "", {pf}{ln}, &{pf}{vn}, true, false, {}, kVUIDUndefined);\n'.format(
+                        funcName, countRequiredVuid, pf=valuePrefix, ldn=lenDisplayName, ln=value.len, vn=value.name, **postProcSpec))
                 else:
                     if value.type in self.structTypes:
                         # If this is a pointer to a struct with an sType field, verify the type

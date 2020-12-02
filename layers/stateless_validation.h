@@ -235,6 +235,8 @@ class StatelessValidation : public ValidationObject {
      * @param countPtrRequired The 'count' parameter may not be NULL when true.
      * @param countValueRequired The '*count' value may not be 0 when true.
      * @param arrayRequired The 'array' parameter may not be NULL when true.
+     * @param count_required_vuid The VUID for the '*count' parameter.
+     * @param array_required_vuid The VUID for the 'array' parameter.
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T1, typename T2>
@@ -453,16 +455,18 @@ class StatelessValidation : public ValidationObject {
      * @param array Array to validate.
      * @param count_required The 'count' parameter may not be 0 when true.
      * @param array_required The 'array' parameter may not be NULL when true.
+     * @param count_required_vuid The VUID for the '*count' parameter.
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
     bool validate_handle_array(const char *api_name, const ParameterName &count_name, const ParameterName &array_name,
-                               uint32_t count, const T *array, bool count_required, bool array_required) const {
+                               uint32_t count, const T *array, bool count_required, bool array_required,
+                               const char *count_required_vuid) const {
         bool skip_call = false;
 
         if ((count == 0) || (array == NULL)) {
             skip_call |= validate_array(api_name, count_name, array_name, count, &array, count_required, array_required,
-                                        kVUIDUndefined, kVUIDUndefined);
+                                        count_required_vuid, kVUIDUndefined);
         } else {
             // Verify that no handles in the array are VK_NULL_HANDLE
             for (uint32_t i = 0; i < count; ++i) {
