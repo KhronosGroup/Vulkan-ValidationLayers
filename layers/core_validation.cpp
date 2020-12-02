@@ -735,10 +735,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
     // Verify vertex & index buffer for unprotected command buffer.
     // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
-    if (enabled_features.core11.protectedMemory == VK_TRUE){
+    if (enabled_features.core11.protectedMemory == VK_TRUE) {
         for (const auto &buffer_binding : current_vtx_bfr_binding_info) {
             if (buffer_binding.buffer_state && !buffer_binding.buffer_state->destroyed) {
-                    skip |= ValidateProtectedBuffer(pCB, buffer_binding.buffer_state.get(), caller, vuid.unprotected_command_buffer,
+                skip |= ValidateProtectedBuffer(pCB, buffer_binding.buffer_state.get(), caller, vuid.unprotected_command_buffer,
                                                 "Buffer is vertex buffer");
             }
         }
@@ -1099,14 +1099,12 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         result |= ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
 
         if (cb_node->activeRenderPass && cb_node->activeFramebuffer) {
-
             // Verify attachments for unprotected/protected command buffer.
             if (enabled_features.core11.protectedMemory == VK_TRUE && cb_node->active_attachments) {
                 uint32_t i = 0;
                 for (const auto &view_state : *cb_node->active_attachments.get()) {
                     const auto &subpass = cb_node->active_subpasses->at(i);
                     if (subpass.used && view_state && !view_state->destroyed) {
-
                         std::string image_desc = "Image is ";
                         image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
                         // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
@@ -1114,10 +1112,10 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                         if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT &&
                             vuid.protected_command_buffer != kVUIDUndefined) {
                             result |= ValidateUnprotectedImage(cb_node, view_state->image_state.get(), function,
-                                                                vuid.protected_command_buffer, image_desc.c_str());
+                                                               vuid.protected_command_buffer, image_desc.c_str());
                         }
                         result |= ValidateProtectedImage(cb_node, view_state->image_state.get(), function,
-                                                            vuid.unprotected_command_buffer, image_desc.c_str());
+                                                         vuid.unprotected_command_buffer, image_desc.c_str());
                     }
                     ++i;
                 }
