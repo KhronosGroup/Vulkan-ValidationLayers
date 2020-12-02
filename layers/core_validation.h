@@ -1378,7 +1378,7 @@ class CoreChecks : public ValidationStateTracker {
                                            VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) const;
 
     bool PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                    VkEvent* pEvent) const final;
+                                    VkEvent* pEvent) const;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
