@@ -85,8 +85,8 @@ class SEMAPHORE_STATE : public BASE_NODE {
 
 class EVENT_STATE : public BASE_NODE {
   public:
-    int write_in_use;
-    VkPipelineStageFlags stageMask;
+    int write_in_use = 0;
+    VkPipelineStageFlags stageMask = VkPipelineStageFlags(0);
 };
 
 class QUEUE_STATE {
@@ -363,7 +363,6 @@ class ValidationStateTracker : public ValidationObject {
     //  TODO -- move to private
     //  TODO -- make consistent with traits approach below.
     std::unordered_map<VkQueue, QUEUE_STATE> queueMap;
-    std::unordered_map<VkEvent, EVENT_STATE> eventMap;
 
     std::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
@@ -413,6 +412,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkFence, FENCE_STATE, fenceMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, queryPoolMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphoreMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkEvent, EVENT_STATE, eventMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, samplerYcbcrConversionMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, accelerationStructureMap_khr)
@@ -622,8 +622,8 @@ class ValidationStateTracker : public ValidationObject {
                                                         const CMD_BUFFER_STATE* primary_cb = nullptr);
     const IMAGE_VIEW_STATE* GetActiveAttachmentImageViewState(const CMD_BUFFER_STATE* cb, uint32_t index,
                                                               const CMD_BUFFER_STATE* primary_cb = nullptr) const;
-    const EVENT_STATE* GetEventState(VkEvent event) const;
-    EVENT_STATE* GetEventState(VkEvent event);
+    const EVENT_STATE* GetEventState(VkEvent event) const { return Get<EVENT_STATE>(event); }
+    EVENT_STATE* GetEventState(VkEvent event) { return Get<EVENT_STATE>(event); }
     const QUEUE_STATE* GetQueueState(VkQueue queue) const;
     QUEUE_STATE* GetQueueState(VkQueue queue);
     const BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle) const;
