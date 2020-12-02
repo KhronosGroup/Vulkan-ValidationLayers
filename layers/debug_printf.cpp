@@ -696,6 +696,15 @@ void DebugPrintf::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer comma
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
+void DebugPrintf::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                           uint32_t firstInstance, VkBuffer counterBuffer,
+                                                           VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                           uint32_t vertexStride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
+                                                                     counterBufferOffset, counterOffset, vertexStride);
+    AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
 void DebugPrintf::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
     AllocateDebugPrintfResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
