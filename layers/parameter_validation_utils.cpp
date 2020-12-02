@@ -6225,17 +6225,15 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                                          "geometry.data->deviceAddress must be aligned to 16 bytes.");
                         }
                     }
-                }
-                if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
+                } else if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
                     if (SafeModulo(pInfos[i].pGeometries[j].geometry.instances.data.deviceAddress, 8) != 0) {
                         skip |= LogError(
                             device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03714",
                             "vkCmdBuildAccelerationStructuresKHR:For any element of pInfos[i].pGeometries with a "
                             "geometryType of VK_GEOMETRY_TYPE_AABBS_KHR, geometry.data->deviceAddress must be aligned to 8 bytes.");
                     }
-                }
-                if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-                    if (SafeModulo(pInfos[i].pGeometries[j].geometry.triangles.indexData.deviceAddress, 16) != 0) {
+                } else if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                    if (SafeModulo(pInfos[i].pGeometries[j].geometry.triangles.transformData.deviceAddress, 16) != 0) {
                         skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03810",
                                          "vkCmdBuildAccelerationStructuresKHR:For any element of pInfos[i].pGeometries "
                                          "with a geometryType of VK_GEOMETRY_TYPE_TRIANGLES_KHR, "
@@ -6260,17 +6258,15 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                                          "geometry.data->deviceAddress must be aligned to 16 bytes.");
                         }
                     }
-                }
-                if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
+                } else if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
                     if (SafeModulo(pInfos[i].ppGeometries[j]->geometry.instances.data.deviceAddress, 8) != 0) {
                         skip |= LogError(
                             device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03714",
                             "vkCmdBuildAccelerationStructuresKHR:For any element of pInfos[i].pGeometries with a "
                             "geometryType of VK_GEOMETRY_TYPE_AABBS_KHR, geometry.data->deviceAddress must be aligned to 8 bytes.");
                     }
-                }
-                if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-                    if (SafeModulo(pInfos[i].ppGeometries[j]->geometry.triangles.indexData.deviceAddress, 16) != 0) {
+                } else if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                    if (SafeModulo(pInfos[i].ppGeometries[j]->geometry.triangles.transformData.deviceAddress, 16) != 0) {
                         skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03810",
                                          "vkCmdBuildAccelerationStructuresKHR:For any element of pInfos[i].pGeometries "
                                          "with a geometryType of VK_GEOMETRY_TYPE_TRIANGLES_KHR, "
