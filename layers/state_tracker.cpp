@@ -844,22 +844,6 @@ void ValidationStateTracker::RemoveAliasingImages(const std::unordered_set<VkIma
     }
 }
 
-const EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) const {
-    auto it = eventMap.find(event);
-    if (it == eventMap.end()) {
-        return nullptr;
-    }
-    return &it->second;
-}
-
-EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
-    auto it = eventMap.find(event);
-    if (it == eventMap.end()) {
-        return nullptr;
-    }
-    return &it->second;
-}
-
 const QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) const {
     auto it = queueMap.find(queue);
     if (it == queueMap.cend()) {
@@ -2216,7 +2200,7 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             for (auto event : cb_node->writeEventsBeforeWait) {
                 auto event_node = eventMap.find(event);
                 if (event_node != eventMap.end()) {
-                    event_node->second.write_in_use--;
+                    event_node->second->write_in_use--;
                 }
             }
             QueryMap local_query_to_state_map;
@@ -2376,8 +2360,8 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                     function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
                 }
 
-                for (auto event_stage_pair : local_event_to_stage_map) {
-                    eventMap[event_stage_pair.first].stageMask = event_stage_pair.second;
+                for (auto eventStagePair : local_event_to_stage_map) {
+                    eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
                 }
             }
         }
@@ -2739,9 +2723,10 @@ void ValidationStateTracker::PreCallRecordDestroySemaphore(VkDevice device, VkSe
 
 void ValidationStateTracker::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
     if (!event) return;
-    EVENT_STATE *event_state = GetEventState(event);
+    EVENT_STATE *event_state = Get<EVENT_STATE>(event);
     const VulkanTypedHandle obj_struct(event, kVulkanObjectTypeEvent);
     InvalidateCommandBuffers(event_state->cb_bindings, obj_struct);
+    event_state->destroyed = true;
     eventMap.erase(event);
 }
 
@@ -5113,8 +5098,7 @@ void ValidationStateTracker::PostCallRecordGetFenceFdKHR(VkDevice device, const 
 void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, VkResult result) {
     if (VK_SUCCESS != result) return;
-    eventMap[*pEvent].write_in_use = 0;
-    eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
+    eventMap[*pEvent] = std::make_shared<EVENT_STATE>();
 }
 
 void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
