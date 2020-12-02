@@ -4703,9 +4703,12 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             vsrisci.shadingRateImageEnable = VK_TRUE;
             vsrisci.viewportCount = 0;
         };
+        // TODO - VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-arraylength or
+        // VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054 will be removed in future
         CreatePipelineHelper::OneshotTest(
             *this, break_vp, kErrorBit,
-            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056"}));
+            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056",
+                                 "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-arraylength"}));
     }
 
     // pShadingRatePalettes must not be NULL.
