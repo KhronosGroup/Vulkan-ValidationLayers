@@ -8008,6 +8008,14 @@ TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), format, &format_props);
+    if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) == 0) {
+        printf("%s SAMPLED_IMAGE_FILTER_CUBIC_BIT for format is not supported.\n", kSkipPrefix);
+        return;
+    }
+
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
 
