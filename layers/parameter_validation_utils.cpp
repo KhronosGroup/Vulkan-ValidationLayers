@@ -33,6 +33,9 @@ inline bool in_inclusive_range(const T &value, const T &min, const T &max) {
     return !((value < min) || (max < value));
 }
 
+read_lock_guard_t StatelessValidation::read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
+write_lock_guard_t StatelessValidation::write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
+
 bool StatelessValidation::validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid,
                                           const char *validateString) const {
     bool skip = false;

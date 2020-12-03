@@ -95,8 +95,8 @@ class StatelessValidation : public ValidationObject {
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
-    virtual read_lock_guard_t read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
-    virtual write_lock_guard_t write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
+    read_lock_guard_t read_lock() override;
+    write_lock_guard_t write_lock() override;
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
     struct DeviceExtensionProperties {
@@ -1248,6 +1248,20 @@ class StatelessValidation : public ValidationObject {
         }
     }
 
+    // Pre/PostCallRecord declarations
+    void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                        const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                        VkResult result) override;
+    void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                            VkResult result) override;
+    void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
+                                         const VkAllocationCallbacks *pAllocator) override;
+    void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) override;
+    void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                      VkInstance *pInstance, VkResult result) override;
+
     bool require_device_extension(bool flag, char const *function_name, char const *extension_name) const;
 
     bool validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo) const;
@@ -1286,18 +1300,7 @@ class StatelessValidation : public ValidationObject {
 
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name) const;
 
-    void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                        const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, VkResult result);
-    void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, VkResult result);
-    void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator);
-    void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result);
-
-    void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                      VkInstance *pInstance, VkResult result);
-
-    void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator);
+    void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) override;
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) const;
