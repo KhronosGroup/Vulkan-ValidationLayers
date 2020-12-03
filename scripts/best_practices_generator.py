@@ -280,7 +280,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
                 return
             if self.featureExtraProtect is not None:
                 self.otwrite('both', '#ifdef %s\n' % self.featureExtraProtect)
-            func_decl = pre_decl.replace(' {',';\n');
+            func_decl = pre_decl.replace(' {',' override;\n');
             func_decl = func_decl.replace('BestPractices::', '')
             self.otwrite('hdr', func_decl)
             intercept += pre_decl
