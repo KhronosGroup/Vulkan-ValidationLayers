@@ -365,8 +365,12 @@ static bool SubresourceRangeIsEmpty(const VkImageSubresourceRange& range) {
 static bool ExtentIsEmpty(const VkExtent3D& extent) { return (0 == extent.width) || (0 == extent.height) || (0 == extent.width); }
 
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
-                                         const VkOffset3D& offset, const VkExtent3D& extent)
-    : encoder_(&encoder), subres_range_(GetRemaining(encoder.FullRange(), subres_range)), offset_(offset), extent_(extent) {
+                                         const VkOffset3D& offset, const VkExtent3D& extent, VkDeviceSize base_address)
+    : encoder_(&encoder),
+      subres_range_(GetRemaining(encoder.FullRange(), subres_range)),
+      offset_(offset),
+      extent_(extent),
+      base_address_(base_address) {
     assert(IsValid(*encoder_, subres_range_));
     if (SubresourceRangeIsEmpty(subres_range) || ExtentIsEmpty(extent)) {
         // Empty range forces empty position -- no operations other than deref for empty check are valid
@@ -397,7 +401,7 @@ void ImageRangeGenerator::SetPos() {
     layer_count_ = range_layer_count_;
     mip_count_ = subres_range_.levelCount;
     aspect_count_ = limits.aspect_index;
-    pos_.begin = encoder_->Encode(subres, subres_range_.baseArrayLayer, offset_);
+    pos_.begin = base_address_ + encoder_->Encode(subres, subres_range_.baseArrayLayer, offset_);
     pos_.end = pos_.begin;
 
     if (offset_.x == 0 && extent_.width >= subres_extent.width) {
