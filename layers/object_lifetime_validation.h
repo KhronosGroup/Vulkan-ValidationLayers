@@ -62,8 +62,8 @@ class ObjectLifetimes : public ValidationObject {
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
     // This class does its own locking with a shared mutex.
-    virtual read_lock_guard_t read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
-    virtual write_lock_guard_t write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
+    read_lock_guard_t read_lock() override;
+    write_lock_guard_t write_lock() override;
 
     mutable ReadWriteLock object_lifetime_mutex;
     write_lock_guard_t write_shared_lock() { return write_lock_guard_t(object_lifetime_mutex); }
