@@ -897,18 +897,11 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                          raygenShaderBindingOffset, raygen_shader_buffer_state->createInfo.size);
     }
 
-    for (const auto &object : cb_state->object_bindings) {
-        if (object.type == kVulkanObjectTypePipeline) {
-            auto pipeline_state = object.node ? (PIPELINE_STATE *)object.node : GetPipelineState(object.Cast<VkPipeline>());
-            const auto &pipeline_state_bind_point =
-                pipeline_state ? pipeline_state->getPipelineType() : VK_PIPELINE_BIND_POINT_MAX_ENUM;
-            if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline) ||
-                pipeline_state_bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                skip |=
-                    LogError(device, "VUID-vkCmdTraceRaysNV-None-02700",
-                             "vkCmdTraceRaysNV: A valid pipeline must be bound to the pipeline bind point used by this command.");
-            }
-        }
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
+    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-None-02700",
+                         "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
     }
     return skip;
 }
