@@ -23,6 +23,9 @@
 #include <bitset>
 #include "synchronization_validation.h"
 
+const static std::array<AccessAddressType, static_cast<size_t>(AccessAddressType::kTypeCount)> kAddressTypes = {
+    AccessAddressType::kLinear, AccessAddressType::kIdealized};
+
 static const char *string_SyncHazardVUID(SyncHazard hazard) {
     switch (hazard) {
         case SyncHazard::NONE:
@@ -325,9 +328,6 @@ bool IsImageLayoutStencilWritable(VkImageLayout image_layout) {
 }
 
 // Class AccessContext stores the state of accesses specific to a Command, Subpass, or Queue
-const std::array<AccessContext::AddressType, AccessContext::kAddressTypeCount> AccessContext::kAddressTypes = {
-    AccessContext::AddressType::kLinearAddress, AccessContext::AddressType::kIdealizedAddress};
-
 template <typename Action>
 static void ApplyOverImageRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range_arg,
                                 Action &action) {
@@ -499,7 +499,7 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
 }
 
 template <typename Detector>
-HazardResult AccessContext::DetectPreviousHazard(AddressType type, const Detector &detector,
+HazardResult AccessContext::DetectPreviousHazard(AccessAddressType type, const Detector &detector,
                                                  const ResourceAccessRange &range) const {
     ResourceAccessRangeMap descent_map;
     ResolvePreviousAccess(type, range, &descent_map, nullptr);
@@ -514,7 +514,7 @@ HazardResult AccessContext::DetectPreviousHazard(AddressType type, const Detecto
 // A recursive range walker for hazard detection, first for the current context and the (DetectHazardRecur) to walk
 // the DAG of the contexts (for example subpasses)
 template <typename Detector>
-HazardResult AccessContext::DetectHazard(AddressType type, const Detector &detector, const ResourceAccessRange &range,
+HazardResult AccessContext::DetectHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range,
                                          DetectOptions options) const {
     HazardResult hazard;
 
@@ -566,7 +566,8 @@ HazardResult AccessContext::DetectHazard(AddressType type, const Detector &detec
 
 // A non recursive range walker for the asynchronous contexts (those we have no barriers with)
 template <typename Detector>
-HazardResult AccessContext::DetectAsyncHazard(AddressType type, const Detector &detector, const ResourceAccessRange &range) const {
+HazardResult AccessContext::DetectAsyncHazard(AccessAddressType type, const Detector &detector,
+                                              const ResourceAccessRange &range) const {
     auto &accesses = GetAccessStateMap(type);
     const auto from = accesses.lower_bound(range);
     const auto to = accesses.upper_bound(range);
@@ -631,7 +632,7 @@ static SyncBarrier MergeBarriers(const std::vector<SyncBarrier> &barriers) {
 }
 
 template <typename BarrierAction>
-void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
+void AccessContext::ResolveAccessRange(AccessAddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
                                        ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                                        bool recur_to_infill) const {
     if (!range.non_empty()) return;
@@ -699,8 +700,8 @@ void AccessContext::ResolveAccessRange(AddressType type, const ResourceAccessRan
     }
 }
 
-void AccessContext::ResolvePreviousAccess(AddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                                          const ResourceAccessState *infill_state) const {
+void AccessContext::ResolvePreviousAccess(AccessAddressType type, const ResourceAccessRange &range,
+                                          ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const {
     if ((prev_.size() == 0) && (src_external_.context == nullptr)) {
         if (range.non_empty() && infill_state) {
             descent_map->insert(std::make_pair(range, *infill_state));
@@ -719,10 +720,9 @@ void AccessContext::ResolvePreviousAccess(AddressType type, const ResourceAccess
     }
 }
 
-AccessContext::AddressType AccessContext::ImageAddressType(const IMAGE_STATE &image) {
-    return (image.fragment_encoder->IsLinearImage()) ? AddressType::kLinearAddress : AddressType::kIdealizedAddress;
+AccessAddressType AccessContext::ImageAddressType(const IMAGE_STATE &image) {
+    return (image.fragment_encoder->IsLinearImage()) ? AccessAddressType::kLinear : AccessAddressType::kIdealized;
 }
-
 
 static SyncStageAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {
     const auto stage_access = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
@@ -748,9 +748,8 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
 template <typename BarrierAction>
 class ResolveAccessRangeFunctor {
   public:
-    ResolveAccessRangeFunctor(const AccessContext &context, AccessContext::AddressType address_type,
-                              ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state,
-                              BarrierAction &barrier_action)
+    ResolveAccessRangeFunctor(const AccessContext &context, AccessAddressType address_type, ResourceAccessRangeMap *descent_map,
+                              const ResourceAccessState *infill_state, BarrierAction &barrier_action)
         : context_(context),
           address_type_(address_type),
           descent_map_(descent_map),
@@ -763,7 +762,7 @@ class ResolveAccessRangeFunctor {
 
   private:
     const AccessContext &context_;
-    const AccessContext::AddressType address_type_;
+    const AccessAddressType address_type_;
     ResourceAccessRangeMap *const descent_map_;
     const ResourceAccessState *infill_state_;
     BarrierAction &barrier_action_;
@@ -771,8 +770,8 @@ class ResolveAccessRangeFunctor {
 
 template <typename BarrierAction>
 void AccessContext::ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
-                                       BarrierAction &barrier_action, AddressType address_type, ResourceAccessRangeMap *descent_map,
-                                       const ResourceAccessState *infill_state) const {
+                                       BarrierAction &barrier_action, AccessAddressType address_type,
+                                       ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const {
     const ResolveAccessRangeFunctor<BarrierAction> action(*this, address_type, descent_map, infill_state, barrier_action);
     ApplyOverImageRange(image_state, subresource_range, action);
 }
@@ -998,7 +997,7 @@ class HazardDetectorWithOrdering {
         : usage_index_(usage), ordering_(ordering) {}
 };
 
-HazardResult AccessContext::DetectHazard(AddressType type, SyncStageAccessIndex usage_index,
+HazardResult AccessContext::DetectHazard(AccessAddressType type, SyncStageAccessIndex usage_index,
                                          const ResourceAccessRange &range) const {
     HazardDetector detector(usage_index);
     return DetectHazard(type, detector, range, DetectOptions::kDetectAll);
@@ -1007,7 +1006,7 @@ HazardResult AccessContext::DetectHazard(AddressType type, SyncStageAccessIndex 
 HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index,
                                          const ResourceAccessRange &range) const {
     if (!SimpleBinding(buffer)) return HazardResult();
-    return DetectHazard(AddressType::kLinearAddress, usage_index, range + ResourceBaseAddress(buffer));
+    return DetectHazard(AccessAddressType::kLinear, usage_index, range + ResourceBaseAddress(buffer));
 }
 
 template <typename Detector>
@@ -1071,6 +1070,7 @@ HazardResult AccessContext::DetectHazard(const IMAGE_VIEW_STATE *view, SyncStage
     }
     return HazardResult();
 }
+
 class BarrierHazardDetector {
   public:
     BarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_exec_scope,
@@ -1091,17 +1091,10 @@ class BarrierHazardDetector {
     SyncStageAccessFlags src_access_scope_;
 };
 
-HazardResult AccessContext::DetectBarrierHazard(AddressType type, SyncStageAccessIndex current_usage,
-                                                VkPipelineStageFlags src_exec_scope, const SyncStageAccessFlags &src_access_scope,
-                                                const ResourceAccessRange &range, DetectOptions options) const {
-    BarrierHazardDetector detector(current_usage, src_exec_scope, src_access_scope);
-    return DetectHazard(type, detector, range, options);
-}
-
 HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                                      const SyncStageAccessFlags &src_access_scope,
                                                      const VkImageSubresourceRange &subresource_range,
-                                                     DetectOptions options) const {
+                                                     const DetectOptions options) const {
     BarrierHazardDetector detector(SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope);
     VkOffset3D zero_offset = {0, 0, 0};
     return DetectHazard(detector, image, subresource_range, zero_offset, image.createInfo.extent, options);
@@ -1197,10 +1190,10 @@ struct UpdateMemoryAccessStateFunctor {
         return pos;
     }
 
-    UpdateMemoryAccessStateFunctor(AccessContext::AddressType type_, const AccessContext &context_, SyncStageAccessIndex usage_,
+    UpdateMemoryAccessStateFunctor(AccessAddressType type_, const AccessContext &context_, SyncStageAccessIndex usage_,
                                    const ResourceUsageTag &tag_)
         : type(type_), context(context_), usage(usage_), tag(tag_) {}
-    const AccessContext::AddressType type;
+    const AccessAddressType type;
     const AccessContext &context;
     const SyncStageAccessIndex usage;
     const ResourceUsageTag &tag;
@@ -1289,7 +1282,7 @@ class ApplyBarrierOpsFunctor {
     const ResourceUsageTag &tag_;
 };
 
-void AccessContext::UpdateAccessState(AddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
+void AccessContext::UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                                       const ResourceUsageTag &tag) {
     UpdateMemoryAccessStateFunctor action(type, *this, current_usage, tag);
     UpdateMemoryAccessState(&GetAccessStateMap(type), range, action);
@@ -1299,7 +1292,7 @@ void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAcces
                                       const ResourceAccessRange &range, const ResourceUsageTag &tag) {
     if (!SimpleBinding(buffer)) return;
     const auto base_address = ResourceBaseAddress(buffer);
-    UpdateAccessState(AddressType::kLinearAddress, current_usage, range + base_address, tag);
+    UpdateAccessState(AccessAddressType::kLinear, current_usage, range + base_address, tag);
 }
 
 void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
@@ -1343,7 +1336,7 @@ template <typename Action>
 void AccessContext::UpdateResourceAccess(const BUFFER_STATE &buffer, const ResourceAccessRange &range, const Action action) {
     if (!SimpleBinding(buffer)) return;
     const auto base_address = ResourceBaseAddress(buffer);
-    UpdateMemoryAccessState(&GetAccessStateMap(AddressType::kLinearAddress), (range + base_address), action);
+    UpdateMemoryAccessState(&GetAccessStateMap(AccessAddressType::kLinear), (range + base_address), action);
 }
 
 template <typename Action>
