@@ -119,6 +119,8 @@ struct SyncBarrier {
     SyncBarrier(const SyncBarrier &other) = default;
 };
 
+enum class AccessAddressType : uint32_t { kLinear = 0, kIdealized = 1, kMaxType = 1, kTypeCount = kMaxType + 1 };
+
 // To represent ordering guarantees such as rasterization and store
 struct SyncOrderingBarrier {
     VkPipelineStageFlags exec_scope;
@@ -260,15 +262,12 @@ using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceA
 
 class AccessContext {
   public:
-    enum AddressType : int { kLinearAddress = 0, kIdealizedAddress = 1, kMaxAddressType = 1 };
     enum DetectOptions : uint32_t {
         kDetectPrevious = 1U << 0,
         kDetectAsync = 1U << 1,
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
-    constexpr static int kAddressTypeCount = AddressType::kMaxAddressType + 1;
-    static const std::array<AddressType, kAddressTypeCount> kAddressTypes;
-    using MapArray = std::array<ResourceAccessRangeMap, kAddressTypeCount>;
+    using MapArray = std::array<ResourceAccessRangeMap, static_cast<size_t>(AccessAddressType::kTypeCount)>;
 
     // WIP TODO WIP Multi-dep -- change track back to support barrier vector, not just last.
     struct TrackBack {
@@ -331,14 +330,14 @@ class AccessContext {
     // subpass layout transition, as the pending state handling is more complex
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
-    void ResolvePreviousAccess(AddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
+    void ResolvePreviousAccess(AccessAddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
                                const ResourceAccessState *infill_state) const;
     template <typename BarrierAction>
     void ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
-                            BarrierAction &barrier_action, AddressType address_type, ResourceAccessRangeMap *descent_map,
+                            BarrierAction &barrier_action, AccessAddressType address_type, ResourceAccessRangeMap *descent_map,
                             const ResourceAccessState *infill_state) const;
     template <typename BarrierAction>
-    void ResolveAccessRange(AddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
+    void ResolveAccessRange(AccessAddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
                             ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                             bool recur_to_infill = true) const;
 
@@ -369,7 +368,7 @@ class AccessContext {
     template <typename Action>
     void ApplyGlobalBarriers(const Action &barrier_action);
 
-    static AddressType ImageAddressType(const IMAGE_STATE &image);
+    static AccessAddressType ImageAddressType(const IMAGE_STATE &image);
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                   const std::vector<AccessContext> &contexts, const AccessContext *external_context);
@@ -377,12 +376,14 @@ class AccessContext {
     AccessContext() { Reset(); }
     AccessContext(const AccessContext &copy_from) = default;
 
-    ResourceAccessRangeMap &GetAccessStateMap(AddressType type) { return access_state_maps_[type]; }
-    const ResourceAccessRangeMap &GetAccessStateMap(AddressType type) const { return access_state_maps_[type]; }
-    ResourceAccessRangeMap &GetLinearMap() { return GetAccessStateMap(AddressType::kLinearAddress); }
-    const ResourceAccessRangeMap &GetLinearMap() const { return GetAccessStateMap(AddressType::kLinearAddress); }
-    ResourceAccessRangeMap &GetIdealizedMap() { return GetAccessStateMap(AddressType::kIdealizedAddress); }
-    const ResourceAccessRangeMap &GetIdealizedMap() const { return GetAccessStateMap(AddressType::kIdealizedAddress); }
+    ResourceAccessRangeMap &GetAccessStateMap(AccessAddressType type) { return access_state_maps_[static_cast<size_t>(type)]; }
+    const ResourceAccessRangeMap &GetAccessStateMap(AccessAddressType type) const {
+        return access_state_maps_[static_cast<size_t>(type)];
+    }
+    ResourceAccessRangeMap &GetLinearMap() { return GetAccessStateMap(AccessAddressType::kLinear); }
+    const ResourceAccessRangeMap &GetLinearMap() const { return GetAccessStateMap(AccessAddressType::kLinear); }
+    ResourceAccessRangeMap &GetIdealizedMap() { return GetAccessStateMap(AccessAddressType::kIdealized); }
+    const ResourceAccessRangeMap &GetIdealizedMap() const { return GetAccessStateMap(AccessAddressType::kIdealized); }
     const TrackBack *GetTrackBackFromSubpass(uint32_t subpass) const {
         if (subpass == VK_SUBPASS_EXTERNAL) {
             return &src_external_;
@@ -413,19 +414,15 @@ class AccessContext {
     void SetStartTag(const ResourceUsageTag &tag) { start_tag_ = tag; }
 
   private:
-    HazardResult DetectHazard(AddressType type, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
-    HazardResult DetectBarrierHazard(AddressType type, SyncStageAccessIndex current_usage, VkPipelineStageFlags src_exec_scope,
-                                     const SyncStageAccessFlags &src_access_scope, const ResourceAccessRange &range,
-                                     DetectOptions options) const;
-
+    HazardResult DetectHazard(AccessAddressType type, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
     template <typename Detector>
-    HazardResult DetectHazard(AddressType type, const Detector &detector, const ResourceAccessRange &range,
+    HazardResult DetectHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range,
                               DetectOptions options) const;
     template <typename Detector>
-    HazardResult DetectAsyncHazard(AddressType type, const Detector &detector, const ResourceAccessRange &range) const;
+    HazardResult DetectAsyncHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range) const;
     template <typename Detector>
-    HazardResult DetectPreviousHazard(AddressType type, const Detector &detector, const ResourceAccessRange &range) const;
-    void UpdateAccessState(AddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
+    HazardResult DetectPreviousHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range) const;
+    void UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                            const ResourceUsageTag &tag);
 
     MapArray access_state_maps_;
