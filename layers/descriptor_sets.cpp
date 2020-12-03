@@ -731,8 +731,9 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
 bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
                                                   const std::vector<uint32_t> &dynamic_offsets,
                                                   std::pair<const uint32_t, DescriptorRequirement> &binding_info,
-                                                  VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*> *attachments,
-                                                  const std::vector<SUBPASS_INFO>& subpasses,const char *caller, const DrawDispatchVuid &vuids) const {
+                                                  VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
+                                                  const std::vector<SUBPASS_INFO> &subpasses, const char *caller,
+                                                  const DrawDispatchVuid &vuids) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -3363,7 +3364,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
             const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                if (!ValidateAccelerationStructureUpdate(GetAccelerationStructureStateNV(accInfo->pAccelerationStructures[di]), func_name, error_code, error_msg)) {
+                if (!ValidateAccelerationStructureUpdate(GetAccelerationStructureStateNV(accInfo->pAccelerationStructures[di]),
+                                                         func_name, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted write update to acceleration structure descriptor failed due to: "
                               << error_msg->c_str();
