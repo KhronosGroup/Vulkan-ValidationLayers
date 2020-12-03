@@ -795,7 +795,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     self.declarations += [ '#ifdef %s' % self.featureExtraProtect ]
                 # Strip off 'vk' from API name
                 decl = '%s%s' % ('bool PreCallValidate', decls[0].split("VKAPI_CALL vk")[1])
-                decl = str(decl).replace(';', ' const;')
+                decl_terminator =  ' const override;'
+                if 'ValidationCache' in name:
+                    decl_terminator = ' const;'
+                decl = str(decl).replace(';', decl_terminator)
                 self.declarations += [ decl ]
                 if (self.featureExtraProtect is not None):
                     self.declarations += [ '#endif' ]
