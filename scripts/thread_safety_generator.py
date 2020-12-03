@@ -425,12 +425,8 @@ public:
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
-    virtual read_lock_guard_t read_lock() {
-        return read_lock_guard_t(validation_object_mutex, std::defer_lock);
-    }
-    virtual write_lock_guard_t write_lock() {
-        return write_lock_guard_t(validation_object_mutex, std::defer_lock);
-    }
+    read_lock_guard_t read_lock() override;
+    write_lock_guard_t write_lock() override;
 
     // If this ThreadSafety is for a VkDevice, then parent_instance points to the
     // ThreadSafety object of its parent VkInstance. This is used to get to the counters
@@ -595,36 +591,36 @@ void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPlanePropertiesKHR*                pProperties,
-    VkResult                                    result);
+    VkResult                                    result) override;
 
 void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPlaneProperties2KHR*               pProperties,
-    VkResult                                    result);
+    VkResult                                    result) override;
 
 void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPropertiesKHR*                     pProperties,
-    VkResult                                    result);
+    VkResult                                    result) override;
 
 void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayProperties2KHR*                    pProperties,
-    VkResult                                    result);
+    VkResult                                    result) override;
 
 void PreCallRecordGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
-    VkDisplayPlaneCapabilities2KHR*             pCapabilities);
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities) override;
 
 void PostCallRecordGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
     VkDisplayPlaneCapabilities2KHR*             pCapabilities,
-    VkResult                                    result);
+    VkResult                                    result) override;
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
@@ -633,12 +629,20 @@ void PostCallRecordGetRandROutputDisplayEXT(
     Display*                                    dpy,
     RROutput                                    rrOutput,
     VkDisplayKHR*                               pDisplay,
-    VkResult                                    result);
+    VkResult                                    result) override;
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT"""
 
 
     inline_custom_source_preamble = """
+read_lock_guard_t ThreadSafety::read_lock() {
+    return read_lock_guard_t(validation_object_mutex, std::defer_lock);
+}
+
+write_lock_guard_t ThreadSafety::write_lock() {
+    return write_lock_guard_t(validation_object_mutex, std::defer_lock);
+}
+
 void ThreadSafety::PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
                                                        VkCommandBuffer *pCommandBuffers) {
     StartReadObjectParentInstance(device, "vkAllocateCommandBuffers");
@@ -1742,7 +1746,10 @@ void ThreadSafety::PostCallRecordDeviceWaitIdle(
         if self.header_file:
             pre_decl = decls[0][:-1]
             pre_decl = pre_decl.split("VKAPI_CALL ")[1]
-            pre_decl = 'void PreCallRecord' + pre_decl + ';'
+            decl_terminator = ';'
+            if 'ValidationCache' not in pre_decl:
+                decl_terminator = ' override;'
+            pre_decl = 'void PreCallRecord' + pre_decl + decl_terminator
 
             # PreCallRecord
             self.appendSection('command', '')

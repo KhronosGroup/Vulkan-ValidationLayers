@@ -25,6 +25,14 @@
 #include "thread_safety.h"
 
 
+read_lock_guard_t ThreadSafety::read_lock() {
+    return read_lock_guard_t(validation_object_mutex, std::defer_lock);
+}
+
+write_lock_guard_t ThreadSafety::write_lock() {
+    return write_lock_guard_t(validation_object_mutex, std::defer_lock);
+}
+
 void ThreadSafety::PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
                                                        VkCommandBuffer *pCommandBuffers) {
     StartReadObjectParentInstance(device, "vkAllocateCommandBuffers");
