@@ -334,11 +334,11 @@ static void ApplyOverImageRange(const IMAGE_STATE &image_state, const VkImageSub
     // At this point the "apply over range" logic only supports a single memory binding
     if (!SimpleBinding(image_state)) return;
     auto subresource_range = NormalizeSubresourceRange(image_state.createInfo, subresource_range_arg);
-    subresource_adapter::ImageRangeGenerator range_gen(*image_state.fragment_encoder.get(), subresource_range, {0, 0, 0},
-                                                       image_state.createInfo.extent);
     const auto base_address = ResourceBaseAddress(image_state);
+    subresource_adapter::ImageRangeGenerator range_gen(*image_state.fragment_encoder.get(), subresource_range, {0, 0, 0},
+                                                       image_state.createInfo.extent, base_address);
     for (; range_gen->non_empty(); ++range_gen) {
-        action((*range_gen + base_address));
+        action(*range_gen);
     }
 }
 
@@ -997,16 +997,12 @@ class HazardDetectorWithOrdering {
         : usage_index_(usage), ordering_(ordering) {}
 };
 
-HazardResult AccessContext::DetectHazard(AccessAddressType type, SyncStageAccessIndex usage_index,
-                                         const ResourceAccessRange &range) const {
-    HazardDetector detector(usage_index);
-    return DetectHazard(type, detector, range, DetectOptions::kDetectAll);
-}
-
 HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index,
                                          const ResourceAccessRange &range) const {
     if (!SimpleBinding(buffer)) return HazardResult();
-    return DetectHazard(AccessAddressType::kLinear, usage_index, range + ResourceBaseAddress(buffer));
+    const auto base_address = ResourceBaseAddress(buffer);
+    HazardDetector detector(usage_index);
+    return DetectHazard(AccessAddressType::kLinear, detector, (range + base_address), DetectOptions::kDetectAll);
 }
 
 template <typename Detector>
@@ -1014,11 +1010,12 @@ HazardResult AccessContext::DetectHazard(Detector &detector, const IMAGE_STATE &
                                          const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                          const VkExtent3D &extent, DetectOptions options) const {
     if (!SimpleBinding(image)) return HazardResult();
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent);
-    const auto address_type = ImageAddressType(image);
     const auto base_address = ResourceBaseAddress(image);
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent,
+                                                       base_address);
+    const auto address_type = ImageAddressType(image);
     for (; range_gen->non_empty(); ++range_gen) {
-        HazardResult hazard = DetectHazard(address_type, detector, (*range_gen + base_address), options);
+        HazardResult hazard = DetectHazard(address_type, detector, *range_gen, options);
         if (hazard.hazard) return hazard;
     }
     return HazardResult();
@@ -1299,12 +1296,13 @@ void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                       const VkExtent3D &extent, const ResourceUsageTag &tag) {
     if (!SimpleBinding(image)) return;
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent);
-    const auto address_type = ImageAddressType(image);
     const auto base_address = ResourceBaseAddress(image);
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent,
+                                                       base_address);
+    const auto address_type = ImageAddressType(image);
     UpdateMemoryAccessStateFunctor action(address_type, *this, current_usage, tag);
     for (; range_gen->non_empty(); ++range_gen) {
-        UpdateMemoryAccessState(&GetAccessStateMap(address_type), (*range_gen + base_address), action);
+        UpdateMemoryAccessState(&GetAccessStateMap(address_type), *range_gen, action);
     }
 }
 void AccessContext::UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const VkOffset3D &offset,
@@ -1346,12 +1344,12 @@ void AccessContext::UpdateResourceAccess(const IMAGE_STATE &image, const VkImage
     const auto address_type = ImageAddressType(image);
     auto *accesses = &GetAccessStateMap(address_type);
 
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, {0, 0, 0},
-                                                       image.createInfo.extent);
-
     const auto base_address = ResourceBaseAddress(image);
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, {0, 0, 0},
+                                                       image.createInfo.extent, base_address);
+
     for (; range_gen->non_empty(); ++range_gen) {
-        UpdateMemoryAccessState(accesses, (*range_gen + base_address), action);
+        UpdateMemoryAccessState(accesses, *range_gen, action);
     }
 }
 

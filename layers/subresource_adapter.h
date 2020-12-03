@@ -359,11 +359,11 @@ class ImageRangeEncoder : public RangeEncoder {
 
 class ImageRangeGenerator {
   public:
-    ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_() {}
+    ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_(), base_address_() {}
     bool operator!=(const ImageRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
     ImageRangeGenerator(const ImageRangeEncoder& encoder);
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
-                        const VkExtent3D& extent);
+                        const VkExtent3D& extent, VkDeviceSize base_address);
     inline const IndexRange& operator*() const { return pos_; }
     inline const IndexRange* operator->() const { return &pos_; }
     ImageRangeGenerator* operator++();
@@ -374,6 +374,7 @@ class ImageRangeGenerator {
     const VkImageSubresourceRange subres_range_;
     const VkOffset3D offset_;
     const VkExtent3D extent_;
+    VkDeviceSize base_address_;
     uint32_t range_arraylayer_base_;
     uint32_t range_layer_count_;
 
