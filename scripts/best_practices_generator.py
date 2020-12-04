@@ -41,6 +41,7 @@ class BestPracticesOutputGeneratorOptions(GeneratorOptions):
                  addExtensions = None,
                  removeExtensions = None,
                  emitExtensions = None,
+                 emitSpirv = None,
                  sortProcedure = regSortFeatures,
                  prefixText = "",
                  genFuncPointers = True,
@@ -66,6 +67,7 @@ class BestPracticesOutputGeneratorOptions(GeneratorOptions):
                 addExtensions = addExtensions,
                 removeExtensions = removeExtensions,
                 emitExtensions = emitExtensions,
+                emitSpirv = emitSpirv,
                 sortProcedure = sortProcedure)
         self.prefixText      = prefixText
         self.genFuncPointers = genFuncPointers
@@ -270,7 +272,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') {\n')
         pre_decl = 'void BestPractices::PostCallRecord' + pre_decl[2:]
-        type = cdecl.split(' ')[1] 
+        type = cdecl.split(' ')[1]
         if type == 'VkResult':
             error_codes = cmdinfo.elem.attrib.get('errorcodes')
             success_codes = cmdinfo.elem.attrib.get('successcodes')

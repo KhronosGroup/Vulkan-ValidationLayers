@@ -1804,11 +1804,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
     TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 2 of 2");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME)) {
-        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
+    // Need to use SPV_EXT_shader_viewport_index_layer
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
+               VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // These tests require that the device support multiViewport

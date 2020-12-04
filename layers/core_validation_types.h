@@ -1493,6 +1493,12 @@ struct DeviceFeatures {
     VkPhysicalDeviceMultiviewFeatures multiview_features;
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features;
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features;
+    VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL shader_integer_functions2_features;
+    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shader_sm_builtins_feature;
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_feature;
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_feature;
+    // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
+    // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

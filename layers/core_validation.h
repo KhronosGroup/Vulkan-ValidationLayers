@@ -453,7 +453,7 @@ class CoreChecks : public ValidationStateTracker {
                                       VkShaderStageFlagBits stage) const;
     bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src,
                                           spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const;
-    bool ValidateShaderCapabilities(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage) const;
+    bool ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const* src) const;
     bool ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
                                                        bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
@@ -476,9 +476,9 @@ class CoreChecks : public ValidationStateTracker {
                                                         const shader_struct_member& push_constant_used_in_shader,
                                                         uint32_t& out_issue_index) const;
     bool ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo const* info) const;
-    bool RequirePropertyFlag(VkBool32 check, char const* flag, char const* structure) const;
-    bool RequireFeature(VkBool32 feature, char const* feature_name) const;
-    bool RequireExtension(bool extension, char const* extension_name) const;
+    bool RequirePropertyFlag(VkBool32 check, char const* flag, char const* structure, const char* vuid) const;
+    bool RequireFeature(VkBool32 feature, char const* feature_name, const char* vuid) const;
+    bool RequireApiVersion(uint32_t version, const char* vuid) const;
     bool ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const* producer, spirv_inst_iter producer_entrypoint,
                                         shader_stage_attributes const* producer_stage, SHADER_MODULE_STATE const* consumer,
                                         spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;

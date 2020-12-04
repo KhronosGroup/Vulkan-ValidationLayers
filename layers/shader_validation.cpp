@@ -900,6 +900,52 @@ static bool AtomicOperation(uint32_t opcode) {
     return false;
 }
 
+// Only includes valid group operations used in Vulkan (for now thats only subgroup ops) and any non supported operation will be
+// covered with VUID 01090
+static bool GroupOperation(uint32_t opcode) {
+    switch (opcode) {
+        case spv::OpGroupNonUniformElect:
+        case spv::OpGroupNonUniformAll:
+        case spv::OpGroupNonUniformAny:
+        case spv::OpGroupNonUniformAllEqual:
+        case spv::OpGroupNonUniformBroadcast:
+        case spv::OpGroupNonUniformBroadcastFirst:
+        case spv::OpGroupNonUniformBallot:
+        case spv::OpGroupNonUniformInverseBallot:
+        case spv::OpGroupNonUniformBallotBitExtract:
+        case spv::OpGroupNonUniformBallotBitCount:
+        case spv::OpGroupNonUniformBallotFindLSB:
+        case spv::OpGroupNonUniformBallotFindMSB:
+        case spv::OpGroupNonUniformShuffle:
+        case spv::OpGroupNonUniformShuffleXor:
+        case spv::OpGroupNonUniformShuffleUp:
+        case spv::OpGroupNonUniformShuffleDown:
+        case spv::OpGroupNonUniformIAdd:
+        case spv::OpGroupNonUniformFAdd:
+        case spv::OpGroupNonUniformIMul:
+        case spv::OpGroupNonUniformFMul:
+        case spv::OpGroupNonUniformSMin:
+        case spv::OpGroupNonUniformUMin:
+        case spv::OpGroupNonUniformFMin:
+        case spv::OpGroupNonUniformSMax:
+        case spv::OpGroupNonUniformUMax:
+        case spv::OpGroupNonUniformFMax:
+        case spv::OpGroupNonUniformBitwiseAnd:
+        case spv::OpGroupNonUniformBitwiseOr:
+        case spv::OpGroupNonUniformBitwiseXor:
+        case spv::OpGroupNonUniformLogicalAnd:
+        case spv::OpGroupNonUniformLogicalOr:
+        case spv::OpGroupNonUniformLogicalXor:
+        case spv::OpGroupNonUniformQuadBroadcast:
+        case spv::OpGroupNonUniformQuadSwap:
+        case spv::OpGroupNonUniformPartitionNV:
+            return true;
+        default:
+            return false;
+    }
+    return false;
+}
+
 bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<unsigned> &operator_members,
                              const std::unordered_map<unsigned, unsigned> &load_members,
                              const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> &accesschain_members) {
@@ -2066,10 +2112,9 @@ static std::string string_descriptorTypes(const std::set<uint32_t> &descriptor_t
     return ss.str();
 }
 
-bool CoreChecks::RequirePropertyFlag(VkBool32 check, char const *flag, char const *structure) const {
+bool CoreChecks::RequirePropertyFlag(VkBool32 check, char const *flag, char const *structure, const char *vuid) const {
     if (!check) {
-        if (LogError(device, kVUID_Core_Shader_ExceedDeviceLimit,
-                     "Shader requires flag %s set in %s but it is not set on the device", flag, structure)) {
+        if (LogError(device, vuid, "Shader requires flag %s set in %s but it is not set on the device", flag, structure)) {
             return true;
         }
     }
@@ -2077,305 +2122,14 @@ bool CoreChecks::RequirePropertyFlag(VkBool32 check, char const *flag, char cons
     return false;
 }
 
-bool CoreChecks::RequireFeature(VkBool32 feature, char const *feature_name) const {
+bool CoreChecks::RequireFeature(VkBool32 feature, char const *feature_name, const char *vuid) const {
     if (!feature) {
-        if (LogError(device, kVUID_Core_Shader_FeatureNotEnabled, "Shader requires %s but is not enabled on the device",
-                     feature_name)) {
+        if (LogError(device, vuid, "Shader requires %s but is not enabled on the device", feature_name)) {
             return true;
         }
     }
 
     return false;
-}
-
-bool CoreChecks::RequireExtension(bool extension, char const *extension_name) const {
-    if (!extension) {
-        if (LogError(device, kVUID_Core_Shader_FeatureNotEnabled, "Shader requires extension %s but is not enabled on the device",
-                     extension_name)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkShaderStageFlagBits stage) const {
-    bool skip = false;
-
-    struct FeaturePointer {
-        // Callable object to test if this feature is enabled in the given aggregate feature struct
-        const std::function<VkBool32(const DeviceFeatures &)> IsEnabled;
-
-        // Test if feature pointer is populated
-        explicit operator bool() const { return static_cast<bool>(IsEnabled); }
-
-        // Default and nullptr constructor to create an empty FeaturePointer
-        FeaturePointer() : IsEnabled(nullptr) {}
-        FeaturePointer(std::nullptr_t ptr) : IsEnabled(nullptr) {}
-
-        // Constructors to populate FeaturePointer based on given pointer to member
-        FeaturePointer(VkBool32 VkPhysicalDeviceFeatures::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.core.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceVulkan11Features::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.core11.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceVulkan12Features::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.core12.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceTransformFeedbackFeaturesEXT::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.transform_feedback_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceCooperativeMatrixFeaturesNV::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.cooperative_matrix_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.compute_shader_derivatives_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shader_barycentric_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceShaderImageFootprintFeaturesNV::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.shader_image_footprint_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shader_interlock_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.demote_to_helper_invocation_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceRayQueryFeaturesKHR::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.ray_query_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingPipelineFeaturesKHR::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_pipeline_features.*ptr; }) {}
-        FeaturePointer(VkBool32 VkPhysicalDeviceAccelerationStructureFeaturesKHR::*ptr)
-            : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_acceleration_structure_features.*ptr; }) {
-        }
-    };
-
-    struct CapabilityInfo {
-        char const *name;
-        FeaturePointer feature;
-        ExtEnabled DeviceExtensions::*extension;
-    };
-
-    // clang-format off
-    static const std::unordered_multimap<uint32_t, CapabilityInfo> capabilities = {
-        // Capabilities always supported by a Vulkan 1.0 implementation -- no
-        // feature bits.
-        {spv::CapabilityMatrix, {nullptr}},
-        {spv::CapabilityShader, {nullptr}},
-        {spv::CapabilityInputAttachment, {nullptr}},
-        {spv::CapabilitySampled1D, {nullptr}},
-        {spv::CapabilityImage1D, {nullptr}},
-        {spv::CapabilitySampledBuffer, {nullptr}},
-        {spv::CapabilityStorageImageExtendedFormats, {nullptr}},
-        {spv::CapabilityImageQuery, {nullptr}},
-        {spv::CapabilityDerivativeControl, {nullptr}},
-
-        // Capabilities that are optionally supported, but require a feature to
-        // be enabled on the device
-        {spv::CapabilityGeometry, {"VkPhysicalDeviceFeatures::geometryShader", &VkPhysicalDeviceFeatures::geometryShader}},
-        {spv::CapabilityTessellation, {"VkPhysicalDeviceFeatures::tessellationShader", &VkPhysicalDeviceFeatures::tessellationShader}},
-        {spv::CapabilityFloat64, {"VkPhysicalDeviceFeatures::shaderFloat64", &VkPhysicalDeviceFeatures::shaderFloat64}},
-        {spv::CapabilityInt64, {"VkPhysicalDeviceFeatures::shaderInt64", &VkPhysicalDeviceFeatures::shaderInt64}},
-        {spv::CapabilityTessellationPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize}},
-        {spv::CapabilityGeometryPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize}},
-        {spv::CapabilityImageGatherExtended, {"VkPhysicalDeviceFeatures::shaderImageGatherExtended", &VkPhysicalDeviceFeatures::shaderImageGatherExtended}},
-        {spv::CapabilityStorageImageMultisample, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &VkPhysicalDeviceFeatures::shaderStorageImageMultisample}},
-        {spv::CapabilityUniformBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing", &VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing}},
-        {spv::CapabilitySampledImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing", &VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing}},
-        {spv::CapabilityStorageBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing", &VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing}},
-        {spv::CapabilityStorageImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing", &VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing}},
-        {spv::CapabilityClipDistance, {"VkPhysicalDeviceFeatures::shaderClipDistance", &VkPhysicalDeviceFeatures::shaderClipDistance}},
-        {spv::CapabilityCullDistance, {"VkPhysicalDeviceFeatures::shaderCullDistance", &VkPhysicalDeviceFeatures::shaderCullDistance}},
-        {spv::CapabilityImageCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &VkPhysicalDeviceFeatures::imageCubeArray}},
-        {spv::CapabilitySampleRateShading, {"VkPhysicalDeviceFeatures::sampleRateShading", &VkPhysicalDeviceFeatures::sampleRateShading}},
-        {spv::CapabilitySparseResidency, {"VkPhysicalDeviceFeatures::shaderResourceResidency", &VkPhysicalDeviceFeatures::shaderResourceResidency}},
-        {spv::CapabilityMinLod, {"VkPhysicalDeviceFeatures::shaderResourceMinLod", &VkPhysicalDeviceFeatures::shaderResourceMinLod}},
-        {spv::CapabilitySampledCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &VkPhysicalDeviceFeatures::imageCubeArray}},
-        {spv::CapabilityImageMSArray, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &VkPhysicalDeviceFeatures::shaderStorageImageMultisample}},
-        {spv::CapabilityInterpolationFunction, {"VkPhysicalDeviceFeatures::sampleRateShading", &VkPhysicalDeviceFeatures::sampleRateShading}},
-        {spv::CapabilityStorageImageReadWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageReadWithoutFormat", &VkPhysicalDeviceFeatures::shaderStorageImageReadWithoutFormat}},
-        {spv::CapabilityStorageImageWriteWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat", &VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat}},
-        {spv::CapabilityMultiViewport, {"VkPhysicalDeviceFeatures::multiViewport", &VkPhysicalDeviceFeatures::multiViewport}},
-
-        {spv::CapabilityShaderNonUniformEXT, {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_descriptor_indexing}},
-        {spv::CapabilityRuntimeDescriptorArrayEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::runtimeDescriptorArray", &VkPhysicalDeviceVulkan12Features::runtimeDescriptorArray}},
-        {spv::CapabilityInputAttachmentArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderInputAttachmentArrayDynamicIndexing", &VkPhysicalDeviceVulkan12Features::shaderInputAttachmentArrayDynamicIndexing}},
-        {spv::CapabilityUniformTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderUniformTexelBufferArrayDynamicIndexing", &VkPhysicalDeviceVulkan12Features::shaderUniformTexelBufferArrayDynamicIndexing}},
-        {spv::CapabilityStorageTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderStorageTexelBufferArrayDynamicIndexing", &VkPhysicalDeviceVulkan12Features::shaderStorageTexelBufferArrayDynamicIndexing}},
-        {spv::CapabilityUniformBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderUniformBufferArrayNonUniformIndexing", &VkPhysicalDeviceVulkan12Features::shaderUniformBufferArrayNonUniformIndexing}},
-        {spv::CapabilitySampledImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderSampledImageArrayNonUniformIndexing", &VkPhysicalDeviceVulkan12Features::shaderSampledImageArrayNonUniformIndexing}},
-        {spv::CapabilityStorageBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderStorageBufferArrayNonUniformIndexing", &VkPhysicalDeviceVulkan12Features::shaderStorageBufferArrayNonUniformIndexing}},
-        {spv::CapabilityStorageImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderStorageImageArrayNonUniformIndexing", &VkPhysicalDeviceVulkan12Features::shaderStorageImageArrayNonUniformIndexing}},
-        {spv::CapabilityInputAttachmentArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderInputAttachmentArrayNonUniformIndexing", &VkPhysicalDeviceVulkan12Features::shaderInputAttachmentArrayNonUniformIndexing}},
-        {spv::CapabilityUniformTexelBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderUniformTexelBufferArrayNonUniformIndexing", &VkPhysicalDeviceVulkan12Features::shaderUniformTexelBufferArrayNonUniformIndexing}},
-        {spv::CapabilityStorageTexelBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeatures::shaderStorageTexelBufferArrayNonUniformIndexing", &VkPhysicalDeviceVulkan12Features::shaderStorageTexelBufferArrayNonUniformIndexing}},
-
-        // Capabilities that require an extension
-        {spv::CapabilityDrawParameters, {VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_khr_shader_draw_parameters}},
-        {spv::CapabilityGeometryShaderPassthroughNV, {VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_geometry_shader_passthrough}},
-        {spv::CapabilitySampleMaskOverrideCoverageNV, {VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_sample_mask_override_coverage}},
-        {spv::CapabilityShaderViewportIndexLayerEXT, {VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_viewport_index_layer}},
-        {spv::CapabilityShaderViewportIndexLayerNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_viewport_array2}},
-        {spv::CapabilityShaderViewportMaskNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_viewport_array2}},
-        {spv::CapabilitySubgroupBallotKHR, {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_ballot }},
-        {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_vote }},
-        {spv::CapabilityGroupNonUniformPartitionedNV, {VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_shader_subgroup_partitioned}},
-        {spv::CapabilityInt64Atomics, {VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_khr_shader_atomic_int64 }},
-        {spv::CapabilityShaderClockKHR, {VK_KHR_SHADER_CLOCK_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_khr_shader_clock }},
-
-        {spv::CapabilityComputeDerivativeGroupQuadsNV, {"VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads", &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads, &DeviceExtensions::vk_nv_compute_shader_derivatives}},
-        {spv::CapabilityComputeDerivativeGroupLinearNV, {"VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear", &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear, &DeviceExtensions::vk_nv_compute_shader_derivatives}},
-        {spv::CapabilityFragmentBarycentricNV, {"VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric", &VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric, &DeviceExtensions::vk_nv_fragment_shader_barycentric}},
-
-        {spv::CapabilityStorageBuffer8BitAccess, {"VkPhysicalDevice8BitStorageFeaturesKHR::storageBuffer8BitAccess", &VkPhysicalDeviceVulkan12Features::storageBuffer8BitAccess, &DeviceExtensions::vk_khr_8bit_storage}},
-        {spv::CapabilityUniformAndStorageBuffer8BitAccess, {"VkPhysicalDevice8BitStorageFeaturesKHR::uniformAndStorageBuffer8BitAccess", &VkPhysicalDeviceVulkan12Features::uniformAndStorageBuffer8BitAccess, &DeviceExtensions::vk_khr_8bit_storage}},
-        {spv::CapabilityStoragePushConstant8, {"VkPhysicalDevice8BitStorageFeaturesKHR::storagePushConstant8", &VkPhysicalDeviceVulkan12Features::storagePushConstant8, &DeviceExtensions::vk_khr_8bit_storage}},
-
-        {spv::CapabilityTransformFeedback, { "VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback", &VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback, &DeviceExtensions::vk_ext_transform_feedback}},
-        {spv::CapabilityGeometryStreams, { "VkPhysicalDeviceTransformFeedbackFeaturesEXT::geometryStreams", &VkPhysicalDeviceTransformFeedbackFeaturesEXT::geometryStreams, &DeviceExtensions::vk_ext_transform_feedback}},
-
-        {spv::CapabilityFloat16, {"VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderFloat16", &VkPhysicalDeviceVulkan12Features::shaderFloat16, &DeviceExtensions::vk_khr_shader_float16_int8}},
-        {spv::CapabilityInt8, {"VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderInt8", &VkPhysicalDeviceVulkan12Features::shaderInt8, &DeviceExtensions::vk_khr_shader_float16_int8}},
-
-        {spv::CapabilityImageFootprintNV, {"VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint", &VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint, &DeviceExtensions::vk_nv_shader_image_footprint}},
-
-        {spv::CapabilityCooperativeMatrixNV, {"VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix", &VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix, &DeviceExtensions::vk_nv_cooperative_matrix}},
-
-        {spv::CapabilitySignedZeroInfNanPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderSignedZeroInfNanPreserve", nullptr, &DeviceExtensions::vk_khr_shader_float_controls}},
-        {spv::CapabilityDenormPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormPreserve", nullptr, &DeviceExtensions::vk_khr_shader_float_controls}},
-        {spv::CapabilityDenormFlushToZero, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormFlushToZero", nullptr, &DeviceExtensions::vk_khr_shader_float_controls}},
-        {spv::CapabilityRoundingModeRTE, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTE", nullptr, &DeviceExtensions::vk_khr_shader_float_controls}},
-        {spv::CapabilityRoundingModeRTZ, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTZ", nullptr, &DeviceExtensions::vk_khr_shader_float_controls}},
-
-        {spv::CapabilityFragmentShaderSampleInterlockEXT,       {"VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderSampleInterlock",       &VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderSampleInterlock,         &DeviceExtensions::vk_ext_fragment_shader_interlock}},
-        {spv::CapabilityFragmentShaderPixelInterlockEXT,        {"VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderPixelInterlock",        &VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderPixelInterlock,          &DeviceExtensions::vk_ext_fragment_shader_interlock}},
-        {spv::CapabilityFragmentShaderShadingRateInterlockEXT,  {"VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderShadingRateInterlock",  &VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderShadingRateInterlock,    &DeviceExtensions::vk_ext_fragment_shader_interlock}},
-        {spv::CapabilityDemoteToHelperInvocationEXT,       {"VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation",       &VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation,         &DeviceExtensions::vk_ext_shader_demote_to_helper_invocation}},
-
-        {spv::CapabilityPhysicalStorageBufferAddresses, {"VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress", &VkPhysicalDeviceVulkan12Features::bufferDeviceAddress, &DeviceExtensions::vk_ext_buffer_device_address}},
-        // Should be non-EXT token, but Android SPIRV-Headers are out of date, and the token value is the same anyway
-        {spv::CapabilityPhysicalStorageBufferAddressesEXT, {"VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::bufferDeviceAddress", &VkPhysicalDeviceVulkan12Features::bufferDeviceAddress, &DeviceExtensions::vk_khr_buffer_device_address}},
-
-        {spv::CapabilityRayTracingKHR, {"VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipeline", &VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipeline, &DeviceExtensions::vk_khr_ray_tracing_pipeline }},
-        {spv::CapabilityRayQueryKHR, {"VkPhysicalDeviceRayQueryFeaturesKHR::rayQuery", &VkPhysicalDeviceRayQueryFeaturesKHR::rayQuery, &DeviceExtensions::vk_khr_ray_query }},
-        {spv::CapabilityRayTraversalPrimitiveCullingKHR, {"VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPrimitiveCulling", &VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTraversalPrimitiveCulling, &DeviceExtensions::vk_khr_ray_tracing_pipeline }},
-    };
-    // clang-format on
-
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpCapability) {
-            size_t n = capabilities.count(insn.word(1));
-            if (1 == n) {  // key occurs exactly once
-                auto it = capabilities.find(insn.word(1));
-                if (it != capabilities.end()) {
-                    if (it->second.feature) {
-                        skip |= RequireFeature(it->second.feature.IsEnabled(enabled_features), it->second.name);
-                    }
-                    if (it->second.extension) {
-                        skip |= RequireExtension(IsExtEnabled((device_extensions.*(it->second.extension))), it->second.name);
-                    }
-                }
-            } else if (1 < n) {  // key occurs multiple times, at least one must be enabled
-                bool needs_feature = false, has_feature = false;
-                bool needs_ext = false, has_ext = false;
-                std::string feature_names = "(one of) [ ";
-                std::string extension_names = feature_names;
-                auto caps = capabilities.equal_range(insn.word(1));
-                for (auto it = caps.first; it != caps.second; ++it) {
-                    if (it->second.feature) {
-                        needs_feature = true;
-                        has_feature = has_feature || it->second.feature.IsEnabled(enabled_features);
-                        feature_names += it->second.name;
-                        feature_names += " ";
-                    }
-                    if (it->second.extension) {
-                        needs_ext = true;
-                        has_ext = has_ext || device_extensions.*(it->second.extension);
-                        extension_names += it->second.name;
-                        extension_names += " ";
-                    }
-                }
-                if (needs_feature) {
-                    feature_names += "]";
-                    skip |= RequireFeature(has_feature, feature_names.c_str());
-                }
-                if (needs_ext) {
-                    extension_names += "]";
-                    skip |= RequireExtension(has_ext, extension_names.c_str());
-                }
-            }
-
-            {  // Do group non-uniform checks
-                const VkSubgroupFeatureFlags supportedOperations = phys_dev_props_core11.subgroupSupportedOperations;
-                const VkSubgroupFeatureFlags supportedStages = phys_dev_props_core11.subgroupSupportedStages;
-
-                switch (insn.word(1)) {
-                    default:
-                        break;
-                    case spv::CapabilityGroupNonUniform:
-                    case spv::CapabilityGroupNonUniformVote:
-                    case spv::CapabilityGroupNonUniformArithmetic:
-                    case spv::CapabilityGroupNonUniformBallot:
-                    case spv::CapabilityGroupNonUniformShuffle:
-                    case spv::CapabilityGroupNonUniformShuffleRelative:
-                    case spv::CapabilityGroupNonUniformClustered:
-                    case spv::CapabilityGroupNonUniformQuad:
-                    case spv::CapabilityGroupNonUniformPartitionedNV:
-                        RequirePropertyFlag(supportedStages & stage, string_VkShaderStageFlagBits(stage),
-                                            "VkPhysicalDeviceSubgroupProperties::supportedStages");
-                        break;
-                }
-
-                switch (insn.word(1)) {
-                    default:
-                        break;
-                    case spv::CapabilityGroupNonUniform:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT, "VK_SUBGROUP_FEATURE_BASIC_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformVote:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_VOTE_BIT, "VK_SUBGROUP_FEATURE_VOTE_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformArithmetic:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT,
-                                            "VK_SUBGROUP_FEATURE_ARITHMETIC_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformBallot:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT, "VK_SUBGROUP_FEATURE_BALLOT_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformShuffle:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT,
-                                            "VK_SUBGROUP_FEATURE_SHUFFLE_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformShuffleRelative:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT,
-                                            "VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformClustered:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT,
-                                            "VK_SUBGROUP_FEATURE_CLUSTERED_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformQuad:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_QUAD_BIT, "VK_SUBGROUP_FEATURE_QUAD_BIT",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                    case spv::CapabilityGroupNonUniformPartitionedNV:
-                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV,
-                                            "VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV",
-                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-                        break;
-                }
-            }
-        } else if (insn.opcode() == spv::OpExtension) {
-            std::string extension_name = (char const *)&insn.word(1);
-
-            if (extension_name == "SPV_KHR_non_semantic_info") {
-                skip |= RequireExtension(IsExtEnabled(device_extensions.vk_khr_shader_non_semantic_info),
-                                         VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-            }
-        }
-    }
-
-    return skip;
 }
 
 bool CoreChecks::ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
@@ -2397,10 +2151,12 @@ bool CoreChecks::ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlag
                  * raytracing, or mesh stages */
                 break;
             case VK_SHADER_STAGE_FRAGMENT_BIT:
-                skip |= RequireFeature(enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
+                skip |= RequireFeature(enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics",
+                                       kVUID_Core_Shader_FeatureNotEnabled);
                 break;
             default:
-                skip |= RequireFeature(enabled_features.core.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics");
+                skip |= RequireFeature(enabled_features.core.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics",
+                                       kVUID_Core_Shader_FeatureNotEnabled);
                 break;
         }
     }
@@ -2412,70 +2168,59 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
     bool skip = false;
 
     auto const subgroup_props = phys_dev_props_core11;
+    const VkSubgroupFeatureFlags supportedStages = subgroup_props.subgroupSupportedStages;
 
     for (auto inst : *module) {
-        // Check the quad operations.
-        switch (inst.opcode()) {
-            default:
-                break;
-            case spv::OpGroupNonUniformQuadBroadcast:
-            case spv::OpGroupNonUniformQuadSwap:
+        // Check anything using a group operation (which currently is only OpGroupNonUnifrom* operations)
+        if (GroupOperation(inst.opcode()) == true) {
+            // Check the quad operations.
+            if ((inst.opcode() == spv::OpGroupNonUniformQuadBroadcast) || (inst.opcode() == spv::OpGroupNonUniformQuadSwap)) {
                 if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
                     skip |= RequireFeature(subgroup_props.subgroupQuadOperationsInAllStages,
-                                           "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages");
+                                           "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages",
+                                           kVUID_Core_Shader_FeatureNotEnabled);
                 }
-                break;
-        }
+            }
 
-        if (!enabled_features.core12.shaderSubgroupExtendedTypes) {
-            switch (inst.opcode()) {
-                default:
+            auto scope_id = module->get_def(inst.word(3));
+            uint32_t scope_type = spv::ScopeMax;
+            if ((scope_id.opcode() == spv::OpSpecConstant) || (scope_id.opcode() == spv::OpConstant)) {
+                scope_type = scope_id.word(3);
+            } else {
+                // TODO - Look if this is check by spirv-val
+                skip |= LogWarning(device, "UNASSIGNED-spirv-group-scopeId",
+                                   "Expecting group operation (%u) scope id operand to point to a OpConstant or OpSpecConstant "
+                                   "opcode but instead it is pointing to opcode (%u)",
+                                   inst.opcode(), scope_id.opcode());
+            }
+
+            if (scope_type == spv::ScopeSubgroup) {
+                // "Group operations with subgroup scope" must have stage support
+                skip |=
+                    RequirePropertyFlag(supportedStages & stage, string_VkShaderStageFlagBits(stage),
+                                        "VkPhysicalDeviceSubgroupProperties::supportedStages", kVUID_Core_Shader_ExceedDeviceLimit);
+            }
+
+            if (!enabled_features.core12.shaderSubgroupExtendedTypes) {
+                auto type = module->get_def(inst.word(1));
+
+                if (type.opcode() == spv::OpTypeVector) {
+                    // Get the element type
+                    type = module->get_def(type.word(2));
+                }
+
+                if (type.opcode() == spv::OpTypeBool) {
                     break;
-                case spv::OpGroupNonUniformAllEqual:
-                case spv::OpGroupNonUniformBroadcast:
-                case spv::OpGroupNonUniformBroadcastFirst:
-                case spv::OpGroupNonUniformShuffle:
-                case spv::OpGroupNonUniformShuffleXor:
-                case spv::OpGroupNonUniformShuffleUp:
-                case spv::OpGroupNonUniformShuffleDown:
-                case spv::OpGroupNonUniformIAdd:
-                case spv::OpGroupNonUniformFAdd:
-                case spv::OpGroupNonUniformIMul:
-                case spv::OpGroupNonUniformFMul:
-                case spv::OpGroupNonUniformSMin:
-                case spv::OpGroupNonUniformUMin:
-                case spv::OpGroupNonUniformFMin:
-                case spv::OpGroupNonUniformSMax:
-                case spv::OpGroupNonUniformUMax:
-                case spv::OpGroupNonUniformFMax:
-                case spv::OpGroupNonUniformBitwiseAnd:
-                case spv::OpGroupNonUniformBitwiseOr:
-                case spv::OpGroupNonUniformBitwiseXor:
-                case spv::OpGroupNonUniformLogicalAnd:
-                case spv::OpGroupNonUniformLogicalOr:
-                case spv::OpGroupNonUniformLogicalXor:
-                case spv::OpGroupNonUniformQuadBroadcast:
-                case spv::OpGroupNonUniformQuadSwap: {
-                    auto type = module->get_def(inst.word(1));
+                }
 
-                    if (type.opcode() == spv::OpTypeVector) {
-                        // Get the element type
-                        type = module->get_def(type.word(2));
-                    }
+                // Both OpTypeInt and OpTypeFloat the width is in the 2nd word.
+                const uint32_t width = type.word(2);
 
-                    if (type.opcode() == spv::OpTypeBool) {
-                        break;
-                    }
-
-                    // Both OpTypeInt and OpTypeFloat the width is in the 2nd word.
-                    const uint32_t width = type.word(2);
-
-                    if ((type.opcode() == spv::OpTypeFloat && width == 16) ||
-                        (type.opcode() == spv::OpTypeInt && (width == 8 || width == 16 || width == 64))) {
-                        skip |= RequireFeature(enabled_features.core12.shaderSubgroupExtendedTypes,
-                                               "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::shaderSubgroupExtendedTypes");
-                    }
-                    break;
+                if ((type.opcode() == spv::OpTypeFloat && width == 16) ||
+                    (type.opcode() == spv::OpTypeInt && (width == 8 || width == 16 || width == 64))) {
+                    skip |= RequireFeature(enabled_features.core12.shaderSubgroupExtendedTypes,
+                                           "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::shaderSubgroupExtendedTypes",
+                                           kVUID_Core_Shader_FeatureNotEnabled);
                 }
             }
         }
@@ -3669,7 +3414,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     auto &descriptor_uses = stage_state.descriptor_uses;
 
     // Validate shader capabilities against enabled device features
-    skip |= ValidateShaderCapabilities(module, pStage->stage);
+    skip |= ValidateShaderCapabilitiesAndExtensions(module);
     skip |=
         ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, has_writable_descriptor, stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);

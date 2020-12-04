@@ -968,7 +968,7 @@ VkResult DispatchDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarker
             local_tag_info.object = it->second;
         }
     }
-    VkResult result = layer_data->device_dispatch_table.DebugMarkerSetObjectTagEXT(device, 
+    VkResult result = layer_data->device_dispatch_table.DebugMarkerSetObjectTagEXT(device,
                                                                                    reinterpret_cast<VkDebugMarkerObjectTagInfoEXT *>(&local_tag_info));
     return result;
 }
