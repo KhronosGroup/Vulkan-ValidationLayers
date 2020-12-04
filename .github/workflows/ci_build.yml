@@ -36,7 +36,7 @@ jobs:
     - name: Prepare external components
       run: |
         # Fetch and build Loader
-        set(cmake_version "3.10.2")
+        set(cmake-version "3.10.2")
         include(ProcessorCount)
         ProcessorCount(N)
         cd ${EXTERNAL_DIR}
@@ -90,7 +90,7 @@ jobs:
         python3 ${{ matrix.config.build_dir }}/scripts/generate_source.py --verify ${{ matrix.config.build_dir }}/external/Vulkan-Headers/registry
     - name: Build Vulkan-ValidationLayers source code
       run: |
-        set(cmake_version "3.10.2")
+        set(cmake-version "3.10.2")
         cd ${{ matrix.config.build_dir }}
         mkdir build
         cd build
