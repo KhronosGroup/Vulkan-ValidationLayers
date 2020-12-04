@@ -1,7 +1,6 @@
 name: CI Build
 
 # Perform CI builds for pull requests targeting the dev branches.
-
 on:
   #pull_request:
   push:
@@ -16,14 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        #- {
-        #    name: "Ubuntu GCC Release",
-        #    os: ubuntu-latest,
-        #    artifact: "gfxreconstruct-dev-ubuntu-gcc-release",
-        #    type: "release",
-        #    build_dir: "build",
-        #    cc: "gcc", cxx: "g++"
-        #  }
         - {
             name: "Ubuntu GCC Debug",
             os: ubuntu-latest,
