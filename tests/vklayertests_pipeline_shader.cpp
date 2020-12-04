@@ -3618,8 +3618,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderNotEnabled) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device);
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "Shader requires VkPhysicalDeviceFeatures::shaderFloat64 but is not enabled on the device");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -5812,6 +5811,7 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     std::array<const char *, 2> required_device_extensions = {
         {VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME}};
@@ -5822,6 +5822,12 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
             printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
             return;
         }
+    }
+
+    // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
+        return;
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
@@ -5835,8 +5841,14 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
 
     auto float16_features = lvl_init_struct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
     auto cooperative_matrix_features = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(&float16_features);
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&cooperative_matrix_features);
+    auto memory_model_features = lvl_init_struct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&memory_model_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (memory_model_features.vulkanMemoryModel == VK_FALSE) {
+        printf("%s vulkanMemoryModel feature not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -5895,12 +5907,13 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SubgroupSupportedOperations) {
-    TEST_DESCRIPTION("Test shader validation support for subgroup supportedOperations.");
+TEST_F(VkLayerTest, SubgroupSupportedProperties) {
+    TEST_DESCRIPTION(
+        "Test shader validation support for subgroup VkPhysicalDeviceSubgroupProperties such as supportedStages, and "
+        "supportedOperations, quadOperationsInAllStages.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // 1.1 and up only.
@@ -5914,158 +5927,198 @@ TEST_F(VkLayerTest, SubgroupSupportedOperations) {
         return;
     }
 
+    // Gather all aspects supported
     VkPhysicalDeviceSubgroupProperties subgroup_prop = GetSubgroupProperties(instance(), gpu());
+    VkSubgroupFeatureFlags subgroup_operations = subgroup_prop.supportedOperations;
+    const bool feature_support_basic = ((subgroup_operations & VK_SUBGROUP_FEATURE_BASIC_BIT) != 0);
+    const bool feature_support_vote = ((subgroup_operations & VK_SUBGROUP_FEATURE_VOTE_BIT) != 0);
+    const bool feature_support_arithmetic = ((subgroup_operations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) != 0);
+    const bool feature_support_ballot = ((subgroup_operations & VK_SUBGROUP_FEATURE_BALLOT_BIT) != 0);
+    const bool feature_support_shuffle = ((subgroup_operations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) != 0);
+    const bool feature_support_relative = ((subgroup_operations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) != 0);
+    const bool feature_support_culstered = ((subgroup_operations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) != 0);
+    const bool feature_support_quad = ((subgroup_operations & VK_SUBGROUP_FEATURE_QUAD_BIT) != 0);
+    const bool vertex_support = ((subgroup_prop.supportedStages & VK_SHADER_STAGE_VERTEX_BIT) != 0);
+    const bool vertex_quad_support = (subgroup_prop.quadOperationsInAllStages == VK_TRUE);
 
-    // CreatePipelineLayout
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_ci.pNext = NULL;
-    pipeline_layout_ci.flags = 0;
-    pipeline_layout_ci.setLayoutCount = 0;
-    pipeline_layout_ci.pSetLayouts = VK_NULL_HANDLE;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    std::string vsSource;
+    std::vector<const char *> errors;
+    // There is no 'supportedOperations' check due to it would be redundant to the Capability check done first in VUID 01091 since
+    // each 'supportedOperations' flag is 1:1 map to a SPIR-V Capability
+    const char *operation_vuid = "VUID-VkShaderModuleCreateInfo-pCode-01091";
+    const char *stage_vuid = "VkPhysicalDeviceSubgroupProperties::supportedStages";
+    const char *quad_vuid = "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages";
 
-    const std::pair<const char *, VkSubgroupFeatureFlagBits> capabilities[] = {
-        {"GroupNonUniform", VK_SUBGROUP_FEATURE_BASIC_BIT},
-        {"GroupNonUniformVote", VK_SUBGROUP_FEATURE_VOTE_BIT},
-        {"GroupNonUniformArithmetic", VK_SUBGROUP_FEATURE_ARITHMETIC_BIT},
-        {"GroupNonUniformBallot", VK_SUBGROUP_FEATURE_BALLOT_BIT},
-        {"GroupNonUniformShuffle", VK_SUBGROUP_FEATURE_SHUFFLE_BIT},
-        {"GroupNonUniformShuffleRelative", VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT},
-        {"GroupNonUniformClustered", VK_SUBGROUP_FEATURE_CLUSTERED_BIT},
-        {"GroupNonUniformQuad", VK_SUBGROUP_FEATURE_QUAD_BIT},
+    // Same pipeline creation for each subgroup test
+    auto info_override = [&](CreatePipelineHelper &info) {
+        info.vs_.reset(new VkShaderObj(m_device, vsSource.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this, "main", false, nullptr,
+                                       /*SPIR-V 1.3*/ 3));
+        info.shader_stages_ = {info.vs_->GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
+        info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
 
-    for (auto &capability : capabilities) {
-        std::string spv_source[3];
-
-        spv_source[0] = "OpCapability " + std::string(capability.first) + "\n" + R"(
-                   OpCapability Shader
-                   OpMemoryModel Logical GLSL450
-                   OpEntryPoint GLCompute %main "main"
-                   OpExecutionMode %main LocalSize 1 1 1
-           %void = OpTypeVoid
-           %func = OpTypeFunction %void
-           %main = OpFunction %void None %func
-             %40 = OpLabel
-                   OpReturn
-                   OpFunctionEnd
-        )";
-
-        spv_source[1] = "OpCapability " + std::string(capability.first) + "\n" + R"(
-                   OpCapability Shader
-                   OpMemoryModel Logical GLSL450
-                   OpEntryPoint Vertex %main "main"
-           %void = OpTypeVoid
-           %func = OpTypeFunction %void
-           %main = OpFunction %void None %func
-             %40 = OpLabel
-                   OpReturn
-                   OpFunctionEnd
-        )";
-
-        spv_source[2] = "OpCapability " + std::string(capability.first) + "\n" + R"(
-                   OpCapability Shader
-                   OpMemoryModel Logical GLSL450
-                   OpEntryPoint Fragment %main "main"
-                   OpExecutionMode %main OriginUpperLeft
-           %void = OpTypeVoid
-           %func = OpTypeFunction %void
-           %main = OpFunction %void None %func
-             %40 = OpLabel
-                   OpReturn
-                   OpFunctionEnd
-        )";
-
-        VkShaderModule shader_module[3];
-        VkPipelineShaderStageCreateInfo stage[3];
-
-        for (int i = 0; i < 3; ++i) {
-            // CreateShaderModule
-            std::vector<unsigned int> spv;
-            VkShaderModuleCreateInfo module_create_info;
-            module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-            module_create_info.pNext = NULL;
-            ASMtoSPV(SPV_ENV_VULKAN_1_1, 0, spv_source[i].data(), spv);
-            module_create_info.pCode = spv.data();
-            module_create_info.codeSize = spv.size() * sizeof(unsigned int);
-            module_create_info.flags = 0;
-
-            VkResult result = vk::CreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module[i]);
-
-            // NOTE: It appears that for the case of invalid capabilities some drivers (recent AMD) fail at CreateShaderModule time.
-            //       Likely the capability test should be moved up to CSM time, implementing ShaderModuleCreateInfo-pCode-01090
-            //       Note(2) -- yes I truncated the above VUID s.t. the VUID checking tools would not catch it.
-            if (result != VK_SUCCESS) shader_module[i] = VK_NULL_HANDLE;
-
-            stage[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            stage[i].pNext = nullptr;
-            stage[i].flags = 0;
-            // stage[i].stage initialized later;
-            stage[i].module = shader_module[i];
-            stage[i].pName = "main";
-            stage[i].pSpecializationInfo = nullptr;
+    // Basic
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_basic: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   if (subgroupElect()) { ssbo.x += 2.0; }\n"
+            "   gl_Position = vec4(ssbo.x);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_basic == false) {
+            errors.push_back(operation_vuid);
         }
-
-        // CreateComputePipelines
-        VkComputePipelineCreateInfo pipeline_info = {};
-        pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-        pipeline_info.pNext = nullptr;
-        pipeline_info.flags = 0;
-        pipeline_info.layout = pipeline_layout;
-        pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-        pipeline_info.basePipelineIndex = -1;
-        pipeline_info.stage = stage[0];
-        pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-
-        if (pipeline_info.stage.module != VK_NULL_HANDLE) {
-            if (!(subgroup_prop.supportedOperations & capability.second)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-            }
-            if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VkPhysicalDeviceSubgroupProperties::supportedStages");
-            }
-
-            VkPipeline cs_pipeline;
-            vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
-            vk::DestroyPipeline(device(), cs_pipeline, nullptr);
-
-            m_errorMonitor->VerifyFound();
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
         }
-
-        if ((stage[1].module != VK_NULL_HANDLE) && (stage[2].module != VK_NULL_HANDLE)) {
-            stage[1].stage = VK_SHADER_STAGE_VERTEX_BIT;
-            stage[2].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-            VkPipelineObj pipe(m_device);
-            pipe.AddShader(stage[1]);
-            pipe.AddShader(stage[2]);
-            pipe.AddDefaultColorAttachment();
-
-            if (!(subgroup_prop.supportedOperations & capability.second)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-            }
-            if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_VERTEX_BIT)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VkPhysicalDeviceSubgroupProperties::supportedStages");
-            }
-            if (!(subgroup_prop.supportedOperations & capability.second)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-            }
-            if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_FRAGMENT_BIT)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VkPhysicalDeviceSubgroupProperties::supportedStages");
-            }
-            pipe.CreateVKPipeline(pipeline_layout, renderPass());
-
-            m_errorMonitor->VerifyFound();
-        }
-
-        vk::DestroyShaderModule(device(), shader_module[0], nullptr);
-        vk::DestroyShaderModule(device(), shader_module[1], nullptr);
-        vk::DestroyShaderModule(device(), shader_module[2], nullptr);
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
     }
 
-    vk::DestroyPipelineLayout(device(), pipeline_layout, nullptr);
+    // Vote
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_vote: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   if (subgroupAll(ssbo.y == 0)) { ssbo.x += 2.0; }\n"
+            "   gl_Position = vec4(ssbo.x);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_vote == false) {
+            errors.push_back(operation_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
+
+    // Arithmetic
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_arithmetic: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   float z = subgroupMax(ssbo.x);\n"
+            "   gl_Position = vec4(z);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_arithmetic == false) {
+            errors.push_back(operation_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
+
+    // Ballot
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_ballot: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   float z = subgroupBroadcastFirst(ssbo.x);\n"
+            "   gl_Position = vec4(z);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_ballot == false) {
+            errors.push_back(operation_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
+
+    // Shuffle
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_shuffle: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   float z = subgroupShuffle(ssbo.x, 1);\n"
+            "   gl_Position = vec4(z);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_shuffle == false) {
+            errors.push_back(operation_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
+
+    // Shuffle Relative
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_shuffle_relative: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   float z = subgroupShuffleUp(ssbo.x, 1);\n"
+            "   gl_Position = vec4(z);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_relative == false) {
+            errors.push_back(operation_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
+
+    // Clustered
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_clustered: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   float z = subgroupClusteredAdd(ssbo.x, 2);\n"
+            "   gl_Position = vec4(z);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_culstered == false) {
+            errors.push_back(operation_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
+
+    // Quad
+    {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_KHR_shader_subgroup_quad: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   float z = subgroupQuadSwapHorizontal(ssbo.x);\n"
+            "   gl_Position = vec4(z);\n"
+            "}\n";
+        errors.clear();
+        if (feature_support_quad == false) {
+            errors.push_back(operation_vuid);
+        }
+        if (vertex_quad_support == false) {
+            errors.push_back(quad_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
 }
 
 TEST_F(VkLayerTest, SubgroupRequired) {
@@ -6289,7 +6342,7 @@ TEST_F(VkLayerTest, NonSemanticInfoEnabled) {
     pipe.cs_.reset(new VkShaderObj(m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, this));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Shader requires extension " VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-04147");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -6453,12 +6506,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
 
     const VkPipelineLayoutObj pipeline_layout(&test_device, {&ds_layout});
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint but is not enabled on the device");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "Shader requires extension VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint "
-                                         "but is not enabled on the device");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-04147");
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -6497,14 +6546,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderBarycentricEnabled) {
 
     const VkPipelineLayoutObj pipeline_layout(&test_device);
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric but is not enabled on the "
-        "device");
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires extension VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric but is not "
-        "enabled on the device");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-04147");
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -6554,15 +6597,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckComputeShaderDerivativesEnabled) {
                                         VK_NULL_HANDLE,
                                         -1};
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads but is not enabled on the "
-        "device");
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires extension VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads but is not "
-        "enabled on the device");
-
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-04147");
     VkPipeline pipe = VK_NULL_HANDLE;
     vk::CreateComputePipelines(test_device.device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
     m_errorMonitor->VerifyFound();
@@ -6615,14 +6651,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderInterlockEnabled) {
 
     const VkPipelineLayoutObj pipeline_layout(&test_device);
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderSampleInterlock but is not enabled on "
-        "the device");
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires extension VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderSampleInterlock but is not "
-        "enabled on the device");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-04147");
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -6670,16 +6700,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckDemoteToHelperInvocation) {
 
     const VkPipelineLayoutObj pipeline_layout(&test_device);
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation but is not "
-        "enabled on "
-        "the device");
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Shader requires extension VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation but "
-        "is not "
-        "enabled on the device");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-04147");
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -7833,7 +7855,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
 
     const std::string empty_shader = R"glsl(#version 460
-        #extension GL_NV_ray_tracing : require
+        #extension GL_EXT_ray_tracing : require
         void main() {}
     )glsl";
 
@@ -8426,9 +8448,8 @@ TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
             info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
 
-        CreatePipelineHelper::OneshotTest(
-            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            "Shader requires VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing but is not enabled on the device");
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091");
     }
 
     {
@@ -8440,9 +8461,8 @@ TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
             info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
 
-        CreatePipelineHelper::OneshotTest(
-            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            "Shader requires VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing but is not enabled on the device");
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091");
     }
 
     {
@@ -8454,9 +8474,8 @@ TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
             info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
 
-        CreatePipelineHelper::OneshotTest(
-            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            "Shader requires VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing but is not enabled on the device");
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091");
     }
 
     {
@@ -8468,9 +8487,8 @@ TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
             info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
 
-        CreatePipelineHelper::OneshotTest(
-            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            "Shader requires VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing but is not enabled on the device");
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091");
     }
 }
 

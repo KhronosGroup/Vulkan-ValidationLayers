@@ -101,6 +101,7 @@ core_validation_sources = [
   "layers/range_vector.h",
   "layers/shader_validation.cpp",
   "layers/shader_validation.h",
+  "layers/generated/spirv_validation_helper.cpp",
   "layers/state_tracker.cpp",
   "layers/state_tracker.h",
   "layers/subresource_adapter.cpp",

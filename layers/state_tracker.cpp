@@ -1899,6 +1899,28 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.portability_subset_features = *portability_features;
     }
 
+    const auto *shader_integer_functions2_features =
+        lvl_find_in_chain<VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL>(pCreateInfo->pNext);
+    if (shader_integer_functions2_features) {
+        state_tracker->enabled_features.shader_integer_functions2_features = *shader_integer_functions2_features;
+    }
+
+    const auto *shader_sm_builtins_feature = lvl_find_in_chain<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV>(pCreateInfo->pNext);
+    if (shader_sm_builtins_feature) {
+        state_tracker->enabled_features.shader_sm_builtins_feature = *shader_sm_builtins_feature;
+    }
+
+    const auto *shader_atomic_float_feature = lvl_find_in_chain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
+    if (shader_atomic_float_feature) {
+        state_tracker->enabled_features.shader_atomic_float_feature = *shader_atomic_float_feature;
+    }
+
+    const auto *shader_image_atomic_int64_feature =
+        lvl_find_in_chain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
+    if (shader_image_atomic_int64_feature) {
+        state_tracker->enabled_features.shader_image_atomic_int64_feature = *shader_image_atomic_int64_feature;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);

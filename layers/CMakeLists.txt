@@ -194,6 +194,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     buffer_validation.h
     shader_validation.cpp
     shader_validation.h
+    generated/spirv_validation_helper.cpp
     gpu_validation.cpp
     xxhash.c)
 

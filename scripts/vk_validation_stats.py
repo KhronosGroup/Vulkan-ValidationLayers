@@ -61,6 +61,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/stateless_validation.h',
     'layers/generated/parameter_validation.cpp',
     'layers/generated/object_tracker.cpp',
+    'layers/generated/spirv_validation_helper.cpp',
 ]]
 
 test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
