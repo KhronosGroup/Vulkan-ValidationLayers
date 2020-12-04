@@ -2342,9 +2342,9 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
                     const ACCELERATION_STRUCTURE_STATE_KHR *as_state =
                         GetAccelerationStructureStateKHR(pnext_struct->pAccelerationStructures[j]);
                     if (as_state && (as_state->create_infoKHR.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR &&
-                                     ((as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
-                                       as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) ||
-                                      as_state->build_info_khr.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR))) {
+                                     (as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
+                                      as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR))) {
+                        // To Do: update VUID descritption after spec changes
                         skip |=
                             LogError(dest_set, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579",
                                      "%s: Each acceleration structure in pAccelerationStructures must have been created with "
