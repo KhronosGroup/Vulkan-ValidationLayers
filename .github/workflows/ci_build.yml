@@ -1,0 +1,222 @@
+name: CI Build
+
+# Perform CI builds for pull requests targeting the dev branches.
+
+on:
+  #pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  linux:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        #- {
+        #    name: "Ubuntu GCC Release",
+        #    os: ubuntu-latest,
+        #    artifact: "gfxreconstruct-dev-ubuntu-gcc-release",
+        #    type: "release",
+        #    build_dir: "build",
+        #    cc: "gcc", cxx: "g++"
+        #  }
+        - {
+            name: "Ubuntu GCC Debug",
+            os: ubuntu-latest,
+            artifact: "Vulkan-ValidationLayers-master-ubuntu-gcc-debug",
+            type: "debug",
+            build_dir: "build",
+            cc: "gcc", cxx: "g++"
+          }
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v1
+    - name: Install build dependencies
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
+                              libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
+                              libxcb-randr0-dev python-pathlib
+
+    - name: Prepare external components
+      run: |
+        # Fetch and build Loader
+        set(cmake_version "3.10.2")
+        include(ProcessorCount)
+        ProcessorCount(N)
+        cd ${EXTERNAL_DIR}
+        git clone https://github.com/KhronosGroup/Vulkan-Loader.git
+        cd Vulkan-Loader
+        python3 scripts/update_deps.py --dir=external
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug -C../external/helper.cmake -DCMAKE_INSTALL_PREFIX=install ..
+        cmake --build . --target install -- -j ${N}
+        # Fetch googletest source code
+        cd ${EXTERNAL_DIR}
+        git clone https://github.com/google/googletest.git ${EXTERNAL_DIR}/googletest
+        cd googletest
+        git checkout tags/release-1.8.1
+        # Build MockICD in Vulkan-Tools to run Vulkan-ValidationLayer tests
+        cd ${EXTERNAL_DIR}
+        git clone https://github.com/KhronosGroup/Vulkan-Tools.git
+        cd Vulkan-Tools
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug \
+              -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF \
+              -DVULKAN_HEADERS_INSTALL_DIR=${EXTERNAL_DIR}/Vulkan-Headers/build/install \
+              ..
+        pushd ../icd/generated
+        python3 ${{ matrix.config.build_dir }}/scripts/lvl_genvk.py -registry ${VVL_REG_DIR}/vk.xml vk_typemap_helper.h
+        python3 ${VT_SCRIPTS_DIR}/kvt_genvk.py -registry ${VVL_REG_DIR}/vk.xml mock_icd.cpp
+        python3 ${VT_SCRIPTS_DIR}/kvt_genvk.py -registry ${VVL_REG_DIR}/vk.xml mock_icd.h
+        popd
+        cmake --build . --target VkICD_mock_icd -- -j $core_count
+        cp ../icd/linux/VkICD_mock_icd.json icd
+        # Build ValidationLayerTests
+        cd ${{ matrix.config.build_dir }}
+        mkdir build
+        cd build
+        cmake -C ${EXTERNAL_DIR}/helper.cmake -DCMAKE_BUILD_TYPE=Debug \
+              -DVULKAN_LOADER_INSTALL_DIR=${EXTERNAL_DIR}/Vulkan-Loader/build/install \
+              -DCMAKE_INSTALL_PREFIX=${{ matrix.config.build_dir }}/build/install -DBUILD_LAYER_SUPPORT_FILES=ON \
+              -DUSE_CCACHE=ON ..
+        cmake --build . --target install -- -j ${N}
+      env:
+        VVL_REG_DIR: ${{ matrix.config.build_dir }}/external/Vulkan-Headers/registry
+        VT_SCRIPTS_DIR: ${{ matrix.config.build_dir }}/external/Vulkan-Tools/scripts
+        EXTERNAL_DIR: ${{ matrix.config.build_dir }}/external
+    - name: Fetch Vulkan-ValidationLayer build dependencies
+      run: |
+        python3 scripts/udpate_deps.py --dir=${{ matrix.config.build_dir}}/external
+    - name: Verify consistency of generated source code
+      run: |
+        python3 ${{ matrix.config.build_dir }}/scripts/generate_source.py --verify ${{ matrix.config.build_dir }}/external/Vulkan-Headers/registry
+    - name: Build Vulkan-ValidationLayers source code
+      run: |
+        set(cmake_version "3.10.2")
+        cd ${{ matrix.config.build_dir }}
+        mkdir build
+        cd build
+        cmake -C ${EXTERNAL_DIR}/helper.cmake -DCMAKE_BUILD_TYPE=Debug \
+              -DVULKAN_LOADER_INSTALL_DIR=${EXTERNAL_DIR}/Vulkan-Loader/build/install \
+              -DCMAKE_INSTALL_PREFIX=${{ matrix.config.build_dir }}/build/install -DBUILD_LAYER_SUPPORT_FILES=ON \
+              -DUSE_CCACHE=ON ..
+        cmake --build . --target install -- -j ${N}
+      env:
+        EXTERNAL_DIR: ${{ matrix.config.build_dir }}/external
+    - name: Run Vulkan-ValidationLayer tests
+      run: |
+        cd ${{ matrix.config.build_dir }}
+        export LD_LIBRARY_PATH=${EXTERNAL_DIR}/Vulkan-Loader/build/install/lib:${LD_LIBRARY_PATH}
+        export VK_LAYER_PATH=${EXTERNAL_DIR}/VulkanTools/build/layersvt:${{ matrix.config.build_dir }}/build/layers
+        export VK_ICD_FILENAMES=${EXTERNAL_DIR}/Vulkan-Tools/build/icd/VkICD_mock_icd.json
+        build/tests/vk_layer_validation_tests
+      env:
+        EXTERNAL_DIR: ${{ matrix.config.build_dir }}/external
+    - name: Check Code Format
+      run: |
+        cd ${{ matrix.config.build_dir }}
+        python3 ./scripts/check_code_format.py
+    #- name: Prepare artifacts
+    #  run: |
+    #    cp LICENSE.txt ${{ matrix.config.build_dir }}/linux/x64/output/bin/
+    #    cp LICENSE_ThirdParty.txt ${{ matrix.config.build_dir }}/linux/x64/output/bin/
+    #    cp USAGE_desktop.md ${{ matrix.config.build_dir }}/linux/x64/output/bin/
+    #    cp layer/vk_layer_settings.txt ${{ matrix.config.build_dir }}/linux/x64/output/bin/
+    #    mv ${{ matrix.config.build_dir }}/linux/x64/output/bin gfxreconstruct-dev
+    #    mv ${{ matrix.config.build_dir }}/linux/x64/output/lib*/*.so gfxreconstruct-dev/
+    #    mv ${{ matrix.config.build_dir }}/linux/x64/output/share/vulkan/explicit_layer.d/*.json gfxreconstruct-dev/
+    #- name: Upload artifacts
+    #  uses: actions/upload-artifact@v1
+    #  with:
+    #    name: ${{ matrix.config.artifact }}
+    #    path: ./gfxreconstruct-dev
+
+  #windows:
+  #  name: ${{ matrix.config.name }}
+  #  runs-on: ${{ matrix.config.os }}
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      config:
+  #      - {
+  #          name: "Windows MSVC Release",
+  #          os: windows-latest,
+  #          artifact: "gfxreconstruct-dev-windows-msvc-release",
+  #          type: "release",
+  #          build_dir: "build",
+  #          cc: "cl", cxx: "cl"
+  #        }
+  #      - {
+  #          name: "Windows MSVC Debug",
+  #          os: windows-latest,
+  #          artifact: "gfxreconstruct-dev-windows-msvc-debug",
+  #          type: "debug",
+  #          build_dir: "dbuild",
+  #          cc: "cl", cxx: "cl"
+  #        }
+  #  steps:
+  #  - name: Clone repository
+  #    uses: actions/checkout@v1
+  #  - name: Run build script
+  #    run: |
+  #      python scripts\build.py --skip-check-code-style --skip-tests --config ${{ matrix.config.type }}
+  #  - name: Prepare artifacts
+  #    run: |
+  #      copy LICENSE.txt ${{ matrix.config.build_dir }}\windows\x64\output\bin\
+  #      copy LICENSE_ThirdParty.txt ${{ matrix.config.build_dir }}\windows\x64\output\bin\
+  #      copy USAGE_desktop.md ${{ matrix.config.build_dir }}\windows\x64\output\bin\
+  #      copy layer\vk_layer_settings.txt ${{ matrix.config.build_dir }}\windows\x64\output\bin\
+  #      move ${{ matrix.config.build_dir }}\windows\x64\output\bin gfxreconstruct-dev
+  #  - name: Upload artifacts
+  #    uses: actions/upload-artifact@v1
+  #    with:
+  #      name: ${{ matrix.config.artifact }}
+  #      path: .\gfxreconstruct-dev
+
+  #android:
+  #  name: ${{ matrix.config.name }}
+  #  runs-on: ${{ matrix.config.os }}
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      config:
+  #      - {
+  #          name: "Android Release/Debug",
+  #          os: ubuntu-latest,
+  #          artifact: "gfxreconstruct-dev-android"
+  #        }
+  #  steps:
+  #  - name: Clone repository
+  #    uses: actions/checkout@v1
+  #  - name: Update submodules
+  #    run: |
+  #      git submodule update --init
+  #  - name: Gradle build
+  #    run: |
+  #      cd android
+  #      sh gradlew assembleRelease assembleDebug
+  #  - name: Prepare artifacts
+  #    run: |
+  #      mkdir gfxreconstruct-dev
+  #      mkdir gfxreconstruct-dev/layer
+  #      mkdir gfxreconstruct-dev/tools
+  #      cp LICENSE.txt gfxreconstruct-dev/
+  #      cp LICENSE_ThirdParty.txt gfxreconstruct-dev/
+  #      cp USAGE_android.md gfxreconstruct-dev/
+  #      cp layer/vk_layer_settings.txt gfxreconstruct-dev/
+  #      cp -r android/layer/build/intermediates/cmake/release/obj/arm64-v8a gfxreconstruct-dev/layer/
+  #      cp -r android/layer/build/intermediates/cmake/release/obj/armeabi-v7a gfxreconstruct-dev/layer/
+  #      cp android/tools/replay/build/outputs/apk/debug/replay-debug.apk gfxreconstruct-dev/tools/
+  #      cp android/scripts/gfxrecon.py gfxreconstruct-dev/tools/
+  #  - name: Upload artifacts
+  #    uses: actions/upload-artifact@v1
+  #    with:
+  #      name: ${{ matrix.config.artifact }}
+  #      path: ./gfxreconstruct-dev
