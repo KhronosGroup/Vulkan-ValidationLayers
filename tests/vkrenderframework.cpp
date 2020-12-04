@@ -1016,6 +1016,8 @@ int VkDescriptorSetObj::AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj
 
 VkPipelineLayout VkDescriptorSetObj::GetPipelineLayout() const { return m_pipeline_layout.handle(); }
 
+VkDescriptorSetLayout VkDescriptorSetObj::GetDescriptorSetLayout() const { return m_layout.handle(); }
+
 VkDescriptorSet VkDescriptorSetObj::GetDescriptorSetHandle() const {
     if (m_set)
         return m_set->handle();
