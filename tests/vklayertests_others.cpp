@@ -10945,3 +10945,99 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateDeviceFeatureCombinations) {
         fsr_features.pNext = nullptr;
     }
 }
+
+TEST_F(VkLayerTest, ValidateArrayLength) {
+    TEST_DESCRIPTION("Validate arraylength VUs");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Used to have a valid pointed to set object too
+    VkCommandBuffer unused_command_buffer;
+    VkDescriptorSet unused_descriptor_set;
+
+    VkDescriptorSetObj descriptor_set_obj(m_device);
+    descriptor_set_obj.AppendDummy();
+    descriptor_set_obj.CreateVKDescriptorSet(m_commandBuffer);
+    VkDescriptorSet descriptor_set = descriptor_set_obj.GetDescriptorSetHandle();
+
+    VkFence fence;
+    VkFenceCreateInfo fence_create_info = {};
+    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_create_info.pNext = nullptr;
+    vk::CreateFence(device(), &fence_create_info, nullptr, &fence);
+
+    VkEvent event;
+    VkEventCreateInfo event_create_info = {};
+    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    event_create_info.pNext = nullptr;
+    vk::CreateEvent(device(), &event_create_info, nullptr, &event);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength");
+    {
+        VkCommandBufferAllocateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        info.pNext = nullptr;
+        info.commandPool = m_commandPool->handle();
+        info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        info.commandBufferCount = 0;  // invalid
+        vk::AllocateCommandBuffers(device(), &info, &unused_command_buffer);
+    }
+    m_errorMonitor->VerifyFound();
+
+    // One exception in spec where the size of a field is used in both the function call it and the struct
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateDescriptorSets-pAllocateInfo::descriptorSetCount-arraylength");
+    // TODO - Figure out why  VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-arraylength is not being generated, very low
+    // priority since it is already caught with the above implicit VU. There was an internal MR and WG decided to keep both
+    // len='descriptorSetCount' for anyone relying on it
+    m_errorMonitor->SetUnexpectedError("VUID_Undefined");
+    {
+        VkDescriptorSetLayout set_layout = descriptor_set_obj.GetDescriptorSetLayout();
+        VkDescriptorSetAllocateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        info.pNext = nullptr;
+        info.descriptorPool = descriptor_set_obj.handle();
+        info.descriptorSetCount = 0;  // invalid
+        info.pSetLayouts = &set_layout;
+        vk::AllocateDescriptorSets(device(), &info, &unused_descriptor_set);
+    }
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-commandBufferCount-arraylength");
+    vk::FreeCommandBuffers(device(), m_commandPool->handle(), 0, &unused_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-descriptorSetCount-arraylength");
+    vk::FreeDescriptorSets(device(), descriptor_set_obj.handle(), 0, &descriptor_set);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetFences-fenceCount-arraylength");
+    vk::ResetFences(device(), 0, &fence);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForFences-fenceCount-arraylength");
+    vk::WaitForFences(device(), 0, &fence, true, 1);
+    m_errorMonitor->VerifyFound();
+
+    VkCommandBufferObj command_buffer(m_device, m_commandPool);
+    command_buffer.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength");
+    vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_set_obj.GetPipelineLayout(), 0,
+                              0, &(descriptor_set), 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBufferCount-arraylength");
+    vk::CmdExecuteCommands(command_buffer.handle(), 0, &unused_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-eventCount-arraylength");
+    vk::CmdWaitEvents(command_buffer.handle(), 0, &event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
+                      nullptr, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    command_buffer.end();
+
+    vk::DestroyFence(device(), fence, nullptr);
+    vk::DestroyEvent(device(), event, nullptr);
+}

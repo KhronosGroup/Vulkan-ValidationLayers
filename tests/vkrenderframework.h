@@ -561,6 +561,7 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
 
     VkDescriptorSet GetDescriptorSetHandle() const;
     VkPipelineLayout GetPipelineLayout() const;
+    VkDescriptorSetLayout GetDescriptorSetLayout() const;
 
   protected:
     VkDeviceObj *m_device;
