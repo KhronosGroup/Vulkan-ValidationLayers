@@ -1220,22 +1220,25 @@ class ApplyBarrierFunctor {
 // This functor applies a collection of barriers, updating the "pending state" in each touched memory range, and optionally
 // resolves the pending state. Suitable for processing Global memory barriers, or Subpass Barriers when the "final" barrier
 // of a collection is known/present.
+struct PipelineBarrierOp {
+    SyncBarrier barrier;
+    bool layout_transition;
+    PipelineBarrierOp(const SyncBarrier &barrier_, bool layout_transition_)
+        : barrier(barrier_), layout_transition(layout_transition_) {}
+    PipelineBarrierOp() = default;
+    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(barrier, layout_transition); }
+};
+
+template <typename BarrierOp>
 class ApplyBarrierOpsFunctor {
   public:
     using Iterator = ResourceAccessRangeMap::iterator;
     inline Iterator Infill(ResourceAccessRangeMap *accesses, Iterator pos, ResourceAccessRange range) const { return pos; }
 
-    struct BarrierOp {
-        SyncBarrier barrier;
-        bool layout_transition;
-        BarrierOp(const SyncBarrier &barrier_, bool layout_transition_)
-            : barrier(barrier_), layout_transition(layout_transition_) {}
-        BarrierOp() = default;
-    };
     Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
         auto &access_state = pos->second;
-        for (const auto op : barrier_ops_) {
-            access_state.ApplyBarrier(op.barrier, op.layout_transition);
+        for (const auto &op : barrier_ops_) {
+            op(&access_state);
         }
 
         if (resolve_) {
@@ -1246,36 +1249,31 @@ class ApplyBarrierOpsFunctor {
         return pos;
     }
 
-    // A valid tag is required IFF any of the barriers ops are a layout transition, as transitions are write ops
-    ApplyBarrierOpsFunctor(bool resolve, size_t size_hint, const ResourceUsageTag &tag)
-        : resolve_(resolve), barrier_ops_(), tag_(tag) {
-        if (size_hint) {
-            barrier_ops_.reserve(size_hint);
-        }
-    };
-
     // A valid tag is required IFF layout_transition is true, as transitions are write ops
-    ApplyBarrierOpsFunctor(bool resolve, const std::vector<SyncBarrier> &barriers, bool layout_transition,
-                           const ResourceUsageTag &tag)
-        : resolve_(resolve), barrier_ops_(), tag_(tag) {
-        barrier_ops_.reserve(barriers.size());
-        for (const auto &barrier : barriers) {
-            barrier_ops_.emplace_back(barrier, layout_transition);
-        }
-    }
-
-    void PushBack(const SyncBarrier &barrier, bool layout_transition) { barrier_ops_.emplace_back(barrier, layout_transition); }
-
-    void PushBack(const std::vector<SyncBarrier> &barriers, bool layout_transition) {
-        barrier_ops_.reserve(barrier_ops_.size() + barriers.size());
-        for (const auto &barrier : barriers) {
-            barrier_ops_.emplace_back(barrier, layout_transition);
-        }
-    }
+    ApplyBarrierOpsFunctor(bool resolve, const std::vector<BarrierOp> &barrier_ops, const ResourceUsageTag &tag)
+        : resolve_(resolve), barrier_ops_(barrier_ops), tag_(tag) {}
 
   private:
     bool resolve_;
-    std::vector<BarrierOp> barrier_ops_;
+    const std::vector<BarrierOp> &barrier_ops_;
+    const ResourceUsageTag &tag_;
+};
+
+// This functor resolves the pendinging state.
+class ResolvePendingBarrierFunctor {
+  public:
+    using Iterator = ResourceAccessRangeMap::iterator;
+    inline Iterator Infill(ResourceAccessRangeMap *accesses, Iterator pos, ResourceAccessRange range) const { return pos; }
+
+    Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
+        auto &access_state = pos->second;
+        access_state.ApplyPendingBarriers(tag_);
+        return pos;
+    }
+
+    ResolvePendingBarrierFunctor(const ResourceUsageTag &tag) : tag_(tag) {}
+
+  private:
     const ResourceUsageTag &tag_;
 };
 
@@ -1471,7 +1469,7 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
 
     // If there were no transitions skip this global map walk
     if (transitions.size()) {
-        ApplyBarrierOpsFunctor apply_pending_action(true /* resolve */, 0, tag);
+        ResolvePendingBarrierFunctor apply_pending_action(tag);
         ApplyGlobalBarriers(apply_pending_action);
     }
 }
@@ -2246,8 +2244,13 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
         const auto &attachment = attachment_views_[transition.attachment];
         const auto &last_trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
         assert(&subpass_contexts_[transition.prev_pass] == last_trackback.context);
-        ApplyBarrierOpsFunctor barrier_ops(true /* resolve */, last_trackback.barriers, true /* layout transition */, tag);
-        external_context->UpdateResourceAccess(*attachment->image_state, attachment->normalized_subresource_range, barrier_ops);
+        std::vector<PipelineBarrierOp> barrier_ops;
+        barrier_ops.reserve(last_trackback.barriers.size());
+        for (const auto &barrier : last_trackback.barriers) {
+            barrier_ops.emplace_back(barrier, true);
+        }
+        ApplyBarrierOpsFunctor<PipelineBarrierOp> barrier_action(true /* resolve */, barrier_ops, tag);
+        external_context->UpdateResourceAccess(*attachment->image_state, attachment->normalized_subresource_range, barrier_action);
     }
 }
 
@@ -2670,17 +2673,19 @@ void SyncValidator::ApplyGlobalBarriers(AccessContext *context, VkPipelineStageF
                                         VkPipelineStageFlags dst_exec_scope, SyncStageAccessFlags src_access_scope,
                                         SyncStageAccessFlags dst_access_scope, uint32_t memory_barrier_count,
                                         const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag) {
-    ApplyBarrierOpsFunctor barriers_functor(true /* resolve */, std::min<uint32_t>(1, memory_barrier_count), tag);
+    std::vector<PipelineBarrierOp> barrier_ops;
+    barrier_ops.reserve(std::min<uint32_t>(1, memory_barrier_count));
     for (uint32_t barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
         const auto &barrier = pMemoryBarriers[barrier_index];
         SyncBarrier sync_barrier(src_exec_scope, SyncStageAccess::AccessScope(src_access_scope, barrier.srcAccessMask),
                                  dst_exec_scope, SyncStageAccess::AccessScope(dst_access_scope, barrier.dstAccessMask));
-        barriers_functor.PushBack(sync_barrier, false);
+        barrier_ops.emplace_back(sync_barrier, false);
     }
     if (0 == memory_barrier_count) {
         // If there are no global memory barriers, force an exec barrier
-        barriers_functor.PushBack(SyncBarrier(src_exec_scope, 0, dst_exec_scope, 0), false);
+        barrier_ops.emplace_back(SyncBarrier(src_exec_scope, 0, dst_exec_scope, 0), false);
     }
+    ApplyBarrierOpsFunctor<PipelineBarrierOp> barriers_functor(true /* resolve */, barrier_ops, tag);
     context->ApplyGlobalBarriers(barriers_functor);
 }
 
