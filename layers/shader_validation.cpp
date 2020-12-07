@@ -2248,6 +2248,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     std::vector<Variable> variables;
 
     uint32_t numVertices = 0;
+    bool is_iso_lines = false;
+    bool is_point_mode = false;
 
     auto entrypointVariables = FindEntrypointInterfaces(entrypoint);
 
@@ -2284,6 +2286,12 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                             break;
                         case spv::ExecutionModeOutputVertices:
                             numVertices = insn.word(3);
+                            break;
+                        case spv::ExecutionModeIsolines:
+                            is_iso_lines = true;
+                            break;
+                        case spv::ExecutionModePointMode:
+                            is_point_mode = true;
                             break;
                     }
                 }
@@ -2438,6 +2446,19 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader output variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents (%u)",
                              limits.maxTessellationEvaluationOutputComponents);
+            }
+            // Portability validation
+            if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+                if (is_iso_lines && (VK_FALSE == enabled_features.portability_subset_features.tessellationIsolines)) {
+                    skip |= LogError(pipeline->pipeline, kVUID_Portability_Tessellation_Isolines,
+                                     "Invalid Pipeline CreateInfo state (portability error): Tessellation evaluation shader"
+                                     " is using abstract patch type IsoLines, but this is not supported on this platform");
+                }
+                if (is_point_mode && (VK_FALSE == enabled_features.portability_subset_features.tessellationPointMode)) {
+                    skip |= LogError(pipeline->pipeline, kVUID_Portability_Tessellation_PointMode,
+                                     "Invalid Pipeline CreateInfo state (portability error): Tessellation evaluation shader"
+                                     " is using abstract patch type PointMode, but this is not supported on this platform");
+                }
             }
             break;
 

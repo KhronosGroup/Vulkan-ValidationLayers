@@ -258,6 +258,11 @@ static const char DECORATE_UNUSED *kVUID_Core_CreateInstance_Debug_Warning = "UN
 static const char DECORATE_UNUSED *kVUID_Core_ImageMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-vkImageMemoryBarrier-sharing-mode-exclusive-same-family";
 static const char DECORATE_UNUSED *kVUID_Core_BufferMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-vkBufferMemoryBarrier-sharing-mode-exclusive-same-family";
 
+// Portability contextual VUs
+static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_Isolines = "UNASSIGNED-PortabilityValidation-Shader-isolines-not-supported";
+static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_PointMode = "UNASSIGNED-PortabilityValidation-Shader-point-mode-not-supported";
+static const char DECORATE_UNUSED *kVUID_Portability_InterpolationFunction = "UNASSIGNED-PortabilityValidation-Shader-interpolation-function-supported";
+
 // clang-format on
 
 #undef DECORATE_UNUSED

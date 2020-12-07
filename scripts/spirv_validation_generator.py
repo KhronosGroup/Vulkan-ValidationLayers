@@ -403,6 +403,15 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
                     continue;
             }
 
+            // Portability checks
+            if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+                if ((VK_FALSE == enabled_features.portability_subset_features.shaderSampleRateInterpolationFunctions) &&
+                    (spv::CapabilityInterpolationFunction == insn.word(1))) {
+                    skip |= LogError(device, kVUID_Portability_InterpolationFunction,
+                                     "Invalid shader capability (portability error): interpolation functions are not supported "
+                                     "by this platform");
+                }
+            }
         } else if (insn.opcode() == spv::OpExtension) {
             std::string extension_name = (char const *)&insn.word(1);
 
