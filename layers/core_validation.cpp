@@ -8136,7 +8136,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     struct BeginQueryVuids : ValidateBeginQueryVuids {
         BeginQueryVuids() : ValidateBeginQueryVuids() {
             vuid_queue_flags = "VUID-vkCmdBeginQuery-commandBuffer-cmdpool";
-            vuid_queue_feedback = "VUID-vkCmdBeginQuery-queryType-02338";
+            vuid_queue_feedback = "VUID-vkCmdBeginQuery-queryType-02327";
             vuid_queue_occlusion = "VUID-vkCmdBeginQuery-queryType-00803";
             vuid_precise = "VUID-vkCmdBeginQuery-queryType-00800";
             vuid_query_count = "VUID-vkCmdBeginQuery-query-00802";

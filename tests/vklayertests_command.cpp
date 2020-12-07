@@ -5856,7 +5856,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
     commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
     if (!tf_properties.transformFeedbackDraw) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02288");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288");
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287");
     fpvkCmdDrawIndirectByteCountEXT(commandBuffer.handle(), 1, 0, counter_buffer2.handle(), 0, 0, 1);
