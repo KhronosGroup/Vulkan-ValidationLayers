@@ -756,8 +756,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                                const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        IMAGE_VIEW_STATE *
-            image_view = GetActiveAttachmentImageViewState(pCB, ref.attachment);
+        IMAGE_VIEW_STATE *image_view = GetActiveAttachmentImageViewState(pCB, ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(ref.pNext);
