@@ -114,6 +114,11 @@ def VerifyCommitMessageFormat():
         # Construct a direct commit list
         pr_commit_range_parms = ['git', 'log', '--no-merges', '--left-only', 'HEAD...origin/master', '--pretty=format:"XXXNEWLINEXXX"%n%B']
 
+    CPrint('ERR_MSG', "HACK")
+    CPrint('CONTENT', "     pr_commit_range: " + pr_commit_range + "\n")
+    CPrint('CONTENT', "     pr_commit_range_parms: " + pr_commit_range_parms + "\n")
+    exit(1);
+
     commit_data = check_output(pr_commit_range_parms)
     commit_text = commit_data.decode('utf-8')
     if commit_text is None:
