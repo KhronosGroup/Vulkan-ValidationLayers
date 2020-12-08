@@ -162,6 +162,7 @@ endif()
 option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
+option(ENABLE_RELEASE_DEBUG_SYMBOLS "Ensure debug symbols are generated for Release builds (WIN32 only)" ON)
 
 if(BUILD_TESTS OR BUILD_LAYERS)
 
@@ -290,6 +291,9 @@ add_library(VkLayer_utils
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 if(WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
+    if (ENABLE_RELEASE_DEBUG_SYMBOLS)
+        target_compile_options(VkLayer_utils PRIVATE "$<$<CONFIG:RELEASE>:/Zi>")
+    endif()
 endif()
 install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
