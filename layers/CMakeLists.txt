@@ -282,17 +282,20 @@ if(BUILD_LAYERS)
         ${SYNC_VALIDATION_LIBRARY_FILES}
         ${OPTICK_SOURCE_FILES})
 
+    # Force generation of the PDB file for Release builds.
+    # Note that CMake reduces inlining optimization levels for RelWithDebInfo builds.
+    if(MSVC)
+        target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:/Zi>")
+        # Need to use this instead of target_link_options() for older versions of CMake.
+        target_link_libraries(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:-DEBUG:FULL>")
+    endif()
+
     # Khronos validation additional dependencies
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
     if(INSTRUMENT_OPTICK)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
-        if(MSVC)
-            # Optick is more useful when we have a PDB file.
-            target_compile_options(VkLayer_khronos_validation PRIVATE "/Zi")
-            target_link_options(VkLayer_khronos_validation PRIVATE "/DEBUG:FULL")
-        endif()
     endif()
     target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
 
