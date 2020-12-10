@@ -969,7 +969,8 @@ instrumentation will return an error to the validation layer.  This checking app
 all uniform and storage buffers. If a buffer access is found to be out of bounds, it will
 not be performed.  Instead, writes will be skipped, and reads will return 0.
 Note that this validation can be disabled by setting "khronos_validation.gpuav_buffer_oob = false" 
-in a vk_layer_settings.txt file.
+in a vk_layer_settings.txt file. Note also that if a robust buffer access extension is enabled
+this buffer access checking will be disabled, since such accesses become valid.
 
 ## GPU-Assisted Validation Testing
 
