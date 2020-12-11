@@ -8322,7 +8322,9 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
         return;
     }
     VkDepthStencilObj ds_image(m_device);
-    ds_image.Init(m_device, 64, 64, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ds_image.Init(m_device, 64, 64, ds_format,
+                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                  VK_IMAGE_ASPECT_DEPTH_BIT);
     ASSERT_TRUE(ds_image.initialized());
     VkImageView ds_view = *ds_image.BindInfo();
 

@@ -512,7 +512,7 @@ class VkDepthStencilObj : public VkImageObj {
   public:
     VkDepthStencilObj(VkDeviceObj *device);
     void Init(VkDeviceObj *device, int32_t width, int32_t height, VkFormat format,
-              VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+              VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkImageAspectFlags aspect = 0);
     bool Initialized();
     VkImageView *BindInfo();
 
