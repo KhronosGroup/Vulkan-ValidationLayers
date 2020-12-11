@@ -6214,15 +6214,17 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     // Create render passes with VK_VERSION_1_2 struct and vkCreateRenderPass2KHR call
     // Create rp2[0] with Multiview, rp2[1] without Multiview (zero viewMask), rp2[2] with Multiview but another viewMask
     VkRenderPass rp2[3];
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    vkCreateRenderPass2KHR(m_device->device(), &rpci2, nullptr, &rp2[0]);
-    subpass2.viewMask = 0x0u;
-    rpci2.pSubpasses = &subpass2;
-    vkCreateRenderPass2KHR(m_device->device(), &rpci2, nullptr, &rp2[1]);
-    subpass2.viewMask = 0x1u;
-    rpci2.pSubpasses = &subpass2;
-    vkCreateRenderPass2KHR(m_device->device(), &rpci2, nullptr, &rp2[2]);
+    if (rp2Supported) {
+        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+        vkCreateRenderPass2KHR(m_device->device(), &rpci2, nullptr, &rp2[0]);
+        subpass2.viewMask = 0x0u;
+        rpci2.pSubpasses = &subpass2;
+        vkCreateRenderPass2KHR(m_device->device(), &rpci2, nullptr, &rp2[1]);
+        subpass2.viewMask = 0x1u;
+        rpci2.pSubpasses = &subpass2;
+        vkCreateRenderPass2KHR(m_device->device(), &rpci2, nullptr, &rp2[2]);
+    }
 
     // Create image view
     VkImageObj image(m_device);
@@ -6250,10 +6252,13 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     fbci.height = 128;
     fbci.layers = 1;
 
-    VkFramebuffer fb, fb2;
+    VkFramebuffer fb = VK_NULL_HANDLE;
+    VkFramebuffer fb2 = VK_NULL_HANDLE;
     vk::CreateFramebuffer(m_device->handle(), &fbci, nullptr, &fb);
-    fbci.renderPass = rp2[0];
-    vk::CreateFramebuffer(m_device->handle(), &fbci, nullptr, &fb2);
+    if (rp2Supported) {
+        fbci.renderPass = rp2[0];
+        vk::CreateFramebuffer(m_device->handle(), &fbci, nullptr, &fb2);
+    }
 
     VkRenderPassBeginInfo rp_begin = {};
     rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -6285,27 +6290,29 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     pipe_2.SetScissor(m_scissors);
     pipe_2.CreateVKPipeline(pipeline_layout.handle(), rp[2]);
 
-    // Create a graphics pipeline with rp2[1]
     VkPipelineObj pipe2_1(m_device);
-    pipe2_1.AddShader(&vs);
-    pipe2_1.AddShader(&fs);
-    pipe2_1.AddDefaultColorAttachment();
-    m_viewports.push_back(viewport);
-    pipe2_1.SetViewport(m_viewports);
-    m_scissors.push_back(rect);
-    pipe2_1.SetScissor(m_scissors);
-    pipe2_1.CreateVKPipeline(pipeline_layout.handle(), rp2[1]);
-
-    // Create a graphics pipeline with rp2[2]
     VkPipelineObj pipe2_2(m_device);
-    pipe2_2.AddShader(&vs);
-    pipe2_2.AddShader(&fs);
-    pipe2_2.AddDefaultColorAttachment();
-    m_viewports.push_back(viewport);
-    pipe2_2.SetViewport(m_viewports);
-    m_scissors.push_back(rect);
-    pipe2_2.SetScissor(m_scissors);
-    pipe2_2.CreateVKPipeline(pipeline_layout.handle(), rp2[2]);
+    if (rp2Supported) {
+        // Create a graphics pipeline with rp2[1]
+        pipe2_1.AddShader(&vs);
+        pipe2_1.AddShader(&fs);
+        pipe2_1.AddDefaultColorAttachment();
+        m_viewports.push_back(viewport);
+        pipe2_1.SetViewport(m_viewports);
+        m_scissors.push_back(rect);
+        pipe2_1.SetScissor(m_scissors);
+        pipe2_1.CreateVKPipeline(pipeline_layout.handle(), rp2[1]);
+
+        // Create a graphics pipeline with rp2[2]
+        pipe2_2.AddShader(&vs);
+        pipe2_2.AddShader(&fs);
+        pipe2_2.AddDefaultColorAttachment();
+        m_viewports.push_back(viewport);
+        pipe2_2.SetViewport(m_viewports);
+        m_scissors.push_back(rect);
+        pipe2_2.SetScissor(m_scissors);
+        pipe2_2.CreateVKPipeline(pipeline_layout.handle(), rp2[2]);
+    }
 
     VkCommandBufferInheritanceInfo cbii = {};
     cbii.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
@@ -6340,38 +6347,44 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     m_commandBuffer->end();
 
     // Begin rp2[0] for VK_VERSION_1_2 test cases
-    cbii.renderPass = rp2[0];
-    rp_begin.renderPass = rp2[0];
-    rp_begin.framebuffer = fb2;
-    vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi);
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+    if (rp2Supported) {
+        cbii.renderPass = rp2[0];
+        rp_begin.renderPass = rp2[0];
+        rp_begin.framebuffer = fb2;
+        vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi);
+        vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
-    // Bind rp2[1]'s pipeline to command buffer
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_1.handle());
+        // Bind rp2[1]'s pipeline to command buffer
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_1.handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
-    // Render triangle (error on Multiview usage should trigger on draw)
-    m_commandBuffer->Draw(3, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
+        // Render triangle (error on Multiview usage should trigger on draw)
+        m_commandBuffer->Draw(3, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
 
-    // Bind rp2[2]'s pipeline to command buffer
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_2.handle());
+        // Bind rp2[2]'s pipeline to command buffer
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_2.handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
-    // Render triangle (error on non-matching viewMasks for Multiview usage should trigger on draw)
-    m_commandBuffer->Draw(3, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
+        // Render triangle (error on non-matching viewMasks for Multiview usage should trigger on draw)
+        m_commandBuffer->Draw(3, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
 
-    // End rp2[0]
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+        // End rp2[0]
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
 
     for (int i = 0; i < 3; i++) {
         vk::DestroyRenderPass(m_device->device(), rp[i], nullptr);
-        vk::DestroyRenderPass(m_device->device(), rp2[i], nullptr);
+        if (rp2Supported) {
+            vk::DestroyRenderPass(m_device->device(), rp2[i], nullptr);
+        }
     }
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyFramebuffer(m_device->device(), fb2, nullptr);
+    if (rp2Supported) {
+        vk::DestroyFramebuffer(m_device->device(), fb2, nullptr);
+    }
     vk::DestroyImageView(m_device->device(), iv, nullptr);
 }
 
