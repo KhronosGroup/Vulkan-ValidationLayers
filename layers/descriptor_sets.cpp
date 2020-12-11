@@ -3205,7 +3205,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
 bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const uint32_t index,
                                            const char *func_name, std::string *error_code, std::string *error_msg) const {
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
-    using SamplerDescriptor = cvdescriptorset::SamplerDescriptor;
+    using Descriptor = cvdescriptorset::Descriptor;
 
     switch (update->descriptorType) {
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
@@ -3215,7 +3215,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                 auto image_layout = update->pImageInfo[di].imageLayout;
                 auto sampler = update->pImageInfo[di].sampler;
                 auto iv_state = GetImageViewState(image_view);
-                ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
+                const ImageSamplerDescriptor *desc =
+                    (const ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
                 if (image_view) {
                     auto image_state = iv_state->image_state.get();
                     if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, func_name, error_code, error_msg)) {
@@ -3299,7 +3300,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
         // Fall through
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                SamplerDescriptor *desc = (SamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
+                const auto *desc = (const Descriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
                 if (!desc->IsImmutableSampler()) {
                     if (!ValidateSampler(update->pImageInfo[di].sampler)) {
                         *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00325";
