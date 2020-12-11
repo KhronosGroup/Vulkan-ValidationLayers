@@ -3316,6 +3316,23 @@ static void processCommand(struct android_app *app, int32_t cmd) {
     }
 }
 
+static void destroyActivity(struct android_app *app) {
+    ANativeActivity_finish(app->activity);
+
+    // Wait for APP_CMD_DESTROY
+    while (app->destroyRequested == 0) {
+        struct android_poll_source *source = nullptr;
+        int events = 0;
+        int result = ALooper_pollAll(-1, nullptr, &events, reinterpret_cast<void **>(&source));
+
+        if ((result >= 0) && (source)) {
+            source->process(app, source);
+        } else {
+            break;
+        }
+    }
+}
+
 void android_main(struct android_app *app) {
     app->onAppCmd = processCommand;
     app->onInputEvent = processInput;
@@ -3377,7 +3394,8 @@ void android_main(struct android_app *app) {
             fclose(stdout);
             fclose(stderr);
 
-            ANativeActivity_finish(app->activity);
+            destroyActivity(app);
+            raise(SIGTERM);
             return;
         }
     }
