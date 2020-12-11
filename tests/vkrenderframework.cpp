@@ -2131,7 +2131,8 @@ VkImageView *VkDepthStencilObj::BindInfo() { return &m_attachmentBindInfo; }
 
 VkFormat VkDepthStencilObj::Format() const { return this->m_depth_stencil_fmt; }
 
-void VkDepthStencilObj::Init(VkDeviceObj *device, int32_t width, int32_t height, VkFormat format, VkImageUsageFlags usage) {
+void VkDepthStencilObj::Init(VkDeviceObj *device, int32_t width, int32_t height, VkFormat format, VkImageUsageFlags usage,
+                             VkImageAspectFlags aspect) {
     VkImageViewCreateInfo view_info = {};
 
     m_device = device;
@@ -2141,12 +2142,14 @@ void VkDepthStencilObj::Init(VkDeviceObj *device, int32_t width, int32_t height,
     /* create image */
     VkImageObj::Init(width, height, 1, m_depth_stencil_fmt, usage, VK_IMAGE_TILING_OPTIMAL);
 
-    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (FormatIsDepthOnly(format))
-        aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-    else if (FormatIsStencilOnly(format))
-        aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-
+    // allows for overriding by caller
+    if (aspect == 0) {
+        aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (FormatIsDepthOnly(format))
+            aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+        else if (FormatIsStencilOnly(format))
+            aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
     SetLayout(aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
