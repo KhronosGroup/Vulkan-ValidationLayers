@@ -143,6 +143,17 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags
     return out_str;
 }
 
+static std::string string_UsageTag(const ResourceUsageTag &tag) {
+    std::stringstream out;
+
+    out << "command: " << CommandTypeString(tag.command);
+    out << ", seq_no: " << ((tag.index >> 1) & UINT32_MAX) << ", reset_no: " << (tag.index >> 33);
+    if (tag.index & 1) {
+        out << ", subcmd: " << (tag.index & 1);
+    }
+    return out.str();
+}
+
 static std::string string_UsageTag(const HazardResult &hazard) {
     const auto &tag = hazard.tag;
     assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex.size()));
@@ -159,8 +170,7 @@ static std::string string_UsageTag(const HazardResult &hazard) {
         out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
     }
 
-    out << ", command: " << CommandTypeString(tag.command);
-    out << ", seq_no: " << (tag.index & 0xFFFFFFFF) << ", reset_no: " << (tag.index >> 32) << ")";
+    out << ", " << string_UsageTag(tag) << ")";
     return out.str();
 }
 
@@ -2183,11 +2193,15 @@ void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, con
     CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
     CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
 
+    // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
+    // subpass, so their tag needs to be different from the layout and load operations below.
+    ResourceUsageTag next_tag = tag;
+    next_tag.index++;
     current_subpass_++;
     assert(current_subpass_ < subpass_contexts_.size());
-    subpass_contexts_[current_subpass_].SetStartTag(tag);
-    RecordLayoutTransitions(tag);
-    RecordLoadOperations(render_area, tag);
+    subpass_contexts_[current_subpass_].SetStartTag(next_tag);
+    RecordLayoutTransitions(next_tag);
+    RecordLoadOperations(render_area, next_tag);
 }
 
 void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const VkRect2D &render_area,
