@@ -521,7 +521,9 @@ class CommandBufferAccessContext {
         // TODO: add command encoding to ResourceUsageTag.
         // What else we what to include.  Do we want some sort of "parent" or global sequence number
         command_number_++;
-        const auto index = (static_cast<uint64_t>(reset_count_) << 32) | command_number_;
+        // The lowest bit is a sub-command number used to separate operations at the end of the previous renderpass
+        // from the start of the new one in VkCmdNextRenderpass().
+        const auto index = (static_cast<uint64_t>(reset_count_) << 33) | (command_number_ << 1) | 0;
         ResourceUsageTag next(index, command);
         return next;
     }
