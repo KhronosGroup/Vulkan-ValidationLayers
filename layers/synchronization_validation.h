@@ -163,7 +163,7 @@ class ResourceAccessState : public SyncStageAccess {
 
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope) const;
-    HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index) const;
+    HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index, const ResourceUsageTag &start_tag) const;
 
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
     void SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag &tag);
@@ -321,6 +321,7 @@ class AccessContext {
         async_.clear();
         src_external_ = TrackBack();
         dst_external_ = TrackBack();
+        start_tag_ = ResourceUsageTag();
         for (auto &map : access_state_maps_) {
             map.clear();
         }
@@ -409,6 +410,8 @@ class AccessContext {
                                    const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
                                    uint32_t subpass) const;
 
+    void SetStartTag(const ResourceUsageTag &tag) { start_tag_ = tag; }
+
   private:
     HazardResult DetectHazard(AddressType type, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
     HazardResult DetectBarrierHazard(AddressType type, SyncStageAccessIndex current_usage, VkPipelineStageFlags src_exec_scope,
@@ -428,9 +431,10 @@ class AccessContext {
     MapArray access_state_maps_;
     std::vector<TrackBack> prev_;
     std::vector<TrackBack *> prev_by_subpass_;
-    std::vector<AccessContext *> async_;
+    std::vector<const AccessContext *> async_;
     TrackBack src_external_;
     TrackBack dst_external_;
+    ResourceUsageTag start_tag_;
 };
 
 class RenderPassAccessContext {

@@ -478,8 +478,7 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
 
     async_.reserve(subpass_dep.async.size());
     for (const auto async_subpass : subpass_dep.async) {
-        // TODO -- review why async is storing non-const
-        async_.emplace_back(const_cast<AccessContext *>(&contexts[async_subpass]));
+        async_.emplace_back(&contexts[async_subpass]);
     }
     if (subpass_dep.barrier_from_external.size()) {
         src_external_ = TrackBack(external_context, queue_flags, subpass_dep.barrier_from_external);
@@ -564,7 +563,7 @@ HazardResult AccessContext::DetectAsyncHazard(AddressType type, const Detector &
 
     HazardResult hazard;
     for (auto pos = from; pos != to && !hazard.hazard; ++pos) {
-        hazard = detector.DetectAsync(pos);
+        hazard = detector.DetectAsync(pos, start_tag_);
     }
 
     return hazard;
@@ -968,8 +967,8 @@ class HazardDetector {
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectHazard(usage_index_); }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectAsyncHazard(usage_index_);
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
+        return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
     HazardDetector(SyncStageAccessIndex usage) : usage_index_(usage) {}
 };
@@ -982,8 +981,8 @@ class HazardDetectorWithOrdering {
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectHazard(usage_index_, ordering_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectAsyncHazard(usage_index_);
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
+        return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
     HazardDetectorWithOrdering(SyncStageAccessIndex usage, const SyncOrderingBarrier &ordering)
         : usage_index_(usage), ordering_(ordering) {}
@@ -1071,9 +1070,9 @@ class BarrierHazardDetector {
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectBarrierHazard(usage_index_, src_exec_scope_, src_access_scope_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos) const {
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(usage_index_);
+        return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
 
   private:
@@ -2174,6 +2173,7 @@ void RenderPassAccessContext::RecordBeginRenderPass(const SyncValidator &state, 
     }
     attachment_views_ = state.GetCurrentAttachmentViews(cb_state);
 
+    subpass_contexts_[current_subpass_].SetStartTag(tag);
     RecordLayoutTransitions(tag);
     RecordLoadOperations(cb_state.activeRenderPassBeginInfo.renderArea, tag);
 }
@@ -2185,6 +2185,7 @@ void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, con
 
     current_subpass_++;
     assert(current_subpass_ < subpass_contexts_.size());
+    subpass_contexts_[current_subpass_].SetStartTag(tag);
     RecordLayoutTransitions(tag);
     RecordLoadOperations(render_area, tag);
 }
@@ -2332,19 +2333,27 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
 }
 
 // Asynchronous Hazards occur between subpasses with no connection through the DAG
-HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_index) const {
+HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_index, const ResourceUsageTag &start_tag) const {
     HazardResult hazard;
     auto usage = FlagBit(usage_index);
+    // Async checks need to not go back further than the start of the subpass, as we only want to find hazards between the async
+    // subpasses.  Anything older than that should have been checked at the start of each subpass, taking into account all of
+    // the raster ordering rules.
     if (IsRead(usage)) {
-        if (last_write != 0) {
+        if (last_write.any() && (write_tag.index >= start_tag.index)) {
             hazard.Set(this, usage_index, READ_RACING_WRITE, last_write, write_tag);
         }
     } else {
-        if (last_write != 0) {
+        if (last_write.any() && (write_tag.index >= start_tag.index)) {
             hazard.Set(this, usage_index, WRITE_RACING_WRITE, last_write, write_tag);
         } else if (last_read_count > 0) {
-            // Any read could be reported, so we'll just pick the first one arbitrarily
-            hazard.Set(this, usage_index, WRITE_RACING_READ, last_reads[0].access, last_reads[0].tag);
+            // Any reads during the other subpass will conflict with this write, so we need to check them all.
+            for (uint32_t i = 0; i < last_read_count; i++) {
+                if (last_reads[i].tag.index >= start_tag.index) {
+                    hazard.Set(this, usage_index, WRITE_RACING_READ, last_reads[i].access, last_reads[i].tag);
+                    break;
+                }
+            }
         }
     }
     return hazard;
