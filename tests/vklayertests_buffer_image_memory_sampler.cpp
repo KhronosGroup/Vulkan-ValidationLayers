@@ -668,6 +668,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     err = vk::MapMemory(m_device->device(), mem, 0, mem_reqs.size, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00678");
+    m_errorMonitor->SetUnexpectedError("VUID-vkMapMemory-size-00681");
     err = vk::MapMemory(m_device->device(), mem, 0, mem_reqs.size, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
 
