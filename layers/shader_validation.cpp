@@ -2182,16 +2182,21 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
                 }
             }
 
-            auto scope_id = module->get_def(inst.word(3));
             uint32_t scope_type = spv::ScopeMax;
-            if ((scope_id.opcode() == spv::OpSpecConstant) || (scope_id.opcode() == spv::OpConstant)) {
-                scope_type = scope_id.word(3);
+            if (inst.opcode() == spv::OpGroupNonUniformPartitionNV) {
+                // OpGroupNonUniformPartitionNV always assumed subgroup as missing operand
+                scope_type = spv::ScopeSubgroup;
             } else {
-                // TODO - Look if this is check by spirv-val
-                skip |= LogWarning(device, "UNASSIGNED-spirv-group-scopeId",
-                                   "Expecting group operation (%u) scope id operand to point to a OpConstant or OpSpecConstant "
-                                   "opcode but instead it is pointing to opcode (%u)",
-                                   inst.opcode(), scope_id.opcode());
+                auto scope_id = module->get_def(inst.word(3));
+                if ((scope_id.opcode() == spv::OpSpecConstant) || (scope_id.opcode() == spv::OpConstant)) {
+                    scope_type = scope_id.word(3);
+                } else {
+                    // TODO - Look if this is check by spirv-val
+                    skip |= LogWarning(device, "UNASSIGNED-spirv-group-scopeId",
+                                       "Expecting group operation (%u) scope id operand to point to a OpConstant or OpSpecConstant "
+                                       "opcode but instead it is pointing to opcode (%u)",
+                                       inst.opcode(), scope_id.opcode());
+                }
             }
 
             if (scope_type == spv::ScopeSubgroup) {

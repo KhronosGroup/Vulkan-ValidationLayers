@@ -5914,6 +5914,9 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init());
+    // Don't enable the extenion on purpose
+    const bool extension_support_partitioned =
+        DeviceExtensionSupported(gpu(), nullptr, VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // 1.1 and up only.
@@ -5938,6 +5941,7 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     const bool feature_support_relative = ((subgroup_operations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) != 0);
     const bool feature_support_culstered = ((subgroup_operations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) != 0);
     const bool feature_support_quad = ((subgroup_operations & VK_SUBGROUP_FEATURE_QUAD_BIT) != 0);
+    const bool feature_support_partitioned = ((subgroup_operations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV) != 0);
     const bool vertex_support = ((subgroup_prop.supportedStages & VK_SHADER_STAGE_VERTEX_BIT) != 0);
     const bool vertex_quad_support = (subgroup_prop.quadOperationsInAllStages == VK_TRUE);
 
@@ -6113,6 +6117,28 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
         }
         if (vertex_quad_support == false) {
             errors.push_back(quad_vuid);
+        }
+        if (vertex_support == false) {
+            errors.push_back(stage_vuid);
+        }
+        CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, errors, /*positive_test*/ (errors.size() == 0));
+    }
+
+    // Partitoned
+    if (extension_support_partitioned) {
+        vsSource =
+            "#version 450\n"
+            "#extension GL_NV_shader_subgroup_partitioned: enable\n"
+            "layout(set = 0, binding = 0) buffer StorageBuffer { float x; uint y; } ssbo;\n"
+            "void main(){\n"
+            "   uvec4 a = subgroupPartitionNV(ssbo.x);\n"  // forces OpGroupNonUniformPartitionNV
+            "   gl_Position = vec4(float(a.x));\n"
+            "}\n";
+        errors.clear();
+        // Extension not enabled on purpose if supported
+        errors.push_back("VUID-VkShaderModuleCreateInfo-pCode-04147");
+        if (feature_support_partitioned == false) {
+            // errors.push_back(operation_vuid);
         }
         if (vertex_support == false) {
             errors.push_back(stage_vuid);
