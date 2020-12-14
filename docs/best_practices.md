@@ -22,9 +22,9 @@ Best Practices will ideally be run periodically along with normal validation che
 
 Best Practices can easily be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK. Or you can manually enable and configure the Best Practices by following the directions below.
 
-The specific areas covered by this layer are currently tracked in
-[Github Issue #24: Best Practices/Assistant/Performance Layer.](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/24)
-Requests for additional checks can be posted through the same issue, or by creating a new Github issue.
+The specific areas covered by this layer are currently tracked in the
+[Best Practices Project](https://github.com/KhronosGroup/Vulkan-ValidationLayers/projects/1).
+Requests for additional checks can be requested by creating a Github issue.
 
 ## Enabling Best Practices Validation
 
