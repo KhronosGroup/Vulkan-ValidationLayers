@@ -7617,6 +7617,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(
         }
     }
     skip |= validate_required_pointer("vkCreateDisplayModeKHR", "pMode", pMode, "VUID-vkCreateDisplayModeKHR-pMode-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
     return skip;
 }
 

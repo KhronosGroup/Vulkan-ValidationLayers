@@ -3843,6 +3843,29 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                                     const VkDisplayModeCreateInfoKHR *pCreateInfo,
+                                                                     const VkAllocationCallbacks *pAllocator,
+                                                                     VkDisplayModeKHR *pMode) const {
+    bool skip = false;
+
+    const VkDisplayModeParametersKHR display_mode_parameters = pCreateInfo->parameters;
+    if (display_mode_parameters.visibleRegion.width == 0) {
+        skip |= LogError(device, "VUID-VkDisplayModeParametersKHR-width-01990",
+                         "vkCreateDisplayModeKHR(): pCreateInfo->parameters.visibleRegion.width must be greater than 0.");
+    }
+    if (display_mode_parameters.visibleRegion.height == 0) {
+        skip |= LogError(device, "VUID-VkDisplayModeParametersKHR-height-01991",
+                         "vkCreateDisplayModeKHR(): pCreateInfo->parameters.visibleRegion.height must be greater than 0.");
+    }
+    if (display_mode_parameters.refreshRate == 0) {
+        skip |= LogError(device, "VUID-VkDisplayModeParametersKHR-refreshRate-01992",
+                         "vkCreateDisplayModeKHR(): pCreateInfo->parameters.refreshRate must be greater than 0.");
+    }
+
+    return skip;
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance,
                                                                       const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
