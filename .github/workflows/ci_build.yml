@@ -1,0 +1,118 @@
+name: CI Build
+
+# Perform CI builds for pull requests targeting the master branch or any pushes to the repo.
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  code-format:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Source Code Format Testing",
+            os: ubuntu-latest,
+            cc: "gcc", cxx: "g++"
+          }
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v1
+    - name: Install build dependencies
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get install -y python-pathlib
+    - name: Execute Source Code Format Checking Script
+      run: |
+        python3 scripts/check_code_format.py
+
+  linux:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Ubuntu GCC Debug",
+            os: ubuntu-latest,
+            type: "debug",
+            build_dir: "build",
+            cc: "gcc", cxx: "g++"
+          }
+        - {
+            name: "Ubuntu Clang Debug",
+            os: ubuntu-latest,
+            type: "debug",
+            build_dir: "build",
+            cc: "clang", cxx: "clang++"
+          }
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v1
+    - name: Install build dependencies
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
+                              libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
+                              libxcb-randr0-dev python-pathlib
+    - name: Build and Test Vulkan-ValidationLayers 
+      run: |
+        python3 scripts/github_ci_win_linux.py
+
+  gn:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Linux GN Debug Build ",
+            os: ubuntu-latest,
+            cc: "gcc", cxx: "g++"
+          }
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v1
+    - name: Install build dependencies
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
+                              libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
+                              libxcb-randr0-dev python-pathlib
+    - name: Build Vulkan-ValidationLayers Using Ninja
+      run: |
+        python3 scripts/github_ci_gn.py
+
+  android:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Android armeabi-v8a",
+            os: ubuntu-latest,
+            abi: arm64-v8a,
+            ndk: r21d,
+          }
+        - {
+            name: "Android armeabi-v7a",
+            os: ubuntu-latest,
+            abi: armeabi-v7a,
+            ndk: r21d,
+          }
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v1
+    - name: Build ValidationLayers
+      run: |
+        python3 scripts/github_ci_android.py --abi ${{ matrix.config.abi }}
+
