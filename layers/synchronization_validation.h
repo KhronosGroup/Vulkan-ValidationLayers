@@ -74,6 +74,11 @@ struct SyncStageAccess {
 struct ResourceUsageTag {
     uint64_t index;
     CMD_TYPE command;
+
+    static constexpr uint64_t kResetShift = 33;
+    static constexpr uint64_t kCommandShift = 1;
+    static constexpr uint64_t kCommandMask = 0xffffffff;
+
     const static uint64_t kMaxIndex = std::numeric_limits<uint64_t>::max();
     ResourceUsageTag &operator++() {
         index++;
@@ -82,8 +87,23 @@ struct ResourceUsageTag {
     bool IsBefore(const ResourceUsageTag &rhs) const { return index < rhs.index; }
     bool operator==(const ResourceUsageTag &rhs) const { return (index == rhs.index); }
     bool operator!=(const ResourceUsageTag &rhs) const { return !(*this == rhs); }
+
+    CMD_TYPE GetCommand() const { return command; }
+    uint32_t GetResetNum() const { return index >> kResetShift; }
+    uint32_t GetSeqNum() const { return (index >> kCommandShift) & kCommandMask; }
+    uint32_t GetSubCommand() const { return (index & 1); }
+
+    ResourceUsageTag NextSubCommand() const {
+        assert((index & 1) == 0);
+        ResourceUsageTag next = *this;
+        next.index++;
+        return next;
+    }
+
     ResourceUsageTag() : index(0), command(CMD_NONE) {}
     ResourceUsageTag(uint64_t index_, CMD_TYPE command_) : index(index_), command(command_) {}
+    ResourceUsageTag(uint32_t reset_count, uint32_t command_num, CMD_TYPE command_)
+        : index(((uint64_t)reset_count << kResetShift) | (command_num << kCommandShift)), command(command_) {}
 };
 
 struct HazardResult {
@@ -606,8 +626,7 @@ class CommandBufferAccessContext {
         command_number_++;
         // The lowest bit is a sub-command number used to separate operations at the end of the previous renderpass
         // from the start of the new one in VkCmdNextRenderpass().
-        const auto index = (static_cast<uint64_t>(reset_count_) << 33) | (command_number_ << 1) | 0;
-        ResourceUsageTag next(index, command);
+        ResourceUsageTag next(reset_count_, command_number_, command);
         return next;
     }
 

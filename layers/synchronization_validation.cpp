@@ -149,10 +149,10 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags
 static std::string string_UsageTag(const ResourceUsageTag &tag) {
     std::stringstream out;
 
-    out << "command: " << CommandTypeString(tag.command);
-    out << ", seq_no: " << ((tag.index >> 1) & UINT32_MAX) << ", reset_no: " << (tag.index >> 33);
-    if (tag.index & 1) {
-        out << ", subcmd: " << (tag.index & 1);
+    out << "command: " << CommandTypeString(tag.GetCommand());
+    out << ", seq_no: " << tag.GetSeqNum() << ", reset_no: " << tag.GetResetNum();
+    if (tag.GetSubCommand() != 0) {
+        out << ", subcmd: " << tag.GetSubCommand();
     }
     return out.str();
 }
@@ -2883,8 +2883,7 @@ void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, con
 
     // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
     // subpass, so their tag needs to be different from the layout and load operations below.
-    ResourceUsageTag next_tag = tag;
-    next_tag.index++;
+    ResourceUsageTag next_tag = tag.NextSubCommand();
     current_subpass_++;
     assert(current_subpass_ < subpass_contexts_.size());
     subpass_contexts_[current_subpass_].SetStartTag(next_tag);
