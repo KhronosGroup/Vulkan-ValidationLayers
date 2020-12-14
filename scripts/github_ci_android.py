@@ -25,75 +25,39 @@ import subprocess
 import sys
 import platform
 
-import common_codegen
-
-from subprocess import check_output
-from datetime import date
+import common_ci
 from argparse import RawDescriptionHelpFormatter
 
-os.system("")
-
-VERBOSE = False
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], '..'))
 SUPPORTED_ABIS = [ 'arm64-v8a', 'armeabi-v7a']
 DEFAULT_ABI = SUPPORTED_ABIS[0]
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], '..'))
-
-# Split command lines into a list of args for python subprocess
-def ListArgs(command_string):
-    return command_string.split(" ")
-
-# Runs a command in a directory and returns its standard output stream.
-#    Captures the standard error stream and prints it if error.
-#    Raises a RuntimeError if the command fails to launch or otherwise fails.
-def command_output(cmd, directory):
-    if VERBOSE:
-        print('In {d}: {cmd}'.format(d=directory, cmd=cmd))
-    p = subprocess.Popen(
-        cmd, cwd=directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout, stderr) = p.communicate()
-    #if p.returncode != 0:
-        #print('*** Error ***\nstderr contents:\n{}'.format(stderr))
-        #if not fail_ok:
-        #    raise RuntimeError('Failed to run {} in {}'.format(cmd, directory))
-    if VERBOSE:
-        print(stdout)
-    return p.returncode, stdout
 
 #
 # Fetch Android components, build Android VVL
 def BuildAndroid(target_abi):
-
-    #wget http://dl.google.com/android/repository/android-ndk-${{ matrix.config.ndk }}-linux-${{ matrix.config.arch }}.zip
+    print("Fetching NDK\n")
     wget_cmd = 'wget http://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip'
-    ret_code, out_text = command_output(ListArgs(wget_cmd), PROJECT_ROOT)
-    print("wget retcode = ", ret_code)
+    ret_code = common_ci.RunShellCmd(wget_cmd, PROJECT_ROOT)
 
     if ret_code == 0:
-        #unzip -u -q android-ndk-${ANDROID_NDK}-linux-${ARCH}.zip
+        print("Extracting NDK components\n")
         unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
-        ret_code, out_text = command_output(ListArgs(unzip_cmd), PROJECT_ROOT)
-        # Add NDK to paths
+        ret_code = common_ci.RunShellCmd(unzip_cmd, PROJECT_ROOT)
+        # Add NDK to path
         os.environ['ANDROID_NDK_HOME'] = common_codegen.repo_relative('android-ndk-r21d')
         os.environ['PATH'] = os.environ.get('ANDROID_NDK_HOME') + ':' + os.environ.get('PATH')
-        print("unzip retcode = ", ret_code)
 
     if ret_code == 0:
-        # Run Android update external sources script
+        print("Preparing Android Dependencies\n")
         update_sources_cmd = './update_external_sources_android.sh --abi %s --no-build' % target_abi
-        ret_code, out_text = command_output(ListArgs(update_sources_cmd), common_codegen.repo_relative("build-android"))
-        print("Preparing Android Sources\n", out_text.decode())
-        print("update retcode = ", ret_code)
+        ret_code = common_ci.RunShellCmd(update_sources_cmd, common_codegen.repo_relative("build-android"))
 
     if ret_code == 0:
-        # Build Android VVL and tests
+        print("Building Android Layers and Tests\n")
         ndk_build_cmd = 'ndk-build APP_ABI=%s -j4' % target_abi
-        ret_code, out_text = command_output(ListArgs(ndk_build_cmd), common_codegen.repo_relative("build-android"))
-        print("Building Android Layers and Tests", out_text.decode())
-        print("build retcode = ", ret_code)
+        ret_code = common_ci.RunShellCmd(ndk_build_cmd, common_codegen.repo_relative("build-android"))
 
-    if ret_code != 0:
-        sys.exit(ret_code)
-    return 0
+    return ret_code
 
 #
 # Module Entrypoint
@@ -114,10 +78,9 @@ def main():
         print("This script requires Python 3. Run script with [-h] option for more details.")
         exit()
 
-    failed = BuildAndroid(args.target_abi)
-
+    ret_code = BuildAndroid(args.target_abi)
     if failed:
-        exit(1)
+        sys.exit()
     else:
         exit(0)
 
