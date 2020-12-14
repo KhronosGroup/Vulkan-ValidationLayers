@@ -22,9 +22,9 @@ Synchronization can easily be enabled and configured using the [Vulkan Configura
 
 
 
-The specific areas covered by this layer are currently tracked in
-[Github Issue #72: Validate synchronization correctness: Sync Tracking](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/72)
-Requests for additional checks can be posted through the same issue, or by creating a new Github issue.
+The specific areas covered by this layer are currently tracked in the
+[Synchronization Validation Project](https://github.com/KhronosGroup/Vulkan-ValidationLayers/projects/5).
+Requests for additional checks can be requested by creating a Github issue.
 
 ## Synchronization Validation Functionality
 
