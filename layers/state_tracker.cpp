@@ -5146,6 +5146,17 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
     }
 }
 
+void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                                const VkDisplayModeCreateInfoKHR *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode,
+                                                                VkResult result) {
+    if (VK_SUCCESS != result) return;
+    if (!pMode) return;
+    auto display_mode_state = std::make_shared<DISPLAY_MODE_STATE>(*pMode);
+    display_mode_state->physical_device = physicalDevice;
+    display_mode_map[*pMode] = std::move(display_mode_state);
+}
+
 void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {

@@ -220,6 +220,14 @@ struct SURFACE_STATE : public BASE_NODE {
     SURFACE_STATE(VkSurfaceKHR surface) : surface(surface) {}
 };
 
+struct DISPLAY_MODE_STATE : public BASE_NODE {
+    VkDisplayModeKHR display_mode = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device;
+
+    DISPLAY_MODE_STATE() {}
+    DISPLAY_MODE_STATE(VkDisplayModeKHR display_mode) : display_mode(display_mode) {}
+};
+
 struct SubpassLayout {
     uint32_t index;
     VkImageLayout layout;
@@ -409,6 +417,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, accelerationStructureMap_khr)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map)
 
     void AddAliasingImage(IMAGE_STATE* image_state);
     void RemoveAliasingImage(IMAGE_STATE* image_state);
@@ -603,6 +612,10 @@ class ValidationStateTracker : public ValidationObject {
     }
     const SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) const { return Get<SURFACE_STATE>(surface); }
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) { return Get<SURFACE_STATE>(surface); }
+    const DISPLAY_MODE_STATE* GetDisplayModeState(VkDisplayModeKHR display_mode) const {
+        return Get<DISPLAY_MODE_STATE>(display_mode);
+    }
+    DISPLAY_MODE_STATE* GetDisplayModeState(VkDisplayModeKHR display_mode) { return Get<DISPLAY_MODE_STATE>(display_mode); }
 
     // Class Declarations for helper functions
     IMAGE_VIEW_STATE* GetActiveAttachmentImageViewState(const CMD_BUFFER_STATE* cb, uint32_t index,
@@ -971,6 +984,9 @@ class ValidationStateTracker : public ValidationObject {
                                           VkResult result) override;
     void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                           const VkAllocationCallbacks* pAllocator) override;
+    void PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                            const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                            VkDisplayModeKHR* pMode, VkResult result) override;
 
     // CommandBuffer/Queue Control
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) override;

@@ -1287,6 +1287,9 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                         const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                         VkDisplayPlaneCapabilities2KHR* pCapabilities) const override;
+    bool PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkSurfaceKHR* pSurface) const override;
     bool PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) const override;
 
     bool PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,

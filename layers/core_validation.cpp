@@ -13318,10 +13318,10 @@ bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysi
     if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called) {
         if (planeIndex >= physical_device_state->display_plane_property_count) {
             skip |= LogError(physicalDevice, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
-                             "%s(): planeIndex must be in the range [0, %d] that was returned by "
+                             "%s(): planeIndex (%u) must be in the range [0, %d] that was returned by "
                              "vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
                              "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
-                             api_name, physical_device_state->display_plane_property_count - 1);
+                             api_name, planeIndex, physical_device_state->display_plane_property_count - 1);
         }
     }
 
@@ -13350,6 +13350,73 @@ bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice
     bool skip = false;
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, pDisplayPlaneInfo->planeIndex,
                                                                     "vkGetDisplayPlaneCapabilities2KHR");
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator,
+                                                             VkSurfaceKHR *pSurface) const {
+    bool skip = false;
+    const VkDisplayModeKHR displayMode = pCreateInfo->displayMode;
+    const uint32_t plane_index = pCreateInfo->planeIndex;
+
+    if (pCreateInfo->alphaMode == VK_DISPLAY_PLANE_ALPHA_GLOBAL_BIT_KHR) {
+        const float globalAlpha = pCreateInfo->globalAlpha;
+        if ((globalAlpha > 1.0f) || (globalAlpha < 0.0f)) {
+            skip |= LogError(
+                displayMode, "VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01254",
+                "vkCreateDisplayPlaneSurfaceKHR(): alphaMode is VK_DISPLAY_PLANE_ALPHA_GLOBAL_BIT_KHR but globalAlpha is %f.",
+                globalAlpha);
+        }
+    }
+
+    const DISPLAY_MODE_STATE *dm_state = GetDisplayModeState(displayMode);
+    if (dm_state != nullptr) {
+        // Get physical device from VkDisplayModeKHR state tracking
+        const VkPhysicalDevice physical_device = dm_state->physical_device;
+        const auto physical_device_state = GetPhysicalDeviceState(physical_device);
+        VkPhysicalDeviceProperties device_properties = {};
+        DispatchGetPhysicalDeviceProperties(physical_device, &device_properties);
+
+        const uint32_t width = pCreateInfo->imageExtent.width;
+        const uint32_t height = pCreateInfo->imageExtent.height;
+        if (width >= device_properties.limits.maxImageDimension2D) {
+            skip |= LogError(displayMode, "VUID-VkDisplaySurfaceCreateInfoKHR-width-01256",
+                             "vkCreateDisplayPlaneSurfaceKHR(): width (%" PRIu32
+                             ") exceeds device limit maxImageDimension2D (%" PRIu32 ").",
+                             width, device_properties.limits.maxImageDimension2D);
+        }
+        if (height >= device_properties.limits.maxImageDimension2D) {
+            skip |= LogError(displayMode, "VUID-VkDisplaySurfaceCreateInfoKHR-width-01256",
+                             "vkCreateDisplayPlaneSurfaceKHR(): height (%" PRIu32
+                             ") exceeds device limit maxImageDimension2D (%" PRIu32 ").",
+                             height, device_properties.limits.maxImageDimension2D);
+        }
+
+        if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called) {
+            if (plane_index >= physical_device_state->display_plane_property_count) {
+                skip |=
+                    LogError(displayMode, "VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252",
+                             "vkCreateDisplayPlaneSurfaceKHR(): planeIndex (%u) must be in the range [0, %d] that was returned by "
+                             "vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
+                             "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
+                             plane_index, physical_device_state->display_plane_property_count - 1);
+            } else {
+                // call here once we know the plane index used is a valid plane index
+                VkDisplayPlaneCapabilitiesKHR plane_capabilities;
+                DispatchGetDisplayPlaneCapabilitiesKHR(physical_device, displayMode, plane_index, &plane_capabilities);
+
+                if ((pCreateInfo->alphaMode & plane_capabilities.supportedAlpha) == 0) {
+                    skip |= LogError(displayMode, "VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255",
+                                     "vkCreateDisplayPlaneSurfaceKHR(): alphaMode is %s but planeIndex %u supportedAlpha (0x%x) "
+                                     "does not support the mode.",
+                                     string_VkDisplayPlaneAlphaFlagBitsKHR(pCreateInfo->alphaMode), plane_index,
+                                     plane_capabilities.supportedAlpha);
+                }
+            }
+        }
+    }
+
     return skip;
 }
 

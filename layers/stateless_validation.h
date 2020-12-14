@@ -1425,6 +1425,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) const;
     bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const;
+    bool manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                    const VkDisplayModeCreateInfoKHR *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
