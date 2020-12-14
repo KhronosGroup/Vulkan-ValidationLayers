@@ -63,7 +63,7 @@ jobs:
                               libxcb-randr0-dev python-pathlib
     - name: Build and Test Vulkan-ValidationLayers 
       run: |
-        python3 scripts/github_ci_win_linux.py
+        python3 scripts/github_ci_win_linux.py --config ${{ matrix.config.type }}
 
   gn:
     name: ${{ matrix.config.name }}

@@ -41,6 +41,9 @@ VERBOSE = False
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], '..'))
 EXTERNAL_DIR = common_codegen.repo_relative(EXTERNAL_DIR_NAME)
 VVL_BUILD_DIR = common_codegen.repo_relative(BUILD_DIR_NAME)
+CONFIGURATIONS = ['release', 'debug']
+DEFAULT_CONFIGURATION = CONFIGURATIONS[0]
+
 
 #
 #
@@ -88,9 +91,9 @@ def CheckVVLCodegenConsistency():
 #
 #
 # Prepare the Validation Layers for testing
-def BuildVVL():
+def BuildVVL(args):
     # Run update_deps.py for VVL repo
-    update_cmd = 'python3 scripts/update_deps.py --dir %s --config debug --arch x64' % EXTERNAL_DIR_NAME
+    update_cmd = 'python3 scripts/update_deps.py --dir %s --config %s --arch x64' % (EXTERNAL_DIR_NAME, args.configuration)
     command_output(ListArgs(update_cmd), PROJECT_ROOT)
 
     if CheckVVLCodegenConsistency():
@@ -109,7 +112,8 @@ def BuildVVL():
     CreateBuildDirectory(VVL_BUILD_DIR)
 
     # Run cmake for VVL
-    cmake_cmd = 'cmake -C ../%s/helper.cmake -DCMAKE_BUILD_TYPE=Debug -DUSE_CCACHE=ON ..' % EXTERNAL_DIR_NAME
+    cmake_cmd = 'cmake -C ../%s/helper.cmake -DCMAKE_BUILD_TYPE=%s -DUSE_CCACHE=ON ..' \
+        % (EXTERNAL_DIR_NAME, args.configuration.capitalize())
     command_output(ListArgs(cmake_cmd), VVL_BUILD_DIR)
 
     # Build VVL
@@ -124,7 +128,7 @@ def BuildVVL():
 #
 #
 # Prepare Loader for executing Layer Validation Tests
-def BuildLoader():
+def BuildLoader(args):
     LOADER_DIR = common_codegen.repo_relative("%s/Vulkan-Loader" % EXTERNAL_DIR_NAME)
     # Clone Loader repo
     if not os.path.exists(LOADER_DIR):
@@ -141,7 +145,7 @@ def BuildLoader():
     CreateBuildDirectory(LOADER_BUILD_DIR)
 
     # Run cmake
-    cmake_cmd = 'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..'
+    cmake_cmd = 'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=%s ..' % args.configuration.capitalize()
     command_output(ListArgs(cmake_cmd), LOADER_BUILD_DIR)
 
     # Build Loader
@@ -156,7 +160,7 @@ def BuildLoader():
 #
 #
 # Prepare Mock ICD for use with Layer Validation Tests
-def BuildMockICD():
+def BuildMockICD(args):
     # Clone Vulkan-Tools repo
     if not os.path.exists(common_codegen.repo_relative("%s/Vulkan-Tools" % EXTERNAL_DIR_NAME)):
         clone_tools_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Tools.git'
@@ -168,13 +172,15 @@ def BuildMockICD():
 
     # Run cmake
     cmake_args = ['cmake',
-                  '-DCMAKE_BUILD_TYPE=Debug',
+                  '-DCMAKE_BUILD_TYPE=%s' % args.configuration.capitalize(),
                   '-DBUILD_CUBE=NO',
                   '-DBUILD_VULKANINFO=NO',
                   '-DINSTALL_ICD=OFF',
                   '-DVULKAN_HEADERS_INSTALL_DIR=%s/Vulkan-Headers/%s/install' % (EXTERNAL_DIR, BUILD_DIR_NAME),
                   '..']
-    cmake_cmd = 'cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -DVULKAN_HEADERS_INSTALL_DIR=%s/Vulkan-Headers/%s/install ..' % (EXTERNAL_DIR, BUILD_DIR_NAME)
+    cmake_cmd = \
+        'cmake -DCMAKE_BUILD_TYPE=%s -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -DVULKAN_HEADERS_INSTALL_DIR=%s/Vulkan-Headers/%s/install ..' \
+        % (args.configuration.capitalize(), EXTERNAL_DIR, BUILD_DIR_NAME)
     command_output(ListArgs(cmake_cmd), ICD_BUILD_DIR)
     
     VVL_REG_DIR = "%s/Vulkan-Headers/registry" % EXTERNAL_DIR
@@ -210,7 +216,7 @@ def BuildMockICD():
 #
 #
 # Run the Layer Validation Tests
-def RunVVLTests():
+def RunVVLTests(args):
     os.chdir(PROJECT_ROOT)
     lvt_cmd = '%s/tests/vk_layer_validation_tests' % BUILD_DIR_NAME
     lvt_env = dict(os.environ)
@@ -229,19 +235,25 @@ def main():
     - Reqires python3
     - Run script in repo root
     ''', formatter_class=RawDescriptionHelpFormatter)
+    parser.add_argument(
+        '-c', '--config', dest='configuration',
+        metavar='CONFIG', action='store',
+        choices=CONFIGURATIONS, default=DEFAULT_CONFIGURATION,
+        help='Build target configuration. Can be one of: {0}'.format(
+            ', '.join(CONFIGURATIONS)))
     args = parser.parse_args()
 
     if sys.version_info[0] != 3:
         print("This script requires Python 3. Run script with [-h] option for more details.")
         exit()
 
-    failed = BuildVVL()
+    failed = BuildVVL(args)
     if not failed:
-        failed = BuildLoader()
+        failed = BuildLoader(args)
     if not failed:
-        failed = BuildMockICD()
+        failed = BuildMockICD(args)
     if not failed:
-        failed = RunVVLTests()
+        failed = RunVVLTests(args)
     
     if failed:
         exit(1)
