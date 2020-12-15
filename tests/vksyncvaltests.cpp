@@ -1037,6 +1037,10 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
         "    vColor4 = imageLoad(stb3, 0);\n"
         "}\n";
 
+    VkEventObj event;
+    event.init(*m_device, VkEventObj::create_info(0));
+    VkEvent event_handle = event.handle();
+
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.cs_.reset(new VkShaderObj(m_device, csSource.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this));
@@ -1183,6 +1187,40 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+
+    // Repeat the draw test with a WaitEvent to protect it.
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), vbo2.handle(), vbo.handle(), 1, &buffer_region);
+
+    auto vbo_barrier = lvl_init_struct<VkBufferMemoryBarrier>();
+    vbo_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    vbo_barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    vbo_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vbo_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vbo_barrier.buffer = vbo.handle();
+    vbo_barrier.offset = buffer_region.dstOffset;
+    vbo_barrier.size = buffer_region.size;
+
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+
+    m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, nullptr, 1,
+                                &vbo_barrier, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
 
     // DrawIndexed
     m_errorMonitor->ExpectSuccess();
