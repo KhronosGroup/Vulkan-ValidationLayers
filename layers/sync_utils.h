@@ -21,7 +21,6 @@
 
 #pragma once
 #include <vulkan/vulkan.h>
-#include <array>
 
 struct DeviceFeatures;
 
@@ -47,5 +46,12 @@ int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlags flag);
 VkPipelineStageFlags GetLogicallyEarliestGraphicsPipelineStage(VkPipelineStageFlags inflags);
 
 VkPipelineStageFlags GetLogicallyLatestGraphicsPipelineStage(VkPipelineStageFlags inflags);
+
+struct ExecScopes {
+    VkPipelineStageFlags2KHR src;
+    VkPipelineStageFlags2KHR dst;
+};
+
+ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR& dep_info);
 
 }  // namespace sync_utils

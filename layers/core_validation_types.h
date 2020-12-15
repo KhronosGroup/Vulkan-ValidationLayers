@@ -1239,7 +1239,7 @@ struct QFOTransferCBScoreboards {
 };
 
 typedef std::map<QueryObject, QueryState> QueryMap;
-typedef std::unordered_map<VkEvent, VkPipelineStageFlags> EventToStageMap;
+typedef std::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
 typedef ImageSubresourceLayoutMap::LayoutMap GlobalImageLayoutRangeMap;
 typedef std::unordered_map<VkImage, std::unique_ptr<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
@@ -1416,15 +1416,8 @@ struct SEMAPHORE_SIGNAL {
 };
 
 struct CB_SUBMISSION {
-    CB_SUBMISSION(std::vector<VkCommandBuffer> const &cbs, std::vector<SEMAPHORE_WAIT> const &waitSemaphores,
-                  std::vector<SEMAPHORE_SIGNAL> const &signalSemaphores, std::vector<VkSemaphore> const &externalSemaphores,
-                  VkFence fence, uint32_t perf_submit_pass)
-        : cbs(cbs),
-          waitSemaphores(waitSemaphores),
-          signalSemaphores(signalSemaphores),
-          externalSemaphores(externalSemaphores),
-          fence(fence),
-          perf_submit_pass(perf_submit_pass) {}
+    CB_SUBMISSION()
+        : cbs(), waitSemaphores(), signalSemaphores(), externalSemaphores(), fence(VK_NULL_HANDLE), perf_submit_pass(0) {}
 
     std::vector<VkCommandBuffer> cbs;
     std::vector<SEMAPHORE_WAIT> waitSemaphores;
@@ -1504,6 +1497,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_feature;
     VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering;
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };
