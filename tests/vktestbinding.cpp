@@ -482,6 +482,14 @@ void Event::init(const Device &dev, const VkEventCreateInfo &info) { NON_DISPATC
 
 void Event::set() { EXPECT(vk::SetEvent(device(), handle()) == VK_SUCCESS); }
 
+void Event::cmd_set(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
+    vk::CmdSetEvent(cmd.handle(), handle(), stage_mask);
+}
+
+void Event::cmd_reset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
+    vk::CmdResetEvent(cmd.handle(), handle(), stage_mask);
+}
+
 void Event::reset() { EXPECT(vk::ResetEvent(device(), handle()) == VK_SUCCESS); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)

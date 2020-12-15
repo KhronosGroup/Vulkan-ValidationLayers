@@ -358,6 +358,8 @@ class Event : public internal::NonDispHandle<VkEvent> {
     // vkResetEvent()
     VkResult status() const { return vk::GetEventStatus(device(), handle()); }
     void set();
+    void cmd_set(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask);
+    void cmd_reset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask);
     void reset();
 
     static VkEventCreateInfo create_info(VkFlags flags);
