@@ -338,6 +338,7 @@ class VkRenderFramework : public VkTestFramework {
 class VkDescriptorSetObj;
 class VkConstantBufferObj;
 class VkPipelineObj;
+typedef vk_testing::Event VkEventObj;
 typedef vk_testing::Fence VkFenceObj;
 typedef vk_testing::Buffer VkBufferObj;
 typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
@@ -382,6 +383,15 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
                                 uint32_t rangeCount, const VkImageSubresourceRange *pRanges);
     void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer);
     void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData);
+    void SetEvent(VkEventObj &event, VkPipelineStageFlags stageMask) { event.cmd_set(*this, stageMask); }
+    void ResetEvent(VkEventObj &event, VkPipelineStageFlags stageMask) { event.cmd_reset(*this, stageMask); }
+    void WaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
+                    VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+        vk::CmdWaitEvents(handle(), eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+                          bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    }
 
   protected:
     VkDeviceObj *m_device;
