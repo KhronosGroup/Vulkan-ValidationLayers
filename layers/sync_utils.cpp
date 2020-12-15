@@ -166,4 +166,22 @@ VkPipelineStageFlags GetLogicallyLatestGraphicsPipelineStage(VkPipelineStageFlag
     return latest_bit;
 }
 
+// helper to extract the union of the stage masks in all of the barriers
+ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR &dep_info) {
+    ExecScopes result{};
+    for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
+        result.src |= dep_info.pMemoryBarriers[i].srcStageMask;
+        result.dst |= dep_info.pMemoryBarriers[i].dstStageMask;
+    }
+    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+        result.src |= dep_info.pBufferMemoryBarriers[i].srcStageMask;
+        result.dst |= dep_info.pBufferMemoryBarriers[i].dstStageMask;
+    }
+    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+        result.src |= dep_info.pImageMemoryBarriers[i].srcStageMask;
+        result.dst |= dep_info.pImageMemoryBarriers[i].dstStageMask;
+    }
+    return result;
+}
+
 }  // namespace sync_utils
