@@ -2986,3 +2986,73 @@ TEST_F(VkSyncValTest, SyncEventsCopyImageHazards) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(VkSyncValTest, SyncEventsCommandHazards) {
+    TEST_DESCRIPTION("Check Set/Reset/Wait command hazard checking");
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkEventObj event;
+    event.init(*m_device, VkEventObj::create_info(0));
+
+    const VkEvent event_handle = event.handle();
+
+    m_commandBuffer->begin();
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-vkCmdWaitEvents-missingbarrier-reset");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-srcStageMask-01158");
+    m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
+                                nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->end();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, nullptr,
+                                0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-vkCmdResetEvent-missingbarrier-wait");
+    m_commandBuffer->ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->end();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-vkCmdSetEvent-missingbarrier-reset");
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0, nullptr, 0,
+                                     nullptr, 0, nullptr);
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
+                                nullptr, 0, nullptr);
+    m_commandBuffer->ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0, nullptr, 0,
+                                     nullptr, 0, nullptr);
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyNotFound();
+
+    // Need a barrier between set and a reset
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-vkCmdResetEvent-missingbarrier-set");
+    m_commandBuffer->ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->end();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-vkCmdSetEvent-missingbarrier-set");
+    m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
