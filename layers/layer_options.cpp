@@ -161,6 +161,14 @@ std::string GetNextToken(std::string *token_list, const std::string &delimiter, 
         token = *token_list;
     }
     token_list->erase(0, *pos + delimiter.length());
+
+    // Remove quotes from quoted strings
+    if ((token.length() > 0) && (token[0] == '\"')) {
+        token.erase(token.begin());
+        if ((token.length() > 0) && (token[token.length() - 1] == '\"')) {
+            token.erase(--token.end());
+        }
+    }
     return token;
 }
 
