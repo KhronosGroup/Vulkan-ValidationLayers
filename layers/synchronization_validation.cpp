@@ -1489,8 +1489,7 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
 bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE &rp_state,
 
                                                          const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                         const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                                         const char *func_name) const {
+                                                         const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const {
     // Check if any of the layout transitions are hazardous.... but we don't have the renderpass context to work with, so we
     bool skip = false;
 
@@ -3067,7 +3066,7 @@ void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDev
 }
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                            const VkSubpassBeginInfoKHR *pSubpassBeginInfo, const char *func_name) const {
+                                            const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const {
     bool skip = false;
     const auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     auto cb_context = GetAccessContext(commandBuffer);
@@ -3089,7 +3088,7 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuf
 }
 
 bool SyncValidator::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       const VkSubpassBeginInfoKHR *pSubpassBeginInfo) const {
+                                                       const VkSubpassBeginInfo *pSubpassBeginInfo) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, "vkCmdBeginRenderPass2");
     return skip;
@@ -3097,7 +3096,7 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
 
 bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                           const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                          const VkSubpassBeginInfoKHR *pSubpassBeginInfo) const {
+                                                          const VkSubpassBeginInfo *pSubpassBeginInfo) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, "vkCmdBeginRenderPass2KHR");
     return skip;
@@ -3143,8 +3142,8 @@ void SyncValidator::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer command
     RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2);
 }
 
-bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                           const VkSubpassEndInfoKHR *pSubpassEndInfo, const char *func_name) const {
+bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                           const VkSubpassEndInfo *pSubpassEndInfo, const char *func_name) const {
     bool skip = false;
 
     auto cb_context = GetAccessContext(commandBuffer);
@@ -3168,8 +3167,8 @@ bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-bool SyncValidator::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                                      const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+bool SyncValidator::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                      const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
     skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, "vkCmdNextSubpass2KHR");
     return skip;
@@ -3214,7 +3213,7 @@ void SyncValidator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuff
     RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2);
 }
 
-bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo,
+bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                              const char *func_name) const {
     bool skip = false;
 
@@ -3236,15 +3235,14 @@ bool SyncValidator::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
     return skip;
 }
 
-bool SyncValidator::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer,
-                                                     const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+bool SyncValidator::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, "vkEndRenderPass2");
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer,
-                                                        const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+                                                        const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, "vkEndRenderPass2KHR");
     return skip;

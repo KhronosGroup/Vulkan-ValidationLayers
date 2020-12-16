@@ -7037,7 +7037,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
     auto ds_layout_ci = lvl_init_struct<VkDescriptorSetLayoutCreateInfo>();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
 
-    std::string error = "Attemped to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT in ";
+    std::string error = "Attemped to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT in ";
     error = error + "VkDescriptorSetLayoutCreateInfo::flags but its required extension ";
     error = error + VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
     error = error + " has not been enabled.";

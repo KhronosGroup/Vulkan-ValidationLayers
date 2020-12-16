@@ -38,10 +38,10 @@
 // state that comes from a different array/structure so they can stay together
 // while being sorted by binding number.
 struct ExtendedBinding {
-    ExtendedBinding(const VkDescriptorSetLayoutBinding *l, VkDescriptorBindingFlagsEXT f) : layout_binding(l), binding_flags(f) {}
+    ExtendedBinding(const VkDescriptorSetLayoutBinding *l, VkDescriptorBindingFlags f) : layout_binding(l), binding_flags(f) {}
 
     const VkDescriptorSetLayoutBinding *layout_binding;
-    VkDescriptorBindingFlagsEXT binding_flags;
+    VkDescriptorBindingFlags binding_flags;
 };
 
 struct BindingNumCmp {
@@ -66,14 +66,14 @@ DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_cr
 // Proactively reserve and resize as possible, as the reallocation was visible in profiling
 cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info)
     : flags_(p_create_info->flags), binding_count_(0), descriptor_count_(0), dynamic_descriptor_count_(0) {
-    const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>(p_create_info->pNext);
+    const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
     binding_type_stats_ = {0, 0, 0};
     std::set<ExtendedBinding, BindingNumCmp> sorted_bindings;
     const uint32_t input_bindings_count = p_create_info->bindingCount;
     // Sort the input bindings in binding number order, eliminating duplicates
     for (uint32_t i = 0; i < input_bindings_count; i++) {
-        VkDescriptorBindingFlagsEXT flags = 0;
+        VkDescriptorBindingFlags flags = 0;
         if (flags_create_info && flags_create_info->bindingCount == p_create_info->bindingCount) {
             flags = flags_create_info->pBindingFlags[i];
         }
@@ -172,8 +172,7 @@ VkShaderStageFlags cvdescriptorset::DescriptorSetLayoutDef::GetStageFlagsFromInd
     return VkShaderStageFlags(0);
 }
 // Return binding flags for given index, 0 if index is unavailable
-VkDescriptorBindingFlagsEXT cvdescriptorset::DescriptorSetLayoutDef::GetDescriptorBindingFlagsFromIndex(
-    const uint32_t index) const {
+VkDescriptorBindingFlags cvdescriptorset::DescriptorSetLayoutDef::GetDescriptorBindingFlagsFromIndex(const uint32_t index) const {
     if (index >= binding_flags_.size()) return 0;
     return binding_flags_[index];
 }
@@ -351,7 +350,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     std::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
 
-    const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>(create_info->pNext);
+    const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(create_info->pNext);
 
     const bool push_descriptor_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     if (push_descriptor_set && !push_descriptor_ext) {
@@ -361,11 +360,11 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                                   "VkDescriptorSetLayoutCreateInfo::flags", VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
 
-    const bool update_after_bind_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT);
+    const bool update_after_bind_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT);
     if (update_after_bind_set && !descriptor_indexing_ext) {
         skip |= val_obj->LogError(val_obj->device, kVUID_Core_DrawState_ExtensionNotEnabled,
                                   "Attemped to use %s in %s but its required extension %s has not been enabled.\n",
-                                  "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT",
+                                  "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT",
                                   "VkDescriptorSetLayoutCreateInfo::flags", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     }
 
@@ -438,7 +437,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         if (flags_create_info->bindingCount != 0 && flags_create_info->bindingCount != create_info->bindingCount) {
             skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-bindingCount-03002",
                                       "VkDescriptorSetLayoutCreateInfo::bindingCount (%d) != "
-                                      "VkDescriptorSetLayoutBindingFlagsCreateInfoEXT::bindingCount (%d)",
+                                      "VkDescriptorSetLayoutBindingFlagsCreateInfo::bindingCount (%d)",
                                       create_info->bindingCount, flags_create_info->bindingCount);
         }
 
@@ -446,7 +445,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
             for (uint32_t i = 0; i < create_info->bindingCount; ++i) {
                 const auto &binding_info = create_info->pBindings[i];
 
-                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) {
+                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
                     if (!update_after_bind_set) {
                         skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-03000",
                                                   "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
@@ -508,14 +507,14 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                         skip |= val_obj->LogError(val_obj->device,
                                                   "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                                   "descriptorBindingInlineUniformBlockUpdateAfterBind-02211",
-                                                  "Invalid flags (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) for "
+                                                  "Invalid flags (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) for "
                                                   "VkDescriptorSetLayoutBinding entry %" PRIu32
                                                   " with descriptorBindingInlineUniformBlockUpdateAfterBind not enabled",
                                                   i);
                     }
                 }
 
-                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT) {
+                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT) {
                     if (!core12_features->descriptorBindingUpdateUnusedWhilePending) {
                         skip |= val_obj->LogError(
                             val_obj->device,
@@ -524,7 +523,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                     }
                 }
 
-                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT) {
+                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT) {
                     if (!core12_features->descriptorBindingPartiallyBound) {
                         skip |= val_obj->LogError(
                             val_obj->device,
@@ -533,7 +532,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                     }
                 }
 
-                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT) {
+                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
                     if (binding_info.binding != max_binding) {
                         skip |= val_obj->LogError(val_obj->device,
                                                   "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03004",
@@ -556,8 +555,8 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
 
                 if (push_descriptor_set &&
                     (flags_create_info->pBindingFlags[i] &
-                     (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT |
-                      VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT))) {
+                     (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+                      VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT))) {
                     skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-flags-03003",
                                               "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                 }
@@ -724,7 +723,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
         }
 
         if (binding_it.GetDescriptorBindingFlags() &
-            (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
+            (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT)) {
             // Can't validate the descriptor because it may not have been updated,
             // or the view could have been destroyed
             continue;
@@ -1492,7 +1491,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
     }
 
     if (!(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
-          (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT))) {
+          (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         InvalidateBoundCmdBuffers(dev_data);
     }
 }
@@ -1542,7 +1541,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     // Verify idle ds
     if (dst_set->in_use.load() &&
         !(dst_layout->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
-          (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT))) {
+          (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         // TODO : Re-using Free Idle error code, need copy update idle error code
         *error_code = "VUID-vkFreeDescriptorSets-pDescriptorSets-00309";
         std::stringstream error_str;
@@ -1605,62 +1604,62 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
 
-    if ((src_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT) &&
-        !(dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
+    if ((src_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
+        !(dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-01918";
         std::stringstream error_str;
         error_str << "If pname:srcSet's (" << report_data->FormatHandle(update->srcSet)
                   << ") layout was created with the "
-                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT flag "
+                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag "
                      "set, then pname:dstSet's ("
                   << report_data->FormatHandle(update->dstSet)
                   << ") layout must: also have been created with the "
-                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT flag set";
+                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag set";
         *error_msg = error_str.str();
         return false;
     }
 
-    if (!(src_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT) &&
-        (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
+    if (!(src_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
+        (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-01919";
         std::stringstream error_str;
         error_str << "If pname:srcSet's (" << report_data->FormatHandle(update->srcSet)
                   << ") layout was created without the "
-                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT flag "
+                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag "
                      "set, then pname:dstSet's ("
                   << report_data->FormatHandle(update->dstSet)
                   << ") layout must: also have been created without the "
-                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT flag set";
+                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag set";
         *error_msg = error_str.str();
         return false;
     }
 
-    if ((src_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT) &&
-        !(dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)) {
+    if ((src_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT) &&
+        !(dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-01920";
         std::stringstream error_str;
         error_str << "If the descriptor pool from which pname:srcSet (" << report_data->FormatHandle(update->srcSet)
                   << ") was allocated was created "
-                     "with the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT flag "
+                     "with the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag "
                      "set, then the descriptor pool from which pname:dstSet ("
                   << report_data->FormatHandle(update->dstSet)
                   << ") was allocated must: "
-                     "also have been created with the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT flag set";
+                     "also have been created with the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set";
         *error_msg = error_str.str();
         return false;
     }
 
-    if (!(src_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT) &&
-        (dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)) {
+    if (!(src_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT) &&
+        (dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-01921";
         std::stringstream error_str;
         error_str << "If the descriptor pool from which pname:srcSet (" << report_data->FormatHandle(update->srcSet)
                   << ") was allocated was created "
-                     "without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT flag "
+                     "without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag "
                      "set, then the descriptor pool from which pname:dstSet ("
                   << report_data->FormatHandle(update->dstSet)
                   << ") was allocated must: "
-                     "also have been created without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT flag set";
+                     "also have been created without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set";
         *error_msg = error_str.str();
         return false;
     }
@@ -1720,7 +1719,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
     }
 
     if (!(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
-          (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT))) {
+          (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         InvalidateBoundCmdBuffers(dev_data);
     }
 }
@@ -1760,8 +1759,8 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
 
         // We aren't validating descriptors created with PARTIALLY_BOUND or UPDATE_AFTER_BIND, so don't record state
         auto flags = layout_->GetDescriptorBindingFlagsFromIndex(index);
-        if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
-            if (!(flags & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)) {
+        if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT)) {
+            if (!(flags & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)) {
                 cmd_info.binding_infos.emplace_back(binding_req_pair);
             }
             continue;
@@ -2898,8 +2897,8 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
                                  report_data->FormatHandle(p_alloc_info->pSetLayouts[i]).c_str(), i,
                                  "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR");
             }
-            if (layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT &&
-                !(pool_state->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT)) {
+            if (layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT &&
+                !(pool_state->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
                 skip |= LogError(device, "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-03044",
                                  "Descriptor set layout create flags and pool create flags mismatch for index (%d)", i);
             }
@@ -2930,14 +2929,14 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
         }
     }
 
-    const auto *count_allocate_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>(p_alloc_info->pNext);
+    const auto *count_allocate_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
 
     if (count_allocate_info) {
         if (count_allocate_info->descriptorSetCount != 0 &&
             count_allocate_info->descriptorSetCount != p_alloc_info->descriptorSetCount) {
             skip |= LogError(device, "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-descriptorSetCount-03045",
                              "VkDescriptorSetAllocateInfo::descriptorSetCount (%d) != "
-                             "VkDescriptorSetVariableDescriptorCountAllocateInfoEXT::descriptorSetCount (%d)",
+                             "VkDescriptorSetVariableDescriptorCountAllocateInfo::descriptorSetCount (%d)",
                              p_alloc_info->descriptorSetCount, count_allocate_info->descriptorSetCount);
         }
         if (count_allocate_info->descriptorSetCount == p_alloc_info->descriptorSetCount) {
@@ -3062,8 +3061,8 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     }
 
     // Verify idle ds
-    if (dest_set->in_use.load() && !(dest.GetDescriptorBindingFlags() & (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT |
-                                                                         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT))) {
+    if (dest_set->in_use.load() && !(dest.GetDescriptorBindingFlags() & (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+                                                                         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         // TODO : Re-using Free Idle error code, need write update idle error code
         *error_code = "VUID-vkFreeDescriptorSets-pDescriptorSets-00309";
         std::stringstream error_str;

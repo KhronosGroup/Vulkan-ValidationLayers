@@ -476,7 +476,7 @@ bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
     bool skip = false;
 
     auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
-    if (rp_state && !(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR)) {
+    if (rp_state && !(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         skip = ValidateAttachments(rp_state->createInfo.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments);
     }
 
@@ -566,7 +566,7 @@ void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const Vk
     if (result != VK_SUCCESS) {
         static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                                                     VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_INVALID_EXTERNAL_HANDLE,
-                                                    VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR};
+                                                    VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS};
         static std::vector<VkResult> success_codes = {};
         ValidateReturnCodes("vkReleaseFullScreenExclusiveModeEXT", result, error_codes, success_codes);
         return;
@@ -1221,7 +1221,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
 
     auto rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
     if (rp_state) {
-        if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
+        if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
             const VkRenderPassAttachmentBeginInfo* rpabi =
                 lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
             if (rpabi) {
@@ -1276,14 +1276,14 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuf
 
 bool BestPractices::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                           const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                          const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const {
+                                                          const VkSubpassBeginInfo* pSubpassBeginInfo) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     skip |= ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                       const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const {
+                                                       const VkSubpassBeginInfo* pSubpassBeginInfo) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     skip |= ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
     return skip;
@@ -1824,9 +1824,9 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
                                                                 "vkGetPhysicalDeviceQueueFamilyProperties()");
 }
 
-bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(
-    VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2KHR* pQueueFamilyProperties) const {
+bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t* pQueueFamilyPropertyCount,
+                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) const {
     const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
@@ -1835,8 +1835,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
-    VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2KHR* pQueueFamilyProperties) const {
+    VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,

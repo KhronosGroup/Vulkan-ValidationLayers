@@ -1254,7 +1254,7 @@ class StatelessValidation : public ValidationObject {
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                         const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                         VkResult result) override;
-    void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+    void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                             VkResult result) override;
     void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
@@ -1353,7 +1353,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const;
 
-    bool manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+    bool manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const;
 
     bool manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,

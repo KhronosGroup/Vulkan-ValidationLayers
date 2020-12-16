@@ -621,8 +621,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                          "You cannot start a render pass using a framebuffer with a different number of attachments.");
     }
 
-    const auto *attachment_info = lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBegin->pNext);
-    if (((framebuffer_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) != 0) && attachment_info != nullptr) {
+    const auto *attachment_info = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+    if (((framebuffer_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0) && attachment_info != nullptr) {
         attachments = attachment_info->pAttachments;
     }
 
@@ -665,7 +665,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 
             // If a separate layout is specified, look for that.
             const auto *attachment_description_stencil_layout =
-                lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(render_pass_info->pAttachments[i].pNext);
+                lvl_find_in_chain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
                 attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
             }
@@ -771,7 +771,7 @@ void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFE
         IMAGE_VIEW_STATE *image_view = GetActiveAttachmentImageViewState(pCB, ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
-            const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(ref.pNext);
+            const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayout>(ref.pNext);
             if (attachment_reference_stencil_layout) {
                 stencil_layout = attachment_reference_stencil_layout->stencilLayout;
             }
@@ -811,7 +811,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
-                lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(rpci->pAttachments[i].pNext);
+                lvl_find_in_chain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
                 stencil_layout = attachment_description_stencil_layout->stencilInitialLayout;
             }
@@ -833,8 +833,7 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
     if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
         if (!FormatHasStencil(format)) return false;
     }
-    if (0 !=
-        (aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR))) {
+    if (0 != (aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
         if (FormatPlaneCount(format) == 1) return false;
     }
     return true;
@@ -1334,10 +1333,10 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier.subresourceRange);
     const auto &image_create_info = image_state->createInfo;
 
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
+    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
     // <arrayLayers> can potentially alias. When recording layout for the entire image, pre-emptively record layouts
     // for all (potential) layer sub_resources.
-    if (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) {
+    if (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
         normalized_isr.baseArrayLayer = 0;
         normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
     }
@@ -1427,14 +1426,14 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
     auto render_pass = GetRenderPassState(pRenderPassBegin->renderPass);
     if (!render_pass) return;
 
-    const VkRenderPassCreateInfo2KHR *render_pass_info = render_pass->createInfo.ptr();
+    const VkRenderPassCreateInfo2 *render_pass_info = render_pass->createInfo.ptr();
     if (framebuffer_state) {
         for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
             auto *view_state = GetActiveAttachmentImageViewState(pCB, i);
             if (view_state) {
                 VkImageLayout stencil_layout = kInvalidLayout;
                 const auto *attachment_description_stencil_layout =
-                    lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(render_pass_info->pAttachments[i].pNext);
+                    lvl_find_in_chain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
                 if (attachment_description_stencil_layout) {
                     stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
                 }
@@ -1943,13 +1942,13 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                  "vkCreateImage(): Swapchain was created with VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR flag so all "
                                  "swapchain images must have the VK_IMAGE_CREATE_PROTECTED_BIT flag set.");
             }
-            const VkImageCreateFlags mutable_flags = (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
+            const VkImageCreateFlags mutable_flags = (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
             if (((swapchain_flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) &&
                 ((pCreateInfo->flags & mutable_flags) != mutable_flags)) {
                 skip |= LogError(device, vuid,
                                  "vkCreateImage(): Swapchain was created with VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR flag so "
                                  "all swapchain images must have the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and "
-                                 "VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR flags both set.");
+                                 "VK_IMAGE_CREATE_EXTENDED_USAGE_BIT flags both set.");
             }
         }
     }
@@ -2219,7 +2218,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             }
         }
         if (any_include_aspect_stencil_bit) {
-            const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(image_state->createInfo.pNext);
+            const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
             if (image_stencil_struct != nullptr) {
                 if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
                     skip |=
@@ -2784,14 +2783,14 @@ bool CoreChecks::CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, c
         // Source image multiplane checks
         uint32_t planes = FormatPlaneCount(src_image_state->createInfo.format);
         VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
-        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR)) {
+        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
             std::stringstream ss;
             ss << func_name << ": Source image aspect mask (0x" << std::hex << aspect << ") is invalid for 2-plane format";
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01552" : "VUID-vkCmdCopyImage-srcImage-01552";
             skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
         }
-        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR) &&
-            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT_KHR)) {
+        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
             std::stringstream ss;
             ss << func_name << ": Source image aspect mask (0x" << std::hex << aspect << ") is invalid for 3-plane format";
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01553" : "VUID-vkCmdCopyImage-srcImage-01553";
@@ -2809,14 +2808,14 @@ bool CoreChecks::CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, c
         // Dest image multiplane checks
         planes = FormatPlaneCount(dst_image_state->createInfo.format);
         aspect = region.dstSubresource.aspectMask;
-        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR)) {
+        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
             std::stringstream ss;
             ss << func_name << ": Dest image aspect mask (0x" << std::hex << aspect << ") is invalid for 2-plane format";
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01554" : "VUID-vkCmdCopyImage-dstImage-01554";
             skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
         }
-        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR) &&
-            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT_KHR)) {
+        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
             std::stringstream ss;
             ss << func_name << ": Dest image aspect mask (0x" << std::hex << aspect << ") is invalid for 3-plane format";
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01555" : "VUID-vkCmdCopyImage-dstImage-01555";
@@ -3293,9 +3292,9 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
     // Validate that attachment is in reference list of active subpass
     if (cb_node->activeRenderPass) {
-        const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
+        const VkRenderPassCreateInfo2 *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
         const uint32_t renderpass_attachment_count = renderpass_create_info->attachmentCount;
-        const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
+        const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
         const auto *framebuffer = cb_node->activeFramebuffer.get();
         const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
 
@@ -3402,8 +3401,8 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                                                   const VkClearRect *pRects) {
     auto *cb_node = GetCBState(commandBuffer);
     if (cb_node->activeRenderPass && (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
-        const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
-        const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
+        const VkRenderPassCreateInfo2 *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
+        const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
         std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
         for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
             const auto clear_desc = &pAttachments[attachment_index];
@@ -4250,7 +4249,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
 // layout attachments don't have CLEAR as their loadOp.
 bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, RenderPassCreateVersion rp_version,
                                                        const VkImageLayout first_layout, const uint32_t attachment,
-                                                       const VkAttachmentDescription2KHR &attachment_description) const {
+                                                       const VkAttachmentDescription2 &attachment_description) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
@@ -4482,31 +4481,31 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
     auto chained_devaddr_struct = lvl_find_in_chain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
     if (chained_devaddr_struct) {
-        if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT) &&
+        if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_devaddr_struct->deviceAddress != 0) {
             skip |= LogError(device, "VUID-VkBufferCreateInfo-deviceAddress-02604",
                              "vkCreateBuffer(): Non-zero VkBufferDeviceAddressCreateInfoEXT::deviceAddress "
-                             "requires VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT.");
+                             "requires VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
         }
     }
 
-    auto chained_opaqueaddr_struct = lvl_find_in_chain<VkBufferOpaqueCaptureAddressCreateInfoKHR>(pCreateInfo->pNext);
+    auto chained_opaqueaddr_struct = lvl_find_in_chain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
     if (chained_opaqueaddr_struct) {
-        if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
+        if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_opaqueaddr_struct->opaqueCaptureAddress != 0) {
             skip |= LogError(device, "VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337",
-                             "vkCreateBuffer(): Non-zero VkBufferOpaqueCaptureAddressCreateInfoKHR::opaqueCaptureAddress"
-                             "requires VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR.");
+                             "vkCreateBuffer(): Non-zero VkBufferOpaqueCaptureAddressCreateInfo::opaqueCaptureAddress"
+                             "requires VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
         }
     }
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
         !enabled_features.core12.bufferDeviceAddressCaptureReplay &&
         !enabled_features.buffer_device_address_ext.bufferDeviceAddressCaptureReplay) {
         skip |= LogError(
             device, "VUID-VkBufferCreateInfo-flags-03338",
             "vkCreateBuffer(): the bufferDeviceAddressCaptureReplay device feature is disabled: Buffers cannot be created with "
-            "the VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT set.");
+            "the VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set.");
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
@@ -4748,7 +4747,7 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
                                                          const VkImageSubresourceRange &subresourceRange) const {
     bool is_khr_maintenance1 = IsExtEnabled(device_extensions.vk_khr_maintenance1);
     bool is_image_slicable = image_state->createInfo.imageType == VK_IMAGE_TYPE_3D &&
-                             (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR);
+                             (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT);
     bool is_3_d_to_2_d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
 
     uint32_t image_layer_count;
@@ -4932,7 +4931,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         VkImageViewType view_type = pCreateInfo->viewType;
 
         // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
-        auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfoKHR>(pCreateInfo->pNext);
+        auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
         if (chained_ivuci_struct) {
             if (device_extensions.vk_khr_maintenance2) {
                 if (!device_extensions.vk_ext_separate_stencil_usage) {
@@ -4943,7 +4942,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     }
                 } else {
                     const auto image_stencil_struct =
-                        lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(image_state->createInfo.pNext);
+                        lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
                     if (image_stencil_struct == nullptr) {
                         if ((image_usage | chained_ivuci_struct->usage) != image_usage) {
                             skip |= LogError(
@@ -4992,7 +4991,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01586", "%s", ss.str().c_str());
                 }
             } else {
-                if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR)) {
+                if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT)) {
                     // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
                     if (FormatCompatibilityClass(image_format) != FormatCompatibilityClass(view_format)) {
                         const char *error_vuid;
@@ -5062,7 +5061,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                 if (device_extensions.vk_khr_maintenance1) {
                     if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
                         if ((view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
-                            if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) {
+                            if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
                                 skip |=
                                     LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01005",
                                              "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
@@ -6086,10 +6085,10 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     const VkFormat img_format = image_entry->createInfo.format;
     if (image_entry->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
         if (FormatIsMultiplane(img_format)) {
-            VkImageAspectFlags allowed_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+            VkImageAspectFlags allowed_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
             const char *vuid = "VUID-vkGetImageSubresourceLayout-format-01581";  // 2-plane version
             if (FormatPlaneCount(img_format) > 2u) {
-                allowed_flags |= VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+                allowed_flags |= VK_IMAGE_ASPECT_PLANE_2_BIT;
                 vuid = "VUID-vkGetImageSubresourceLayout-format-01582";  // 3-plane version
             }
             if (sub_aspect != (sub_aspect & allowed_flags)) {

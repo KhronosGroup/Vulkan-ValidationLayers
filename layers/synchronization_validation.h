@@ -501,7 +501,7 @@ class CommandBufferAccessContext {
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
     bool ValidateBeginRenderPass(const RENDER_PASS_STATE &render_pass, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                 const VkSubpassBeginInfoKHR *pSubpassBeginInfo, const char *func_name) const;
+                                 const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const;
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const ResourceUsageTag &tag);
     bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const char *func_name) const;
@@ -604,16 +604,16 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) override;
 
     bool ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                 const VkSubpassBeginInfoKHR *pSubpassBeginInfo, const char *func_name) const;
+                                 const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const;
 
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                            VkSubpassContents contents) const override;
 
     bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                               const VkSubpassBeginInfoKHR *pSubpassBeginInfo) const override;
+                                               const VkSubpassBeginInfo *pSubpassBeginInfo) const override;
 
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                            const VkSubpassBeginInfoKHR *pSubpassBeginInfo) const override;
+                                            const VkSubpassBeginInfo *pSubpassBeginInfo) const override;
 
     bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                       const VkBufferCopy *pRegions) const override;
@@ -659,13 +659,13 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                               const VkSubpassBeginInfo *pSubpassBeginInfo) override;
 
-    bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                const VkSubpassEndInfoKHR *pSubpassEndInfo, const char *func_name) const;
+    bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                const VkSubpassEndInfo *pSubpassEndInfo, const char *func_name) const;
     bool PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) const override;
-    bool PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                        const VkSubpassEndInfoKHR *pSubpassEndInfo) const override;
-    bool PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                           const VkSubpassEndInfoKHR *pSubpassEndInfo) const override;
+    bool PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                        const VkSubpassEndInfo *pSubpassEndInfo) const override;
+    bool PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                           const VkSubpassEndInfo *pSubpassEndInfo) const override;
 
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) override;
     void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
@@ -673,11 +673,11 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                           const VkSubpassEndInfo *pSubpassEndInfo) override;
 
-    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo,
+    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                   const char *func_name) const;
     bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const override;
-    bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) const override;
-    bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) const override;
+    bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const override;
+    bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const override;
 
     void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) override;
     void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) override;

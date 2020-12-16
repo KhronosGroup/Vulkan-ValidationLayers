@@ -121,7 +121,7 @@ static bool IsAcquireOp(const COMMAND_POOL_STATE *pool, const Barrier *barrier) 
 }
 
 static inline bool QueueFamilyIsExternal(const uint32_t queue_family_index) {
-    return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL_KHR) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
+    return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
 static inline bool QueueFamilyIsIgnored(uint32_t queue_family_index) { return queue_family_index == VK_QUEUE_FAMILY_IGNORED; }
@@ -547,11 +547,11 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
     safe_VkAccelerationStructureInfoNV build_info;
     bool memory_requirements_checked = false;
-    VkMemoryRequirements2KHR memory_requirements;
+    VkMemoryRequirements2 memory_requirements;
     bool build_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2KHR build_scratch_memory_requirements;
+    VkMemoryRequirements2 build_scratch_memory_requirements;
     bool update_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2KHR update_scratch_memory_requirements;
+    VkMemoryRequirements2 update_scratch_memory_requirements;
     bool built = false;
     uint64_t opaque_handle = 0;
     const VkAllocationCallbacks *allocator = NULL;
@@ -572,11 +572,11 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
     safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
     safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
     bool memory_requirements_checked = false;
-    VkMemoryRequirements2KHR memory_requirements;
+    VkMemoryRequirements2 memory_requirements;
     bool build_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2KHR build_scratch_memory_requirements;
+    VkMemoryRequirements2 build_scratch_memory_requirements;
     bool update_scratch_memory_requirements_checked = false;
-    VkMemoryRequirements2KHR update_scratch_memory_requirements;
+    VkMemoryRequirements2 update_scratch_memory_requirements;
     bool built = false;
     uint64_t opaque_handle = 0;
     const VkAllocationCallbacks *allocator = NULL;
@@ -657,7 +657,7 @@ struct RENDER_PASS_STATE : public BASE_NODE {
     std::vector<SubpassDependencyGraphNode> subpass_dependencies;
     std::vector<std::vector<AttachmentTransition>> subpass_transitions;
 
-    RENDER_PASS_STATE(VkRenderPassCreateInfo2KHR const *pCreateInfo) : createInfo(pCreateInfo) {}
+    RENDER_PASS_STATE(VkRenderPassCreateInfo2 const *pCreateInfo) : createInfo(pCreateInfo) {}
     RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) {
         ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &createInfo);
     }
@@ -1399,7 +1399,7 @@ static inline QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
 
 struct SEMAPHORE_WAIT {
     VkSemaphore semaphore;
-    VkSemaphoreTypeKHR type;
+    VkSemaphoreType type;
     VkQueue queue;
     uint64_t payload;
     uint64_t seq;
