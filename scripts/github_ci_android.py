@@ -26,7 +26,6 @@ import platform
 import common_ci
 from argparse import RawDescriptionHelpFormatter
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], '..'))
 SUPPORTED_ABIS = [ 'arm64-v8a', 'armeabi-v7a']
 DEFAULT_ABI = SUPPORTED_ABIS[0]
 
@@ -35,35 +34,27 @@ DEFAULT_ABI = SUPPORTED_ABIS[0]
 def BuildAndroid(target_abi):
     print("Fetching NDK\n")
     wget_cmd = 'wget http://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip'
-    ret_code = common_ci.RunShellCmd(wget_cmd, PROJECT_ROOT)
+    common_ci.RunShellCmd(wget_cmd)
 
-    if ret_code == 0:
-        print("Extracting NDK components\n")
-        unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
-        ret_code = common_ci.RunShellCmd(unzip_cmd, PROJECT_ROOT)
-        # Add NDK to path
-        os.environ['ANDROID_NDK_HOME'] = common_ci.repo_relative('android-ndk-r21d')
-        os.environ['PATH'] = os.environ.get('ANDROID_NDK_HOME') + ':' + os.environ.get('PATH')
+    print("Extracting NDK components\n")
+    unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
+    common_ci.RunShellCmd(unzip_cmd)
+    # Add NDK to path
+    os.environ['ANDROID_NDK_HOME'] = common_ci.repo_relative('android-ndk-r21d')
+    os.environ['PATH'] = os.environ.get('ANDROID_NDK_HOME') + os.pathsep + os.environ.get('PATH')
 
-    if ret_code == 0:
-        print("Preparing Android Dependencies\n")
-        update_sources_cmd = './update_external_sources_android.sh --abi %s --no-build' % target_abi
-        ret_code = common_ci.RunShellCmd(update_sources_cmd, common_ci.repo_relative("build-android"))
+    print("Preparing Android Dependencies\n")
+    update_sources_cmd = './update_external_sources_android.sh --abi %s --no-build' % target_abi
+    common_ci.RunShellCmd(update_sources_cmd, "build-android")
 
-    if ret_code == 0:
-        print("Building Android Layers and Tests\n")
-        ndk_build_cmd = 'ndk-build APP_ABI=%s -j%s' % (target_abi, os.cpu_count())
-        ret_code = common_ci.RunShellCmd(ndk_build_cmd, common_ci.repo_relative("build-android"))
-
-    return ret_code
+    print("Building Android Layers and Tests\n")
+    ndk_build_cmd = 'ndk-build APP_ABI=%s -j%s' % (target_abi, os.cpu_count())
+    common_ci.RunShellCmd(ndk_build_cmd, "build-android")
 
 #
 # Module Entrypoint
 def main():
-    parser = argparse.ArgumentParser(description='''Usage: python3 ./scripts/github_ci_android.py
-    - Reqires python3
-    - Run script in repo root
-    ''', formatter_class=RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         '-a', '--abi', dest='target_abi',
         metavar='ABI', action='store',
@@ -72,15 +63,17 @@ def main():
             ', '.join(SUPPORTED_ABIS)))
     args = parser.parse_args()
 
-    if sys.version_info[0] != 3:
-        print("This script requires Python 3. Run script with [-h] option for more details.")
-        exit()
+    try:
+       BuildAndroid(args.target_abi)
 
-    ret_code = BuildAndroid(args.target_abi)
-    if ret_code != 0:
-        sys.exit(ret_code)
-    else:
-        sys.exit(0)
+    except subprocess.CalledProcessError as proc_error:
+        print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
+        sys.exit(proc_error.returncode)
+    except Exception as unknown_error:
+        print('An unkown error occured: %s', unknown_error)
+        sys.exit(1)
+
+    sys.exit(0)
 
 if __name__ == '__main__':
   main()

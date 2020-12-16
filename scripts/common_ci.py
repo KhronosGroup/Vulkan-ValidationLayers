@@ -18,27 +18,25 @@
 #
 # Author: Mark Lobodzinski <mark@lunarg.com>
 
-import os,re,sys,string
-import shutil
+import os
+import sys
 import subprocess
-import platform
-import xml.etree.ElementTree as etree
-from collections import namedtuple, OrderedDict
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], '..'))
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3. Run script with [-h] option for more details.")
+    sys_exit(0)
 
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
 # Runs a command in a directory and returns its return code.
-#    Captures the standard error stream and prints it if error.
-def RunShellCmd(command, directory):
-    print("Command: ", command)
+# Directory is project root by default, or a relative path from project root
+def RunShellCmd(command, start_dir = PROJECT_ROOT):
+    if start_dir != PROJECT_ROOT:
+        start_dir = repo_relative(start_dir)
     cmd_list = command.split(" ")
-    p = subprocess.Popen(cmd_list, cwd=directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout, stderr) = p.communicate()  # Forces a wait
-    if p.returncode != 0:
-        print('Error -- stderr contents:\n', stderr.decode())
-    else:
-        print(stdout.decode())
-    return p.returncode
+    subprocess.check_call(cmd_list, cwd=start_dir)
 
