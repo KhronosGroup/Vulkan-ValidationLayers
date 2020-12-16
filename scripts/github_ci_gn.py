@@ -25,53 +25,43 @@ import platform
 import common_ci
 from argparse import RawDescriptionHelpFormatter
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file__))[0], '..'))
-
 #
 # Build VVL repo using gn and Ninja
 def BuildGn():
     print("Cloning Ninja depot_tools\n")
     clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'
-    ret_code = common_ci.RunShellCmd(clone_cmd, PROJECT_ROOT)
+    common_ci.RunShellCmd(clone_cmd)
     os.environ['PATH'] = os.environ.get('PATH') + ":" + common_ci.repo_relative("depot_tools")
 
-    if ret_code == 0:
-        print("Updating Ninja build dependencies\n")
-        update_cmd = './build-gn/update_deps.sh'
-        ret_code = common_ci.RunShellCmd(update_cmd, PROJECT_ROOT)
+    print("Updating Ninja build dependencies\n")
+    update_cmd = './build-gn/update_deps.sh'
+    common_ci.RunShellCmd(update_cmd)
 
-    if ret_code == 0:
-        print("Generating Ninja Files\n", )
-        # TODO: Enable ccache for Ninja builds : --args="cc_wrapper=\"ccache\""
-        #       There are issues passing this on the command line.
-        #       Possible solution is to write/append this line to the out/Debug/args.gn file
-        gn_gen_cmd = 'gn gen out/Debug'
-        ret_code = common_ci.RunShellCmd(gn_gen_cmd, PROJECT_ROOT)
+    print("Generating Ninja Files\n")
+    gn_gen_cmd = 'gn gen out/Debug'
+    common_ci.RunShellCmd(gn_gen_cmd)
 
-    if ret_code == 0:
-        print("Running Ninja Build\n", )
-        ninja_build_cmd = 'ninja -C out/Debug'
-        ret_code = common_ci.RunShellCmd(ninja_build_cmd, PROJECT_ROOT)
-
-    return ret_code
+    print("Running Ninja Build\n")
+    ninja_build_cmd = 'ninja -C out/Debug'
+    common_ci.RunShellCmd(ninja_build_cmd)
 
 #
 # Module Entrypoint
 def main():
-    parser = argparse.ArgumentParser(description='''Usage: python3 ./scripts/github_ci_gn.py
-    - Reqires python3
-    - Run script in repo root
-    ''', formatter_class=RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser()
+    args = parser.parse_args()
 
-    if sys.version_info[0] != 3:
-        print("This script requires Python 3. Run script with [-h] option for more details.")
-        sys.exit(0)
+    try:
+        BuildGn()
 
-    ret_code = BuildGn()
-    if ret_code:
-        sys.exit(ret_code)
-    else:
-        sys.exit(0)
+    except subprocess.CalledProcessError as proc_error:
+        print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
+        sys.exit(proc_error.returncode)
+    except Exception as unknown_error:
+        print('An unkown error occured: %s', unknown_error)
+        sys.exit(1)
+
+    sys.exit(0)
 
 if __name__ == '__main__':
   main()
