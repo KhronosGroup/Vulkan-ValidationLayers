@@ -291,7 +291,7 @@ VkResult DispatchCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo 
     return result;
 }
 
-VkResult DispatchCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+VkResult DispatchCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                       const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = layer_data->device_dispatch_table.CreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
@@ -304,7 +304,7 @@ VkResult DispatchCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateI
     return result;
 }
 
-VkResult DispatchCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+VkResult DispatchCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                       const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = layer_data->device_dispatch_table.CreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
@@ -582,9 +582,9 @@ VkResult DispatchFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptor
 }
 
 // This is the core version of this routine.  The extension version is below.
-VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator,
-                                                VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+                                                VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator,
@@ -617,9 +617,9 @@ VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
 }
 
 // This is the extension version of this routine.  The core version is above.
-VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator,
-                                                   VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+                                                   VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator,
@@ -653,7 +653,7 @@ VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
 }
 
 // This is the core version of this routine.  The extension version is below.
-void DispatchDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+void DispatchDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                              const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
@@ -674,7 +674,7 @@ void DispatchDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdate
 }
 
 // This is the extension version of this routine.  The core version is above.
-void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                 const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
@@ -791,7 +791,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
 }
 
 void DispatchUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
-                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
+                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void *pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate,
@@ -809,7 +809,7 @@ void DispatchUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet de
 }
 
 void DispatchUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
-                                                VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
+                                                VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void *pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate,
@@ -827,7 +827,7 @@ void DispatchUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet
 }
 
 void DispatchCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
-                                                 VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, VkPipelineLayout layout,
+                                                 VkDescriptorUpdateTemplate descriptorUpdateTemplate, VkPipelineLayout layout,
                                                  uint32_t set, const void *pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles)

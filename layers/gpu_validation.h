@@ -127,11 +127,11 @@ class GpuAssisted : public ValidationStateTracker {
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void* modified_create_info) override;
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result) override;
-    void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo,
+    void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                               VkDeviceAddress address) override;
-    void PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo,
+    void PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                  VkDeviceAddress address) override;
-    void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo,
+    void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                  VkDeviceAddress address) override;
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) override;

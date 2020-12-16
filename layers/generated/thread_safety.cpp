@@ -77,10 +77,10 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(
 
         // Check whether any binding uses UPDATE_AFTER_BIND
         bool update_after_bind = false;
-        const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>(pCreateInfo->pNext);
+        const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
         if (flags_create_info) {
             for (uint32_t i = 0; i < flags_create_info->bindingCount; ++i) {
-                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) {
+                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
                     update_after_bind = true;
                     break;
                 }

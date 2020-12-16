@@ -115,7 +115,7 @@ class DescriptorSetLayoutDef {
     const VkDescriptorSetLayoutBinding *GetBindingInfoFromBinding(const uint32_t binding) const {
         return GetBindingInfoFromIndex(GetIndexFromBinding(binding));
     }
-    const std::vector<VkDescriptorBindingFlagsEXT> &GetBindingFlags() const { return binding_flags_; }
+    const std::vector<VkDescriptorBindingFlags> &GetBindingFlags() const { return binding_flags_; }
     uint32_t GetDescriptorCountFromIndex(const uint32_t) const;
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
         return GetDescriptorCountFromIndex(GetIndexFromBinding(binding));
@@ -126,8 +126,8 @@ class DescriptorSetLayoutDef {
     VkShaderStageFlags GetStageFlagsFromBinding(const uint32_t binding) const {
         return GetStageFlagsFromIndex(GetIndexFromBinding(binding));
     }
-    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromIndex(const uint32_t) const;
-    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
+    VkDescriptorBindingFlags GetDescriptorBindingFlagsFromIndex(const uint32_t) const;
+    VkDescriptorBindingFlags GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
     }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t) const;
@@ -162,7 +162,7 @@ class DescriptorSetLayoutDef {
     // used to speed up the various lookups/queries/validations
     VkDescriptorSetLayoutCreateFlags flags_;
     std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
-    std::vector<VkDescriptorBindingFlagsEXT> binding_flags_;
+    std::vector<VkDescriptorBindingFlags> binding_flags_;
 
     // Convenience data structures for rapid lookup of various descriptor set layout properties
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
@@ -228,10 +228,10 @@ class DescriptorSetLayout : public BASE_NODE {
     VkShaderStageFlags GetStageFlagsFromBinding(const uint32_t binding) const {
         return layout_id_->GetStageFlagsFromBinding(binding);
     }
-    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromIndex(const uint32_t index) const {
+    VkDescriptorBindingFlags GetDescriptorBindingFlagsFromIndex(const uint32_t index) const {
         return layout_id_->GetDescriptorBindingFlagsFromIndex(index);
     }
-    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
+    VkDescriptorBindingFlags GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return layout_id_->GetDescriptorBindingFlagsFromBinding(binding);
     }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t binding) const {
@@ -255,7 +255,7 @@ class DescriptorSetLayout : public BASE_NODE {
     uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
     bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
     bool IsVariableDescriptorCountFromIndex(uint32_t index) const {
-        return !!(GetDescriptorBindingFlagsFromIndex(index) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT);
+        return !!(GetDescriptorBindingFlagsFromIndex(index) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT);
     }
     bool IsVariableDescriptorCount(uint32_t binding) const {
         return IsVariableDescriptorCountFromIndex(GetIndexFromBinding(binding));
@@ -283,9 +283,7 @@ class DescriptorSetLayout : public BASE_NODE {
         VkDescriptorType GetType() const { return layout_->GetTypeFromIndex(index_); }
         VkShaderStageFlags GetStageFlags() const { return layout_->GetStageFlagsFromIndex(index_); }
 
-        VkDescriptorBindingFlagsEXT GetDescriptorBindingFlags() const {
-            return layout_->GetDescriptorBindingFlagsFromIndex(index_);
-        }
+        VkDescriptorBindingFlags GetDescriptorBindingFlags() const { return layout_->GetDescriptorBindingFlagsFromIndex(index_); }
 
         bool IsVariableDescriptorCount() const { return layout_->IsVariableDescriptorCountFromIndex(index_); }
 
@@ -667,7 +665,7 @@ class DescriptorSet : public BASE_NODE {
     bool IsPushDescriptor() const { return layout_->IsPushDescriptor(); };
     bool IsVariableDescriptorCount(uint32_t binding) const { return layout_->IsVariableDescriptorCount(binding); }
     bool IsUpdateAfterBind(uint32_t binding) const {
-        return !!(layout_->GetDescriptorBindingFlagsFromBinding(binding) & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT);
+        return !!(layout_->GetDescriptorBindingFlagsFromBinding(binding) & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
     }
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }

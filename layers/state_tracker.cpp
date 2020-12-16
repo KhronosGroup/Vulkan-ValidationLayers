@@ -201,9 +201,9 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
     VkImageSubresourceRange norm = range;
     norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
 
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
+    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
     // <arrayLayers> can potentially alias.
-    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR))
+    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT))
                                ? image_create_info.extent.depth
                                : image_create_info.arrayLayers;
     norm.layerCount = ResolveRemainingLayers(&range, layer_limit);
@@ -928,7 +928,7 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
     memObjMap[mem] = std::make_shared<DEVICE_MEMORY_STATE>(object, mem, pAllocateInfo, fake_address);
     auto mem_info = memObjMap[mem].get();
 
-    auto dedicated = lvl_find_in_chain<VkMemoryDedicatedAllocateInfoKHR>(pAllocateInfo->pNext);
+    auto dedicated = lvl_find_in_chain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated) {
         mem_info->is_dedicated = true;
         mem_info->dedicated_buffer = dedicated->buffer;
@@ -1516,7 +1516,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
     if (nullptr == enabled_features_found) {
-        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
+        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
         if (features2) {
             enabled_features_found = &(features2->features);
         }
@@ -1940,7 +1940,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     }
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_ext_descriptor_indexing) {
-        VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_prop;
+        VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_prop;
         GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_descriptor_indexing, &descriptor_indexing_prop);
         state_tracker->phys_dev_props_core12.maxUpdateAfterBindDescriptorsInAllPools =
             descriptor_indexing_prop.maxUpdateAfterBindDescriptorsInAllPools;
@@ -1995,7 +1995,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_vertex_attribute_divisor, &phys_dev_props->vtx_attrib_divisor_props);
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_depth_stencil_resolve) {
-        VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
+        VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
         GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_depth_stencil_resolve, &depth_stencil_resolve_props);
         state_tracker->phys_dev_props_core12.supportedDepthResolveModes = depth_stencil_resolve_props.supportedDepthResolveModes;
         state_tracker->phys_dev_props_core12.supportedStencilResolveModes =
@@ -2018,14 +2018,14 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_portability_subset, &phys_dev_props->portability_props);
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_timeline_semaphore) {
-        VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;
+        VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props;
         GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_timeline_semaphore, &timeline_semaphore_props);
         state_tracker->phys_dev_props_core12.maxTimelineSemaphoreValueDifference =
             timeline_semaphore_props.maxTimelineSemaphoreValueDifference;
     }
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_shader_float_controls) {
-        VkPhysicalDeviceFloatControlsPropertiesKHR float_controls_props;
+        VkPhysicalDeviceFloatControlsProperties float_controls_props;
         GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_shader_float_controls, &float_controls_props);
         state_tracker->phys_dev_props_core12.denormBehaviorIndependence = float_controls_props.denormBehaviorIndependence;
         state_tracker->phys_dev_props_core12.roundingModeIndependence = float_controls_props.roundingModeIndependence;
@@ -2052,7 +2052,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
         auto cooperative_matrix_props = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&cooperative_matrix_props);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&cooperative_matrix_props);
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         state_tracker->phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
@@ -2067,7 +2067,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && state_tracker->api_version >= VK_API_VERSION_1_1) {
         // Get the needed subgroup limits
         auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&subgroup_prop);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&subgroup_prop);
         instance_dispatch_table.GetPhysicalDeviceProperties2(gpu, &prop2);
 
         state_tracker->phys_dev_props_core11.subgroupSize = subgroup_prop.subgroupSize;
@@ -2164,7 +2164,7 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             if (semaphore_state) {
                 semaphore_state->in_use.fetch_sub(1);
             }
-            if (wait.type == VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
+            if (wait.type == VK_SEMAPHORE_TYPE_TIMELINE) {
                 auto &last_counter = timeline_semaphore_counters[wait.semaphore];
                 last_counter = std::max(last_counter, wait.payload);
             } else {
@@ -2177,7 +2177,7 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             auto semaphore_state = GetSemaphoreState(signal.semaphore);
             if (semaphore_state) {
                 semaphore_state->in_use.fetch_sub(1);
-                if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && semaphore_state->payload < signal.payload) {
+                if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && semaphore_state->payload < signal.payload) {
                     semaphore_state->payload = signal.payload;
                 }
             }
@@ -2275,7 +2275,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         std::vector<SEMAPHORE_SIGNAL> semaphore_signals;
         std::vector<VkSemaphore> semaphore_externals;
         const uint64_t next_seq = queue_state->seq + queue_state->submissions.size() + 1;
-        auto *timeline_semaphore_submit = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(submit->pNext);
+        auto *timeline_semaphore_submit = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
             auto semaphore_state = GetSemaphoreState(semaphore);
@@ -2284,7 +2284,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                     SEMAPHORE_WAIT wait;
                     wait.semaphore = semaphore;
                     wait.type = semaphore_state->type;
-                    if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
+                    if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
                         if (semaphore_state->signaler.first != VK_NULL_HANDLE) {
                             wait.queue = semaphore_state->signaler.first;
                             wait.seq = semaphore_state->signaler.second;
@@ -2317,7 +2317,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                     SEMAPHORE_SIGNAL signal;
                     signal.semaphore = semaphore;
                     signal.seq = next_seq;
-                    if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
+                    if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
                         semaphore_state->signaler.first = queue;
                         semaphore_state->signaler.second = next_seq;
                         semaphore_state->signaled = true;
@@ -2544,9 +2544,9 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
     semaphore_state->signaler.second = 0;
     semaphore_state->signaled = false;
     semaphore_state->scope = kSyncScopeInternal;
-    semaphore_state->type = VK_SEMAPHORE_TYPE_BINARY_KHR;
+    semaphore_state->type = VK_SEMAPHORE_TYPE_BINARY;
     semaphore_state->payload = 0;
-    auto semaphore_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfoKHR>(pCreateInfo->pNext);
+    auto semaphore_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
     if (semaphore_type_create_info) {
         semaphore_state->type = semaphore_type_create_info->semaphoreType;
         semaphore_state->payload = semaphore_type_create_info->initialValue;
@@ -2554,11 +2554,11 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
     semaphoreMap[*pSemaphore] = std::move(semaphore_state);
 }
 
-void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
-                                                        VkSemaphoreImportFlagsKHR flags) {
+void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type,
+                                                        VkSemaphoreImportFlags flags) {
     SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
     if (sema_node && sema_node->scope != kSyncScopeExternalPermanent) {
-        if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR) &&
+        if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) &&
             sema_node->scope == kSyncScopeInternal) {
             sema_node->scope = kSyncScopeExternalTemporary;
         } else {
@@ -2567,7 +2567,7 @@ void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, V
     }
 }
 
-void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo,
+void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                                               VkResult result) {
     auto *semaphore_state = GetSemaphoreState(pSignalInfo->semaphore);
     semaphore_state->payload = pSignalInfo->value;
@@ -2812,14 +2812,14 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory(VkDevice device, VkB
 }
 
 void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                             const VkBindBufferMemoryInfoKHR *pBindInfos, VkResult result) {
+                                                             const VkBindBufferMemoryInfo *pBindInfos, VkResult result) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindBufferMemoryState(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
     }
 }
 
 void ValidationStateTracker::PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                                const VkBindBufferMemoryInfoKHR *pBindInfos, VkResult result) {
+                                                                const VkBindBufferMemoryInfo *pBindInfos, VkResult result) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindBufferMemoryState(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
     }
@@ -2838,14 +2838,14 @@ void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements(VkDevice 
 }
 
 void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2(VkDevice device,
-                                                                        const VkBufferMemoryRequirementsInfo2KHR *pInfo,
-                                                                        VkMemoryRequirements2KHR *pMemoryRequirements) {
+                                                                        const VkBufferMemoryRequirementsInfo2 *pInfo,
+                                                                        VkMemoryRequirements2 *pMemoryRequirements) {
     RecordGetBufferMemoryRequirementsState(pInfo->buffer);
 }
 
 void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device,
-                                                                           const VkBufferMemoryRequirementsInfo2KHR *pInfo,
-                                                                           VkMemoryRequirements2KHR *pMemoryRequirements) {
+                                                                           const VkBufferMemoryRequirementsInfo2 *pInfo,
+                                                                           VkMemoryRequirements2 *pMemoryRequirements) {
     RecordGetBufferMemoryRequirementsState(pInfo->buffer);
 }
 
@@ -2907,8 +2907,8 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements(
 }
 
 void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2(
-    VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
+    VkDevice device, const VkImageSparseMemoryRequirementsInfo2 *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) {
     auto image_state = GetImageState(pInfo->image);
     image_state->get_sparse_reqs_called = true;
     if (!pSparseMemoryRequirements) return;
@@ -2919,8 +2919,8 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2(
 }
 
 void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
-    VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
+    VkDevice device, const VkImageSparseMemoryRequirementsInfo2 *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) {
     auto image_state = GetImageState(pInfo->image);
     image_state->get_sparse_reqs_called = true;
     if (!pSparseMemoryRequirements) return;
@@ -3522,7 +3522,7 @@ void ValidationStateTracker::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, F
     AddCommandBufferBinding(fb_state->cb_bindings, VulkanTypedHandle(fb_state->framebuffer, kVulkanObjectTypeFramebuffer, fb_state),
                             cb_state);
     // If imageless fb, skip fb binding
-    if (!fb_state || fb_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return;
+    if (!fb_state || fb_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) return;
     const uint32_t attachment_count = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
         auto view_state = GetActiveAttachmentImageViewState(cb_state, attachment);
@@ -3885,7 +3885,7 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
     cb_state->hasBuildAccelerationStructureCmd = true;
 }
 void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
-    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2KHR *pMemoryRequirements) {
+    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2 *pMemoryRequirements) {
     ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(pInfo->accelerationStructure);
     if (as_state != nullptr) {
         if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV) {
@@ -4481,7 +4481,7 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
     // Shadow create info and store in map
     auto fb_state = std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, GetRenderPassShared(pCreateInfo->renderPass));
 
-    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         fb_state->attachments_view_state.resize(pCreateInfo->attachmentCount);
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
@@ -4491,7 +4491,7 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
     frameBufferMap[*pFramebuffer] = std::move(fb_state);
 }
 
-void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                  RENDER_PASS_STATE *render_pass) {
     auto &subpass_to_node = render_pass->subpassToNode;
     subpass_to_node.resize(pCreateInfo->subpassCount);
@@ -4674,7 +4674,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
     AttachmentTracker attachment_tracker(render_pass);
 
     for (uint32_t subpass_index = 0; subpass_index < create_info->subpassCount; ++subpass_index) {
-        const VkSubpassDescription2KHR &subpass = create_info->pSubpasses[subpass_index];
+        const VkSubpassDescription2 &subpass = create_info->pSubpasses[subpass_index];
         attachment_tracker.Update(subpass_index, subpass.pColorAttachments, subpass.colorAttachmentCount, false);
         attachment_tracker.Update(subpass_index, subpass.pResolveAttachments, subpass.colorAttachmentCount, false);
         attachment_tracker.Update(subpass_index, subpass.pDepthStencilAttachment, 1, false);
@@ -4722,7 +4722,7 @@ void ValidationStateTracker::PostCallRecordCreateRenderPass(VkDevice device, con
     RecordCreateRenderPassState(RENDER_PASS_VERSION_1, render_pass_state, pRenderPass);
 }
 
-void ValidationStateTracker::RecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+void ValidationStateTracker::RecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                      VkResult result) {
     if (VK_SUCCESS != result) return;
@@ -4730,13 +4730,13 @@ void ValidationStateTracker::RecordCreateRenderPass2(VkDevice device, const VkRe
     RecordCreateRenderPassState(RENDER_PASS_VERSION_2, render_pass_state, pRenderPass);
 }
 
-void ValidationStateTracker::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+void ValidationStateTracker::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                                 VkResult result) {
     RecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, result);
 }
 
-void ValidationStateTracker::PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+void ValidationStateTracker::PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                              VkResult result) {
     RecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, result);
@@ -4799,7 +4799,7 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderPass(VkCommandBuffer com
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                                  const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                 const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
+                                                                 const VkSubpassBeginInfo *pSubpassBeginInfo) {
     RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
@@ -4822,7 +4822,7 @@ void ValidationStateTracker::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandB
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                                                               const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                              const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
+                                                              const VkSubpassBeginInfo *pSubpassBeginInfo) {
     RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
@@ -4847,14 +4847,14 @@ void ValidationStateTracker::PostCallRecordCmdNextSubpass(VkCommandBuffer comman
 }
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer,
-                                                              const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                                              const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+                                                              const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                              const VkSubpassEndInfo *pSubpassEndInfo) {
     RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
 }
 
 void ValidationStateTracker::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer,
-                                                           const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                                           const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+                                                           const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                           const VkSubpassEndInfo *pSubpassEndInfo) {
     RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
 }
 
@@ -4872,12 +4872,12 @@ void ValidationStateTracker::PostCallRecordCmdEndRenderPass(VkCommandBuffer comm
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer,
-                                                                const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+                                                                const VkSubpassEndInfo *pSubpassEndInfo) {
     RecordCmdEndRenderPassState(commandBuffer);
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer,
-                                                             const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+                                                             const VkSubpassEndInfo *pSubpassEndInfo) {
     RecordCmdEndRenderPassState(commandBuffer);
 }
 void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
@@ -4981,7 +4981,7 @@ void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkIm
 }
 
 void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                            const VkBindImageMemoryInfoKHR *pBindInfos, VkResult result) {
+                                                            const VkBindImageMemoryInfo *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindImageMemoryState(pBindInfos[i]);
@@ -4989,7 +4989,7 @@ void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uin
 }
 
 void ValidationStateTracker::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                               const VkBindImageMemoryInfoKHR *pBindInfos, VkResult result) {
+                                                               const VkBindImageMemoryInfo *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindImageMemoryState(pBindInfos[i]);
@@ -5012,9 +5012,9 @@ void ValidationStateTracker::PostCallRecordImportSemaphoreFdKHR(VkDevice device,
 }
 
 void ValidationStateTracker::RecordGetExternalSemaphoreState(VkSemaphore semaphore,
-                                                             VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
+                                                             VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     SEMAPHORE_STATE *semaphore_state = GetSemaphoreState(semaphore);
-    if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
+    if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
         semaphore_state->scope = kSyncScopeExternalPermanent;
     }
@@ -5056,11 +5056,11 @@ void ValidationStateTracker::PostCallRecordGetSemaphoreFdKHR(VkDevice device, co
     RecordGetExternalSemaphoreState(pGetFdInfo->semaphore, pGetFdInfo->handleType);
 }
 
-void ValidationStateTracker::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
-                                                    VkFenceImportFlagsKHR flags) {
+void ValidationStateTracker::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type,
+                                                    VkFenceImportFlags flags) {
     FENCE_STATE *fence_node = GetFenceState(fence);
     if (fence_node && fence_node->scope != kSyncScopeExternalPermanent) {
-        if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_FENCE_IMPORT_TEMPORARY_BIT_KHR) &&
+        if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_FENCE_IMPORT_TEMPORARY_BIT) &&
             fence_node->scope == kSyncScopeInternal) {
             fence_node->scope = kSyncScopeExternalTemporary;
         } else {
@@ -5075,10 +5075,10 @@ void ValidationStateTracker::PostCallRecordImportFenceFdKHR(VkDevice device, con
     RecordImportFenceState(pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
 }
 
-void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
+void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type) {
     FENCE_STATE *fence_state = GetFenceState(fence);
     if (fence_state) {
-        if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
+        if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT) {
             // Export with reference transference becomes external
             fence_state->scope = kSyncScopeExternalPermanent;
         } else if (fence_state->scope == kSyncScopeInternal) {
@@ -5264,7 +5264,7 @@ void ValidationStateTracker::PostCallRecordEnumeratePhysicalDevices(VkInstance i
 
 // Common function to update state for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
 static void StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEVICE_STATE *pd_state, uint32_t count,
-                                                                    VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+                                                                    VkQueueFamilyProperties2 *pQueueFamilyProperties) {
     pd_state->queue_family_known_count = std::max(pd_state->queue_family_known_count, count);
 
     if (pQueueFamilyProperties) {  // Save queue family properties
@@ -5280,12 +5280,12 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
                                                                                   VkQueueFamilyProperties *pQueueFamilyProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
-    VkQueueFamilyProperties2KHR *pqfp = nullptr;
-    std::vector<VkQueueFamilyProperties2KHR> qfp;
+    VkQueueFamilyProperties2 *pqfp = nullptr;
+    std::vector<VkQueueFamilyProperties2> qfp;
     qfp.resize(*pQueueFamilyPropertyCount);
     if (pQueueFamilyProperties) {
         for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; ++i) {
-            qfp[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2_KHR;
+            qfp[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
             qfp[i].pNext = nullptr;
             qfp[i].queueFamilyProperties = pQueueFamilyProperties[i];
         }
@@ -5295,7 +5295,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(
-    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
@@ -5303,7 +5303,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(
-    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
@@ -5566,7 +5566,7 @@ void ValidationStateTracker::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandB
 }
 
 void ValidationStateTracker::RecordEnumeratePhysicalDeviceGroupsState(
-    uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+    uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties) {
     if (NULL != pPhysicalDeviceGroupProperties) {
         for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
             for (uint32_t j = 0; j < pPhysicalDeviceGroupProperties[i].physicalDeviceCount; j++) {
@@ -5581,14 +5581,14 @@ void ValidationStateTracker::RecordEnumeratePhysicalDeviceGroupsState(
 }
 
 void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
     VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
     RecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
 void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
-    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
     VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
     RecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
@@ -5630,7 +5630,7 @@ void ValidationStateTracker::PostCallRecordReleaseProfilingLockKHR(VkDevice devi
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device,
-                                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                           const VkAllocationCallbacks *pAllocator) {
     if (!descriptorUpdateTemplate) return;
     auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
@@ -5639,7 +5639,7 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevi
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device,
-                                                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                              const VkAllocationCallbacks *pAllocator) {
     if (!descriptorUpdateTemplate) return;
     auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
@@ -5647,29 +5647,31 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkD
     desc_template_map.erase(descriptorUpdateTemplate);
 }
 
-void ValidationStateTracker::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
-                                                                       VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+void ValidationStateTracker::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
+                                                                       VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) {
     safe_VkDescriptorUpdateTemplateCreateInfo local_create_info(pCreateInfo);
     auto template_state = std::make_shared<TEMPLATE_STATE>(*pDescriptorUpdateTemplate, &local_create_info);
     desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
 }
 
-void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplate(
-    VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device,
+                                                                          const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
+                                                                          const VkAllocationCallbacks *pAllocator,
+                                                                          VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
+                                                                          VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordCreateDescriptorUpdateTemplateState(pCreateInfo, pDescriptorUpdateTemplate);
 }
 
 void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplateKHR(
-    VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate, VkResult result) {
+    VkDevice device, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordCreateDescriptorUpdateTemplateState(pCreateInfo, pDescriptorUpdateTemplate);
 }
 
 void ValidationStateTracker::RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
-                                                                        VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                        VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                         const void *pData) {
     auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
     if ((template_map_entry == desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
@@ -5690,14 +5692,15 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevi
 }
 
 void ValidationStateTracker::PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
-                                                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                              const void *pData) {
     RecordUpdateDescriptorSetWithTemplateState(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
-void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(
-    VkCommandBuffer commandBuffer, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, VkPipelineLayout layout, uint32_t set,
-    const void *pData) {
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
+                                                                              VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                              VkPipelineLayout layout, uint32_t set,
+                                                                              const void *pData) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
     const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
@@ -5889,7 +5892,7 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
         pool_state->availableDescriptorTypeCount[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
     }
 
-    const auto *variable_count_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>(p_alloc_info->pNext);
+    const auto *variable_count_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
     bool variable_count_valid = variable_count_info && variable_count_info->descriptorSetCount == p_alloc_info->descriptorSetCount;
 
     // Create tracking object for each descriptor set; insert into global map and the pool's set.
@@ -6195,7 +6198,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_ci.pQueueFamilyIndices = swapchain_state->createInfo.pQueueFamilyIndices;
             image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-            image_ci.pNext = lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(swapchain_state->createInfo.pNext);
+            image_ci.pNext = lvl_find_in_chain<VkImageFormatListCreateInfo>(swapchain_state->createInfo.pNext);
 
             if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
                 image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
@@ -6204,7 +6207,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                 image_ci.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
             }
             if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
-                image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
+                image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
             }
 
             imageMap[pSwapchainImages[i]] = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], &image_ci);

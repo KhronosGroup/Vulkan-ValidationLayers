@@ -817,8 +817,7 @@ void ObjectLifetimes::PreCallRecordDestroyCommandPool(VkDevice device, VkCommand
 }
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(
-    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2KHR *pQueueFamilyProperties) const {
+    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties) const {
     return ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false,
                           "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter", kVUIDUndefined);
 }
@@ -831,10 +830,11 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                             uint32_t *pQueueFamilyPropertyCount,
-                                                                            VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {}
+                                                                            VkQueueFamilyProperties2 *pQueueFamilyProperties) {}
 
-void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(
-    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {}
+void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t *pQueueFamilyPropertyCount,
+                                                                               VkQueueFamilyProperties2 *pQueueFamilyProperties) {}
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t *pPropertyCount,
@@ -948,7 +948,7 @@ bool ObjectLifetimes::PreCallValidateCreateFramebuffer(VkDevice device, const Vk
     if (pCreateInfo) {
         skip |= ValidateObject(pCreateInfo->renderPass, kVulkanObjectTypeRenderPass, false,
                                "VUID-VkFramebufferCreateInfo-renderPass-parameter", "VUID-VkFramebufferCreateInfo-commonparent");
-        if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+        if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
             for (uint32_t index1 = 0; index1 < pCreateInfo->attachmentCount; ++index1) {
                 skip |= ValidateObject(pCreateInfo->pAttachments[index1], kVulkanObjectTypeImageView, true, kVUIDUndefined,
                                        "VUID-VkFramebufferCreateInfo-commonparent");

@@ -210,9 +210,9 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                            VkSubpassContents contents) const override;
     bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const override;
+                                               const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                            const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const override;
+                                            const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                   const VkRenderPassBeginInfo* pRenderPassBegin);
     void PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,

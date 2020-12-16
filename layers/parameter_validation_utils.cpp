@@ -224,7 +224,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     if (device_extensions.vk_nv_shading_rate_image) {
         // Get the needed shading rate image limits
         auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&shading_rate_image_props);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&shading_rate_image_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
@@ -232,7 +232,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     if (device_extensions.vk_nv_mesh_shader) {
         // Get the needed mesh shader limits
         auto mesh_shader_props = lvl_init_struct<VkPhysicalDeviceMeshShaderPropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_props);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&mesh_shader_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
     }
@@ -240,7 +240,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     if (device_extensions.vk_nv_ray_tracing) {
         // Get the needed ray tracing limits
         auto ray_tracing_props = lvl_init_struct<VkPhysicalDeviceRayTracingPropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_props);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.ray_tracing_propsNV = ray_tracing_props;
     }
@@ -248,7 +248,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     if (device_extensions.vk_khr_ray_tracing_pipeline) {
         // Get the needed ray tracing limits
         auto ray_tracing_props = lvl_init_struct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_props);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.ray_tracing_propsKHR = ray_tracing_props;
     }
@@ -256,7 +256,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     if (device_extensions.vk_khr_acceleration_structure) {
         // Get the needed ray tracing acc structure limits
         auto acc_structure_props = lvl_init_struct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&acc_structure_props);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&acc_structure_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
@@ -264,7 +264,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     if (device_extensions.vk_ext_transform_feedback) {
         // Get the needed transform feedback limits
         auto transform_feedback_props = lvl_init_struct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&transform_feedback_props);
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
@@ -343,11 +343,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     if (pCreateInfo->pNext != NULL && pCreateInfo->pEnabledFeatures) {
         // Check for get_physical_device_properties2 struct
-        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
+        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
         if (features2) {
-            // Cannot include VkPhysicalDeviceFeatures2KHR and have non-null pEnabledFeatures
+            // Cannot include VkPhysicalDeviceFeatures2 and have non-null pEnabledFeatures
             skip |= LogError(device, "VUID-VkDeviceCreateInfo-pNext-00373",
-                             "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceFeatures2KHR struct when "
+                             "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceFeatures2 struct when "
                              "pCreateInfo->pEnabledFeatures is non-NULL.");
         }
     }
@@ -885,7 +885,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "format must be a depth or depth/stencil format.");
         }
 
-        const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(pCreateInfo->pNext);
+        const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(pCreateInfo->pNext);
         if (image_stencil_struct != nullptr) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
                 VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -1092,7 +1092,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 }
                 const VkImageCreateFlags valid_flags =
                     (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
-                     VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
+                     VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
                 if ((pCreateInfo->flags & ~valid_flags) != 0) {
                     skip |= LogError(device, vuid, "%s flags are %" PRIu32 "and must only have valid flags set.", base_message,
                                      pCreateInfo->flags);
@@ -3345,7 +3345,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice devic
     return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkRenderPass *pRenderPass) const {
     return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
@@ -3665,7 +3665,7 @@ bool StatelessValidation::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhys
     bool skip = false;
 
     if (pImageFormatInfo != nullptr) {
-        const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(pImageFormatInfo->pNext);
+        const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(pImageFormatInfo->pNext);
         if (image_stencil_struct != nullptr) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
                 VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -4259,7 +4259,7 @@ void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const 
     RecordRenderPass(*pRenderPass, pCreateInfo);
 }
 
-void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                              VkResult result) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
@@ -4292,12 +4292,12 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
             flags = flags_info->flags;
         }
 
-        auto opaque_alloc_info = lvl_find_in_chain<VkMemoryOpaqueCaptureAddressAllocateInfoKHR>(pAllocateInfo->pNext);
+        auto opaque_alloc_info = lvl_find_in_chain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
         if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
-            if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR)) {
+            if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
                 skip |= LogError(device, "VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03329",
                                  "If opaqueCaptureAddress is non-zero, VkMemoryAllocateFlagsInfo::flags must include "
-                                 "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR.");
+                                 "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
             }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -4336,21 +4336,20 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
                 capture_replay = vulkan_12_features->bufferDeviceAddressCaptureReplay;
                 buffer_device_address = vulkan_12_features->bufferDeviceAddress;
             } else {
-                const auto *bda_features =
-                    lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(device_createinfo_pnext);
+                const auto *bda_features = lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeatures>(device_createinfo_pnext);
                 if (bda_features) {
                     capture_replay = bda_features->bufferDeviceAddressCaptureReplay;
                     buffer_device_address = bda_features->bufferDeviceAddress;
                 }
             }
-            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) && !capture_replay) {
+            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) && !capture_replay) {
                 skip |= LogError(device, "VUID-VkMemoryAllocateInfo-flags-03330",
-                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR is set, "
+                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT is set, "
                                  "bufferDeviceAddressCaptureReplay must be enabled.");
             }
-            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR) && !buffer_device_address) {
+            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) && !buffer_device_address) {
                 skip |= LogError(device, "VUID-VkMemoryAllocateInfo-flags-03331",
-                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR is set, bufferDeviceAddress must be enabled.");
+                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT is set, bufferDeviceAddress must be enabled.");
             }
         }
     }
@@ -4948,7 +4947,7 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
                                                                   VkFramebuffer *pFramebuffer) const {
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
-    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         skip |= validate_array("vkCreateFramebuffer", "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
                                &pCreateInfo->pAttachments, false, true, kVUIDUndefined, kVUIDUndefined);
     }

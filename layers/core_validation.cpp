@@ -919,7 +919,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         VkSampleCountFlagBits pso_num_samples = GetNumSamples(pPipeline);
         if (pCB->activeRenderPass) {
             const auto render_pass_info = pCB->activeRenderPass->createInfo.ptr();
-            const VkSubpassDescription2KHR *subpass_desc = &render_pass_info->pSubpasses[pCB->activeSubpass];
+            const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[pCB->activeSubpass];
             uint32_t i;
             unsigned subpass_num_samples = 0;
 
@@ -2880,7 +2880,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
     auto &signaled_semaphores = *signaled_sema_arg;
     auto &unsignaled_semaphores = *unsignaled_sema_arg;
     auto &internal_semaphores = *internal_sema_arg;
-    auto *timeline_semaphore_submit_info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(submit->pNext);
+    auto *timeline_semaphore_submit_info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
     const char *vuid_error = device_extensions.vk_khr_timeline_semaphore ? "VUID-vkQueueSubmit-pWaitSemaphores-03238"
                                                                          : "VUID-vkQueueSubmit-pWaitSemaphores-00069";
 
@@ -2892,22 +2892,22 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
         skip |= ValidateStageMaskHost(submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
         VkSemaphore semaphore = submit->pWaitSemaphores[i];
         const auto *semaphore_state = GetSemaphoreState(semaphore);
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && !timeline_semaphore_submit_info) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pWaitSemaphores-03239",
                              "VkQueueSubmit: pSubmits[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, but pSubmits[%u] does "
-                             "not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                             "not include an instance of VkTimelineSemaphoreSubmitInfo",
                              submit_index, i, report_data->FormatHandle(semaphore).c_str(), submit_index);
         }
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_semaphore_submit_info &&
             submit->waitSemaphoreCount != timeline_semaphore_submit_info->waitSemaphoreValueCount) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pNext-03240",
                              "VkQueueSubmit: pSubmits[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, it contains an "
-                             "instance of VkTimelineSemaphoreSubmitInfoKHR, but waitSemaphoreValueCount (%u) is different than "
+                             "instance of VkTimelineSemaphoreSubmitInfo, but waitSemaphoreValueCount (%u) is different than "
                              "pSubmits[%u].waitSemaphoreCount (%u)",
                              submit_index, i, report_data->FormatHandle(semaphore).c_str(),
                              timeline_semaphore_submit_info->waitSemaphoreValueCount, submit_index, submit->waitSemaphoreCount);
         }
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY &&
             (semaphore_state->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             if (unsignaled_semaphores.count(semaphore) ||
                 (!(signaled_semaphores.count(semaphore)) && !(semaphore_state->signaled) && !SemaphoreWasSignaled(semaphore))) {
@@ -2922,7 +2922,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
                 unsignaled_semaphores.insert(semaphore);
             }
         }
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY &&
             semaphore_state->scope == kSyncScopeExternalTemporary) {
             internal_semaphores.insert(semaphore);
         }
@@ -2930,22 +2930,22 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
     for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
         VkSemaphore semaphore = submit->pSignalSemaphores[i];
         const auto *semaphore_state = GetSemaphoreState(semaphore);
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && !timeline_semaphore_submit_info) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pWaitSemaphores-03239",
                              "VkQueueSubmit: pSubmits[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, but pSubmits[%u] "
-                             "does not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                             "does not include an instance of VkTimelineSemaphoreSubmitInfo",
                              submit_index, i, report_data->FormatHandle(semaphore).c_str(), submit_index);
         }
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_semaphore_submit_info &&
             submit->signalSemaphoreCount != timeline_semaphore_submit_info->signalSemaphoreValueCount) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pNext-03241",
                              "VkQueueSubmit: pSubmits[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, it contains an "
-                             "instance of VkTimelineSemaphoreSubmitInfoKHR, but signalSemaphoreValueCount (%u) is different than "
+                             "instance of VkTimelineSemaphoreSubmitInfo, but signalSemaphoreValueCount (%u) is different than "
                              "pSubmits[%u].signalSemaphoreCount (%u)",
                              submit_index, i, report_data->FormatHandle(semaphore).c_str(),
                              timeline_semaphore_submit_info->signalSemaphoreValueCount, submit_index, submit->signalSemaphoreCount);
         }
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_semaphore_submit_info &&
             timeline_semaphore_submit_info->pSignalSemaphoreValues[i] <= semaphore_state->payload) {
             skip |= LogError(semaphore, "VUID-VkSubmitInfo-pSignalSemaphores-03242",
                              "VkQueueSubmit: signal value (0x%" PRIx64
@@ -2955,7 +2955,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
                              report_data->FormatHandle(semaphore).c_str(),
                              timeline_semaphore_submit_info->pSignalSemaphoreValues[i], submit_index, i);
         }
-        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY &&
             (semaphore_state->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && semaphore_state->signaled)) {
                 LogObjectList objlist(semaphore);
@@ -2982,7 +2982,7 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(VkSemaphore semapho
     bool skip = false;
     const auto semaphore_state = GetSemaphoreState(semaphore);
 
-    if (semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) return false;
+    if (semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) return false;
 
     uint64_t diff = value > semaphore_state->payload ? value - semaphore_state->payload : semaphore_state->payload - value;
 
@@ -3158,7 +3158,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     // Now verify maxTimelineSemaphoreValueDifference
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(submit->pNext);
+        auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         if (info) {
             // If there are any timeline semaphores, this condition gets checked before the early return above
             if (info->waitSemaphoreValueCount) {
@@ -3293,7 +3293,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(pInfo->memory);
 
     // VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID must have been included in
-    // VkExportMemoryAllocateInfoKHR::handleTypes when memory was created.
+    // VkExportMemoryAllocateInfo::handleTypes when memory was created.
     if (!mem_info->is_export ||
         (0 == (mem_info->export_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID))) {
         skip |= LogError(device, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882",
@@ -3913,39 +3913,38 @@ bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) const {
 bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore) const {
     bool skip = false;
-    auto *sem_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfoKHR>(pCreateInfo->pNext);
+    auto *sem_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
 
-    if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE_KHR &&
+    if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE &&
         !enabled_features.core12.timelineSemaphore && !device_extensions.vk_khr_timeline_semaphore) {
         skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252",
                          "VkCreateSemaphore: timelineSemaphore feature is not enabled, can not create timeline semaphores");
     }
 
-    if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_BINARY_KHR &&
+    if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_BINARY &&
         sem_type_create_info->initialValue != 0) {
         skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279",
-                         "vkCreateSemaphore: if semaphoreType is VK_SEMAPHORE_TYPE_BINARY_KHR, initialValue must be zero");
+                         "vkCreateSemaphore: if semaphoreType is VK_SEMAPHORE_TYPE_BINARY, initialValue must be zero");
     }
 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo, uint64_t timeout) const {
+bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout) const {
     return ValidateWaitSemaphores(device, pWaitInfo, timeout, "VkWaitSemaphores");
 }
 
-bool CoreChecks::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo,
-                                                  uint64_t timeout) const {
+bool CoreChecks::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout) const {
     return ValidateWaitSemaphores(device, pWaitInfo, timeout, "VkWaitSemaphoresKHR");
 }
 
-bool CoreChecks::ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo, uint64_t timeout,
+bool CoreChecks::ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
                                         const char *apiName) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
         auto *semaphore_state = GetSemaphoreState(pWaitInfo->pSemaphores[i]);
-        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
+        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |= LogError(pWaitInfo->pSemaphores[i], "VUID-VkSemaphoreWaitInfo-pSemaphores-03256",
                              "%s(): all semaphores in pWaitInfo must be timeline semaphores, but %s is not", apiName,
                              report_data->FormatHandle(pWaitInfo->pSemaphores[i]).c_str());
@@ -4272,7 +4271,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                 objlist.add(mem);
                 objlist.add(mem_info->dedicated_buffer);
                 skip |= LogError(objlist, vuid,
-                                 "%s: for dedicated %s, VkMemoryDedicatedAllocateInfoKHR::buffer %s must be equal "
+                                 "%s: for dedicated %s, VkMemoryDedicatedAllocateInfo::buffer %s must be equal "
                                  "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                  api_name, report_data->FormatHandle(mem).c_str(),
                                  report_data->FormatHandle(mem_info->dedicated_buffer).c_str(),
@@ -4281,11 +4280,11 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
 
             auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
             if (enabled_features.core12.bufferDeviceAddress &&
-                (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) &&
-                (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR))) {
+                (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
+                (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
                 skip |= LogError(buffer, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339",
-                                 "%s: If buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR bit set, "
-                                 "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR bit set.",
+                                 "%s: If buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT bit set, "
+                                 "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
                                  api_name);
             }
 
@@ -4364,7 +4363,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffe
 }
 
 bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                  const VkBindBufferMemoryInfoKHR *pBindInfos) const {
+                                                  const VkBindBufferMemoryInfo *pBindInfos) const {
     char api_name[64];
     bool skip = false;
 
@@ -4376,7 +4375,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bind
 }
 
 bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                     const VkBindBufferMemoryInfoKHR *pBindInfos) const {
+                                                     const VkBindBufferMemoryInfo *pBindInfos) const {
     char api_name[64];
     bool skip = false;
 
@@ -5130,8 +5129,7 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
     for (auto stage : stage_flags) {
         std::valarray<uint32_t> stage_sum(0U, DSL_NUM_DESCRIPTOR_GROUPS);  // per-stage sums
         for (auto dsl : set_layouts) {
-            if (skip_update_after_bind &&
-                (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
+            if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
                 continue;
             }
 
@@ -5190,7 +5188,7 @@ std::map<uint32_t, uint32_t> GetDescriptorSum(
     const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
     std::map<uint32_t, uint32_t> sum_by_type;
     for (auto dsl : set_layouts) {
-        if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
+        if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
             continue;
         }
 
@@ -5619,7 +5617,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         for (auto dsl : set_layouts) {
             // find the number of subsampled samplers across all stages
             // NOTE: this does not use the GetDescriptorSum patter because it needs the GetSamplerState method
-            if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
+            if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
                 continue;
             }
             for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
@@ -7535,13 +7533,13 @@ class ValidatorState {
 
     // Descriptive text for the various types of queue family index
     const char *GetFamilyAnnotation(uint32_t family) const {
-        const char *external = " (VK_QUEUE_FAMILY_EXTERNAL_KHR)";
+        const char *external = " (VK_QUEUE_FAMILY_EXTERNAL)";
         const char *foreign = " (VK_QUEUE_FAMILY_FOREIGN_EXT)";
         const char *ignored = " (VK_QUEUE_FAMILY_IGNORED)";
         const char *valid = " (VALID)";
         const char *invalid = " (INVALID)";
         switch (family) {
-            case VK_QUEUE_FAMILY_EXTERNAL_KHR:
+            case VK_QUEUE_FAMILY_EXTERNAL:
                 return external;
             case VK_QUEUE_FAMILY_FOREIGN_EXT:
                 return foreign;
@@ -8610,7 +8608,7 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
     });
 }
 
-bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *attachments, const VkFramebufferCreateInfo *fbci,
+bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attachments, const VkFramebufferCreateInfo *fbci,
                             VkImageUsageFlagBits usage_flag, const char *error_code) const {
     bool skip = false;
 
@@ -8619,7 +8617,7 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
             if (attachments[attach].attachment != VK_ATTACHMENT_UNUSED) {
                 // Attachment counts are verified elsewhere, but prevent an invalid access
                 if (attachments[attach].attachment < fbci->attachmentCount) {
-                    if ((fbci->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+                    if ((fbci->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
                         const VkImageView *image_view = &fbci->pAttachments[attachments[attach].attachment];
                         auto view_state = GetImageViewState(*image_view);
                         if (view_state) {
@@ -8639,8 +8637,8 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
                             }
                         }
                     } else {
-                        const VkFramebufferAttachmentsCreateInfoKHR *fbaci =
-                            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfoKHR>(fbci->pNext);
+                        const VkFramebufferAttachmentsCreateInfo *fbaci =
+                            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfo>(fbci->pNext);
                         if (fbaci != nullptr && fbaci->pAttachmentImageInfos != nullptr &&
                             fbaci->attachmentImageInfoCount > attachments[attach].attachment) {
                             uint32_t image_usage = fbaci->pAttachmentImageInfos[attachments[attach].attachment].usage;
@@ -8663,27 +8661,25 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
 bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pCreateInfo) const {
     bool skip = false;
 
-    const VkFramebufferAttachmentsCreateInfoKHR *framebuffer_attachments_create_info =
-        lvl_find_in_chain<VkFramebufferAttachmentsCreateInfoKHR>(pCreateInfo->pNext);
-    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) != 0) {
+    const VkFramebufferAttachmentsCreateInfo *framebuffer_attachments_create_info =
+        lvl_find_in_chain<VkFramebufferAttachmentsCreateInfo>(pCreateInfo->pNext);
+    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0) {
         if (!enabled_features.core12.imagelessFramebuffer) {
-            skip |=
-                LogError(device, "VUID-VkFramebufferCreateInfo-flags-03189",
-                         "vkCreateFramebuffer(): VkFramebufferCreateInfo flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR, "
-                         "but the imagelessFramebuffer feature is not enabled.");
+            skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-03189",
+                             "vkCreateFramebuffer(): VkFramebufferCreateInfo flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, "
+                             "but the imagelessFramebuffer feature is not enabled.");
         }
 
         if (framebuffer_attachments_create_info == nullptr) {
-            skip |=
-                LogError(device, "VUID-VkFramebufferCreateInfo-flags-03190",
-                         "vkCreateFramebuffer(): VkFramebufferCreateInfo flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR, "
-                         "but no instance of VkFramebufferAttachmentsCreateInfoKHR is present in the pNext chain.");
+            skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-03190",
+                             "vkCreateFramebuffer(): VkFramebufferCreateInfo flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, "
+                             "but no instance of VkFramebufferAttachmentsCreateInfo is present in the pNext chain.");
         } else {
             if (framebuffer_attachments_create_info->attachmentImageInfoCount != 0 &&
                 framebuffer_attachments_create_info->attachmentImageInfoCount != pCreateInfo->attachmentCount) {
                 skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-03191",
                                  "vkCreateFramebuffer(): VkFramebufferCreateInfo attachmentCount is %u, but "
-                                 "VkFramebufferAttachmentsCreateInfoKHR attachmentImageInfoCount is %u.",
+                                 "VkFramebufferAttachmentsCreateInfo attachmentImageInfoCount is %u.",
                                  pCreateInfo->attachmentCount, framebuffer_attachments_create_info->attachmentImageInfoCount);
             }
         }
@@ -8700,7 +8696,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                              report_data->FormatHandle(pCreateInfo->renderPass).c_str());
         } else {
             // attachmentCounts match, so make sure corresponding attachment details line up
-            if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+            if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
                 const VkImageView *image_views = pCreateInfo->pAttachments;
                 for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
                     auto view_state = GetImageViewState(image_views[i]);
@@ -8946,7 +8942,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     }
                 }
             } else if (framebuffer_attachments_create_info) {
-                // VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR is set
+                // VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT is set
                 for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
                     auto &aii = framebuffer_attachments_create_info->pAttachmentImageInfos[i];
                     bool format_found = false;
@@ -9210,7 +9206,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                 }
             }
 
-            if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+            if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
                 // Verify correct attachment usage flags
                 for (uint32_t subpass = 0; subpass < rpci->subpassCount; subpass++) {
                     const VkSubpassDescription2 &subpass_description = rpci->pSubpasses[subpass];
@@ -9370,7 +9366,7 @@ bool CoreChecks::CheckPreserved(const VkRenderPass renderpass, const VkRenderPas
                                 bool &skip) const {
     const DAGNode &node = subpass_to_node[index];
     // If this node writes to the attachment return true as next nodes need to preserve the attachment.
-    const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[index];
+    const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[index];
     for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
         if (attachment == subpass.pColorAttachments[j].attachment) return true;
     }
@@ -9468,7 +9464,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     // Find for each attachment the subpasses that use them.
     unordered_set<uint32_t> attachment_indices;
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
-        const VkSubpassDescription2KHR &subpass = create_info->pSubpasses[i];
+        const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         attachment_indices.clear();
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             uint32_t attachment = subpass.pInputAttachments[j].attachment;
@@ -9506,7 +9502,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     }
     // If there is a dependency needed make sure one exists
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
-        const VkSubpassDescription2KHR &subpass = create_info->pSubpasses[i];
+        const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         // If the attachment is an input then all subpasses that output must have a dependency relationship
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             uint32_t attachment = subpass.pInputAttachments[j].attachment;
@@ -9534,7 +9530,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     // Loop through implicit dependencies, if this pass reads make sure the attachment is preserved for all passes after it was
     // written.
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
-        const VkSubpassDescription2KHR &subpass = create_info->pSubpasses[i];
+        const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             CheckPreserved(renderPass->renderPass, create_info, i, subpass.pInputAttachments[j].attachment, subpass_to_node, 0,
                            skip);
@@ -9549,7 +9545,7 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
-        const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
+        const VkSubpassDependency2 &dependency = pCreateInfo->pDependencies[i];
         VkPipelineStageFlagBits latest_src_stage = GetLogicallyLatestGraphicsPipelineStage(dependency.srcStageMask);
         VkPipelineStageFlagBits earliest_dst_stage = GetLogicallyEarliestGraphicsPipelineStage(dependency.dstStageMask);
 
@@ -9726,7 +9722,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                 break;
         }
     } else {
-        const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(reference.pNext);
+        const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayout>(reference.pNext);
         switch (reference.layout) {
             case VK_IMAGE_LAYOUT_UNDEFINED:
             case VK_IMAGE_LAYOUT_PREINITIALIZED:
@@ -9754,7 +9750,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                         stencil_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                         stencil_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
                         skip |= LogError(device, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318",
-                                            "%s: In %s with pNext chain instance VkAttachmentReferenceStencilLayoutKHR, "
+                                            "%s: In %s with pNext chain instance VkAttachmentReferenceStencilLayout, "
                                             "the stencilLayout (%s) must not be "
                                             "VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, "
                                             "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
@@ -9833,7 +9829,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
     std::unordered_set<uint32_t> input_attachments;
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
+        const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         std::vector<uint8_t> attachment_uses(pCreateInfo->attachmentCount);
         std::vector<VkImageLayout> attachment_layouts(pCreateInfo->attachmentCount);
 
@@ -10262,7 +10258,7 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
     bool view_mask_non_zero = false;
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
+        const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         if (subpass.viewMask != 0) {
             view_mask_non_zero = true;
         } else {
@@ -10436,7 +10432,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
     // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
-        const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
+        const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
 
         if (resolve == nullptr) {
@@ -10461,12 +10457,12 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
                              function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
-        if (resolve_attachment_not_unused && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR &&
-            resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR) {
+        if (resolve_attachment_not_unused && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
+            resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
                              "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure with resolve attachment %u, but both depth and stencil resolve modes are "
-                             "VK_RESOLVE_MODE_NONE_KHR.",
+                             "VK_RESOLVE_MODE_NONE.",
                              function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
@@ -10523,7 +10519,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
             }
         }
 
-        if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
+        if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
               resolve->depthResolveMode & core12_props.supportedDepthResolveModes)) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183",
                              "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
@@ -10531,7 +10527,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
                              function_name, i, resolve->depthResolveMode);
         }
 
-        if (!(resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
+        if (!(resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE ||
               resolve->stencilResolveMode & core12_props.supportedStencilResolveModes)) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184",
                              "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
@@ -10550,13 +10546,13 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
 
         if (valid_resolve_attachment_index && FormatIsDepthAndStencil(depth_stencil_resolve_attachment_format) &&
             core12_props.independentResolve == VK_FALSE && core12_props.independentResolveNone == VK_TRUE &&
-            !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
-              resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR)) {
+            !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
+              resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE)) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186",
                              "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical, or "
                              "one of them must be %u.",
-                             function_name, i, resolve->depthResolveMode, resolve->stencilResolveMode, VK_RESOLVE_MODE_NONE_KHR);
+                             function_name, i, resolve->depthResolveMode, resolve->stencilResolveMode, VK_RESOLVE_MODE_NONE);
         }
     }
 
@@ -10791,7 +10787,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
     return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "vkCreateRenderPass2KHR()");
 }
@@ -10829,18 +10825,18 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
 bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo *pRenderPassBeginInfo,
                                                           const char *func_name) const {
     bool skip = false;
-    const VkRenderPassAttachmentBeginInfoKHR *render_pass_attachment_begin_info =
-        lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBeginInfo->pNext);
+    const VkRenderPassAttachmentBeginInfo *render_pass_attachment_begin_info =
+        lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBeginInfo->pNext);
 
     if (render_pass_attachment_begin_info && render_pass_attachment_begin_info->attachmentCount != 0) {
         const safe_VkFramebufferCreateInfo *framebuffer_create_info =
             &GetFramebufferState(pRenderPassBeginInfo->framebuffer)->createInfo;
-        const VkFramebufferAttachmentsCreateInfoKHR *framebuffer_attachments_create_info =
-            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfoKHR>(framebuffer_create_info->pNext);
-        if ((framebuffer_create_info->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+        const VkFramebufferAttachmentsCreateInfo *framebuffer_attachments_create_info =
+            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfo>(framebuffer_create_info->pNext);
+        if ((framebuffer_create_info->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
             skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03207",
                              "%s: Image views specified at render pass begin, but framebuffer not created with "
-                             "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR",
+                             "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT",
                              func_name);
         } else if (framebuffer_attachments_create_info) {
             if (framebuffer_attachments_create_info->attachmentImageInfoCount !=
@@ -10856,7 +10852,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                 for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
                     const VkImageViewCreateInfo *image_view_create_info =
                         &GetImageViewState(render_pass_attachment_begin_info->pAttachments[i])->create_info;
-                    const VkFramebufferAttachmentImageInfoKHR *framebuffer_attachment_image_info =
+                    const VkFramebufferAttachmentImageInfo *framebuffer_attachment_image_info =
                         &framebuffer_attachments_create_info->pAttachmentImageInfos[i];
                     const VkImageCreateInfo *image_create_info = &GetImageState(image_view_create_info->image)->createInfo;
 
@@ -10898,8 +10894,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          framebuffer_attachment_image_info->layerCount);
                     }
 
-                    const VkImageFormatListCreateInfoKHR *image_format_list_create_info =
-                        lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(image_create_info->pNext);
+                    const VkImageFormatListCreateInfo *image_format_list_create_info =
+                        lvl_find_in_chain<VkImageFormatListCreateInfo>(image_create_info->pNext);
                     if (image_format_list_create_info) {
                         if (image_format_list_create_info->viewFormatCount != framebuffer_attachment_image_info->viewFormatCount) {
                             skip |= LogError(
@@ -11107,13 +11103,13 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       const VkSubpassBeginInfoKHR *pSubpassBeginInfo) const {
+                                                       const VkSubpassBeginInfo *pSubpassBeginInfo) const {
     bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                    const VkSubpassBeginInfoKHR *pSubpassBeginInfo) const {
+                                                    const VkSubpassBeginInfo *pSubpassBeginInfo) const {
     bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
     return skip;
 }
@@ -11136,13 +11132,13 @@ void CoreChecks::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, 
 }
 
 void CoreChecks::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                     const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
+                                                     const VkSubpassBeginInfo *pSubpassBeginInfo) {
     StateTracker::PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
 void CoreChecks::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                  const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
+                                                  const VkSubpassBeginInfo *pSubpassBeginInfo) {
     StateTracker::PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
@@ -11178,13 +11174,13 @@ bool CoreChecks::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, Vk
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_1, commandBuffer);
 }
 
-bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                                   const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                   const VkSubpassEndInfo *pSubpassEndInfo) const {
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer);
 }
 
-bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                                const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                const VkSubpassEndInfo *pSubpassEndInfo) const {
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer);
 }
 
@@ -11199,14 +11195,14 @@ void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkS
     RecordCmdNextSubpassLayouts(commandBuffer, contents);
 }
 
-void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                                  const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                  const VkSubpassEndInfo *pSubpassEndInfo) {
     StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
     RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
-void CoreChecks::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
-                                               const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+void CoreChecks::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                               const VkSubpassEndInfo *pSubpassEndInfo) {
     StateTracker::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
     RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
@@ -11246,13 +11242,12 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer,
-                                                     const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = ValidateCmdEndRenderPass(RENDER_PASS_VERSION_2, commandBuffer);
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = ValidateCmdEndRenderPass(RENDER_PASS_VERSION_2, commandBuffer);
     return skip;
 }
@@ -11268,13 +11263,13 @@ void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     StateTracker::PostCallRecordCmdEndRenderPass(commandBuffer);
 }
 
-void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
     // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
     RecordCmdEndRenderPassLayouts(commandBuffer);
     StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
-void CoreChecks::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+void CoreChecks::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
     RecordCmdEndRenderPassLayouts(commandBuffer);
     StateTracker::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
 }
@@ -11885,7 +11880,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             objlist.add(mem_info->dedicated_image);
                             skip |= LogError(
                                 objlist, validation_error,
-                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must compatible "
+                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must compatible "
                                 "with %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                 error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
                                 report_data->FormatHandle(mem_info->dedicated_image).c_str(),
@@ -11903,13 +11898,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             LogObjectList objlist(bind_info.image);
                             objlist.add(bind_info.memory);
                             objlist.add(mem_info->dedicated_image);
-                            skip |= LogError(
-                                objlist, validation_error,
-                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must be equal "
-                                "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
-                                error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
-                                report_data->FormatHandle(mem_info->dedicated_image).c_str(),
-                                report_data->FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
+                            skip |=
+                                LogError(objlist, validation_error,
+                                         "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must be equal "
+                                         "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
+                                         error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
+                                         report_data->FormatHandle(mem_info->dedicated_image).c_str(),
+                                         report_data->FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
                     }
                 }
@@ -12097,12 +12092,12 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                 const VkBindImageMemoryInfoKHR *pBindInfos) const {
+                                                 const VkBindImageMemoryInfo *pBindInfos) const {
     return ValidateBindImageMemory(bindInfoCount, pBindInfos, "vkBindImageMemory2()");
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                    const VkBindImageMemoryInfoKHR *pBindInfos) const {
+                                                    const VkBindImageMemoryInfo *pBindInfos) const {
     return ValidateBindImageMemory(bindInfoCount, pBindInfos, "vkBindImageMemory2KHR()");
 }
 
@@ -12143,28 +12138,28 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
 
-        auto timeline_semaphore_submit_info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(pBindInfo->pNext);
+        auto timeline_semaphore_submit_info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(pBindInfo->pNext);
         std::vector<SEMAPHORE_WAIT> semaphore_waits;
         std::vector<VkSemaphore> semaphore_signals;
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = bind_info.pWaitSemaphores[i];
             const auto semaphore_state = GetSemaphoreState(semaphore);
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && !timeline_semaphore_submit_info) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pWaitSemaphores-03246",
                                  "VkQueueBindSparse: pBindInfo[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, but "
-                                 "pBindInfo[%u] does not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                                 "pBindInfo[%u] does not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  bind_idx, i, report_data->FormatHandle(semaphore).c_str(), bind_idx);
             }
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_semaphore_submit_info &&
                 bind_info.waitSemaphoreCount != timeline_semaphore_submit_info->waitSemaphoreValueCount) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pNext-03247",
                                  "VkQueueBindSparse: pBindInfo[%u].pWaitSemaphores[%u] (%s) is a timeline semaphore, it contains "
-                                 "an instance of VkTimelineSemaphoreSubmitInfoKHR, but waitSemaphoreValueCount (%u) is different "
+                                 "an instance of VkTimelineSemaphoreSubmitInfo, but waitSemaphoreValueCount (%u) is different "
                                  "than pBindInfo[%u].waitSemaphoreCount (%u)",
                                  bind_idx, i, report_data->FormatHandle(semaphore).c_str(),
                                  timeline_semaphore_submit_info->waitSemaphoreValueCount, bind_idx, bind_info.waitSemaphoreCount);
             }
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY &&
                 (semaphore_state->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (unsignaled_semaphores.count(semaphore) ||
                     (!(signaled_semaphores.count(semaphore)) && !(semaphore_state->signaled) && !SemaphoreWasSignaled(semaphore))) {
@@ -12181,7 +12176,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     unsignaled_semaphores.insert(semaphore);
                 }
             }
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY &&
                 semaphore_state->scope == kSyncScopeExternalTemporary) {
                 internal_semaphores.insert(semaphore);
             }
@@ -12190,13 +12185,13 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         for (uint32_t i = 0; i < bind_info.signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = bind_info.pSignalSemaphores[i];
             const auto semaphore_state = GetSemaphoreState(semaphore);
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && !timeline_semaphore_submit_info) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pWaitSemaphores-03246",
                                  "VkQueueBindSparse: pBindInfo[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, but "
-                                 "pBindInfo[%u] does not include an instance of VkTimelineSemaphoreSubmitInfoKHR",
+                                 "pBindInfo[%u] does not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  bind_idx, i, report_data->FormatHandle(semaphore).c_str(), bind_idx);
             }
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_semaphore_submit_info &&
                 timeline_semaphore_submit_info->pSignalSemaphoreValues[i] <= semaphore_state->payload) {
                 LogObjectList objlist(semaphore);
                 objlist.add(queue);
@@ -12208,17 +12203,17 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                                  report_data->FormatHandle(semaphore).c_str(),
                                  timeline_semaphore_submit_info->pSignalSemaphoreValues[i], bind_idx, i);
             }
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_semaphore_submit_info &&
                 bind_info.signalSemaphoreCount != timeline_semaphore_submit_info->signalSemaphoreValueCount) {
                 skip |=
                     LogError(semaphore, "VUID-VkBindSparseInfo-pNext-03248",
                              "VkQueueBindSparse: pBindInfo[%u].pSignalSemaphores[%u] (%s) is a timeline semaphore, it contains "
-                             "an instance of VkTimelineSemaphoreSubmitInfoKHR, but signalSemaphoreValueCount (%u) is different "
+                             "an instance of VkTimelineSemaphoreSubmitInfo, but signalSemaphoreValueCount (%u) is different "
                              "than pBindInfo[%u].signalSemaphoreCount (%u)",
                              bind_idx, i, report_data->FormatHandle(semaphore).c_str(),
                              timeline_semaphore_submit_info->signalSemaphoreValueCount, bind_idx, bind_info.signalSemaphoreCount);
             }
-            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
+            if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY &&
                 semaphore_state->scope == kSyncScopeInternal) {
                 if (signaled_semaphores.count(semaphore) ||
                     (!(unsignaled_semaphores.count(semaphore)) && semaphore_state->signaled)) {
@@ -12256,7 +12251,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     // Now verify maxTimelineSemaphoreValueDifference
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo *bind_info = &pBindInfo[bind_idx];
-        auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(bind_info->pNext);
+        auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(bind_info->pNext);
         if (info) {
             // If there are any timeline semaphores, this condition gets checked before the early return above
             if (info->waitSemaphoreValueCount) {
@@ -12282,12 +12277,12 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     return skip;
 }
 
-bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo, const char *api_name) const {
+bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo, const char *api_name) const {
     bool skip = false;
     const auto semaphore_state = GetSemaphoreState(pSignalInfo->semaphore);
-    if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
+    if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
         skip |= LogError(pSignalInfo->semaphore, "VUID-VkSemaphoreSignalInfo-semaphore-03257",
-                         "%s(): semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE_KHR type", api_name,
+                         "%s(): semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE type", api_name,
                          report_data->FormatHandle(pSignalInfo->semaphore).c_str());
         return skip;
     }
@@ -12322,7 +12317,7 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
     return ValidateSignalSemaphore(device, pSignalInfo, "vkSignalSemaphore");
 }
 
-bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo) const {
+bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo) const {
     return ValidateSignalSemaphore(device, pSignalInfo, "vkSignalSemaphoreKHR");
 }
 
@@ -12694,18 +12689,18 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                 return true;
             }
         } else {
-            const auto *image_format_list = lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(pCreateInfo->pNext);
+            const auto *image_format_list = lvl_find_in_chain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
             if (image_format_list == nullptr) {
                 if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
                              "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain of "
-                             "pCreateInfo does not contain an instance of VkImageFormatListCreateInfoKHR.",
+                             "pCreateInfo does not contain an instance of VkImageFormatListCreateInfo.",
                              func_name)) {
                     return true;
                 }
             } else if (image_format_list->viewFormatCount == 0) {
                 if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
                              "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the viewFormatCount "
-                             "member of VkImageFormatListCreateInfoKHR in the pNext chain is zero.",
+                             "member of VkImageFormatListCreateInfo in the pNext chain is zero.",
                              func_name)) {
                     return true;
                 }
@@ -12720,7 +12715,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                 if (!found_base_format) {
                     if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
                                  "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
-                                 "elements of the pViewFormats member of VkImageFormatListCreateInfoKHR match "
+                                 "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
                                  "pCreateInfo->imageFormat.",
                                  func_name)) {
                         return true;
@@ -12919,9 +12914,9 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         const auto semaphore_state = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
-        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY_KHR) {
+        if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError(pPresentInfo->pWaitSemaphores[i], "VUID-vkQueuePresentKHR-pWaitSemaphores-03267",
-                             "vkQueuePresentKHR: pWaitSemaphores[%u] (%s) is not a VK_SEMAPHORE_TYPE_BINARY_KHR", i,
+                             "vkQueuePresentKHR: pWaitSemaphores[%u] (%s) is not a VK_SEMAPHORE_TYPE_BINARY", i,
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
         if (semaphore_state && !semaphore_state->signaled && !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i])) {
@@ -13063,8 +13058,8 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
     bool skip = false;
 
     auto semaphore_state = GetSemaphoreState(semaphore);
-    if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY_KHR) {
-        skip |= LogError(semaphore, semaphore_type_vuid, "%s: %s is not a VK_SEMAPHORE_TYPE_BINARY_KHR", func_name,
+    if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
+        skip |= LogError(semaphore, semaphore_type_vuid, "%s: %s is not a VK_SEMAPHORE_TYPE_BINARY", func_name,
                          report_data->FormatHandle(semaphore).c_str());
     }
     if (semaphore_state && semaphore_state->scope == kSyncScopeInternal && semaphore_state->signaled) {
@@ -13204,7 +13199,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDev
 }
 
 bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
-                                                  const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo) const {
+                                                  const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo) const {
     bool skip = false;
     const auto layout = GetDescriptorSetLayoutShared(pCreateInfo->descriptorSetLayout);
     if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
@@ -13240,23 +13235,23 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
 }
 
 bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
-                                                               const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                               const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
-                                                               VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) const {
+                                                               VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) const {
     bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplate()", pCreateInfo);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device,
-                                                                  const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                                  const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                  VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) const {
+                                                                  VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) const {
     bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplateKHR()", pCreateInfo);
     return skip;
 }
 
 bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
-                                                         VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                         VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                          const void *pData) const {
     bool skip = false;
     auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
@@ -13281,13 +13276,13 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device,
 }
 
 bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
-                                                                   VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                   VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                    const void *pData) const {
     return ValidateUpdateDescriptorSetWithTemplate(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
-                                                                    VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                     VkPipelineLayout layout, uint32_t set,
                                                                     const void *pData) const {
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
@@ -13799,7 +13794,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
     return skip;
 }
 
-bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo,
+bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                 const char *apiName) const {
     bool skip = false;
 
@@ -13830,22 +13825,22 @@ bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferD
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo),
+bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
+    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
                                           "vkGetBufferDeviceAddressEXT");
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo),
+    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
                                           "vkGetBufferDeviceAddressKHR");
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo),
+    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
                                           "vkGetBufferDeviceAddress");
 }
 
-bool CoreChecks::ValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo,
+bool CoreChecks::ValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                        const char *apiName) const {
     bool skip = false;
 
@@ -13863,18 +13858,17 @@ bool CoreChecks::ValidateGetBufferOpaqueCaptureAddress(VkDevice device, const Vk
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo) const {
-    return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo),
+bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
+    return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
                                                  "vkGetBufferOpaqueCaptureAddressKHR");
 }
 
 bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo),
+    return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
                                                  "vkGetBufferOpaqueCaptureAddress");
 }
 
-bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
-                                                             const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *pInfo,
+bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo,
                                                              const char *apiName) const {
     bool skip = false;
 
@@ -13893,7 +13887,7 @@ bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
     const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(pInfo->memory);
     if (mem_info) {
         auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
-        if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR)) {
+        if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
             skip |= LogError(pInfo->memory, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336",
                              "%s(): memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.", apiName);
         }
@@ -13902,16 +13896,16 @@ bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
-    VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *pInfo) const {
-    return ValidateGetDeviceMemoryOpaqueCaptureAddress(
-        device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *>(pInfo), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
+bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device,
+                                                                       const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo) const {
+    return ValidateGetDeviceMemoryOpaqueCaptureAddress(device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfo *>(pInfo),
+                                                       "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
 }
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
                                                                     const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo) const {
-    return ValidateGetDeviceMemoryOpaqueCaptureAddress(
-        device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *>(pInfo), "vkGetDeviceMemoryOpaqueCaptureAddress");
+    return ValidateGetDeviceMemoryOpaqueCaptureAddress(device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfo *>(pInfo),
+                                                       "vkGetDeviceMemoryOpaqueCaptureAddress");
 }
 
 bool CoreChecks::ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery,
@@ -14028,7 +14022,7 @@ bool CoreChecks::ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore s
                                                   const char *apiName) const {
     bool skip = false;
     const auto *semaphore_state = GetSemaphoreState(semaphore);
-    if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
+    if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_TIMELINE) {
         skip |= LogError(semaphore, "VUID-vkGetSemaphoreCounterValue-semaphore-03255",
                          "%s(): semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE type", apiName,
                          report_data->FormatHandle(semaphore).c_str());

@@ -27,7 +27,7 @@
 
 static safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_struct) {
     safe_VkAttachmentDescription2 v2;
-    v2.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+    v2.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
     v2.pNext = nullptr;
     v2.flags = in_struct.flags;
     v2.format = in_struct.format;
@@ -44,7 +44,7 @@ static safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_s
 
 static safe_VkAttachmentReference2 ToV2KHR(const VkAttachmentReference& in_struct, const VkImageAspectFlags aspectMask = 0) {
     safe_VkAttachmentReference2 v2;
-    v2.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+    v2.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
     v2.pNext = nullptr;
     v2.attachment = in_struct.attachment;
     v2.layout = in_struct.layout;
@@ -56,7 +56,7 @@ static safe_VkAttachmentReference2 ToV2KHR(const VkAttachmentReference& in_struc
 static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct, const uint32_t viewMask,
                                           const VkImageAspectFlags* input_attachment_aspect_masks) {
     safe_VkSubpassDescription2 v2;
-    v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR;
+    v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
     v2.pNext = nullptr;
     v2.flags = in_struct.flags;
     v2.pipelineBindPoint = in_struct.pipelineBindPoint;
@@ -105,7 +105,7 @@ static safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct,
 
 static safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_struct, int32_t viewOffset = 0) {
     safe_VkSubpassDependency2 v2;
-    v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2_KHR;
+    v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
     v2.pNext = nullptr;
     v2.srcSubpass = in_struct.srcSubpass;
     v2.dstSubpass = in_struct.dstSubpass;
@@ -126,7 +126,7 @@ void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struc
     const auto fragment_density_map_info = lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(in_struct.pNext);
 
     out_struct->~safe_VkRenderPassCreateInfo2();
-    out_struct->sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
+    out_struct->sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
 
     // Fixup RPCI2 pNext chain.  Only FDM2 is valid on both chains.
     if (fragment_density_map_info) {
