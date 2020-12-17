@@ -1259,6 +1259,12 @@ class StatelessValidation : public ValidationObject {
                                             VkResult result) override;
     void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                          const VkAllocationCallbacks *pAllocator) override;
+    void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
+                                              VkCommandBuffer *pCommandBuffers, VkResult result) override;
+    void PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                          const VkCommandBuffer *pCommandBuffers) override;
+    void PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+                                          const VkAllocationCallbacks *pAllocator) override;
     void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) override;
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,

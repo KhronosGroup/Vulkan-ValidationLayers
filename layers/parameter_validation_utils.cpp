@@ -36,6 +36,15 @@ inline bool in_inclusive_range(const T &value, const T &min, const T &max) {
 read_lock_guard_t StatelessValidation::read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
 write_lock_guard_t StatelessValidation::write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
 
+static std::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+static ReadWriteLock secondary_cb_map_mutex;
+static read_lock_guard_t cb_read_lock() {
+    return read_lock_guard_t(secondary_cb_map_mutex);
+}
+static write_lock_guard_t cb_write_lock() {
+    return write_lock_guard_t(secondary_cb_map_mutex);
+}
+
 bool StatelessValidation::validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid,
                                           const char *validateString) const {
     bool skip = false;
@@ -3370,66 +3379,74 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
 
     // VkCommandBufferInheritanceInfo validation, due to a 'noautovalidity' of pBeginInfo->pInheritanceInfo in vkBeginCommandBuffer
     const char *cmd_name = "vkBeginCommandBuffer";
-    const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
+    bool cb_is_secondary;
+    {
+        auto lock = cb_read_lock();
+        cb_is_secondary = (secondary_cb_map.find(commandBuffer) != secondary_cb_map.end());
+    }
 
-    // Implicit VUs
-    // validate only sType here; pointer has to be validated in core_validation
-    const bool k_not_required = false;
-    const char *k_no_vuid = nullptr;
-    skip |= validate_struct_type(cmd_name, "pBeginInfo->pInheritanceInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO",
-                                 info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
-                                 "VUID-VkCommandBufferInheritanceInfo-sType-sType");
+    if (cb_is_secondary) {
+        // Implicit VUs
+        // validate only sType here; pointer has to be validated in core_validation
+        const bool k_not_required = false;
+        const char *k_no_vuid = nullptr;
+        const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
+        skip |= validate_struct_type(cmd_name, "pBeginInfo->pInheritanceInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO",
+            info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
+            "VUID-VkCommandBufferInheritanceInfo-sType-sType");
 
-    if (info) {
-        const VkStructureType allowed_structs_vk_command_buffer_inheritance_info[] = {
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT};
-        skip |= validate_struct_pnext(
-            cmd_name, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT", info->pNext,
-            ARRAY_SIZE(allowed_structs_vk_command_buffer_inheritance_info), allowed_structs_vk_command_buffer_inheritance_info,
-            GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferInheritanceInfo-pNext-pNext",
-            "VUID-VkCommandBufferInheritanceInfo-sType-unique");
+        if (info) {
+            const VkStructureType allowed_structs_vk_command_buffer_inheritance_info[] = {
+                VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT };
+            skip |= validate_struct_pnext(
+                cmd_name, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT", info->pNext,
+                ARRAY_SIZE(allowed_structs_vk_command_buffer_inheritance_info), allowed_structs_vk_command_buffer_inheritance_info,
+                GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferInheritanceInfo-pNext-pNext",
+                "VUID-VkCommandBufferInheritanceInfo-sType-unique");
 
-        skip |= validate_bool32(cmd_name, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", info->occlusionQueryEnable);
+            skip |= validate_bool32(cmd_name, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", info->occlusionQueryEnable);
 
-        // Explicit VUs
-        if (!physical_device_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
-            skip |= LogError(
-                commandBuffer, "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056",
-                "%s: Inherited queries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.",
-                cmd_name);
-        }
-
-        if (physical_device_features.inheritedQueries) {
-            skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
-                                   AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
-                                   "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
-        } else {  // !inheritedQueries
-            skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", info->queryFlags,
-                                            "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
-        }
-
-        if (physical_device_features.pipelineStatisticsQuery) {
-            skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", "VkQueryPipelineStatisticFlagBits",
-                                   AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
-                                   "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
-        } else {  // !pipelineStatisticsQuery
-            skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", info->pipelineStatistics,
-                                            "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
-        }
-
-        const auto *conditional_rendering = lvl_find_in_chain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
-        if (conditional_rendering) {
-            const auto *cr_features = lvl_find_in_chain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
-            const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
-            if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
+            // Explicit VUs
+            if (!physical_device_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
                 skip |= LogError(
-                    commandBuffer, "VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977",
-                    "vkBeginCommandBuffer: Inherited conditional rendering is disabled, but "
-                    "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
+                    commandBuffer, "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056",
+                    "%s: Inherited queries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.",
+                    cmd_name);
+            }
+
+            if (physical_device_features.inheritedQueries) {
+                skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
+                    AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
+                    "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
+            }
+            else {  // !inheritedQueries
+                skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", info->queryFlags,
+                    "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
+            }
+
+            if (physical_device_features.pipelineStatisticsQuery) {
+                skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", "VkQueryPipelineStatisticFlagBits",
+                    AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
+                    "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
+            }
+            else {  // !pipelineStatisticsQuery
+                skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", info->pipelineStatistics,
+                    "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
+            }
+
+            const auto *conditional_rendering = lvl_find_in_chain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
+            if (conditional_rendering) {
+                const auto *cr_features = lvl_find_in_chain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
+                const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
+                if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
+                    skip |= LogError(
+                        commandBuffer, "VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977",
+                        "vkBeginCommandBuffer: Inherited conditional rendering is disabled, but "
+                        "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
+                }
             }
         }
     }
-
     return skip;
 }
 
@@ -4272,6 +4289,37 @@ void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRen
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     renderpasses_states.erase(renderPass);
+}
+
+void StatelessValidation::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
+    VkCommandBuffer *pCommandBuffers, VkResult result) {
+    if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+        auto lock = cb_write_lock();
+        for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
+            secondary_cb_map.insert({ pCommandBuffers[cb_index], pAllocateInfo->commandPool });
+        }
+    }
+}
+
+void StatelessValidation::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+    const VkCommandBuffer *pCommandBuffers) {
+    auto lock = cb_write_lock();
+    for (uint32_t cb_index = 0; cb_index < commandBufferCount; cb_index++) {
+        secondary_cb_map.erase(pCommandBuffers[cb_index]);
+    }
+}
+
+void StatelessValidation::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+    const VkAllocationCallbacks *pAllocator) {
+    auto lock = cb_write_lock();
+    for (auto item = secondary_cb_map.begin(); item != secondary_cb_map.end();) {
+        if (item->second == commandPool) {
+            item = secondary_cb_map.erase(item);
+        }
+        else {
+            ++item;
+        }
+    }
 }
 
 bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,

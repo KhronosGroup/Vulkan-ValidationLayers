@@ -3601,7 +3601,7 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
     // Set updated state here in case implicit reset occurs above
     cb_state->state = CB_RECORDING;
     cb_state->beginInfo = *pBeginInfo;
-    if (cb_state->beginInfo.pInheritanceInfo) {
+    if (cb_state->beginInfo.pInheritanceInfo && (cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         cb_state->inheritanceInfo = *(cb_state->beginInfo.pInheritanceInfo);
         cb_state->beginInfo.pInheritanceInfo = &cb_state->inheritanceInfo;
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
