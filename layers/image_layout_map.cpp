@@ -28,7 +28,7 @@
 
 namespace image_layout_map {
 // Storage for the static state
-const ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::end_iterator = ImageSubresourceLayoutMap::ConstIterator();
+const ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::kEndIterator = ImageSubresourceLayoutMap::ConstIterator();
 
 using InitialLayoutStates = ImageSubresourceLayoutMap::InitialLayoutStates;
 

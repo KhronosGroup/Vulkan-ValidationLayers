@@ -144,7 +144,7 @@ class ImageSubresourceLayoutMap {
     // Begin is a find of the full range with the default skip/ always get parameters
     ConstIterator Begin(bool always_get_initial = true) const;
     inline ConstIterator begin() const { return Begin(); }  // STL style, for range based loops and familiarity
-    const ConstIterator& End() const { return end_iterator; }
+    const ConstIterator& End() const { return kEndIterator; }
     const ConstIterator& end() const { return End(); }  // STL style, for range based loops and familiarity.
     inline size_t InitialLayoutSize() const { return layouts_.initial.size(); }
     inline size_t CurrentLayoutSize() const { return layouts_.current.size(); }
@@ -212,7 +212,7 @@ class ImageSubresourceLayoutMap {
     InitialLayoutStates initial_layout_states_;
     InitialLayoutStateMap initial_layout_state_map_;
 
-    static const ConstIterator end_iterator;  // Just to hold the end condition tombstone (aspectMask == 0)
+    static const ConstIterator kEndIterator;  // Just to hold the end condition tombstone (aspectMask == 0)
 };
 }  // namespace image_layout_map
 #endif

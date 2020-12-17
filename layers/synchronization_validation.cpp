@@ -246,7 +246,7 @@ static inline ResourceAccessRange MakeRange(const BUFFER_VIEW_STATE &buf_view_st
 template <typename KeyType>
 class SingleRangeGenerator {
   public:
-    SingleRangeGenerator(const KeyType &range) : current_(range) {}
+    explicit SingleRangeGenerator(const KeyType &range) : current_(range) {}
     KeyType &operator*() const { return *current_; }
     KeyType *operator->() const { return &*current_; }
     SingleRangeGenerator &operator++() {
@@ -353,9 +353,9 @@ class FilteredGeneratorGenerator {
     KeyType FastForwardFilter(const KeyType &range) {
         auto filter_range = FilterRange();
         int retry_count = 0;
-        const static int kRetryLimit = 2;  // TODO -- determine whether this limit is optimal
+        const static int retry_limit = 2;  // TODO -- determine whether this limit is optimal
         while (!filter_range.empty() && (filter_range.end <= range.begin)) {
-            if (retry_count < kRetryLimit) {
+            if (retry_count < retry_limit) {
                 ++filter_pos_;
                 filter_range = FilterRange();
                 retry_count++;
@@ -1515,7 +1515,7 @@ class ApplyBarrierFunctor {
         return pos;
     }
 
-    ApplyBarrierFunctor(const BarrierOp &barrier_op) : barrier_op_(barrier_op) {}
+    explicit ApplyBarrierFunctor(const BarrierOp &barrier_op) : barrier_op_(barrier_op) {}
 
   private:
     const BarrierOp barrier_op_;
@@ -1533,7 +1533,7 @@ class ResolvePendingBarrierFunctor {
         return pos;
     }
 
-    ResolvePendingBarrierFunctor(const ResourceUsageTag &tag) : tag_(tag) {}
+    explicit ResolvePendingBarrierFunctor(const ResourceUsageTag &tag) : tag_(tag) {}
 
   private:
     const ResourceUsageTag &tag_;

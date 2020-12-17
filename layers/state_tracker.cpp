@@ -2360,8 +2360,8 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                     function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
                 }
 
-                for (auto eventStagePair : local_event_to_stage_map) {
-                    eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
+                for (auto event_stage_pair : local_event_to_stage_map) {
+                    eventMap[event_stage_pair.first]->stageMask = event_stage_pair.second;
                 }
             }
         }
