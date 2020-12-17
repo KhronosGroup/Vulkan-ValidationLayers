@@ -271,7 +271,7 @@ VkPipelineStageFlags WithLaterPipelineStages(VkPipelineStageFlags stage_mask) {
     return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages);
 }
 
-static const ResourceAccessRange full_range(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
+static const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 
 ResourceAccessRange GetBufferRange(VkDeviceSize offset, VkDeviceSize buf_whole_size, uint32_t first_index, uint32_t count,
                                    VkDeviceSize stride) {
@@ -580,7 +580,7 @@ HazardResult AccessContext::DetectAsyncHazard(AddressType type, const Detector &
 }
 
 struct ApplySubpassTransitionBarriersAction {
-    ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
+    explicit ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
     void operator()(ResourceAccessState *access) const {
         assert(access);
         access->ApplyBarriers(barriers, true);
@@ -589,7 +589,7 @@ struct ApplySubpassTransitionBarriersAction {
 };
 
 struct ApplyTrackbackBarriersAction {
-    ApplyTrackbackBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
+    explicit ApplyTrackbackBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
     void operator()(ResourceAccessState *access) const {
         assert(access);
         assert(!access->HasPendingState());
@@ -980,7 +980,7 @@ class HazardDetector {
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
         return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
-    HazardDetector(SyncStageAccessIndex usage) : usage_index_(usage) {}
+    explicit HazardDetector(SyncStageAccessIndex usage) : usage_index_(usage) {}
 };
 
 class HazardDetectorWithOrdering {
@@ -1414,7 +1414,7 @@ template <typename Action>
 void AccessContext::ApplyGlobalBarriers(const Action &barrier_action) {
     // Note: Barriers do *not* cross context boundaries, applying to accessess within.... (at least for renderpass subpasses)
     for (const auto address_type : kAddressTypes) {
-        UpdateMemoryAccessState(&GetAccessStateMap(address_type), full_range, barrier_action);
+        UpdateMemoryAccessState(&GetAccessStateMap(address_type), kFullRange, barrier_action);
     }
 }
 
@@ -1423,7 +1423,7 @@ void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &conte
         auto &context = contexts[subpass_index];
         ApplyTrackbackBarriersAction barrier_action(context.GetDstExternalTrackBack().barriers);
         for (const auto address_type : kAddressTypes) {
-            context.ResolveAccessRange(address_type, full_range, barrier_action, &GetAccessStateMap(address_type), nullptr, false);
+            context.ResolveAccessRange(address_type, kFullRange, barrier_action, &GetAccessStateMap(address_type), nullptr, false);
         }
     }
 }
@@ -1528,10 +1528,10 @@ bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE
 bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                    const char *func_name) const {
     bool skip = false;
-    const PIPELINE_STATE *pPipe = nullptr;
+    const PIPELINE_STATE *pipe = nullptr;
     const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
-    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pPipe, &per_sets);
-    if (!pPipe || !per_sets) {
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pipe, &per_sets);
+    if (!pipe || !per_sets) {
         return skip;
     }
 
@@ -1541,10 +1541,11 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
-    for (const auto &stage_state : pPipe->stage_state) {
-        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pPipe->graphicsPipelineCI.pRasterizationState &&
-            pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)
+    for (const auto &stage_state : pipe->stage_state) {
+        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->graphicsPipelineCI.pRasterizationState &&
+            pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
             continue;
+        }
         for (const auto &set_binding : stage_state.descriptor_uses) {
             cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
@@ -1603,7 +1604,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 func_name, string_SyncHazard(hazard.hazard),
                                 sync_state_->report_data->FormatHandle(img_view_state->image_view).c_str(),
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
-                                sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                sync_state_->report_data->FormatHandle(pipe->pipeline).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
                                 set_binding.first.second, index, string_UsageTag(hazard).c_str());
@@ -1623,7 +1624,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 func_name, string_SyncHazard(hazard.hazard),
                                 sync_state_->report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
-                                sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                sync_state_->report_data->FormatHandle(pipe->pipeline).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), set_binding.first.second, index,
                                 string_UsageTag(hazard).c_str());
@@ -1644,7 +1645,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 func_name, string_SyncHazard(hazard.hazard),
                                 sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
-                                sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                sync_state_->report_data->FormatHandle(pipe->pipeline).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), set_binding.first.second, index,
                                 string_UsageTag(hazard).c_str());
@@ -1663,10 +1664,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 
 void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                  const ResourceUsageTag &tag) {
-    const PIPELINE_STATE *pPipe = nullptr;
+    const PIPELINE_STATE *pipe = nullptr;
     const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
-    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pPipe, &per_sets);
-    if (!pPipe || !per_sets) {
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pipe, &per_sets);
+    if (!pipe || !per_sets) {
         return;
     }
 
@@ -1676,10 +1677,11 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
-    for (const auto &stage_state : pPipe->stage_state) {
-        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pPipe->graphicsPipelineCI.pRasterizationState &&
-            pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)
+    for (const auto &stage_state : pipe->stage_state) {
+        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->graphicsPipelineCI.pRasterizationState &&
+            pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
             continue;
+        }
         for (const auto &set_binding : stage_state.descriptor_uses) {
             cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
@@ -1747,17 +1749,17 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
 
 bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const char *func_name) const {
     bool skip = false;
-    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe) {
+    const auto *pipe = GetCurrentPipelineFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (!pipe) {
         return skip;
     }
 
     const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pPipe->vertex_binding_descriptions_.size();
+    const auto &binding_descriptions_size = pipe->vertex_binding_descriptions_.size();
 
     for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
+        const auto &binding_description = pipe->vertex_binding_descriptions_[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
             if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->destroyed) continue;
@@ -1778,16 +1780,16 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
 }
 
 void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag &tag) {
-    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe) {
+    const auto *pipe = GetCurrentPipelineFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (!pipe) {
         return;
     }
     const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pPipe->vertex_binding_descriptions_.size();
+    const auto &binding_descriptions_size = pipe->vertex_binding_descriptions_.size();
 
     for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
+        const auto &binding_description = pipe->vertex_binding_descriptions_[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
             if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->destroyed) continue;
@@ -1802,8 +1804,9 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
 
 bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const char *func_name) const {
     bool skip = false;
-    if (cb_state_->index_buffer_binding.buffer_state == nullptr || cb_state_->index_buffer_binding.buffer_state->destroyed)
+    if (cb_state_->index_buffer_binding.buffer_state == nullptr || cb_state_->index_buffer_binding.buffer_state->destroyed) {
         return skip;
+    }
 
     auto *index_buf_state = cb_state_->index_buffer_binding.buffer_state.get();
     const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
@@ -1846,9 +1849,10 @@ bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(const char *func_
 }
 
 void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsageTag &tag) {
-    if (current_renderpass_context_)
+    if (current_renderpass_context_) {
         current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_.get(), cb_state_->activeRenderPassBeginInfo.renderArea,
                                                                  tag);
+    }
 }
 
 bool CommandBufferAccessContext::ValidateNextSubpass(const char *func_name) const {
@@ -1900,12 +1904,12 @@ void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &re
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator &sync_state, const CMD_BUFFER_STATE &cmd,
                                                             const VkRect2D &render_area, const char *func_name) const {
     bool skip = false;
-    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe ||
-        (pPipe->graphicsPipelineCI.pRasterizationState && pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
+    const auto *pipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (!pipe ||
+        (pipe->graphicsPipelineCI.pRasterizationState && pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
         return skip;
     }
-    const auto &list = pPipe->fragmentShader_writable_output_location_list;
+    const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
@@ -1914,8 +1918,10 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
     // Subpass's inputAttachment has been done in ValidateDispatchDrawDescriptorSet
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
-            if (location >= subpass.colorAttachmentCount || subpass.pColorAttachments[location].attachment == VK_ATTACHMENT_UNUSED)
+            if (location >= subpass.colorAttachmentCount ||
+                subpass.pColorAttachments[location].attachment == VK_ATTACHMENT_UNUSED) {
                 continue;
+            }
             const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pColorAttachments[location].attachment];
             HazardResult hazard = current_context.DetectHazard(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
                                                                kColorAttachmentRasterOrder, offset, extent);
@@ -1932,15 +1938,15 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
 
     // PHASE1 TODO: Add layout based read/vs. write selection.
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
-    if (pPipe->graphicsPipelineCI.pDepthStencilState && subpass.pDepthStencilAttachment &&
+    if (pipe->graphicsPipelineCI.pDepthStencilState && subpass.pDepthStencilAttachment &&
         subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
         const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pDepthStencilAttachment->attachment];
         bool depth_write = false, stencil_write = false;
 
         // PHASE1 TODO: These validation should be in core_checks.
         if (!FormatIsStencilOnly(img_view_state->create_info.format) &&
-            pPipe->graphicsPipelineCI.pDepthStencilState->depthTestEnable &&
-            pPipe->graphicsPipelineCI.pDepthStencilState->depthWriteEnable &&
+            pipe->graphicsPipelineCI.pDepthStencilState->depthTestEnable &&
+            pipe->graphicsPipelineCI.pDepthStencilState->depthWriteEnable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
@@ -1949,7 +1955,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
         if (!FormatIsDepthOnly(img_view_state->create_info.format) &&
-            pPipe->graphicsPipelineCI.pDepthStencilState->stencilTestEnable &&
+            pipe->graphicsPipelineCI.pDepthStencilState->stencilTestEnable &&
             IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
             stencil_write = true;
         }
@@ -1989,12 +1995,12 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
 
 void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area,
                                                           const ResourceUsageTag &tag) {
-    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe ||
-        (pPipe->graphicsPipelineCI.pRasterizationState && pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
+    const auto *pipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (!pipe ||
+        (pipe->graphicsPipelineCI.pRasterizationState && pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
         return;
     }
-    const auto &list = pPipe->fragmentShader_writable_output_location_list;
+    const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
@@ -2003,8 +2009,10 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
     // Subpass's inputAttachment has been done in RecordDispatchDrawDescriptorSet
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
-            if (location >= subpass.colorAttachmentCount || subpass.pColorAttachments[location].attachment == VK_ATTACHMENT_UNUSED)
+            if (location >= subpass.colorAttachmentCount ||
+                subpass.pColorAttachments[location].attachment == VK_ATTACHMENT_UNUSED) {
                 continue;
+            }
             const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pColorAttachments[location].attachment];
             current_context.UpdateAccessState(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, offset, extent,
                                               0, tag);
@@ -2013,15 +2021,15 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
 
     // PHASE1 TODO: Add layout based read/vs. write selection.
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
-    if (pPipe->graphicsPipelineCI.pDepthStencilState && subpass.pDepthStencilAttachment &&
+    if (pipe->graphicsPipelineCI.pDepthStencilState && subpass.pDepthStencilAttachment &&
         subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
         const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pDepthStencilAttachment->attachment];
         bool depth_write = false, stencil_write = false;
 
         // PHASE1 TODO: These validation should be in core_checks.
         if (!FormatIsStencilOnly(img_view_state->create_info.format) &&
-            pPipe->graphicsPipelineCI.pDepthStencilState->depthTestEnable &&
-            pPipe->graphicsPipelineCI.pDepthStencilState->depthWriteEnable &&
+            pipe->graphicsPipelineCI.pDepthStencilState->depthTestEnable &&
+            pipe->graphicsPipelineCI.pDepthStencilState->depthWriteEnable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
@@ -2030,7 +2038,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
         if (!FormatIsDepthOnly(img_view_state->create_info.format) &&
-            pPipe->graphicsPipelineCI.pDepthStencilState->stencilTestEnable &&
+            pipe->graphicsPipelineCI.pDepthStencilState->stencilTestEnable &&
             IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
             stencil_write = true;
         }

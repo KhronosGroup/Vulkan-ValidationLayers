@@ -29,14 +29,14 @@
 #include "vulkan/vulkan.h"
 #include "vk_layer_config.h"
 
-static const uint8_t UTF8_ONE_BYTE_CODE = 0xC0;
-static const uint8_t UTF8_ONE_BYTE_MASK = 0xE0;
-static const uint8_t UTF8_TWO_BYTE_CODE = 0xE0;
-static const uint8_t UTF8_TWO_BYTE_MASK = 0xF0;
-static const uint8_t UTF8_THREE_BYTE_CODE = 0xF0;
-static const uint8_t UTF8_THREE_BYTE_MASK = 0xF8;
-static const uint8_t UTF8_DATA_BYTE_CODE = 0x80;
-static const uint8_t UTF8_DATA_BYTE_MASK = 0xC0;
+static const uint8_t kUtF8OneByteCode = 0xC0;
+static const uint8_t kUtF8OneByteMask = 0xE0;
+static const uint8_t kUtF8TwoByteCode = 0xE0;
+static const uint8_t kUtF8TwoByteMask = 0xF0;
+static const uint8_t kUtF8ThreeByteCode = 0xF0;
+static const uint8_t kUtF8ThreeByteMask = 0xF8;
+static const uint8_t kUtF8DataByteCode = 0x80;
+static const uint8_t kUtF8DataByteMask = 0xC0;
 
 VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
     VkStringErrorFlags result = VK_STRING_ERROR_NONE;
@@ -51,11 +51,11 @@ VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, cons
             break;
         } else if ((utf8[i] >= 0xa) && (utf8[i] < 0x7f)) {
             num_char_bytes = 0;
-        } else if ((utf8[i] & UTF8_ONE_BYTE_MASK) == UTF8_ONE_BYTE_CODE) {
+        } else if ((utf8[i] & kUtF8OneByteMask) == kUtF8OneByteCode) {
             num_char_bytes = 1;
-        } else if ((utf8[i] & UTF8_TWO_BYTE_MASK) == UTF8_TWO_BYTE_CODE) {
+        } else if ((utf8[i] & kUtF8TwoByteMask) == kUtF8TwoByteCode) {
             num_char_bytes = 2;
-        } else if ((utf8[i] & UTF8_THREE_BYTE_MASK) == UTF8_THREE_BYTE_CODE) {
+        } else if ((utf8[i] & kUtF8ThreeByteMask) == kUtF8ThreeByteCode) {
             num_char_bytes = 3;
         } else {
             result |= VK_STRING_ERROR_BAD_DATA;
@@ -68,7 +68,7 @@ VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, cons
                 result |= VK_STRING_ERROR_LENGTH;
                 break;
             }
-            if ((utf8[i] & UTF8_DATA_BYTE_MASK) != UTF8_DATA_BYTE_CODE) {
+            if ((utf8[i] & kUtF8DataByteMask) != kUtF8DataByteCode) {
                 result |= VK_STRING_ERROR_BAD_DATA;
                 break;
             }
@@ -107,49 +107,49 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     LogMessageTypeFlags report_flags = GetLayerOptionFlags(report_flags_key, log_msg_type_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);
     // Flag as default if these settings are not from a vk_layer_settings.txt file
-    VkDebugUtilsMessengerCreateInfoEXT dbgCreateInfo;
-    memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
-    dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    dbgCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    VkDebugUtilsMessengerCreateInfoEXT dbg_create_info;
+    memset(&dbg_create_info, 0, sizeof(dbg_create_info));
+    dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     if (report_flags & kErrorBit) {
-        dbgCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     }
     if (report_flags & kWarningBit) {
-        dbgCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     }
     if (report_flags & kPerformanceWarningBit) {
-        dbgCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        dbgCreateInfo.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        dbg_create_info.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     }
     if (report_flags & kInformationBit) {
-        dbgCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
     }
     if (report_flags & kDebugBit) {
-        dbgCreateInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
     }
 
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
         const char *log_filename = getLayerOption(log_filename_key.c_str());
         FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
-        dbgCreateInfo.pfnUserCallback = messenger_log_callback;
-        dbgCreateInfo.pUserData = (void *)log_output;
-        layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
+        dbg_create_info.pfnUserCallback = messenger_log_callback;
+        dbg_create_info.pUserData = (void *)log_output;
+        layer_create_messenger_callback(report_data, true, &dbg_create_info, pAllocator, &messenger);
     }
 
     messenger = VK_NULL_HANDLE;
 
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
-        dbgCreateInfo.pfnUserCallback = messenger_win32_debug_output_msg;
-        dbgCreateInfo.pUserData = NULL;
-        layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
+        dbg_create_info.pfnUserCallback = messenger_win32_debug_output_msg;
+        dbg_create_info.pUserData = NULL;
+        layer_create_messenger_callback(report_data, true, &dbg_create_info, pAllocator, &messenger);
     }
 
     messenger = VK_NULL_HANDLE;
 
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
-        dbgCreateInfo.pfnUserCallback = MessengerBreakCallback;
-        dbgCreateInfo.pUserData = NULL;
-        layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
+        dbg_create_info.pfnUserCallback = MessengerBreakCallback;
+        dbg_create_info.pUserData = NULL;
+        layer_create_messenger_callback(report_data, true, &dbg_create_info, pAllocator, &messenger);
     }
 }
 
@@ -175,37 +175,37 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, 
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
         const char *log_filename = getLayerOption(log_filename_key.c_str());
         FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
-        VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
-        memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
-        dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        dbgCreateInfo.flags = report_flags;
-        dbgCreateInfo.pfnCallback = report_log_callback;
-        dbgCreateInfo.pUserData = (void *)log_output;
-        layer_create_report_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &callback);
+        VkDebugReportCallbackCreateInfoEXT dbg_create_info;
+        memset(&dbg_create_info, 0, sizeof(dbg_create_info));
+        dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        dbg_create_info.flags = report_flags;
+        dbg_create_info.pfnCallback = report_log_callback;
+        dbg_create_info.pUserData = (void *)log_output;
+        layer_create_report_callback(report_data, default_layer_callback, &dbg_create_info, pAllocator, &callback);
     }
 
     callback = VK_NULL_HANDLE;
 
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
-        VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
-        memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
-        dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        dbgCreateInfo.flags = report_flags;
-        dbgCreateInfo.pfnCallback = report_win32_debug_output_msg;
-        dbgCreateInfo.pUserData = NULL;
-        layer_create_report_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &callback);
+        VkDebugReportCallbackCreateInfoEXT dbg_create_info;
+        memset(&dbg_create_info, 0, sizeof(dbg_create_info));
+        dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        dbg_create_info.flags = report_flags;
+        dbg_create_info.pfnCallback = report_win32_debug_output_msg;
+        dbg_create_info.pUserData = NULL;
+        layer_create_report_callback(report_data, default_layer_callback, &dbg_create_info, pAllocator, &callback);
     }
 
     callback = VK_NULL_HANDLE;
 
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
-        VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
-        memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
-        dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        dbgCreateInfo.flags = report_flags;
-        dbgCreateInfo.pfnCallback = DebugBreakCallback;
-        dbgCreateInfo.pUserData = NULL;
-        layer_create_report_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &callback);
+        VkDebugReportCallbackCreateInfoEXT dbg_create_info;
+        memset(&dbg_create_info, 0, sizeof(dbg_create_info));
+        dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        dbg_create_info.flags = report_flags;
+        dbg_create_info.pfnCallback = DebugBreakCallback;
+        dbg_create_info.pUserData = NULL;
+        layer_create_report_callback(report_data, default_layer_callback, &dbg_create_info, pAllocator, &callback);
     }
 }
 

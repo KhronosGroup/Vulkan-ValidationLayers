@@ -188,30 +188,30 @@ void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struc
         for (uint32_t i = 0; i < input_attachment_aspect_info->aspectReferenceCount; ++i) {
             const uint32_t subpass = input_attachment_aspect_info->pAspectReferences[i].subpass;
             const uint32_t input_attachment = input_attachment_aspect_info->pAspectReferences[i].inputAttachmentIndex;
-            const VkImageAspectFlags aspectMask = input_attachment_aspect_info->pAspectReferences[i].aspectMask;
+            const VkImageAspectFlags aspect_mask = input_attachment_aspect_info->pAspectReferences[i].aspectMask;
 
             if (subpass < input_attachment_aspect_masks.size() &&
                 input_attachment < input_attachment_aspect_masks[subpass].size()) {
-                input_attachment_aspect_masks[subpass][input_attachment] = aspectMask;
+                input_attachment_aspect_masks[subpass][input_attachment] = aspect_mask;
             }
         }
     }
 
-    const bool has_viewMask = multiview_info && multiview_info->subpassCount && multiview_info->pViewMasks;
+    const bool has_view_mask = multiview_info && multiview_info->subpassCount && multiview_info->pViewMasks;
     if (out_struct->subpassCount && in_struct.pSubpasses) {
         out_struct->pSubpasses = new safe_VkSubpassDescription2[out_struct->subpassCount];
         for (uint32_t i = 0; i < out_struct->subpassCount; ++i) {
-            const uint32_t viewMask = has_viewMask ? multiview_info->pViewMasks[i] : 0;
-            out_struct->pSubpasses[i] = ToV2KHR(in_struct.pSubpasses[i], viewMask, input_attachment_aspect_masks[i].data());
+            const uint32_t view_mask = has_view_mask ? multiview_info->pViewMasks[i] : 0;
+            out_struct->pSubpasses[i] = ToV2KHR(in_struct.pSubpasses[i], view_mask, input_attachment_aspect_masks[i].data());
         }
     }
 
-    const bool has_viewOffset = multiview_info && multiview_info->dependencyCount && multiview_info->pViewOffsets;
+    const bool has_view_offset = multiview_info && multiview_info->dependencyCount && multiview_info->pViewOffsets;
     if (out_struct->dependencyCount && in_struct.pDependencies) {
         out_struct->pDependencies = new safe_VkSubpassDependency2[out_struct->dependencyCount];
         for (uint32_t i = 0; i < out_struct->dependencyCount; ++i) {
-            const int32_t viewOffset = has_viewOffset ? multiview_info->pViewOffsets[i] : 0;
-            out_struct->pDependencies[i] = ToV2KHR(in_struct.pDependencies[i], viewOffset);
+            const int32_t view_offset = has_view_offset ? multiview_info->pViewOffsets[i] : 0;
+            out_struct->pDependencies[i] = ToV2KHR(in_struct.pDependencies[i], view_offset);
         }
     }
 

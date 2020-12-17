@@ -215,30 +215,31 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
 
 VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator) {
     VmaVulkanFunctions functions;
-    VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.device = device;
-    allocatorInfo.physicalDevice = physical_device;
+    VmaAllocatorCreateInfo allocator_info = {};
+    allocator_info.device = device;
+    allocator_info.physicalDevice = physical_device;
 
-    functions.vkGetPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)gpuVkGetPhysicalDeviceProperties;
-    functions.vkGetPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)gpuVkGetPhysicalDeviceMemoryProperties;
-    functions.vkAllocateMemory = (PFN_vkAllocateMemory)gpuVkAllocateMemory;
-    functions.vkFreeMemory = (PFN_vkFreeMemory)gpuVkFreeMemory;
-    functions.vkMapMemory = (PFN_vkMapMemory)gpuVkMapMemory;
-    functions.vkUnmapMemory = (PFN_vkUnmapMemory)gpuVkUnmapMemory;
-    functions.vkFlushMappedMemoryRanges = (PFN_vkFlushMappedMemoryRanges)gpuVkFlushMappedMemoryRanges;
-    functions.vkInvalidateMappedMemoryRanges = (PFN_vkInvalidateMappedMemoryRanges)gpuVkInvalidateMappedMemoryRanges;
-    functions.vkBindBufferMemory = (PFN_vkBindBufferMemory)gpuVkBindBufferMemory;
-    functions.vkBindImageMemory = (PFN_vkBindImageMemory)gpuVkBindImageMemory;
-    functions.vkGetBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)gpuVkGetBufferMemoryRequirements;
-    functions.vkGetImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements)gpuVkGetImageMemoryRequirements;
-    functions.vkCreateBuffer = (PFN_vkCreateBuffer)gpuVkCreateBuffer;
-    functions.vkDestroyBuffer = (PFN_vkDestroyBuffer)gpuVkDestroyBuffer;
-    functions.vkCreateImage = (PFN_vkCreateImage)gpuVkCreateImage;
-    functions.vkDestroyImage = (PFN_vkDestroyImage)gpuVkDestroyImage;
-    functions.vkCmdCopyBuffer = (PFN_vkCmdCopyBuffer)gpuVkCmdCopyBuffer;
-    allocatorInfo.pVulkanFunctions = &functions;
+    functions.vkGetPhysicalDeviceProperties = static_cast<PFN_vkGetPhysicalDeviceProperties>(gpuVkGetPhysicalDeviceProperties);
+    functions.vkGetPhysicalDeviceMemoryProperties =
+        static_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(gpuVkGetPhysicalDeviceMemoryProperties);
+    functions.vkAllocateMemory = static_cast<PFN_vkAllocateMemory>(gpuVkAllocateMemory);
+    functions.vkFreeMemory = static_cast<PFN_vkFreeMemory>(gpuVkFreeMemory);
+    functions.vkMapMemory = static_cast<PFN_vkMapMemory>(gpuVkMapMemory);
+    functions.vkUnmapMemory = static_cast<PFN_vkUnmapMemory>(gpuVkUnmapMemory);
+    functions.vkFlushMappedMemoryRanges = static_cast<PFN_vkFlushMappedMemoryRanges>(gpuVkFlushMappedMemoryRanges);
+    functions.vkInvalidateMappedMemoryRanges = static_cast<PFN_vkInvalidateMappedMemoryRanges>(gpuVkInvalidateMappedMemoryRanges);
+    functions.vkBindBufferMemory = static_cast<PFN_vkBindBufferMemory>(gpuVkBindBufferMemory);
+    functions.vkBindImageMemory = static_cast<PFN_vkBindImageMemory>(gpuVkBindImageMemory);
+    functions.vkGetBufferMemoryRequirements = static_cast<PFN_vkGetBufferMemoryRequirements>(gpuVkGetBufferMemoryRequirements);
+    functions.vkGetImageMemoryRequirements = static_cast<PFN_vkGetImageMemoryRequirements>(gpuVkGetImageMemoryRequirements);
+    functions.vkCreateBuffer = static_cast<PFN_vkCreateBuffer>(gpuVkCreateBuffer);
+    functions.vkDestroyBuffer = static_cast<PFN_vkDestroyBuffer>(gpuVkDestroyBuffer);
+    functions.vkCreateImage = static_cast<PFN_vkCreateImage>(gpuVkCreateImage);
+    functions.vkDestroyImage = static_cast<PFN_vkDestroyImage>(gpuVkDestroyImage);
+    functions.vkCmdCopyBuffer = static_cast<PFN_vkCmdCopyBuffer>(gpuVkCmdCopyBuffer);
+    allocator_info.pVulkanFunctions = &functions;
 
-    return vmaCreateAllocator(&allocatorInfo, pAllocator);
+    return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
 void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
@@ -255,15 +256,15 @@ void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo
     }
     if (features) {
         VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features);
-        VkBool32 *featurePtr = reinterpret_cast<VkBool32 *>(features);
+        VkBool32 *feature_ptr = reinterpret_cast<VkBool32 *>(features);
         VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features);
         for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures); i += (sizeof(VkBool32))) {
             if (*supported && *desired) {
-                *featurePtr = true;
+                *feature_ptr = true;
             }
             supported++;
             desired++;
-            featurePtr++;
+            feature_ptr++;
         }
     } else {
         VkPhysicalDeviceFeatures new_features = {};
@@ -520,10 +521,11 @@ void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint
     } else {
         bool found_opstring = false;
         std::string prefix;
-        if (from_printf)
+        if (from_printf) {
             prefix = "Debug shader printf message generated ";
-        else
+        } else {
             prefix = "Shader validation error occurred ";
+        }
         for (auto insn : shader) {
             if ((insn.opcode() == spv::OpString) && (insn.len() >= 3) && (insn.word(1) == reported_file_id)) {
                 found_opstring = true;

@@ -270,16 +270,16 @@ void SetCustomStypeInfo(std::string raw_id_list, std::string delimiter) {
 
 uint32_t SetMessageDuplicateLimit(std::string &config_message_limit, std::string &env_message_limit) {
     uint32_t limit = 0;
-    auto GetNum = [](std::string &source_string) {
+    auto get_num = [](std::string &source_string) {
         uint32_t limit = 0;
         int radix = ((source_string.find("0x") == 0) ? 16 : 10);
         limit = static_cast<uint32_t>(std::strtoul(source_string.c_str(), nullptr, radix));
         return limit;
     };
     // ENV var takes precedence over settings file
-    limit = GetNum(env_message_limit);
+    limit = get_num(env_message_limit);
     if (limit == 0) {
-        limit = GetNum(config_message_limit);
+        limit = get_num(config_message_limit);
     }
     return limit;
 }

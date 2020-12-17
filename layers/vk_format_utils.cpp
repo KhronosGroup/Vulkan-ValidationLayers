@@ -38,7 +38,7 @@ struct VULKAN_FORMAT_INFO {
 
 // Set up data structure with size(bytes) and number of channels for each Vulkan format
 // For compressed and multi-plane formats, size is bytes per compressed or shared block
-const std::map<VkFormat, VULKAN_FORMAT_INFO> vk_format_table = {
+const std::map<VkFormat, VULKAN_FORMAT_INFO> kVkFormatTable = {
     {VK_FORMAT_UNDEFINED,                   {0, 0, VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT }},
     {VK_FORMAT_R4G4_UNORM_PACK8,            {1, 2, VK_FORMAT_COMPATIBILITY_CLASS_8_BIT}},
     {VK_FORMAT_R4G4B4A4_UNORM_PACK16,       {2, 4, VK_FORMAT_COMPATIBILITY_CLASS_16_BIT}},
@@ -1181,8 +1181,8 @@ VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format) {
 
 // Return format class of the specified format
 VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat format) {
-    auto item = vk_format_table.find(format);
-    if (item != vk_format_table.end()) {
+    auto item = kVkFormatTable.find(format);
+    if (item != kVkFormatTable.end()) {
         return item->second.format_class;
     }
     return VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT;
@@ -1212,8 +1212,8 @@ VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags a
         format = FindMultiplaneCompatibleFormat(format, aspectMask);
     }
 
-    auto item = vk_format_table.find(format);
-    if (item != vk_format_table.end()) {
+    auto item = kVkFormatTable.find(format);
+    if (item != kVkFormatTable.end()) {
         return item->second.size;
     }
     return 0;
@@ -1233,8 +1233,8 @@ VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspec
 
 // Return the number of channels for a given format
 uint32_t FormatChannelCount(VkFormat format) {
-    auto item = vk_format_table.find(format);
-    if (item != vk_format_table.end()) {
+    auto item = kVkFormatTable.find(format);
+    if (item != kVkFormatTable.end()) {
         return item->second.channel_count;
     }
     return 0;
@@ -1269,7 +1269,7 @@ struct VULKAN_MULTIPLANE_COMPATIBILITY {
 
 // Source: Vulkan spec Table 47. Plane Format Compatibility Table
 // clang-format off
-static const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY>vk_multiplane_compatibility_map {
+static const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY>kVkMultiplaneCompatibilityMap {
     { VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,                  { { { 1, 1, VK_FORMAT_R8_UNORM },
                                                                 { 2, 2, VK_FORMAT_R8_UNORM },
                                                                 { 2, 2, VK_FORMAT_R8_UNORM } } } },
@@ -1354,8 +1354,8 @@ uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
 
 VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
     uint32_t plane_idx = GetPlaneIndex(plane_aspect);
-    auto it = vk_multiplane_compatibility_map.find(mp_fmt);
-    if ((it == vk_multiplane_compatibility_map.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
+    auto it = kVkMultiplaneCompatibilityMap.find(mp_fmt);
+    if ((it == kVkMultiplaneCompatibilityMap.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
         return VK_FORMAT_UNDEFINED;
     }
 
@@ -1365,8 +1365,8 @@ VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImage
 VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
     VkExtent2D divisors = {1, 1};
     uint32_t plane_idx = GetPlaneIndex(plane_aspect);
-    auto it = vk_multiplane_compatibility_map.find(mp_fmt);
-    if ((it == vk_multiplane_compatibility_map.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
+    auto it = kVkMultiplaneCompatibilityMap.find(mp_fmt);
+    if ((it == kVkMultiplaneCompatibilityMap.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
         return divisors;
     }
 
@@ -1377,67 +1377,67 @@ VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImage
 
 VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count,
                                          const VkImageCopy *regions) {
-    size_t srcSize = 0, dstSize = 0;
+    size_t src_size = 0, dst_size = 0;
 
     if (FormatIsMultiplane(srcFormat) || FormatIsMultiplane(dstFormat)) {
         for (uint32_t i = 0; i < region_count; i++) {
             if (FormatIsMultiplane(srcFormat)) {
-                VkFormat planeFormat = FindMultiplaneCompatibleFormat(srcFormat, regions[i].srcSubresource.aspectMask);
-                srcSize = FormatElementSize(planeFormat);
+                VkFormat plane_format = FindMultiplaneCompatibleFormat(srcFormat, regions[i].srcSubresource.aspectMask);
+                src_size = FormatElementSize(plane_format);
             } else {
-                srcSize = FormatElementSize(srcFormat);
+                src_size = FormatElementSize(srcFormat);
             }
             if (FormatIsMultiplane(dstFormat)) {
-                VkFormat planeFormat = FindMultiplaneCompatibleFormat(dstFormat, regions[i].dstSubresource.aspectMask);
-                dstSize = FormatElementSize(planeFormat);
+                VkFormat plane_format = FindMultiplaneCompatibleFormat(dstFormat, regions[i].dstSubresource.aspectMask);
+                dst_size = FormatElementSize(plane_format);
             } else {
-                dstSize = FormatElementSize(dstFormat);
+                dst_size = FormatElementSize(dstFormat);
             }
-            if (dstSize != srcSize) return false;
+            if (dst_size != src_size) return false;
         }
         return true;
     } else {
-        srcSize = FormatElementSize(srcFormat);
-        dstSize = FormatElementSize(dstFormat);
-        return (dstSize == srcSize);
+        src_size = FormatElementSize(srcFormat);
+        dst_size = FormatElementSize(dstFormat);
+        return (dst_size == src_size);
     }
 }
 
 // Source: Vulkan spec Table 69. Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views
-const std::set<VkFormat> vk_formats_requiring_ycbcr_conversion{VK_FORMAT_G8B8G8R8_422_UNORM,
-                                                               VK_FORMAT_B8G8R8G8_422_UNORM,
-                                                               VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
-                                                               VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                                               VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM,
-                                                               VK_FORMAT_G8_B8R8_2PLANE_422_UNORM,
-                                                               VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,
-                                                               VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16,
-                                                               VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16,
-                                                               VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16,
-                                                               VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16,
-                                                               VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16,
-                                                               VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16,
-                                                               VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16,
-                                                               VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16,
-                                                               VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16,
-                                                               VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16,
-                                                               VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16,
-                                                               VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16,
-                                                               VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16,
-                                                               VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16,
-                                                               VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16,
-                                                               VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16,
-                                                               VK_FORMAT_G16B16G16R16_422_UNORM,
-                                                               VK_FORMAT_B16G16R16G16_422_UNORM,
-                                                               VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,
-                                                               VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,
-                                                               VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,
-                                                               VK_FORMAT_G16_B16R16_2PLANE_422_UNORM,
-                                                               VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM};
+const std::set<VkFormat> kVkFormatsRequiringYcbcrConversion{VK_FORMAT_G8B8G8R8_422_UNORM,
+                                                            VK_FORMAT_B8G8R8G8_422_UNORM,
+                                                            VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
+                                                            VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
+                                                            VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM,
+                                                            VK_FORMAT_G8_B8R8_2PLANE_422_UNORM,
+                                                            VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,
+                                                            VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16,
+                                                            VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16,
+                                                            VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16,
+                                                            VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16,
+                                                            VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16,
+                                                            VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16,
+                                                            VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16,
+                                                            VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16,
+                                                            VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16,
+                                                            VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16,
+                                                            VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16,
+                                                            VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16,
+                                                            VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16,
+                                                            VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16,
+                                                            VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16,
+                                                            VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16,
+                                                            VK_FORMAT_G16B16G16R16_422_UNORM,
+                                                            VK_FORMAT_B16G16R16G16_422_UNORM,
+                                                            VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,
+                                                            VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,
+                                                            VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,
+                                                            VK_FORMAT_G16_B16R16_2PLANE_422_UNORM,
+                                                            VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM};
 
 VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format) {
-    auto it = vk_formats_requiring_ycbcr_conversion.find(format);
-    return (it != vk_formats_requiring_ycbcr_conversion.end());
+    auto it = kVkFormatsRequiringYcbcrConversion.find(format);
+    return (it != kVkFormatsRequiringYcbcrConversion.end());
 }
 
 VK_LAYER_EXPORT bool FormatIsXChromaSubsampled(VkFormat format) {

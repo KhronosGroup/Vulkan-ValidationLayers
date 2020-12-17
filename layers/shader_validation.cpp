@@ -114,9 +114,9 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
 
     for (auto insn : *this) {
         // offset is not 0, it means it's updated and the offset is in a Function.
-        if (func_set.offset)
+        if (func_set.offset) {
             func_set.op_lists.insert({insn.opcode(), insn.offset()});
-        else if (entry_point) {
+        } else if (entry_point) {
             entry_point->decorate_list.insert({insn.opcode(), insn.offset()});
         }
 
@@ -181,8 +181,8 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
 
                 // Decorations
             case spv::OpDecorate: {
-                auto targetId = insn.word(1);
-                decorations[targetId].add(insn.word(2), insn.len() > 3u ? insn.word(3) : 0u);
+                auto target_id = insn.word(1);
+                decorations[target_id].add(insn.word(2), insn.len() > 3u ? insn.word(3) : 0u);
             } break;
             case spv::OpGroupDecorate: {
                 auto const &src = decorations[insn.word(1)];
@@ -192,7 +192,7 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 // Entry points ... add to the entrypoint table
             case spv::OpEntryPoint: {
                 // Entry points do not have an id (the id is the function id) and thus need their own table
-                auto entrypoint_name = (char const *)&insn.word(3);
+                auto entrypoint_name = reinterpret_cast<char const *>(&insn.word(3));
                 auto execution_model = insn.word(1);
                 auto entrypoint_stage = ExecutionModelToShaderStageFlagBits(execution_model);
                 entry_points.emplace(entrypoint_name,
@@ -741,9 +741,9 @@ static std::map<location_t, interface_var> CollectInterfaceByLocation(SHADER_MOD
             bool is_patch = (d.flags & decoration_set::patch_bit) != 0;
             bool is_relaxed_precision = (d.flags & decoration_set::relaxed_precision_bit) != 0;
 
-            if (builtin != -1)
+            if (builtin != -1) {
                 continue;
-            else if (!CollectInterfaceBlockMembers(src, &out, is_array_of_verts, id, type, is_patch, location)) {
+            } else if (!CollectInterfaceBlockMembers(src, &out, is_array_of_verts, id, type, is_patch, location)) {
                 // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
                 // one result for each.
                 unsigned num_locations = GetLocationsConsumedByType(src, type, is_array_of_verts && !is_patch);
@@ -766,33 +766,33 @@ static std::map<location_t, interface_var> CollectInterfaceByLocation(SHADER_MOD
 static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint,
                                                         uint32_t storageClass) {
     std::vector<uint32_t> variables;
-    std::vector<uint32_t> builtinStructMembers;
-    std::vector<uint32_t> builtinDecorations;
+    std::vector<uint32_t> builtin_struct_members;
+    std::vector<uint32_t> builtin_decorations;
 
     for (auto insn : *src) {
         switch (insn.opcode()) {
             // Find all built-in member decorations
             case spv::OpMemberDecorate:
                 if (insn.word(3) == spv::DecorationBuiltIn) {
-                    builtinStructMembers.push_back(insn.word(1));
+                    builtin_struct_members.push_back(insn.word(1));
                 }
                 break;
             // Find all built-in decorations
             case spv::OpDecorate:
                 switch (insn.word(2)) {
                     case spv::DecorationBlock: {
-                        uint32_t blockID = insn.word(1);
-                        for (auto builtInBlockID : builtinStructMembers) {
+                        uint32_t block_id = insn.word(1);
+                        for (auto built_in_block_id : builtin_struct_members) {
                             // Check if one of the members of the block are built-in -> the block is built-in
-                            if (blockID == builtInBlockID) {
-                                builtinDecorations.push_back(blockID);
+                            if (block_id == built_in_block_id) {
+                                builtin_decorations.push_back(block_id);
                                 break;
                             }
                         }
                         break;
                     }
                     case spv::DecorationBuiltIn:
-                        builtinDecorations.push_back(insn.word(1));
+                        builtin_decorations.push_back(insn.word(1));
                         break;
                     default:
                         break;
@@ -813,7 +813,7 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
     }
 
     // Find all members belonging to the builtin block selected
-    std::vector<uint32_t> builtinBlockMembers;
+    std::vector<uint32_t> builtin_block_members;
     for (auto &var : variables) {
         auto def = src->get_def(src->get_def(var).word(3));
 
@@ -822,17 +822,18 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
 
         // Now find all members belonging to the struct defining the IO block
         if (def.opcode() == spv::OpTypeStruct) {
-            for (auto builtInID : builtinDecorations) {
-                if (builtInID == def.word(1)) {
-                    for (int i = 2; i < (int)def.len(); i++)
-                        builtinBlockMembers.push_back(spv::BuiltInMax);  // Start with undefined builtin for each struct member.
-                                                                         // These shouldn't be left after replacing.
+            for (auto built_in_id : builtin_decorations) {
+                if (built_in_id == def.word(1)) {
+                    for (int i = 2; i < static_cast<int>(def.len()); i++) {
+                        builtin_block_members.push_back(spv::BuiltInMax);  // Start with undefined builtin for each struct member.
+                    }
+                    // These shouldn't be left after replacing.
                     for (auto insn : *src) {
-                        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == builtInID &&
+                        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == built_in_id &&
                             insn.word(3) == spv::DecorationBuiltIn) {
-                            auto structIndex = insn.word(2);
-                            assert(structIndex < builtinBlockMembers.size());
-                            builtinBlockMembers[structIndex] = insn.word(4);
+                            auto struct_index = insn.word(2);
+                            assert(struct_index < builtin_block_members.size());
+                            builtin_block_members[struct_index] = insn.word(4);
                         }
                     }
                 }
@@ -840,7 +841,7 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
         }
     }
 
-    return builtinBlockMembers;
+    return builtin_block_members;
 }
 
 static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
@@ -1599,8 +1600,8 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
         location_map[location].output = &output_it.second;
     }
 
-    const bool alphaToCoverageEnabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
-                                        pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
+    const bool alpha_to_coverage_enabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
+                                           pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
 
     for (const auto &location_it : location_map) {
         const auto reference = location_it.second.reference;
@@ -1619,7 +1620,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
                                    location);
             }
         } else if (!attachment && output) {
-            if (!(alphaToCoverageEnabled && location == 0)) {
+            if (!(alpha_to_coverage_enabled && location == 0)) {
                 skip |= LogWarning(fs->vk_shader_module, kVUID_Core_Shader_OutputNotConsumed,
                                    "fragment shader writes to output location %" PRIu32 " with no matching attachment", location);
             }
@@ -1641,9 +1642,9 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
     }
 
     const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
-    bool locationZeroHasAlpha = output_zero && fs->get_def(output_zero->type_id) != fs->end() &&
-                                GetComponentsConsumedByType(fs, output_zero->type_id, false) == 4;
-    if (alphaToCoverageEnabled && !locationZeroHasAlpha) {
+    bool location_zero_has_alpha = output_zero && fs->get_def(output_zero->type_id) != fs->end() &&
+                                   GetComponentsConsumedByType(fs, output_zero->type_id, false) == 4;
+    if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
         skip |= LogError(fs->vk_shader_module, kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
                          "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
     }
@@ -2168,7 +2169,7 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
     bool skip = false;
 
     auto const subgroup_props = phys_dev_props_core11;
-    const VkSubgroupFeatureFlags supportedStages = subgroup_props.subgroupSupportedStages;
+    const VkSubgroupFeatureFlags supported_stages = subgroup_props.subgroupSupportedStages;
 
     for (auto inst : *module) {
         // Check anything using a group operation (which currently is only OpGroupNonUnifrom* operations)
@@ -2202,7 +2203,7 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
             if (scope_type == spv::ScopeSubgroup) {
                 // "Group operations with subgroup scope" must have stage support
                 skip |=
-                    RequirePropertyFlag(supportedStages & stage, string_VkShaderStageFlagBits(stage),
+                    RequirePropertyFlag(supported_stages & stage, string_VkShaderStageFlagBits(stage),
                                         "VkPhysicalDeviceSubgroupProperties::supportedStages", kVUID_Core_Shader_ExceedDeviceLimit);
             }
 
@@ -2244,7 +2245,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     bool skip = false;
     auto const &limits = phys_dev_props.limits;
 
-    std::set<uint32_t> patchIDs;
+    std::set<uint32_t> patch_i_ds;
     struct Variable {
         uint32_t baseTypePtrID;
         uint32_t ID;
@@ -2252,11 +2253,11 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     };
     std::vector<Variable> variables;
 
-    uint32_t numVertices = 0;
+    uint32_t num_vertices = 0;
     bool is_iso_lines = false;
     bool is_point_mode = false;
 
-    auto entrypointVariables = FindEntrypointInterfaces(entrypoint);
+    auto entrypoint_variables = FindEntrypointInterfaces(entrypoint);
 
     for (auto insn : *src) {
         switch (insn.opcode()) {
@@ -2264,7 +2265,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             case spv::OpDecorate:
                 switch (insn.word(2)) {
                     case spv::DecorationPatch: {
-                        patchIDs.insert(insn.word(1));
+                        patch_i_ds.insert(insn.word(1));
                         break;
                     }
                     default:
@@ -2277,7 +2278,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                 var.storageClass = insn.word(3);
                 if ((var.storageClass == spv::StorageClassInput || var.storageClass == spv::StorageClassOutput) &&
                     // Only include variables in the entrypoint's interface
-                    find(entrypointVariables.begin(), entrypointVariables.end(), insn.word(2)) != entrypointVariables.end()) {
+                    find(entrypoint_variables.begin(), entrypoint_variables.end(), insn.word(2)) != entrypoint_variables.end()) {
                     var.baseTypePtrID = insn.word(1);
                     var.ID = insn.word(2);
                     variables.push_back(var);
@@ -2290,7 +2291,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                         default:
                             break;
                         case spv::ExecutionModeOutputVertices:
-                            numVertices = insn.word(3);
+                            num_vertices = insn.word(3);
                             break;
                         case spv::ExecutionModeIsolines:
                             is_iso_lines = true;
@@ -2312,8 +2313,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
         (pStage->stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
          pStage->stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT);
 
-    uint32_t numCompIn = 0, numCompOut = 0;
-    int maxCompIn = 0, maxCompOut = 0;
+    uint32_t num_comp_in = 0, num_comp_out = 0;
+    int max_comp_in = 0, max_comp_out = 0;
 
     auto inputs = CollectInterfaceByLocation(src, entrypoint, spv::StorageClassInput, strip_input_array_level);
     auto outputs = CollectInterfaceByLocation(src, entrypoint, spv::StorageClassOutput, strip_output_array_level);
@@ -2333,8 +2334,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             continue;
         }
 
-        int numComponents = GetComponentsConsumedByType(src, iv.type_id, strip_input_array_level);
-        maxCompIn = std::max(maxCompIn, location * 4 + component + numComponents);
+        int num_components = GetComponentsConsumedByType(src, iv.type_id, strip_input_array_level);
+        max_comp_in = std::max(max_comp_in, location * 4 + component + num_components);
     }
 
     // Find max component location used for output variables.
@@ -2352,8 +2353,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             continue;
         }
 
-        int numComponents = GetComponentsConsumedByType(src, iv.type_id, strip_output_array_level);
-        maxCompOut = std::max(maxCompOut, location * 4 + component + numComponents);
+        int num_components = GetComponentsConsumedByType(src, iv.type_id, strip_output_array_level);
+        max_comp_out = std::max(max_comp_out, location * 4 + component + num_components);
     }
 
     // XXX TODO: Would be nice to rewrite this to use CollectInterfaceByLocation (or something similar),
@@ -2362,25 +2363,25 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
         // Check if the variable is a patch. Patches can also be members of blocks,
         // but if they are then the top-level arrayness has already been stripped
         // by the time GetComponentsConsumedByType gets to it.
-        bool isPatch = patchIDs.find(var.ID) != patchIDs.end();
+        bool is_patch = patch_i_ds.find(var.ID) != patch_i_ds.end();
 
         if (var.storageClass == spv::StorageClassInput) {
-            numCompIn += GetComponentsConsumedByType(src, var.baseTypePtrID, strip_input_array_level && !isPatch);
+            num_comp_in += GetComponentsConsumedByType(src, var.baseTypePtrID, strip_input_array_level && !is_patch);
         } else {  // var.storageClass == spv::StorageClassOutput
-            numCompOut += GetComponentsConsumedByType(src, var.baseTypePtrID, strip_output_array_level && !isPatch);
+            num_comp_out += GetComponentsConsumedByType(src, var.baseTypePtrID, strip_output_array_level && !is_patch);
         }
     }
 
     switch (pStage->stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
-            if (numCompOut > limits.maxVertexOutputComponents) {
+            if (num_comp_out > limits.maxVertexOutputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Vertex shader exceeds "
                                  "VkPhysicalDeviceLimits::maxVertexOutputComponents of %u "
                                  "components by %u components",
-                                 limits.maxVertexOutputComponents, numCompOut - limits.maxVertexOutputComponents);
+                                 limits.maxVertexOutputComponents, num_comp_out - limits.maxVertexOutputComponents);
             }
-            if (maxCompOut > (int)limits.maxVertexOutputComponents) {
+            if (max_comp_out > static_cast<int>(limits.maxVertexOutputComponents)) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Vertex shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxVertexOutputComponents (%u)",
@@ -2389,30 +2390,30 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            if (numCompIn > limits.maxTessellationControlPerVertexInputComponents) {
+            if (num_comp_in > limits.maxTessellationControlPerVertexInputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents of %u "
                                  "components by %u components",
                                  limits.maxTessellationControlPerVertexInputComponents,
-                                 numCompIn - limits.maxTessellationControlPerVertexInputComponents);
+                                 num_comp_in - limits.maxTessellationControlPerVertexInputComponents);
             }
-            if (maxCompIn > (int)limits.maxTessellationControlPerVertexInputComponents) {
+            if (max_comp_in > static_cast<int>(limits.maxTessellationControlPerVertexInputComponents)) {
                 skip |=
                     LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation control shader input variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents (%u)",
                              limits.maxTessellationControlPerVertexInputComponents);
             }
-            if (numCompOut > limits.maxTessellationControlPerVertexOutputComponents) {
+            if (num_comp_out > limits.maxTessellationControlPerVertexOutputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents of %u "
                                  "components by %u components",
                                  limits.maxTessellationControlPerVertexOutputComponents,
-                                 numCompOut - limits.maxTessellationControlPerVertexOutputComponents);
+                                 num_comp_out - limits.maxTessellationControlPerVertexOutputComponents);
             }
-            if (maxCompOut > (int)limits.maxTessellationControlPerVertexOutputComponents) {
+            if (max_comp_out > static_cast<int>(limits.maxTessellationControlPerVertexOutputComponents)) {
                 skip |=
                     LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation control shader output variable uses location that "
@@ -2422,30 +2423,30 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            if (numCompIn > limits.maxTessellationEvaluationInputComponents) {
+            if (num_comp_in > limits.maxTessellationEvaluationInputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents of %u "
                                  "components by %u components",
                                  limits.maxTessellationEvaluationInputComponents,
-                                 numCompIn - limits.maxTessellationEvaluationInputComponents);
+                                 num_comp_in - limits.maxTessellationEvaluationInputComponents);
             }
-            if (maxCompIn > (int)limits.maxTessellationEvaluationInputComponents) {
+            if (max_comp_in > static_cast<int>(limits.maxTessellationEvaluationInputComponents)) {
                 skip |=
                     LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader input variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents (%u)",
                              limits.maxTessellationEvaluationInputComponents);
             }
-            if (numCompOut > limits.maxTessellationEvaluationOutputComponents) {
+            if (num_comp_out > limits.maxTessellationEvaluationOutputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents of %u "
                                  "components by %u components",
                                  limits.maxTessellationEvaluationOutputComponents,
-                                 numCompOut - limits.maxTessellationEvaluationOutputComponents);
+                                 num_comp_out - limits.maxTessellationEvaluationOutputComponents);
             }
-            if (maxCompOut > (int)limits.maxTessellationEvaluationOutputComponents) {
+            if (max_comp_out > static_cast<int>(limits.maxTessellationEvaluationOutputComponents)) {
                 skip |=
                     LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader output variable uses location that "
@@ -2468,51 +2469,51 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             break;
 
         case VK_SHADER_STAGE_GEOMETRY_BIT:
-            if (numCompIn > limits.maxGeometryInputComponents) {
+            if (num_comp_in > limits.maxGeometryInputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryInputComponents of %u "
                                  "components by %u components",
-                                 limits.maxGeometryInputComponents, numCompIn - limits.maxGeometryInputComponents);
+                                 limits.maxGeometryInputComponents, num_comp_in - limits.maxGeometryInputComponents);
             }
-            if (maxCompIn > (int)limits.maxGeometryInputComponents) {
+            if (max_comp_in > static_cast<int>(limits.maxGeometryInputComponents)) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryInputComponents (%u)",
                                  limits.maxGeometryInputComponents);
             }
-            if (numCompOut > limits.maxGeometryOutputComponents) {
+            if (num_comp_out > limits.maxGeometryOutputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryOutputComponents of %u "
                                  "components by %u components",
-                                 limits.maxGeometryOutputComponents, numCompOut - limits.maxGeometryOutputComponents);
+                                 limits.maxGeometryOutputComponents, num_comp_out - limits.maxGeometryOutputComponents);
             }
-            if (maxCompOut > (int)limits.maxGeometryOutputComponents) {
+            if (max_comp_out > static_cast<int>(limits.maxGeometryOutputComponents)) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryOutputComponents (%u)",
                                  limits.maxGeometryOutputComponents);
             }
-            if (numCompOut * numVertices > limits.maxGeometryTotalOutputComponents) {
+            if (num_comp_out * num_vertices > limits.maxGeometryTotalOutputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents of %u "
                                  "components by %u components",
                                  limits.maxGeometryTotalOutputComponents,
-                                 numCompOut * numVertices - limits.maxGeometryTotalOutputComponents);
+                                 num_comp_out * num_vertices - limits.maxGeometryTotalOutputComponents);
             }
             break;
 
         case VK_SHADER_STAGE_FRAGMENT_BIT:
-            if (numCompIn > limits.maxFragmentInputComponents) {
+            if (num_comp_in > limits.maxFragmentInputComponents) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Fragment shader exceeds "
                                  "VkPhysicalDeviceLimits::maxFragmentInputComponents of %u "
                                  "components by %u components",
-                                 limits.maxFragmentInputComponents, numCompIn - limits.maxFragmentInputComponents);
+                                 limits.maxFragmentInputComponents, num_comp_in - limits.maxFragmentInputComponents);
             }
-            if (maxCompIn > (int)limits.maxFragmentInputComponents) {
+            if (max_comp_in > static_cast<int>(limits.maxFragmentInputComponents)) {
                 skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Fragment shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxFragmentInputComponents (%u)",
@@ -2764,35 +2765,35 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
                 }
                 break;
             case spv::OpTypeCooperativeMatrixNV: {
-                CoopMatType M;
-                M.Init(insn.word(1), src, pStage, id_to_spec_id);
+                CoopMatType m;
+                m.Init(insn.word(1), src, pStage, id_to_spec_id);
 
-                if (M.all_constant) {
+                if (m.all_constant) {
                     // Validate that the type parameters are all supported for one of the
                     // operands of a cooperative matrix property.
                     bool valid = false;
                     for (unsigned i = 0; i < cooperative_matrix_properties.size(); ++i) {
-                        if (cooperative_matrix_properties[i].AType == M.component_type &&
-                            cooperative_matrix_properties[i].MSize == M.rows && cooperative_matrix_properties[i].KSize == M.cols &&
-                            cooperative_matrix_properties[i].scope == M.scope) {
+                        if (cooperative_matrix_properties[i].AType == m.component_type &&
+                            cooperative_matrix_properties[i].MSize == m.rows && cooperative_matrix_properties[i].KSize == m.cols &&
+                            cooperative_matrix_properties[i].scope == m.scope) {
                             valid = true;
                             break;
                         }
-                        if (cooperative_matrix_properties[i].BType == M.component_type &&
-                            cooperative_matrix_properties[i].KSize == M.rows && cooperative_matrix_properties[i].NSize == M.cols &&
-                            cooperative_matrix_properties[i].scope == M.scope) {
+                        if (cooperative_matrix_properties[i].BType == m.component_type &&
+                            cooperative_matrix_properties[i].KSize == m.rows && cooperative_matrix_properties[i].NSize == m.cols &&
+                            cooperative_matrix_properties[i].scope == m.scope) {
                             valid = true;
                             break;
                         }
-                        if (cooperative_matrix_properties[i].CType == M.component_type &&
-                            cooperative_matrix_properties[i].MSize == M.rows && cooperative_matrix_properties[i].NSize == M.cols &&
-                            cooperative_matrix_properties[i].scope == M.scope) {
+                        if (cooperative_matrix_properties[i].CType == m.component_type &&
+                            cooperative_matrix_properties[i].MSize == m.rows && cooperative_matrix_properties[i].NSize == m.cols &&
+                            cooperative_matrix_properties[i].scope == m.scope) {
                             valid = true;
                             break;
                         }
-                        if (cooperative_matrix_properties[i].DType == M.component_type &&
-                            cooperative_matrix_properties[i].MSize == M.rows && cooperative_matrix_properties[i].NSize == M.cols &&
-                            cooperative_matrix_properties[i].scope == M.scope) {
+                        if (cooperative_matrix_properties[i].DType == m.component_type &&
+                            cooperative_matrix_properties[i].MSize == m.rows && cooperative_matrix_properties[i].NSize == m.cols &&
+                            cooperative_matrix_properties[i].scope == m.scope) {
                             valid = true;
                             break;
                         }
@@ -2806,7 +2807,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
                 break;
             }
             case spv::OpCooperativeMatrixMulAddNV: {
-                CoopMatType A, B, C, D;
+                CoopMatType a, b, c, d;
                 if (id_to_type_id.find(insn.word(2)) == id_to_type_id.end() ||
                     id_to_type_id.find(insn.word(3)) == id_to_type_id.end() ||
                     id_to_type_id.find(insn.word(4)) == id_to_type_id.end() ||
@@ -2815,31 +2816,31 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
                     assert(false);
                     break;
                 }
-                D.Init(id_to_type_id[insn.word(2)], src, pStage, id_to_spec_id);
-                A.Init(id_to_type_id[insn.word(3)], src, pStage, id_to_spec_id);
-                B.Init(id_to_type_id[insn.word(4)], src, pStage, id_to_spec_id);
-                C.Init(id_to_type_id[insn.word(5)], src, pStage, id_to_spec_id);
+                d.Init(id_to_type_id[insn.word(2)], src, pStage, id_to_spec_id);
+                a.Init(id_to_type_id[insn.word(3)], src, pStage, id_to_spec_id);
+                b.Init(id_to_type_id[insn.word(4)], src, pStage, id_to_spec_id);
+                c.Init(id_to_type_id[insn.word(5)], src, pStage, id_to_spec_id);
 
-                if (A.all_constant && B.all_constant && C.all_constant && D.all_constant) {
+                if (a.all_constant && b.all_constant && c.all_constant && d.all_constant) {
                     // Validate that the type parameters are all supported for the same
                     // cooperative matrix property.
                     bool valid = false;
                     for (unsigned i = 0; i < cooperative_matrix_properties.size(); ++i) {
-                        if (cooperative_matrix_properties[i].AType == A.component_type &&
-                            cooperative_matrix_properties[i].MSize == A.rows && cooperative_matrix_properties[i].KSize == A.cols &&
-                            cooperative_matrix_properties[i].scope == A.scope &&
+                        if (cooperative_matrix_properties[i].AType == a.component_type &&
+                            cooperative_matrix_properties[i].MSize == a.rows && cooperative_matrix_properties[i].KSize == a.cols &&
+                            cooperative_matrix_properties[i].scope == a.scope &&
 
-                            cooperative_matrix_properties[i].BType == B.component_type &&
-                            cooperative_matrix_properties[i].KSize == B.rows && cooperative_matrix_properties[i].NSize == B.cols &&
-                            cooperative_matrix_properties[i].scope == B.scope &&
+                            cooperative_matrix_properties[i].BType == b.component_type &&
+                            cooperative_matrix_properties[i].KSize == b.rows && cooperative_matrix_properties[i].NSize == b.cols &&
+                            cooperative_matrix_properties[i].scope == b.scope &&
 
-                            cooperative_matrix_properties[i].CType == C.component_type &&
-                            cooperative_matrix_properties[i].MSize == C.rows && cooperative_matrix_properties[i].NSize == C.cols &&
-                            cooperative_matrix_properties[i].scope == C.scope &&
+                            cooperative_matrix_properties[i].CType == c.component_type &&
+                            cooperative_matrix_properties[i].MSize == c.rows && cooperative_matrix_properties[i].NSize == c.cols &&
+                            cooperative_matrix_properties[i].scope == c.scope &&
 
-                            cooperative_matrix_properties[i].DType == D.component_type &&
-                            cooperative_matrix_properties[i].MSize == D.rows && cooperative_matrix_properties[i].NSize == D.cols &&
-                            cooperative_matrix_properties[i].scope == D.scope) {
+                            cooperative_matrix_properties[i].DType == d.component_type &&
+                            cooperative_matrix_properties[i].MSize == d.rows && cooperative_matrix_properties[i].NSize == d.cols &&
+                            cooperative_matrix_properties[i].scope == d.scope) {
                             valid = true;
                             break;
                         }
@@ -2874,7 +2875,7 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
 
     bool skip = false;
 
-    uint32_t verticesOut = 0;
+    uint32_t vertices_out = 0;
     uint32_t invocations = 0;
 
     for (auto insn : *src) {
@@ -3059,7 +3060,7 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                 }
 
                 case spv::ExecutionModeOutputVertices: {
-                    verticesOut = insn.word(3);
+                    vertices_out = insn.word(3);
                     break;
                 }
 
@@ -3072,13 +3073,13 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
     }
 
     if (entrypoint.word(1) == spv::ExecutionModelGeometry) {
-        if (verticesOut == 0 || verticesOut > phys_dev_props.limits.maxGeometryOutputVertices) {
+        if (vertices_out == 0 || vertices_out > phys_dev_props.limits.maxGeometryOutputVertices) {
             skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-00714",
                              "Geometry shader entry point must have an OpExecutionMode instruction that "
                              "specifies a maximum output vertex count that is greater than 0 and less "
                              "than or equal to maxGeometryOutputVertices. "
                              "OutputVertices=%d, maxGeometryOutputVertices=%d",
-                             verticesOut, phys_dev_props.limits.maxGeometryOutputVertices);
+                             vertices_out, phys_dev_props.limits.maxGeometryOutputVertices);
         }
 
         if (invocations == 0 || invocations > phys_dev_props.limits.maxGeometryShaderInvocations) {
@@ -3187,9 +3188,9 @@ int32_t GetShaderResourceDimensionality(const SHADER_MODULE_STATE *module, const
 bool FindLocalSize(SHADER_MODULE_STATE const *src, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) {
     for (auto insn : *src) {
         if (insn.opcode() == spv::OpEntryPoint) {
-            auto executionModel = insn.word(1);
-            auto entrypointStageBits = ExecutionModelToShaderStageFlagBits(executionModel);
-            if (entrypointStageBits == VK_SHADER_STAGE_COMPUTE_BIT) {
+            auto execution_model = insn.word(1);
+            auto entrypoint_stage_bits = ExecutionModelToShaderStageFlagBits(execution_model);
+            if (entrypoint_stage_bits == VK_SHADER_STAGE_COMPUTE_BIT) {
                 auto entrypoint_id = insn.word(2);
                 for (auto insn1 : *src) {
                     if (insn1.opcode() == spv::OpExecutionMode && insn1.word(1) == entrypoint_id &&
@@ -3595,8 +3596,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
             if (builtins_producer.size() != builtins_consumer.size()) {
                 skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Number of elements inside builtin block differ between stages (%s %d vs %s %d).",
-                                 producer_stage->name, (int)builtins_producer.size(), consumer_stage->name,
-                                 (int)builtins_consumer.size());
+                                 producer_stage->name, static_cast<int>(builtins_producer.size()), consumer_stage->name,
+                                 static_cast<int>(builtins_consumer.size()));
             } else {
                 auto it_producer = builtins_producer.begin();
                 auto it_consumer = builtins_consumer.begin();
@@ -3640,7 +3641,7 @@ static inline uint32_t DetermineFinalGeomStage(const PIPELINE_STATE *pipeline, c
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
 bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline) const {
-    auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
+    auto create_info = pipeline->graphicsPipelineCI.ptr();
     int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -3649,21 +3650,21 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     spirv_inst_iter entrypoints[32];
     bool skip = false;
 
-    uint32_t pointlist_stage_mask = DetermineFinalGeomStage(pipeline, pCreateInfo);
+    uint32_t pointlist_stage_mask = DetermineFinalGeomStage(pipeline, create_info);
 
-    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-        auto pStage = &pCreateInfo->pStages[i];
-        auto stage_id = GetShaderStageId(pStage->stage);
-        shaders[stage_id] = GetShaderModuleState(pStage->module);
-        entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], pStage->pName, pStage->stage);
-        skip |= ValidatePipelineShaderStage(pStage, pipeline, pipeline->stage_state[i], shaders[stage_id], entrypoints[stage_id],
-                                            (pointlist_stage_mask == pStage->stage));
+    for (uint32_t i = 0; i < create_info->stageCount; i++) {
+        auto stage = &create_info->pStages[i];
+        auto stage_id = GetShaderStageId(stage->stage);
+        shaders[stage_id] = GetShaderModuleState(stage->module);
+        entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], stage->pName, stage->stage);
+        skip |= ValidatePipelineShaderStage(stage, pipeline, pipeline->stage_state[i], shaders[stage_id], entrypoints[stage_id],
+                                            (pointlist_stage_mask == stage->stage));
     }
 
     // if the shader stages are no good individually, cross-stage validation is pointless.
     if (skip) return true;
 
-    auto vi = pCreateInfo->pVertexInputState;
+    auto vi = create_info->pVertexInputState;
 
     if (vi) {
         skip |= ValidateViConsistency(vi);
@@ -3695,7 +3696,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
 
     if (shaders[fragment_stage] && shaders[fragment_stage]->has_valid_spirv) {
         skip |= ValidateFsOutputsAgainstRenderPass(shaders[fragment_stage], entrypoints[fragment_stage], pipeline,
-                                                   pCreateInfo->subpass);
+                                                   create_info->subpass);
     }
 
     return skip;
@@ -3703,7 +3704,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
 
 bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE *pipeline, const CMD_BUFFER_STATE *pCB,
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
-    auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
+    auto create_info = pipeline->graphicsPipelineCI.ptr();
 
     const SHADER_MODULE_STATE *shaders[32];
     memset(shaders, 0, sizeof(shaders));
@@ -3711,14 +3712,14 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
     memset(entrypoints, 0, sizeof(entrypoints));
     bool skip = false;
 
-    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-        auto pStage = &pCreateInfo->pStages[i];
-        auto stage_id = GetShaderStageId(pStage->stage);
-        shaders[stage_id] = GetShaderModuleState(pStage->module);
-        entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], pStage->pName, pStage->stage);
+    for (uint32_t i = 0; i < create_info->stageCount; i++) {
+        auto stage = &create_info->pStages[i];
+        auto stage_id = GetShaderStageId(stage->stage);
+        shaders[stage_id] = GetShaderModuleState(stage->module);
+        entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], stage->pName, stage->stage);
 
-        if (pStage->stage == VK_SHADER_STAGE_VERTEX_BIT || pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
-            pStage->stage == VK_SHADER_STAGE_MESH_BIT_NV) {
+        if (stage->stage == VK_SHADER_STAGE_VERTEX_BIT || stage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
+            stage->stage == VK_SHADER_STAGE_MESH_BIT_NV) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
                 IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
                 spirv_inst_iter insn = entrypoints[stage_id];
@@ -3748,7 +3749,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
                                  "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
                                  "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
                                  "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                                 caller, string_VkShaderStageFlagBits(pStage->stage));
+                                 caller, string_VkShaderStageFlagBits(stage->stage));
                 }
             }
         }
@@ -3800,21 +3801,21 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         }
         if (pipeline->raytracingPipelineCI.pLibraryInfo) {
             for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.pLibraryInfo->libraryCount; ++i) {
-                const PIPELINE_STATE *pLibrary_pipelinestate =
+                const PIPELINE_STATE *library_pipelinestate =
                     GetPipelineState(pipeline->raytracingPipelineCI.pLibraryInfo->pLibraries[i]);
-                if (pLibrary_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth !=
+                if (library_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth !=
                     pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth) {
                     skip |= LogError(
                         device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03591",
                         "vkCreateRayTracingPipelinesKHR: Each element  (%d) of the pLibraries member of libraries must have been"
                         "created with the value of maxPipelineRayRecursionDepth (%d) equal to that in this pipeline (%d) .",
-                        i, pLibrary_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth,
+                        i, library_pipelinestate->raytracingPipelineCI.maxPipelineRayRecursionDepth,
                         pipeline->raytracingPipelineCI.maxPipelineRayRecursionDepth);
                 }
-                if (pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInfo &&
-                    (pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayHitAttributeSize !=
+                if (library_pipelinestate->raytracingPipelineCI.pLibraryInfo &&
+                    (library_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayHitAttributeSize !=
                          pipeline->raytracingPipelineCI.pLibraryInterface->maxPipelineRayHitAttributeSize ||
-                     pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayPayloadSize !=
+                     library_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPipelineRayPayloadSize !=
                          pipeline->raytracingPipelineCI.pLibraryInterface->maxPipelineRayPayloadSize)) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03593",
                                      "vkCreateRayTracingPipelinesKHR: If pLibraryInfo is not NULL, each element of its pLibraries "
@@ -3822,7 +3823,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
                                      "maxPipelineRayHitAttributeSize members of pLibraryInterface equal to those in this pipeline");
                 }
                 if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR) &&
-                    !(pLibrary_pipelinestate->raytracingPipelineCI.flags &
+                    !(library_pipelinestate->raytracingPipelineCI.flags &
                       VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03594",
                                      "vkCreateRayTracingPipelinesKHR: If flags includes "
