@@ -117,16 +117,17 @@ VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo() { return &lay
 // as a filename. If successful, return file handle, otherwise stdout
 VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name) {
     FILE *log_output = NULL;
-    if (!option || !strcmp("stdout", option))
+    if (!option || !strcmp("stdout", option)) {
         log_output = stdout;
-    else {
+    } else {
         log_output = fopen(option, "w");
         if (log_output == NULL) {
-            if (option)
+            if (option) {
                 std::cout << std::endl
                           << layer_name << " ERROR: Bad output filename specified: " << option << ". Writing to STDOUT instead"
                           << std::endl
                           << std::endl;
+            }
             log_output = stdout;
         }
     }
@@ -194,10 +195,11 @@ const char *ConfigFile::GetOption(const string &option) {
         ParseFile(settings_file.c_str());
     }
 
-    if ((it = value_map_.find(option)) == value_map_.end())
+    if ((it = value_map_.find(option)) == value_map_.end()) {
         return "";
-    else
+    } else {
         return it->second.c_str();
+    }
 }
 
 void ConfigFile::SetOption(const string &option, const string &val) {

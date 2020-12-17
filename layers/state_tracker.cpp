@@ -1184,23 +1184,23 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, CMD_TYP
                                              const char *function) {
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto &state = cb_state->lastBound[lv_bind_point];
-    PIPELINE_STATE *pPipe = state.pipeline_state;
+    PIPELINE_STATE *pipe = state.pipeline_state;
     if (VK_NULL_HANDLE != state.pipeline_layout) {
-        for (const auto &set_binding_pair : pPipe->active_slots) {
-            uint32_t setIndex = set_binding_pair.first;
+        for (const auto &set_binding_pair : pipe->active_slots) {
+            uint32_t set_index = set_binding_pair.first;
             // Pull the set node
-            cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
+            cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[set_index].bound_descriptor_set;
 
             // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
 
             // TODO: If recreating the reduced_map here shows up in profilinging, need to find a way of sharing with the
             // Validate pass.  Though in the case of "many" descriptors, typically the descriptor count >> binding count
             cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
-            const auto &binding_req_map = reduced_map.FilteredMap(*cb_state, *pPipe);
+            const auto &binding_req_map = reduced_map.FilteredMap(*cb_state, *pipe);
 
             if (reduced_map.IsManyDescriptors()) {
                 // Only update validate binding tags if we meet the "many" criteria in the Prefilter class
-                descriptor_set->UpdateValidationCache(*cb_state, *pPipe, binding_req_map);
+                descriptor_set->UpdateValidationCache(*cb_state, *pipe, binding_req_map);
             }
 
             // We can skip updating the state if "nothing" has changed since the last validation.
@@ -1208,14 +1208,14 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, CMD_TYP
             bool descriptor_set_changed =
                 !reduced_map.IsManyDescriptors() ||
                 // Update if descriptor set (or contents) has changed
-                state.per_set[setIndex].validated_set != descriptor_set ||
-                state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
+                state.per_set[set_index].validated_set != descriptor_set ||
+                state.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
                 (!disabled[image_layout_validation] &&
-                 state.per_set[setIndex].validated_set_image_layout_change_count != cb_state->image_layout_change_count);
+                 state.per_set[set_index].validated_set_image_layout_change_count != cb_state->image_layout_change_count);
             bool need_update = descriptor_set_changed ||
                                // Update if previous bindingReqMap doesn't include new bindingReqMap
-                               !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
-                                              state.per_set[setIndex].validated_set_binding_req_map.end(), binding_req_map.begin(),
+                               !std::includes(state.per_set[set_index].validated_set_binding_req_map.begin(),
+                                              state.per_set[set_index].validated_set_binding_req_map.end(), binding_req_map.begin(),
                                               binding_req_map.end());
 
             if (need_update) {
@@ -1224,30 +1224,30 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, CMD_TYP
                     // Only record the bindings that haven't already been recorded
                     BindingReqMap delta_reqs;
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                        state.per_set[setIndex].validated_set_binding_req_map.begin(),
-                                        state.per_set[setIndex].validated_set_binding_req_map.end(),
+                                        state.per_set[set_index].validated_set_binding_req_map.begin(),
+                                        state.per_set[set_index].validated_set_binding_req_map.end(),
                                         std::inserter(delta_reqs, delta_reqs.begin()));
-                    descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pPipe, delta_reqs, function);
+                    descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pipe, delta_reqs, function);
                 } else {
-                    descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pPipe, binding_req_map, function);
+                    descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pipe, binding_req_map, function);
                 }
 
-                state.per_set[setIndex].validated_set = descriptor_set;
-                state.per_set[setIndex].validated_set_change_count = descriptor_set->GetChangeCount();
-                state.per_set[setIndex].validated_set_image_layout_change_count = cb_state->image_layout_change_count;
+                state.per_set[set_index].validated_set = descriptor_set;
+                state.per_set[set_index].validated_set_change_count = descriptor_set->GetChangeCount();
+                state.per_set[set_index].validated_set_image_layout_change_count = cb_state->image_layout_change_count;
                 if (reduced_map.IsManyDescriptors()) {
                     // Check whether old == new before assigning, the equality check is much cheaper than
                     // freeing and reallocating the map.
-                    if (state.per_set[setIndex].validated_set_binding_req_map != set_binding_pair.second) {
-                        state.per_set[setIndex].validated_set_binding_req_map = set_binding_pair.second;
+                    if (state.per_set[set_index].validated_set_binding_req_map != set_binding_pair.second) {
+                        state.per_set[set_index].validated_set_binding_req_map = set_binding_pair.second;
                     }
                 } else {
-                    state.per_set[setIndex].validated_set_binding_req_map = BindingReqMap();
+                    state.per_set[set_index].validated_set_binding_req_map = BindingReqMap();
                 }
             }
         }
     }
-    if (!pPipe->vertex_binding_descriptions_.empty()) {
+    if (!pipe->vertex_binding_descriptions_.empty()) {
         cb_state->vertex_buffer_used = true;
     }
 }
@@ -1403,7 +1403,7 @@ bool ValidationStateTracker::AddCommandBufferBinding(small_unordered_map<CMD_BUF
     auto inserted = cb_bindings.insert({cb_node, -1});
     if (inserted.second) {
         cb_node->object_bindings.push_back(obj);
-        inserted.first->second = (int)cb_node->object_bindings.size() - 1;
+        inserted.first->second = static_cast<int>(cb_node->object_bindings.size()) - 1;
         return true;
     }
     return false;
@@ -1418,91 +1418,91 @@ void ValidationStateTracker::RemoveCommandBufferBinding(VulkanTypedHandle const 
 // Reset the command buffer state
 //  Maintain the createInfo and set state to CB_NEW, but clear all other state
 void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
-    CMD_BUFFER_STATE *pCB = GetCBState(cb);
-    if (pCB) {
-        pCB->in_use.store(0);
+    CMD_BUFFER_STATE *cb_state = GetCBState(cb);
+    if (cb_state) {
+        cb_state->in_use.store(0);
         // Reset CB state (note that createInfo is not cleared)
-        pCB->commandBuffer = cb;
-        memset(&pCB->beginInfo, 0, sizeof(VkCommandBufferBeginInfo));
-        memset(&pCB->inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
-        pCB->hasDrawCmd = false;
-        pCB->hasTraceRaysCmd = false;
-        pCB->hasBuildAccelerationStructureCmd = false;
-        pCB->hasDispatchCmd = false;
-        pCB->state = CB_NEW;
-        pCB->commandCount = 0;
-        pCB->submitCount = 0;
-        pCB->image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
-        pCB->status = 0;
-        pCB->static_status = 0;
-        pCB->viewportMask = 0;
-        pCB->viewportWithCountMask = 0;
-        pCB->viewportWithCountCount = 0;
-        pCB->scissorMask = 0;
-        pCB->scissorWithCountMask = 0;
-        pCB->primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+        cb_state->commandBuffer = cb;
+        memset(&cb_state->beginInfo, 0, sizeof(VkCommandBufferBeginInfo));
+        memset(&cb_state->inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
+        cb_state->hasDrawCmd = false;
+        cb_state->hasTraceRaysCmd = false;
+        cb_state->hasBuildAccelerationStructureCmd = false;
+        cb_state->hasDispatchCmd = false;
+        cb_state->state = CB_NEW;
+        cb_state->commandCount = 0;
+        cb_state->submitCount = 0;
+        cb_state->image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
+        cb_state->status = 0;
+        cb_state->static_status = 0;
+        cb_state->viewportMask = 0;
+        cb_state->viewportWithCountMask = 0;
+        cb_state->viewportWithCountCount = 0;
+        cb_state->scissorMask = 0;
+        cb_state->scissorWithCountMask = 0;
+        cb_state->primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 
-        for (auto &item : pCB->lastBound) {
+        for (auto &item : cb_state->lastBound) {
             item.reset();
         }
 
-        pCB->activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();
-        pCB->activeRenderPass = nullptr;
-        pCB->active_attachments = nullptr;
-        pCB->active_subpasses = nullptr;
-        pCB->attachments_view_states.clear();
-        pCB->activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
-        pCB->activeSubpass = 0;
-        pCB->broken_bindings.clear();
-        pCB->waitedEvents.clear();
-        pCB->events.clear();
-        pCB->writeEventsBeforeWait.clear();
-        pCB->activeQueries.clear();
-        pCB->startedQueries.clear();
-        pCB->image_layout_map.clear();
-        pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
-        pCB->vertex_buffer_used = false;
-        pCB->primaryCommandBuffer = VK_NULL_HANDLE;
+        cb_state->activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();
+        cb_state->activeRenderPass = nullptr;
+        cb_state->active_attachments = nullptr;
+        cb_state->active_subpasses = nullptr;
+        cb_state->attachments_view_states.clear();
+        cb_state->activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
+        cb_state->activeSubpass = 0;
+        cb_state->broken_bindings.clear();
+        cb_state->waitedEvents.clear();
+        cb_state->events.clear();
+        cb_state->writeEventsBeforeWait.clear();
+        cb_state->activeQueries.clear();
+        cb_state->startedQueries.clear();
+        cb_state->image_layout_map.clear();
+        cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
+        cb_state->vertex_buffer_used = false;
+        cb_state->primaryCommandBuffer = VK_NULL_HANDLE;
         // If secondary, invalidate any primary command buffer that may call us.
-        if (pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
-            InvalidateLinkedCommandBuffers(pCB->linkedCommandBuffers, VulkanTypedHandle(cb, kVulkanObjectTypeCommandBuffer));
+        if (cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+            InvalidateLinkedCommandBuffers(cb_state->linkedCommandBuffers, VulkanTypedHandle(cb, kVulkanObjectTypeCommandBuffer));
         }
 
         // Remove reverse command buffer links.
-        for (auto pSubCB : pCB->linkedCommandBuffers) {
-            pSubCB->linkedCommandBuffers.erase(pCB);
+        for (auto sub_cb : cb_state->linkedCommandBuffers) {
+            sub_cb->linkedCommandBuffers.erase(cb_state);
         }
-        pCB->linkedCommandBuffers.clear();
-        pCB->queue_submit_functions.clear();
-        pCB->cmd_execute_commands_functions.clear();
-        pCB->eventUpdates.clear();
-        pCB->queryUpdates.clear();
+        cb_state->linkedCommandBuffers.clear();
+        cb_state->queue_submit_functions.clear();
+        cb_state->cmd_execute_commands_functions.clear();
+        cb_state->eventUpdates.clear();
+        cb_state->queryUpdates.clear();
 
         // Remove object bindings
-        for (const auto &obj : pCB->object_bindings) {
-            RemoveCommandBufferBinding(obj, pCB);
+        for (const auto &obj : cb_state->object_bindings) {
+            RemoveCommandBufferBinding(obj, cb_state);
         }
-        pCB->object_bindings.clear();
+        cb_state->object_bindings.clear();
         // Remove this cmdBuffer's reference from each FrameBuffer's CB ref list
-        for (auto framebuffer : pCB->framebuffers) {
-            framebuffer->cb_bindings.erase(pCB);
+        for (auto framebuffer : cb_state->framebuffers) {
+            framebuffer->cb_bindings.erase(cb_state);
         }
-        pCB->framebuffers.clear();
-        pCB->activeFramebuffer = VK_NULL_HANDLE;
-        pCB->index_buffer_binding.reset();
+        cb_state->framebuffers.clear();
+        cb_state->activeFramebuffer = VK_NULL_HANDLE;
+        cb_state->index_buffer_binding.reset();
 
-        pCB->qfo_transfer_image_barriers.Reset();
-        pCB->qfo_transfer_buffer_barriers.Reset();
+        cb_state->qfo_transfer_image_barriers.Reset();
+        cb_state->qfo_transfer_buffer_barriers.Reset();
 
         // Clean up the label data
-        ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
-        pCB->debug_label.Reset();
-        pCB->validate_descriptorsets_in_queuesubmit.clear();
+        ResetCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
+        cb_state->debug_label.Reset();
+        cb_state->validate_descriptorsets_in_queuesubmit.clear();
 
         // Best practices info
-        pCB->small_indexed_draw_call_count = 0;
+        cb_state->small_indexed_draw_call_count = 0;
 
-        pCB->transform_feedback_active = false;
+        cb_state->transform_feedback_active = false;
     }
     if (command_buffer_reset_callback) {
         (*command_buffer_reset_callback)(cb);
@@ -2056,12 +2056,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         state_tracker->phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
-        uint32_t numCooperativeMatrixProperties = 0;
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties, NULL);
-        state_tracker->cooperative_matrix_properties.resize(numCooperativeMatrixProperties,
+        uint32_t num_cooperative_matrix_properties = 0;
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &num_cooperative_matrix_properties, NULL);
+        state_tracker->cooperative_matrix_properties.resize(num_cooperative_matrix_properties,
                                                             lvl_init_struct<VkCooperativeMatrixPropertiesNV>());
 
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties,
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &num_cooperative_matrix_properties,
                                                                                state_tracker->cooperative_matrix_properties.data());
     }
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && state_tracker->api_version >= VK_API_VERSION_1_1) {
@@ -2094,8 +2094,8 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     if (!device) return;
 
     // Reset all command buffers before destroying them, to unlink object_bindings.
-    for (auto &commandBuffer : commandBufferMap) {
-        ResetCommandBufferState(commandBuffer.first);
+    for (auto &command_buffer : commandBufferMap) {
+        ResetCommandBufferState(command_buffer.first);
     }
     pipelineMap.clear();
     renderPassMap.clear();
@@ -2152,41 +2152,41 @@ void ValidationStateTracker::DecrementBoundResources(CMD_BUFFER_STATE const *cb_
 }
 
 void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
-    std::unordered_map<VkQueue, uint64_t> otherQueueSeqs;
-    std::unordered_map<VkSemaphore, uint64_t> timelineSemaphoreCounters;
+    std::unordered_map<VkQueue, uint64_t> other_queue_seqs;
+    std::unordered_map<VkSemaphore, uint64_t> timeline_semaphore_counters;
 
     // Roll this queue forward, one submission at a time.
     while (pQueue->seq < seq) {
         auto &submission = pQueue->submissions.front();
 
         for (auto &wait : submission.waitSemaphores) {
-            auto pSemaphore = GetSemaphoreState(wait.semaphore);
-            if (pSemaphore) {
-                pSemaphore->in_use.fetch_sub(1);
+            auto semaphore_state = GetSemaphoreState(wait.semaphore);
+            if (semaphore_state) {
+                semaphore_state->in_use.fetch_sub(1);
             }
             if (wait.type == VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
-                auto &lastCounter = timelineSemaphoreCounters[wait.semaphore];
-                lastCounter = std::max(lastCounter, wait.payload);
+                auto &last_counter = timeline_semaphore_counters[wait.semaphore];
+                last_counter = std::max(last_counter, wait.payload);
             } else {
-                auto &lastSeq = otherQueueSeqs[wait.queue];
-                lastSeq = std::max(lastSeq, wait.seq);
+                auto &last_seq = other_queue_seqs[wait.queue];
+                last_seq = std::max(last_seq, wait.seq);
             }
         }
 
         for (auto &signal : submission.signalSemaphores) {
-            auto pSemaphore = GetSemaphoreState(signal.semaphore);
-            if (pSemaphore) {
-                pSemaphore->in_use.fetch_sub(1);
-                if (pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && pSemaphore->payload < signal.payload) {
-                    pSemaphore->payload = signal.payload;
+            auto semaphore_state = GetSemaphoreState(signal.semaphore);
+            if (semaphore_state) {
+                semaphore_state->in_use.fetch_sub(1);
+                if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && semaphore_state->payload < signal.payload) {
+                    semaphore_state->payload = signal.payload;
                 }
             }
         }
 
         for (auto &semaphore : submission.externalSemaphores) {
-            auto pSemaphore = GetSemaphoreState(semaphore);
-            if (pSemaphore) {
-                pSemaphore->in_use.fetch_sub(1);
+            auto semaphore_state = GetSemaphoreState(semaphore);
+            if (semaphore_state) {
+                semaphore_state->in_use.fetch_sub(1);
             }
         }
 
@@ -2198,28 +2198,28 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             // First perform decrement on general case bound objects
             DecrementBoundResources(cb_node);
             for (auto event : cb_node->writeEventsBeforeWait) {
-                auto eventNode = eventMap.find(event);
-                if (eventNode != eventMap.end()) {
-                    eventNode->second.write_in_use--;
+                auto event_node = eventMap.find(event);
+                if (event_node != eventMap.end()) {
+                    event_node->second.write_in_use--;
                 }
             }
-            QueryMap localQueryToStateMap;
+            QueryMap local_query_to_state_map;
             VkQueryPool first_pool = VK_NULL_HANDLE;
             for (auto &function : cb_node->queryUpdates) {
-                function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &localQueryToStateMap);
+                function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &local_query_to_state_map);
             }
 
-            for (auto queryStatePair : localQueryToStateMap) {
-                if (queryStatePair.second == QUERYSTATE_ENDED) {
-                    queryToStateMap[queryStatePair.first] = QUERYSTATE_AVAILABLE;
+            for (auto query_state_pair : local_query_to_state_map) {
+                if (query_state_pair.second == QUERYSTATE_ENDED) {
+                    queryToStateMap[query_state_pair.first] = QUERYSTATE_AVAILABLE;
                 }
             }
             cb_node->in_use.fetch_sub(1);
         }
 
-        auto pFence = GetFenceState(submission.fence);
-        if (pFence && pFence->scope == kSyncScopeInternal) {
-            pFence->state = FENCE_RETIRED;
+        auto fence_state = GetFenceState(submission.fence);
+        if (fence_state && fence_state->scope == kSyncScopeInternal) {
+            fence_state->state = FENCE_RETIRED;
         }
 
         pQueue->submissions.pop_front();
@@ -2227,10 +2227,10 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
     }
 
     // Roll other queues forward to the highest seq we saw a wait for
-    for (auto qs : otherQueueSeqs) {
+    for (auto qs : other_queue_seqs) {
         RetireWorkOnQueue(GetQueueState(qs.first), qs.second);
     }
-    for (auto sc : timelineSemaphoreCounters) {
+    for (auto sc : timeline_semaphore_counters) {
         RetireTimelineSemaphore(sc.first, sc.second);
     }
 }
@@ -2247,23 +2247,23 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                                                        VkFence fence, VkResult result) {
     if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
-    auto pQueue = GetQueueState(queue);
-    auto pFence = GetFenceState(fence);
+    auto queue_state = GetQueueState(queue);
+    auto fence_state = GetFenceState(fence);
 
-    if (pFence) {
-        if (pFence->scope == kSyncScopeInternal) {
+    if (fence_state) {
+        if (fence_state->scope == kSyncScopeInternal) {
             // Mark fence in use
-            SubmitFence(pQueue, pFence, std::max(1u, submitCount));
+            SubmitFence(queue_state, fence_state, std::max(1u, submitCount));
             if (!submitCount) {
                 // If no submissions, but just dropping a fence on the end of the queue,
                 // record an empty submission with just the fence, so we can determine
                 // its completion.
-                pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
-                                                 std::vector<SEMAPHORE_SIGNAL>(), std::vector<VkSemaphore>(), fence, 0);
+                queue_state->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
+                                                      std::vector<SEMAPHORE_SIGNAL>(), std::vector<VkSemaphore>(), fence, 0);
             }
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
-            early_retire_seq = pQueue->seq + pQueue->submissions.size();
+            early_retire_seq = queue_state->seq + queue_state->submissions.size();
         }
     }
 
@@ -2274,57 +2274,57 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         std::vector<SEMAPHORE_WAIT> semaphore_waits;
         std::vector<SEMAPHORE_SIGNAL> semaphore_signals;
         std::vector<VkSemaphore> semaphore_externals;
-        const uint64_t next_seq = pQueue->seq + pQueue->submissions.size() + 1;
+        const uint64_t next_seq = queue_state->seq + queue_state->submissions.size() + 1;
         auto *timeline_semaphore_submit = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
-            if (pSemaphore) {
-                if (pSemaphore->scope == kSyncScopeInternal) {
+            auto semaphore_state = GetSemaphoreState(semaphore);
+            if (semaphore_state) {
+                if (semaphore_state->scope == kSyncScopeInternal) {
                     SEMAPHORE_WAIT wait;
                     wait.semaphore = semaphore;
-                    wait.type = pSemaphore->type;
-                    if (pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
-                        if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
-                            wait.queue = pSemaphore->signaler.first;
-                            wait.seq = pSemaphore->signaler.second;
+                    wait.type = semaphore_state->type;
+                    if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
+                        if (semaphore_state->signaler.first != VK_NULL_HANDLE) {
+                            wait.queue = semaphore_state->signaler.first;
+                            wait.seq = semaphore_state->signaler.second;
                             semaphore_waits.push_back(wait);
-                            pSemaphore->in_use.fetch_add(1);
+                            semaphore_state->in_use.fetch_add(1);
                         }
-                        pSemaphore->signaler.first = VK_NULL_HANDLE;
-                        pSemaphore->signaled = false;
-                    } else if (pSemaphore->payload < timeline_semaphore_submit->pWaitSemaphoreValues[i]) {
+                        semaphore_state->signaler.first = VK_NULL_HANDLE;
+                        semaphore_state->signaled = false;
+                    } else if (semaphore_state->payload < timeline_semaphore_submit->pWaitSemaphoreValues[i]) {
                         wait.queue = queue;
                         wait.seq = next_seq;
                         wait.payload = timeline_semaphore_submit->pWaitSemaphoreValues[i];
                         semaphore_waits.push_back(wait);
-                        pSemaphore->in_use.fetch_add(1);
+                        semaphore_state->in_use.fetch_add(1);
                     }
                 } else {
                     semaphore_externals.push_back(semaphore);
-                    pSemaphore->in_use.fetch_add(1);
-                    if (pSemaphore->scope == kSyncScopeExternalTemporary) {
-                        pSemaphore->scope = kSyncScopeInternal;
+                    semaphore_state->in_use.fetch_add(1);
+                    if (semaphore_state->scope == kSyncScopeExternalTemporary) {
+                        semaphore_state->scope = kSyncScopeInternal;
                     }
                 }
             }
         }
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
-            if (pSemaphore) {
-                if (pSemaphore->scope == kSyncScopeInternal) {
+            auto semaphore_state = GetSemaphoreState(semaphore);
+            if (semaphore_state) {
+                if (semaphore_state->scope == kSyncScopeInternal) {
                     SEMAPHORE_SIGNAL signal;
                     signal.semaphore = semaphore;
                     signal.seq = next_seq;
-                    if (pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
-                        pSemaphore->signaler.first = queue;
-                        pSemaphore->signaler.second = next_seq;
-                        pSemaphore->signaled = true;
+                    if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
+                        semaphore_state->signaler.first = queue;
+                        semaphore_state->signaler.second = next_seq;
+                        semaphore_state->signaled = true;
                     } else {
                         signal.payload = timeline_semaphore_submit->pSignalSemaphoreValues[i];
                     }
-                    pSemaphore->in_use.fetch_add(1);
+                    semaphore_state->in_use.fetch_add(1);
                     semaphore_signals.push_back(signal);
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
@@ -2339,39 +2339,39 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
             auto cb_node = GetCBState(submit->pCommandBuffers[i]);
             if (cb_node) {
                 cbs.push_back(submit->pCommandBuffers[i]);
-                for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
-                    cbs.push_back(secondaryCmdBuffer->commandBuffer);
-                    IncrementResources(secondaryCmdBuffer);
+                for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+                    cbs.push_back(secondary_cmd_buffer->commandBuffer);
+                    IncrementResources(secondary_cmd_buffer);
                 }
                 IncrementResources(cb_node);
 
                 VkQueryPool first_pool = VK_NULL_HANDLE;
-                EventToStageMap localEventToStageMap;
-                QueryMap localQueryToStateMap;
+                EventToStageMap local_event_to_stage_map;
+                QueryMap local_query_to_state_map;
                 for (auto &function : cb_node->queryUpdates) {
-                    function(nullptr, /*do_validate*/ false, first_pool, perf_pass, &localQueryToStateMap);
+                    function(nullptr, /*do_validate*/ false, first_pool, perf_pass, &local_query_to_state_map);
                 }
 
-                for (auto queryStatePair : localQueryToStateMap) {
-                    queryToStateMap[queryStatePair.first] = queryStatePair.second;
+                for (auto query_state_pair : local_query_to_state_map) {
+                    queryToStateMap[query_state_pair.first] = query_state_pair.second;
                 }
 
                 for (auto &function : cb_node->eventUpdates) {
-                    function(nullptr, /*do_validate*/ false, &localEventToStageMap);
+                    function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
                 }
 
-                for (auto eventStagePair : localEventToStageMap) {
-                    eventMap[eventStagePair.first].stageMask = eventStagePair.second;
+                for (auto event_stage_pair : local_event_to_stage_map) {
+                    eventMap[event_stage_pair.first].stageMask = event_stage_pair.second;
                 }
             }
         }
 
-        pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
-                                         submit_idx == submitCount - 1 ? fence : (VkFence)VK_NULL_HANDLE, perf_pass);
+        queue_state->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
+                                              submit_idx == submitCount - 1 ? fence : (VkFence)VK_NULL_HANDLE, perf_pass);
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(pQueue, early_retire_seq);
+        RetireWorkOnQueue(queue_state, early_retire_seq);
     }
 }
 
@@ -2436,101 +2436,102 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
                                                            VkFence fence, VkResult result) {
     if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
-    auto pFence = GetFenceState(fence);
-    auto pQueue = GetQueueState(queue);
+    auto fence_state = GetFenceState(fence);
+    auto queue_state = GetQueueState(queue);
 
-    if (pFence) {
-        if (pFence->scope == kSyncScopeInternal) {
-            SubmitFence(pQueue, pFence, std::max(1u, bindInfoCount));
+    if (fence_state) {
+        if (fence_state->scope == kSyncScopeInternal) {
+            SubmitFence(queue_state, fence_state, std::max(1u, bindInfoCount));
             if (!bindInfoCount) {
                 // No work to do, just dropping a fence in the queue by itself.
-                pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
-                                                 std::vector<SEMAPHORE_SIGNAL>(), std::vector<VkSemaphore>(), fence, 0);
+                queue_state->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
+                                                      std::vector<SEMAPHORE_SIGNAL>(), std::vector<VkSemaphore>(), fence, 0);
             }
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
-            early_retire_seq = pQueue->seq + pQueue->submissions.size();
+            early_retire_seq = queue_state->seq + queue_state->submissions.size();
         }
     }
 
-    for (uint32_t bindIdx = 0; bindIdx < bindInfoCount; ++bindIdx) {
-        const VkBindSparseInfo &bindInfo = pBindInfo[bindIdx];
+    for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
+        const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
         // Track objects tied to memory
-        for (uint32_t j = 0; j < bindInfo.bufferBindCount; j++) {
-            for (uint32_t k = 0; k < bindInfo.pBufferBinds[j].bindCount; k++) {
-                auto sparse_binding = bindInfo.pBufferBinds[j].pBinds[k];
+        for (uint32_t j = 0; j < bind_info.bufferBindCount; j++) {
+            for (uint32_t k = 0; k < bind_info.pBufferBinds[j].bindCount; k++) {
+                auto sparse_binding = bind_info.pBufferBinds[j].pBinds[k];
                 SetSparseMemBinding(sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size,
-                                    VulkanTypedHandle(bindInfo.pBufferBinds[j].buffer, kVulkanObjectTypeBuffer));
+                                    VulkanTypedHandle(bind_info.pBufferBinds[j].buffer, kVulkanObjectTypeBuffer));
             }
         }
-        for (uint32_t j = 0; j < bindInfo.imageOpaqueBindCount; j++) {
-            for (uint32_t k = 0; k < bindInfo.pImageOpaqueBinds[j].bindCount; k++) {
-                auto sparse_binding = bindInfo.pImageOpaqueBinds[j].pBinds[k];
+        for (uint32_t j = 0; j < bind_info.imageOpaqueBindCount; j++) {
+            for (uint32_t k = 0; k < bind_info.pImageOpaqueBinds[j].bindCount; k++) {
+                auto sparse_binding = bind_info.pImageOpaqueBinds[j].pBinds[k];
                 SetSparseMemBinding(sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size,
-                                    VulkanTypedHandle(bindInfo.pImageOpaqueBinds[j].image, kVulkanObjectTypeImage));
+                                    VulkanTypedHandle(bind_info.pImageOpaqueBinds[j].image, kVulkanObjectTypeImage));
             }
         }
-        for (uint32_t j = 0; j < bindInfo.imageBindCount; j++) {
-            for (uint32_t k = 0; k < bindInfo.pImageBinds[j].bindCount; k++) {
-                auto sparse_binding = bindInfo.pImageBinds[j].pBinds[k];
+        for (uint32_t j = 0; j < bind_info.imageBindCount; j++) {
+            for (uint32_t k = 0; k < bind_info.pImageBinds[j].bindCount; k++) {
+                auto sparse_binding = bind_info.pImageBinds[j].pBinds[k];
                 // TODO: This size is broken for non-opaque bindings, need to update to comprehend full sparse binding data
                 VkDeviceSize size = sparse_binding.extent.depth * sparse_binding.extent.height * sparse_binding.extent.width * 4;
                 SetSparseMemBinding(sparse_binding.memory, sparse_binding.memoryOffset, size,
-                                    VulkanTypedHandle(bindInfo.pImageBinds[j].image, kVulkanObjectTypeImage));
+                                    VulkanTypedHandle(bind_info.pImageBinds[j].image, kVulkanObjectTypeImage));
             }
         }
 
         std::vector<SEMAPHORE_WAIT> semaphore_waits;
         std::vector<SEMAPHORE_SIGNAL> semaphore_signals;
         std::vector<VkSemaphore> semaphore_externals;
-        for (uint32_t i = 0; i < bindInfo.waitSemaphoreCount; ++i) {
-            VkSemaphore semaphore = bindInfo.pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
-            if (pSemaphore) {
-                if (pSemaphore->scope == kSyncScopeInternal) {
-                    if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
+        for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
+            VkSemaphore semaphore = bind_info.pWaitSemaphores[i];
+            auto semaphore_state = GetSemaphoreState(semaphore);
+            if (semaphore_state) {
+                if (semaphore_state->scope == kSyncScopeInternal) {
+                    if (semaphore_state->signaler.first != VK_NULL_HANDLE) {
                         semaphore_waits.push_back(
-                            {semaphore, pSemaphore->type, pSemaphore->signaler.first, pSemaphore->signaler.second});
-                        pSemaphore->in_use.fetch_add(1);
+                            {semaphore, semaphore_state->type, semaphore_state->signaler.first, semaphore_state->signaler.second});
+                        semaphore_state->in_use.fetch_add(1);
                     }
-                    pSemaphore->signaler.first = VK_NULL_HANDLE;
-                    pSemaphore->signaled = false;
+                    semaphore_state->signaler.first = VK_NULL_HANDLE;
+                    semaphore_state->signaled = false;
                 } else {
                     semaphore_externals.push_back(semaphore);
-                    pSemaphore->in_use.fetch_add(1);
-                    if (pSemaphore->scope == kSyncScopeExternalTemporary) {
-                        pSemaphore->scope = kSyncScopeInternal;
+                    semaphore_state->in_use.fetch_add(1);
+                    if (semaphore_state->scope == kSyncScopeExternalTemporary) {
+                        semaphore_state->scope = kSyncScopeInternal;
                     }
                 }
             }
         }
-        for (uint32_t i = 0; i < bindInfo.signalSemaphoreCount; ++i) {
-            VkSemaphore semaphore = bindInfo.pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
-            if (pSemaphore) {
-                if (pSemaphore->scope == kSyncScopeInternal) {
-                    pSemaphore->signaler.first = queue;
-                    pSemaphore->signaler.second = pQueue->seq + pQueue->submissions.size() + 1;
-                    pSemaphore->signaled = true;
-                    pSemaphore->in_use.fetch_add(1);
+        for (uint32_t i = 0; i < bind_info.signalSemaphoreCount; ++i) {
+            VkSemaphore semaphore = bind_info.pSignalSemaphores[i];
+            auto semaphore_state = GetSemaphoreState(semaphore);
+            if (semaphore_state) {
+                if (semaphore_state->scope == kSyncScopeInternal) {
+                    semaphore_state->signaler.first = queue;
+                    semaphore_state->signaler.second = queue_state->seq + queue_state->submissions.size() + 1;
+                    semaphore_state->signaled = true;
+                    semaphore_state->in_use.fetch_add(1);
 
                     SEMAPHORE_SIGNAL signal;
                     signal.semaphore = semaphore;
-                    signal.seq = pSemaphore->signaler.second;
+                    signal.seq = semaphore_state->signaler.second;
                     semaphore_signals.push_back(signal);
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
-                    early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
+                    early_retire_seq = std::max(early_retire_seq, queue_state->seq + queue_state->submissions.size() + 1);
                 }
             }
         }
 
-        pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), semaphore_waits, semaphore_signals, semaphore_externals,
-                                         bindIdx == bindInfoCount - 1 ? fence : (VkFence)VK_NULL_HANDLE, 0);
+        queue_state->submissions.emplace_back(std::vector<VkCommandBuffer>(), semaphore_waits, semaphore_signals,
+                                              semaphore_externals, bind_idx == bindInfoCount - 1 ? fence : (VkFence)VK_NULL_HANDLE,
+                                              0);
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(pQueue, early_retire_seq);
+        RetireWorkOnQueue(queue_state, early_retire_seq);
     }
 }
 
@@ -2568,8 +2569,8 @@ void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, V
 
 void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo,
                                                               VkResult result) {
-    auto *pSemaphore = GetSemaphoreState(pSignalInfo->semaphore);
-    pSemaphore->payload = pSignalInfo->value;
+    auto *semaphore_state = GetSemaphoreState(pSignalInfo->semaphore);
+    semaphore_state->payload = pSignalInfo->value;
 }
 
 void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
@@ -2582,15 +2583,15 @@ void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize
 }
 
 void ValidationStateTracker::RetireFence(VkFence fence) {
-    auto pFence = GetFenceState(fence);
-    if (pFence && pFence->scope == kSyncScopeInternal) {
-        if (pFence->signaler.first != VK_NULL_HANDLE) {
+    auto fence_state = GetFenceState(fence);
+    if (fence_state && fence_state->scope == kSyncScopeInternal) {
+        if (fence_state->signaler.first != VK_NULL_HANDLE) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            RetireWorkOnQueue(GetQueueState(pFence->signaler.first), pFence->signaler.second);
+            RetireWorkOnQueue(GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
         } else {
             // Fence signaller is the WSI. We're not tracking what the WSI op actually /was/ in CV yet, but we need to mark
             // the fence as retired.
-            pFence->state = FENCE_RETIRED;
+            fence_state->state = FENCE_RETIRED;
         }
     }
 }
@@ -2611,22 +2612,22 @@ void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32
 }
 
 void ValidationStateTracker::RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload) {
-    auto pSemaphore = GetSemaphoreState(semaphore);
-    if (pSemaphore) {
+    auto semaphore_state = GetSemaphoreState(semaphore);
+    if (semaphore_state) {
         for (auto &pair : queueMap) {
-            QUEUE_STATE &queueState = pair.second;
+            QUEUE_STATE &queue_state = pair.second;
             uint64_t max_seq = 0;
-            for (const auto &submission : queueState.submissions) {
-                for (const auto &signalSemaphore : submission.signalSemaphores) {
-                    if (signalSemaphore.semaphore == semaphore && signalSemaphore.payload <= until_payload) {
-                        if (signalSemaphore.seq > max_seq) {
-                            max_seq = signalSemaphore.seq;
+            for (const auto &submission : queue_state.submissions) {
+                for (const auto &signal_semaphore : submission.signalSemaphores) {
+                    if (signal_semaphore.semaphore == semaphore && signal_semaphore.payload <= until_payload) {
+                        if (signal_semaphore.seq > max_seq) {
+                            max_seq = signal_semaphore.seq;
                         }
                     }
                 }
             }
             if (max_seq) {
-                RetireWorkOnQueue(&queueState, max_seq);
+                RetireWorkOnQueue(&queue_state, max_seq);
             }
         }
     }
@@ -3030,8 +3031,8 @@ void ValidationStateTracker::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_st
 
 void ValidationStateTracker::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
                                                              uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) {
-    auto pPool = GetCommandPoolState(commandPool);
-    FreeCommandBufferStates(pPool, commandBufferCount, pCommandBuffers);
+    auto pool = GetCommandPoolState(commandPool);
+    FreeCommandBufferStates(pool, commandBufferCount, pCommandBuffers);
 }
 
 void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -3106,20 +3107,20 @@ void ValidationStateTracker::PostCallRecordResetCommandPool(VkDevice device, VkC
     if (VK_SUCCESS != result) return;
     // Reset all of the CBs allocated from this pool
     auto command_pool_state = GetCommandPoolState(commandPool);
-    for (auto cmdBuffer : command_pool_state->commandBuffers) {
-        ResetCommandBufferState(cmdBuffer);
+    for (auto cmd_buffer : command_pool_state->commandBuffers) {
+        ResetCommandBufferState(cmd_buffer);
     }
 }
 
 void ValidationStateTracker::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences,
                                                        VkResult result) {
     for (uint32_t i = 0; i < fenceCount; ++i) {
-        auto pFence = GetFenceState(pFences[i]);
-        if (pFence) {
-            if (pFence->scope == kSyncScopeInternal) {
-                pFence->state = FENCE_UNSIGNALED;
-            } else if (pFence->scope == kSyncScopeExternalTemporary) {
-                pFence->scope = kSyncScopeInternal;
+        auto fence_state = GetFenceState(pFences[i]);
+        if (fence_state) {
+            if (fence_state->scope == kSyncScopeInternal) {
+                fence_state->state = FENCE_UNSIGNALED;
+            } else if (fence_state->scope == kSyncScopeExternalTemporary) {
+                fence_state->scope = kSyncScopeInternal;
             }
         }
     }
@@ -3332,8 +3333,10 @@ void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const 
                                                          const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                                          VkResult result) {
     samplerMap[*pSampler] = std::make_shared<SAMPLER_STATE>(pSampler, pCreateInfo);
-    if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT || pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT)
+    if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+        pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
         custom_border_color_sampler_count++;
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(VkDevice device,
@@ -3429,18 +3432,18 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device,
 void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                                VkDescriptorPoolResetFlags flags, VkResult result) {
     if (VK_SUCCESS != result) return;
-    DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(descriptorPool);
+    DESCRIPTOR_POOL_STATE *pool = GetDescriptorPoolState(descriptorPool);
     // TODO: validate flags
     // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
-    for (auto ds : pPool->sets) {
+    for (auto ds : pool->sets) {
         FreeDescriptorSet(ds);
     }
-    pPool->sets.clear();
+    pool->sets.clear();
     // Reset available count for each type and available sets for this pool
-    for (auto it = pPool->availableDescriptorTypeCount.begin(); it != pPool->availableDescriptorTypeCount.end(); ++it) {
-        pPool->availableDescriptorTypeCount[it->first] = pPool->maxDescriptorTypeCount[it->first];
+    for (auto it = pool->availableDescriptorTypeCount.begin(); it != pool->availableDescriptorTypeCount.end(); ++it) {
+        pool->availableDescriptorTypeCount[it->first] = pool->maxDescriptorTypeCount[it->first];
     }
-    pPool->availableSets = pPool->maxSets;
+    pool->availableSets = pool->maxSets;
 }
 
 bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice device,
@@ -3498,17 +3501,17 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, 
 void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                                   VkCommandBuffer *pCommandBuffer, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto pPool = GetCommandPoolShared(pCreateInfo->commandPool);
-    if (pPool) {
+    auto pool = GetCommandPoolShared(pCreateInfo->commandPool);
+    if (pool) {
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
-            pPool->commandBuffers.insert(pCommandBuffer[i]);
-            auto pCB = std::make_shared<CMD_BUFFER_STATE>();
-            pCB->createInfo = *pCreateInfo;
-            pCB->command_pool = pPool;
-            pCB->unprotected = pPool->unprotected;
+            pool->commandBuffers.insert(pCommandBuffer[i]);
+            auto cb_state = std::make_shared<CMD_BUFFER_STATE>();
+            cb_state->createInfo = *pCreateInfo;
+            cb_state->command_pool = pool;
+            cb_state->unprotected = pool->unprotected;
             // Add command buffer to map
-            commandBufferMap[pCommandBuffer[i]] = std::move(pCB);
+            commandBufferMap[pCommandBuffer[i]] = std::move(cb_state);
             ResetCommandBufferState(pCommandBuffer[i]);
         }
     }
@@ -3520,8 +3523,8 @@ void ValidationStateTracker::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, F
                             cb_state);
     // If imageless fb, skip fb binding
     if (!fb_state || fb_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return;
-    const uint32_t attachmentCount = fb_state->createInfo.attachmentCount;
-    for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
+    const uint32_t attachment_count = fb_state->createInfo.attachmentCount;
+    for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
         auto view_state = GetActiveAttachmentImageViewState(cb_state, attachment);
         if (view_state) {
             AddCommandBufferBindingImageView(cb_state, view_state);
@@ -4190,8 +4193,9 @@ void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *c
     const auto &pipeline_layout = GetPipelineLayout(layout);
     // Short circuit invalid updates
     if (!pipeline_layout || (set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
-        !pipeline_layout->set_layouts[set]->IsPushDescriptor())
+        !pipeline_layout->set_layouts[set]->IsPushDescriptor()) {
         return;
+    }
 
     // We need a descriptor set to update the bindings with, compatible with the passed layout
     const auto dsl = pipeline_layout->set_layouts[set];
@@ -4503,8 +4507,8 @@ void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_vers
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const auto &dependency = pCreateInfo->pDependencies[i];
-        const auto srcSubpass = dependency.srcSubpass;
-        const auto dstSubpass = dependency.dstSubpass;
+        const auto src_subpass = dependency.srcSubpass;
+        const auto dst_subpass = dependency.dstSubpass;
         if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass != VK_SUBPASS_EXTERNAL)) {
             if (dependency.srcSubpass == dependency.dstSubpass) {
                 self_dependencies[dependency.srcSubpass].push_back(i);
@@ -4513,15 +4517,15 @@ void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_vers
                 subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
             }
         }
-        if (srcSubpass == VK_SUBPASS_EXTERNAL) {
-            assert(dstSubpass != VK_SUBPASS_EXTERNAL);  // this is invalid per VUID-VkSubpassDependency-srcSubpass-00865
-            subpass_dependencies[dstSubpass].barrier_from_external.emplace_back(&dependency);
-        } else if (dstSubpass == VK_SUBPASS_EXTERNAL) {
-            subpass_dependencies[srcSubpass].barrier_to_external.emplace_back(&dependency);
+        if (src_subpass == VK_SUBPASS_EXTERNAL) {
+            assert(dst_subpass != VK_SUBPASS_EXTERNAL);  // this is invalid per VUID-VkSubpassDependency-srcSubpass-00865
+            subpass_dependencies[dst_subpass].barrier_from_external.emplace_back(&dependency);
+        } else if (dst_subpass == VK_SUBPASS_EXTERNAL) {
+            subpass_dependencies[src_subpass].barrier_to_external.emplace_back(&dependency);
         } else if (dependency.srcSubpass != dependency.dstSubpass) {
             // ignore self dependencies in prev and next
-            subpass_dependencies[srcSubpass].next[&subpass_dependencies[dstSubpass]].emplace_back(&dependency);
-            subpass_dependencies[dstSubpass].prev[&subpass_dependencies[srcSubpass]].emplace_back(&dependency);
+            subpass_dependencies[src_subpass].next[&subpass_dependencies[dst_subpass]].emplace_back(&dependency);
+            subpass_dependencies[dst_subpass].prev[&subpass_dependencies[src_subpass]].emplace_back(&dependency);
         }
     }
 
@@ -4601,7 +4605,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
         const uint32_t attachment_count;
         std::vector<VkImageLayout> attachment_layout;
         std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
-        AttachmentTracker(std::shared_ptr<RENDER_PASS_STATE> &render_pass)
+        explicit AttachmentTracker(std::shared_ptr<RENDER_PASS_STATE> &render_pass)
             : rp(render_pass.get()),
               first(rp->attachment_first_subpass),
               first_is_transition(rp->attachment_first_is_transition),
@@ -4968,12 +4972,12 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
 void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
                                                            VkDeviceSize memoryOffset, VkResult result) {
     if (VK_SUCCESS != result) return;
-    VkBindImageMemoryInfo bindInfo = {};
-    bindInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
-    bindInfo.image = image;
-    bindInfo.memory = mem;
-    bindInfo.memoryOffset = memoryOffset;
-    UpdateBindImageMemoryState(bindInfo);
+    VkBindImageMemoryInfo bind_info = {};
+    bind_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bind_info.image = image;
+    bind_info.memory = mem;
+    bind_info.memoryOffset = memoryOffset;
+    UpdateBindImageMemoryState(bind_info);
 }
 
 void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
@@ -5160,10 +5164,10 @@ void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice
 void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-        auto pSemaphore = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
-        if (pSemaphore) {
-            pSemaphore->signaler.first = VK_NULL_HANDLE;
-            pSemaphore->signaled = false;
+        auto semaphore_state = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
+        if (semaphore_state) {
+            semaphore_state->signaler.first = VK_NULL_HANDLE;
+            semaphore_state->signaled = false;
         }
     }
 
@@ -5204,20 +5208,20 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
 
 void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                          VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
-    auto pFence = GetFenceState(fence);
-    if (pFence && pFence->scope == kSyncScopeInternal) {
+    auto fence_state = GetFenceState(fence);
+    if (fence_state && fence_state->scope == kSyncScopeInternal) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
         // import
-        pFence->state = FENCE_INFLIGHT;
-        pFence->signaler.first = VK_NULL_HANDLE;  // ANI isn't on a queue, so this can't participate in a completion proof.
+        fence_state->state = FENCE_INFLIGHT;
+        fence_state->signaler.first = VK_NULL_HANDLE;  // ANI isn't on a queue, so this can't participate in a completion proof.
     }
 
-    auto pSemaphore = GetSemaphoreState(semaphore);
-    if (pSemaphore && pSemaphore->scope == kSyncScopeInternal) {
+    auto semaphore_state = GetSemaphoreState(semaphore);
+    if (semaphore_state && semaphore_state->scope == kSyncScopeInternal) {
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import
-        pSemaphore->signaled = true;
-        pSemaphore->signaler.first = VK_NULL_HANDLE;
+        semaphore_state->signaled = true;
+        semaphore_state->signaler.first = VK_NULL_HANDLE;
     }
 
     // Mark the image as acquired.
@@ -5492,8 +5496,9 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesK
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
 
     if (*pPresentModeCount) {
-        if (*pPresentModeCount > physical_device_state->present_modes.size())
+        if (*pPresentModeCount > physical_device_state->present_modes.size()) {
             physical_device_state->present_modes.resize(*pPresentModeCount);
+        }
     }
     if (pPresentModes) {
         for (uint32_t i = 0; i < *pPresentModeCount; i++) {
@@ -5511,8 +5516,9 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(Vk
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
 
     if (*pSurfaceFormatCount) {
-        if (*pSurfaceFormatCount > physical_device_state->surface_formats.size())
+        if (*pSurfaceFormatCount > physical_device_state->surface_formats.size()) {
             physical_device_state->surface_formats.resize(*pSurfaceFormatCount);
+        }
     }
     if (pSurfaceFormats) {
         for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
@@ -5528,14 +5534,15 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
                                                                                VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
-    auto physicalDeviceState = GetPhysicalDeviceState(physicalDevice);
+    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     if (*pSurfaceFormatCount) {
-        if (*pSurfaceFormatCount > physicalDeviceState->surface_formats.size())
-            physicalDeviceState->surface_formats.resize(*pSurfaceFormatCount);
+        if (*pSurfaceFormatCount > physical_device_state->surface_formats.size()) {
+            physical_device_state->surface_formats.resize(*pSurfaceFormatCount);
+        }
     }
     if (pSurfaceFormats) {
         for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
-            physicalDeviceState->surface_formats[i] = pSurfaceFormats[i].surfaceFormat;
+            physical_device_state->surface_formats[i] = pSurfaceFormats[i].surfaceFormat;
         }
     }
 }
@@ -5596,11 +5603,11 @@ void ValidationStateTracker::RecordEnumeratePhysicalDeviceQueueFamilyPerformance
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
 
-    std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS> queueFamilyCounters(new QUEUE_FAMILY_PERF_COUNTERS());
-    queueFamilyCounters->counters.resize(*pCounterCount);
-    for (uint32_t i = 0; i < *pCounterCount; i++) queueFamilyCounters->counters[i] = pCounters[i];
+    std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS> queue_family_counters(new QUEUE_FAMILY_PERF_COUNTERS());
+    queue_family_counters->counters.resize(*pCounterCount);
+    for (uint32_t i = 0; i < *pCounterCount; i++) queue_family_counters->counters[i] = pCounters[i];
 
-    physical_device_state->perf_counters[queueFamilyIndex] = std::move(queueFamilyCounters);
+    physical_device_state->perf_counters[queueFamilyIndex] = std::move(queue_family_counters);
 }
 
 void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
@@ -5827,8 +5834,8 @@ void ValidationStateTracker::RecordResetQueryPool(VkDevice device, VkQueryPool q
         query_obj.query = firstQuery + i;
         queryToStateMap[query_obj] = QUERYSTATE_RESET;
         if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
-            for (uint32_t passIndex = 0; passIndex < query_pool_state->n_performance_passes; passIndex++) {
-                query_obj.perf_pass = passIndex;
+            for (uint32_t pass_index = 0; pass_index < query_pool_state->n_performance_passes; pass_index++) {
+                query_obj.perf_pass = pass_index;
                 queryToStateMap[query_obj] = QUERYSTATE_RESET;
             }
         }
@@ -5863,8 +5870,8 @@ void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptor
             // Count total descriptors required per type
             for (uint32_t j = 0; j < layout->GetBindingCount(); ++j) {
                 const auto &binding_layout = layout->GetDescriptorSetLayoutBindingPtrFromIndex(j);
-                uint32_t typeIndex = static_cast<uint32_t>(binding_layout->descriptorType);
-                ds_data->required_descriptors_by_type[typeIndex] += binding_layout->descriptorCount;
+                uint32_t type_index = static_cast<uint32_t>(binding_layout->descriptorType);
+                ds_data->required_descriptors_by_type[type_index] += binding_layout->descriptorCount;
             }
         }
         // Any unknown layouts will be flagged as errors during ValidateAllocateDescriptorSets() call
@@ -6127,10 +6134,10 @@ void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CM
             auto size = push_constant_range.offset + push_constant_range.size;
             size_needed = std::max(size_needed, size);
 
-            auto stageFlags = push_constant_range.stageFlags;
+            auto stage_flags = push_constant_range.stageFlags;
             uint32_t bit_shift = 0;
-            while (stageFlags) {
-                if (stageFlags & 1) {
+            while (stage_flags) {
+                if (stage_flags & 1) {
                     VkShaderStageFlagBits flag = static_cast<VkShaderStageFlagBits>(1 << bit_shift);
                     const auto it = cb_state->push_constant_data_update.find(flag);
 
@@ -6148,7 +6155,7 @@ void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CM
                         cb_state->push_constant_data_update[flag] = bytes;
                     }
                 }
-                stageFlags = stageFlags >> 1;
+                stage_flags = stage_flags >> 1;
                 ++bit_shift;
             }
         }
@@ -6190,12 +6197,15 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
 
             image_ci.pNext = lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(swapchain_state->createInfo.pNext);
 
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR)
+            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
                 image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)
+            }
+            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
                 image_ci.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR)
+            }
+            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
                 image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
+            }
 
             imageMap[pSwapchainImages[i]] = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], &image_ci);
             auto &image_state = imageMap[pSwapchainImages[i]];
