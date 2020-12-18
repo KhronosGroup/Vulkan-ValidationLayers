@@ -2943,7 +2943,7 @@ TEST_F(VkSyncValTest, SyncEventsCopyImageHazards) {
         image_a.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     };
 
-    // Scope chcek.  One access in, one access not
+    // Scope check.  One access in, one access not
     m_commandBuffer->begin();
     set_layouts();
     m_errorMonitor->ExpectSuccess();
