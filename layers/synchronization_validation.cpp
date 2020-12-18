@@ -2407,16 +2407,22 @@ bool CommandBufferAccessContext::ValidateWaitEvents(uint32_t eventCount, const V
     if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
         const char *const cmd_name = CommandTypeString(cmd);
         const char *const vuid = "SYNC-vkCmdWaitEvents-hostevent-unsupported";
-        skip = sync_state_->LogWarning(cb_state_->commandBuffer, vuid,
-                                       "%s, srcStageMask includes %s, unsupported by synchronization validaton.", cmd_name,
-                                       string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), ignored);
+        skip = sync_state_->LogInfo(cb_state_->commandBuffer, vuid,
+                                    "%s, srcStageMask includes %s, unsupported by synchronization validaton.", cmd_name,
+                                    string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), ignored);
     }
 
     VkPipelineStageFlags event_stage_masks = 0U;
+    bool events_not_found = false;
     for (uint32_t event_index = 0; event_index < eventCount; event_index++) {
         const auto event = pEvents[event_index];
         const auto *sync_event = GetEventState(event);
-        if (!sync_event) continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
+        if (!sync_event) {
+            // NOTE PHASE2: This is where we'll need queue submit time validation to come back and check the srcStageMask bits
+            events_not_found = true;  // Demote "extra_stage_bits" error to warning, to avoid false positives.
+
+            continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
+        }
 
         event_stage_masks |= sync_event->stage_mask_param;
         const auto ignore_reason = sync_event->IsIgnoredByWait(srcStageMask);
@@ -2494,9 +2500,15 @@ bool CommandBufferAccessContext::ValidateWaitEvents(uint32_t eventCount, const V
         const char *const cmd_name = CommandTypeString(cmd);
         const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
         const char *const message =
-            "%s: srcStageMask 0x%" PRIx32 " contains stages not present in pEvents stageMask. Extra stages are %s.";
-        skip |= sync_state_->LogError(cb_state_->commandBuffer, vuid, message, cmd_name, srcStageMask,
-                                      string_VkPipelineStageFlags(extra_stage_bits).c_str());
+            "%s: srcStageMask 0x%" PRIx32 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
+        if (events_not_found) {
+            skip |= sync_state_->LogInfo(cb_state_->commandBuffer, vuid, message, cmd_name, srcStageMask,
+                                         string_VkPipelineStageFlags(extra_stage_bits).c_str(),
+                                         " vkCmdSetEvent may be in previously submitted command buffer.");
+        } else {
+            skip |= sync_state_->LogError(cb_state_->commandBuffer, vuid, message, cmd_name, srcStageMask,
+                                          string_VkPipelineStageFlags(extra_stage_bits).c_str(), "");
+        }
     }
     return skip;
 }
