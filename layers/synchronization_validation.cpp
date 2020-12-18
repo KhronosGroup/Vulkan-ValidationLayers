@@ -235,6 +235,8 @@ static inline ResourceAccessRange MakeRange(const BUFFER_VIEW_STATE &buf_view_st
 
 // Range generators for to allow event scope filtration to be limited to the top of the resource access traversal pipeline
 //
+// Note: there is no "begin/end" or reset facility.  These are each written as "one time through" generators.
+//
 // Usage:
 //  Constructor() -- initializes the generator to point to the begin of the space declared.
 //  *  -- the current range of the generator empty signfies end
@@ -301,8 +303,6 @@ using EventSimpleRangeGenerator = FilteredRangeGenerator<SyncEventState::ScopeMa
 // Templated to allow for different Range generators or map sources...
 
 // Generate the ranges that are the intersection of the RangeGen ranges and the entries in the FilterMap
-// Note that begin *cannot* reset RangeGen (image range generation currently doesn't support it), so you can only iterate over
-// this generator once.
 template <typename FilterMap, typename RangeGen, typename KeyType = typename FilterMap::key_type>
 class FilteredGeneratorGenerator {
   public:
@@ -353,7 +353,7 @@ class FilteredGeneratorGenerator {
     KeyType FastForwardFilter(const KeyType &range) {
         auto filter_range = FilterRange();
         int retry_count = 0;
-        const static int kRetryLimit = 2;  // TODO -- determine wheter this limit is optimal
+        const static int kRetryLimit = 2;  // TODO -- determine whether this limit is optimal
         while (!filter_range.empty() && (filter_range.end <= range.begin)) {
             if (retry_count < kRetryLimit) {
                 ++filter_pos_;
