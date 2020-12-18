@@ -1553,6 +1553,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.core12.samplerFilterMinmax = VK_FALSE;
         state_tracker->enabled_features.core12.shaderOutputLayer = VK_FALSE;
         state_tracker->enabled_features.core12.shaderOutputViewportIndex = VK_FALSE;
+        state_tracker->enabled_features.core12.subgroupBroadcastDynamicId = VK_FALSE;
 
         // These structs are only allowed in pNext chain if there is no VkPhysicalDeviceVulkan12Features
 
@@ -1663,6 +1664,21 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
                 buffer_device_address->bufferDeviceAddressCaptureReplay;
             state_tracker->enabled_features.core12.bufferDeviceAddressMultiDevice =
                 buffer_device_address->bufferDeviceAddressMultiDevice;
+        }
+
+        const auto *atomic_int64_features = lvl_find_in_chain<VkPhysicalDeviceShaderAtomicInt64Features>(pCreateInfo->pNext);
+        if (atomic_int64_features) {
+            state_tracker->enabled_features.core12.shaderBufferInt64Atomics = atomic_int64_features->shaderBufferInt64Atomics;
+            state_tracker->enabled_features.core12.shaderSharedInt64Atomics = atomic_int64_features->shaderSharedInt64Atomics;
+        }
+
+        const auto *memory_model_features = lvl_find_in_chain<VkPhysicalDeviceVulkanMemoryModelFeatures>(pCreateInfo->pNext);
+        if (memory_model_features) {
+            state_tracker->enabled_features.core12.vulkanMemoryModel = memory_model_features->vulkanMemoryModel;
+            state_tracker->enabled_features.core12.vulkanMemoryModelDeviceScope =
+                memory_model_features->vulkanMemoryModelDeviceScope;
+            state_tracker->enabled_features.core12.vulkanMemoryModelAvailabilityVisibilityChains =
+                memory_model_features->vulkanMemoryModelAvailabilityVisibilityChains;
         }
     }
 
