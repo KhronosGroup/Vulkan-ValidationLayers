@@ -21,9 +21,10 @@ name: CI Build
 # Perform CI builds for pull requests targeting the master branch or any pushes to the repo.
 on:
   push:
-  pull_request:
+  pull_request_target:
     branches:
       - master
+    types: opened
 
 jobs:
   code-format:
