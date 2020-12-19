@@ -24,7 +24,7 @@ on:
   pull_request_target:
     branches:
       - master
-    types: opened
+    types: [opened, synchronize]
 
 jobs:
   code-format:
