@@ -5,14 +5,14 @@
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
 [2]: https://www.khronos.org/vulkan/
 
-# Synchronization Validation (Alpha)
+# Synchronization Validation
 
 [![Creative Commons][3]][4]
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
-Synchronization Validation (alpha release)
+Synchronization Validation
 
 Synchronization Validation is implemented in the `VK_LAYER_KHRONOS_validation layer`. When enabled, the Synchronization Object is intended to identify resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.
 
@@ -24,7 +24,7 @@ Synchronization can easily be enabled and configured using the [Vulkan Configura
 
 The specific areas covered by this layer are currently tracked in the
 [Synchronization Validation Project](https://github.com/KhronosGroup/Vulkan-ValidationLayers/projects/5).
-Requests for additional checks can be requested by creating a Github issue.
+Requests for additional checks can be requested by creating a [Github issue](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues).
 
 ## Synchronization Validation Functionality
 
@@ -81,14 +81,16 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 ### Current Feature set
 
 - Hazard detection for memory usage for commands within the *same* command buffer
-- Synchronization operations vkCmdPipelineBarrier and renderpass/subpass barriers
+- Synchronization operations 
+  - vkCmdPipelineBarrier
+  - vkCmdSetEvent/vkCmdWaitEvents/vkCmdResetEvent
+  - renderpass/subpass barriers
 - Image layout transition hazard and access tracking
 - Load/Store/Resolve operations within Subpasses.
 
 ### Known Limitations
 
 - Does not include implementation of multi-view renderpass support.
-- Does not include vkCmd(Set|Wait)Event support.
 - Host set event not supported
 - ExecuteCommands and QueueSubmit hazards from are not tracked or reported
 - Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK
