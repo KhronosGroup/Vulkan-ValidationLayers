@@ -56,8 +56,12 @@ config("vulkan_internal_config") {
     "API_NAME=\"Vulkan\"",
     "VK_ENABLE_BETA_EXTENSIONS",
   ]
+  cflags = []
   if (is_clang || !is_win) {
-    cflags = [ "-Wno-unused-function" ]
+    cflags += [ "-Wno-unused-function" ]
+  }
+  if (is_clang) {
+    cflags += [ "-Wno-inconsistent-missing-override" ]
   }
   if (is_linux) {
     defines += [
@@ -91,6 +95,9 @@ core_validation_sources = [
   "layers/descriptor_sets.cpp",
   "layers/descriptor_sets.h",
   "layers/drawdispatch.cpp",
+  "layers/generated/corechecks_optick_instrumentation.cpp",
+  "layers/generated/corechecks_optick_instrumentation.h",
+  "layers/generated/spirv_validation_helper.cpp",
   "layers/generated/synchronization_validation_types.h",
   "layers/gpu_utils.cpp",
   "layers/gpu_utils.h",
@@ -101,15 +108,12 @@ core_validation_sources = [
   "layers/range_vector.h",
   "layers/shader_validation.cpp",
   "layers/shader_validation.h",
-  "layers/generated/spirv_validation_helper.cpp",
   "layers/state_tracker.cpp",
   "layers/state_tracker.h",
   "layers/subresource_adapter.cpp",
   "layers/subresource_adapter.h",
   "layers/synchronization_validation.cpp",
   "layers/synchronization_validation.h",
-  "layers/generated/corechecks_optick_instrumentation.cpp",
-  "layers/generated/corechecks_optick_instrumentation.h",
 ]
 
 object_lifetimes_sources = [
