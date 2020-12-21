@@ -59,6 +59,8 @@ VK_NV_ray_tracing extension is enabled.
 
 (August 2019) Add bounds checking for pointers retrieved from vkGetBufferDeviceAddressEXT.
 
+(December 2020) Add bounds checking for reads and writes to uniform buffers, storage buffers, uniform texel buffers, and storage texel buffers
+
 ### Out-of-Bounds(OOB) Descriptor Array Indexing
 
 Checking for correct indexing of descriptor arrays is sometimes referred to as "bind-less validation".
