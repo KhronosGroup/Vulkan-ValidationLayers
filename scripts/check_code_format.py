@@ -56,14 +56,8 @@ def CPrint(msg_type, msg_string):
     print(txtcolors.get(msg_type, txtcolors['NO_COLOR']) + msg_string + txtcolors['NO_COLOR'])
 #
 #
-# Get list of files involved in this branch
-target_files_data = subprocess.check_output(['git', 'diff', '--name-only', 'origin/master'])
-target_files = target_files_data.decode('utf-8')
-target_files = target_files.split("\n")
-#
-#
 # Check clang-formatting of source code diff
-def VerifyClangFormatSource():
+def VerifyClangFormatSource(target_refspec, target_files):
     CPrint('', "\nChecking PR source code for clang-format errors:")
     retval = 0
     good_file_pattern = re.compile('.*\\.(cpp|cc|c\+\+|cxx|c|h|hpp)$')
@@ -71,7 +65,7 @@ def VerifyClangFormatSource():
     diff_files = ' '.join([str(elem) for elem in diff_files_list])
     retval = 0
     if diff_files != '':
-        git_diff = subprocess.Popen(('git', 'diff', '-U0', 'origin/master', '--', diff_files), stdout=subprocess.PIPE)
+        git_diff = subprocess.Popen(('git', 'diff', '-U0', target_refspec, '--', diff_files), stdout=subprocess.PIPE)
         diff_files_data = subprocess.check_output(('python3', './scripts/clang-format-diff.py', '-p1', '-style=file'), stdin=git_diff.stdout)
         diff_files_data = diff_files_data.decode('utf-8')
         if diff_files_data != '':
@@ -84,7 +78,7 @@ def VerifyClangFormatSource():
 #
 #
 # Check copyright dates for modified files
-def VerifyCopyrights():
+def VerifyCopyrights(target_refspec, target_files):
     CPrint('', "\nChecking PR source files for correct copyright information:")
     retval = 0
     current_year = str(date.today().year)
@@ -101,12 +95,12 @@ def VerifyCopyrights():
 #
 #
 # Check commit message formats for commits in this PR/Branch
-def VerifyCommitMessageFormat():
+def VerifyCommitMessageFormat(target_refspec, target_files):
     CPrint('', "\nChecking PR commit messages for consistency issues:")
     retval = 0
 
     # Construct correct commit list
-    pr_commit_range_parms = ['git', 'log', '--no-merges', '--left-only', 'HEAD...origin/master', '--pretty=format:"XXXNEWLINEXXX"%n%B']
+    pr_commit_range_parms = ['git', 'log', '--no-merges', '--left-only', 'HEAD...' + target_refspec, '--pretty=format:"XXXNEWLINEXXX"%n%B']
 
     commit_data = check_output(pr_commit_range_parms)
     commit_text = commit_data.decode('utf-8')
@@ -191,23 +185,40 @@ def VerifyCommitMessageFormat():
 #
 # Entrypoint
 def main():
+    DEFAULT_REFSPEC = 'origin/master'
+
     parser = argparse.ArgumentParser(description='''Usage: python3 ./scripts/check_code_format.py
     - Reqires python3 and clang-format 7.0+
     - Run script in repo root
-    - May produce inaccurate clang-format results if local branch is not rebased on origin/master
+    - May produce inaccurate clang-format results if local branch is not rebased on the TARGET_REFSPEC
     ''', formatter_class=RawDescriptionHelpFormatter)
+    parser.add_argument('--target-refspec', metavar='TARGET_REFSPEC', type=str, dest='target_refspec', help = 'Refspec to '
+        + 'diff against (default is origin/master)', default=DEFAULT_REFSPEC)
     args = parser.parse_args()
 
     if sys.version_info[0] != 3:
         print("This script requires Python 3. Run script with [-h] option for more details.")
         exit()
 
+    target_refspec = args.target_refspec
+    if target_refspec == 'origin/':
+        # For non-pull requests (e.g., pushing to a branch on a fork), an empty string will be passed in as the
+        # "target branch." In this case, just diff against the previous commit.
+        target_refspec = 'HEAD^'
+
+    #
+    #
+    # Get list of files involved in this branch
+    target_files_data = subprocess.check_output(['git', 'diff', '--name-only', target_refspec])
+    target_files = target_files_data.decode('utf-8')
+    target_files = target_files.split("\n")
+
     if os.path.isfile('check_code_format.py'):
         os.chdir('..')
 
-    clang_format_failure = VerifyClangFormatSource()
-    copyright_failure = VerifyCopyrights()
-    commit_msg_failure = VerifyCommitMessageFormat()
+    clang_format_failure = VerifyClangFormatSource(target_refspec, target_files)
+    copyright_failure = VerifyCopyrights(target_refspec, target_files)
+    commit_msg_failure = VerifyCommitMessageFormat(target_refspec, target_files)
 
     if clang_format_failure or copyright_failure or commit_msg_failure:
         CPrint('ERR_MSG', "\nOne or more format checks failed.\n\n")
