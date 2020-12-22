@@ -901,14 +901,18 @@ class StatelessValidation : public ValidationObject {
 
     template <typename RenderPassCreateInfoGeneric>
     bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const RenderPassCreateInfoGeneric *pCreateInfo,
-                                      uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags stages, const char *vuid,
-                                      const char *target, const char *func_name) const {
+                                      uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags2KHR stages,
+                                      const char *vuid, const char *target, const char *func_name) const {
         bool skip = false;
         // make sure we consider all of the expanded and un-expanded graphics bits to be valid
-        const auto kExcludeStages = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        const auto kGraphicsStages = (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) |
-                                      VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) &
-                                     ~kExcludeStages;
+        const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
+                                    VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR | VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
+                                    VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR;
+        const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
+                                         VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR;
+        const auto kGraphicsStages =
+            (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
+            ~kExcludeStages;
 
         const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
             if (subpass == VK_SUBPASS_EXTERNAL)
@@ -923,8 +927,8 @@ class StatelessValidation : public ValidationObject {
                              "%s: Dependency pDependencies[%" PRIu32
                              "] specifies a %sStageMask that contains stages (%s) that are not part "
                              "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
-                             func_name, dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(),
-                             target, subpass);
+                             func_name, dependency_index, target,
+                             sync_utils::StringPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
         }
 
         return skip;

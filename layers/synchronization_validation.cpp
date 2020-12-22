@@ -177,7 +177,7 @@ std::string CommandBufferAccessContext::FormatUsage(const HazardResult &hazard) 
     out << "(usage: " << usage_info.name << ", prior_usage: " << stage_access_name;
     if (IsHazardVsRead(hazard.hazard)) {
         const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access);
-        out << ", read_barriers: " << string_VkPipelineStageFlags(barriers);
+        out << ", read_barriers: " << string_VkPipelineStageFlags2KHR(barriers);
     } else {
         SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
         out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
@@ -191,14 +191,14 @@ std::string CommandBufferAccessContext::FormatUsage(const HazardResult &hazard) 
 // NOTE: the attachement read flag is put *only* in the access scope and not in the exect scope, since the ordering
 //       rules apply only to this specific access for this stage, and not the stage as a whole. The ordering detection
 //       also reflects this special case for read hazard detection (using access instead of exec scope)
-static constexpr VkPipelineStageFlags kColorAttachmentExecScope = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+static constexpr VkPipelineStageFlags2KHR kColorAttachmentExecScope = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR;
 static const SyncStageAccessFlags kColorAttachmentAccessScope =
     SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_BIT |
     SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
     SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE_BIT |
     SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT;  // Note: this is intentionally not in the exec scope
-static constexpr VkPipelineStageFlags kDepthStencilAttachmentExecScope =
-    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+static constexpr VkPipelineStageFlags2KHR kDepthStencilAttachmentExecScope =
+    VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR;
 static const SyncStageAccessFlags kDepthStencilAttachmentAccessScope =
     SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
     SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
@@ -207,7 +207,7 @@ static constexpr VkPipelineStageFlags kRasterAttachmentExecScope = kDepthStencil
 static const SyncStageAccessFlags kRasterAttachmentAccessScope = kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope;
 
 ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
-    {{0U, SyncStageAccessFlags()},
+    {{VK_PIPELINE_STAGE_2_NONE_KHR, SyncStageAccessFlags()},
      {kColorAttachmentExecScope, kColorAttachmentAccessScope},
      {kDepthStencilAttachmentExecScope, kDepthStencilAttachmentAccessScope},
      {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
@@ -456,9 +456,10 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
     // Because if write hazard happens, read hazard might or might not happen.
     // But if write hazard doesn't happen, read hazard is impossible to happen.
     if (descriptor_data.is_writable) {
-        return stage_access->second.shader_write;
+        return stage_access->second.storage_write;
     }
-    return stage_access->second.shader_read;
+    // TODO: sampled_read
+    return stage_access->second.storage_read;
 }
 
 bool IsImageLayoutDepthWritable(VkImageLayout image_layout) {
@@ -1239,7 +1240,7 @@ HazardResult AccessContext::DetectHazard(const IMAGE_VIEW_STATE *view, SyncStage
 
 class BarrierHazardDetector {
   public:
-    BarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_exec_scope,
+    BarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                           SyncStageAccessFlags src_access_scope)
         : usage_index_(usage_index), src_exec_scope_(src_exec_scope), src_access_scope_(src_access_scope) {}
 
@@ -1253,13 +1254,13 @@ class BarrierHazardDetector {
 
   private:
     SyncStageAccessIndex usage_index_;
-    VkPipelineStageFlags src_exec_scope_;
+    VkPipelineStageFlags2KHR src_exec_scope_;
     SyncStageAccessFlags src_access_scope_;
 };
 
 class EventBarrierHazardDetector {
   public:
-    EventBarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_exec_scope,
+    EventBarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                                SyncStageAccessFlags src_access_scope, const SyncEventState::ScopeMap &event_scope,
                                const ResourceUsageTag &scope_tag)
         : usage_index_(usage_index),
@@ -1290,7 +1291,7 @@ class EventBarrierHazardDetector {
 
   private:
     SyncStageAccessIndex usage_index_;
-    VkPipelineStageFlags src_exec_scope_;
+    VkPipelineStageFlags2KHR src_exec_scope_;
     SyncStageAccessFlags src_access_scope_;
     const SyncEventState::ScopeMap &event_scope_;
     SyncEventState::ScopeMap::const_iterator scope_pos_;
@@ -1298,7 +1299,7 @@ class EventBarrierHazardDetector {
     const ResourceUsageTag &scope_tag_;
 };
 
-HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
+HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
                                                      const SyncStageAccessFlags &src_access_scope,
                                                      const VkImageSubresourceRange &subresource_range,
                                                      const SyncEventState &sync_event, DetectOptions options) const {
@@ -1313,7 +1314,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, V
     return DetectHazard(detector, image, subresource_range, zero_offset, image.createInfo.extent, options);
 }
 
-HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
+HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
                                                      const SyncStageAccessFlags &src_access_scope,
                                                      const VkImageSubresourceRange &subresource_range,
                                                      const DetectOptions options) const {
@@ -1322,7 +1323,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, V
     return DetectHazard(detector, image, subresource_range, zero_offset, image.createInfo.extent, options);
 }
 
-HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
+HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
                                                      const SyncStageAccessFlags &src_stage_accesses,
                                                      const VkImageMemoryBarrier &barrier) const {
     auto subresource_range = NormalizeSubresourceRange(image.createInfo, barrier.subresourceRange);
@@ -1347,16 +1348,16 @@ SyncStageAccessFlags AccessScopeImpl(Flags flag_mask, const Map &map) {
     return scope;
 }
 
-SyncStageAccessFlags SyncStageAccess::AccessScopeByStage(VkPipelineStageFlags stages) {
+SyncStageAccessFlags SyncStageAccess::AccessScopeByStage(VkPipelineStageFlags2KHR stages) {
     return AccessScopeImpl(stages, syncStageAccessMaskByStageBit);
 }
 
-SyncStageAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags accesses) {
-    return AccessScopeImpl(accesses, syncStageAccessMaskByAccessBit);
+SyncStageAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags2KHR accesses) {
+    return AccessScopeImpl(sync_utils::ExpandAccessFlags(accesses), syncStageAccessMaskByAccessBit);
 }
 
-// Getting from stage mask and access mask to stage/acess masks is something we need to be good at...
-SyncStageAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags stages, VkAccessFlags accesses) {
+// Getting from stage mask and access mask to stage/access masks is something we need to be good at...
+SyncStageAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags2KHR stages, VkAccessFlags2KHR accesses) {
     // The access scope is the intersection of all stage/access types possible for the enabled stages and the enables
     // accesses (after doing a couple factoring of common terms the union of stage/access intersections is the intersections
     // of the union of all stage/access types for all the stages and the same unions for the access mask...
@@ -2001,7 +2002,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
             auto *buf_state = binding_buffer.buffer_state.get();
             const ResourceAccessRange range = GetBufferRange(binding_buffer.offset, buf_state->createInfo.size, firstVertex,
                                                              vertexCount, binding_description.stride);
-            auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range);
+            auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.hazard) {
                 skip |= sync_state_->LogError(
                     buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for vertex %s in %s. Access info %s.",
@@ -2031,8 +2032,8 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
             auto *buf_state = binding_buffer.buffer_state.get();
             const ResourceAccessRange range = GetBufferRange(binding_buffer.offset, buf_state->createInfo.size, firstVertex,
                                                              vertexCount, binding_description.stride);
-            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, SyncOrdering::kNonAttachment,
-                                                range, tag);
+            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ,
+                                                SyncOrdering::kNonAttachment, range, tag);
         }
     }
 }
@@ -2047,7 +2048,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
     const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
     const ResourceAccessRange range = GetBufferRange(cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size,
                                                      firstIndex, indexCount, index_size);
-    auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, range);
+    auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.hazard) {
         skip |= sync_state_->LogError(
             index_buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for index %s in %s. Access info %s.",
@@ -2068,7 +2069,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
     const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
     const ResourceAccessRange range = GetBufferRange(cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size,
                                                      firstIndex, indexCount, index_size);
-    current_context_->UpdateAccessState(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag);
+    current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag);
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
@@ -2463,7 +2464,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     }
 }
 
-SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags mask_param) {
+SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param) {
     SyncExecScope result;
     result.mask_param = mask_param;
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
@@ -2472,7 +2473,7 @@ SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFl
     return result;
 }
 
-SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags mask_param) {
+SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param) {
     SyncExecScope result;
     result.mask_param = mask_param;
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
@@ -2590,7 +2591,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
         bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
         if (last_reads.size()) {
             // Look for any WAR hazards outside the ordered set of stages
-            VkPipelineStageFlags ordered_stages = 0;
+            VkPipelineStageFlags2KHR ordered_stages = 0;
             if (usage_write_is_ordered) {
                 // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
                 ordered_stages = GetOrderedStages(ordering);
@@ -2641,7 +2642,7 @@ HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_i
     return hazard;
 }
 
-HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_exec_scope,
+HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                                                       const SyncStageAccessFlags &src_access_scope) const {
     // Only supporting image layout transitions for now
     assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
@@ -2663,7 +2664,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
     return hazard;
 }
 
-HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_exec_scope,
+HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                                                       const SyncStageAccessFlags &src_access_scope,
                                                       const ResourceUsageTag &event_tag) const {
     // Only supporting image layout transitions for now
@@ -2743,7 +2744,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                             // TODO: Phase 2 -- review the state merge logic to avoid false positive from overwriting the barriers
                             //                  May require tracking more than one access per stage.
                             my_read.barriers = other_read.barriers;
-                            if (my_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+                            if (my_read.stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR) {
                                 // Since I'm overwriting the fragement stage read, also update the input attachment info
                                 // as this is the only stage that affects it.
                                 input_attachment_read = other.input_attachment_read;
@@ -2761,7 +2762,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                 // The other read stage doesn't exist in this, so add it.
                 last_reads.emplace_back(other_read);
                 last_read_stages |= other_read.stage;
-                if (other_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+                if (other_read.stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR) {
                     input_attachment_read = other.input_attachment_read;
                 }
             }
@@ -2814,7 +2815,7 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering 
         }
 
         // Fragment shader reads come in two flavors, and we need to track if the one we're tracking is the special one.
-        if (usage_stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
+        if (usage_stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR) {
             // TODO Revisit re: multiple reads for a given stage
             input_attachment_read = (usage_bit == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT);
         }
@@ -2930,8 +2931,8 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag &tag) {
 }
 
 // This should be just Bits or Index, but we don't have an invalid state for Index
-VkPipelineStageFlags ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
-    VkPipelineStageFlags barriers = 0U;
+VkPipelineStageFlags2KHR ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
+    VkPipelineStageFlags2KHR barriers = 0U;
 
     for (const auto &read_access : last_reads) {
         if ((read_access.access & usage_bit).any()) {
@@ -2943,7 +2944,7 @@ VkPipelineStageFlags ResourceAccessState::GetReadBarriers(const SyncStageAccessF
     return barriers;
 }
 
-inline bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlagBits usage_stage, const SyncStageAccessFlags &usage) const {
+inline bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const {
     assert(IsRead(usage));
     // Only RAW vs. last_write if it doesn't happen-after any other read because either:
     //    * the previous reads are not hazards, and thus last_write must be visible and available to
@@ -2953,14 +2954,14 @@ inline bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlagBits usage_stage
     return last_write.any() && (0 == (read_execution_barriers & usage_stage)) && IsWriteHazard(usage);
 }
 
-VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const OrderingBarrier &ordering) const {
+VkPipelineStageFlags2KHR ResourceAccessState::GetOrderedStages(const OrderingBarrier &ordering) const {
     // Whether the stage are in the ordering scope only matters if the current write is ordered
-    VkPipelineStageFlags ordered_stages = last_read_stages & ordering.exec_scope;
+    VkPipelineStageFlags2KHR ordered_stages = last_read_stages & ordering.exec_scope;
     // Special input attachment handling as always (not encoded in exec_scop)
     const bool input_attachment_ordering = (ordering.access_scope & SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT).any();
     if (input_attachment_ordering && input_attachment_read) {
         // If we have an input attachment in last_reads and input attachments are ordered we all that stage
-        ordered_stages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        ordered_stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
     }
 
     return ordered_stages;
@@ -2969,8 +2970,7 @@ VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const OrderingBarrier
 void ResourceAccessState::UpdateFirst(const ResourceUsageTag &tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule) {
     // Only record until we record a write.
     if (first_accesses_.empty() || IsRead(first_accesses_.back().usage_index)) {
-        const VkPipelineStageFlags usage_stage =
-            IsRead(usage_index) ? static_cast<VkPipelineStageFlags>(PipelineStageBit(usage_index)) : 0U;
+        const VkPipelineStageFlags2KHR usage_stage = IsRead(usage_index) ? PipelineStageBit(usage_index) : 0U;
         if (0 == (usage_stage & first_read_stages_)) {
             // If this is a read we haven't seen or a write, record.
             first_read_stages_ |= usage_stage;
@@ -3010,7 +3010,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            auto hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
+            auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
             if (hazard.hazard) {
                 skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBuffer: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.",
@@ -3020,7 +3020,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
         }
         if (dst_buffer && !skip) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
+            auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.hazard) {
                 skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBuffer: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
@@ -3047,11 +3047,11 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
+            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
         }
         if (dst_buffer) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
         }
     }
 }
@@ -3079,7 +3079,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuff
         const auto &copy_region = pCopyBufferInfos->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            auto hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
+            auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
             if (hazard.hazard) {
                 // TODO -- add tag information to log msg when useful.
                 skip |= LogError(pCopyBufferInfos->srcBuffer, string_SyncHazardVUID(hazard.hazard),
@@ -3090,7 +3090,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuff
         }
         if (dst_buffer && !skip) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
+            auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.hazard) {
                 skip |= LogError(pCopyBufferInfos->dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBuffer2KHR(): Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
@@ -3116,11 +3116,11 @@ void SyncValidator::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer
         const auto &copy_region = pCopyBufferInfos->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
+            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
         }
         if (dst_buffer) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
         }
     }
 }
@@ -3142,7 +3142,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
-            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.srcSubresource,
+            auto hazard = context->DetectHazard(*src_image, SYNC_COPY_TRANSFER_READ, copy_region.srcSubresource,
                                                 copy_region.srcOffset, copy_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
@@ -3155,7 +3155,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
         if (dst_image) {
             VkExtent3D dst_copy_extent =
                 GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
-            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource,
+            auto hazard = context->DetectHazard(*dst_image, SYNC_COPY_TRANSFER_WRITE, copy_region.dstSubresource,
                                                 copy_region.dstOffset, dst_copy_extent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
@@ -3185,13 +3185,13 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        copy_region.srcSubresource, copy_region.srcOffset, copy_region.extent, tag);
         }
         if (dst_image) {
             VkExtent3D dst_copy_extent =
                 GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        copy_region.dstSubresource, copy_region.dstOffset, dst_copy_extent, tag);
         }
     }
@@ -3213,7 +3213,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffe
     for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
-            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.srcSubresource,
+            auto hazard = context->DetectHazard(*src_image, SYNC_COPY_TRANSFER_READ, copy_region.srcSubresource,
                                                 copy_region.srcOffset, copy_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(pCopyImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
@@ -3226,7 +3226,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffe
         if (dst_image) {
             VkExtent3D dst_copy_extent =
                 GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
-            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource,
+            auto hazard = context->DetectHazard(*dst_image, SYNC_COPY_TRANSFER_WRITE, copy_region.dstSubresource,
                                                 copy_region.dstOffset, dst_copy_extent);
             if (hazard.hazard) {
                 skip |= LogError(pCopyImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
@@ -3254,13 +3254,13 @@ void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
     for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        copy_region.srcSubresource, copy_region.srcOffset, copy_region.extent, tag);
         }
         if (dst_image) {
             VkExtent3D dst_copy_extent =
                 GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        copy_region.dstSubresource, copy_region.dstOffset, dst_copy_extent, tag);
         }
     }
@@ -3561,7 +3561,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
             if (src_buffer) {
                 ResourceAccessRange src_range =
                     MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
-                hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
+                hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
                 if (hazard.hazard) {
                     // PHASE1 TODO -- add tag information to log msg when useful.
                     skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
@@ -3571,7 +3571,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                 }
             }
 
-            hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.imageSubresource,
+            hazard = context->DetectHazard(*dst_image, SYNC_COPY_TRANSFER_WRITE, copy_region.imageSubresource,
                                            copy_region.imageOffset, copy_region.imageExtent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
@@ -3623,9 +3623,9 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
             if (src_buffer) {
                 ResourceAccessRange src_range =
                     MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
-                context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
+                context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
             }
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        copy_region.imageSubresource, copy_region.imageOffset, copy_region.imageExtent, tag);
         }
     }
@@ -3668,7 +3668,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
-            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.imageSubresource,
+            auto hazard = context->DetectHazard(*src_image, SYNC_COPY_TRANSFER_READ, copy_region.imageSubresource,
                                                 copy_region.imageOffset, copy_region.imageExtent);
             if (hazard.hazard) {
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
@@ -3679,7 +3679,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
             if (dst_mem) {
                 ResourceAccessRange dst_range =
                     MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
-                hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
+                hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
                 if (hazard.hazard) {
                     skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                                      "%s: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
@@ -3729,12 +3729,12 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        copy_region.imageSubresource, copy_region.imageOffset, copy_region.imageExtent, tag);
             if (dst_buffer) {
                 ResourceAccessRange dst_range =
                     MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
-                context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+                context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
             }
         }
     }
@@ -3779,8 +3779,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
-            auto hazard =
-                context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, blit_region.srcSubresource, offset, extent);
+            auto hazard = context->DetectHazard(*src_image, SYNC_BLIT_TRANSFER_READ, blit_region.srcSubresource, offset, extent);
             if (hazard.hazard) {
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", apiName,
@@ -3796,8 +3795,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
-            auto hazard =
-                context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent);
+            auto hazard = context->DetectHazard(*dst_image, SYNC_BLIT_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", apiName,
@@ -3846,7 +3844,7 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*src_image, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        blit_region.srcSubresource, offset, extent, tag);
         }
         if (dst_image) {
@@ -3856,7 +3854,7 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*dst_image, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        blit_region.dstSubresource, offset, extent, tag);
         }
     }
@@ -4332,7 +4330,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
         const auto &range = pRanges[index];
         if (image_state) {
             auto hazard =
-                context->DetectHazard(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, range, {0, 0, 0}, image_state->createInfo.extent);
+                context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, {0, 0, 0}, image_state->createInfo.extent);
             if (hazard.hazard) {
                 skip |= LogError(image, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdClearColorImage: Hazard %s for %s, range index %" PRIu32 ". Access info %s.",
@@ -4359,7 +4357,7 @@ void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
     for (uint32_t index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
-            context->UpdateAccessState(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, {0, 0, 0},
+            context->UpdateAccessState(*image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, {0, 0, 0},
                                        image_state->createInfo.extent, tag);
         }
     }
@@ -4384,7 +4382,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
         const auto &range = pRanges[index];
         if (image_state) {
             auto hazard =
-                context->DetectHazard(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, range, {0, 0, 0}, image_state->createInfo.extent);
+                context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, {0, 0, 0}, image_state->createInfo.extent);
             if (hazard.hazard) {
                 skip |= LogError(image, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdClearDepthStencilImage: Hazard %s for %s, range index %" PRIu32 ". Access info %s.",
@@ -4411,7 +4409,7 @@ void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     for (uint32_t index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
-            context->UpdateAccessState(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, {0, 0, 0},
+            context->UpdateAccessState(*image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, {0, 0, 0},
                                        image_state->createInfo.extent, tag);
         }
     }
@@ -4434,7 +4432,7 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.hazard) {
             skip |=
                 LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
@@ -4462,7 +4460,7 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 
     // TODO:Track VkQueryPool
@@ -4483,7 +4481,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.hazard) {
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdFillBuffer: Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
@@ -4506,7 +4504,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 
@@ -4528,7 +4526,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
         if (src_image) {
-            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, resolve_region.srcSubresource,
+            auto hazard = context->DetectHazard(*src_image, SYNC_RESOLVE_TRANSFER_READ, resolve_region.srcSubresource,
                                                 resolve_region.srcOffset, resolve_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
@@ -4539,7 +4537,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
         }
 
         if (dst_image) {
-            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, resolve_region.dstSubresource,
+            auto hazard = context->DetectHazard(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, resolve_region.dstSubresource,
                                                 resolve_region.dstOffset, resolve_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
@@ -4571,11 +4569,11 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        resolve_region.srcSubresource, resolve_region.srcOffset, resolve_region.extent, tag);
         }
         if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        resolve_region.dstSubresource, resolve_region.dstOffset, resolve_region.extent, tag);
         }
     }
@@ -4598,7 +4596,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBu
     for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
-            auto hazard = context->DetectHazard(*src_image, SYNC_TRANSFER_TRANSFER_READ, resolve_region.srcSubresource,
+            auto hazard = context->DetectHazard(*src_image, SYNC_RESOLVE_TRANSFER_READ, resolve_region.srcSubresource,
                                                 resolve_region.srcOffset, resolve_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(pResolveImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
@@ -4609,7 +4607,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBu
         }
 
         if (dst_image) {
-            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, resolve_region.dstSubresource,
+            auto hazard = context->DetectHazard(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, resolve_region.dstSubresource,
                                                 resolve_region.dstOffset, resolve_region.extent);
             if (hazard.hazard) {
                 skip |= LogError(pResolveImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
@@ -4639,11 +4637,11 @@ void SyncValidator::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuff
     for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        resolve_region.srcSubresource, resolve_region.srcOffset, resolve_region.extent, tag);
         }
         if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+            context->UpdateAccessState(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        resolve_region.dstSubresource, resolve_region.dstOffset, resolve_region.extent, tag);
         }
     }
@@ -4665,7 +4663,7 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
     if (dst_buffer) {
         // VK_WHOLE_SIZE not allowed
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.hazard) {
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdUpdateBuffer: Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
@@ -4689,7 +4687,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     if (dst_buffer) {
         // VK_WHOLE_SIZE not allowed
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 
@@ -4708,7 +4706,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.hazard) {
             skip |=
                 LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
@@ -4732,7 +4730,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 
@@ -4823,7 +4821,7 @@ void SyncEventState::ResetFirstScope() {
 }
 
 // Keep the "ignore this event" logic in same place for ValidateWait and RecordWait to use
-SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(VkPipelineStageFlags srcStageMask) const {
+SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(VkPipelineStageFlags2KHR srcStageMask) const {
     IgnoreReason reason = NotIgnored;
 
     if (last_command == CMD_RESETEVENT && !HasBarrier(0U, 0U)) {
@@ -4831,14 +4829,14 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(VkPipelineStageFlag
     } else if (unsynchronized_set) {
         reason = SetRace;
     } else {
-        const VkPipelineStageFlags missing_bits = scope.mask_param & ~srcStageMask;
+        const VkPipelineStageFlags2KHR missing_bits = scope.mask_param & ~srcStageMask;
         if (missing_bits) reason = MissingStageBits;
     }
 
     return reason;
 }
 
-bool SyncEventState::HasBarrier(VkPipelineStageFlags stageMask, VkPipelineStageFlags exec_scope_arg) const {
+bool SyncEventState::HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope_arg) const {
     bool has_barrier = (last_command == CMD_NONE) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
                        (barriers & exec_scope_arg) || (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     return has_barrier;
@@ -5042,10 +5040,10 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
         const char *const vuid = "SYNC-vkCmdWaitEvents-hostevent-unsupported";
         skip = sync_state.LogInfo(command_buffer_handle, vuid,
                                   "%s, srcStageMask includes %s, unsupported by synchronization validaton.", CmdName(),
-                                  string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), ignored);
+                                  string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
     }
 
-    VkPipelineStageFlags event_stage_masks = 0U;
+    VkPipelineStageFlags2KHR event_stage_masks = 0U;
     bool events_not_found = false;
     const auto *events_context = cb_context.GetCurrentEventsContext();
     assert(events_context);
@@ -5088,16 +5086,16 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
                     break;
                 }
                 case SyncEventState::MissingStageBits: {
-                    const VkPipelineStageFlags missing_bits = sync_event->scope.mask_param & ~src_exec_scope_.mask_param;
+                    const VkPipelineStageFlags2KHR missing_bits = sync_event->scope.mask_param & ~src_exec_scope_.mask_param;
                     // Issue error message that event waited for is not in wait events scope
                     const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
                     const char *const message =
-                        "%s: %s stageMask 0x%" PRIx32 " includes bits not present in srcStageMask 0x%" PRIx32
+                        "%s: %s stageMask %" PRIx64 " includes bits not present in srcStageMask 0x%" PRIx64
                         ". Bits missing from srcStageMask %s. %s";
                     skip |=
                         sync_state.LogError(event, vuid, message, CmdName(), sync_state.report_data->FormatHandle(event).c_str(),
                                             sync_event->scope.mask_param, src_exec_scope_.mask_param,
-                                            string_VkPipelineStageFlags(missing_bits).c_str(), ignored);
+                                            sync_utils::StringPipelineStageFlags(missing_bits).c_str(), ignored);
                     break;
                 }
                 default:
@@ -5128,19 +5126,19 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
     }
 
     // Note that we can't check for HOST in pEvents as we don't track that set event type
-    const auto extra_stage_bits = (src_exec_scope_.mask_param & ~VK_PIPELINE_STAGE_HOST_BIT) & ~event_stage_masks;
+    const auto extra_stage_bits = (src_exec_scope_.mask_param & ~VK_PIPELINE_STAGE_2_HOST_BIT_KHR) & ~event_stage_masks;
     if (extra_stage_bits) {
         // Issue error message that event waited for is not in wait events scope
         const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
         const char *const message =
-            "%s: srcStageMask 0x%" PRIx32 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
+            "%s: srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         if (events_not_found) {
             skip |= sync_state.LogInfo(command_buffer_handle, vuid, message, CmdName(), src_exec_scope_.mask_param,
-                                       string_VkPipelineStageFlags(extra_stage_bits).c_str(),
+                                       sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(),
                                        " vkCmdSetEvent may be in previously submitted command buffer.");
         } else {
             skip |= sync_state.LogError(command_buffer_handle, vuid, message, CmdName(), src_exec_scope_.mask_param,
-                                        string_VkPipelineStageFlags(extra_stage_bits).c_str(), "");
+                                        sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(), "");
         }
     }
     return skip;
