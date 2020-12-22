@@ -21,6 +21,7 @@
 
 #pragma once
 #include <vulkan/vulkan.h>
+#include <string>
 
 struct DeviceFeatures;
 
@@ -28,24 +29,30 @@ namespace sync_utils {
 
 static constexpr VkQueueFlags kAllQueueTypes = (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
 
-VkPipelineStageFlags DisabledPipelineStages(const DeviceFeatures& features);
+VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures& features);
 
 // Expand all pipeline stage bits. If queue_flags and disabled_feature_mask is provided, the expansion of ALL_COMMANDS_BIT
 // and ALL_GRAPHICS_BIT will be limited to what is supported.
-VkPipelineStageFlags ExpandPipelineStages(VkPipelineStageFlags stage_mask, VkQueueFlags queue_flags = kAllQueueTypes,
-                                          const VkPipelineStageFlags disabled_feature_mask = 0);
+VkPipelineStageFlags2KHR ExpandPipelineStages(VkPipelineStageFlags2KHR stage_mask, VkQueueFlags queue_flags = kAllQueueTypes,
+                                              const VkPipelineStageFlags2KHR disabled_feature_mask = 0);
 
-VkAccessFlags CompatibleAccessMask(VkPipelineStageFlags stage_mask);
+VkAccessFlags2KHR ExpandAccessFlags(VkAccessFlags2KHR access_mask);
 
-VkPipelineStageFlags WithEarlierPipelineStages(VkPipelineStageFlags stage_mask);
+VkAccessFlags2KHR CompatibleAccessMask(VkPipelineStageFlags2KHR stage_mask);
 
-VkPipelineStageFlags WithLaterPipelineStages(VkPipelineStageFlags stage_mask);
+VkPipelineStageFlags2KHR WithEarlierPipelineStages(VkPipelineStageFlags2KHR stage_mask);
 
-int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlags flag);
+VkPipelineStageFlags2KHR WithLaterPipelineStages(VkPipelineStageFlags2KHR stage_mask);
 
-VkPipelineStageFlags GetLogicallyEarliestGraphicsPipelineStage(VkPipelineStageFlags inflags);
+int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlags2KHR flag);
 
-VkPipelineStageFlags GetLogicallyLatestGraphicsPipelineStage(VkPipelineStageFlags inflags);
+VkPipelineStageFlags2KHR GetLogicallyEarliestGraphicsPipelineStage(VkPipelineStageFlags2KHR inflags);
+
+VkPipelineStageFlags2KHR GetLogicallyLatestGraphicsPipelineStage(VkPipelineStageFlags2KHR inflags);
+
+std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask);
+
+std::string StringAccessFlags(VkAccessFlags2KHR mask);
 
 struct ExecScopes {
     VkPipelineStageFlags2KHR src;

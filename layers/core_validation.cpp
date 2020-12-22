@@ -9497,8 +9497,8 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                 skip |= LogError(
                     device, vuid,
                     "Dependency %u specifies a self-dependency from logically-later stage (%s) to a logically-earlier stage (%s).",
-                    i, string_VkPipelineStageFlags(latest_src_stage).c_str(),
-                    string_VkPipelineStageFlags(earliest_dst_stage).c_str());
+                    i, sync_utils::StringPipelineStageFlags(latest_src_stage).c_str(),
+                    sync_utils::StringPipelineStageFlags(earliest_dst_stage).c_str());
             } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) == false) &&
                        (HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask) == false) &&
                        ((dependency.dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT) == 0)) {
