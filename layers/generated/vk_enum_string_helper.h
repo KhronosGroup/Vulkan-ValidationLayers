@@ -4,10 +4,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -542,6 +542,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE:
+            return "VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE";
         case VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL:
             return "VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL";
         case VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR:
@@ -702,6 +704,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR:
@@ -1351,6 +1355,8 @@ static inline const char* string_VkVendorId(VkVendorId input_value)
             return "VK_VENDOR_ID_KAZAN";
         case VK_VENDOR_ID_MESA:
             return "VK_VENDOR_ID_MESA";
+        case VK_VENDOR_ID_POCL:
+            return "VK_VENDOR_ID_POCL";
         case VK_VENDOR_ID_VIV:
             return "VK_VENDOR_ID_VIV";
         case VK_VENDOR_ID_VSI:
@@ -3485,6 +3491,8 @@ static inline const char* string_VkDescriptorPoolCreateFlagBits(VkDescriptorPool
     {
         case VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT:
             return "VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT";
+        case VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE:
+            return "VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE";
         case VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT:
             return "VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT";
         default:
@@ -3522,6 +3530,8 @@ static inline const char* string_VkDescriptorType(VkDescriptorType input_value)
             return "VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT";
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
             return "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT";
+        case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+            return "VK_DESCRIPTOR_TYPE_MUTABLE_VALVE";
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
             return "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE";
         case VK_DESCRIPTOR_TYPE_SAMPLER:
@@ -3549,6 +3559,8 @@ static inline const char* string_VkDescriptorSetLayoutCreateFlagBits(VkDescripto
 {
     switch ((VkDescriptorSetLayoutCreateFlagBits)input_value)
     {
+        case VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE:
+            return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE";
         case VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR:
             return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR";
         case VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT:

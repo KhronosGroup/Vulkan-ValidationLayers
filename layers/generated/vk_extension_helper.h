@@ -4,10 +4,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -479,6 +479,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_win32_keyed_mutex{kNotEnabled};
     ExtEnabled vk_nvx_image_view_handle{kNotEnabled};
     ExtEnabled vk_nvx_multiview_per_view_attributes{kNotEnabled};
+    ExtEnabled vk_nv_acquire_winrt_display{kNotEnabled};
     ExtEnabled vk_nv_clip_space_w_scaling{kNotEnabled};
     ExtEnabled vk_nv_compute_shader_derivatives{kNotEnabled};
     ExtEnabled vk_nv_cooperative_matrix{kNotEnabled};
@@ -514,6 +515,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qcom_render_pass_store_ops{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_transform{kNotEnabled};
     ExtEnabled vk_qcom_rotated_copy_commands{kNotEnabled};
+    ExtEnabled vk_valve_mutable_descriptor_type{kNotEnabled};
 
     struct DeviceReq {
         const ExtEnabled DeviceExtensions::* enabled;
@@ -832,6 +834,10 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nvx_image_view_handle, {})),
             std::make_pair(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nvx_multiview_per_view_attributes, {{
                            {&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME}}})),
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+            std::make_pair(VK_NV_ACQUIRE_WINRT_DISPLAY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_acquire_winrt_display, {{
+                           {&DeviceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})),
+#endif
             std::make_pair(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_clip_space_w_scaling, {})),
             std::make_pair(VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_compute_shader_derivatives, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
@@ -896,6 +902,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_QCOM_rotated_copy_commands_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_rotated_copy_commands, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_copy_commands_2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_valve_mutable_descriptor_type, {{
+                           {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE3_EXTENSION_NAME}}})),
         };
 
         static const DeviceInfo empty_info {nullptr, DeviceReqVec()};
@@ -1166,6 +1174,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME,
     VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    VK_NV_ACQUIRE_WINRT_DISPLAY_EXTENSION_NAME,
+#endif
     VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME,
     VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME,
     VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME,
@@ -1205,6 +1216,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_QCOM_render_pass_store_ops_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
     VK_QCOM_rotated_copy_commands_EXTENSION_NAME,
+    VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
 };
 
 

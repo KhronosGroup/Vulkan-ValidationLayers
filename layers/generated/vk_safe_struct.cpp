@@ -4,10 +4,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34892,6 +34892,219 @@ void safe_VkDirectFBSurfaceCreateInfoEXT::initialize(const safe_VkDirectFBSurfac
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
 
+safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE(const VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE* in_struct) :
+    sType(in_struct->sType),
+    mutableDescriptorType(in_struct->mutableDescriptorType)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    mutableDescriptorType = copy_src.mutableDescriptorType;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE& safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::operator=(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    mutableDescriptorType = copy_src.mutableDescriptorType;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::~safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::initialize(const VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE* in_struct)
+{
+    sType = in_struct->sType;
+    mutableDescriptorType = in_struct->mutableDescriptorType;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::initialize(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    mutableDescriptorType = copy_src->mutableDescriptorType;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkMutableDescriptorTypeListVALVE::safe_VkMutableDescriptorTypeListVALVE(const VkMutableDescriptorTypeListVALVE* in_struct) :
+    descriptorTypeCount(in_struct->descriptorTypeCount),
+    pDescriptorTypes(nullptr)
+{
+    if (in_struct->pDescriptorTypes) {
+        pDescriptorTypes = new VkDescriptorType[in_struct->descriptorTypeCount];
+        memcpy ((void *)pDescriptorTypes, (void *)in_struct->pDescriptorTypes, sizeof(VkDescriptorType)*in_struct->descriptorTypeCount);
+    }
+}
+
+safe_VkMutableDescriptorTypeListVALVE::safe_VkMutableDescriptorTypeListVALVE() :
+    pDescriptorTypes(nullptr)
+{}
+
+safe_VkMutableDescriptorTypeListVALVE::safe_VkMutableDescriptorTypeListVALVE(const safe_VkMutableDescriptorTypeListVALVE& copy_src)
+{
+    descriptorTypeCount = copy_src.descriptorTypeCount;
+    pDescriptorTypes = nullptr;
+    if (copy_src.pDescriptorTypes) {
+        pDescriptorTypes = new VkDescriptorType[copy_src.descriptorTypeCount];
+        memcpy ((void *)pDescriptorTypes, (void *)copy_src.pDescriptorTypes, sizeof(VkDescriptorType)*copy_src.descriptorTypeCount);
+    }
+}
+
+safe_VkMutableDescriptorTypeListVALVE& safe_VkMutableDescriptorTypeListVALVE::operator=(const safe_VkMutableDescriptorTypeListVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pDescriptorTypes)
+        delete[] pDescriptorTypes;
+
+    descriptorTypeCount = copy_src.descriptorTypeCount;
+    pDescriptorTypes = nullptr;
+    if (copy_src.pDescriptorTypes) {
+        pDescriptorTypes = new VkDescriptorType[copy_src.descriptorTypeCount];
+        memcpy ((void *)pDescriptorTypes, (void *)copy_src.pDescriptorTypes, sizeof(VkDescriptorType)*copy_src.descriptorTypeCount);
+    }
+
+    return *this;
+}
+
+safe_VkMutableDescriptorTypeListVALVE::~safe_VkMutableDescriptorTypeListVALVE()
+{
+    if (pDescriptorTypes)
+        delete[] pDescriptorTypes;
+}
+
+void safe_VkMutableDescriptorTypeListVALVE::initialize(const VkMutableDescriptorTypeListVALVE* in_struct)
+{
+    descriptorTypeCount = in_struct->descriptorTypeCount;
+    pDescriptorTypes = nullptr;
+    if (in_struct->pDescriptorTypes) {
+        pDescriptorTypes = new VkDescriptorType[in_struct->descriptorTypeCount];
+        memcpy ((void *)pDescriptorTypes, (void *)in_struct->pDescriptorTypes, sizeof(VkDescriptorType)*in_struct->descriptorTypeCount);
+    }
+}
+
+void safe_VkMutableDescriptorTypeListVALVE::initialize(const safe_VkMutableDescriptorTypeListVALVE* copy_src)
+{
+    descriptorTypeCount = copy_src->descriptorTypeCount;
+    pDescriptorTypes = nullptr;
+    if (copy_src->pDescriptorTypes) {
+        pDescriptorTypes = new VkDescriptorType[copy_src->descriptorTypeCount];
+        memcpy ((void *)pDescriptorTypes, (void *)copy_src->pDescriptorTypes, sizeof(VkDescriptorType)*copy_src->descriptorTypeCount);
+    }
+}
+
+safe_VkMutableDescriptorTypeCreateInfoVALVE::safe_VkMutableDescriptorTypeCreateInfoVALVE(const VkMutableDescriptorTypeCreateInfoVALVE* in_struct) :
+    sType(in_struct->sType),
+    mutableDescriptorTypeListCount(in_struct->mutableDescriptorTypeListCount),
+    pMutableDescriptorTypeLists(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (mutableDescriptorTypeListCount && in_struct->pMutableDescriptorTypeLists) {
+        pMutableDescriptorTypeLists = new safe_VkMutableDescriptorTypeListVALVE[mutableDescriptorTypeListCount];
+        for (uint32_t i = 0; i < mutableDescriptorTypeListCount; ++i) {
+            pMutableDescriptorTypeLists[i].initialize(&in_struct->pMutableDescriptorTypeLists[i]);
+        }
+    }
+}
+
+safe_VkMutableDescriptorTypeCreateInfoVALVE::safe_VkMutableDescriptorTypeCreateInfoVALVE() :
+    sType(VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE),
+    pNext(nullptr),
+    pMutableDescriptorTypeLists(nullptr)
+{}
+
+safe_VkMutableDescriptorTypeCreateInfoVALVE::safe_VkMutableDescriptorTypeCreateInfoVALVE(const safe_VkMutableDescriptorTypeCreateInfoVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    mutableDescriptorTypeListCount = copy_src.mutableDescriptorTypeListCount;
+    pMutableDescriptorTypeLists = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (mutableDescriptorTypeListCount && copy_src.pMutableDescriptorTypeLists) {
+        pMutableDescriptorTypeLists = new safe_VkMutableDescriptorTypeListVALVE[mutableDescriptorTypeListCount];
+        for (uint32_t i = 0; i < mutableDescriptorTypeListCount; ++i) {
+            pMutableDescriptorTypeLists[i].initialize(&copy_src.pMutableDescriptorTypeLists[i]);
+        }
+    }
+}
+
+safe_VkMutableDescriptorTypeCreateInfoVALVE& safe_VkMutableDescriptorTypeCreateInfoVALVE::operator=(const safe_VkMutableDescriptorTypeCreateInfoVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pMutableDescriptorTypeLists)
+        delete[] pMutableDescriptorTypeLists;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    mutableDescriptorTypeListCount = copy_src.mutableDescriptorTypeListCount;
+    pMutableDescriptorTypeLists = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (mutableDescriptorTypeListCount && copy_src.pMutableDescriptorTypeLists) {
+        pMutableDescriptorTypeLists = new safe_VkMutableDescriptorTypeListVALVE[mutableDescriptorTypeListCount];
+        for (uint32_t i = 0; i < mutableDescriptorTypeListCount; ++i) {
+            pMutableDescriptorTypeLists[i].initialize(&copy_src.pMutableDescriptorTypeLists[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkMutableDescriptorTypeCreateInfoVALVE::~safe_VkMutableDescriptorTypeCreateInfoVALVE()
+{
+    if (pMutableDescriptorTypeLists)
+        delete[] pMutableDescriptorTypeLists;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMutableDescriptorTypeCreateInfoVALVE::initialize(const VkMutableDescriptorTypeCreateInfoVALVE* in_struct)
+{
+    sType = in_struct->sType;
+    mutableDescriptorTypeListCount = in_struct->mutableDescriptorTypeListCount;
+    pMutableDescriptorTypeLists = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (mutableDescriptorTypeListCount && in_struct->pMutableDescriptorTypeLists) {
+        pMutableDescriptorTypeLists = new safe_VkMutableDescriptorTypeListVALVE[mutableDescriptorTypeListCount];
+        for (uint32_t i = 0; i < mutableDescriptorTypeListCount; ++i) {
+            pMutableDescriptorTypeLists[i].initialize(&in_struct->pMutableDescriptorTypeLists[i]);
+        }
+    }
+}
+
+void safe_VkMutableDescriptorTypeCreateInfoVALVE::initialize(const safe_VkMutableDescriptorTypeCreateInfoVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    mutableDescriptorTypeListCount = copy_src->mutableDescriptorTypeListCount;
+    pMutableDescriptorTypeLists = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (mutableDescriptorTypeListCount && copy_src->pMutableDescriptorTypeLists) {
+        pMutableDescriptorTypeLists = new safe_VkMutableDescriptorTypeListVALVE[mutableDescriptorTypeListCount];
+        for (uint32_t i = 0; i < mutableDescriptorTypeListCount; ++i) {
+            pMutableDescriptorTypeLists[i].initialize(&copy_src->pMutableDescriptorTypeLists[i]);
+        }
+    }
+}
+
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {
     initialize(in_struct);
@@ -37442,6 +37655,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevice4444FormatsFeaturesEXT(reinterpret_cast<const VkPhysicalDevice4444FormatsFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE:
+            safe_pNext = new safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE(reinterpret_cast<const VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE:
+            safe_pNext = new safe_VkMutableDescriptorTypeCreateInfoVALVE(reinterpret_cast<const VkMutableDescriptorTypeCreateInfoVALVE *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
             break;
@@ -38273,6 +38492,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevice4444FormatsFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE:
+            delete reinterpret_cast<const safe_VkMutableDescriptorTypeCreateInfoVALVE *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);
