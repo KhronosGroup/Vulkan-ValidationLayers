@@ -10238,14 +10238,6 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &invalid_build_info_khr, &pBuildRangeInfos);
         m_errorMonitor->VerifyFound();
     }
-    // Invalid mode
-    {
-        VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;
-        invalid_build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_MAX_ENUM_KHR;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-mode-parameter");
-        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &invalid_build_info_khr, &pBuildRangeInfos);
-        m_errorMonitor->VerifyFound();
-    }
     // Invalid sType
     {
         VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;

@@ -8851,12 +8851,10 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
     vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     rpci.flags = 0;
-
     attach_desc.format =
         FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     if (attach_desc.format) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04523");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-pAttachments-04586");
         vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
     }

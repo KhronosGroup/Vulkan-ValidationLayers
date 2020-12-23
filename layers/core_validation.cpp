@@ -1115,7 +1115,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                         std::string image_desc = "Image is ";
                         image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
                         // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
-                        // Some CMD_TYPE could not be protected. See VUID-02711.
+                        // Some CMD_TYPE could not be protected. See VUID 02711.
                         if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT &&
                             vuid.protected_command_buffer != kVUIDUndefined) {
                             result |= ValidateUnprotectedImage(cb_node, view_state->image_state.get(), function,
@@ -2197,8 +2197,8 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, co
     "VUID-vkCmdBindVertexBuffers2EXT-commandBuffer-recording",
     "VUID-vkCmdBlitImage-commandBuffer-recording",
     "VUID-vkCmdBlitImage2KHR-commandBuffer-recording",
-    "VUID-vkCmdBuildAccelerationStructureIndirectKHR-commandBuffer-recording",
-    "VUID-vkCmdBuildAccelerationStructureKHR-commandBuffer-recording",
+    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-commandBuffer-recording",
+    "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-recording",
     "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording",
     "VUID-vkCmdClearAttachments-commandBuffer-recording",
     "VUID-vkCmdClearColorImage-commandBuffer-recording",
@@ -10635,7 +10635,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
 
                         if (!(potential_format_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
                             skip |=
-                                LogError(device, "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04523",
+                                LogError(device, "VUID-VkRenderPassCreateInfo2-pAttachments-04586",
                                          "vkCreateRenderPass2: Attachment description %u is used in subpass %u as a fragment "
                                          "shading rate attachment, but specifies format %s, which does not support "
                                          "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
@@ -10761,7 +10761,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                     for (uint32_t attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
                         if (subpass_info.pColorAttachments[attachment].attachment == attachment_description) {
                             skip |= LogError(
-                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachments-04585",
                                 "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
                                 "subpass(es) %s but also as color attachment %u in subpass %u",
                                 attachment_description, fsr_attachment_subpasses_string.c_str(), attachment, subpass);
@@ -10771,7 +10771,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                         if (subpass_info.pResolveAttachments &&
                             subpass_info.pResolveAttachments[attachment].attachment == attachment_description) {
                             skip |= LogError(
-                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachments-04585",
                                 "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
                                 "subpass(es) %s but also as color resolve attachment %u in subpass %u",
                                 attachment_description, fsr_attachment_subpasses_string.c_str(), attachment, subpass);
@@ -10780,7 +10780,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                     for (uint32_t attachment = 0; attachment < subpass_info.inputAttachmentCount; ++attachment) {
                         if (subpass_info.pInputAttachments[attachment].attachment == attachment_description) {
                             skip |= LogError(
-                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachments-04585",
                                 "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
                                 "subpass(es) %s but also as input attachment %u in subpass %u",
                                 attachment_description, fsr_attachment_subpasses_string.c_str(), attachment, subpass);
@@ -10789,7 +10789,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                     if (subpass_info.pDepthStencilAttachment) {
                         if (subpass_info.pDepthStencilAttachment->attachment == attachment_description) {
                             skip |= LogError(
-                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachments-04585",
                                 "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
                                 "subpass(es) %s but also as the depth/stencil attachment in subpass %u",
                                 attachment_description, fsr_attachment_subpasses_string.c_str(), subpass);
@@ -10799,7 +10799,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                         if (depth_stencil_resolve_attachment->pDepthStencilResolveAttachment->attachment ==
                             attachment_description) {
                             skip |= LogError(
-                                device, "VUID-VkRenderPassCreateInfo2-pAttachmentImageInfos-04520",
+                                device, "VUID-VkRenderPassCreateInfo2-pAttachments-04585",
                                 "vkCreateRenderPass2: Attachment description %u is used as a fragment shading rate attachment in "
                                 "subpass(es) %s but also as the depth/stencil resolve attachment in subpass %u",
                                 attachment_description, fsr_attachment_subpasses_string.c_str(), subpass);
@@ -10890,7 +10890,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                     }
 
                     if (framebuffer_attachment_image_info->usage != image_create_info->usage) {
-                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03210",
+                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-04627",
                                          "%s: Image view #%u created from an image with usage set as 0x%X, "
                                          "but image info #%u used to create the framebuffer had usage set as 0x%X",
                                          func_name, i, image_create_info->usage, i, framebuffer_attachment_image_info->usage);
