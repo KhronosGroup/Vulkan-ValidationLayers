@@ -10137,7 +10137,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-03066"
                                        : "VUID-VkSubpassDescription-pResolveAttachments-00848";
                         skip |= LogError(device, vuid,
-                                         "%s:  ubpass %u requests multisample resolve from attachment %u which has "
+                                         "%s: Subpass %u requests multisample resolve from attachment %u which has "
                                          "VK_SAMPLE_COUNT_1_BIT.",
                                          function_name, i, attachment_index);
                     }
