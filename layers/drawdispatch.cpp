@@ -208,6 +208,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         queue_flag                         = "VUID-vkCmdDispatch-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDispatch-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatch-None-02700";
+        dynamic_state                      = "VUID-vkCmdDispatch-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatch-None-02697";
         linear_sampler                     = "VUID-vkCmdDispatch-magFilter-04553";
         cubic_sampler                      = "VUID-vkCmdDispatch-None-02692";
@@ -232,6 +233,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         queue_flag                         = "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDispatchIndirect-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatchIndirect-None-02700";
+        dynamic_state                      = "VUID-vkCmdDispatchIndirect-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchIndirect-None-02697";
         linear_sampler                     = "VUID-vkCmdDispatchIndirect-magFilter-04553";
         cubic_sampler                      = "VUID-vkCmdDispatchIndirect-None-02692";
@@ -569,6 +571,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         queue_flag                         = "VUID-vkCmdDispatchBase-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDispatchBase-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatchBase-None-02700";
+        dynamic_state                      = "VUID-vkCmdDispatchBase-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchBase-None-02697";
         linear_sampler                     = "VUID-vkCmdDispatchBase-magFilter-04553";
         cubic_sampler                      = "VUID-vkCmdDispatchBase-None-02692";
