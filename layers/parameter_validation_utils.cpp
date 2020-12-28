@@ -3251,80 +3251,78 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
             }
             // pNext chain must be either NULL or a pointer to a valid instance of VkWriteDescriptorSetAccelerationStructureKHR
             // or VkWriteDescriptorSetInlineUniformBlockEX
-            if (pDescriptorWrites[i].pNext) {
-                if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-                    const auto *pnext_struct =
-                        lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
-                    if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
-                        skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-02382",
-                                         "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, the pNext"
-                                         "chain must include a VkWriteDescriptorSetAccelerationStructureKHR structure whose "
-                                         "accelerationStructureCount %d member equals descriptorCount %d.",
-                                         vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
-                                         pDescriptorWrites[i].descriptorCount);
+            if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+                const auto *pnext_struct =
+                    lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
+                if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
+                    skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-02382",
+                                     "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, the pNext"
+                                     "chain must include a VkWriteDescriptorSetAccelerationStructureKHR structure whose "
+                                     "accelerationStructureCount %d member equals descriptorCount %d.",
+                                     vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
+                                     pDescriptorWrites[i].descriptorCount);
+                }
+                // further checks only if we have right structtype
+                if (pnext_struct) {
+                    if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
+                        skip |= LogError(
+                            device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236",
+                            "%s(): accelerationStructureCount %d must be equal to descriptorCount %d in the extended structure "
+                            ".",
+                            vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
                     }
-                    // further checks only if we have right structtype
-                    if (pnext_struct) {
-                        if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
-                            skip |= LogError(
-                                device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236",
-                                "%s(): accelerationStructureCount %d must be equal to descriptorCount %d in the extended structure "
-                                ".",
-                                vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
-                        }
-                        if (pnext_struct->accelerationStructureCount == 0) {
-                            skip |= LogError(
-                                device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
-                                "%s(): accelerationStructureCount must be greater than 0 .");
-                        }
-                        const auto *robustness2_features =
-                            lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                        if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
-                            for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-                                if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
-                                    skip |= LogError(
-                                        device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580",
-                                        "%s(): If the nullDescriptor feature is not enabled, each member of "
-                                        "pAccelerationStructures must not be VK_NULL_HANDLE.");
-                                }
+                    if (pnext_struct->accelerationStructureCount == 0) {
+                        skip |= LogError(device,
+                                         "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
+                                         "%s(): accelerationStructureCount must be greater than 0 .");
+                    }
+                    const auto *robustness2_features =
+                        lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                    if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
+                        for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                            if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
+                                skip |= LogError(device,
+                                                 "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580",
+                                                 "%s(): If the nullDescriptor feature is not enabled, each member of "
+                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.");
                             }
                         }
                     }
-                } else if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-                    const auto *pnext_struct =
-                        lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
-                    if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
-                        skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-03817",
-                                         "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, the pNext"
-                                         "chain must include a VkWriteDescriptorSetAccelerationStructureNV structure whose "
-                                         "accelerationStructureCount %d member equals descriptorCount %d.",
-                                         vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
-                                         pDescriptorWrites[i].descriptorCount);
+                }
+            } else if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+                const auto *pnext_struct =
+                    lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
+                if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
+                    skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-03817",
+                                     "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, the pNext"
+                                     "chain must include a VkWriteDescriptorSetAccelerationStructureNV structure whose "
+                                     "accelerationStructureCount %d member equals descriptorCount %d.",
+                                     vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
+                                     pDescriptorWrites[i].descriptorCount);
+                }
+                // further checks only if we have right structtype
+                if (pnext_struct) {
+                    if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
+                        skip |= LogError(
+                            device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-03747",
+                            "%s(): accelerationStructureCount %d must be equal to descriptorCount %d in the extended structure "
+                            ".",
+                            vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
                     }
-                    // further checks only if we have right structtype
-                    if (pnext_struct) {
-                        if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
-                            skip |= LogError(
-                                device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-03747",
-                                "%s(): accelerationStructureCount %d must be equal to descriptorCount %d in the extended structure "
-                                ".",
-                                vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
-                        }
-                        if (pnext_struct->accelerationStructureCount == 0) {
-                            skip |= LogError(
-                                device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
-                                "%s(): accelerationStructureCount must be greater than 0 .");
-                        }
-                        const auto *robustness2_features =
-                            lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                        if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
-                            for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-                                if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
-                                    skip |= LogError(
-                                        device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749",
-                                        "%s(): If the nullDescriptor feature is not enabled, each member of "
-                                        "pAccelerationStructures must not be VK_NULL_HANDLE.");
-                                }
+                    if (pnext_struct->accelerationStructureCount == 0) {
+                        skip |= LogError(device,
+                                         "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
+                                         "%s(): accelerationStructureCount must be greater than 0 .");
+                    }
+                    const auto *robustness2_features =
+                        lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                    if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
+                        for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                            if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
+                                skip |= LogError(device,
+                                                 "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749",
+                                                 "%s(): If the nullDescriptor feature is not enabled, each member of "
+                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.");
                             }
                         }
                     }
