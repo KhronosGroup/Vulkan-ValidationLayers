@@ -29,7 +29,7 @@
 # Notes:
 #    Exits with non 0 exit code if formatting is needed.
 #    Requires python3 to run correctly
-#    In standalone mode (outside of travis), changes must be rebased on master
+#    In standalone mode (outside of CI), changes must be rebased on master
 #        to get meaningful and complete results
 
 import os
@@ -105,14 +105,8 @@ def VerifyCommitMessageFormat():
     CPrint('', "\nChecking PR commit messages for consistency issues:")
     retval = 0
 
-    # Construct correct commit list under Travis CI
-    if 'TRAVIS_BUILD_DIR' in os.environ:
-        pr_commit_range = os.environ.get('TRAVIS_COMMIT_RANGE')
-        pr_commit_range = pr_commit_range.replace("...", "..")
-        pr_commit_range_parms = ['git', 'log', pr_commit_range, '--pretty=format:"XXXNEWLINEXXX"%n%B']
-    else:
-        # Construct a direct commit list
-        pr_commit_range_parms = ['git', 'log', '--no-merges', '--left-only', 'HEAD...origin/master', '--pretty=format:"XXXNEWLINEXXX"%n%B']
+    # Construct correct commit list
+    pr_commit_range_parms = ['git', 'log', '--no-merges', '--left-only', 'HEAD...origin/master', '--pretty=format:"XXXNEWLINEXXX"%n%B']
 
     commit_data = check_output(pr_commit_range_parms)
     commit_text = commit_data.decode('utf-8')
