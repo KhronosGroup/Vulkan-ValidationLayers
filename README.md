@@ -22,6 +22,7 @@ The following components are available in this repository:
 
 ## Contact Information
 * [Mark Lobodzinski](mailto:mark@lunarg.com)
+* [Nate Cesario](mailto:nathaniel@lunarg.com)
 
 ## Information for Developing or Contributing:
 
