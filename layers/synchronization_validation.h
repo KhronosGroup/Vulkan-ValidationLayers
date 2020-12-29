@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2020 Valve Corporation
- * Copyright (c) 2019-2020 LunarG, Inc.
+ * Copyright (c) 2019-2021 Valve Corporation
+ * Copyright (c) 2019-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Locke Lin <locke@lunarg.com>
+ * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 
 #pragma once
@@ -194,6 +196,9 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags pending_dep_chain;  // Should be zero except during barrier application
                                                  // Excluded from comparison
         ReadState() = default;
+        ReadState(VkPipelineStageFlagBits stage_, SyncStageAccessFlags access_, VkPipelineStageFlags barriers_,
+                  const ResourceUsageTag &tag_)
+            : stage(stage_), access(access_), barriers(barriers_), tag(tag_), pending_dep_chain(0) {}
         bool operator==(const ReadState &rhs) const {
             bool same = (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) && (tag == rhs.tag);
             return same;
@@ -241,7 +246,6 @@ class ResourceAccessState : public SyncStageAccess {
           write_tag(),
           last_write(0),
           input_attachment_read(false),
-          last_read_count(0),
           last_read_stages(0),
           read_execution_barriers(0),
           pending_write_dep_chain(0),
@@ -254,12 +258,9 @@ class ResourceAccessState : public SyncStageAccess {
     bool HasWriteOp() const { return last_write != 0; }
     bool operator==(const ResourceAccessState &rhs) const {
         bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
-                    (last_read_count == rhs.last_read_count) && (last_read_stages == rhs.last_read_stages) &&
-                    (write_tag == rhs.write_tag) && (input_attachment_read == rhs.input_attachment_read) &&
+                    (last_reads == rhs.last_reads) && (last_read_stages == rhs.last_read_stages) && (write_tag == rhs.write_tag) &&
+                    (input_attachment_read == rhs.input_attachment_read) &&
                     (read_execution_barriers == rhs.read_execution_barriers);
-        for (uint32_t i = 0; same && i < last_read_count; i++) {
-            same &= last_reads[i] == rhs.last_reads[i];
-        }
         return same;
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
@@ -301,7 +302,6 @@ class ResourceAccessState : public SyncStageAccess {
         return IsReadHazard(stage_mask, read_access.barriers);
     }
     VkPipelineStageFlags GetOrderedStages(const SyncOrderingBarrier &ordering) const;
-    ReadState *GetReadStateForStage(VkPipelineStageFlagBits stage, uint32_t search_limit = kStageCount);
 
     // TODO: Add a NONE (zero) enum to SyncStageAccessFlags for input_attachment_read and last_write
 
@@ -317,11 +317,9 @@ class ResourceAccessState : public SyncStageAccess {
     // Tracks whether the fragment shader read is input attachment read
     bool input_attachment_read;
 
-    uint32_t last_read_count;
     VkPipelineStageFlags last_read_stages;
     VkPipelineStageFlags read_execution_barriers;
-    static constexpr size_t kStageCount = 32;  // TODO: The manual count was 28 real stages. Add stage count to codegen
-    std::array<ReadState, kStageCount> last_reads;
+    small_vector<ReadState, 3> last_reads;
 
     // Pending execution state to support independent parallel barriers
     VkPipelineStageFlags pending_write_dep_chain;
