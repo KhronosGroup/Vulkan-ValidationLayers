@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2020 The Khronos Group Inc.
- * Copyright (c) 2019-2020 Valve Corporation
- * Copyright (c) 2019-2020 LunarG, Inc.
+/* Copyright (c) 2019-2021 The Khronos Group Inc.
+ * Copyright (c) 2019-2021 Valve Corporation
+ * Copyright (c) 2019-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Locke Lin <locke@lunarg.com>
+ * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 
 #include <limits>
@@ -2965,9 +2967,8 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
         // Otherwise test against last_write
         //
         // Look for casus belli for WAR
-        if (last_read_count) {
-            for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                const auto &read_access = last_reads[read_index];
+        if (last_reads.size()) {
+            for (const auto &read_access : last_reads) {
                 if (IsReadHazard(usage_stage, read_access)) {
                     hazard.Set(this, usage_index, WRITE_AFTER_READ, read_access.access, read_access.tag);
                     break;
@@ -3010,7 +3011,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
     } else {
         // Only check for WAW if there are no reads since last_write
         bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
-        if (last_read_count) {
+        if (last_reads.size()) {
             // Look for any WAR hazards outside the ordered set of stages
             VkPipelineStageFlags ordered_stages = 0;
             if (usage_write_is_ordered) {
@@ -3019,8 +3020,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
             }
             // If we're tracking any reads that aren't ordered against the current write, got to check 'em all.
             if ((ordered_stages & last_read_stages) != last_read_stages) {
-                for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                    const auto &read_access = last_reads[read_index];
+                for (const auto &read_access : last_reads) {
                     if (read_access.stage & ordered_stages) continue;  // but we can skip the ordered ones
                     if (IsReadHazard(usage_stage, read_access)) {
                         hazard.Set(this, usage_index, WRITE_AFTER_READ, read_access.access, read_access.tag);
@@ -3051,11 +3051,11 @@ HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_i
     } else {
         if (last_write.any() && (write_tag.index >= start_tag.index)) {
             hazard.Set(this, usage_index, WRITE_RACING_WRITE, last_write, write_tag);
-        } else if (last_read_count > 0) {
+        } else if (last_reads.size() > 0) {
             // Any reads during the other subpass will conflict with this write, so we need to check them all.
-            for (uint32_t i = 0; i < last_read_count; i++) {
-                if (last_reads[i].tag.index >= start_tag.index) {
-                    hazard.Set(this, usage_index, WRITE_RACING_READ, last_reads[i].access, last_reads[i].tag);
+            for (const auto &read_access : last_reads) {
+                if (read_access.tag.index >= start_tag.index) {
+                    hazard.Set(this, usage_index, WRITE_RACING_READ, read_access.access, read_access.tag);
                     break;
                 }
             }
@@ -3071,10 +3071,9 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
     HazardResult hazard;
     // only test for WAW if there no intervening read operations.
     // See DetectHazard(SyncStagetAccessIndex) above for more details.
-    if (last_read_count) {
+    if (last_reads.size()) {
         // Look at the reads if any
-        for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-            const auto &read_access = last_reads[read_index];
+        for (const auto &read_access : last_reads) {
             if (read_access.IsReadBarrierHazard(src_exec_scope)) {
                 hazard.Set(this, usage_index, WRITE_AFTER_READ, read_access.access, read_access.tag);
                 break;
@@ -3096,11 +3095,10 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
     // only test for WAW if there no intervening read operations.
     // See DetectHazard(SyncStagetAccessIndex) above for more details.
 
-    if (last_read_count) {
+    if (last_reads.size()) {
         // Look at the reads if any... if reads exist, they are either the resaon the access is in the event
         // first scope, or they are a hazard.
-        for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-            const auto &read_access = last_reads[read_index];
+        for (const auto &read_access : last_reads) {
             if (read_access.tag.IsBefore(event_tag)) {
                 // The read is in the events first synchronization scope, so we use a barrier hazard check
                 // If the read stage is not in the src sync scope
@@ -3149,9 +3147,9 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         pending_write_dep_chain |= other.pending_write_dep_chain;
 
         // Merge the read states
-        const auto pre_merge_count = last_read_count;
+        const auto pre_merge_count = last_reads.size();
         const auto pre_merge_stages = last_read_stages;
-        for (uint32_t other_read_index = 0; other_read_index < other.last_read_count; other_read_index++) {
+        for (uint32_t other_read_index = 0; other_read_index < other.last_reads.size(); other_read_index++) {
             auto &other_read = other.last_reads[other_read_index];
             if (pre_merge_stages & other_read.stage) {
                 // Merge in the barriers for read stages that exist in *both* this and other
@@ -3184,8 +3182,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                 }
             } else {
                 // The other read stage doesn't exist in this, so add it.
-                last_reads[last_read_count] = other_read;
-                last_read_count++;
+                last_reads.emplace_back(other_read);
                 last_read_stages |= other_read.stage;
                 if (other_read.stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
                     input_attachment_read = other.input_attachment_read;
@@ -3204,21 +3201,17 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
         // Mulitple outstanding reads may be of interest and do dependency chains independently
         // However, for purposes of barrier tracking, only one read per pipeline stage matters
         const auto usage_stage = PipelineStageBit(usage_index);
-        uint32_t update_index = kStageCount;
         if (usage_stage & last_read_stages) {
-            for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-                if (last_reads[read_index].stage == usage_stage) {
-                    update_index = read_index;
+            for (auto &read_access : last_reads) {
+                if (read_access.stage == usage_stage) {
+                    read_access.Set(usage_stage, usage_bit, 0, tag);
                     break;
                 }
             }
-            assert(update_index < last_read_count);
         } else {
-            assert(last_read_count < last_reads.size());
-            update_index = last_read_count++;
+            last_reads.emplace_back(usage_stage, usage_bit, 0, tag);
             last_read_stages |= usage_stage;
         }
-        last_reads[update_index].Set(usage_stage, usage_bit, 0, tag);
 
         // Fragment shader reads come in two flavors, and we need to track if the one we're tracking is the special one.
         if (usage_stage == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT) {
@@ -3238,7 +3231,7 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const Resourc
 //
 // Note: intentionally ignore pending barriers and chains (i.e. don't apply or clear them), let ApplyPendingBarriers handle them.
 void ResourceAccessState::SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag &tag) {
-    last_read_count = 0;
+    last_reads.clear();
     last_read_stages = 0;
     read_execution_barriers = 0;
     input_attachment_read = false;  // Denotes no outstanding input attachment read after the last write.
@@ -3270,11 +3263,10 @@ void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_t
     if (!pending_layout_transition) {
         // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/writes/chains
         // don't need to be tracked as we're just going to zero them.
-        for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-            ReadState &access = last_reads[read_index];
+        for (auto &read_access : last_reads) {
             // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync scope
-            if (barrier.src_exec_scope & (access.stage | access.barriers)) {
-                access.pending_dep_chain |= barrier.dst_exec_scope;
+            if (barrier.src_exec_scope & (read_access.stage | read_access.barriers)) {
+                read_access.pending_dep_chain |= barrier.dst_exec_scope;
             }
         }
     }
@@ -3299,8 +3291,7 @@ void ResourceAccessState::ApplyBarrier(const ResourceUsageTag &scope_tag, const 
     if (!pending_layout_transition) {
         // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/writes/chains
         // don't need to be tracked as we're just going to zero them.
-        for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-            ReadState &access = last_reads[read_index];
+        for (auto &read_access : last_reads) {
             // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
             // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
             // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
@@ -3308,8 +3299,8 @@ void ResourceAccessState::ApplyBarrier(const ResourceUsageTag &scope_tag, const 
             // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
             // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
             // TODO: eliminate the false positive by including write/read-stages "in scope" information in SetEvents first_scope
-            if (access.tag.IsBefore(scope_tag) && (barrier.src_exec_scope & (access.stage | access.barriers))) {
-                access.pending_dep_chain |= barrier.dst_exec_scope;
+            if (read_access.tag.IsBefore(scope_tag) && (barrier.src_exec_scope & (read_access.stage | read_access.barriers))) {
+                read_access.pending_dep_chain |= barrier.dst_exec_scope;
             }
         }
     }
@@ -3323,11 +3314,10 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag &tag) {
 
     // Apply the accumulate execution barriers (and thus update chaining information)
     // for layout transition, read count is zeroed by SetWrite, so this will be skipped.
-    for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-        ReadState &access = last_reads[read_index];
-        access.barriers |= access.pending_dep_chain;
-        read_execution_barriers |= access.barriers;
-        access.pending_dep_chain = 0;
+    for (auto &read_access : last_reads) {
+        read_access.barriers |= read_access.pending_dep_chain;
+        read_execution_barriers |= read_access.barriers;
+        read_access.pending_dep_chain = 0;
     }
 
     // We OR in the accumulated write chain and barriers even in the case of a layout transition as SetWrite zeros them.
@@ -3341,8 +3331,7 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag &tag) {
 VkPipelineStageFlags ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
     VkPipelineStageFlags barriers = 0U;
 
-    for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-        const auto &read_access = last_reads[read_index];
+    for (const auto &read_access : last_reads) {
         if ((read_access.access & usage_bit).any()) {
             barriers = read_access.barriers;
             break;
@@ -3373,19 +3362,6 @@ VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const SyncOrderingBar
     }
 
     return ordered_stages;
-}
-
-inline ResourceAccessState::ReadState *ResourceAccessState::GetReadStateForStage(VkPipelineStageFlagBits stage,
-                                                                                 uint32_t search_limit) {
-    ReadState *read_state = nullptr;
-    search_limit = std::min(search_limit, last_read_count);
-    for (uint32_t i = 0; i < search_limit; i++) {
-        if (last_reads[i].stage == stage) {
-            read_state = &last_reads[i];
-            break;
-        }
-    }
-    return read_state;
 }
 
 void SyncValidator::ResetCommandBufferCallback(VkCommandBuffer command_buffer) {
