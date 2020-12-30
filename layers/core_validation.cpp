@@ -14636,6 +14636,19 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer command
         }
     }
 
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto *pipe = cb_state->lastBound[lv_bind_point].pipeline_state;
+    auto vibs = IsDynamic(pipe, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
+    if (vibs && (pStrides == nullptr)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03361",
+                         "vkCmdBindVertexBuffers2EXT(): pStrides is NULL but the bound pipeline was created with "
+                         "VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT dynamic state enabled.");
+    } else if (!vibs && (pStrides != nullptr)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03361",
+                         "vkCmdBindVertexBuffers2EXT(): pStrides is non-NULL, but the bound pipeline was not created with "
+                         "VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT dynamic state enabled.");
+    }
+
     return skip;
 }
 
