@@ -1854,11 +1854,18 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             if item.ifdef_protect is not None:
                 code.append('#endif // %s' % item.ifdef_protect)
 
+        # Generate Generate utilities for all types
+        find_func = 'LvlFindInChain'
+        init_func = 'LvlInitStruct'
+        code.append('\n'.join((
+            utilities_format.format(id_member=id_member, type_map=typemap,
+                header=generic_header, find_func=find_func, init_func=init_func), ''
+            )))
+
+        # Generate utilities using legacy names for backwards compatibility
         fprefix = 'lvl_'
         find_func = fprefix + 'find_in_chain'
         init_func = fprefix + 'init_struct'
-
-        # Generate utilities for all types
         code.append('\n'.join((
             utilities_format.format(id_member=id_member, type_map=typemap,
                 header=generic_header, find_func=find_func, init_func=init_func), ''
