@@ -1450,12 +1450,12 @@ class ValidationStateTracker : public ValidationObject {
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
         assert(ext_prop);
         if (enabled) {
-            *ext_prop = lvl_init_struct<ExtProp>();
+            *ext_prop = LvlInitStruct<ExtProp>();
             if (api_version < VK_API_VERSION_1_1) {
-                auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(ext_prop);
+                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
                 DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
             } else {
-                auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(ext_prop);
+                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
                 DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
             }
         }

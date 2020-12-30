@@ -3845,7 +3845,7 @@ bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const
 bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                       VkSubpassContents contents) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
-    auto subpass_begin_info = lvl_init_struct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, "vkCmdBeginRenderPass");
     return skip;
@@ -3888,7 +3888,7 @@ void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
 void SyncValidator::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                      VkSubpassContents contents) {
     StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
-    auto subpass_begin_info = lvl_init_struct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, CMD_BEGINRENDERPASS);
 }
@@ -3925,7 +3925,7 @@ bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const 
 
 bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass(commandBuffer, contents);
-    auto subpass_begin_info = lvl_init_struct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     skip |= ValidateCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, "vkCmdNextSubpass");
     return skip;
@@ -3960,7 +3960,7 @@ void SyncValidator::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const Vk
 
 void SyncValidator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     StateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
-    auto subpass_begin_info = lvl_init_struct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     RecordCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, CMD_NEXTSUBPASS);
 }

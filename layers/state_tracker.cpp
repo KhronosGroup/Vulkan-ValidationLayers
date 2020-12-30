@@ -642,18 +642,18 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
-    image_view_state->filter_cubic_props = lvl_init_struct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
+    image_view_state->filter_cubic_props = LvlInitStruct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
     if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
-        auto imageview_format_info = lvl_init_struct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
+        auto imageview_format_info = LvlInitStruct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
         imageview_format_info.imageViewType = pCreateInfo->viewType;
-        auto image_format_info = lvl_init_struct<VkPhysicalDeviceImageFormatInfo2>(&imageview_format_info);
+        auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&imageview_format_info);
         image_format_info.type = image_state->createInfo.imageType;
         image_format_info.format = image_state->createInfo.format;
         image_format_info.tiling = image_state->createInfo.tiling;
         image_format_info.usage = image_state->createInfo.usage;
         image_format_info.flags = image_state->createInfo.flags;
 
-        auto image_format_properties = lvl_init_struct<VkImageFormatProperties2>(&image_view_state->filter_cubic_props);
+        auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>(&image_view_state->filter_cubic_props);
 
         DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
     }
@@ -2044,23 +2044,23 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
-        auto cooperative_matrix_props = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&cooperative_matrix_props);
+        auto cooperative_matrix_props = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&cooperative_matrix_props);
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         state_tracker->phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
         uint32_t num_cooperative_matrix_properties = 0;
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &num_cooperative_matrix_properties, NULL);
         state_tracker->cooperative_matrix_properties.resize(num_cooperative_matrix_properties,
-                                                            lvl_init_struct<VkCooperativeMatrixPropertiesNV>());
+                                                            LvlInitStruct<VkCooperativeMatrixPropertiesNV>());
 
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &num_cooperative_matrix_properties,
                                                                                state_tracker->cooperative_matrix_properties.data());
     }
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && state_tracker->api_version >= VK_API_VERSION_1_1) {
         // Get the needed subgroup limits
-        auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&subgroup_prop);
+        auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_prop);
         instance_dispatch_table.GetPhysicalDeviceProperties2(gpu, &prop2);
 
         state_tracker->phys_dev_props_core11.subgroupSize = subgroup_prop.subgroupSize;
