@@ -393,7 +393,7 @@ class BUFFER_STATE : public BINDABLE {
             sparse = true;
         }
 
-        auto *externalMemoryInfo = lvl_find_in_chain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
+        auto *externalMemoryInfo = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
         if (externalMemoryInfo) {
             external_memory_handle = externalMemoryInfo->handleTypes;
         }
@@ -427,9 +427,9 @@ struct SAMPLER_STATE : public BASE_NODE {
     VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo = {};
 
     SAMPLER_STATE(const VkSampler *ps, const VkSamplerCreateInfo *pci) : sampler(*ps), createInfo(*pci) {
-        auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pci->pNext);
+        auto *conversionInfo = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pci->pNext);
         if (conversionInfo) samplerConversion = conversionInfo->conversion;
-        auto cbci = lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
+        auto cbci = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
         if (cbci) customCreateInfo = *cbci;
     }
 };
@@ -1318,7 +1318,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
     std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
     std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
-    std::shared_ptr<std::vector<IMAGE_VIEW_STATE*>> active_attachments;
+    std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> active_attachments;
     std::set<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_states;
 
     VkSubpassContents activeSubpassContents;

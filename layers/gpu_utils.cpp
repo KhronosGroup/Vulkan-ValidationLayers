@@ -250,8 +250,7 @@ void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo
         features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
     } else {
         VkPhysicalDeviceFeatures2 *features2 = nullptr;
-        features2 =
-            const_cast<VkPhysicalDeviceFeatures2 *>(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
+        features2 = const_cast<VkPhysicalDeviceFeatures2 *>(LvlFindInChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
         if (features2) features = &features2->features;
     }
     if (features) {

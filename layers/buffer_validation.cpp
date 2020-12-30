@@ -187,7 +187,7 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const VkExternalFormatANDROID *external_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(&create_info);
+    const VkExternalFormatANDROID *external_format_android = LvlFindInChain<VkExternalFormatANDROID>(&create_info);
     bool is_external_format_conversion = (external_format_android != nullptr && external_format_android->externalFormat != 0);
 #else
     bool is_external_format_conversion = false;
@@ -241,7 +241,7 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
         sparse = true;
     }
 
-    auto *external_memory_info = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+    auto *external_memory_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     if (external_memory_info) {
         external_memory_handle = external_memory_info->handleTypes;
     }
@@ -299,7 +299,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
       range_generator(im->subresource_encoder, normalized_subresource_range),
       samplerConversion(VK_NULL_HANDLE),
       image_state(im) {
-    auto *conversion_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
+    auto *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
     if (conversion_info) samplerConversion = conversion_info->conversion;
     if (image_state) {
         // A light normalization of the createInfo range
@@ -498,7 +498,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     }
 
     auto image_usage = image_state->createInfo.usage;
-    const auto stencil_usage_info = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
+    const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
     if (stencil_usage_info) {
         image_usage |= stencil_usage_info->stencilUsage;
     }
@@ -621,7 +621,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                          "You cannot start a render pass using a framebuffer with a different number of attachments.");
     }
 
-    const auto *attachment_info = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+    const auto *attachment_info = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
     if (((framebuffer_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0) && attachment_info != nullptr) {
         attachments = attachment_info->pAttachments;
     }
@@ -665,7 +665,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 
             // If a separate layout is specified, look for that.
             const auto *attachment_description_stencil_layout =
-                lvl_find_in_chain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+                LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
                 attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
             }
@@ -771,7 +771,7 @@ void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFE
         IMAGE_VIEW_STATE *image_view = GetActiveAttachmentImageViewState(pCB, ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
-            const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayout>(ref.pNext);
+            const auto *attachment_reference_stencil_layout = LvlFindInChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
             if (attachment_reference_stencil_layout) {
                 stencil_layout = attachment_reference_stencil_layout->stencilLayout;
             }
@@ -811,7 +811,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
-                lvl_find_in_chain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
+                LvlFindInChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
                 stencil_layout = attachment_description_stencil_layout->stencilInitialLayout;
             }
@@ -1433,7 +1433,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
             if (view_state) {
                 VkImageLayout stencil_layout = kInvalidLayout;
                 const auto *attachment_description_stencil_layout =
-                    lvl_find_in_chain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+                    LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
                 if (attachment_description_stencil_layout) {
                     stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
                 }
@@ -1453,7 +1453,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
 bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) const {
     bool skip = false;
 
-    const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
+    const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_fmt_android) {
         if (0 != ext_fmt_android->externalFormat) {
             if (VK_FORMAT_UNDEFINED != create_info->format) {
@@ -1503,7 +1503,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
         }
     }
 
-    const VkExternalMemoryImageCreateInfo *emici = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
+    const VkExternalMemoryImageCreateInfo *emici = LvlFindInChain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         if (create_info->imageType != VK_IMAGE_TYPE_2D) {
             skip |=
@@ -1540,7 +1540,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         // Chain must include a compatible ycbcr conversion
         bool conv_found = false;
         uint64_t external_format = 0;
-        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
+        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
         if (ycbcr_conv_info != nullptr) {
             VkSamplerYcbcrConversion conv_handle = ycbcr_conv_info->conversion;
             if (ycbcr_conversion_ahb_fmt_map.find(conv_handle) != ycbcr_conversion_ahb_fmt_map.end()) {
@@ -1610,7 +1610,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     if (image_format == VK_FORMAT_UNDEFINED) {
         // VU 01975 states format can't be undefined unless an android externalFormat
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-        const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(pCreateInfo->pNext);
+        const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext);
         if ((image_tiling == VK_IMAGE_TILING_OPTIMAL) && (ext_fmt_android != nullptr) && (0 != ext_fmt_android->externalFormat)) {
             auto it = ahb_ext_formats_map.find(ext_fmt_android->externalFormat);
             if (it != ahb_ext_formats_map.end()) {
@@ -1621,9 +1621,9 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         uint64_t drm_format_modifier = 0;
         const VkImageDrmFormatModifierExplicitCreateInfoEXT *drm_explicit =
-            lvl_find_in_chain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+            LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         const VkImageDrmFormatModifierListCreateInfoEXT *drm_implicit =
-            lvl_find_in_chain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+            LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
 
         if (drm_explicit != nullptr) {
             drm_format_modifier = drm_explicit->drmFormatModifier;
@@ -1746,8 +1746,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                                                 pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags,
                                                                 &format_limits);
     } else {
-        auto modifier_list = lvl_find_in_chain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-        auto explicit_modifier = lvl_find_in_chain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+        auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         if (modifier_list) {
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
                 auto drm_format_modifier = lvl_init_struct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
@@ -1791,7 +1791,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     if (result != VK_SUCCESS) {
         // External memory will always have a "imageCreateImageFormatPropertiesList" so skip
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-        if (!lvl_find_in_chain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
+        if (!LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
             skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251",
                              "vkCreateImage(): Format %s is not supported for this combination of parameters and "
@@ -1921,7 +1921,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                      string_VkFormat(pCreateInfo->format), string_VkImageCreateFlags(pCreateInfo->flags).c_str());
     }
 
-    const auto swapchain_create_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    const auto swapchain_create_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     if (swapchain_create_info != nullptr) {
         if (swapchain_create_info->swapchain != VK_NULL_HANDLE) {
             const SWAPCHAIN_NODE *swapchain_state = GetSwapchainState(swapchain_create_info->swapchain);
@@ -2218,7 +2218,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             }
         }
         if (any_include_aspect_stencil_bit) {
-            const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
+            const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
             if (image_stencil_struct != nullptr) {
                 if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
                     skip |=
@@ -4479,7 +4479,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
     // TODO: Add check for "VUID-vkCreateBuffer-flags-00911"        (sparse address space accounting)
 
-    auto chained_devaddr_struct = lvl_find_in_chain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
+    auto chained_devaddr_struct = LvlFindInChain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
     if (chained_devaddr_struct) {
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_devaddr_struct->deviceAddress != 0) {
@@ -4489,7 +4489,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    auto chained_opaqueaddr_struct = lvl_find_in_chain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
+    auto chained_opaqueaddr_struct = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
     if (chained_opaqueaddr_struct) {
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_opaqueaddr_struct->opaqueCaptureAddress != 0) {
@@ -4931,7 +4931,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         VkImageViewType view_type = pCreateInfo->viewType;
 
         // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
-        auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
+        auto chained_ivuci_struct = LvlFindInChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
         if (chained_ivuci_struct) {
             if (device_extensions.vk_khr_maintenance2) {
                 if (!device_extensions.vk_ext_separate_stencil_usage) {
@@ -4941,8 +4941,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                          "include any bits that were not set in VkImageCreateInfo::usage used to create image");
                     }
                 } else {
-                    const auto image_stencil_struct =
-                        lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
+                    const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
                     if (image_stencil_struct == nullptr) {
                         if ((image_usage | chained_ivuci_struct->usage) != image_usage) {
                             skip |= LogError(
@@ -5200,7 +5199,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
-        auto astc_decode_mode = lvl_find_in_chain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
+        auto astc_decode_mode = LvlFindInChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
         if ((device_extensions.vk_ext_astc_decode_mode) && (astc_decode_mode != nullptr)) {
             if ((enabled_features.astc_decode_features.decodeModeSharedExponent == VK_FALSE) &&
                 (astc_decode_mode->decodeMode == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)) {

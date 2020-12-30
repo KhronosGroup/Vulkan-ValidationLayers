@@ -751,7 +751,7 @@ bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bi
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindImageMemory2() pBindInfos[%u]", i);
-        if (!lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[i].pNext)) {
+        if (!LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[i].pNext)) {
             skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, api_name);
         }
     }
@@ -1222,8 +1222,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
     auto rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
     if (rp_state) {
         if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
-            const VkRenderPassAttachmentBeginInfo* rpabi =
-                lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+            const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
             if (rpabi) {
                 skip = ValidateAttachments(rp_state->createInfo.ptr(), rpabi->attachmentCount, rpabi->pAttachments);
             }

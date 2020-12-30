@@ -338,11 +338,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             }
         }
     }
-    const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(settings_data->pnext_chain);
+    const auto *validation_features_ext = LvlFindInChain<VkValidationFeaturesEXT>(settings_data->pnext_chain);
     if (validation_features_ext) {
         SetValidationFeatures(settings_data->disables, settings_data->enables, validation_features_ext);
     }
-    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(settings_data->pnext_chain);
+    const auto *validation_flags_ext = LvlFindInChain<VkValidationFlagsEXT>(settings_data->pnext_chain);
     if (validation_flags_ext) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }

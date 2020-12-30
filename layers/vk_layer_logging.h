@@ -594,14 +594,14 @@ static inline VkResult layer_create_report_callback(debug_report_data *debug_dat
 static inline void ActivateInstanceDebugCallbacks(debug_report_data *debug_data) {
     auto current = debug_data->instance_pnext_chain;
     for (;;) {
-        auto create_info = lvl_find_in_chain<VkDebugUtilsMessengerCreateInfoEXT>(current);
+        auto create_info = LvlFindInChain<VkDebugUtilsMessengerCreateInfoEXT>(current);
         if (!create_info) break;
         current = create_info->pNext;
         VkDebugUtilsMessengerEXT utils_callback{};
         layer_create_callback((DEBUG_CALLBACK_UTILS | DEBUG_CALLBACK_INSTANCE), debug_data, create_info, nullptr, &utils_callback);
     }
     for (;;) {
-        auto create_info = lvl_find_in_chain<VkDebugReportCallbackCreateInfoEXT>(current);
+        auto create_info = LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(current);
         if (!create_info) break;
         current = create_info->pNext;
         VkDebugReportCallbackEXT report_callback{};
@@ -610,8 +610,8 @@ static inline void ActivateInstanceDebugCallbacks(debug_report_data *debug_data)
 }
 
 static inline void DeactivateInstanceDebugCallbacks(debug_report_data *debug_data) {
-    if (!lvl_find_in_chain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain) &&
-        !lvl_find_in_chain<VkDebugReportCallbackCreateInfoEXT>(debug_data->instance_pnext_chain))
+    if (!LvlFindInChain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain) &&
+        !LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(debug_data->instance_pnext_chain))
         return;
     std::vector<VkDebugUtilsMessengerEXT> instance_utils_callback_handles{};
     std::vector<VkDebugReportCallbackEXT> instance_report_callback_handles{};

@@ -538,7 +538,7 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
     }
 
     // Depth stencil resolve only if the extension is present
-    const auto ds_resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass_ci.pNext);
+    const auto ds_resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass_ci.pNext);
     if (ds_resolve && ds_resolve->pDepthStencilResolveAttachment &&
         (ds_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) && subpass_ci.pDepthStencilAttachment &&
         (subpass_ci.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
@@ -568,8 +568,7 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
 
         if (aspect_mask) {
             action(aspect_string, "resolve read", src_at, dst_at, attachment_views[src_at],
-                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kAttachmentRasterOrder, offset, extent,
-                   aspect_mask);
+                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kAttachmentRasterOrder, offset, extent, aspect_mask);
             action(aspect_string, "resolve write", src_at, dst_at, attachment_views[dst_at],
                    SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kAttachmentRasterOrder, offset, extent, aspect_mask);
         }
