@@ -8612,6 +8612,29 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
     });
 }
 
+void CoreChecks::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
+                                                                          uint32_t accelerationStructureCount,
+                                                                          const VkAccelerationStructureKHR *pAccelerationStructures,
+                                                                          VkQueryType queryType, VkQueryPool queryPool,
+                                                                          uint32_t firstQuery) {
+    if (disabled[query_validation]) return;
+    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const char *func_name = "vkCmdWriteAccelerationStructuresPropertiesKHR()";
+    cb_state->queryUpdates.emplace_back([accelerationStructureCount, commandBuffer, firstQuery, func_name, queryPool](
+                                            const ValidationStateTracker *device_data, bool do_validate,
+                                            VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
+        if (!do_validate) return false;
+        bool skip = false;
+        for (uint32_t i = 0; i < accelerationStructureCount; i++) {
+            QueryObject query = {{queryPool, firstQuery + i}, perfPass};
+            skip |= VerifyQueryIsReset(device_data, commandBuffer, query, func_name, firstPerfQueryPool, perfPass,
+                                       localQueryToStateMap);
+        }
+        return skip;
+    });
+}
+
 bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attachments, const VkFramebufferCreateInfo *fbci,
                             VkImageUsageFlagBits usage_flag, const char *error_code) const {
     bool skip = false;
