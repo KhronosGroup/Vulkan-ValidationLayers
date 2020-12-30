@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -730,6 +730,10 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
 TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     TEST_DESCRIPTION("Check that GetPhysicalDeviceQueueFamilyProperties is working as expected");
 
+    // Vulkan 1.1 required to test vkGetPhysicalDeviceQueueFamilyProperties2
+    app_info_.apiVersion = VK_API_VERSION_1_1;
+    // VK_KHR_get_physical_device_properties2 required to test vkGetPhysicalDeviceQueueFamilyProperties2KHR
+    instance_extensions_.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     const vk_testing::PhysicalDevice phys_device_obj(gpu_);
 
@@ -743,6 +747,24 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
 
     queue_family_props.resize(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(phys_device_obj.handle(), &queue_count, queue_family_props.data());
+
+    // Now  for GetPhysicalDeviceQueueFamilyProperties2
+    std::vector<VkQueueFamilyProperties2> queue_family_props2;
+    vk::GetPhysicalDeviceQueueFamilyProperties2(phys_device_obj.handle(), &queue_count, nullptr);
+
+    queue_family_props2.resize(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties2(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
+
+    // And for GetPhysicalDeviceQueueFamilyProperties2KHR
+    PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR vkGetPhysicalDeviceQueueFamilyProperties2KHR =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceQueueFamilyProperties2KHR"));
+    if (vkGetPhysicalDeviceQueueFamilyProperties2KHR) {
+        vkGetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, nullptr);
+
+        queue_family_props2.resize(queue_count);
+        vkGetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
+    }
 
     vk_testing::Device device(phys_device_obj.handle());
     device.init();
