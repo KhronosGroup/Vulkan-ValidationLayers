@@ -4339,6 +4339,37 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATU
 };
 
 // Find an entry of the given type in the pNext chain
+template <typename T> const T *LvlFindInChain(const void *next) {
+    const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
+    const T *found = nullptr;
+    while (current) {
+        if (LvlTypeMap<T>::kSType == current->sType) {
+            found = reinterpret_cast<const T*>(current);
+            current = nullptr;
+        } else {
+            current = current->pNext;
+        }
+    }
+    return found;
+}
+
+// Init the header of an sType struct with pNext
+template <typename T> T LvlInitStruct(void *p_next) {
+    T out = {};
+    out.sType = LvlTypeMap<T>::kSType;
+    out.pNext = p_next;
+    return out;
+}
+
+// Init the header of an sType struct
+template <typename T> T LvlInitStruct() {
+    T out = {};
+    out.sType = LvlTypeMap<T>::kSType;
+    return out;
+}
+
+
+// Find an entry of the given type in the pNext chain
 template <typename T> const T *lvl_find_in_chain(const void *next) {
     const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
     const T *found = nullptr;
