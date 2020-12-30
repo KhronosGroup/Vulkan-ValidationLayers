@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1761,32 +1761,27 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
 bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const PHYSICAL_DEVICE_STATE* pd_state,
                                                                          uint32_t requested_queue_family_property_count,
-                                                                         bool qfp_null, const char* caller_name) const {
+                                                                         const CALL_STATE call_state,
+                                                                         const char* caller_name) const {
     bool skip = false;
-    if (!qfp_null) {
-        // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
-        const auto* bp_pd_state = GetPhysicalDeviceStateBP(pd_state->phys_device);
-        if (bp_pd_state) {
-            if (UNCALLED == bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState) {
-                skip |= LogWarning(
-                    pd_state->phys_device, kVUID_Core_DevLimit_MissingQueryCount,
-                    "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is "
-                    "recommended "
-                    "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
-                    caller_name, caller_name);
-                // Then verify that pCount that is passed in on second call matches what was returned
-            } else if (pd_state->queue_family_known_count != requested_queue_family_property_count) {
-                skip |=
-                    LogWarning(pd_state->phys_device, kVUID_Core_DevLimit_CountMismatch,
-                               "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
-                               ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
-                               ". It is recommended to instead receive all the properties by calling %s with "
-                               "pQueueFamilyPropertyCount that was "
-                               "previously obtained by calling %s with NULL pQueueFamilyProperties.",
-                               caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name,
-                               caller_name);
-            }
-        }
+    // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
+    if (UNCALLED == call_state) {
+        skip |= LogWarning(
+            pd_state->phys_device, kVUID_Core_DevLimit_MissingQueryCount,
+            "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is "
+            "recommended "
+            "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
+            caller_name, caller_name);
+        // Then verify that pCount that is passed in on second call matches what was returned
+    } else if (pd_state->queue_family_known_count != requested_queue_family_property_count) {
+        skip |= LogWarning(pd_state->phys_device, kVUID_Core_DevLimit_CountMismatch,
+                           "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
+                           ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
+                           ". It is recommended to instead receive all the properties by calling %s with "
+                           "pQueueFamilyPropertyCount that was "
+                           "previously obtained by calling %s with NULL pQueueFamilyProperties.",
+                           caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name,
+                           caller_name);
     }
 
     return skip;
@@ -1818,9 +1813,13 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
                                                                           VkQueueFamilyProperties* pQueueFamilyProperties) const {
     const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
-                                                                (nullptr == pQueueFamilyProperties),
-                                                                "vkGetPhysicalDeviceQueueFamilyProperties()");
+    const auto* bp_pd_state = GetPhysicalDeviceStateBP(physical_device_state->phys_device);
+    if (pQueueFamilyProperties && bp_pd_state) {
+        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
+                                                                    bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
+                                                                    "vkGetPhysicalDeviceQueueFamilyProperties()");
+    }
+    return false;
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
@@ -1828,18 +1827,26 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
                                                                            VkQueueFamilyProperties2* pQueueFamilyProperties) const {
     const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
-                                                                (nullptr == pQueueFamilyProperties),
-                                                                "vkGetPhysicalDeviceQueueFamilyProperties2()");
+    const auto* bp_pd_state = GetPhysicalDeviceStateBP(physical_device_state->phys_device);
+    if (pQueueFamilyProperties && bp_pd_state) {
+        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
+                                                                    bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
+                                                                    "vkGetPhysicalDeviceQueueFamilyProperties2()");
+    }
+    return false;
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
-                                                                (nullptr == pQueueFamilyProperties),
-                                                                "vkGetPhysicalDeviceQueueFamilyProperties2KHR()");
+    const auto* bp_pd_state = GetPhysicalDeviceStateBP(physical_device_state->phys_device);
+    if (pQueueFamilyProperties && bp_pd_state) {
+        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
+                                                                    bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
+                                                                    "vkGetPhysicalDeviceQueueFamilyProperties2KHR()");
+    }
+    return false;
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
@@ -2179,6 +2186,16 @@ bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapch
     return skip;
 }
 
+void BestPractices::CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer) {
+    if (no_pointer) {
+        if (UNCALLED == call_state) {
+            call_state = QUERY_COUNT;
+        }
+    } else {  // Save queue family properties
+        call_state = QUERY_DETAILS;
+    }
+}
+
 void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                          uint32_t* pQueueFamilyPropertyCount,
                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) {
@@ -2186,13 +2203,32 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysi
                                                                                  pQueueFamilyProperties);
     auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
     if (bp_pd_state) {
-        if (!pQueueFamilyProperties) {
-            if (UNCALLED == bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState) {
-                bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState = QUERY_COUNT;
-            }
-        } else {  // Save queue family properties
-            bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState = QUERY_DETAILS;
-        }
+        CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
+                                                                   nullptr == pQueueFamilyProperties);
+    }
+}
+
+void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                          uint32_t* pQueueFamilyPropertyCount,
+                                                                          VkQueueFamilyProperties2* pQueueFamilyProperties) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
+                                                                                  pQueueFamilyProperties);
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
+                                                                   nullptr == pQueueFamilyProperties);
+    }
+}
+
+void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                             uint32_t* pQueueFamilyPropertyCount,
+                                                                             VkQueueFamilyProperties2* pQueueFamilyProperties) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
+                                                                                     pQueueFamilyProperties);
+    auto* bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);
+    if (bp_pd_state) {
+        CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
+                                                                   nullptr == pQueueFamilyProperties);
     }
 }
 
