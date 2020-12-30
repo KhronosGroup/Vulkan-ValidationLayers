@@ -3331,11 +3331,12 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
         if (!IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
             pipeline->graphicsPipelineCI.pViewportState->viewportCount > 1 && primitiverate_written) {
-            skip |= LogError(
-                pipeline->pipeline, "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
-                "vkCreateGraphicsPipelines: %s shader statically writes to PrimitiveShadingRateKHR built-in, but multiple viewports "
-                "are used and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                string_VkShaderStageFlagBits(stage));
+            skip |= LogError(pipeline->pipeline,
+                             "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
+                             "vkCreateGraphicsPipelines: %s shader statically writes to PrimitiveShadingRateKHR built-in, but "
+                             "multiple viewports "
+                             "are used and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                             string_VkShaderStageFlagBits(stage));
         }
 
         if (primitiverate_written && viewportindex_written) {
@@ -3926,7 +3927,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
 uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }
 
 static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
-    const auto validation_cache_ci = lvl_find_in_chain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
+    const auto validation_cache_ci = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
     if (validation_cache_ci) {
         return CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache);
     }

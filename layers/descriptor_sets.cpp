@@ -66,7 +66,7 @@ DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_cr
 // Proactively reserve and resize as possible, as the reallocation was visible in profiling
 cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info)
     : flags_(p_create_info->flags), binding_count_(0), descriptor_count_(0), dynamic_descriptor_count_(0) {
-    const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
+    const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
     binding_type_stats_ = {0, 0, 0};
     std::set<ExtendedBinding, BindingNumCmp> sorted_bindings;
@@ -350,7 +350,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     std::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
 
-    const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(create_info->pNext);
+    const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(create_info->pNext);
 
     const bool push_descriptor_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     if (push_descriptor_set && !push_descriptor_ext) {
@@ -1117,7 +1117,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
 
                                 if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
                                     const auto reduction_mode_info =
-                                        lvl_find_in_chain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
+                                        LvlFindInChain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
                                     if (reduction_mode_info &&
                                         (reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
                                          reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
@@ -1901,7 +1901,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
 
     format = image_node->createInfo.format;
     usage = image_node->createInfo.usage;
-    const auto stencil_usage_info = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_node->createInfo.pNext);
+    const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_node->createInfo.pNext);
     if (stencil_usage_info) {
         usage |= stencil_usage_info->stencilUsage;
     }
@@ -2298,8 +2298,8 @@ cvdescriptorset::AccelerationStructureDescriptor::AccelerationStructureDescripto
 }
 void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
                                                                    const VkWriteDescriptorSet *update, const uint32_t index) {
-    const auto *acc_info = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(update->pNext);
-    const auto *acc_info_nv = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
+    const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(update->pNext);
+    const auto *acc_info_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
     assert(acc_info || acc_info_nv);
     is_khr_ = (acc_info != NULL);
     updated = true;
@@ -2360,7 +2360,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
             }
         }
         if (p_wds[i].pNext) {
-            const auto *pnext_struct = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(p_wds[i].pNext);
+            const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(p_wds[i].pNext);
             if (pnext_struct) {
                 for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                     const ACCELERATION_STRUCTURE_STATE_KHR *as_state =
@@ -2376,7 +2376,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
                     }
                 }
             }
-            const auto *pnext_struct_nv = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(p_wds[i].pNext);
+            const auto *pnext_struct_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(p_wds[i].pNext);
             if (pnext_struct_nv) {
                 for (uint32_t j = 0; j < pnext_struct_nv->accelerationStructureCount; ++j) {
                     const ACCELERATION_STRUCTURE_STATE *as_state =
@@ -2927,7 +2927,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
         }
     }
 
-    const auto *count_allocate_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
+    const auto *count_allocate_info = LvlFindInChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
 
     if (count_allocate_info) {
         if (count_allocate_info->descriptorSetCount != 0 &&
@@ -3100,7 +3100,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
             *error_msg = error_str.str();
             return false;
         }
-        const auto *write_inline_info = lvl_find_in_chain<VkWriteDescriptorSetInlineUniformBlockEXT>(update->pNext);
+        const auto *write_inline_info = LvlFindInChain<VkWriteDescriptorSetInlineUniformBlockEXT>(update->pNext);
         if (!write_inline_info || write_inline_info->dataSize != update->descriptorCount) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02221";
             std::stringstream error_str;
@@ -3396,7 +3396,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
             break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
-            const auto *acc_info = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
+            const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
                 if (!ValidateAccelerationStructureUpdate(GetAccelerationStructureStateNV(acc_info->pAccelerationStructures[di]),
                                                          func_name, error_code, error_msg)) {

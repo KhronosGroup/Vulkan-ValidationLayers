@@ -234,7 +234,7 @@ std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRende
     const VkImageView *attachments = fb_state.createInfo.pAttachments;
     uint32_t count = fb_state.createInfo.attachmentCount;
     if (fb_state.createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
-        const auto *framebuffer_attachments = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(rp_begin.pNext);
+        const auto *framebuffer_attachments = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(rp_begin.pNext);
         if (framebuffer_attachments) {
             attachments = framebuffer_attachments->pAttachments;
             count = framebuffer_attachments->attachmentCount;
@@ -294,11 +294,11 @@ void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE 
 // This could also move into a seperate core_validation_android.cpp file... ?
 
 void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
-    const VkExternalMemoryImageCreateInfo *emici = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
+    const VkExternalMemoryImageCreateInfo *emici = LvlFindInChain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         is_node->external_ahb = true;
     }
-    const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
+    const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
         is_node->has_ahb_format = true;
         is_node->ahb_format = ext_fmt_android->externalFormat;
@@ -311,7 +311,7 @@ void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *c
 }
 
 void ValidationStateTracker::RecordCreateBufferANDROID(const VkBufferCreateInfo *create_info, BUFFER_STATE *bs_node) {
-    const VkExternalMemoryBufferCreateInfo *embci = lvl_find_in_chain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
+    const VkExternalMemoryBufferCreateInfo *embci = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
     if (embci && (embci->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         bs_node->external_ahb = true;
     }
@@ -320,7 +320,7 @@ void ValidationStateTracker::RecordCreateBufferANDROID(const VkBufferCreateInfo 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                                        VkSamplerYcbcrConversion ycbcr_conversion,
                                                                        SAMPLER_YCBCR_CONVERSION_STATE *ycbcr_state) {
-    const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
+    const VkExternalFormatANDROID *ext_format_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_format_android && (0 != ext_format_android->externalFormat)) {
         ycbcr_conversion_ahb_fmt_map.emplace(ycbcr_conversion, ext_format_android->externalFormat);
         // VUID 01894 will catch if not found in map
@@ -338,7 +338,7 @@ void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSample
 void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice device, const struct AHardwareBuffer *buffer, VkAndroidHardwareBufferPropertiesANDROID *pProperties, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
+    auto ahb_format_props = LvlFindInChain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
     if (ahb_format_props) {
         ahb_ext_formats_map.insert({ahb_format_props->externalFormat, ahb_format_props->formatFeatures});
     }
@@ -413,7 +413,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node.get());
     }
-    const auto swapchain_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    const auto swapchain_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     if (swapchain_info) {
         is_node->create_from_swapchain = swapchain_info->swapchain;
     }
@@ -912,19 +912,19 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
     memObjMap[mem] = std::make_shared<DEVICE_MEMORY_STATE>(object, mem, pAllocateInfo, fake_address);
     auto mem_info = memObjMap[mem].get();
 
-    auto dedicated = lvl_find_in_chain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+    auto dedicated = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated) {
         mem_info->is_dedicated = true;
         mem_info->dedicated_buffer = dedicated->buffer;
         mem_info->dedicated_image = dedicated->image;
     }
-    auto export_info = lvl_find_in_chain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
+    auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
     if (export_info) {
         mem_info->is_export = true;
         mem_info->export_handle_type_flags = export_info->handleTypes;
     }
 
-    auto alloc_flags = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
+    auto alloc_flags = LvlFindInChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
     if (alloc_flags) {
         auto dev_mask = alloc_flags->deviceMask;
         if ((dev_mask != 0) && (dev_mask & (dev_mask - 1))) {
@@ -937,18 +937,18 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
 
     // Assumes validation already for only a single import operation in the pNext
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    auto win32_import = lvl_find_in_chain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
+    auto win32_import = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
     if (win32_import) {
         mem_info->is_import = true;
         mem_info->import_handle_type_flags = win32_import->handleType;
     }
 #endif
-    auto fd_import = lvl_find_in_chain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
+    auto fd_import = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
     if (fd_import) {
         mem_info->is_import = true;
         mem_info->import_handle_type_flags = fd_import->handleType;
     }
-    auto host_pointer_import = lvl_find_in_chain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
+    auto host_pointer_import = LvlFindInChain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
     if (host_pointer_import) {
         mem_info->is_import = true;
         mem_info->import_handle_type_flags = host_pointer_import->handleType;
@@ -956,7 +956,7 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     // AHB Import doesn't have handle in the pNext struct
     // It should be assumed that all imported AHB can only have the same, single handleType
-    auto ahb_import = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
+    auto ahb_import = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
     if ((ahb_import) && (ahb_import->buffer != nullptr)) {
         mem_info->is_import_ahb = true;
         mem_info->is_import = true;
@@ -1500,7 +1500,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
     if (nullptr == enabled_features_found) {
-        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
+        const auto *features2 = LvlFindInChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
         if (features2) {
             enabled_features_found = &(features2->features);
         }
@@ -1526,7 +1526,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     // Save local link to this device's physical device state
     state_tracker->physical_device_state = pd_state;
 
-    const auto *vulkan_12_features = lvl_find_in_chain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
+    const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
     if (vulkan_12_features) {
         state_tracker->enabled_features.core12 = *vulkan_12_features;
     } else {
@@ -1541,7 +1541,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
         // These structs are only allowed in pNext chain if there is no VkPhysicalDeviceVulkan12Features
 
-        const auto *eight_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice8BitStorageFeatures>(pCreateInfo->pNext);
+        const auto *eight_bit_storage_features = LvlFindInChain<VkPhysicalDevice8BitStorageFeatures>(pCreateInfo->pNext);
         if (eight_bit_storage_features) {
             state_tracker->enabled_features.core12.storageBuffer8BitAccess = eight_bit_storage_features->storageBuffer8BitAccess;
             state_tracker->enabled_features.core12.uniformAndStorageBuffer8BitAccess =
@@ -1549,14 +1549,13 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.core12.storagePushConstant8 = eight_bit_storage_features->storagePushConstant8;
         }
 
-        const auto *float16_int8_features = lvl_find_in_chain<VkPhysicalDeviceShaderFloat16Int8Features>(pCreateInfo->pNext);
+        const auto *float16_int8_features = LvlFindInChain<VkPhysicalDeviceShaderFloat16Int8Features>(pCreateInfo->pNext);
         if (float16_int8_features) {
             state_tracker->enabled_features.core12.shaderFloat16 = float16_int8_features->shaderFloat16;
             state_tracker->enabled_features.core12.shaderInt8 = float16_int8_features->shaderInt8;
         }
 
-        const auto *descriptor_indexing_features =
-            lvl_find_in_chain<VkPhysicalDeviceDescriptorIndexingFeatures>(pCreateInfo->pNext);
+        const auto *descriptor_indexing_features = LvlFindInChain<VkPhysicalDeviceDescriptorIndexingFeatures>(pCreateInfo->pNext);
         if (descriptor_indexing_features) {
             state_tracker->enabled_features.core12.shaderInputAttachmentArrayDynamicIndexing =
                 descriptor_indexing_features->shaderInputAttachmentArrayDynamicIndexing;
@@ -1599,49 +1598,49 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.core12.runtimeDescriptorArray = descriptor_indexing_features->runtimeDescriptorArray;
         }
 
-        const auto *scalar_block_layout_features = lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeatures>(pCreateInfo->pNext);
+        const auto *scalar_block_layout_features = LvlFindInChain<VkPhysicalDeviceScalarBlockLayoutFeatures>(pCreateInfo->pNext);
         if (scalar_block_layout_features) {
             state_tracker->enabled_features.core12.scalarBlockLayout = scalar_block_layout_features->scalarBlockLayout;
         }
 
         const auto *imageless_framebuffer_features =
-            lvl_find_in_chain<VkPhysicalDeviceImagelessFramebufferFeatures>(pCreateInfo->pNext);
+            LvlFindInChain<VkPhysicalDeviceImagelessFramebufferFeatures>(pCreateInfo->pNext);
         if (imageless_framebuffer_features) {
             state_tracker->enabled_features.core12.imagelessFramebuffer = imageless_framebuffer_features->imagelessFramebuffer;
         }
 
         const auto *uniform_buffer_standard_layout_features =
-            lvl_find_in_chain<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>(pCreateInfo->pNext);
+            LvlFindInChain<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>(pCreateInfo->pNext);
         if (uniform_buffer_standard_layout_features) {
             state_tracker->enabled_features.core12.uniformBufferStandardLayout =
                 uniform_buffer_standard_layout_features->uniformBufferStandardLayout;
         }
 
         const auto *subgroup_extended_types_features =
-            lvl_find_in_chain<VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures>(pCreateInfo->pNext);
+            LvlFindInChain<VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures>(pCreateInfo->pNext);
         if (subgroup_extended_types_features) {
             state_tracker->enabled_features.core12.shaderSubgroupExtendedTypes =
                 subgroup_extended_types_features->shaderSubgroupExtendedTypes;
         }
 
         const auto *separate_depth_stencil_layouts_features =
-            lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(pCreateInfo->pNext);
+            LvlFindInChain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(pCreateInfo->pNext);
         if (separate_depth_stencil_layouts_features) {
             state_tracker->enabled_features.core12.separateDepthStencilLayouts =
                 separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
         }
 
-        const auto *host_query_reset_features = lvl_find_in_chain<VkPhysicalDeviceHostQueryResetFeatures>(pCreateInfo->pNext);
+        const auto *host_query_reset_features = LvlFindInChain<VkPhysicalDeviceHostQueryResetFeatures>(pCreateInfo->pNext);
         if (host_query_reset_features) {
             state_tracker->enabled_features.core12.hostQueryReset = host_query_reset_features->hostQueryReset;
         }
 
-        const auto *timeline_semaphore_features = lvl_find_in_chain<VkPhysicalDeviceTimelineSemaphoreFeatures>(pCreateInfo->pNext);
+        const auto *timeline_semaphore_features = LvlFindInChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(pCreateInfo->pNext);
         if (timeline_semaphore_features) {
             state_tracker->enabled_features.core12.timelineSemaphore = timeline_semaphore_features->timelineSemaphore;
         }
 
-        const auto *buffer_device_address = lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeatures>(pCreateInfo->pNext);
+        const auto *buffer_device_address = LvlFindInChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(pCreateInfo->pNext);
         if (buffer_device_address) {
             state_tracker->enabled_features.core12.bufferDeviceAddress = buffer_device_address->bufferDeviceAddress;
             state_tracker->enabled_features.core12.bufferDeviceAddressCaptureReplay =
@@ -1650,13 +1649,13 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
                 buffer_device_address->bufferDeviceAddressMultiDevice;
         }
 
-        const auto *atomic_int64_features = lvl_find_in_chain<VkPhysicalDeviceShaderAtomicInt64Features>(pCreateInfo->pNext);
+        const auto *atomic_int64_features = LvlFindInChain<VkPhysicalDeviceShaderAtomicInt64Features>(pCreateInfo->pNext);
         if (atomic_int64_features) {
             state_tracker->enabled_features.core12.shaderBufferInt64Atomics = atomic_int64_features->shaderBufferInt64Atomics;
             state_tracker->enabled_features.core12.shaderSharedInt64Atomics = atomic_int64_features->shaderSharedInt64Atomics;
         }
 
-        const auto *memory_model_features = lvl_find_in_chain<VkPhysicalDeviceVulkanMemoryModelFeatures>(pCreateInfo->pNext);
+        const auto *memory_model_features = LvlFindInChain<VkPhysicalDeviceVulkanMemoryModelFeatures>(pCreateInfo->pNext);
         if (memory_model_features) {
             state_tracker->enabled_features.core12.vulkanMemoryModel = memory_model_features->vulkanMemoryModel;
             state_tracker->enabled_features.core12.vulkanMemoryModelDeviceScope =
@@ -1666,13 +1665,13 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         }
     }
 
-    const auto *vulkan_11_features = lvl_find_in_chain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
+    const auto *vulkan_11_features = LvlFindInChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
     if (vulkan_11_features) {
         state_tracker->enabled_features.core11 = *vulkan_11_features;
     } else {
         // These structs are only allowed in pNext chain if there is no kPhysicalDeviceVulkan11Features
 
-        const auto *sixteen_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice16BitStorageFeatures>(pCreateInfo->pNext);
+        const auto *sixteen_bit_storage_features = LvlFindInChain<VkPhysicalDevice16BitStorageFeatures>(pCreateInfo->pNext);
         if (sixteen_bit_storage_features) {
             state_tracker->enabled_features.core11.storageBuffer16BitAccess =
                 sixteen_bit_storage_features->storageBuffer16BitAccess;
@@ -1682,39 +1681,38 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
             state_tracker->enabled_features.core11.storageInputOutput16 = sixteen_bit_storage_features->storageInputOutput16;
         }
 
-        const auto *multiview_features = lvl_find_in_chain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
+        const auto *multiview_features = LvlFindInChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
         if (multiview_features) {
             state_tracker->enabled_features.core11.multiview = multiview_features->multiview;
             state_tracker->enabled_features.core11.multiviewGeometryShader = multiview_features->multiviewGeometryShader;
             state_tracker->enabled_features.core11.multiviewTessellationShader = multiview_features->multiviewTessellationShader;
         }
 
-        const auto *variable_pointers_features = lvl_find_in_chain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
+        const auto *variable_pointers_features = LvlFindInChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
         if (variable_pointers_features) {
             state_tracker->enabled_features.core11.variablePointersStorageBuffer =
                 variable_pointers_features->variablePointersStorageBuffer;
             state_tracker->enabled_features.core11.variablePointers = variable_pointers_features->variablePointers;
         }
 
-        const auto *protected_memory_features = lvl_find_in_chain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
+        const auto *protected_memory_features = LvlFindInChain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
         if (protected_memory_features) {
             state_tracker->enabled_features.core11.protectedMemory = protected_memory_features->protectedMemory;
         }
 
-        const auto *ycbcr_conversion_features =
-            lvl_find_in_chain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(pCreateInfo->pNext);
+        const auto *ycbcr_conversion_features = LvlFindInChain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(pCreateInfo->pNext);
         if (ycbcr_conversion_features) {
             state_tracker->enabled_features.core11.samplerYcbcrConversion = ycbcr_conversion_features->samplerYcbcrConversion;
         }
 
         const auto *shader_draw_parameters_features =
-            lvl_find_in_chain<VkPhysicalDeviceShaderDrawParametersFeatures>(pCreateInfo->pNext);
+            LvlFindInChain<VkPhysicalDeviceShaderDrawParametersFeatures>(pCreateInfo->pNext);
         if (shader_draw_parameters_features) {
             state_tracker->enabled_features.core11.shaderDrawParameters = shader_draw_parameters_features->shaderDrawParameters;
         }
     }
 
-    const auto *device_group_ci = lvl_find_in_chain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
+    const auto *device_group_ci = LvlFindInChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
     if (device_group_ci) {
         state_tracker->physical_device_count = device_group_ci->physicalDeviceCount;
         state_tracker->device_group_create_info = *device_group_ci;
@@ -1722,201 +1720,196 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->physical_device_count = 1;
     }
 
-    const auto *exclusive_scissor_features = lvl_find_in_chain<VkPhysicalDeviceExclusiveScissorFeaturesNV>(pCreateInfo->pNext);
+    const auto *exclusive_scissor_features = LvlFindInChain<VkPhysicalDeviceExclusiveScissorFeaturesNV>(pCreateInfo->pNext);
     if (exclusive_scissor_features) {
         state_tracker->enabled_features.exclusive_scissor = *exclusive_scissor_features;
     }
 
-    const auto *shading_rate_image_features = lvl_find_in_chain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
+    const auto *shading_rate_image_features = LvlFindInChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
     if (shading_rate_image_features) {
         state_tracker->enabled_features.shading_rate_image = *shading_rate_image_features;
     }
 
-    const auto *mesh_shader_features = lvl_find_in_chain<VkPhysicalDeviceMeshShaderFeaturesNV>(pCreateInfo->pNext);
+    const auto *mesh_shader_features = LvlFindInChain<VkPhysicalDeviceMeshShaderFeaturesNV>(pCreateInfo->pNext);
     if (mesh_shader_features) {
         state_tracker->enabled_features.mesh_shader = *mesh_shader_features;
     }
 
-    const auto *inline_uniform_block_features =
-        lvl_find_in_chain<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(pCreateInfo->pNext);
+    const auto *inline_uniform_block_features = LvlFindInChain<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(pCreateInfo->pNext);
     if (inline_uniform_block_features) {
         state_tracker->enabled_features.inline_uniform_block = *inline_uniform_block_features;
     }
 
-    const auto *transform_feedback_features = lvl_find_in_chain<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(pCreateInfo->pNext);
+    const auto *transform_feedback_features = LvlFindInChain<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(pCreateInfo->pNext);
     if (transform_feedback_features) {
         state_tracker->enabled_features.transform_feedback_features = *transform_feedback_features;
     }
 
-    const auto *vtx_attrib_div_features = lvl_find_in_chain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
+    const auto *vtx_attrib_div_features = LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
     if (vtx_attrib_div_features) {
         state_tracker->enabled_features.vtx_attrib_divisor_features = *vtx_attrib_div_features;
     }
 
-    const auto *buffer_device_address_ext = lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>(pCreateInfo->pNext);
+    const auto *buffer_device_address_ext = LvlFindInChain<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>(pCreateInfo->pNext);
     if (buffer_device_address_ext) {
         state_tracker->enabled_features.buffer_device_address_ext = *buffer_device_address_ext;
     }
 
-    const auto *cooperative_matrix_features = lvl_find_in_chain<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(pCreateInfo->pNext);
+    const auto *cooperative_matrix_features = LvlFindInChain<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(pCreateInfo->pNext);
     if (cooperative_matrix_features) {
         state_tracker->enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
     }
 
     const auto *compute_shader_derivatives_features =
-        lvl_find_in_chain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(pCreateInfo->pNext);
     if (compute_shader_derivatives_features) {
         state_tracker->enabled_features.compute_shader_derivatives_features = *compute_shader_derivatives_features;
     }
 
     const auto *fragment_shader_barycentric_features =
-        lvl_find_in_chain<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>(pCreateInfo->pNext);
     if (fragment_shader_barycentric_features) {
         state_tracker->enabled_features.fragment_shader_barycentric_features = *fragment_shader_barycentric_features;
     }
 
     const auto *shader_image_footprint_features =
-        lvl_find_in_chain<VkPhysicalDeviceShaderImageFootprintFeaturesNV>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceShaderImageFootprintFeaturesNV>(pCreateInfo->pNext);
     if (shader_image_footprint_features) {
         state_tracker->enabled_features.shader_image_footprint_features = *shader_image_footprint_features;
     }
 
     const auto *fragment_shader_interlock_features =
-        lvl_find_in_chain<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>(pCreateInfo->pNext);
     if (fragment_shader_interlock_features) {
         state_tracker->enabled_features.fragment_shader_interlock_features = *fragment_shader_interlock_features;
     }
 
     const auto *demote_to_helper_invocation_features =
-        lvl_find_in_chain<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>(pCreateInfo->pNext);
     if (demote_to_helper_invocation_features) {
         state_tracker->enabled_features.demote_to_helper_invocation_features = *demote_to_helper_invocation_features;
     }
 
     const auto *texel_buffer_alignment_features =
-        lvl_find_in_chain<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT>(pCreateInfo->pNext);
     if (texel_buffer_alignment_features) {
         state_tracker->enabled_features.texel_buffer_alignment_features = *texel_buffer_alignment_features;
     }
 
     const auto *pipeline_exe_props_features =
-        lvl_find_in_chain<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>(pCreateInfo->pNext);
     if (pipeline_exe_props_features) {
         state_tracker->enabled_features.pipeline_exe_props_features = *pipeline_exe_props_features;
     }
 
     const auto *dedicated_allocation_image_aliasing_features =
-        lvl_find_in_chain<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>(pCreateInfo->pNext);
     if (dedicated_allocation_image_aliasing_features) {
         state_tracker->enabled_features.dedicated_allocation_image_aliasing_features =
             *dedicated_allocation_image_aliasing_features;
     }
 
-    const auto *performance_query_features = lvl_find_in_chain<VkPhysicalDevicePerformanceQueryFeaturesKHR>(pCreateInfo->pNext);
+    const auto *performance_query_features = LvlFindInChain<VkPhysicalDevicePerformanceQueryFeaturesKHR>(pCreateInfo->pNext);
     if (performance_query_features) {
         state_tracker->enabled_features.performance_query_features = *performance_query_features;
     }
 
-    const auto *device_coherent_memory_features = lvl_find_in_chain<VkPhysicalDeviceCoherentMemoryFeaturesAMD>(pCreateInfo->pNext);
+    const auto *device_coherent_memory_features = LvlFindInChain<VkPhysicalDeviceCoherentMemoryFeaturesAMD>(pCreateInfo->pNext);
     if (device_coherent_memory_features) {
         state_tracker->enabled_features.device_coherent_memory_features = *device_coherent_memory_features;
     }
 
-    const auto *ycbcr_image_array_features = lvl_find_in_chain<VkPhysicalDeviceYcbcrImageArraysFeaturesEXT>(pCreateInfo->pNext);
+    const auto *ycbcr_image_array_features = LvlFindInChain<VkPhysicalDeviceYcbcrImageArraysFeaturesEXT>(pCreateInfo->pNext);
     if (ycbcr_image_array_features) {
         state_tracker->enabled_features.ycbcr_image_array_features = *ycbcr_image_array_features;
     }
 
-    const auto *ray_query_features = lvl_find_in_chain<VkPhysicalDeviceRayQueryFeaturesKHR>(pCreateInfo->pNext);
+    const auto *ray_query_features = LvlFindInChain<VkPhysicalDeviceRayQueryFeaturesKHR>(pCreateInfo->pNext);
     if (ray_query_features) {
         state_tracker->enabled_features.ray_query_features = *ray_query_features;
     }
 
-    const auto *ray_tracing_pipeline_features =
-        lvl_find_in_chain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
+    const auto *ray_tracing_pipeline_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
     if (ray_tracing_pipeline_features) {
         state_tracker->enabled_features.ray_tracing_pipeline_features = *ray_tracing_pipeline_features;
     }
 
     const auto *ray_tracing_acceleration_structure_features =
-        lvl_find_in_chain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(pCreateInfo->pNext);
     if (ray_tracing_acceleration_structure_features) {
         state_tracker->enabled_features.ray_tracing_acceleration_structure_features = *ray_tracing_acceleration_structure_features;
     }
 
-    const auto *robustness2_features = lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
+    const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
     if (robustness2_features) {
         state_tracker->enabled_features.robustness2_features = *robustness2_features;
     }
 
-    const auto *fragment_density_map_features =
-        lvl_find_in_chain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
+    const auto *fragment_density_map_features = LvlFindInChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
     if (fragment_density_map_features) {
         state_tracker->enabled_features.fragment_density_map_features = *fragment_density_map_features;
     }
 
-    const auto *fragment_density_map_features2 =
-        lvl_find_in_chain<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT>(pCreateInfo->pNext);
+    const auto *fragment_density_map_features2 = LvlFindInChain<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT>(pCreateInfo->pNext);
     if (fragment_density_map_features2) {
         state_tracker->enabled_features.fragment_density_map2_features = *fragment_density_map_features2;
     }
 
-    const auto *astc_decode_features = lvl_find_in_chain<VkPhysicalDeviceASTCDecodeFeaturesEXT>(pCreateInfo->pNext);
+    const auto *astc_decode_features = LvlFindInChain<VkPhysicalDeviceASTCDecodeFeaturesEXT>(pCreateInfo->pNext);
     if (astc_decode_features) {
         state_tracker->enabled_features.astc_decode_features = *astc_decode_features;
     }
 
-    const auto *custom_border_color_features = lvl_find_in_chain<VkPhysicalDeviceCustomBorderColorFeaturesEXT>(pCreateInfo->pNext);
+    const auto *custom_border_color_features = LvlFindInChain<VkPhysicalDeviceCustomBorderColorFeaturesEXT>(pCreateInfo->pNext);
     if (custom_border_color_features) {
         state_tracker->enabled_features.custom_border_color_features = *custom_border_color_features;
     }
 
     const auto *pipeline_creation_cache_control_features =
-        lvl_find_in_chain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(pCreateInfo->pNext);
     if (pipeline_creation_cache_control_features) {
         state_tracker->enabled_features.pipeline_creation_cache_control_features = *pipeline_creation_cache_control_features;
     }
 
-    const auto *fragment_shading_rate_features =
-        lvl_find_in_chain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+    const auto *fragment_shading_rate_features = LvlFindInChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
     if (fragment_shading_rate_features) {
         state_tracker->enabled_features.fragment_shading_rate_features = *fragment_shading_rate_features;
     }
 
     const auto *extended_dynamic_state_features =
-        lvl_find_in_chain<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>(pCreateInfo->pNext);
     if (extended_dynamic_state_features) {
         state_tracker->enabled_features.extended_dynamic_state_features = *extended_dynamic_state_features;
     }
 
-    const auto *multiview_features = lvl_find_in_chain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
+    const auto *multiview_features = LvlFindInChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
     if (multiview_features) {
         state_tracker->enabled_features.multiview_features = *multiview_features;
     }
 
-    const auto *portability_features = lvl_find_in_chain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(pCreateInfo->pNext);
+    const auto *portability_features = LvlFindInChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(pCreateInfo->pNext);
     if (portability_features) {
         state_tracker->enabled_features.portability_subset_features = *portability_features;
     }
 
     const auto *shader_integer_functions2_features =
-        lvl_find_in_chain<VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL>(pCreateInfo->pNext);
     if (shader_integer_functions2_features) {
         state_tracker->enabled_features.shader_integer_functions2_features = *shader_integer_functions2_features;
     }
 
-    const auto *shader_sm_builtins_feature = lvl_find_in_chain<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV>(pCreateInfo->pNext);
+    const auto *shader_sm_builtins_feature = LvlFindInChain<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV>(pCreateInfo->pNext);
     if (shader_sm_builtins_feature) {
         state_tracker->enabled_features.shader_sm_builtins_feature = *shader_sm_builtins_feature;
     }
 
-    const auto *shader_atomic_float_feature = lvl_find_in_chain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
+    const auto *shader_atomic_float_feature = LvlFindInChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
     if (shader_atomic_float_feature) {
         state_tracker->enabled_features.shader_atomic_float_feature = *shader_atomic_float_feature;
     }
 
     const auto *shader_image_atomic_int64_feature =
-        lvl_find_in_chain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
+        LvlFindInChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
     if (shader_image_atomic_int64_feature) {
         state_tracker->enabled_features.shader_image_atomic_int64_feature = *shader_image_atomic_int64_feature;
     }
@@ -2275,7 +2268,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         std::vector<SEMAPHORE_SIGNAL> semaphore_signals;
         std::vector<VkSemaphore> semaphore_externals;
         const uint64_t next_seq = queue_state->seq + queue_state->submissions.size() + 1;
-        auto *timeline_semaphore_submit = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
+        auto *timeline_semaphore_submit = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
             auto semaphore_state = GetSemaphoreState(semaphore);
@@ -2332,7 +2325,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 }
             }
         }
-        const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
+        const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
@@ -2546,7 +2539,7 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
     semaphore_state->scope = kSyncScopeInternal;
     semaphore_state->type = VK_SEMAPHORE_TYPE_BINARY;
     semaphore_state->payload = 0;
-    auto semaphore_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
+    auto semaphore_type_create_info = LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
     if (semaphore_type_create_info) {
         semaphore_state->type = semaphore_type_create_info->semaphoreType;
         semaphore_state->payload = semaphore_type_create_info->initialValue;
@@ -2852,7 +2845,7 @@ void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2KHR(VkDev
 
 void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image, const VkImageMemoryRequirementsInfo2 *pInfo) {
     const VkImagePlaneMemoryRequirementsInfo *plane_info =
-        (pInfo == nullptr) ? nullptr : lvl_find_in_chain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
+        (pInfo == nullptr) ? nullptr : LvlFindInChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
     IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         if (plane_info != nullptr) {
@@ -3057,7 +3050,7 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
     query_pool_state->createInfo = *pCreateInfo;
     query_pool_state->pool = *pQueryPool;
     if (pCreateInfo->queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
-        const auto *perf = lvl_find_in_chain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
+        const auto *perf = LvlFindInChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
         query_pool_state->perf_counter_index_count = perf->counterIndexCount;
 
         const QUEUE_FAMILY_PERF_COUNTERS &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
@@ -3575,7 +3568,7 @@ void UpdateAttachmentsView(ValidationStateTracker &tracker, CMD_BUFFER_STATE &cb
     auto &attachments = *(cb_state.active_attachments.get());
     const bool imageless = (framebuffer.createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) ? true : false;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
-    if (pRenderPassBegin) attachment_info_struct = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+    if (pRenderPassBegin) attachment_info_struct = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
     for (uint32_t i = 0; i < attachments.size(); ++i) {
         if (imageless) {
@@ -3637,7 +3630,7 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
         }
     }
 
-    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
+    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
     if (chained_device_group_struct) {
         cb_state->initial_device_mask = chained_device_group_struct->deviceMask;
     } else {
@@ -3703,7 +3696,7 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
     // Check if sample location is enabled
     if (pPipe->graphicsPipelineCI.pMultisampleState) {
         const VkPipelineSampleLocationsStateCreateInfoEXT *sample_location_state =
-            lvl_find_in_chain<VkPipelineSampleLocationsStateCreateInfoEXT>(pPipe->graphicsPipelineCI.pMultisampleState->pNext);
+            LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pPipe->graphicsPipelineCI.pMultisampleState->pNext);
         if (sample_location_state != nullptr) {
             pPipe->sample_location_enabled = sample_location_state->sampleLocationsEnable;
         }
@@ -4762,7 +4755,7 @@ void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer comma
             render_pass_state->cb_bindings,
             VulkanTypedHandle(render_pass_state->renderPass, kVulkanObjectTypeRenderPass, render_pass_state.get()), cb_state);
 
-        auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+        auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
         if (chained_device_group_struct) {
             cb_state->active_render_pass_device_mask = chained_device_group_struct->deviceMask;
         } else {
@@ -4945,7 +4938,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
         // See: VUID-vkGetImageSubresourceLayout-image-01895
         image_state->fragment_encoder =
             std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
-        const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
+        const auto swapchain_info = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
         if (swapchain_info) {
             auto swapchain = GetSwapchainState(swapchain_info->swapchain);
             if (swapchain) {
@@ -5892,7 +5885,7 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
         pool_state->availableDescriptorTypeCount[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
     }
 
-    const auto *variable_count_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
+    const auto *variable_count_info = LvlFindInChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(p_alloc_info->pNext);
     bool variable_count_valid = variable_count_info && variable_count_info->descriptorSetCount == p_alloc_info->descriptorSetCount;
 
     // Create tracking object for each descriptor set; insert into global map and the pool's set.
@@ -6198,7 +6191,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_ci.pQueueFamilyIndices = swapchain_state->createInfo.pQueueFamilyIndices;
             image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-            image_ci.pNext = lvl_find_in_chain<VkImageFormatListCreateInfo>(swapchain_state->createInfo.pNext);
+            image_ci.pNext = LvlFindInChain<VkImageFormatListCreateInfo>(swapchain_state->createInfo.pNext);
 
             if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
                 image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;

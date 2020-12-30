@@ -275,7 +275,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     // Let VkPhysicalDeviceFeatures2 take priority over VkPhysicalDeviceFeatures,
     // since it supports extensions
 
-    if (!(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(dev_info.pNext))) {
+    if (!(LvlFindInChain<VkPhysicalDeviceFeatures2>(dev_info.pNext))) {
         if (features) {
             dev_info.pEnabledFeatures = features;
         } else {

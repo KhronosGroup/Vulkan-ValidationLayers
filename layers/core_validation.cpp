@@ -490,7 +490,7 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
         const auto *line_state =
-            lvl_find_in_chain<VkPipelineRasterizationLineStateCreateInfoEXT>(pPipe->graphicsPipelineCI.pRasterizationState->pNext);
+            LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(pPipe->graphicsPipelineCI.pRasterizationState->pNext);
         if (line_state && line_state->stippledLineEnable) {
             result |= ValidateStatus(pCB, CBSTATUS_LINE_STIPPLE_SET, "Dynamic line stipple state not set for this command buffer",
                                      msg_code);
@@ -672,8 +672,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     }
 
     // Find an entry of the Fragment Density Map type in the pNext chain, if it exists
-    const auto fdm1 = lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp1_state->createInfo.pNext);
-    const auto fdm2 = lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp2_state->createInfo.pNext);
+    const auto fdm1 = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp1_state->createInfo.pNext);
+    const auto fdm2 = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp2_state->createInfo.pNext);
 
     // Both renderpasses must agree on usage of a Fragment Density Map type
     if (fdm1 && fdm2) {
@@ -1781,7 +1781,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     }
 
                     const auto *coverage_modulation_state =
-                        lvl_find_in_chain<VkPipelineCoverageModulationStateCreateInfoNV>(multisample_state->pNext);
+                        LvlFindInChain<VkPipelineCoverageModulationStateCreateInfoNV>(multisample_state->pNext);
 
                     if (coverage_modulation_state && (coverage_modulation_state->coverageModulationTableEnable == VK_TRUE)) {
                         if (coverage_modulation_state->coverageModulationTableCount != (raster_samples / subpass_color_samples)) {
@@ -1812,7 +1812,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             if (multisample_state && IsPowerOfTwo(subpass_color_samples) &&
                 (subpass_depth_samples == 0 || IsPowerOfTwo(subpass_depth_samples))) {
                 const auto *coverage_reduction_state =
-                    lvl_find_in_chain<VkPipelineCoverageReductionStateCreateInfoNV>(multisample_state->pNext);
+                    LvlFindInChain<VkPipelineCoverageReductionStateCreateInfoNV>(multisample_state->pNext);
 
                 if (coverage_reduction_state) {
                     const VkCoverageReductionModeNV coverage_reduction_mode = coverage_reduction_state->coverageReductionMode;
@@ -1848,7 +1848,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
 
         if (device_extensions.vk_nv_fragment_coverage_to_color) {
-            const auto coverage_to_color_state = lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(multisample_state);
+            const auto coverage_to_color_state = LvlFindInChain<VkPipelineCoverageToColorStateCreateInfoNV>(multisample_state);
 
             if (coverage_to_color_state && coverage_to_color_state->coverageToColorEnable == VK_TRUE) {
                 bool attachment_is_valid = false;
@@ -1902,7 +1902,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
         if (device_extensions.vk_ext_sample_locations) {
             const VkPipelineSampleLocationsStateCreateInfoEXT *sample_location_state =
-                lvl_find_in_chain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
+                LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
 
             if (sample_location_state != nullptr) {
                 if ((sample_location_state->sampleLocationsEnable == VK_TRUE) &&
@@ -1970,7 +1970,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     }
 
     const VkPipelineFragmentShadingRateStateCreateInfoKHR *fragment_shading_rate_state =
-        lvl_find_in_chain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pPipeline->graphicsPipelineCI.pNext);
+        LvlFindInChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pPipeline->graphicsPipelineCI.pNext);
 
     if (fragment_shading_rate_state && !IsDynamic(pPipeline, VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
         const char *struct_name = "VkPipelineFragmentShadingRateStateCreateInfoKHR";
@@ -2484,11 +2484,11 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         skip |= ValidateDeviceQueueCreateInfos(pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
 
         const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *fragment_shading_rate_features =
-            lvl_find_in_chain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+            LvlFindInChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
 
         if (fragment_shading_rate_features) {
             const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
-                lvl_find_in_chain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
+                LvlFindInChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
 
             if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
@@ -2509,7 +2509,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             }
 
             const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *fragment_density_map_features =
-                lvl_find_in_chain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
+                LvlFindInChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
 
             if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
@@ -2880,7 +2880,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
     auto &signaled_semaphores = *signaled_sema_arg;
     auto &unsignaled_semaphores = *unsignaled_sema_arg;
     auto &internal_semaphores = *internal_sema_arg;
-    auto *timeline_semaphore_submit_info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
+    auto *timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
     const char *vuid_error = device_extensions.vk_khr_timeline_semaphore ? "VUID-vkQueueSubmit-pWaitSemaphores-03238"
                                                                          : "VUID-vkQueueSubmit-pWaitSemaphores-00069";
 
@@ -3032,7 +3032,7 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
     QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
     EventToStageMap local_event_to_stage_map;
 
-    const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
+    const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
     uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
     for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
@@ -3107,7 +3107,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                             &internal_semaphores);
         skip |= ValidateCommandBuffersForSubmit(queue, submit, &overlay_image_layout_map, &local_query_to_state_map, &current_cmds);
 
-        auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupSubmitInfo>(submit->pNext);
+        auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupSubmitInfo>(submit->pNext);
         if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {
             for (uint32_t i = 0; i < chained_device_group_struct->commandBufferCount; ++i) {
                 skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->pCommandBufferDeviceMasks[i], queue,
@@ -3115,7 +3115,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
             }
         }
 
-        auto protected_submit_info = lvl_find_in_chain<VkProtectedSubmitInfo>(submit->pNext);
+        auto protected_submit_info = LvlFindInChain<VkProtectedSubmitInfo>(submit->pNext);
         if (protected_submit_info) {
             const bool protected_submit = protected_submit_info->protectedSubmit == VK_TRUE;
             // Only check feature once for submit
@@ -3158,7 +3158,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     // Now verify maxTimelineSemaphoreValueDifference
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
+        auto *info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         if (info) {
             // If there are any timeline semaphores, this condition gets checked before the early return above
             if (info->waitSemaphoreValueCount) {
@@ -3329,9 +3329,9 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 //
 bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) const {
     bool skip = false;
-    auto import_ahb_info = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(alloc_info->pNext);
-    auto exp_mem_alloc_info = lvl_find_in_chain<VkExportMemoryAllocateInfo>(alloc_info->pNext);
-    auto mem_ded_alloc_info = lvl_find_in_chain<VkMemoryDedicatedAllocateInfo>(alloc_info->pNext);
+    auto import_ahb_info = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(alloc_info->pNext);
+    auto exp_mem_alloc_info = LvlFindInChain<VkExportMemoryAllocateInfo>(alloc_info->pNext);
+    auto mem_ded_alloc_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(alloc_info->pNext);
 
     if ((import_ahb_info) && (NULL != import_ahb_info->buffer)) {
         // This is an import with handleType of VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID
@@ -3586,10 +3586,10 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties) const {
     bool skip = false;
     const VkAndroidHardwareBufferUsageANDROID *ahb_usage =
-        lvl_find_in_chain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
+        LvlFindInChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
     if (nullptr != ahb_usage) {
         const VkPhysicalDeviceExternalImageFormatInfo *pdeifi =
-            lvl_find_in_chain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
+            LvlFindInChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
         if ((nullptr == pdeifi) || (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID != pdeifi->handleType)) {
             skip |= LogError(device, "VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868",
                              "vkGetPhysicalDeviceImageFormatProperties2: pImageFormatProperties includes a chained "
@@ -3690,7 +3690,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         };
     }
 
-    auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
+    auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
     if (chained_flags_struct && chained_flags_struct->flags == VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT) {
         skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_flags_struct->deviceMask, device,
                                                         "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
@@ -3737,12 +3737,12 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 #ifdef AHB_VALIDATION_SUPPORT
     //  "memory is not an imported Android Hardware Buffer" refers to VkImportAndroidHardwareBufferInfoANDROID with a non-NULL
     //  buffer value. Memory imported has another VUID to check size and allocationSize match up
-    auto imported_ahb_info = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
+    auto imported_ahb_info = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
     if (imported_ahb_info != nullptr) {
         imported_ahb = imported_ahb_info->buffer != nullptr;
     }
 #endif  // AHB_VALIDATION_SUPPORT
-    auto dedicated_allocate_info = lvl_find_in_chain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+    auto dedicated_allocate_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated_allocate_info) {
         if ((dedicated_allocate_info->buffer != VK_NULL_HANDLE) && (dedicated_allocate_info->image != VK_NULL_HANDLE)) {
             skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01432",
@@ -3913,7 +3913,7 @@ bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) const {
 bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore) const {
     bool skip = false;
-    auto *sem_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
+    auto *sem_type_create_info = LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
 
     if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE &&
         !enabled_features.core12.timelineSemaphore && !device_extensions.vk_khr_timeline_semaphore) {
@@ -4278,7 +4278,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  report_data->FormatHandle(buffer).c_str(), memoryOffset);
             }
 
-            auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+            auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
             if (enabled_features.core12.bufferDeviceAddress &&
                 (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
                 (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
@@ -4415,8 +4415,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
     const IMAGE_STATE *image_state = GetImageState(pInfo->image);
     const VkFormat image_format = image_state->createInfo.format;
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
-    const VkImagePlaneMemoryRequirementsInfo *image_plane_info =
-        lvl_find_in_chain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
+    const VkImagePlaneMemoryRequirementsInfo *image_plane_info = LvlFindInChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
 
     if ((FormatIsMultiplane(image_format)) && (image_state->disjoint == true) && (image_plane_info == nullptr)) {
         skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01589",
@@ -4597,7 +4596,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                          "VkPhysicalDevicePerformanceQueryFeaturesKHR.performanceCounterQueryPools == VK_FALSE.");
         }
 
-        auto perf_ci = lvl_find_in_chain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
+        auto perf_ci = LvlFindInChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
         if (!perf_ci) {
             skip |= LogError(
                 device, "VUID-VkQueryPoolCreateInfo-queryType-03222",
@@ -4690,7 +4689,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
 
     for (uint32_t i = 0; i < count; i++) {
-        auto pvids_ci = lvl_find_in_chain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext);
+        auto pvids_ci = LvlFindInChain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext);
         if (nullptr == pvids_ci) continue;
 
         const PIPELINE_STATE *pipe_state = pipe_state_vec[i].get();
@@ -5797,7 +5796,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                              report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmd_pool).c_str());
         }
     }
-    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
+    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
     if (chained_device_group_struct) {
         skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->deviceMask, commandBuffer,
                                                         "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00106");
@@ -7129,7 +7128,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
             sub_image_found = true;
         }
         if (!sub_image_found && device_extensions.vk_khr_depth_stencil_resolve) {
-            const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
+            const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
                 sub_image_layout = resolve->pDepthStencilResolveAttachment->layout;
@@ -7429,7 +7428,7 @@ static bool ValidateAccessMaskPipelineStage(const DeviceExtensions &extensions, 
         assert(index >= 0);
         // Must have "!= 0" compare to prevent warning from MSVC
         if ((kAccessMaskToPipeStage[index] & stage_mask) == 0) return false;  // early out
-        access_mask &= ~(1 << index);                                        // Mask off bit that's been checked
+        access_mask &= ~(1 << index);                                         // Mask off bit that's been checked
     }
     return true;
 }
@@ -8628,7 +8627,7 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
                             const VkImageCreateInfo *ici = &GetImageState(view_state->create_info.image)->createInfo;
                             if (ici != nullptr) {
                                 auto creation_usage = ici->usage;
-                                const auto stencil_usage_info = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(ici->pNext);
+                                const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(ici->pNext);
                                 if (stencil_usage_info) {
                                     creation_usage |= stencil_usage_info->stencilUsage;
                                 }
@@ -8642,7 +8641,7 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
                         }
                     } else {
                         const VkFramebufferAttachmentsCreateInfo *fbaci =
-                            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfo>(fbci->pNext);
+                            LvlFindInChain<VkFramebufferAttachmentsCreateInfo>(fbci->pNext);
                         if (fbaci != nullptr && fbaci->pAttachmentImageInfos != nullptr &&
                             fbaci->attachmentImageInfoCount > attachments[attach].attachment) {
                             uint32_t image_usage = fbaci->pAttachmentImageInfos[attachments[attach].attachment].usage;
@@ -8666,7 +8665,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
     bool skip = false;
 
     const VkFramebufferAttachmentsCreateInfo *framebuffer_attachments_create_info =
-        lvl_find_in_chain<VkFramebufferAttachmentsCreateInfo>(pCreateInfo->pNext);
+        LvlFindInChain<VkFramebufferAttachmentsCreateInfo>(pCreateInfo->pNext);
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0) {
         if (!enabled_features.core12.imagelessFramebuffer) {
             skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-03189",
@@ -8791,7 +8790,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
                             if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
                                 const VkFragmentShadingRateAttachmentInfoKHR *fsr_attachment;
-                                fsr_attachment = lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
+                                fsr_attachment = LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
                                 if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
                                     used_as_fragment_shading_rate_attachment = true;
                                     if ((mip_width * fsr_attachment->shadingRateAttachmentTexelSize.width) < pCreateInfo->width) {
@@ -8834,7 +8833,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
                         if (enabled_features.fragment_density_map_features.fragmentDensityMap) {
                             const VkRenderPassFragmentDensityMapCreateInfoEXT *fdm_attachment;
-                            fdm_attachment = lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
+                            fdm_attachment = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
                             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
                                 uint32_t ceiling_width = static_cast<uint32_t>(ceil(
                                     static_cast<float>(pCreateInfo->width) /
@@ -8999,7 +8998,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
                         if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
                             const VkFragmentShadingRateAttachmentInfoKHR *fsr_attachment;
-                            fsr_attachment = lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
+                            fsr_attachment = LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
                             if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
                                 used_as_fragment_shading_rate_attachment = true;
                                 if ((aii.width * fsr_attachment->shadingRateAttachmentTexelSize.width) < pCreateInfo->width) {
@@ -9090,14 +9089,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03204");
 
                     const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
-                        lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
+                        LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
                     if (device_extensions.vk_khr_depth_stencil_resolve && depth_stencil_resolve != nullptr) {
                         skip |= MatchUsage(1, depth_stencil_resolve->pDepthStencilResolveAttachment, pCreateInfo,
                                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03203");
                     }
 
                     const VkFragmentShadingRateAttachmentInfoKHR *fragment_shading_rate_attachment_info =
-                        lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(rpci->pSubpasses[i].pNext);
+                        LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(rpci->pSubpasses[i].pNext);
                     if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
                         fragment_shading_rate_attachment_info != nullptr) {
                         skip |= MatchUsage(1, fragment_shading_rate_attachment_info->pFragmentShadingRateAttachment, pCreateInfo,
@@ -9110,7 +9109,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     if ((rpci->subpassCount > 0) && (rpci->pSubpasses[0].viewMask != 0)) {
                         for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
                             const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
-                                lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
+                                LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
                             uint32_t view_bits = rpci->pSubpasses[i].viewMask;
                             uint32_t highest_view_bit = 0;
 
@@ -9227,7 +9226,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     // Verify depth/stecnil resolve
                     if (device_extensions.vk_khr_depth_stencil_resolve) {
                         const VkSubpassDescriptionDepthStencilResolve *ds_resolve =
-                            lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass_description.pNext);
+                            LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass_description.pNext);
                         if (ds_resolve) {
                             skip |= MatchUsage(1, ds_resolve->pDepthStencilResolveAttachment, pCreateInfo,
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -9238,7 +9237,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     // Verify fragment shading rate attachments
                     if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
                         const VkFragmentShadingRateAttachmentInfoKHR *fragment_shading_rate_attachment_info =
-                            lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(subpass_description.pNext);
+                            LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass_description.pNext);
                         if (fragment_shading_rate_attachment_info) {
                             skip |= MatchUsage(1, fragment_shading_rate_attachment_info->pFragmentShadingRateAttachment,
                                                pCreateInfo, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
@@ -9726,7 +9725,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                 break;
         }
     } else {
-        const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayout>(reference.pNext);
+        const auto *attachment_reference_stencil_layout = LvlFindInChain<VkAttachmentReferenceStencilLayout>(reference.pNext);
         switch (reference.layout) {
             case VK_IMAGE_LAYOUT_UNDEFINED:
             case VK_IMAGE_LAYOUT_PREINITIALIZED:
@@ -10347,7 +10346,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
     bool skip = false;
     // Handle extension structs from KHR_multiview and KHR_maintenance2 that can only be validated for RP1 (indices out of bounds)
-    const VkRenderPassMultiviewCreateInfo *multiview_info = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
+    const VkRenderPassMultiviewCreateInfo *multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
     if (multiview_info) {
         if (multiview_info->subpassCount && multiview_info->subpassCount != pCreateInfo->subpassCount) {
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01928",
@@ -10360,7 +10359,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
         }
     }
     const VkRenderPassInputAttachmentAspectCreateInfo *input_attachment_aspect_info =
-        lvl_find_in_chain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
+        LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
     if (input_attachment_aspect_info) {
         for (uint32_t i = 0; i < input_attachment_aspect_info->aspectReferenceCount; ++i) {
             uint32_t subpass = input_attachment_aspect_info->pAspectReferences[i].subpass;
@@ -10381,7 +10380,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
         }
     }
     const VkRenderPassFragmentDensityMapCreateInfoEXT *fragment_density_map_info =
-        lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
+        LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
     if (fragment_density_map_info) {
         if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
             if (fragment_density_map_info->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
@@ -10437,7 +10436,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
     // then that structure describes depth/stencil resolve operations for the subpass.
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
-        const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
+        const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
 
         if (resolve == nullptr) {
             continue;
@@ -10590,7 +10589,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
             // Prepass to find any use as a fragment shading rate attachment structures and validate them independently
             for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
                 const VkFragmentShadingRateAttachmentInfoKHR *fragment_shading_rate_attachment =
-                    lvl_find_in_chain<VkFragmentShadingRateAttachmentInfoKHR>(pCreateInfo->pSubpasses[subpass].pNext);
+                    LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(pCreateInfo->pSubpasses[subpass].pNext);
 
                 if (fragment_shading_rate_attachment && fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
                     const VkAttachmentReference2 &attachment_reference =
@@ -10732,7 +10731,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
                 for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
                     const VkSubpassDescription2 &subpass_info = pCreateInfo->pSubpasses[subpass];
                     const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve_attachment =
-                        lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass_info.pNext);
+                        LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass_info.pNext);
 
                     std::string fsr_attachment_subpasses_string = vector_to_string(used_as_fragment_shading_rate_attachment);
 
@@ -10830,13 +10829,13 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                                           const char *func_name) const {
     bool skip = false;
     const VkRenderPassAttachmentBeginInfo *render_pass_attachment_begin_info =
-        lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBeginInfo->pNext);
+        LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBeginInfo->pNext);
 
     if (render_pass_attachment_begin_info && render_pass_attachment_begin_info->attachmentCount != 0) {
         const safe_VkFramebufferCreateInfo *framebuffer_create_info =
             &GetFramebufferState(pRenderPassBeginInfo->framebuffer)->createInfo;
         const VkFramebufferAttachmentsCreateInfo *framebuffer_attachments_create_info =
-            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfo>(framebuffer_create_info->pNext);
+            LvlFindInChain<VkFramebufferAttachmentsCreateInfo>(framebuffer_create_info->pNext);
         if ((framebuffer_create_info->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
             skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03207",
                              "%s: Image views specified at render pass begin, but framebuffer not created with "
@@ -10899,7 +10898,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                     }
 
                     const VkImageFormatListCreateInfo *image_format_list_create_info =
-                        lvl_find_in_chain<VkImageFormatListCreateInfo>(image_create_info->pNext);
+                        LvlFindInChain<VkImageFormatListCreateInfo>(image_create_info->pNext);
                     if (image_format_list_create_info) {
                         if (image_format_list_create_info->viewFormatCount != framebuffer_attachment_image_info->viewFormatCount) {
                             skip |= LogError(
@@ -11012,7 +11011,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
 
         // Handle extension struct from EXT_sample_locations
         const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info =
-            lvl_find_in_chain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
+            LvlFindInChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
         if (sample_locations_begin_info) {
             for (uint32_t i = 0; i < sample_locations_begin_info->attachmentInitialSampleLocationsCount; ++i) {
                 const VkAttachmentSampleLocationsEXT &sample_location =
@@ -11081,7 +11080,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
         skip |= ValidateCmd(cb_state, cmd_type, function_name);
     }
 
-    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
     if (chained_device_group_struct) {
         skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->deviceMask, pRenderPassBegin->renderPass,
                                                         "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00905");
@@ -11705,7 +11704,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             skip |=
                 ValidateSetMemBinding(bind_info.memory, VulkanTypedHandle(bind_info.image, kVulkanObjectTypeImage), error_prefix);
 
-            const auto plane_info = lvl_find_in_chain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
+            const auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
             const auto mem_info = GetDevMemState(bind_info.memory);
 
             // Need extra check for disjoint flag incase called without bindImage2 and don't want false positive errors
@@ -11981,7 +11980,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
             }
 
-            const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bind_info.pNext);
+            const auto swapchain_info = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(bind_info.pNext);
             if (swapchain_info) {
                 if (bind_info.memory != VK_NULL_HANDLE) {
                     skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01631", "%s: %s is not VK_NULL_HANDLE.",
@@ -12142,7 +12141,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
 
-        auto timeline_semaphore_submit_info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(pBindInfo->pNext);
+        auto timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(pBindInfo->pNext);
         std::vector<SEMAPHORE_WAIT> semaphore_waits;
         std::vector<VkSemaphore> semaphore_signals;
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
@@ -12255,7 +12254,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     // Now verify maxTimelineSemaphoreValueDifference
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo *bind_info = &pBindInfo[bind_idx];
-        auto *info = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfo>(bind_info->pNext);
+        auto *info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(bind_info->pNext);
         if (info) {
             // If there are any timeline semaphores, this condition gets checked before the early return above
             if (info->waitSemaphoreValueCount) {
@@ -12693,7 +12692,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                 return true;
             }
         } else {
-            const auto *image_format_list = lvl_find_in_chain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+            const auto *image_format_list = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
             if (image_format_list == nullptr) {
                 if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
                              "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain of "
@@ -12990,7 +12989,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
     if (pPresentInfo->pNext) {
         // Verify ext struct
-        const auto *present_regions = lvl_find_in_chain<VkPresentRegionsKHR>(pPresentInfo->pNext);
+        const auto *present_regions = LvlFindInChain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
                 const auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
@@ -13023,7 +13022,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
 
-        const auto *present_times_info = lvl_find_in_chain<VkPresentTimesInfoGOOGLE>(pPresentInfo->pNext);
+        const auto *present_times_info = LvlFindInChain<VkPresentTimesInfoGOOGLE>(pPresentInfo->pNext);
         if (present_times_info) {
             if (pPresentInfo->swapchainCount != present_times_info->swapchainCount) {
                 skip |=
@@ -13605,7 +13604,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
     // Need to check for external format conversion first as it allows for non-UNORM format
     bool external_format = false;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
+    const VkExternalFormatANDROID *ext_format_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
     if ((nullptr != ext_format_android) && (0 != ext_format_android->externalFormat)) {
         external_format = true;
         if (VK_FORMAT_UNDEFINED != create_info->format) {
@@ -13726,7 +13725,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
     }
 
     if (enabled_features.core11.samplerYcbcrConversion == VK_TRUE) {
-        const VkSamplerYcbcrConversionInfo *conversion_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+        const VkSamplerYcbcrConversionInfo *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         if (conversion_info != nullptr) {
             const VkSamplerYcbcrConversion sampler_ycbcr_conversion = conversion_info->conversion;
             const SAMPLER_YCBCR_CONVERSION_STATE *ycbcr_state = GetSamplerYcbcrConversionState(sampler_ycbcr_conversion);
@@ -13753,7 +13752,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                 }
             }
             // At this point there is a known sampler YCbCr conversion enabled
-            const auto *sampler_reduction = lvl_find_in_chain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+            const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
             if (sampler_reduction != nullptr) {
                 if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
                     skip |= LogError(device, "VUID-VkSamplerCreateInfo-None-01647",
@@ -13771,7 +13770,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                 LogError(device, "VUID-VkSamplerCreateInfo-customBorderColors-04085",
                          "vkCreateSampler(): A custom border color was specified without enabling the custom border color feature");
         }
-        auto custom_create_info = lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
+        auto custom_create_info = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
         if (custom_create_info) {
             if (custom_create_info->format == VK_FORMAT_UNDEFINED &&
                 !enabled_features.custom_border_color_features.customBorderColorWithoutFormat) {
@@ -13890,7 +13889,7 @@ bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device, co
 
     const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(pInfo->memory);
     if (mem_info) {
-        auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+        auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
         if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
             skip |= LogError(pInfo->memory, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336",
                              "%s(): memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.", apiName);

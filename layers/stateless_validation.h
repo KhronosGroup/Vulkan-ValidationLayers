@@ -923,19 +923,19 @@ class StatelessValidation : public ValidationObject {
         const char *func_name = (use_rp2) ? "vkCreateRenderPass2" : "vkCreateRenderPass";
         const char *vuid;
         VkBool32 separate_depth_stencil_layouts = false;
-        const auto *vulkan_12_features = lvl_find_in_chain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
+        const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
         if (vulkan_12_features) {
             separate_depth_stencil_layouts = vulkan_12_features->separateDepthStencilLayouts;
         } else {
             const auto *separate_depth_stencil_layouts_features =
-                lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(device_createinfo_pnext);
+                LvlFindInChain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(device_createinfo_pnext);
             if (separate_depth_stencil_layouts_features)
                 separate_depth_stencil_layouts = separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
         }
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
             const auto *attachment_description_stencil_layout =
-                (use_rp2) ? lvl_find_in_chain<VkAttachmentDescriptionStencilLayout>(
+                (use_rp2) ? LvlFindInChain<VkAttachmentDescriptionStencilLayout>(
                                 reinterpret_cast<VkAttachmentDescription2 const *>(&pCreateInfo->pAttachments[i])->pNext)
                           : 0;
 
