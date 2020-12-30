@@ -1769,17 +1769,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
     # Generate the type map
     def GenerateTypeMapHelperHeader(self):
         prefix = 'Lvl'
-        fprefix = 'lvl_'
         typemap = prefix + 'TypeMap'
         idmap = prefix + 'STypeMap'
         type_member = 'Type'
         id_member = 'kSType'
         id_decl = 'static const VkStructureType '
         generic_header = 'VkBaseOutStructure'
-        typename_func = fprefix + 'typename'
-        idname_func = fprefix + 'stype_name'
-        find_func = fprefix + 'find_in_chain'
-        init_func = fprefix + 'init_struct'
 
         explanatory_comment = '\n'.join((
                 '// These empty generic templates are specialized for each type with sType',
@@ -1859,11 +1854,14 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             if item.ifdef_protect is not None:
                 code.append('#endif // %s' % item.ifdef_protect)
 
+        fprefix = 'lvl_'
+        find_func = fprefix + 'find_in_chain'
+        init_func = fprefix + 'init_struct'
+
         # Generate utilities for all types
         code.append('\n'.join((
-            utilities_format.format(id_member=id_member, id_map=idmap, type_map=typemap,
-                type_member=type_member, header=generic_header, typename_func=typename_func, idname_func=idname_func,
-                find_func=find_func, init_func=init_func), ''
+            utilities_format.format(id_member=id_member, type_map=typemap,
+                header=generic_header, find_func=find_func, init_func=init_func), ''
             )))
 
         return "\n".join(code)
