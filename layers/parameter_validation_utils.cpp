@@ -228,48 +228,48 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
     if (device_extensions.vk_nv_shading_rate_image) {
         // Get the needed shading rate image limits
-        auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&shading_rate_image_props);
+        auto shading_rate_image_props = LvlInitStruct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&shading_rate_image_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
     if (device_extensions.vk_nv_mesh_shader) {
         // Get the needed mesh shader limits
-        auto mesh_shader_props = lvl_init_struct<VkPhysicalDeviceMeshShaderPropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&mesh_shader_props);
+        auto mesh_shader_props = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesNV>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
     }
 
     if (device_extensions.vk_nv_ray_tracing) {
         // Get the needed ray tracing limits
-        auto ray_tracing_props = lvl_init_struct<VkPhysicalDeviceRayTracingPropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
+        auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.ray_tracing_propsNV = ray_tracing_props;
     }
 
     if (device_extensions.vk_khr_ray_tracing_pipeline) {
         // Get the needed ray tracing limits
-        auto ray_tracing_props = lvl_init_struct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
+        auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.ray_tracing_propsKHR = ray_tracing_props;
     }
 
     if (device_extensions.vk_khr_acceleration_structure) {
         // Get the needed ray tracing acc structure limits
-        auto acc_structure_props = lvl_init_struct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&acc_structure_props);
+        auto acc_structure_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&acc_structure_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
 
     if (device_extensions.vk_ext_transform_feedback) {
         // Get the needed transform feedback limits
-        auto transform_feedback_props = lvl_init_struct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
+        auto transform_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
