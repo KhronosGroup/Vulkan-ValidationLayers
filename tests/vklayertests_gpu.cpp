@@ -60,13 +60,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     }
 
     VkPhysicalDeviceFeatures2KHR features2 = {};
-    auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     if (descriptor_indexing) {
         PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
             (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
         ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-        features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
+        features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
         vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
         if (!indexing_features.runtimeDescriptorArray || !indexing_features.descriptorBindingSampledImageUpdateAfterBind ||
@@ -544,8 +544,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
 
     m_device_extension_names.push_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
 
-    auto robustness2_features = lvl_init_struct<VkPhysicalDeviceRobustness2FeaturesEXT>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&robustness2_features);
+    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&robustness2_features);
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
@@ -796,7 +796,8 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
 }
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
@@ -813,7 +814,8 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
-                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource, "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
+                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource,
+                         "Descriptor size is 4 units (bytes or texels) and highest unit accessed was 7");
 }
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
@@ -836,7 +838,8 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
     ShaderBufferSizeTest(64,  // buffer size
                          0,   // binding offset
                          64,  // binding range
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 64 units (bytes or texels) and highest unit accessed was 67");
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "Descriptor size is 64 units (bytes or texels) and highest unit accessed was 67");
 }
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) {
@@ -860,7 +863,8 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
     ShaderBufferSizeTest(8,  // buffer size
                          0,  // binding offset
                          8,  // binding range
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 8 units (bytes or texels) and highest unit accessed was 19");
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "Descriptor size is 8 units (bytes or texels) and highest unit accessed was 19");
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
@@ -878,12 +882,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
     VkPhysicalDeviceFeatures2KHR features2 = {};
-    auto bda_features = lvl_init_struct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     supported = supported && bda_features.bufferDeviceAddress;
 
@@ -1680,8 +1684,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         return;
     }
     VkPhysicalDeviceFeatures2KHR features2 = {};
-    auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
-    auto inline_uniform_block_features = lvl_init_struct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto inline_uniform_block_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
     bool inline_uniform_block = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     if (!(descriptor_indexing && inline_uniform_block)) {
         printf("Descriptor indexing and/or inline uniform block not supported Skipping test\n");
@@ -1693,14 +1697,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&inline_uniform_block_features);
+    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&inline_uniform_block_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (!indexing_features.descriptorBindingPartiallyBound || !inline_uniform_block_features.inlineUniformBlock) {
         printf("Not all features supported, skipping test\n");
         return;
     }
-    auto inline_uniform_props = lvl_init_struct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
-    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_props);
+    auto inline_uniform_props = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_props);
     vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -2227,8 +2231,8 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // Create a device that enables mesh_shader
-    auto mesh_shader_features = lvl_init_struct<VkPhysicalDeviceMeshShaderFeaturesNV>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));

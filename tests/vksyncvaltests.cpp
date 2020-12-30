@@ -59,7 +59,7 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto buffer_barrier = lvl_init_struct<VkBufferMemoryBarrier>();
+    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.buffer = buffer_a.handle();
@@ -85,7 +85,7 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = lvl_init_struct<VkMemoryBarrier>();
+    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -215,7 +215,7 @@ TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_a.handle();
@@ -242,7 +242,7 @@ TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = lvl_init_struct<VkMemoryBarrier>();
+    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -399,7 +399,7 @@ TEST_F(VkSyncValTest, SyncCopyOptimalMultiPlanarHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_a.handle();
@@ -430,7 +430,7 @@ TEST_F(VkSyncValTest, SyncCopyOptimalMultiPlanarHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = lvl_init_struct<VkMemoryBarrier>();
+    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -505,7 +505,7 @@ TEST_F(VkSyncValTest, SyncCopyLinearImageHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_b.handle();
@@ -614,7 +614,7 @@ TEST_F(VkSyncValTest, SyncCopyLinearMultiPlanarHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_a.handle();
@@ -645,7 +645,7 @@ TEST_F(VkSyncValTest, SyncCopyLinearMultiPlanarHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = lvl_init_struct<VkMemoryBarrier>();
+    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -748,7 +748,7 @@ TEST_F(VkSyncValTest, SyncCopyBufferImageHazards) {
     vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_0_back);
     m_errorMonitor->VerifyNotFound();
 
-    auto buffer_barrier = lvl_init_struct<VkBufferMemoryBarrier>();
+    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.buffer = buffer_a.handle();
@@ -918,7 +918,7 @@ TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
     m_errorMonitor->ExpectSuccess();
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     VkImageSubresourceRange rt_full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    auto image_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.dstAccessMask = 0;
     image_barrier.image = rt_0->handle();
@@ -998,7 +998,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
     buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
 
     VkBufferView bufferview;
-    auto bvci = lvl_init_struct<VkBufferViewCreateInfo>();
+    auto bvci = LvlInitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = buffer_a.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.offset = 0;
@@ -1195,7 +1195,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
 
     vk::CmdCopyBuffer(m_commandBuffer->handle(), vbo2.handle(), vbo.handle(), 1, &buffer_region);
 
-    auto vbo_barrier = lvl_init_struct<VkBufferMemoryBarrier>();
+    auto vbo_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
     vbo_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vbo_barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
     vbo_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1663,7 +1663,7 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     stencil.depthFailOp = VK_STENCIL_OP_KEEP;
     stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-    auto ds_ci = lvl_init_struct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthWriteEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -1953,7 +1953,7 @@ TEST_F(VkSyncValTest, SyncRenderPassWithWrongDepthStencilInitialLayout) {
     stencil.depthFailOp = VK_STENCIL_OP_KEEP;
     stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-    auto ds_ci = lvl_init_struct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthWriteEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -2857,7 +2857,7 @@ TEST_F(VkSyncValTest, SyncEventsBufferCopy) {
     m_errorMonitor->ExpectSuccess();
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
     m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    auto mem_barrier_waw = lvl_init_struct<VkMemoryBarrier>();
+    auto mem_barrier_waw = LvlInitStruct<VkMemoryBarrier>();
     mem_barrier_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 1,
@@ -2870,7 +2870,7 @@ TEST_F(VkSyncValTest, SyncEventsBufferCopy) {
     m_commandBuffer->end();
 
     // Barrier range check for WAW
-    auto buffer_barrier_front_waw = lvl_init_struct<VkBufferMemoryBarrier>();
+    auto buffer_barrier_front_waw = LvlInitStruct<VkBufferMemoryBarrier>();
     buffer_barrier_front_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier_front_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier_front_waw.buffer = buffer_b.handle();
@@ -2985,7 +2985,7 @@ TEST_F(VkSyncValTest, SyncEventsCopyImageHazards) {
     set_layouts();
     copy_general(image_a, image_b, full_region);
     m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    auto mem_barrier_waw = lvl_init_struct<VkMemoryBarrier>();
+    auto mem_barrier_waw = LvlInitStruct<VkMemoryBarrier>();
     mem_barrier_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 1,
@@ -2998,7 +2998,7 @@ TEST_F(VkSyncValTest, SyncEventsCopyImageHazards) {
     m_commandBuffer->end();
 
     // Barrier range check for WAW
-    auto image_barrier_region0_waw = lvl_init_struct<VkImageMemoryBarrier>();
+    auto image_barrier_region0_waw = LvlInitStruct<VkImageMemoryBarrier>();
     image_barrier_region0_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier_region0_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier_region0_waw.oldLayout = VK_IMAGE_LAYOUT_GENERAL;

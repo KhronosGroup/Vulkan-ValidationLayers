@@ -291,9 +291,9 @@ VkRenderFramework::VkRenderFramework()
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
       m_depthStencil(NULL) {
-    m_framebuffer_info = lvl_init_struct<VkFramebufferCreateInfo>();
-    m_renderPass_info = lvl_init_struct<VkRenderPassCreateInfo>();
-    m_renderPassBeginInfo = lvl_init_struct<VkRenderPassBeginInfo>();
+    m_framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    m_renderPass_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    m_renderPassBeginInfo = LvlInitStruct<VkRenderPassBeginInfo>();
 
     // clear the back buffer to dark grey
     m_clear_color.float32[0] = 0.25f;
