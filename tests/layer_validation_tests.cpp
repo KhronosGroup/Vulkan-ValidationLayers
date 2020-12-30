@@ -143,24 +143,24 @@ VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstan
     assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     // Get the push descriptor limits
-    auto push_descriptor_prop = lvl_init_struct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&push_descriptor_prop);
+    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&push_descriptor_prop);
     vkGetPhysicalDeviceProperties2KHR(gpu, &prop2);
     return push_descriptor_prop;
 }
 
 VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu) {
-    auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
+    auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
 
-    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&subgroup_prop);
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_prop);
     vk::GetPhysicalDeviceProperties2(gpu, &prop2);
     return subgroup_prop;
 }
 
 VkPhysicalDeviceDescriptorIndexingProperties GetDescriptorIndexingProperties(VkInstance instance, VkPhysicalDevice gpu) {
-    auto descriptor_indexing_prop = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingProperties>();
+    auto descriptor_indexing_prop = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
 
-    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&descriptor_indexing_prop);
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&descriptor_indexing_prop);
     vk::GetPhysicalDeviceProperties2(gpu, &prop2);
     return descriptor_indexing_prop;
 }
@@ -742,8 +742,8 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
                                                                      "vkGetPhysicalDeviceFeatures2KHR");
-    auto timeline_semaphore_features = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timeline_semaphore_features);
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&timeline_semaphore_features);
     vkGetPhysicalDeviceFeatures2KHR(renderFramework->gpu(), &features2);
     if (!timeline_semaphore_features.timelineSemaphore) {
         return false;
@@ -2202,13 +2202,13 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     }
 
     VkPhysicalDeviceFeatures2KHR features2 = {};
-    auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     if (descriptor_indexing) {
         PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
             (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
         ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-        features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
+        features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
         vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
         if (!indexing_features.runtimeDescriptorArray || !indexing_features.descriptorBindingPartiallyBound ||
@@ -2225,8 +2225,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
-    auto ray_tracing_properties = lvl_init_struct<VkPhysicalDeviceRayTracingPropertiesNV>();
-    auto properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
+    auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     if (ray_tracing_properties.maxTriangleCount == 0) {
         printf("%s Did not find required ray tracing properties; skipped.\n", kSkipPrefix);
