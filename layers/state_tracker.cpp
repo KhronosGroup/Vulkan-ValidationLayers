@@ -4468,6 +4468,23 @@ void ValidationStateTracker::PostCallRecordCmdWriteTimestamp(VkCommandBuffer com
     });
 }
 
+void ValidationStateTracker::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
+    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
+    if (disabled[query_validation]) return;
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto pool_state = GetQueryPoolState(queryPool);
+    AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool, pool_state),
+                            cb_state);
+    cb_state->queryUpdates.emplace_back(
+        [queryPool, firstQuery, accelerationStructureCount](const ValidationStateTracker *device_data, bool do_validate,
+                                                            VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                            QueryMap *localQueryToStateMap) {
+            return SetQueryStateMulti(queryPool, firstQuery, accelerationStructureCount, perfQueryPass, QUERYSTATE_ENDED,
+                                      localQueryToStateMap);
+        });
+}
+
 void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                              VkResult result) {

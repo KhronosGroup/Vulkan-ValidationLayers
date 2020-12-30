@@ -1199,6 +1199,11 @@ class ValidationStateTracker : public ValidationObject {
                                     uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) override;
     void PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                          VkQueryPool queryPool, uint32_t slot) override;
+    void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
+                                                                   uint32_t accelerationStructureCount,
+                                                                   const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                   VkQueryType queryType, VkQueryPool queryPool,
+                                                                   uint32_t firstQuery) override;
     void PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                const VkViewportWScalingNV* pViewportWScalings) override;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
