@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1090,9 +1090,8 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                 objlist.add(sampler_state->sampler);
                                 objlist.add(image_view_state->image_view);
                                 return LogError(objlist, vuids.linear_sampler,
-                                                "sampler (%s) in descriptor set (%s) "
-                                                "is set to use VK_FILTER_LINEAR, then image view's (%s"
-                                                ") format (%s) MUST "
+                                                "sampler (%s) in descriptor set (%s) is set to use VK_FILTER_LINEAR with "
+                                                "compareEnable is set to VK_TRUE, but image view's (%s) format (%s) does not "
                                                 "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
                                                 report_data->FormatHandle(sampler_state->sampler).c_str(),
                                                 report_data->FormatHandle(set).c_str(),

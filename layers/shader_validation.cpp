@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -986,7 +986,7 @@ struct shader_module_used_operators {
     std::vector<unsigned> atomic_store_members;
     std::vector<unsigned> sampler_implicitLod_dref_proj_members;  // sampler Load id
     std::vector<unsigned> sampler_bias_offset_members;            // sampler Load id
-    std::vector<std::pair<unsigned, unsigned>> sampledImage_members;
+    std::vector<std::pair<unsigned, unsigned>> sampledImage_members;  // <image,sampler> Load id
     std::unordered_map<unsigned, unsigned> load_members;
     std::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
     std::unordered_map<unsigned, unsigned> image_texel_pointer_members;
@@ -1085,7 +1085,8 @@ struct shader_module_used_operators {
     }
 };
 
-// Check writable, image atomic operation
+// Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable, image
+// atomic operation, matching images to samplers, etc
 static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const spirv_inst_iter &id_it, bool is_storage_buffer,
                                      bool is_check_writable, interface_var &out_interface_var,
                                      shader_module_used_operators &used_operators) {
