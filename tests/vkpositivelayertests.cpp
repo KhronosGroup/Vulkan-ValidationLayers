@@ -10251,6 +10251,76 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ReadShaderClock) {
+    TEST_DESCRIPTION("Test VK_KHR_shader_clock");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_CLOCK_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto shader_clock_features = LvlInitStruct<VkPhysicalDeviceShaderClockFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&shader_clock_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if ((shader_clock_features.shaderDeviceClock == VK_FALSE) && (shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
+        // shaderSubgroupClock should be supported, but extra check
+        printf("%s no support for shaderDeviceClock or shaderSubgroupClock.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Device scope using GL_EXT_shader_realtime_clock
+    char const *vsSourceDevice =
+        "#version 450\n"
+        "#extension GL_EXT_shader_realtime_clock: enable\n"
+        "void main(){\n"
+        "   uvec2 a = clockRealtime2x32EXT();\n"
+        "   gl_Position = vec4(float(a.x) * 0.0);\n"
+        "}\n";
+    VkShaderObj vs_device(m_device, vsSourceDevice, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    // Subgroup scope using ARB_shader_clock
+    char const *vsSourceScope =
+        "#version 450\n"
+        "#extension GL_ARB_shader_clock: enable\n"
+        "void main(){\n"
+        "   uvec2 a = clock2x32ARB();\n"
+        "   gl_Position = vec4(float(a.x) * 0.0);\n"
+        "}\n";
+    VkShaderObj vs_subgroup(m_device, vsSourceScope, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    if (shader_clock_features.shaderDeviceClock == VK_TRUE) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs_device.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    }
+
+    if (shader_clock_features.shaderSubgroupClock == VK_TRUE) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs_subgroup.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    }
+}
+
 // Android Hardware Buffer Positive Tests
 #include "android_ndk_types.h"
 #ifdef AHB_VALIDATION_SUPPORT

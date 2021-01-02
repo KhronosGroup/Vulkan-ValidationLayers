@@ -9853,3 +9853,55 @@ TEST_F(VkLayerTest, Storage8and16bit) {
         }
     }
 }
+
+TEST_F(VkLayerTest, ReadShaderClock) {
+    TEST_DESCRIPTION("Test VK_KHR_shader_clock");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_CLOCK_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
+        return;
+    }
+    // Don't enable either feature bit on purpose
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Device scope using GL_EXT_shader_realtime_clock
+    char const *vsSourceDevice =
+        "#version 450\n"
+        "#extension GL_EXT_shader_realtime_clock: enable\n"
+        "void main(){\n"
+        "   uvec2 a = clockRealtime2x32EXT();\n"
+        "   gl_Position = vec4(float(a.x) * 0.0);\n"
+        "}\n";
+    VkShaderObj vs_device(m_device, vsSourceDevice, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    // Subgroup scope using ARB_shader_clock
+    char const *vsSourceScope =
+        "#version 450\n"
+        "#extension GL_ARB_shader_clock: enable\n"
+        "void main(){\n"
+        "   uvec2 a = clock2x32ARB();\n"
+        "   gl_Position = vec4(float(a.x) * 0.0);\n"
+        "}\n";
+    VkShaderObj vs_subgroup(m_device, vsSourceScope, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    const auto set_info_device = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs_device.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info_device, kErrorBit, "UNASSIGNED-spirv-shaderClock-shaderDeviceClock");
+
+    const auto set_info_subgroup = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs_subgroup.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info_subgroup, kErrorBit, "UNASSIGNED-spirv-shaderClock-shaderSubgroupClock");
+}
