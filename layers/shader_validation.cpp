@@ -2189,16 +2189,9 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
                 // OpGroupNonUniformPartitionNV always assumed subgroup as missing operand
                 scope_type = spv::ScopeSubgroup;
             } else {
+                // "All <id> used for Scope <id> must be of an OpConstant"
                 auto scope_id = module->get_def(inst.word(3));
-                if ((scope_id.opcode() == spv::OpSpecConstant) || (scope_id.opcode() == spv::OpConstant)) {
-                    scope_type = scope_id.word(3);
-                } else {
-                    // TODO - Look if this is check by spirv-val
-                    skip |= LogWarning(device, "UNASSIGNED-spirv-group-scopeId",
-                                       "Expecting group operation (%u) scope id operand to point to a OpConstant or OpSpecConstant "
-                                       "opcode but instead it is pointing to opcode (%u)",
-                                       inst.opcode(), scope_id.opcode());
-                }
+                scope_type = scope_id.word(3);
             }
 
             if (scope_type == spv::ScopeSubgroup) {
@@ -3361,6 +3354,33 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     return skip;
 }
 
+// Validate runtime usage of various opcodes that depends on what Vulkan properties or features are exposed
+bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module) const {
+    bool skip = false;
+
+    for (auto insn : *module) {
+        switch (insn.opcode()) {
+            case spv::OpReadClockKHR: {
+                auto scope_id = module->get_def(insn.word(3));
+                auto scope_type = scope_id.word(3);
+                // if scope isn't Subgroup or Device, spirv-val will catch
+                if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_feature.shaderSubgroupClock == VK_FALSE)) {
+                    skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderSubgroupClock",
+                                     "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.",
+                                     report_data->FormatHandle(module->vk_shader_module).c_str());
+                } else if ((scope_type == spv::ScopeDevice) &&
+                           (enabled_features.shader_clock_feature.shaderDeviceClock == VK_FALSE)) {
+                    skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderDeviceClock",
+                                     "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.",
+                                     report_data->FormatHandle(module->vk_shader_module).c_str());
+                }
+                break;
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, const PIPELINE_STATE *pipeline,
                                              const PIPELINE_STATE::StageState &stage_state, const SHADER_MODULE_STATE *module,
                                              const spirv_inst_iter &entrypoint, bool check_point_size) const {
@@ -3460,6 +3480,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module, entrypoint, pStage->stage);
     }
+    skip |= ValidatePropertiesAndFeatures(module);
 
     std::string vuid_layout_mismatch;
     if (pipeline->graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO) {
