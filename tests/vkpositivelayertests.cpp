@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -9952,6 +9952,303 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
             m_surface = VK_NULL_HANDLE;
         }
     }
+}
+
+TEST_F(VkPositiveLayerTest, Storage8and16bit) {
+    TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
+    m_errorMonitor->ExpectSuccess();
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool support_8_bit = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    bool support_16_bit = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+
+    if ((support_8_bit == false) && (support_16_bit == false)) {
+        printf("%s Extension %s and %s are not supported.\n", kSkipPrefix, VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
+               VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+        return;
+    } else if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME) == false) {
+        // need for all shaders, but not guaranteed from driver to have support
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+        return;
+    } else {
+        m_device_extension_names.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
+        if (support_8_bit == true) {
+            m_device_extension_names.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+        }
+        if (support_16_bit == true) {
+            m_device_extension_names.push_back(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto storage_8_bit_features = LvlInitStruct<VkPhysicalDevice8BitStorageFeaturesKHR>();
+    auto storage_16_bit_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeaturesKHR>(&storage_8_bit_features);
+    auto float_16_int_8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&storage_16_bit_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&float_16_int_8_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // 8 bit int test (not 8 bit float support in Vulkan)
+    if ((support_8_bit == true) && (float_16_int_8_features.shaderInt8 == VK_TRUE)) {
+        if (storage_8_bit_features.storageBuffer8BitAccess == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_8bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int8: enable\n"
+                "layout(set = 0, binding = 0) buffer SSBO { int8_t x; } data;\n"
+                "void main(){\n"
+                "   int8_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_8_bit_features.uniformAndStorageBuffer8BitAccess == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_8bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int8: enable\n"
+                "layout(set = 0, binding = 0) uniform UBO { int8_t x; } data;\n"
+                "void main(){\n"
+                "   int8_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_8_bit_features.storagePushConstant8 == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_8bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int8: enable\n"
+                "layout(push_constant) uniform PushConstant { int8_t x; } data;\n"
+                "void main(){\n"
+                "   int8_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+    }
+
+    // 16 bit float tests
+    if ((support_16_bit == true) && (float_16_int_8_features.shaderFloat16 == VK_TRUE)) {
+        if (storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
+                "layout(set = 0, binding = 0) buffer SSBO { float16_t x; } data;\n"
+                "void main(){\n"
+                "   float16_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
+                "layout(set = 0, binding = 0) uniform UBO { float16_t x; } data;\n"
+                "void main(){\n"
+                "   float16_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
+                "layout(push_constant) uniform PushConstant { float16_t x; } data;\n"
+                "void main(){\n"
+                "   float16_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
+                "layout(location = 0) out float16_t outData;\n"
+                "void main(){\n"
+                "   outData = float16_t(1);\n"
+                "   gl_Position = vec4(0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            // Need to match in/out
+            char const *fsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
+                "layout(location = 0) in float16_t x;\n"
+                "layout(location = 0) out vec4 uFragColor;\n"
+                "void main(){\n"
+                "   uFragColor = vec4(0,1,0,1);\n"
+                "}\n";
+            VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+    }
+
+    // 16 bit int tests
+    if ((support_16_bit == true) && (features2.features.shaderInt16 == VK_TRUE)) {
+        if (storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
+                "layout(set = 0, binding = 0) buffer SSBO { int16_t x; } data;\n"
+                "void main(){\n"
+                "   int16_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
+                "layout(set = 0, binding = 0) uniform UBO { int16_t x; } data;\n"
+                "void main(){\n"
+                "   int16_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
+                "layout(push_constant) uniform PushConstant { int16_t x; } data;\n"
+                "void main(){\n"
+                "   int16_t a = data.x + data.x;\n"
+                "   gl_Position = vec4(float(a) * 0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+
+        if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
+            char const *vsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
+                "layout(location = 0) out int16_t outData;\n"
+                "void main(){\n"
+                "   outData = int16_t(1);\n"
+                "   gl_Position = vec4(0.0);\n"
+                "}\n";
+            VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+            // Need to match in/out
+            char const *fsSource =
+                "#version 450\n"
+                "#extension GL_EXT_shader_16bit_storage: enable\n"
+                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
+                "layout(location = 0) flat in int16_t x;\n"
+                "layout(location = 0) out vec4 uFragColor;\n"
+                "void main(){\n"
+                "   uFragColor = vec4(0,1,0,1);\n"
+                "}\n";
+            VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        }
+    }
+    m_errorMonitor->VerifyNotFound();
 }
 
 // Android Hardware Buffer Positive Tests
