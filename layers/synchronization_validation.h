@@ -118,27 +118,40 @@ struct HazardResult {
              const SyncStageAccessFlags &prior_, const ResourceUsageTag &tag_);
 };
 
+struct SyncExecScope {
+    VkPipelineStageFlags mask_param;      // the xxxStageMask parameter passed by the caller
+    VkPipelineStageFlags expanded_mask;   // all stage bits covered by any 'catch all bits' in the parameter (eg. ALL_GRAPHICS_BIT).
+    VkPipelineStageFlags exec_scope;      // all earlier or later stages that would be affected by a barrier using this scope.
+    SyncStageAccessFlags valid_accesses;  // all valid accesses that can be used with this scope.
+
+    SyncExecScope() : mask_param(0), expanded_mask(0), exec_scope(0), valid_accesses(0) {}
+
+    static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags src_stage_mask);
+    static SyncExecScope MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags src_stage_mask);
+};
+
 struct SyncBarrier {
     VkPipelineStageFlags src_exec_scope;
     SyncStageAccessFlags src_access_scope;
     VkPipelineStageFlags dst_exec_scope;
     SyncStageAccessFlags dst_access_scope;
     SyncBarrier() = default;
+    SyncBarrier(const SyncBarrier &other) = default;
     SyncBarrier &operator=(const SyncBarrier &) = default;
-    SyncBarrier(VkQueueFlags gueue_flags, const VkSubpassDependency2 &sub_pass_barrier);
+
+    SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst);
+
+    template <typename Barrier>
+    SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst);
+
+    SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &barrier);
+
     void Merge(const SyncBarrier &other) {
         src_exec_scope |= other.src_exec_scope;
         src_access_scope |= other.src_access_scope;
         dst_exec_scope |= other.dst_exec_scope;
         dst_access_scope |= other.dst_access_scope;
     }
-    SyncBarrier(VkPipelineStageFlags src_exec_scope_, const SyncStageAccessFlags &src_access_scope_,
-                VkPipelineStageFlags dst_exec_scope_, const SyncStageAccessFlags &dst_access_scope_)
-        : src_exec_scope(src_exec_scope_),
-          src_access_scope(src_access_scope_),
-          dst_exec_scope(dst_exec_scope_),
-          dst_access_scope(dst_access_scope_) {}
-    SyncBarrier(const SyncBarrier &other) = default;
 };
 
 enum class AccessAddressType : uint32_t { kLinear = 0, kIdealized = 1, kMaxType = 1, kTypeCount = kMaxType + 1 };
@@ -151,21 +164,11 @@ struct SyncEventState {
     CMD_TYPE last_command;  // Only Event commands are valid here.
     CMD_TYPE unsynchronized_set;
     VkPipelineStageFlags barriers;
-    VkPipelineStageFlags stage_mask_param;
-    VkPipelineStageFlags stage_mask;
-    VkPipelineStageFlags exec_scope;
-    SyncStageAccessFlags stage_accesses;
+    SyncExecScope scope;
     ResourceUsageTag first_scope_tag;
     std::array<ScopeMap, static_cast<size_t>(AccessAddressType::kTypeCount)> first_scope;
     SyncEventState(const EventPointer &event_state)
-        : event(event_state),
-          last_command(CMD_NONE),
-          unsynchronized_set(CMD_NONE),
-          barriers(0U),
-          stage_mask_param(0U),
-          stage_mask(0U),
-          exec_scope(0U),
-          stage_accesses() {}
+        : event(event_state), last_command(CMD_NONE), unsynchronized_set(CMD_NONE), barriers(0U), scope() {}
     SyncEventState() : SyncEventState(EventPointer()) {}
     void ResetFirstScope();
     const ScopeMap &FirstScope(AccessAddressType address_type) const { return first_scope[static_cast<size_t>(address_type)]; }
@@ -574,16 +577,12 @@ class CommandBufferAccessContext {
     AccessContext *GetCurrentAccessContext() { return current_context_; }
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
-    void ApplyBufferBarriers(const SyncEventState &sync_event, VkPipelineStageFlags dst_exec_scope,
-                             const SyncStageAccessFlags &dst_stage_accesses, uint32_t barrier_count,
+    void ApplyBufferBarriers(const SyncEventState &sync_event, const SyncExecScope &dst, uint32_t barrier_count,
                              const VkBufferMemoryBarrier *barriers);
-    void ApplyGlobalBarriers(SyncEventState &sync_event, VkPipelineStageFlags dstStageMask, VkPipelineStageFlags dst_exec_scope,
-                             const SyncStageAccessFlags &dst_stage_accesses, uint32_t memory_barrier_count,
+    void ApplyGlobalBarriers(SyncEventState &sync_event, const SyncExecScope &dst, uint32_t memory_barrier_count,
                              const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag);
-    void ApplyGlobalBarriersToEvents(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags src_exec_scope,
-                                     VkPipelineStageFlags dstStageMask, VkPipelineStageFlags dst_exec_scope);
-    void ApplyImageBarriers(const SyncEventState &sync_event, VkPipelineStageFlags dst_exec_scope,
-                            const SyncStageAccessFlags &dst_stage_accesses, uint32_t barrier_count,
+    void ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst);
+    void ApplyImageBarriers(const SyncEventState &sync_event, const SyncExecScope &dst, uint32_t barrier_count,
                             const VkImageMemoryBarrier *barriers, const ResourceUsageTag &tag);
     bool ValidateBeginRenderPass(const RENDER_PASS_STATE &render_pass, const VkRenderPassBeginInfo *pRenderPassBegin,
                                  const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const;
@@ -680,16 +679,13 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
         return found_it->second.get();
     }
 
-    void ApplyGlobalBarriers(AccessContext *context, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                             SyncStageAccessFlags src_stage_scope, SyncStageAccessFlags dst_stage_scope,
+    void ApplyGlobalBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst,
                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag);
-    void ApplyBufferBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask,
-                             const SyncStageAccessFlags &src_stage_scope, VkPipelineStageFlags dst_stage_mask,
-                             const SyncStageAccessFlags &dst_stage_scope, uint32_t barrier_count,
+
+    void ApplyBufferBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst, uint32_t barrier_count,
                              const VkBufferMemoryBarrier *barriers);
-    void ApplyImageBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask,
-                            const SyncStageAccessFlags &src_stage_scope, VkPipelineStageFlags dst_stage_mask,
-                            const SyncStageAccessFlags &dst_stage_scope, uint32_t barrier_count,
+
+    void ApplyImageBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst, uint32_t barrier_count,
                             const VkImageMemoryBarrier *barriers, const ResourceUsageTag &tag);
 
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
@@ -697,7 +693,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                   const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE command);
     void RecordCmdNextSubpass(VkCommandBuffer commandBuffer,
-
                               const VkSubpassBeginInfo *pSubpassBeginInfo, const VkSubpassEndInfo *pSubpassEndInfo,
                               CMD_TYPE command);
     void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE command);
