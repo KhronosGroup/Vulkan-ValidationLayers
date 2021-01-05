@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1687,9 +1687,8 @@ VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize alloc
 
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
-VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name, bool debug, VkSpecializationInfo *specInfo, uint32_t spirv_minor_version) {
-    m_device = device;
+VkShaderObj::VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char const *name, VkSpecializationInfo *specInfo)
+    : m_device(device) {
     m_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     m_stage_info.pNext = nullptr;
     m_stage_info.flags = 0;
@@ -1697,40 +1696,78 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     m_stage_info.module = VK_NULL_HANDLE;
     m_stage_info.pName = name;
     m_stage_info.pSpecializationInfo = specInfo;
+}
 
-    vector<unsigned int> spv;
-    framework->GLSLtoSPV(&device->props.limits, stage, shader_code, spv, debug, spirv_minor_version);
+VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderStageFlagBits stage, VkRenderFramework *framework,
+                         char const *name, bool debug, VkSpecializationInfo *specInfo, uint32_t spirv_minor_version)
+    : VkShaderObj(*device, stage, name, specInfo) {
+    InitFromGLSL(*framework, shader_code, debug, spirv_minor_version);
+}
+
+bool VkShaderObj::InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug, uint32_t spirv_minor_version) {
+    std::vector<unsigned int> spv;
+    framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, spirv_minor_version);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
     moduleCreateInfo.pCode = spv.data();
 
-    init(*m_device, moduleCreateInfo);
+    init(m_device, moduleCreateInfo);
     m_stage_info.module = handle();
+    return VK_NULL_HANDLE != handle();
+}
+
+// Because shaders are currently validated at pipeline creation time, there are test cases that might fail shader module creation
+// due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when tests are found
+// to crash on a CI device
+VkResult VkShaderObj::InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug,
+                                      uint32_t spirv_minor_version) {
+    std::vector<unsigned int> spv;
+    framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, spirv_minor_version);
+
+    VkShaderModuleCreateInfo moduleCreateInfo = {};
+    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.pCode = spv.data();
+
+    const auto result = init_try(m_device, moduleCreateInfo);
+    m_stage_info.module = handle();
+    return result;
 }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name, VkSpecializationInfo *specInfo) {
-    m_device = device;
-    m_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    m_stage_info.pNext = nullptr;
-    m_stage_info.flags = 0;
-    m_stage_info.stage = stage;
-    m_stage_info.module = VK_NULL_HANDLE;
-    m_stage_info.pName = name;
-    m_stage_info.pSpecializationInfo = specInfo;
+                         char const *name, VkSpecializationInfo *specInfo)
+    : VkShaderObj(*device, stage, name, specInfo) {
+    InitFromASM(*framework, spv_source);
+}
 
+bool VkShaderObj::InitFromASM(VkRenderFramework &framework, const std::string &spv_source) {
     vector<unsigned int> spv;
-    framework->ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    framework.ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
     moduleCreateInfo.pCode = spv.data();
 
-    init(*m_device, moduleCreateInfo);
+    init(m_device, moduleCreateInfo);
     m_stage_info.module = handle();
+    return VK_NULL_HANDLE != handle();
+}
+
+VkResult VkShaderObj::InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source) {
+    vector<unsigned int> spv;
+    framework.ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+
+    VkShaderModuleCreateInfo moduleCreateInfo = {};
+    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.pCode = spv.data();
+
+    const auto result = init_try(m_device, moduleCreateInfo);
+    m_stage_info.module = handle();
+    return result;
 }
 
 VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device, const vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts,

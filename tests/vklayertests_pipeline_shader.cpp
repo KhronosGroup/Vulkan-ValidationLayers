@@ -9559,15 +9559,18 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   int8_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
-                                                         "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer8BitAccess
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer8BitAccess
+        }
     }
 
     // uniformAndStorageBuffer8BitAccess
@@ -9581,16 +9584,18 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   int8_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-        };
-        CreatePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
-                           "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer8BitAccess
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer8BitAccess
+        }
     }
 
     // storagePushConstant8
@@ -9604,18 +9609,20 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   int8_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
-        VkPipelineLayoutCreateInfo pipeline_layout_info{
-            VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.pipeline_layout_ci_ = pipeline_layout_info;
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
-                                                         "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant8
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
+                                                             "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant8
+        }
     }
 
     // storageBuffer16BitAccess - Float
@@ -9629,15 +9636,18 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   float16_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
-                                                         "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer16BitAccess
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer16BitAccess
+        }
     }
 
     // uniformAndStorageBuffer16BitAccess - Float
@@ -9651,16 +9661,18 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   float16_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-        };
-        CreatePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
-                           "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer16BitAccess
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer16BitAccess
+        }
     }
 
     // storagePushConstant16 - Float
@@ -9674,18 +9686,21 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   float16_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
-        VkPipelineLayoutCreateInfo pipeline_layout_info{
-            VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.pipeline_layout_ci_ = pipeline_layout_info;
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
-                                                         "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant16
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant16
+        }
     }
 
     // storageInputOutput16 - Float
@@ -9699,7 +9714,7 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   outData = float16_t(1);\n"
             "   gl_Position = vec4(0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
         // Need to match in/out
         char const *fsSource =
@@ -9711,15 +9726,17 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "void main(){\n"
             "   uFragColor = vec4(0,1,0,1);\n"
             "}\n";
-        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkShaderObj fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
-        CreatePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
-                           "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
+        if ((VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) && (VK_SUCCESS == fs.InitFromGLSLTry(*this, fsSource))) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
+        }
     }
 
     // storageBuffer16BitAccess - Int
@@ -9733,15 +9750,18 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   int16_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
-                                                         "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer16BitAccess
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer16BitAccess
+        }
     }
 
     // uniformAndStorageBuffer16BitAccess - Int
@@ -9755,16 +9775,18 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   int16_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-        };
-        CreatePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
-                           "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer16BitAccess
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer16BitAccess
+        }
     }
 
     // storagePushConstant16 - Int
@@ -9778,18 +9800,21 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   int16_t a = data.x + data.x;\n"
             "   gl_Position = vec4(float(a) * 0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
-        VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
-        VkPipelineLayoutCreateInfo pipeline_layout_info{
-            VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-            helper.pipeline_layout_ci_ = pipeline_layout_info;
-        };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
-                                                         "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant16
+        if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant16
+        }
     }
 
     // storageInputOutput16 - Int
@@ -9803,7 +9828,7 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "   outData = int16_t(1);\n"
             "   gl_Position = vec4(0.0);\n"
             "}\n";
-        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
         // Need to match in/out
         char const *fsSource =
@@ -9815,14 +9840,16 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             "void main(){\n"
             "   uFragColor = vec4(0,1,0,1);\n"
             "}\n";
-        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkShaderObj fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
-        CreatePipelineHelper::OneshotTest(
-            *this, set_info, kErrorBit,
-            vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
-                           "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
+        if ((VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) && (VK_SUCCESS == fs.InitFromGLSLTry(*this, fsSource))) {
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
+        }
     }
 }
