@@ -152,9 +152,10 @@ static std::string string_UsageTag(const ResourceUsageTag &tag) {
     std::stringstream out;
 
     out << "command: " << CommandTypeString(tag.GetCommand());
-    out << ", seq_no: " << tag.GetSeqNum() << ", reset_no: " << tag.GetResetNum();
-    if (tag.GetSubCommand() != 0) {
-        out << ", subcmd: " << tag.GetSubCommand();
+    const auto seq_id = tag.GetSequenceId();
+    out << ", seq_no: " << seq_id.seq_num << ", reset_no: " << seq_id.reset_count;
+    if (seq_id.sub_command != 0) {
+        out << ", subcmd: " << seq_id.sub_command;
     }
     return out.str();
 }

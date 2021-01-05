@@ -74,26 +74,59 @@ struct SyncStageAccess {
 };
 
 struct ResourceUsageTag {
-    uint64_t index;
-    CMD_TYPE command;
+    using TagIndex = uint64_t;
+    constexpr static TagIndex kMaxIndex = std::numeric_limits<TagIndex>::max();
+    // Special values for submit_index
+    // Every unsubmitted primary is *after* every submited primary
+    // Every recorded secondary is *after* every executing primary
+    constexpr static TagIndex kUnsubmittedPrimary = kMaxIndex - 1;
+    constexpr static TagIndex kUnexecutedSecondary = kMaxIndex;
+    // TODO: determine submit_index encoding
+    TagIndex submit_index;
+    TagIndex index;              // the index of the command within the command buffer itself (primary or secondary)
+    TagIndex secondary_index;    // the index of the command within a executed secondary imported into a primary context
+    CMD_TYPE command;            // the command within the commmand buffer itself (primary or secondary)
+    CMD_TYPE secondary_command;  // the command within the secondary imported into a primary (iff command == CMD_EXECUTECOMMANDS)
 
+    // This is the command information encoding for index (primary) and secondary
     static constexpr uint64_t kResetShift = 33;
     static constexpr uint64_t kCommandShift = 1;
     static constexpr uint64_t kCommandMask = 0xffffffff;
+    static constexpr uint64_t kSubCommandMask = (1 < kCommandShift) - 1U;
+    struct SequenceId {
+        uint32_t reset_count;
+        uint32_t seq_num;
+        uint32_t sub_command;
+    };
+    static TagIndex EncodeSequenceId(TagIndex reset_count, uint32_t command_num, uint32_t sub_command) {
+        const TagIndex command_index = ((static_cast<TagIndex>(command_num) << kCommandShift) | (sub_command & kSubCommandMask));
+        return (reset_count << kResetShift) | command_index;
+    }
+    static SequenceId DecodeSequenceId(TagIndex index) {
+        SequenceId dt;
+        dt.reset_count = index >> kResetShift;
+        dt.seq_num = (index >> kCommandShift) & kCommandMask;
+        dt.sub_command = (index & 1);
+        return dt;
+    }
 
-    const static uint64_t kMaxIndex = std::numeric_limits<uint64_t>::max();
     ResourceUsageTag &operator++() {
         index++;
         return *this;
     }
     bool IsBefore(const ResourceUsageTag &rhs) const { return index < rhs.index; }
-    bool operator==(const ResourceUsageTag &rhs) const { return (index == rhs.index); }
+    bool IsGloballyBefore(const ResourceUsageTag &rhs) const {
+        return (submit_index < rhs.submit_index) ||
+               ((submit_index == rhs.submit_index) &&
+                ((index < rhs.index) || ((index == rhs.index) && (secondary_index < rhs.secondary_index))));
+    }
+    bool operator==(const ResourceUsageTag &rhs) const {
+        return (submit_index == rhs.submit_index) && (index == rhs.index) && (secondary_index == rhs.secondary_index);
+    }
     bool operator!=(const ResourceUsageTag &rhs) const { return !(*this == rhs); }
 
     CMD_TYPE GetCommand() const { return command; }
-    uint32_t GetResetNum() const { return index >> kResetShift; }
-    uint32_t GetSeqNum() const { return (index >> kCommandShift) & kCommandMask; }
-    uint32_t GetSubCommand() const { return (index & 1); }
+    SequenceId GetSequenceId() const { return DecodeSequenceId(index); }
 
     ResourceUsageTag NextSubCommand() const {
         assert((index & 1) == 0);
@@ -102,10 +135,17 @@ struct ResourceUsageTag {
         return next;
     }
 
-    ResourceUsageTag() : index(0), command(CMD_NONE) {}
-    ResourceUsageTag(uint64_t index_, CMD_TYPE command_) : index(index_), command(command_) {}
-    ResourceUsageTag(uint32_t reset_count, uint32_t command_num, CMD_TYPE command_)
-        : index(((uint64_t)reset_count << kResetShift) | (command_num << kCommandShift)), command(command_) {}
+    ResourceUsageTag()
+        : submit_index(kUnsubmittedPrimary), index(0), secondary_index(0), command(CMD_NONE), secondary_command(CMD_NONE) {}
+    ResourceUsageTag(uint64_t index_, CMD_TYPE command_, bool is_primary = true)
+        : submit_index(is_primary ? kUnsubmittedPrimary : kUnexecutedSecondary),
+          index(index_),
+          secondary_index(0),
+          command(command_),
+          secondary_command(CMD_NONE) {}
+
+    ResourceUsageTag(uint32_t reset_count, uint32_t command_num, CMD_TYPE command_, bool is_primary = true)
+        : index(EncodeSequenceId(reset_count, command_num, 0)), command(command_) {}
 };
 
 struct HazardResult {
