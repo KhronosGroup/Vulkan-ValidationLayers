@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -589,6 +589,8 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
 
 class VkShaderObj : public vk_testing::ShaderModule {
   public:
+    VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char const *name = "main",
+                VkSpecializationInfo *specInfo = nullptr);
     VkShaderObj(VkDeviceObj *device, const char *shaderText, VkShaderStageFlagBits stage, VkRenderFramework *framework,
                 char const *name = "main", bool debug = false, VkSpecializationInfo *specInfo = nullptr,
                 uint32_t spirv_minor_version = 0);
@@ -596,9 +598,15 @@ class VkShaderObj : public vk_testing::ShaderModule {
                 char const *name = "main", VkSpecializationInfo *specInfo = nullptr);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
+    bool InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug = false, uint32_t spirv_minor_version = 0);
+    VkResult InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug = false,
+                             uint32_t spirv_minor_version = 0);
+    bool InitFromASM(VkRenderFramework &framework, const std::string &spv_source);
+    VkResult InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source);
+
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
-    VkDeviceObj *m_device;
+    VkDeviceObj &m_device;
 };
 
 class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
