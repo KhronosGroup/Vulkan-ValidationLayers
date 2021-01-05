@@ -1,6 +1,6 @@
-/* Copyright (c) 2020 The Khronos Group Inc.
- * Copyright (c) 2020 Valve Corporation
- * Copyright (c) 2020 LunarG, Inc.
+/* Copyright (c) 2020-2021 The Khronos Group Inc.
+ * Copyright (c) 2020-2021 Valve Corporation
+ * Copyright (c) 2020-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -253,21 +253,24 @@ void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo
         features2 = const_cast<VkPhysicalDeviceFeatures2 *>(LvlFindInChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
         if (features2) features = &features2->features;
     }
+    VkPhysicalDeviceFeatures new_features = {};
+    VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features);
+    VkBool32 *feature_ptr;
     if (features) {
-        VkBool32 *desired = reinterpret_cast<VkBool32 *>(&desired_features);
-        VkBool32 *feature_ptr = reinterpret_cast<VkBool32 *>(features);
-        VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features);
-        for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures); i += (sizeof(VkBool32))) {
-            if (*supported && *desired) {
-                *feature_ptr = true;
-            }
-            supported++;
-            desired++;
-            feature_ptr++;
-        }
+        feature_ptr = reinterpret_cast<VkBool32 *>(features);
     } else {
-        VkPhysicalDeviceFeatures new_features = {};
-        new_features = desired_features;
+        feature_ptr = reinterpret_cast<VkBool32 *>(&new_features);
+    }
+    VkBool32 *supported = reinterpret_cast<VkBool32 *>(&supported_features);
+    for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures); i += (sizeof(VkBool32))) {
+        if (*supported && *desired) {
+            *feature_ptr = true;
+        }
+        supported++;
+        desired++;
+        feature_ptr++;
+    }
+    if (!features) {
         delete modified_create_info->pEnabledFeatures;
         modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
     }
