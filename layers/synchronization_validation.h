@@ -43,6 +43,14 @@ enum SyncHazard {
     WRITE_RACING_READ,
 };
 
+enum class SyncOrdering : uint8_t {
+    kNonAttachment = 0,
+    kColorAttachment = 1,
+    kDepthStencilAttachment = 2,
+    kRaster = 3,
+    kNumOrderings = 4,
+};
+
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
     static inline SyncStageAccessFlags FlagBit(SyncStageAccessIndex stage_access) {
@@ -217,15 +225,17 @@ struct SyncEventState {
 };
 
 // To represent ordering guarantees such as rasterization and store
-struct SyncOrderingBarrier {
-    VkPipelineStageFlags exec_scope;
-    SyncStageAccessFlags access_scope;
-    SyncOrderingBarrier() = default;
-    SyncOrderingBarrier &operator=(const SyncOrderingBarrier &) = default;
-};
 
 class ResourceAccessState : public SyncStageAccess {
   protected:
+    struct OrderingBarrier {
+        VkPipelineStageFlags exec_scope;
+        SyncStageAccessFlags access_scope;
+        OrderingBarrier() = default;
+        OrderingBarrier &operator=(const OrderingBarrier &) = default;
+    };
+    using OrderingBarriers = std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)>;
+
     // Mutliple read operations can be simlutaneously (and independently) synchronized,
     // given the only the second execution scope creates a dependency chain, we have to track each,
     // but only up to one per pipeline stage (as another read from the *same* stage become more recent,
@@ -266,7 +276,7 @@ class ResourceAccessState : public SyncStageAccess {
 
   public:
     HazardResult DetectHazard(SyncStageAccessIndex usage_index) const;
-    HazardResult DetectHazard(SyncStageAccessIndex usage_index, const SyncOrderingBarrier &ordering) const;
+    HazardResult DetectHazard(SyncStageAccessIndex usage_index, const SyncOrdering &ordering_rule) const;
 
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope) const;
@@ -274,7 +284,7 @@ class ResourceAccessState : public SyncStageAccess {
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope, const ResourceUsageTag &event_tag) const;
 
-    void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
+    void Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, const ResourceUsageTag &tag);
     void SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag &tag);
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
@@ -344,7 +354,11 @@ class ResourceAccessState : public SyncStageAccess {
     bool IsReadHazard(VkPipelineStageFlags stage_mask, const ReadState &read_access) const {
         return IsReadHazard(stage_mask, read_access.barriers);
     }
-    VkPipelineStageFlags GetOrderedStages(const SyncOrderingBarrier &ordering) const;
+    VkPipelineStageFlags GetOrderedStages(const OrderingBarrier &ordering) const;
+
+    static const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) {
+        return kOrderingRules[static_cast<size_t>(ordering_enum)];
+    }
 
     // TODO: Add a NONE (zero) enum to SyncStageAccessFlags for input_attachment_read and last_write
 
@@ -368,6 +382,8 @@ class ResourceAccessState : public SyncStageAccess {
     VkPipelineStageFlags pending_write_dep_chain;
     bool pending_layout_transition;
     SyncStageAccessFlags pending_write_barriers;
+
+    static OrderingBarriers kOrderingRules;
 };
 
 using ResourceAccessRangeMap = sparse_container::range_map<VkDeviceSize, ResourceAccessState>;
@@ -412,9 +428,9 @@ class AccessContext {
                               const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                               const VkExtent3D &extent) const;
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
-                              const VkImageSubresourceRange &subresource_range, const SyncOrderingBarrier &ordering,
+                              const VkImageSubresourceRange &subresource_range, SyncOrdering ordering_rule,
                               const VkOffset3D &offset, const VkExtent3D &extent) const;
-    HazardResult DetectHazard(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const SyncOrderingBarrier &ordering,
+    HazardResult DetectHazard(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                               const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0U) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                           const SyncStageAccessFlags &src_access_scope,
@@ -460,14 +476,15 @@ class AccessContext {
                             ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                             bool recur_to_infill = true) const;
 
-    void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
-                           const ResourceUsageTag &tag);
-    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+    void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                           const ResourceAccessRange &range, const ResourceUsageTag &tag);
+    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
-    void UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const VkOffset3D &offset,
-                           const VkExtent3D &extent, VkImageAspectFlags aspect_mask, const ResourceUsageTag &tag);
-    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+    void UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                           const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask,
+                           const ResourceUsageTag &tag);
+    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
     void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
@@ -541,8 +558,8 @@ class AccessContext {
     HazardResult DetectAsyncHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range) const;
     template <typename Detector>
     HazardResult DetectPreviousHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range) const;
-    void UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
-                           const ResourceUsageTag &tag);
+    void UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                           const ResourceAccessRange &range, const ResourceUsageTag &tag);
 
     MapArray access_state_maps_;
     std::vector<TrackBack> prev_;

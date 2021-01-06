@@ -195,12 +195,15 @@ static const SyncStageAccessFlags kDepthStencilAttachmentAccessScope =
     SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
     SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
     SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT;  // Note: this is intentionally not in the exec scope
+static constexpr VkPipelineStageFlags kRasterAttachmentExecScope = kDepthStencilAttachmentExecScope | kColorAttachmentExecScope;
+static const SyncStageAccessFlags kRasterAttachmentAccessScope = kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope;
 
-static const SyncOrderingBarrier kColorAttachmentRasterOrder = {kColorAttachmentExecScope, kColorAttachmentAccessScope};
-static const SyncOrderingBarrier kDepthStencilAttachmentRasterOrder = {kDepthStencilAttachmentExecScope,
-                                                                       kDepthStencilAttachmentAccessScope};
-static const SyncOrderingBarrier kAttachmentRasterOrder = {kDepthStencilAttachmentExecScope | kColorAttachmentExecScope,
-                                                           kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope};
+ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
+    {{0U, SyncStageAccessFlags()},
+     {kColorAttachmentExecScope, kColorAttachmentAccessScope},
+     {kDepthStencilAttachmentExecScope, kDepthStencilAttachmentAccessScope},
+     {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
+
 // Sometimes we have an internal access conflict, and we using the kCurrentCommandTag to set and detect in temporary/proxy contexts
 static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, CMD_NONE);
 
@@ -533,9 +536,9 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
             const auto &resolve_attach = subpass_ci.pResolveAttachments[i].attachment;
             if ((color_attach != VK_ATTACHMENT_UNUSED) && (resolve_attach != VK_ATTACHMENT_UNUSED)) {
                 action("color", "resolve read", color_attach, resolve_attach, attachment_views[color_attach],
-                       SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kColorAttachmentRasterOrder, offset, extent, 0);
+                       SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, SyncOrdering::kColorAttachment, offset, extent, 0);
                 action("color", "resolve write", color_attach, resolve_attach, attachment_views[resolve_attach],
-                       SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kColorAttachmentRasterOrder, offset, extent, 0);
+                       SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment, offset, extent, 0);
             }
         }
     }
@@ -571,9 +574,9 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
 
         if (aspect_mask) {
             action(aspect_string, "resolve read", src_at, dst_at, attachment_views[src_at],
-                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kAttachmentRasterOrder, offset, extent, aspect_mask);
+                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, SyncOrdering::kRaster, offset, extent, aspect_mask);
             action(aspect_string, "resolve write", src_at, dst_at, attachment_views[dst_at],
-                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kAttachmentRasterOrder, offset, extent, aspect_mask);
+                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kRaster, offset, extent, aspect_mask);
         }
     }
 }
@@ -590,10 +593,10 @@ class ValidateResolveAction {
           func_name_(func_name),
           skip_(false) {}
     void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
-                    const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const SyncOrderingBarrier &ordering,
+                    const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                     const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask) {
         HazardResult hazard;
-        hazard = context_.DetectHazard(view, current_usage, ordering, offset, extent, aspect_mask);
+        hazard = context_.DetectHazard(view, current_usage, ordering_rule, offset, extent, aspect_mask);
         if (hazard.hazard) {
             skip_ |= sync_state_.LogError(render_pass_, string_SyncHazardVUID(hazard.hazard),
                                           "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32
@@ -619,10 +622,10 @@ class UpdateStateResolveAction {
   public:
     UpdateStateResolveAction(AccessContext &context, const ResourceUsageTag &tag) : context_(context), tag_(tag) {}
     void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
-                    const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const SyncOrderingBarrier &ordering,
+                    const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                     const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask) {
         // Ignores validation only arguments...
-        context_.UpdateAccessState(view, current_usage, offset, extent, aspect_mask, tag_);
+        context_.UpdateAccessState(view, current_usage, ordering_rule, offset, extent, aspect_mask, tag_);
     }
 
   private:
@@ -1040,19 +1043,19 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
             auto hazard_range = view.normalized_subresource_range;
             bool checked_stencil = false;
             if (is_color) {
-                hazard = DetectHazard(*image, load_index, view.normalized_subresource_range, kColorAttachmentRasterOrder, offset,
+                hazard = DetectHazard(*image, load_index, view.normalized_subresource_range, SyncOrdering::kColorAttachment, offset,
                                       extent);
                 aspect = "color";
             } else {
                 if (has_depth) {
                     hazard_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    hazard = DetectHazard(*image, load_index, hazard_range, kDepthStencilAttachmentRasterOrder, offset, extent);
+                    hazard = DetectHazard(*image, load_index, hazard_range, SyncOrdering::kDepthStencilAttachment, offset, extent);
                     aspect = "depth";
                 }
                 if (!hazard.hazard && has_stencil) {
                     hazard_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                    hazard =
-                        DetectHazard(*image, stencil_load_index, hazard_range, kDepthStencilAttachmentRasterOrder, offset, extent);
+                    hazard = DetectHazard(*image, stencil_load_index, hazard_range, SyncOrdering::kDepthStencilAttachment, offset,
+                                          extent);
                     aspect = "stencil";
                     checked_stencil = true;
                 }
@@ -1114,7 +1117,7 @@ bool AccessContext::ValidateStoreOperation(const SyncValidator &sync_state, cons
             bool checked_stencil = false;
             if (is_color) {
                 hazard = DetectHazard(*image, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                      view.normalized_subresource_range, kAttachmentRasterOrder, offset, extent);
+                                      view.normalized_subresource_range, SyncOrdering::kRaster, offset, extent);
                 aspect = "color";
             } else {
                 const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
@@ -1122,13 +1125,13 @@ bool AccessContext::ValidateStoreOperation(const SyncValidator &sync_state, cons
                 if (has_depth && store_op_stores) {
                     hazard_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
                     hazard = DetectHazard(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, hazard_range,
-                                          kAttachmentRasterOrder, offset, extent);
+                                          SyncOrdering::kRaster, offset, extent);
                     aspect = "depth";
                 }
                 if (!hazard.hazard && has_stencil && stencil_op_stores) {
                     hazard_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
                     hazard = DetectHazard(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, hazard_range,
-                                          kAttachmentRasterOrder, offset, extent);
+                                          SyncOrdering::kRaster, offset, extent);
                     aspect = "stencil";
                     checked_stencil = true;
                 }
@@ -1170,17 +1173,16 @@ class HazardDetector {
 
 class HazardDetectorWithOrdering {
     const SyncStageAccessIndex usage_index_;
-    const SyncOrderingBarrier &ordering_;
+    const SyncOrdering ordering_rule_;
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectHazard(usage_index_, ordering_);
+        return pos->second.DetectHazard(usage_index_, ordering_rule_);
     }
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
         return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
-    HazardDetectorWithOrdering(SyncStageAccessIndex usage, const SyncOrderingBarrier &ordering)
-        : usage_index_(usage), ordering_(ordering) {}
+    HazardDetectorWithOrdering(SyncStageAccessIndex usage, SyncOrdering ordering) : usage_index_(usage), ordering_rule_(ordering) {}
 };
 
 HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index,
@@ -1223,16 +1225,16 @@ HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAcce
 }
 
 HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
-                                         const VkImageSubresourceRange &subresource_range, const SyncOrderingBarrier &ordering,
+                                         const VkImageSubresourceRange &subresource_range, SyncOrdering ordering_rule,
                                          const VkOffset3D &offset, const VkExtent3D &extent) const {
-    HazardDetectorWithOrdering detector(current_usage, ordering);
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
     return DetectHazard(detector, image, subresource_range, offset, extent, DetectOptions::kDetectAll);
 }
 
 // Some common code for looking at attachments, if there's anything wrong, we return no hazard, core validation
 // should have reported the issue regarding an invalid attachment entry
 HazardResult AccessContext::DetectHazard(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage,
-                                         const SyncOrderingBarrier &ordering, const VkOffset3D &offset, const VkExtent3D &extent,
+                                         SyncOrdering ordering_rule, const VkOffset3D &offset, const VkExtent3D &extent,
                                          VkImageAspectFlags aspect_mask) const {
     if (view != nullptr) {
         const IMAGE_STATE *image = view->image_state.get();
@@ -1247,7 +1249,7 @@ HazardResult AccessContext::DetectHazard(const IMAGE_VIEW_STATE *view, SyncStage
 
             // NOTE: The range encoding code is not robust to invalid ranges, so we protect it from our change
             if (detect_range->aspectMask) {
-                return DetectHazard(*image, current_usage, *detect_range, ordering, offset, extent);
+                return DetectHazard(*image, current_usage, *detect_range, ordering_rule, offset, extent);
             }
         }
     }
@@ -1434,16 +1436,17 @@ struct UpdateMemoryAccessStateFunctor {
 
     Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
         auto &access_state = pos->second;
-        access_state.Update(usage, tag);
+        access_state.Update(usage, ordering_rule, tag);
         return pos;
     }
 
     UpdateMemoryAccessStateFunctor(AccessAddressType type_, const AccessContext &context_, SyncStageAccessIndex usage_,
-                                   const ResourceUsageTag &tag_)
-        : type(type_), context(context_), usage(usage_), tag(tag_) {}
+                                   SyncOrdering ordering_rule_, const ResourceUsageTag &tag_)
+        : type(type_), context(context_), usage(usage_), ordering_rule(ordering_rule_), tag(tag_) {}
     const AccessAddressType type;
     const AccessContext &context;
     const SyncStageAccessIndex usage;
+    const SyncOrdering ordering_rule;
     const ResourceUsageTag &tag;
 };
 
@@ -1541,20 +1544,20 @@ class ResolvePendingBarrierFunctor {
     const ResourceUsageTag &tag_;
 };
 
-void AccessContext::UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
-                                      const ResourceUsageTag &tag) {
-    UpdateMemoryAccessStateFunctor action(type, *this, current_usage, tag);
+void AccessContext::UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                                      const ResourceAccessRange &range, const ResourceUsageTag &tag) {
+    UpdateMemoryAccessStateFunctor action(type, *this, current_usage, ordering_rule, tag);
     UpdateMemoryAccessState(&GetAccessStateMap(type), range, action);
 }
 
-void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage,
+void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const ResourceAccessRange &range, const ResourceUsageTag &tag) {
     if (!SimpleBinding(buffer)) return;
     const auto base_address = ResourceBaseAddress(buffer);
-    UpdateAccessState(AccessAddressType::kLinear, current_usage, range + base_address, tag);
+    UpdateAccessState(AccessAddressType::kLinear, current_usage, ordering_rule, range + base_address, tag);
 }
 
-void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                       const VkExtent3D &extent, const ResourceUsageTag &tag) {
     if (!SimpleBinding(image)) return;
@@ -1562,13 +1565,14 @@ void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
     subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent,
                                                        base_address);
     const auto address_type = ImageAddressType(image);
-    UpdateMemoryAccessStateFunctor action(address_type, *this, current_usage, tag);
+    UpdateMemoryAccessStateFunctor action(address_type, *this, current_usage, ordering_rule, tag);
     for (; range_gen->non_empty(); ++range_gen) {
         UpdateMemoryAccessState(&GetAccessStateMap(address_type), *range_gen, action);
     }
 }
-void AccessContext::UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const VkOffset3D &offset,
-                                      const VkExtent3D &extent, VkImageAspectFlags aspect_mask, const ResourceUsageTag &tag) {
+void AccessContext::UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                                      const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask,
+                                      const ResourceUsageTag &tag) {
     if (view != nullptr) {
         const IMAGE_STATE *image = view->image_state.get();
         if (image != nullptr) {
@@ -1579,17 +1583,17 @@ void AccessContext::UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAcc
                 masked_range.aspectMask = aspect_mask & masked_range.aspectMask;
                 update_range = &masked_range;
             }
-            UpdateAccessState(*image, current_usage, *update_range, offset, extent, tag);
+            UpdateAccessState(*image, current_usage, ordering_rule, *update_range, offset, extent, tag);
         }
     }
 }
 
-void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
                                       const VkExtent3D &extent, const ResourceUsageTag &tag) {
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
-    UpdateAccessState(image, current_usage, subresource_range, offset, extent, tag);
+    UpdateAccessState(image, current_usage, ordering_rule, subresource_range, offset, extent, tag);
 }
 
 template <typename Action>
@@ -1643,20 +1647,20 @@ void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_stat
             const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
 
             if (is_color && store_op_stores) {
-                UpdateAccessState(*image, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, view.normalized_subresource_range,
-                                  offset, extent, tag);
+                UpdateAccessState(*image, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kRaster,
+                                  view.normalized_subresource_range, offset, extent, tag);
             } else {
                 auto update_range = view.normalized_subresource_range;
                 if (has_depth && store_op_stores) {
                     update_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    UpdateAccessState(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, update_range, offset, extent,
-                                      tag);
+                    UpdateAccessState(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kRaster,
+                                      update_range, offset, extent, tag);
                 }
                 const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
                 if (has_stencil && stencil_op_stores) {
                     update_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                    UpdateAccessState(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, update_range, offset, extent,
-                                      tag);
+                    UpdateAccessState(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kRaster,
+                                      update_range, offset, extent, tag);
                 }
             }
         }
@@ -1926,7 +1930,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
                             // Input attachments are subject to raster ordering rules
                             hazard = current_context_->DetectHazard(*img_state, sync_index, subresource_range,
-                                                                    kAttachmentRasterOrder, offset, extent);
+                                                                    SyncOrdering::kRaster, offset, extent);
                         } else {
                             hazard = current_context_->DetectHazard(*img_state, sync_index, subresource_range, offset, extent);
                         }
@@ -2051,8 +2055,11 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         } else {
                             extent = img_state->createInfo.extent;
                         }
-                        current_context_->UpdateAccessState(*img_state, sync_index, img_view_state->normalized_subresource_range,
-                                                            offset, extent, tag);
+                        SyncOrdering ordering_rule = (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+                                                         ? SyncOrdering::kRaster
+                                                         : SyncOrdering::kNonAttachment;
+                        current_context_->UpdateAccessState(*img_state, sync_index, ordering_rule,
+                                                            img_view_state->normalized_subresource_range, offset, extent, tag);
                         break;
                     }
                     case DescriptorClass::TexelBuffer: {
@@ -2060,7 +2067,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (!buf_view_state) continue;
                         const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
-                        current_context_->UpdateAccessState(*buf_state, sync_index, range, tag);
+                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
                         break;
                     }
                     case DescriptorClass::GeneralBuffer: {
@@ -2069,7 +2076,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (!buf_state) continue;
                         const ResourceAccessRange range =
                             MakeRange(*buf_state, buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
-                        current_context_->UpdateAccessState(*buf_state, sync_index, range, tag);
+                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag);
                         break;
                     }
                     // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
@@ -2131,7 +2138,8 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
             auto *buf_state = binding_buffer.buffer_state.get();
             const ResourceAccessRange range = GetBufferRange(binding_buffer.offset, buf_state->createInfo.size, firstVertex,
                                                              vertexCount, binding_description.stride);
-            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range, tag);
+            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, SyncOrdering::kNonAttachment,
+                                                range, tag);
         }
     }
 }
@@ -2167,7 +2175,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
     const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
     const ResourceAccessRange range = GetBufferRange(cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size,
                                                      firstIndex, indexCount, index_size);
-    current_context_->UpdateAccessState(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, range, tag);
+    current_context_->UpdateAccessState(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag);
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
@@ -2587,7 +2595,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
             }
             const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pColorAttachments[location].attachment];
             HazardResult hazard = current_context.DetectHazard(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                                               kColorAttachmentRasterOrder, offset, extent);
+                                                               SyncOrdering::kColorAttachment, offset, extent);
             if (hazard.hazard) {
                 skip |= sync_state.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
                                             "%s: Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Access info %s.",
@@ -2627,7 +2635,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
         if (depth_write) {
             HazardResult hazard =
                 current_context.DetectHazard(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                             kDepthStencilAttachmentRasterOrder, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
+                                             SyncOrdering::kDepthStencilAttachment, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
             if (hazard.hazard) {
                 skip |= sync_state.LogError(
                     img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
@@ -2641,7 +2649,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
         if (stencil_write) {
             HazardResult hazard =
                 current_context.DetectHazard(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                             kDepthStencilAttachmentRasterOrder, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
+                                             SyncOrdering::kDepthStencilAttachment, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
             if (hazard.hazard) {
                 skip |= sync_state.LogError(
                     img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
@@ -2677,8 +2685,8 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
                 continue;
             }
             const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pColorAttachments[location].attachment];
-            current_context.UpdateAccessState(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, offset, extent,
-                                              0, tag);
+            current_context.UpdateAccessState(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                              SyncOrdering::kColorAttachment, offset, extent, 0, tag);
         }
     }
 
@@ -2708,12 +2716,14 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
 
         // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
         if (depth_write) {
-            current_context.UpdateAccessState(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, offset,
-                                              extent, VK_IMAGE_ASPECT_DEPTH_BIT, tag);
+            current_context.UpdateAccessState(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                              SyncOrdering::kDepthStencilAttachment, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT,
+                                              tag);
         }
         if (stencil_write) {
-            current_context.UpdateAccessState(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, offset,
-                                              extent, VK_IMAGE_ASPECT_STENCIL_BIT, tag);
+            current_context.UpdateAccessState(img_view_state, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                              SyncOrdering::kDepthStencilAttachment, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT,
+                                              tag);
         }
     }
 }
@@ -2824,18 +2834,19 @@ void RenderPassAccessContext::RecordLoadOperations(const VkRect2D &render_area, 
             const bool is_color = !(has_depth || has_stencil);
 
             if (is_color) {
-                subpass_context.UpdateAccessState(*image, ColorLoadUsage(ci.loadOp), view.normalized_subresource_range, offset,
-                                                  extent, tag);
+                subpass_context.UpdateAccessState(*image, ColorLoadUsage(ci.loadOp), SyncOrdering::kColorAttachment,
+                                                  view.normalized_subresource_range, offset, extent, tag);
             } else {
                 auto update_range = view.normalized_subresource_range;
                 if (has_depth) {
                     update_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    subpass_context.UpdateAccessState(*image, DepthStencilLoadUsage(ci.loadOp), update_range, offset, extent, tag);
+                    subpass_context.UpdateAccessState(*image, DepthStencilLoadUsage(ci.loadOp),
+                                                      SyncOrdering::kDepthStencilAttachment, update_range, offset, extent, tag);
                 }
                 if (has_stencil) {
                     update_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                    subpass_context.UpdateAccessState(*image, DepthStencilLoadUsage(ci.stencilLoadOp), update_range, offset, extent,
-                                                      tag);
+                    subpass_context.UpdateAccessState(*image, DepthStencilLoadUsage(ci.stencilLoadOp),
+                                                      SyncOrdering::kDepthStencilAttachment, update_range, offset, extent, tag);
                 }
             }
         }
@@ -2998,7 +3009,8 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
     return hazard;
 }
 
-HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index, const SyncOrderingBarrier &ordering) const {
+HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index, const SyncOrdering &ordering_rule) const {
+    const auto &ordering = GetOrderingRules(ordering_rule);
     // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
     HazardResult hazard;
     const auto usage_bit = FlagBit(usage_index);
@@ -3210,7 +3222,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
        // ignore it.
 }
 
-void ResourceAccessState::Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag) {
+void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, const ResourceUsageTag &tag) {
     // Move this logic in the ResourceStateTracker as methods, thereof (or we'll repeat it for every flavor of resource...
     const auto usage_bit = FlagBit(usage_index);
     if (IsRead(usage_index)) {
@@ -3367,7 +3379,7 @@ inline bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlagBits usage_stage
     return last_write.any() && (0 == (read_execution_barriers & usage_stage)) && IsWriteHazard(usage);
 }
 
-VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const SyncOrderingBarrier &ordering) const {
+VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const OrderingBarrier &ordering) const {
     // Whether the stage are in the ordering scope only matters if the current write is ordered
     VkPipelineStageFlags ordered_stages = last_read_stages & ordering.exec_scope;
     // Special input attachment handling as always (not encoded in exec_scop)
@@ -3494,11 +3506,11 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range, tag);
+            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
         }
         if (dst_buffer) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range, tag);
+            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
         }
     }
 }
@@ -3563,11 +3575,11 @@ void SyncValidator::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer
         const auto &copy_region = pCopyBufferInfos->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range, tag);
+            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
         }
         if (dst_buffer) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range, tag);
+            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
         }
     }
 }
@@ -3632,14 +3644,14 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.srcSubresource, copy_region.srcOffset,
-                                       copy_region.extent, tag);
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                       copy_region.srcSubresource, copy_region.srcOffset, copy_region.extent, tag);
         }
         if (dst_image) {
             VkExtent3D dst_copy_extent =
                 GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource, copy_region.dstOffset,
-                                       dst_copy_extent, tag);
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                       copy_region.dstSubresource, copy_region.dstOffset, dst_copy_extent, tag);
         }
     }
 }
@@ -3701,14 +3713,14 @@ void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer,
     for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.srcSubresource, copy_region.srcOffset,
-                                       copy_region.extent, tag);
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                       copy_region.srcSubresource, copy_region.srcOffset, copy_region.extent, tag);
         }
         if (dst_image) {
             VkExtent3D dst_copy_extent =
                 GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource, copy_region.dstOffset,
-                                       dst_copy_extent, tag);
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                       copy_region.dstSubresource, copy_region.dstOffset, dst_copy_extent, tag);
         }
     }
 }
@@ -4108,11 +4120,11 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
         if (src_buffer) {
             ResourceAccessRange src_range =
                 MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
-            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range, tag);
+            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
         }
         if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.imageSubresource,
-                                       copy_region.imageOffset, copy_region.imageExtent, tag);
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                       copy_region.imageSubresource, copy_region.imageOffset, copy_region.imageExtent, tag);
         }
     }
 }
@@ -4215,13 +4227,13 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, copy_region.imageSubresource,
-                                       copy_region.imageOffset, copy_region.imageExtent, tag);
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                       copy_region.imageSubresource, copy_region.imageOffset, copy_region.imageExtent, tag);
         }
         if (dst_buffer) {
             ResourceAccessRange dst_range =
                 MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
-            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range, tag);
+            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
         }
     }
 }
@@ -4332,7 +4344,8 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, blit_region.srcSubresource, offset, extent, tag);
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                       blit_region.srcSubresource, offset, extent, tag);
         }
         if (dst_image) {
             VkOffset3D offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
@@ -4341,7 +4354,8 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent, tag);
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                       blit_region.dstSubresource, offset, extent, tag);
         }
     }
 }
@@ -4409,11 +4423,12 @@ void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceU
     if (drawCount == 1 || stride == size) {
         if (drawCount > 1) size *= drawCount;
         const ResourceAccessRange range = MakeRange(offset, size);
-        context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag);
+        context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range, tag);
     } else {
         for (uint32_t i = 0; i < drawCount; ++i) {
             const ResourceAccessRange range = MakeRange(offset + i * stride, size);
-            context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag);
+            context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
+                                      tag);
         }
     }
 }
@@ -4437,7 +4452,7 @@ bool SyncValidator::ValidateCountBuffer(const AccessContext &context, VkCommandB
 void SyncValidator::RecordCountBuffer(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset) {
     const auto *count_buf_state = Get<BUFFER_STATE>(buffer);
     const ResourceAccessRange range = MakeRange(offset, 4);
-    context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag);
+    context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const {
@@ -4840,8 +4855,8 @@ void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
     for (uint32_t index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
-            context->UpdateAccessState(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, range, {0, 0, 0}, image_state->createInfo.extent,
-                                       tag);
+            context->UpdateAccessState(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, {0, 0, 0},
+                                       image_state->createInfo.extent, tag);
         }
     }
 }
@@ -4892,8 +4907,8 @@ void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     for (uint32_t index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
-            context->UpdateAccessState(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, range, {0, 0, 0}, image_state->createInfo.extent,
-                                       tag);
+            context->UpdateAccessState(*image_state, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, {0, 0, 0},
+                                       image_state->createInfo.extent, tag);
         }
     }
 }
@@ -4943,7 +4958,7 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 
     // TODO:Track VkQueryPool
@@ -4987,7 +5002,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(*dst_buffer, dstOffset, size);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 
@@ -5052,12 +5067,12 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, resolve_region.srcSubresource,
-                                       resolve_region.srcOffset, resolve_region.extent, tag);
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                       resolve_region.srcSubresource, resolve_region.srcOffset, resolve_region.extent, tag);
         }
         if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, resolve_region.dstSubresource,
-                                       resolve_region.dstOffset, resolve_region.extent, tag);
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                       resolve_region.dstSubresource, resolve_region.dstOffset, resolve_region.extent, tag);
         }
     }
 }
@@ -5120,12 +5135,12 @@ void SyncValidator::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuff
     for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, resolve_region.srcSubresource,
-                                       resolve_region.srcOffset, resolve_region.extent, tag);
+            context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                       resolve_region.srcSubresource, resolve_region.srcOffset, resolve_region.extent, tag);
         }
         if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, resolve_region.dstSubresource,
-                                       resolve_region.dstOffset, resolve_region.extent, tag);
+            context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                       resolve_region.dstSubresource, resolve_region.dstOffset, resolve_region.extent, tag);
         }
     }
 }
@@ -5170,7 +5185,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     if (dst_buffer) {
         // VK_WHOLE_SIZE not allowed
         const ResourceAccessRange range = MakeRange(dstOffset, dataSize);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 
@@ -5213,7 +5228,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
 
     if (dst_buffer) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
-        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, range, tag);
+        context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
 
