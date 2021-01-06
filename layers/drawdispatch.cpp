@@ -794,6 +794,12 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
     bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT,
                                     "vkCmdDispatchIndirect()", VK_QUEUE_COMPUTE_BIT);
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()");
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    if ((offset + sizeof(VkDispatchIndirectCommand)) > buffer_state->createInfo.size) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchIndirect-offset-00407",
+                         "vkCmdDispatchIndirect(): The sum of offset and the size of VkDispatchIndirectCommand is greater than the "
+                         "size of the buffer");
+    }
     return skip;
 }
 bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
