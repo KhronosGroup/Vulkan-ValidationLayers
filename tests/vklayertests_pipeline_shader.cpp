@@ -1627,7 +1627,8 @@ TEST_F(VkLayerTest, InvalidPipeline) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchIndirect-None-02700");
-    vk::CmdDispatchIndirect(m_commandBuffer->handle(), buffer.handle(), 0);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchIndirect-offset-00407");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), buffer.handle(), ci.size);
     m_errorMonitor->VerifyFound();
 }
 
