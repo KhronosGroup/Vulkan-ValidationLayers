@@ -4056,21 +4056,23 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
-        if (src_buffer) {
-            ResourceAccessRange src_range =
-                MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
-            auto hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
-            if (hazard.hazard) {
-                // PHASE1 TODO -- add tag information to log msg when useful.
-                skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
-                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region,
-                                 string_UsageTag(hazard).c_str());
-            }
-        }
+        HazardResult hazard;
         if (dst_image) {
-            auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.imageSubresource,
-                                                copy_region.imageOffset, copy_region.imageExtent);
+            if (src_buffer) {
+                ResourceAccessRange src_range =
+                    MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
+                hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
+                if (hazard.hazard) {
+                    // PHASE1 TODO -- add tag information to log msg when useful.
+                    skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
+                                     "%s: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
+                                     string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region,
+                                     string_UsageTag(hazard).c_str());
+                }
+            }
+
+            hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.imageSubresource,
+                                           copy_region.imageOffset, copy_region.imageExtent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
                                  "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", func_name,
@@ -4117,12 +4119,12 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
-        if (src_buffer) {
-            ResourceAccessRange src_range =
-                MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
-            context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
-        }
         if (dst_image) {
+            if (src_buffer) {
+                ResourceAccessRange src_range =
+                    MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
+                context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
+            }
             context->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        copy_region.imageSubresource, copy_region.imageOffset, copy_region.imageExtent, tag);
         }
@@ -4174,16 +4176,16 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcImage).c_str(), region,
                                  string_UsageTag(hazard).c_str());
             }
-        }
-        if (dst_mem) {
-            ResourceAccessRange dst_range =
-                MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
-            auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
-            if (hazard.hazard) {
-                skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
-                                 string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(), region,
-                                 string_UsageTag(hazard).c_str());
+            if (dst_mem) {
+                ResourceAccessRange dst_range =
+                    MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
+                hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
+                if (hazard.hazard) {
+                    skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
+                                     "%s: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", func_name,
+                                     string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(), region,
+                                     string_UsageTag(hazard).c_str());
+                }
             }
         }
         if (skip) break;
@@ -4229,11 +4231,11 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_TRANSFER_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        copy_region.imageSubresource, copy_region.imageOffset, copy_region.imageExtent, tag);
-        }
-        if (dst_buffer) {
-            ResourceAccessRange dst_range =
-                MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
-            context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+            if (dst_buffer) {
+                ResourceAccessRange dst_range =
+                    MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
+                context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
+            }
         }
     }
 }
