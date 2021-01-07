@@ -4853,12 +4853,9 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             vsrisci.shadingRateImageEnable = VK_TRUE;
             vsrisci.viewportCount = 0;
         };
-        // TODO - VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-arraylength or
-        // VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054 will be removed in future
         CreatePipelineHelper::OneshotTest(
             *this, break_vp, kErrorBit,
-            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056",
-                                 "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-arraylength"}));
+            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056"}));
     }
 
     // pShadingRatePalettes must not be NULL.
@@ -10189,16 +10186,6 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     m_errorMonitor->ExpectSuccess(kErrorBit);
     vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_ppGeometries_khr, &pBuildRangeInfos);
     m_errorMonitor->VerifyNotFound();
-    // Invalid geometry maxVertex
-    {
-        VkAccelerationStructureGeometryKHR invalid_geometry_triangles = valid_geometry_triangles;
-        invalid_geometry_triangles.geometry.triangles.maxVertex = 0;
-        VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;
-        invalid_build_info_khr.pGeometries = &invalid_geometry_triangles;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-maxVertex-03655");
-        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &invalid_build_info_khr, &pBuildRangeInfos);
-        m_errorMonitor->VerifyFound();
-    }
     // Invalid info count
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-infoCount-arraylength");

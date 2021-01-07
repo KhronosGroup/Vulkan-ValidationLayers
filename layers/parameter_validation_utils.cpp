@@ -6062,10 +6062,6 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                     "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[i].pGeometries[j].geometryType,
                     "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
                 if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-                    if (pInfos[i].pGeometries[j].geometry.triangles.maxVertex <= 0) {
-                        skip |= LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-maxVertex-03655",
-                                         "(%s): maxVertex must be greater than 0", api_name);
-                    }
                     skip |= validate_struct_type(
                         api_name, ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
@@ -6183,10 +6179,6 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                     "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[i].ppGeometries[j]->geometryType,
                     "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
                 if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-                    if (pInfos[i].ppGeometries[j]->geometry.triangles.maxVertex <= 0) {
-                        skip |= LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-maxVertex-03655",
-                                         "(%s): maxVertex must be greater than 0", api_name);
-                    }
                     skip |= validate_struct_type(api_name, "pInfos[i].pGeometries[j].geometry.triangles",
                                                  "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
                                                  &pInfos[i].ppGeometries[j]->geometry.triangles,
