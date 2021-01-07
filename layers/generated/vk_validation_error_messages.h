@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.165 */
+/* Vulkan specification version: 1.2.166 */
 /*
  * Vulkan
  *
@@ -298,6 +298,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-StandaloneSpirv-Offset-04690", "The first member of an output block that specifies a Offset decoration must specify a Offset value that is aligned to an 8 byte boundary if that block contains any member decorated with Offset and is a 64-bit type", "1.2-extensions"},
     {"VUID-StandaloneSpirv-Offset-04691", "Output variables or block members decorated with Offset that have a 32-bit type, or a composite type contains a 32-bit type, must specify an Offset value aligned to a 4 byte boundary", "1.2-extensions"},
     {"VUID-StandaloneSpirv-Offset-04692", "Output variables, blocks or block members decorated with Offset must only contain base types that have components that are either 32-bit or 64-bit in size", "1.2-extensions"},
+    {"VUID-StandaloneSpirv-Offset-04716", "Only variables or block members in the output interface decorated with Offset can be captured for transform feedback, and those variables or block members must also be decorated with XfbBuffer and XfbStride, or inherit XfbBuffer and XfbStride decorations from a block containing them", "1.2-extensions"},
     {"VUID-StandaloneSpirv-OpAtomicLoad-04647", "Release memory semantics must not be used with OpAtomicLoad", "1.2-extensions"},
     {"VUID-StandaloneSpirv-OpAtomicStore-04646", "Acquire memory semantics must not be used with OpAtomicStore", "1.2-extensions"},
     {"VUID-StandaloneSpirv-OpAtomicStore-04648", "AcquireRelease memory semantics must not be used with OpAtomicStore or OpAtomicLoad", "1.2-extensions"},
@@ -454,7 +455,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexData-parameter", "If indexData is not 0, indexData must be a valid VkDeviceOrHostAddressConstKHR union", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798", "indexType must be VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter", "indexType must be a valid VkIndexType value", "1.2-extensions"},
-    {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-maxVertex-03655", "maxVertex must be greater than 0", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR", "1.2-extensions"},
     {"VUID-VkAccelerationStructureGeometryTrianglesDataKHR-transformData-parameter", "If transformData is not 0, transformData must be a valid VkDeviceOrHostAddressConstKHR union", "1.2-extensions"},
@@ -1957,6 +1957,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageCreateInfo-format-02796", "If format is a depth-stencil format, usage does not include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, and the pNext chain includes a VkImageStencilUsageCreateInfo structure, then its VkImageStencilUsageCreateInfo::stencilUsage member must also not include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-format-02797", "If format is a depth-stencil format, usage includes VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, and the pNext chain includes a VkImageStencilUsageCreateInfo structure, then its VkImageStencilUsageCreateInfo::stencilUsage member must also include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-format-02798", "If format is a depth-stencil format, usage does not include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, and the pNext chain includes a VkImageStencilUsageCreateInfo structure, then its VkImageStencilUsageCreateInfo::stencilUsage member must also not include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT", "1.2-extensions"},
+    {"VUID-VkImageCreateInfo-format-04712", "If format has a _422 or _420 suffix, width must be a multiple of 2", "1.2-extensions"},
+    {"VUID-VkImageCreateInfo-format-04713", "If format has a _420 suffix, height must be a multiple of 2", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-format-parameter", "format must be a valid VkFormat value", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260", "If format is a multi-planar format, and if imageCreateFormatFeatures (as defined in Image Creation Limits) does not contain VK_FORMAT_FEATURE_DISJOINT_BIT, then flags must not contain VK_IMAGE_CREATE_DISJOINT_BIT", "1.2-extensions"},
     {"VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", "Each of the following values (as described in Image Creation Limits) must not be undefined imageCreateMaxMipLevels, imageCreateMaxArrayLayers, imageCreateMaxExtent, and imageCreateSampleCounts", "1.2-extensions"},
@@ -2146,6 +2148,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageViewCreateInfo-flags-04083", "If flags does not contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and the pNext chain include a VkImageFormatListCreateInfo structure then VkImageFormatListCreateInfo::viewFormatCount must be 0 or 1", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-flags-04116", "If flags does not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT and image was created with usage containing VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, its flags must not contain any of VK_IMAGE_CREATE_PROTECTED_BIT, VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-flags-parameter", "flags must be a valid combination of VkImageViewCreateFlagBits values", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-format-04714", "If format has a _422 or _420 suffix then image must have been created with a width that is a multiple of 2", "1.2-extensions"},
+    {"VUID-VkImageViewCreateInfo-format-04715", "If format has a _420 suffix then image must have been created with a height that is a multiple of 2", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-format-parameter", "format must be a valid VkFormat value", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-01003", "If image was not created with VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT then viewType must not be VK_IMAGE_VIEW_TYPE_CUBE or VK_IMAGE_VIEW_TYPE_CUBE_ARRAY", "1.2-extensions"},
     {"VUID-VkImageViewCreateInfo-image-01005", "If image was created with VK_IMAGE_TYPE_3D but without VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT set then viewType must not be VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY", "1.2-extensions"},
@@ -2966,7 +2970,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056", "If shadingRateImageEnable is VK_TRUE, viewportCount must be greater or equal to the viewportCount member of VkPipelineViewportStateCreateInfo", "1.2-extensions"},
     {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054", "If the multiple viewports feature is not enabled, viewportCount must be 0 or 1", "1.2-extensions"},
     {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02055", "viewportCount must be less than or equal to VkPhysicalDeviceLimits::maxViewports", "1.2-extensions"},
-    {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-arraylength", "viewportCount must be greater than 0", "1.2-extensions"},
     {"VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask", "flags must be 0", "1.2-extensions"},
     {"VUID-VkPipelineViewportStateCreateInfo-offset-02822", "Evaluation of (offset.x + extent.width) must not cause a signed integer addition overflow for any element of pScissors", "1.2-extensions"},
     {"VUID-VkPipelineViewportStateCreateInfo-offset-02823", "Evaluation of (offset.y + extent.height) must not cause a signed integer addition overflow for any element of pScissors", "1.2-extensions"},
@@ -3302,7 +3305,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSamplerCreateInfo-None-01647", "The sampler reduction mode must be set to VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE if sampler {YCbCr} conversion is enabled", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-None-04012", "The maximum number of samplers with custom border colors which can be simultaneously created on a device is implementation-dependent and specified by the maxCustomBorderColorSamplers member of the VkPhysicalDeviceCustomBorderColorPropertiesEXT structure", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-addressModeU-01078", "If any of addressModeU, addressModeV or addressModeW are VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, borderColor must be a valid VkBorderColor value", "1.2-extensions"},
-    {"VUID-VkSamplerCreateInfo-addressModeU-01079", "If ifdef::VK_VERSION_1_2[samplerMirrorClampToEdge is not enabled, and if]     the VK_KHR_sampler_mirror_clamp_to_edge extension is not enabled,     addressModeU, addressModeV and addressModeW must not     be VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE", "1.2-extensions"},
+    {"VUID-VkSamplerCreateInfo-addressModeU-01079", "If samplerMirrorClampToEdge is not enabled, and if the VK_KHR_sampler_mirror_clamp_to_edge extension is not enabled, addressModeU, addressModeV and addressModeW must not be VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-addressModeU-01646", "If sampler {YCbCr} conversion is enabled, addressModeU, addressModeV, and addressModeW must be VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, anisotropyEnable must be VK_FALSE, and unnormalizedCoordinates must be VK_FALSE", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-addressModeU-parameter", "addressModeU must be a valid VkSamplerAddressMode value", "1.2-extensions"},
     {"VUID-VkSamplerCreateInfo-addressModeV-parameter", "addressModeV must be a valid VkSamplerAddressMode value", "1.2-extensions"},
@@ -3859,7 +3862,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkWriteDescriptorSet-sType-unique", "The sType value of each struct in the pNext chain must be unique", "1.2-extensions"},
     {"VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236", "accelerationStructureCount must be equal to descriptorCount in the extended structure", "1.2-extensions"},
     {"VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength", "accelerationStructureCount must be greater than 0", "1.2-extensions"},
-    {"VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579", "Each acceleration structure in pAccelerationStructures must have been created with VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR or VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR and built with VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR", "1.2-extensions"},
+    {"VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579", "Each acceleration structure in pAccelerationStructures must have been created with a type of VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR or VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR", "1.2-extensions"},
     {"VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", "If the nullDescriptor feature is not enabled, each member of pAccelerationStructures must not be VK_NULL_HANDLE", "1.2-extensions"},
     {"VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter", "pAccelerationStructures must be a valid pointer to an array of accelerationStructureCount valid or VK_NULL_HANDLE VkAccelerationStructureKHR handles", "1.2-extensions"},
     {"VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR", "1.2-extensions"},
