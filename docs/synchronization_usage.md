@@ -148,7 +148,7 @@ To debug synchronization validation issues (all platforms):
 On Windows, Synchronization Validation can be run using just vkconfig and the debugger without defining a callback:
 
 *   In vkconfig
-    *   Enable Synchronization Valdation
+    *   Enable Synchronization Validation
     *   Select 'Debug Actions' 'Break' and 'Debug Output'
 *   Debug application in Visual Studio
 *   Hazard messages will appear in the debugger output window and the debugger will break (in the validation layer code)  when a `vkCmd`... command with a hazard is recorded.
@@ -230,7 +230,7 @@ Command specific details typically include the specifics of the access within th
 ### Debugging Tips
 
 *   Read and write barriers in the error message can help identify the synchronization operation (either subpass dependency or pipeline barrier) with insufficient or incorrect destination stage/access masks (second scope).
-*   `Access info read_barrier` and `write_barrier` values of 0, reflect the absence of any barrier, and can indicate an insufficient or incorrect source mask (first scope)
+*   `Access info read_barrier` and `write_barrier` values of 0, reflect the absence of any barrier, and can indicate an insufficient or incorrect source mask (first scope).
 *   Insert additional barriers with stage/access `VK_PIPELINE_STAGE_ALL_COMMANDS_BIT`, `VK_ACCESS_MEMORY_READ_BIT`|`VK_ACCESS_MEMORY_WRITE_BIT` for both` src*Mask` and `dst*Mask` fields to locate missing barriers. If the inserted barrier _resolves_ a hazard, the conflicting access _happens-before_ the inserted barrier. (Be sure to delete later.)
 
 
