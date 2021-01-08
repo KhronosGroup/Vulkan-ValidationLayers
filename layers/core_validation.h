@@ -1393,6 +1393,12 @@ class CoreChecks : public ValidationStateTracker {
                                                                     VkQueryType queryType, VkQueryPool queryPool,
                                                                     uint32_t firstQuery) const override;
 
+    bool PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandBuffer,
+                                                                   uint32_t accelerationStructureCount,
+                                                                   const VkAccelerationStructureNV* pAccelerationStructures,
+                                                                   VkQueryType queryType, VkQueryPool queryPool,
+                                                                   uint32_t firstQuery) const override;
+
     // Calculates the total number of shader groups taking libraries into account.
     uint32_t CalcTotalShaderGroupCount(const PIPELINE_STATE* pipelineState) const;
 

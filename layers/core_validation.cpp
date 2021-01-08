@@ -14186,6 +14186,41 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandBuffer,
+                                                                           uint32_t accelerationStructureCount,
+                                                                           const VkAccelerationStructureNV *pAccelerationStructures,
+                                                                           VkQueryType queryType, VkQueryPool queryPool,
+                                                                           uint32_t firstQuery) const {
+    bool skip = false;
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    skip |= ValidateCmdQueueFlags(cb_state, "vkCmdWriteAccelerationStructuresPropertiesNV()", VK_QUEUE_COMPUTE_BIT,
+                                  "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESNV, "vkCmdWriteAccelerationStructuresPropertiesNV()");
+    // This command must only be called outside of a render pass instance
+    skip |= InsideRenderPass(cb_state, "vkCmdWriteAccelerationStructuresPropertiesNV()",
+                             "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-renderpass");
+    const auto *query_pool_state = GetQueryPoolState(queryPool);
+    const auto &query_pool_ci = query_pool_state->createInfo;
+    if (query_pool_ci.queryType != queryType) {
+        skip |= LogError(
+            device, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryPool-03755",
+            "vkCmdWriteAccelerationStructuresPropertiesNV: queryPool must have been created with a queryType matching queryType.");
+    }
+    for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
+        if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
+            const ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(pAccelerationStructures[i]);
+            if (!(as_state->build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
+                skip |=
+                    LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-accelerationStructures-03431",
+                             "vkCmdWriteAccelerationStructuresPropertiesNV: All acceleration structures in pAccelerationStructures "
+                             "must have been built with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR if queryType is "
+                             "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV.");
+            }
+        }
+    }
+    return skip;
+}
+
 uint32_t CoreChecks::CalcTotalShaderGroupCount(const PIPELINE_STATE *pipelineState) const {
     uint32_t total = pipelineState->raytracingPipelineCI.groupCount;
 
