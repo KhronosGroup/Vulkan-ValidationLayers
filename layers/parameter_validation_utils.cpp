@@ -173,29 +173,56 @@ void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInf
     // Copy extension data into local object
     if (result != VK_SUCCESS) return;
     this->instance_extensions = instance_data->instance_extensions;
+}
 
-    uint32_t pdev_count = 0;
-    DispatchEnumeratePhysicalDevices(*pInstance, &pdev_count, nullptr);
-    std::vector<VkPhysicalDevice> physical_devices;
-    physical_devices.resize(pdev_count);
-    DispatchEnumeratePhysicalDevices(*pInstance, &pdev_count, physical_devices.data());
+void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count) {
+    // Assume phys_devices is valid
+    assert(phys_devices);
+    for (int i = 0; i < count; ++i) {
+        const auto &phys_device = phys_devices[i];
+        if (0 == physical_device_properties_map.count(phys_device)) {
+            auto phys_dev_props = new VkPhysicalDeviceProperties;
+            DispatchGetPhysicalDeviceProperties(phys_device, phys_dev_props);
+            physical_device_properties_map[phys_device] = phys_dev_props;
 
-    for (uint32_t i = 0; i < physical_devices.size(); i++) {
-        auto phys_dev_props = new VkPhysicalDeviceProperties;
-        DispatchGetPhysicalDeviceProperties(physical_devices[i], phys_dev_props);
-        physical_device_properties_map[physical_devices[i]] = phys_dev_props;
-
-        // Enumerate the Device Ext Properties to save the PhysicalDevice supported extension state
-        uint32_t ext_count = 0;
-        std::unordered_set<std::string> dev_exts_enumerated{};
-        std::vector<VkExtensionProperties> ext_props{};
-        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_devices[i], nullptr, &ext_count, nullptr);
-        ext_props.resize(ext_count);
-        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_devices[i], nullptr, &ext_count, ext_props.data());
-        for (uint32_t j = 0; j < ext_count; j++) {
-            dev_exts_enumerated.insert(ext_props[j].extensionName);
+            // Enumerate the Device Ext Properties to save the PhysicalDevice supported extension state
+            uint32_t ext_count = 0;
+            std::unordered_set<std::string> dev_exts_enumerated{};
+            std::vector<VkExtensionProperties> ext_props{};
+            instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, nullptr);
+            ext_props.resize(ext_count);
+            instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
+            for (uint32_t j = 0; j < ext_count; j++) {
+                dev_exts_enumerated.insert(ext_props[j].extensionName);
+            }
+            device_extensions_enumerated[phys_device] = std::move(dev_exts_enumerated);
         }
-        device_extensions_enumerated[physical_devices[i]] = std::move(dev_exts_enumerated);
+    }
+}
+
+void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                                                 VkPhysicalDevice *pPhysicalDevices, VkResult result) {
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) {
+        return;
+    }
+
+    if (pPhysicalDeviceCount && pPhysicalDevices) {
+        CommonPostCallRecordEnumeratePhysicalDevice(pPhysicalDevices, *pPhysicalDeviceCount);
+    }
+}
+
+void StatelessValidation::PostCallRecordEnumeratePhysicalDeviceGroups(
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
+    VkResult result) {
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) {
+        return;
+    }
+
+    if (pPhysicalDeviceGroupCount && pPhysicalDeviceGroupProperties) {
+        for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
+            const auto &group = pPhysicalDeviceGroupProperties[i];
+            CommonPostCallRecordEnumeratePhysicalDevice(group.physicalDevices, group.physicalDeviceCount);
+        }
     }
 }
 
