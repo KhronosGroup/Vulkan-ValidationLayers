@@ -1870,10 +1870,13 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     bool skip = false;
     const PIPELINE_STATE *pipe = nullptr;
     const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
-    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pipe, &per_sets);
+    uint32_t shader_group;
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pipe, &per_sets, shader_group);
     if (!pipe || !per_sets) {
         return skip;
     }
+
+    const auto &stage_state_vector = shader_group == 0 ? pipe->stage_state : pipe->shader_groups[shader_group].stage_state;
 
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
@@ -1881,7 +1884,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
-    for (const auto &stage_state : pipe->stage_state) {
+    for (const auto &stage_state : stage_state_vector) {
         if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->graphicsPipelineCI.pRasterizationState &&
             pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
             continue;
@@ -2006,10 +2009,13 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                                                                  const ResourceUsageTag &tag) {
     const PIPELINE_STATE *pipe = nullptr;
     const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
-    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pipe, &per_sets);
+    uint32_t shader_group;
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pipe, &per_sets, shader_group);
     if (!pipe || !per_sets) {
         return;
     }
+
+    const auto &stage_state_vector = shader_group == 0 ? pipe->stage_state : pipe->shader_groups[shader_group].stage_state;
 
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
@@ -2017,7 +2023,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
-    for (const auto &stage_state : pipe->stage_state) {
+    for (const auto &stage_state : stage_state_vector) {
         if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->graphicsPipelineCI.pRasterizationState &&
             pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
             continue;

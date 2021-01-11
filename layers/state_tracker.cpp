@@ -285,9 +285,11 @@ PIPELINE_STATE *GetCurrentPipelineShaderGroupFromCommandBuffer(const CMD_BUFFER_
 
 void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE &cmd, VkPipelineBindPoint pipelineBindPoint,
                                                          const PIPELINE_STATE **rtn_pipe,
-                                                         const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) {
+                                                         const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets,
+                                                         uint32_t &shaderGroup) {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     const auto &last_bound_it = cmd.lastBound[lv_bind_point];
+    shaderGroup = cmd.lastBound[lv_bind_point].shader_group;
     if (!last_bound_it.IsUsing()) {
         return;
     }

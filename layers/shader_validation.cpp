@@ -3667,7 +3667,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         auto stage_id = GetShaderStageId(stage->stage);
         shaders[stage_id] = GetShaderModuleState(stage->module);
         entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], stage->pName, stage->stage);
-        skip |= ValidatePipelineShaderStage(stage, pipeline, pipeline->stage_state[i], shaders[stage_id], entrypoints[stage_id],
+        skip |= ValidatePipelineShaderStage(stage, pipeline, stage_state[i], shaders[stage_id], entrypoints[stage_id],
                                             (pointlist_stage_mask == stage->stage));
     }
 

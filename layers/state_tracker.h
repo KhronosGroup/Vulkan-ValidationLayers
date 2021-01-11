@@ -53,7 +53,8 @@ PIPELINE_STATE* GetCurrentPipelineFromCommandBuffer(const CMD_BUFFER_STATE& cmd,
 PIPELINE_STATE* GetCurrentPipelineShaderGroupFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint, uint32_t& shaderGroup);
 void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint,
                                                          const PIPELINE_STATE** rtn_pipe,
-                                                         const std::vector<LAST_BOUND_STATE::PER_SET>** rtn_sets);
+                                                         const std::vector<LAST_BOUND_STATE::PER_SET>** rtn_sets,
+                                                         uint32_t& shaderGroup);
 
 enum SyncScope {
     kSyncScopeInternal,
