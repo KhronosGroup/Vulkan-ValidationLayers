@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -10777,9 +10777,21 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02562");
     image_create_info = reset_create_info;
 
+    // invalid width
+    image_create_info.extent.width = 31;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-04712");
+    image_create_info = reset_create_info;
+
+    // invalid height (since 420 format)
+    image_create_info.extent.height = 31;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-04713");
+    image_create_info = reset_create_info;
+
     // invalid imageType
-    image_create_info.extent.height = 1;  // to satisfy 1D requriments
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
+    // Can't just set height to 1 as stateless valdiation will hit 04713 first
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageType-00956");
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-extent-02253");
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02563");
     image_create_info = reset_create_info;
 
