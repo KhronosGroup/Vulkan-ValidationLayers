@@ -2089,8 +2089,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
 
 bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const char *func_name) const {
     bool skip = false;
-    uint32_t shaderGroup = 0;
-    const auto *pipe = GetCurrentPipelineShaderGroupFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS, shaderGroup);
+    uint32_t shader_group = 0;
+    const auto *pipe = GetCurrentPipelineShaderGroupFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS, shader_group);
 
     if (!pipe) {
         return skip;
@@ -2098,10 +2098,10 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
 
     const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pipe->getVertexState(shaderGroup).binding_descriptions_.size();
+    const auto &binding_descriptions_size = pipe->getVertexState(shader_group).binding_descriptions_.size();
 
     for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pipe->getVertexState(shaderGroup).binding_descriptions_[i];
+        const auto &binding_description = pipe->getVertexState(shader_group).binding_descriptions_[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
             if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->destroyed) continue;
@@ -2122,17 +2122,17 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
 }
 
 void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag &tag) {
-    uint32_t shaderGroup = 0;
-    const auto *pipe = GetCurrentPipelineShaderGroupFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS, shaderGroup);
+    uint32_t shader_group = 0;
+    const auto *pipe = GetCurrentPipelineShaderGroupFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS, shader_group);
     if (!pipe) {
         return;
     }
     const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pipe->vertex_state.binding_descriptions_.size();
+    const auto &binding_descriptions_size = pipe->getVertexState(shader_group).binding_descriptions_.size();
 
     for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pipe->vertex_state.binding_descriptions_[i];
+        const auto &binding_description = pipe->getVertexState(shader_group).binding_descriptions_[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
             if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->destroyed) continue;

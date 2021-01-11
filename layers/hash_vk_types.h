@@ -145,8 +145,8 @@ static bool operator==(const VkPipelineMultisampleStateCreateInfo &lhs, const Vk
         (lhs.alphaToOneEnable != rhs.alphaToOneEnable) || !hash_util::similar_for_nullity(lhs.pSampleMask, rhs.pSampleMask)) {
         return false;
     }
-    uint32_t maskCount = lhs.rasterizationSamples & VK_SAMPLE_COUNT_64_BIT ? 2 : 1;
-    return (!lhs.pSampleMask || memcmp(lhs.pSampleMask, rhs.pSampleMask, sizeof(VkSampleMask) * maskCount) == 0);
+    uint32_t mask_count = lhs.rasterizationSamples & VK_SAMPLE_COUNT_64_BIT ? 2 : 1;
+    return (!lhs.pSampleMask || memcmp(lhs.pSampleMask, rhs.pSampleMask, sizeof(VkSampleMask) * mask_count) == 0);
 };
 
 // VkPipelineDepthStencilStateCreateInfo
@@ -172,16 +172,16 @@ static bool operator==(const VkPipelineDynamicStateCreateInfo &lhs, const VkPipe
     if ((lhs.flags == rhs.flags) && (lhs.dynamicStateCount == rhs.dynamicStateCount)) {
         return false;
     }
-    uint32_t matchCount = 0;
+    uint32_t match_count = 0;
     for (uint32_t i = 0; i < lhs.dynamicStateCount; i++) {
       for (uint32_t n = 0; n < rhs.dynamicStateCount; n++){
         if (lhs.pDynamicStates[i] == rhs.pDynamicStates[n]) {
-            matchCount++;
+            match_count++;
             break;
         }
       }
     }
-    return matchCount == lhs.dynamicStateCount;
+    return match_count == lhs.dynamicStateCount;
 };
 
 #endif  // HASH_VK_TYPES_H_

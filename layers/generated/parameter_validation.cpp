@@ -7617,6 +7617,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(
         }
     }
     skip |= validate_required_pointer("vkCreateDisplayModeKHR", "pMode", pMode, "VUID-vkCreateDisplayModeKHR-pMode-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
     return skip;
 }
 
@@ -12854,6 +12855,7 @@ bool StatelessValidation::PreCallValidateCmdBindPipelineShaderGroupNV(
     if (!device_extensions.vk_nv_device_generated_commands) skip |= OutputExtensionError("vkCmdBindPipelineShaderGroupNV", VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_ranged_enum("vkCmdBindPipelineShaderGroupNV", "pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pipelineBindPoint, "VUID-vkCmdBindPipelineShaderGroupNV-pipelineBindPoint-parameter");
     skip |= validate_required_handle("vkCmdBindPipelineShaderGroupNV", "pipeline", pipeline);
+    if (!skip) skip |= manual_PreCallValidateCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
     return skip;
 }
 

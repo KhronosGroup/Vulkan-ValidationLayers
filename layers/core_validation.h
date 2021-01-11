@@ -1444,21 +1444,21 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
-                                                       VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) const;
+                                                       VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) const override;
     bool ValidatePipelineReferences(VkPipeline pipeline, const char* vuid, const char* apiName) const;
     bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
                                                                  const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
-                                                                 VkMemoryRequirements2* pMemoryRequirements) const;
+                                                                 VkMemoryRequirements2* pMemoryRequirements) const override;
     bool ValidateGeneratedCommandsBufferNV(VkCommandBuffer commandBuffer, VkBuffer buffer, const char* bufferName,
                                            const char* vuidBound, const char* vuidFlag, const char* apiName) const;
     bool ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo,
                                          bool isPreprocess, const char* apiName) const;
-    bool PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const;
+    bool PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const override;
     bool PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                                      const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const;
+                                                      const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const override;
 
     bool PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                        VkPipeline pipeline, uint32_t groupIndex) const;
+                                        VkPipeline pipeline, uint32_t groupIndex) const override;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
         VkDevice device, const struct AHardwareBuffer* buffer,

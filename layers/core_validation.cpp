@@ -1469,26 +1469,26 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    auto pCreateInfo = pPipeline->graphicsPipelineCI.ptr();
-    auto pShaderGroupsInfo = device_extensions.vk_nv_device_generated_commands
-                                 ? lvl_find_in_chain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(pCreateInfo->pNext)
+    auto create_info = pPipeline->graphicsPipelineCI.ptr();
+    auto shader_groups_info = device_extensions.vk_nv_device_generated_commands
+                                 ? lvl_find_in_chain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(create_info->pNext)
                                  : NULL;
-    uint32_t groupCount = pShaderGroupsInfo ? pShaderGroupsInfo->groupCount : 1;
+    uint32_t group_count = shader_groups_info ? shader_groups_info->groupCount : 1;
 
-    for (uint32_t groupIndex = 0; groupIndex < groupCount; groupIndex++) {
-        if (ValidateGraphicsPipelineShaderState(pPipeline, groupIndex)) {
-            if (groupIndex) {
+    for (uint32_t group_index = 0; group_index < group_count; group_index++) {
+        if (ValidateGraphicsPipelineShaderState(pPipeline, group_index)) {
+            if (group_index) {
                 LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-02882",
-                         "Invalid Pipeline CreateInfo State: invalid shaders provided for shader group %d", groupIndex);
+                         "Invalid Pipeline CreateInfo State: invalid shaders provided for shader group %d", group_index);
             }
             skip = true;
         }
-        if (groupIndex) {
+        if (group_index) {
             // in mesh pipeline can ignore task stage
-            if ((pPipeline->shader_groups[groupIndex].active_shaders & ~VK_SHADER_STAGE_TASK_BIT_NV) !=
+            if ((pPipeline->shader_groups[group_index].active_shaders & ~VK_SHADER_STAGE_TASK_BIT_NV) !=
                 (pPipeline->active_shaders & ~VK_SHADER_STAGE_TASK_BIT_NV)) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-02883",
-                                 "Invalid Pipeline CreateInfo State: active shader stages mismatch at shader group %d", groupIndex);
+                                 "Invalid Pipeline CreateInfo State: active shader stages mismatch at shader group %d", group_index);
             }
         }
     }
@@ -1686,8 +1686,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    for (uint32_t groupIndex = 0; groupIndex < groupCount; groupIndex++) {
-        auto vi = groupIndex == 0 ? pCreateInfo->pVertexInputState : pShaderGroupsInfo->pGroups[groupIndex].pVertexInputState;
+    for (uint32_t groupIndex = 0; groupIndex < group_count; groupIndex++) {
+        auto vi = groupIndex == 0 ? create_info->pVertexInputState : shader_groups_info->pGroups[groupIndex].pVertexInputState;
 
 
         if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !vi) {
@@ -1723,17 +1723,26 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     if (device_extensions.vk_nv_device_generated_commands &&
         (!pPipeline->shader_group_references.empty() || !pPipeline->shader_groups.empty())) {
-        const VkGraphicsPipelineCreateInfo *pA = pPipeline->graphicsPipelineCI.ptr();
+        const VkGraphicsPipelineCreateInfo *create_info_a = pPipeline->graphicsPipelineCI.ptr();
         for (size_t i = 0; i < pPipeline->shader_group_references.size(); i++) {
             skip |= ValidatePipelineReferences(pPipeline->shader_group_references[i].pipeline_state->pipeline,
                                                "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parameter",
                                                "vkCreateGraphicsPipelines()");
 
-            const PIPELINE_STATE *pReference = pPipeline->shader_group_references[i].pipeline_state.get();
-            const VkGraphicsPipelineCreateInfo *pB = pReference->graphicsPipelineCI.ptr();
+            const PIPELINE_STATE *reference = pPipeline->shader_group_references[i].pipeline_state.get();
+            const VkGraphicsPipelineCreateInfo *create_info_b = reference->graphicsPipelineCI.ptr();
 
-            // FIXME just a basic test, full validity would need to do a deep comparison of all pNext chains
-            // missing (as of header version 135):
+            // When referenced pipelines are used, they must match in their creation state, except for 
+            // state that is overridden through shader groups and a few exceptions. This requires a deep 
+            // comparison of all known extension structs that the graphics state create info may
+            // reference.
+            //
+            // FIXME As of time of writing only basic structs are compared and therefore validation will not
+            // catch a state mismatch for extension structs. A full implementation would need to add 
+            // comparators for every extension struct, and find the corresponding struct in both
+            // pipelines and ensure a match.
+            // Following structs are known to be missing (as of header version 135)
+            //
             // "VkPipelineDiscardRectangleStateCreateInfoEXT" structextends="VkGraphicsPipelineCreateInfo"
             // "VkPipelineRepresentativeFragmentTestStateCreateInfoNV" structextends="VkGraphicsPipelineCreateInfo"
             // "VkPipelineViewportWScalingStateCreateInfoNV" structextends="VkPipelineViewportStateCreateInfo"
@@ -1752,25 +1761,29 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             // "VkPipelineRasterizationLineStateCreateInfoEXT" structextends="VkPipelineRasterizationStateCreateInfo"
             // "VkPipelineColorBlendAdvancedStateCreateInfoEXT" structextends="VkPipelineColorBlendStateCreateInfo"
 
-            if (((pA->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
-                                VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) !=
-                 (pB->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
-                                VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT))) ||
-                pA->renderPass != pB->renderPass || pA->subpass != pB->subpass || pA->layout != pB->layout ||
-                !hash_util::similar_for_nullity(pA->pInputAssemblyState, pB->pInputAssemblyState) ||
-                !hash_util::similar_for_nullity(pA->pViewportState, pB->pViewportState) ||
-                !hash_util::similar_for_nullity(pA->pRasterizationState, pB->pRasterizationState) ||
-                !hash_util::similar_for_nullity(pA->pMultisampleState, pB->pMultisampleState) ||
-                !hash_util::similar_for_nullity(pA->pDepthStencilState, pB->pDepthStencilState) ||
-                !hash_util::similar_for_nullity(pA->pColorBlendState, pB->pColorBlendState) ||
-                !hash_util::similar_for_nullity(pA->pDynamicState, pB->pDynamicState) ||
-                (pA->pInputAssemblyState && !(*pA->pInputAssemblyState == *pB->pInputAssemblyState)) ||
-                (pA->pViewportState && !(*pA->pViewportState == *pB->pViewportState)) ||
-                (pA->pRasterizationState && !(*pA->pRasterizationState == *pB->pRasterizationState)) ||
-                (pA->pMultisampleState && !(*pA->pMultisampleState == *pB->pMultisampleState)) ||
-                (pA->pDepthStencilState && !(*pA->pDepthStencilState == *pB->pDepthStencilState)) ||
-                (pA->pColorBlendState && !(*pA->pColorBlendState == *pB->pColorBlendState)) ||
-                (pA->pDynamicState && !(*pA->pDynamicState == *pB->pDynamicState))) {
+            if (((create_info_a->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
+                                           VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) !=
+                 (create_info_b->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
+                                           VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT))) ||
+                create_info_a->renderPass != create_info_b->renderPass || create_info_a->subpass != create_info_b->subpass ||
+                create_info_a->layout != create_info_b->layout ||
+                !hash_util::similar_for_nullity(create_info_a->pInputAssemblyState, create_info_b->pInputAssemblyState) ||
+                !hash_util::similar_for_nullity(create_info_a->pViewportState, create_info_b->pViewportState) ||
+                !hash_util::similar_for_nullity(create_info_a->pRasterizationState, create_info_b->pRasterizationState) ||
+                !hash_util::similar_for_nullity(create_info_a->pMultisampleState, create_info_b->pMultisampleState) ||
+                !hash_util::similar_for_nullity(create_info_a->pDepthStencilState, create_info_b->pDepthStencilState) ||
+                !hash_util::similar_for_nullity(create_info_a->pColorBlendState, create_info_b->pColorBlendState) ||
+                !hash_util::similar_for_nullity(create_info_a->pDynamicState, create_info_b->pDynamicState) ||
+                (create_info_a->pInputAssemblyState &&
+                 !(*create_info_a->pInputAssemblyState == *create_info_b->pInputAssemblyState)) ||
+                (create_info_a->pViewportState && !(*create_info_a->pViewportState == *create_info_b->pViewportState)) ||
+                (create_info_a->pRasterizationState &&
+                 !(*create_info_a->pRasterizationState == *create_info_b->pRasterizationState)) ||
+                (create_info_a->pMultisampleState && !(*create_info_a->pMultisampleState == *create_info_b->pMultisampleState)) ||
+                (create_info_a->pDepthStencilState &&
+                 !(*create_info_a->pDepthStencilState == *create_info_b->pDepthStencilState)) ||
+                (create_info_a->pColorBlendState && !(*create_info_a->pColorBlendState == *create_info_b->pColorBlendState)) ||
+                (create_info_a->pDynamicState && !(*create_info_a->pDynamicState == *create_info_b->pDynamicState))) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
                                  "Invalid Pipeline CreateInfo: common state for shader groups must match.");
             }

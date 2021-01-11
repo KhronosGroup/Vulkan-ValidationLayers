@@ -5653,12 +5653,12 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
     }
 
     uint32_t stream_misaligned = 0;
-    bool hadWork = false;
+    bool had_work = false;
     for (uint32_t index = 0; index < pCreateInfo->tokenCount; index++) {
         const VkIndirectCommandsLayoutTokenNV *token = &pCreateInfo->pTokens[index];
-        bool hadShader = false;
-        bool hadState = false;
-        bool isWork = false;
+        bool had_shader = false;
+        bool had_state = false;
+        bool is_work = false;
         uint32_t alignment = 4;
 
         if (token->stream > pCreateInfo->streamCount) {
@@ -5683,16 +5683,16 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
                                      "VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV must be first token if used.",
                                      index);
                 }
-                if (hadShader) {
+                if (had_shader) {
                     skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02932",
                                      "vkCreateIndirectCommandsLayoutNV token %u: "
                                      "VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV must exist only once if used.",
                                      index);
                 }
-                hadShader = true;
+                had_shader = true;
             }
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV: {
-                if (hadState) {
+                if (had_state) {
                     skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02933",
                                      "vkCreateIndirectCommandsLayoutNV token %u: "
                                      "VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV must exist only once if used.",
@@ -5703,7 +5703,7 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
                                      "vkCreateIndirectCommandsLayoutNV token %u: "
                                      "must have a non-zero indirectStateFlags.");
                 }
-                hadState = true;
+                had_state = true;
             }
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV: {
                 alignment = 8;
@@ -5759,12 +5759,12 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_NV:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_TASKS_NV: {
-                if (hadWork) {
+                if (had_work) {
                     skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02935",
                                      "vkCreateIndirectCommandsLayoutNV token %u: only one work provoking token must exist.", index);
                 }
-                hadWork = true;
-                isWork = true;
+                had_work = true;
+                is_work = true;
             } break;
             default:
                 break;
@@ -5782,14 +5782,14 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
                              token->stream);
         }
 
-        if (!isWork && hadWork) {
+        if (!is_work && had_work) {
             skip |=
                 LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02934",
                          "vkCreateIndirectCommandsLayoutNV token %u: all state tokens must be prior work provoking tokens.", index);
         }
     }
 
-    if (!hadWork) {
+    if (!had_work) {
         skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02935",
                          "vkCreateIndirectCommandsLayoutNV call must have at least one work provoking token.");
     }

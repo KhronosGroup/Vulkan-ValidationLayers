@@ -3656,14 +3656,14 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
 
     uint32_t pointlist_stage_mask = DetermineFinalGeomStage(pipeline, create_info);
 
-    uint32_t stageCount = groupIndex == 0
+    uint32_t stage_count = groupIndex == 0
                               ? create_info->stageCount
                               : shader_groups_info->pGroups[groupIndex].stageCount;
-    auto pStages = groupIndex == 0 ? create_info->pStages : shader_groups_info->pGroups[groupIndex].pStages;
+    auto stages = groupIndex == 0 ? create_info->pStages : shader_groups_info->pGroups[groupIndex].pStages;
     auto &stage_state = groupIndex == 0 ? pipeline->stage_state : pipeline->shader_groups[groupIndex].stage_state;
 
-    for (uint32_t i = 0; i < stageCount; i++) {
-        auto stage = &pStages[i];
+    for (uint32_t i = 0; i < stage_count; i++) {
+        auto stage = &stages[i];
         auto stage_id = GetShaderStageId(stage->stage);
         shaders[stage_id] = GetShaderModuleState(stage->module);
         entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], stage->pName, stage->stage);

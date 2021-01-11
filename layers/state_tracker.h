@@ -996,9 +996,9 @@ class ValidationStateTracker : public ValidationObject {
                                             VkDisplayModeKHR* pMode, VkResult result) override;
     void PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
-                                                      VkIndirectCommandsLayoutNV* pIndirectCommandsLayout, VkResult result);
+                                                      VkIndirectCommandsLayoutNV* pIndirectCommandsLayout, VkResult result) override;
     void PreCallRecordDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
-                                                       const VkAllocationCallbacks* pAllocator);
+                                                       const VkAllocationCallbacks* pAllocator) override;
 
     // CommandBuffer/Queue Control
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) override;
@@ -1226,13 +1226,13 @@ class ValidationStateTracker : public ValidationObject {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     void PreCallRecordCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
-                                                       const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+                                                       const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) override;
     void PreCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                                    const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+                                                    const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) override;
     void PostCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                                     const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+                                                     const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) override;
     void PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                   VkPipeline pipeline, uint32_t groupIndex);
+                                                   VkPipeline pipeline, uint32_t groupIndex) override;
     // WSI
     void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                            VkFence fence, uint32_t* pImageIndex, VkResult result) override;
