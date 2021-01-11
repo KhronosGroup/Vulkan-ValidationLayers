@@ -5248,12 +5248,14 @@ void ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutNV(VkDevi
 
     for (uint32_t i = 0; i < pCreateInfo->tokenCount; i++) {
         switch (pCreateInfo->pTokens[i].tokenType) {
-            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV: {
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV:
                 ind_state->hasShaderGroups = true;
-            } break;
-            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV: {
+                break;
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV:
                 ind_state->generated_vertex_bindings.insert(pCreateInfo->pTokens[i].vertexBindingUnit);
-            } break;
+                break;
+            default:
+                break;
         }
     }
 

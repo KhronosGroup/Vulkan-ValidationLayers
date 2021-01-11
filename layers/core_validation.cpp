@@ -15019,7 +15019,6 @@ bool CoreChecks::ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, 
     bool skip = false;
 
     const PIPELINE_STATE *pipeline_state = GetPipelineState(pGenInfo->pipeline);
-    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state = GetIndirectCommandsLayoutState(pGenInfo->indirectCommandsLayout);
 
     if (ind_state->hasShaderGroups && pipeline_state->effective_shader_group_count <= 1) {

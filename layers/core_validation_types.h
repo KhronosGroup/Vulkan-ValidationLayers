@@ -959,7 +959,7 @@ class PIPELINE_STATE : public BASE_NODE {
         std::vector<VkDeviceSize> attribute_alignments_;
         std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
 
-        VertexState() : binding_descriptions_(), attribute_descriptions_(), binding_to_index_map_(), attribute_alignments_() {}
+        VertexState() : binding_descriptions_(), attribute_descriptions_(), attribute_alignments_(), binding_to_index_map_() {}
     };
     struct ShaderGroup {
         uint32_t active_shaders;
@@ -967,7 +967,7 @@ class PIPELINE_STATE : public BASE_NODE {
         std::vector<StageState> stage_state;
         VertexState             vertex_state;
 
-        ShaderGroup() : vertex_state(), stage_state(), active_shaders(0), duplicate_shaders(0) {}
+        ShaderGroup() : active_shaders(0), duplicate_shaders(0), stage_state(), vertex_state() {}
     };
     struct ShaderGroupReference {
         uint32_t                              lower_shader_group;
