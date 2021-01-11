@@ -645,6 +645,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
+        const VkFormat image_format = pCreateInfo->format;
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
         if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
             // If sharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
@@ -861,11 +862,12 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "imageType must be VK_IMAGE_TYPE_2D or VK_IMAGE_TYPE_3D.");
             }
 
-            if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) || FormatIsDepthOrStencil(pCreateInfo->format)) {
+            if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) || FormatIsDepthOrStencil(image_format)) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02051",
                                  "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
-                                 "it must not also contain VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT and format must "
-                                 "not be a depth/stencil format.");
+                                 "it must not also contain VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT and format (%s) must not be a "
+                                 "depth/stencil format.",
+                                 string_VkFormat(image_format));
             }
 
             if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D && (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1)) {
@@ -883,10 +885,11 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
 
         if (((pCreateInfo->flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
-            (FormatHasDepth(pCreateInfo->format) == false)) {
+            (FormatHasDepth(image_format) == false)) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01533",
                              "vkCreateImage(): if flags contain VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT the "
-                             "format must be a depth or depth/stencil format.");
+                             "format (%s) must be a depth or depth/stencil format.",
+                             string_VkFormat(image_format));
         }
 
         const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(pCreateInfo->pNext);
@@ -903,7 +906,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 }
             }
 
-            if (FormatIsDepthOrStencil(pCreateInfo->format)) {
+            if (FormatIsDepthOrStencil(image_format)) {
                 if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0) {
                     if (pCreateInfo->extent.width > device_limits.maxFramebufferWidth) {
                         skip |=
@@ -1101,6 +1104,21 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                      pCreateInfo->flags);
                 }
             }
+        }
+
+        // If Chroma subsampled format ( _420_ or _422_ )
+        if (FormatIsXChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.width, 2) != 0)) {
+            skip |=
+                LogError(device, "VUID-VkImageCreateInfo-format-04712",
+                         "vkCreateImage(): The format (%s) is X Chroma Subsampled (has _422 or _420 suffix) so the width (=%" PRIu32
+                         ") must be a multiple of 2.",
+                         string_VkFormat(image_format), pCreateInfo->extent.width);
+        }
+        if (FormatIsYChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.height, 2) != 0)) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-format-04713",
+                             "vkCreateImage(): The format (%s) is Y Chroma Subsampled (has _420 suffix) so the height (=%" PRIu32
+                             ") must be a multiple of 2.",
+                             string_VkFormat(image_format), pCreateInfo->extent.height);
         }
     }
 
