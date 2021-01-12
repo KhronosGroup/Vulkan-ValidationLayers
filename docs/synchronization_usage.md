@@ -47,7 +47,7 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
    </td>
    <td>Write-after-read
    </td>
-   <td>Occurs when a subsequent operation overwrites a memory location read by a previous operation before that operation is complete. (requires only execution dependency)
+   <td>Occurs when a subsequent operation overwrites a memory location read by a previous operation before that operation is complete (requires only execution dependency).
    </td>
   </tr>
   <tr>
@@ -71,7 +71,7 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
    </td>
    <td>Read-racing-write
    </td>
-   <td>Occurs when unsynchronized subpasses/queues perform read and write operations on the same set of memory locations
+   <td>Occurs when unsynchronized subpasses/queues perform read and write operations on the same set of memory locations.
    </td>
   </tr>
 </table>
@@ -80,22 +80,22 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 
 ### Current Feature set
 
-- Hazard detection for memory usage for commands within the *same* command buffer
-- Synchronization operations 
-  - vkCmdPipelineBarrier
-  - vkCmdSetEvent/vkCmdWaitEvents/vkCmdResetEvent
-  - renderpass/subpass barriers
-- Image layout transition hazard and access tracking
+- Hazard detection for memory usage for commands within the *same* command buffer.
+- Synchronization operations .
+  - vkCmdPipelineBarrier.
+  - vkCmdSetEvent/vkCmdWaitEvents/vkCmdResetEvent.
+  - renderpass/subpass barriers.
+- Image layout transition hazard and access tracking.
 - Load/Store/Resolve operations within Subpasses.
 
 ### Known Limitations
 
 - Does not include implementation of multi-view renderpass support.
-- Host set event not supported
-- ExecuteCommands and QueueSubmit hazards from are not tracked or reported
-- Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK
+- Host set event not supported.
+- ExecuteCommands and QueueSubmit hazards from are not tracked or reported.
+- Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK.
 - Does not include component granularity access tracking.
-- Host synchronization not supported
+- Host synchronization not supported.
 
 ## Enabling Synchronization Validation
 
@@ -141,16 +141,16 @@ info.pNext = &features;
 To debug synchronization validation issues (all platforms):
 
 - Create a debug callback with `vkCreateDebugUtilsMessengerEXT` with the `VK_DEBUG_REPORT_ERROR_BIT_EXT` set.
-- Enable synchronization as noted above. On Linux and Windows this can be simplified by enabling Synchronization Validation using [Vulkan Configurator (vkconfig)](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html)
+- Enable synchronization as noted above. On Linux and Windows this can be simplified by enabling Synchronization Validation using [Vulkan Configurator (vkconfig)](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html).
 - Set a breakpoint in the debug callback and run your application in the debugger.
 - The callback will be called when a `vkCmd`... command with a hazard is recorded.
 
 On Windows, Synchronization Validation can be run using just vkconfig and the debugger without defining a callback:
 
-*   In vkconfig
-    *   Enable Synchronization Validation
-    *   Select 'Debug Actions' 'Break' and 'Debug Output'
-*   Debug application in Visual Studio
+*   In vkconfig.
+    *   Enable Synchronization Validation.
+    *   Select 'Debug Actions' 'Break' and 'Debug Output'.
+*   Debug application in Visual Studio.
 *   Hazard messages will appear in the debugger output window and the debugger will break (in the validation layer code)  when a `vkCmd`... command with a hazard is recorded.
 
 
