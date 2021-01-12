@@ -242,5 +242,5 @@ Keeping your GPU fed without getting bitten [ https://www.youtube.com/watch?v=oF
 
 Yet another blog explaining Vulkan synchronization[ http://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/](http://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/)
 
-A Guide to Vulkan Synchronization Validation https://www.khronos.org/news/permalink/blog-a-guide-to-vulkan-synchronization-validation
+A Guide to Vulkan Synchronization Validation https://www.lunarg.com/wp-content/uploads/2021/01/Final_Guide-to-Vulkan-Synchronization-Validation_01_21.pdf
 
