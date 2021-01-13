@@ -1,6 +1,6 @@
-/* Copyright (c) 2020 The Khronos Group Inc.
- * Copyright (c) 2020 Valve Corporation
- * Copyright (c) 2020 LunarG, Inc.
+/* Copyright (c) 2020-2021 The Khronos Group Inc.
+ * Copyright (c) 2020-2021 Valve Corporation
+ * Copyright (c) 2020-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -249,6 +249,18 @@ void DebugPrintf::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                                       pPipelines, result, crtpl_state_data);
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->printf_create_infos.data());
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, this);
+}
+
+void DebugPrintf::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                             VkPipelineCache pipelineCache, uint32_t count,
+                                                             const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                             VkResult result, void *crtpl_state_data) {
+    auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
+    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
+        device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result, crtpl_state_data);
+    UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->printf_create_infos.data());
+    UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
 }
 
 // Remove all the shader trackers associated with this destroyed pipeline.
