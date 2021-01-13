@@ -119,6 +119,8 @@ class CoreChecks : public ValidationStateTracker {
     GlobalQFOTransferBarrierMap<QFOImageTransferBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<QFOBufferTransferBarrier> qfo_release_buffer_barrier_map;
     GlobalImageLayoutMap imageLayoutMap;
+    VkValidationCacheEXT core_validation_cache = VK_NULL_HANDLE;
+    std::string validation_cache_path;
 
     CoreChecks() { container_type = LayerObjectTypeCoreValidation; }
 
