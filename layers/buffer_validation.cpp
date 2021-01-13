@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1701,14 +1701,16 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     if ((pCreateInfo->usage & attach_flags) && (pCreateInfo->extent.width > device_limits->maxFramebufferWidth)) {
         skip |= LogError(device, "VUID-VkImageCreateInfo-usage-00964",
-                         "vkCreateImage(): Image usage flags include a frame buffer attachment bit and image width exceeds device "
-                         "maxFramebufferWidth.");
+                         "vkCreateImage(): Image usage flags include a frame buffer attachment bit and image width (%u) exceeds "
+                         "device maxFramebufferWidth (%u).",
+                         pCreateInfo->extent.width, device_limits->maxFramebufferWidth);
     }
 
     if ((pCreateInfo->usage & attach_flags) && (pCreateInfo->extent.height > device_limits->maxFramebufferHeight)) {
         skip |= LogError(device, "VUID-VkImageCreateInfo-usage-00965",
-                         "vkCreateImage(): Image usage flags include a frame buffer attachment bit and image height exceeds device "
-                         "maxFramebufferHeight");
+                         "vkCreateImage(): Image usage flags include a frame buffer attachment bit and image height (%u) exceeds "
+                         "device maxFramebufferHeight (%u).",
+                         pCreateInfo->extent.height, device_limits->maxFramebufferHeight);
     }
 
     if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map_2) {
@@ -2758,82 +2760,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
     return skip;
 }
 
-// vkCmdCopyImage / vmCmdCopyImage2KHR checks that only apply if the multiplane extension is enabled
-template <typename RegionType>
-bool CoreChecks::CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, const IMAGE_STATE *src_image_state,
-                                               const IMAGE_STATE *dst_image_state, const RegionType region,
-                                               CopyCommandVersion version) const {
-    const bool is_2khr = (version == COPY_COMMAND_VERSION_2);
-    bool skip = false;
-
-    const char *func_name = is_2khr ? "vkCmdCopyImage2KHR()" : "vkCmdCopyImage()";
-    const char *vuid;
-
-    // Neither image is multiplane
-    if ((!FormatIsMultiplane(src_image_state->createInfo.format)) && (!FormatIsMultiplane(dst_image_state->createInfo.format))) {
-        // If neither image is multi-plane the aspectMask member of src and dst must match
-        if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
-            std::stringstream ss;
-            ss << func_name << ": Copy between non-multiplane images with differing aspectMasks ( 0x" << std::hex
-               << region.srcSubresource.aspectMask << " and 0x" << region.dstSubresource.aspectMask << " )";
-            vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01551" : "VUID-vkCmdCopyImage-srcImage-01551";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
-        }
-    } else {
-        // Source image multiplane checks
-        uint32_t planes = FormatPlaneCount(src_image_state->createInfo.format);
-        VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
-        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
-            std::stringstream ss;
-            ss << func_name << ": Source image aspect mask (0x" << std::hex << aspect << ") is invalid for 2-plane format";
-            vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01552" : "VUID-vkCmdCopyImage-srcImage-01552";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
-        }
-        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-            std::stringstream ss;
-            ss << func_name << ": Source image aspect mask (0x" << std::hex << aspect << ") is invalid for 3-plane format";
-            vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01553" : "VUID-vkCmdCopyImage-srcImage-01553";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
-        }
-        // Single-plane to multi-plane
-        if ((!FormatIsMultiplane(src_image_state->createInfo.format)) && (FormatIsMultiplane(dst_image_state->createInfo.format)) &&
-            (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
-            std::stringstream ss;
-            ss << func_name << ": Source image aspect mask (0x" << std::hex << aspect << ") is not VK_IMAGE_ASPECT_COLOR_BIT";
-            vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01557" : "VUID-vkCmdCopyImage-dstImage-01557";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
-        }
-
-        // Dest image multiplane checks
-        planes = FormatPlaneCount(dst_image_state->createInfo.format);
-        aspect = region.dstSubresource.aspectMask;
-        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
-            std::stringstream ss;
-            ss << func_name << ": Dest image aspect mask (0x" << std::hex << aspect << ") is invalid for 2-plane format";
-            vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01554" : "VUID-vkCmdCopyImage-dstImage-01554";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
-        }
-        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-            std::stringstream ss;
-            ss << func_name << ": Dest image aspect mask (0x" << std::hex << aspect << ") is invalid for 3-plane format";
-            vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01555" : "VUID-vkCmdCopyImage-dstImage-01555";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
-        }
-        // Multi-plane to single-plane
-        if ((FormatIsMultiplane(src_image_state->createInfo.format)) && (!FormatIsMultiplane(dst_image_state->createInfo.format)) &&
-            (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
-            std::stringstream ss;
-            ss << func_name << ": Dest image aspect mask (0x" << std::hex << aspect << ") is not VK_IMAGE_ASPECT_COLOR_BIT";
-            vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01556" : "VUID-vkCmdCopyImage-srcImage-01556";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
-        }
-    }
-
-    return skip;
-}
-
 template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -2905,51 +2831,112 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 if (src_slices != dst_slices) {
                     vuid = is_2khr ? "VUID-VkImageCopy2KHR-extent-00140" : "VUID-VkImageCopy-extent-00140";
                     skip |= LogError(command_buffer, vuid,
-                                     "%s: number of depth slices in source and destination subresources for "
-                                     "pRegions[%u] do not match.",
-                                     func_name, i);
+                                     "%s: number of depth slices in source (%u) and destination (%u) subresources for pRegions[%u] "
+                                     "do not match.",
+                                     func_name, src_slices, dst_slices, i);
                 }
             }
         } else {
             // For each region the layerCount member of srcSubresource and dstSubresource must match
             if (region.srcSubresource.layerCount != region.dstSubresource.layerCount) {
                 vuid = is_2khr ? "VUID-VkImageCopy2KHR-layerCount-00138" : "VUID-VkImageCopy-layerCount-00138";
-                skip |= LogError(command_buffer, vuid,
-                                 "%s: number of layers in source and destination subresources for pRegions[%u] do not match",
-                                 func_name, i);
+                skip |=
+                    LogError(command_buffer, vuid,
+                             "%s: number of layers in source (%u) and destination (%u) subresources for pRegions[%u] do not match",
+                             func_name, region.srcSubresource.layerCount, region.dstSubresource.layerCount, i);
             }
         }
 
         // Do multiplane-specific checks, if extension enabled
         if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-            skip |= CopyImageMultiplaneValidation(command_buffer, src_image_state, dst_image_state, region, version);
-        }
+            if ((!FormatIsMultiplane(src_format)) && (!FormatIsMultiplane(dst_format))) {
+                // If neither image is multi-plane the aspectMask member of src and dst must match
+                if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
+                    vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01551" : "VUID-vkCmdCopyImage-srcImage-01551";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: Copy between non-multiplane images with differing aspectMasks in pRegions[%u] with "
+                                     "source (0x%x) destination (0x%x).",
+                                     func_name, i, region.srcSubresource.aspectMask, region.dstSubresource.aspectMask);
+                }
+            } else {
+                // Source image multiplane checks
+                uint32_t planes = FormatPlaneCount(src_format);
+                VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
+                if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                    vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01552" : "VUID-vkCmdCopyImage-srcImage-01552";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: pRegions[%u].srcSubresource.aspectMask (0x%x) is invalid for 2-plane format.", func_name,
+                                     i, aspect);
+                }
+                if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+                    (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                    vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01553" : "VUID-vkCmdCopyImage-srcImage-01553";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: pRegions[%u].srcSubresource.aspectMask (0x%x) is invalid for 3-plane format.", func_name,
+                                     i, aspect);
+                }
+                // Single-plane to multi-plane
+                if ((!FormatIsMultiplane(src_format)) && (FormatIsMultiplane(dst_format)) &&
+                    (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+                    vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01557" : "VUID-vkCmdCopyImage-dstImage-01557";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: pRegions[%u].srcSubresource.aspectMask (0x%x) is not VK_IMAGE_ASPECT_COLOR_BIT.",
+                                     func_name, i, aspect);
+                }
 
-        if (!device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                // Dest image multiplane checks
+                planes = FormatPlaneCount(dst_format);
+                aspect = region.dstSubresource.aspectMask;
+                if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                    vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01554" : "VUID-vkCmdCopyImage-dstImage-01554";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: pRegions[%u].dstSubresource.aspectMask (0x%x) is invalid for 2-plane format.", func_name,
+                                     i, aspect);
+                }
+                if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+                    (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                    vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01555" : "VUID-vkCmdCopyImage-dstImage-01555";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: pRegions[%u].dstSubresource.aspectMask (0x%x) is invalid for 3-plane format.", func_name,
+                                     i, aspect);
+                }
+                // Multi-plane to single-plane
+                if ((FormatIsMultiplane(src_format)) && (!FormatIsMultiplane(dst_format)) &&
+                    (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+                    vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01556" : "VUID-vkCmdCopyImage-srcImage-01556";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: pRegions[%u].dstSubresource.aspectMask (0x%x) is not VK_IMAGE_ASPECT_COLOR_BIT.",
+                                     func_name, i, aspect);
+                }
+            }
+        } else {
+            // !vk_khr_sampler_ycbcr_conversion
             // not multi-plane, the aspectMask member of srcSubresource and dstSubresource must match
             if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
-                std::stringstream ss;
-                ss << func_name << ": Src and dest aspectMasks for each region must match";
                 vuid = is_2khr ? "VUID-VkImageCopy2KHR-aspectMask-00137" : "VUID-VkImageCopy-aspectMask-00137";
-                skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
+                skip |= LogError(
+                    command_buffer, vuid,
+                    "%s: Copy between images with differing aspectMasks in pRegions[%u] with source (0x%x) destination (0x%x).",
+                    func_name, i, region.srcSubresource.aspectMask, region.dstSubresource.aspectMask);
             }
         }
 
         // For each region, the aspectMask member of srcSubresource must be present in the source image
         if (!VerifyAspectsPresent(region.srcSubresource.aspectMask, src_format)) {
-            std::stringstream ss;
-            ss << func_name << ": pRegion[" << i
-               << "] srcSubresource.aspectMask cannot specify aspects not present in source image";
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-aspectMask-00142" : "VUID-vkCmdCopyImage-aspectMask-00142";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
+            skip |=
+                LogError(command_buffer, vuid,
+                         "%s: pRegions[%u].srcSubresource.aspectMask (0x%x) cannot specify aspects not present in source image.",
+                         func_name, i, region.srcSubresource.aspectMask);
         }
 
         // For each region, the aspectMask member of dstSubresource must be present in the destination image
         if (!VerifyAspectsPresent(region.dstSubresource.aspectMask, dst_format)) {
-            std::stringstream ss;
-            ss << func_name << ": pRegion[" << i << "] dstSubresource.aspectMask cannot specify aspects not present in dest image";
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-aspectMask-00143" : "VUID-vkCmdCopyImage-aspectMask-00143";
-            skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
+            skip |= LogError(
+                command_buffer, vuid,
+                "%s: pRegions[%u].dstSubresource.aspectMask (0x%x) cannot specify aspects not present in destination image.",
+                func_name, i, region.dstSubresource.aspectMask);
         }
 
         // Each dimension offset + extent limits must fall with image subresource extent
@@ -2959,7 +2946,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (extent_check & kXBit) {
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcOffset-00144" : "VUID-vkCmdCopyImage-srcOffset-00144";
             skip |= LogError(command_buffer, vuid,
-                             "%s: Source image pRegion %1d x-dimension offset [%1d] + extent [%1d] exceeds subResource "
+                             "%s: Source image pRegion[%u] x-dimension offset [%1d] + extent [%1d] exceeds subResource "
                              "width [%1d].",
                              func_name, i, region.srcOffset.x, src_copy_extent.width, subresource_extent.width);
         }
@@ -2967,14 +2954,14 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (extent_check & kYBit) {
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcOffset-00145" : "VUID-vkCmdCopyImage-srcOffset-00145";
             skip |= LogError(command_buffer, vuid,
-                             "%s: Source image pRegion %1d y-dimension offset [%1d] + extent [%1d] exceeds subResource "
+                             "%s: Source image pRegion[%u] y-dimension offset [%1d] + extent [%1d] exceeds subResource "
                              "height [%1d].",
                              func_name, i, region.srcOffset.y, src_copy_extent.height, subresource_extent.height);
         }
         if (extent_check & kZBit) {
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcOffset-00147" : "VUID-vkCmdCopyImage-srcOffset-00147";
             skip |= LogError(command_buffer, vuid,
-                             "%s: Source image pRegion %1d z-dimension offset [%1d] + extent [%1d] exceeds subResource "
+                             "%s: Source image pRegion[%u] z-dimension offset [%1d] + extent [%1d] exceeds subResource "
                              "depth [%1d].",
                              func_name, i, region.srcOffset.z, src_copy_extent.depth, subresource_extent.depth);
         }
@@ -2987,21 +2974,21 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (extent_check & kXBit) {
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstOffset-00150" : "VUID-vkCmdCopyImage-dstOffset-00150";
             skip |= LogError(command_buffer, vuid,
-                             "%s: Dest image pRegion %1d x-dimension offset [%1d] + extent [%1d] exceeds subResource "
+                             "%s: Dest image pRegion[%u] x-dimension offset [%1d] + extent [%1d] exceeds subResource "
                              "width [%1d].",
                              func_name, i, region.dstOffset.x, dst_copy_extent.width, subresource_extent.width);
         }
         if (extent_check & kYBit) {
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstOffset-00151" : "VUID-vkCmdCopyImage-dstOffset-00151";
             skip |= LogError(command_buffer, vuid,
-                             "%s): Dest image pRegion %1d y-dimension offset [%1d] + extent [%1d] exceeds subResource "
+                             "%s): Dest image pRegion[%u] y-dimension offset [%1d] + extent [%1d] exceeds subResource "
                              "height [%1d].",
                              func_name, i, region.dstOffset.y, dst_copy_extent.height, subresource_extent.height);
         }
         if (extent_check & kZBit) {
             vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstOffset-00153" : "VUID-vkCmdCopyImage-dstOffset-00153";
             skip |= LogError(command_buffer, vuid,
-                             "%s: Dest image pRegion %1d z-dimension offset [%1d] + extent [%1d] exceeds subResource "
+                             "%s: Dest image pRegion[%u] z-dimension offset [%1d] + extent [%1d] exceeds subResource "
                              "depth [%1d].",
                              func_name, i, region.dstOffset.z, dst_copy_extent.depth, subresource_extent.depth);
         }
@@ -3012,10 +2999,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             for (uint32_t j = 0; j < regionCount; j++) {
                 if (RegionIntersects(&region, &pRegions[j], src_image_state->createInfo.imageType,
                                      FormatIsMultiplane(src_format))) {
-                    std::stringstream ss;
-                    ss << func_name << ": pRegions[" << i << "] src overlaps with pRegions[" << j << "].";
                     vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
-                    skip |= LogError(command_buffer, vuid, "%s.", ss.str().c_str());
+                    skip |= LogError(command_buffer, vuid, "%s: pRegion[%u] src overlaps with pRegions[%u].", func_name, i, j);
                 }
             }
         }
@@ -3120,7 +3105,10 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         std::stringstream ss;
         ss << func_name << " called on image pair with non-identical sample counts.";
         vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-00136" : "VUID-vkCmdCopyImage-srcImage-00136";
-        skip |= LogError(command_buffer, vuid, "%s", ss.str().c_str());
+        skip |=
+            LogError(command_buffer, vuid, "%s: The src image sample count (%s) dose not match the dst image sample count (%s).",
+                     func_name, string_VkSampleCountFlagBits(src_image_state->createInfo.samples),
+                     string_VkSampleCountFlagBits(dst_image_state->createInfo.samples));
     }
 
     vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-00127" : "VUID-vkCmdCopyImage-srcImage-00127";
@@ -4460,15 +4448,17 @@ bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE *buffer_state, cons
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
         skip |= LogError(buffer_state->buffer, "VUID-VkBufferViewCreateInfo-buffer-00933",
                          "vkCreateBufferView(): If buffer was created with `usage` containing "
-                         "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format must "
-                         "be supported for uniform texel buffers");
+                         "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format (%s) must "
+                         "be supported for uniform texel buffers",
+                         string_VkFormat(pCreateInfo->format));
     }
     if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         skip |= LogError(buffer_state->buffer, "VUID-VkBufferViewCreateInfo-buffer-00934",
                          "vkCreateBufferView(): If buffer was created with `usage` containing "
-                         "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format must "
-                         "be supported for storage texel buffers");
+                         "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format (%s) must "
+                         "be supported for storage texel buffers",
+                         string_VkFormat(pCreateInfo->format));
     }
     return skip;
 }
