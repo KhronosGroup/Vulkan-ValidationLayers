@@ -577,11 +577,6 @@ class CoreChecks : public ValidationStateTracker {
                         const char* function, const char* member, const char* vuid) const;
     VkExtent3D GetScaledItg(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img) const;
 
-    template <typename RegionType>
-    bool CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, const IMAGE_STATE* src_image_state,
-                                       const IMAGE_STATE* dst_image_state, const RegionType region,
-                                       CopyCommandVersion version) const;
-
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
                                            const VkImageSubresourceRange* pRanges) const override;

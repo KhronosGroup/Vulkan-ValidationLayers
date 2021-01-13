@@ -948,19 +948,21 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             if (FormatIsDepthOrStencil(image_format)) {
                 if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0) {
                     if (pCreateInfo->extent.width > device_limits.maxFramebufferWidth) {
-                        skip |=
-                            LogError(device, "VUID-VkImageCreateInfo-Format-02536",
-                                     "vkCreateImage(): Depth-stencil image contains VkImageStencilUsageCreateInfo structure with "
-                                     "stencilUsage including VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image width exceeds device "
-                                     "maxFramebufferWidth");
+                        skip |= LogError(
+                            device, "VUID-VkImageCreateInfo-Format-02536",
+                            "vkCreateImage(): Depth-stencil image contains VkImageStencilUsageCreateInfo structure with "
+                            "stencilUsage including VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image width (%u) exceeds device "
+                            "maxFramebufferWidth (%u)",
+                            pCreateInfo->extent.width, device_limits.maxFramebufferWidth);
                     }
 
                     if (pCreateInfo->extent.height > device_limits.maxFramebufferHeight) {
-                        skip |=
-                            LogError(device, "VUID-VkImageCreateInfo-format-02537",
-                                     "vkCreateImage(): Depth-stencil image contains VkImageStencilUsageCreateInfo structure with "
-                                     "stencilUsage including VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image height exceeds device "
-                                     "maxFramebufferHeight");
+                        skip |= LogError(
+                            device, "VUID-VkImageCreateInfo-format-02537",
+                            "vkCreateImage(): Depth-stencil image contains VkImageStencilUsageCreateInfo structure with "
+                            "stencilUsage including VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image height (%u) exceeds device "
+                            "maxFramebufferHeight (%u)",
+                            pCreateInfo->extent.height, device_limits.maxFramebufferHeight);
                     }
                 }
 
