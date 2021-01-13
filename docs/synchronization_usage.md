@@ -112,7 +112,7 @@ To enable using environment variables, set the following variable:
 VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
 ```
 
-Some platforms do not support configuration of the validation layers with this configuration file.
+Mobile platforms (such as Android) do not support configuration of the validation layers with this configuration file.
 Programs running on these platforms must then use the programmatic interface.
 
 As Synchronization Validation is resource intensive, it is recommended to disable all other validation layer objects.
