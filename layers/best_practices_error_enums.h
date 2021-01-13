@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_TooManyIn
 static const char DECORATE_UNUSED *kVUID_BestPractices_ClearAttachments_ClearAfterLoad =
     "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load";
 static const char DECORATE_UNUSED *kVUID_BestPractices_Error_Result = "UNASSIGNED-BestPractices-Error-Result";
+static const char DECORATE_UNUSED *kVUID_BestPractices_Failure_Result = "UNASSIGNED-BestPractices-Failure-Result";
 static const char DECORATE_UNUSED *kVUID_BestPractices_NonSuccess_Result = "UNASSIGNED-BestPractices-NonSuccess-Result";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SuboptimalSwapchain = "UNASSIGNED-BestPractices-SuboptimalSwapchain";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SuboptimalSwapchainImageCount =
