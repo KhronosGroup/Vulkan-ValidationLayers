@@ -43,6 +43,7 @@
 #include <array>
 #include <assert.h>
 #include <cmath>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <map>
@@ -2543,6 +2544,36 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         [core_checks](CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
             core_checks->SetImageViewInitialLayout(cb_node, iv_state, layout);
         });
+
+    // Allocate shader validation cache
+    if (!core_checks->core_validation_cache) {
+        std::string validation_cache_path;
+        auto tmp_path = GetEnvironment("TMPDIR");
+        if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
+        if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
+        if (!tmp_path.size()) tmp_path = "//tmp";
+        core_checks->validation_cache_path = tmp_path + "//shader_validation_cache.bin";
+
+        std::vector<char> validation_cache_data;
+        std::ifstream read_file(core_checks->validation_cache_path.c_str(), std::ios::in | std::ios::binary);
+
+        if (read_file) {
+            std::copy(std::istreambuf_iterator<char>(read_file), {}, std::back_inserter(validation_cache_data));
+            read_file.close();
+        } else {
+            LogInfo(core_checks->device, "VUID-NONE",
+                    "Cannot open shader validation cache at %s for reading (it may not exist yet)",
+                    core_checks->validation_cache_path.c_str());
+        }
+
+        VkValidationCacheCreateInfoEXT cacheCreateInfo = {};
+        cacheCreateInfo.sType = VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT;
+        cacheCreateInfo.pNext = NULL;
+        cacheCreateInfo.initialDataSize = validation_cache_data.size();
+        cacheCreateInfo.pInitialData = validation_cache_data.data();
+        cacheCreateInfo.flags = 0;
+        CoreLayerCreateValidationCacheEXT(*pDevice, &cacheCreateInfo, nullptr, &core_checks->core_validation_cache);
+    }
 }
 
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
@@ -2550,6 +2581,37 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
     imageLayoutMap.clear();
 
     StateTracker::PreCallRecordDestroyDevice(device, pAllocator);
+
+    if (core_validation_cache) {
+        size_t validation_cache_size = 0;
+        void *validation_cache_data = nullptr;
+
+        CoreLayerGetValidationCacheDataEXT(device, core_validation_cache, &validation_cache_size, nullptr);
+
+        validation_cache_data = (char *)malloc(sizeof(char) * validation_cache_size);
+        if (!validation_cache_data) {
+            LogInfo(device, "VUID-NONE", "Validation Cache Memory Error");
+            return;
+        }
+
+        VkResult result =
+            CoreLayerGetValidationCacheDataEXT(device, core_validation_cache, &validation_cache_size, validation_cache_data);
+
+        if (result != VK_SUCCESS) {
+            LogInfo(device, "VUID-NONE", "Validation Cache Retrieval Error");
+            return;
+        }
+
+        FILE *write_file = fopen(validation_cache_path.c_str(), "wb");
+        if (write_file) {
+            fwrite(validation_cache_data, sizeof(char), validation_cache_size, write_file);
+            fclose(write_file);
+        } else {
+            LogInfo(device, "VUID-NONE", "Cannot open shader validation cache at %s for writing", validation_cache_path.c_str());
+        }
+        free(validation_cache_data);
+        CoreLayerDestroyValidationCacheEXT(device, core_validation_cache, NULL);
+    }
 }
 
 bool CoreChecks::ValidateStageMaskHost(const Location &loc, VkPipelineStageFlags2KHR stageMask) const {

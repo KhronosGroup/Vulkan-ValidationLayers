@@ -2352,6 +2352,8 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     } else {
         auto cache = GetValidationCacheInfo(pCreateInfo);
         uint32_t hash = 0;
+        // If app isn't using a shader validation cache, use the default one from CoreChecks
+        if (!cache) cache = CastFromHandle<ValidationCache *>(core_validation_cache);
         if (cache) {
             hash = ValidationCache::MakeShaderHash(pCreateInfo);
             if (cache->Contains(hash)) return false;
