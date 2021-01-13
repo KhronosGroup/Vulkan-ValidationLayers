@@ -578,7 +578,15 @@ void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, c
                                         const std::vector<VkResult>& success_codes) const {
     auto error = std::find(error_codes.begin(), error_codes.end(), result);
     if (error != error_codes.end()) {
-        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
+        static const std::vector<VkResult> common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR,
+                                                                   VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
+
+        auto common_failure = std::find(common_failure_codes.begin(), common_failure_codes.end(), result);
+        if (common_failure != common_failure_codes.end()) {
+            LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
+        } else {
+            LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
+        }
         return;
     }
     auto success = std::find(success_codes.begin(), success_codes.end(), result);

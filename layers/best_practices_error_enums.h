@@ -93,6 +93,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_TooManyIn
 static const char DECORATE_UNUSED *kVUID_BestPractices_ClearAttachments_ClearAfterLoad =
     "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load";
 static const char DECORATE_UNUSED *kVUID_BestPractices_Error_Result = "UNASSIGNED-BestPractices-Error-Result";
+static const char DECORATE_UNUSED *kVUID_BestPractices_Failure_Result = "UNASSIGNED-BestPractices-Failure-Result";
 static const char DECORATE_UNUSED *kVUID_BestPractices_NonSuccess_Result = "UNASSIGNED-BestPractices-NonSuccess-Result";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SuboptimalSwapchain = "UNASSIGNED-BestPractices-SuboptimalSwapchain";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SuboptimalSwapchainImageCount =
