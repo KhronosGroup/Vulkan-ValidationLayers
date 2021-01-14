@@ -25,6 +25,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "vk_extension_helper.h"
 
 #include <algorithm>
 #include <array>
@@ -12684,4 +12685,25 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
         }
     };
     do_test(&image, &view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+TEST_F(VkPositiveLayerTest, DevsimLoaderCrash) {
+    TEST_DESCRIPTION("Test to see if instance extensions are called during CreateInstance.");
+
+    // See https://github.com/KhronosGroup/Vulkan-Loader/issues/537 for more details.
+    // This is specifically meant to ensure a crash encountered in devsim does not occur, but also to
+    // attempt to ensure that no extension calls have been added to CreateInstance hooks.
+    // NOTE: it is certainly possible that a layer will call an extension during the Createinstance hook
+    //       and the loader will _not_ crash (e.g., nvidia, android seem to not crash in this case, but AMD does).
+    //       So, this test will only catch an erroneous extension _if_ run on HW/a driver that crashes in this use
+    //       case.
+
+    for (const auto &ext : InstanceExtensions::get_info_map()) {
+        // Add all "real" instance extensions
+        if (InstanceExtensionSupported(ext.first.c_str())) {
+            m_instance_extension_names.emplace_back(ext.first.c_str());
+        }
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 }
