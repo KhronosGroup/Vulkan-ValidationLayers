@@ -595,13 +595,13 @@ class VkShaderObj : public vk_testing::ShaderModule {
                 char const *name = "main", bool debug = false, VkSpecializationInfo *specInfo = nullptr,
                 uint32_t spirv_minor_version = 0);
     VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                char const *name = "main", VkSpecializationInfo *specInfo = nullptr);
+                char const *name = "main", VkSpecializationInfo *specInfo = nullptr, const spv_target_env env = SPV_ENV_VULKAN_1_0);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
     bool InitFromGLSL(VkRenderFramework &framework, const char *shader_code, bool debug = false, uint32_t spirv_minor_version = 0);
     VkResult InitFromGLSLTry(VkRenderFramework &framework, const char *shader_code, bool debug = false,
                              uint32_t spirv_minor_version = 0);
-    bool InitFromASM(VkRenderFramework &framework, const std::string &spv_source);
+    bool InitFromASM(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env env = SPV_ENV_VULKAN_1_0);
     VkResult InitFromASMTry(VkRenderFramework &framework, const std::string &spv_source);
 
   protected:
