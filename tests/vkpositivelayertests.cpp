@@ -10895,3 +10895,100 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
 }
 
 #endif  // AHB_VALIDATION_SUPPORT
+
+TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
+    TEST_DESCRIPTION("Reproduces Github issue #2467 and effectively #2465 as well.");
+
+    app_info_.apiVersion = VK_API_VERSION_1_2;
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    std::vector<const char *> exts = {
+        "VK_EXT_buffer_device_address",  // TODO (ncesario) why does VK_KHR_buffer_device_address not work?
+        "VK_KHR_shader_non_semantic_info",
+        "VK_EXT_scalar_block_layout",
+    };
+    for (const auto *ext : exts) {
+        if (DeviceExtensionSupported(gpu(), nullptr, ext)) {
+            m_device_extension_names.push_back(ext);
+        } else {
+            printf("%s %s extension not supported. Skipping.", kSkipPrefix, ext);
+            return;
+        }
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *vertex_source = R"glsl(
+#version 450
+
+#extension GL_EXT_buffer_reference : enable
+#extension GL_EXT_scalar_block_layout : enable
+
+layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
+  vec3 v;
+};
+
+layout(push_constant, scalar) uniform pc {
+  VectorBuffer vb;
+} pcs;
+
+void main() {
+    gl_Position = vec4(pcs.vb.v, 1.0);
+}
+        )glsl";
+    const VkShaderObj vs(m_device, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    const char *fragment_source = R"glsl(
+#version 450
+
+#extension GL_EXT_buffer_reference : enable
+#extension GL_EXT_scalar_block_layout : enable
+
+layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
+  vec3 v;
+};
+  
+layout(push_constant, scalar) uniform pushConstants {
+  layout(offset=8) VectorBuffer vb;
+} pcs;
+
+layout(location=0) out vec4 o;
+void main() {
+    o = vec4(pcs.vb.v, 1.0);
+}
+    )glsl";
+    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    m_errorMonitor->ExpectSuccess();
+
+    std::array<VkPushConstantRange, 2> push_ranges;
+    push_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_ranges[0].size = sizeof(uint64_t);
+    push_ranges[0].offset = 0;
+    push_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_ranges[1].size = sizeof(uint64_t);
+    push_ranges[1].offset = sizeof(uint64_t);
+
+    VkPipelineLayoutCreateInfo const pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr,           0, 0, nullptr,
+        static_cast<uint32_t>(push_ranges.size()),     push_ranges.data()};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}

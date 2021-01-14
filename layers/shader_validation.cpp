@@ -1291,9 +1291,17 @@ void DefineStructMember(const SHADER_MODULE_STATE &src, const spirv_inst_iter &i
             def_member = src.get_def(def_member.word(2));
         }
 
-        if (def_member.opcode() == spv::OpTypeStruct || def_member.opcode() == spv::OpTypePointer) {
-            // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
+        if (def_member.opcode() == spv::OpTypeStruct) {
             DefineStructMember(src, def_member, memberDecorate_offsets, data1);
+        } else if (def_member.opcode() == spv::OpTypePointer) {
+            if (def_member.word(2) == spv::StorageClassPhysicalStorageBuffer) {
+                // If it's a pointer with PhysicalStorageBuffer class, this member is essentially a uint64_t containing an address
+                // that "points to something."
+                data1.size = 8;
+            } else {
+                // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
+                DefineStructMember(src, def_member, memberDecorate_offsets, data1);
+            }
         } else {
             if (def_member.opcode() == spv::OpTypeMatrix) {
                 data1.array_length_hierarchy.emplace_back(def_member.word(3));  // matrix's columns. matrix's row is vector.

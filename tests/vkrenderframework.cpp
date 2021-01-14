@@ -1737,14 +1737,14 @@ VkResult VkShaderObj::InitFromGLSLTry(VkRenderFramework &framework, const char *
 }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name, VkSpecializationInfo *specInfo)
+                         char const *name, VkSpecializationInfo *specInfo, const spv_target_env env)
     : VkShaderObj(*device, stage, name, specInfo) {
-    InitFromASM(*framework, spv_source);
+    InitFromASM(*framework, spv_source, env);
 }
 
-bool VkShaderObj::InitFromASM(VkRenderFramework &framework, const std::string &spv_source) {
+bool VkShaderObj::InitFromASM(VkRenderFramework &framework, const std::string &spv_source, const spv_target_env env) {
     vector<unsigned int> spv;
-    framework.ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    framework.ASMtoSPV(env, 0, spv_source.data(), spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
