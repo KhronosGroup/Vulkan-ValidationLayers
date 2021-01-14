@@ -32,6 +32,7 @@
 
 class SyncValidator;
 class ResourceAccessState;
+class CommandBufferAccessContext;
 
 enum SyncHazard {
     NONE = 0,
@@ -81,79 +82,26 @@ struct SyncStageAccess {
     }
 };
 
+// The resource tag is relative to the command buffer or queue in which it's found
 struct ResourceUsageTag {
     using TagIndex = uint64_t;
+    using Count = uint32_t;
     constexpr static TagIndex kMaxIndex = std::numeric_limits<TagIndex>::max();
-    // Special values for submit_index
-    // Every unsubmitted primary is *after* every submited primary
-    // Every recorded secondary is *after* every executing primary
-    constexpr static TagIndex kUnsubmittedPrimary = kMaxIndex - 1;
-    constexpr static TagIndex kUnexecutedSecondary = kMaxIndex;
-    // TODO: determine submit_index encoding
-    TagIndex submit_index;
-    TagIndex index;              // the index of the command within the command buffer itself (primary or secondary)
-    TagIndex secondary_index;    // the index of the command within a executed secondary imported into a primary context
-    CMD_TYPE command;            // the command within the commmand buffer itself (primary or secondary)
-    CMD_TYPE secondary_command;  // the command within the secondary imported into a primary (iff command == CMD_EXECUTECOMMANDS)
+    constexpr static uint32_t kMaxCount = std::numeric_limits<Count>::max();
 
-    // This is the command information encoding for index (primary) and secondary
-    static constexpr uint64_t kResetShift = 33;
-    static constexpr uint64_t kCommandShift = 1;
-    static constexpr uint64_t kCommandMask = 0xffffffff;
-    static constexpr uint64_t kSubCommandMask = (1 < kCommandShift) - 1U;
-    struct SequenceId {
-        uint32_t reset_count;
-        uint32_t seq_num;
-        uint32_t sub_command;
-    };
-    static TagIndex EncodeSequenceId(TagIndex reset_count, uint32_t command_num, uint32_t sub_command) {
-        const TagIndex command_index = ((static_cast<TagIndex>(command_num) << kCommandShift) | (sub_command & kSubCommandMask));
-        return (reset_count << kResetShift) | command_index;
-    }
-    static SequenceId DecodeSequenceId(TagIndex index) {
-        SequenceId dt;
-        dt.reset_count = index >> kResetShift;
-        dt.seq_num = (index >> kCommandShift) & kCommandMask;
-        dt.sub_command = (index & 1);
-        return dt;
-    }
+    TagIndex index = 0U;  // the index of the command within the command buffer itself (primary or secondary)
+    CMD_TYPE command = CMD_NONE;
+    Count seq_num = 0U;
+    Count sub_command = 0U;
 
-    ResourceUsageTag &operator++() {
-        index++;
-        return *this;
-    }
+    bool operator<(const ResourceUsageTag &rhs) const { return index < rhs.index; }
     bool IsBefore(const ResourceUsageTag &rhs) const { return index < rhs.index; }
-    bool IsGloballyBefore(const ResourceUsageTag &rhs) const {
-        return (submit_index < rhs.submit_index) ||
-               ((submit_index == rhs.submit_index) &&
-                ((index < rhs.index) || ((index == rhs.index) && (secondary_index < rhs.secondary_index))));
-    }
-    bool operator==(const ResourceUsageTag &rhs) const {
-        return (submit_index == rhs.submit_index) && (index == rhs.index) && (secondary_index == rhs.secondary_index);
-    }
+    bool operator==(const ResourceUsageTag &rhs) const { return (index == rhs.index); }
     bool operator!=(const ResourceUsageTag &rhs) const { return !(*this == rhs); }
 
-    CMD_TYPE GetCommand() const { return command; }
-    SequenceId GetSequenceId() const { return DecodeSequenceId(index); }
-
-    ResourceUsageTag NextSubCommand() const {
-        assert((index & 1) == 0);
-        ResourceUsageTag next = *this;
-        next.index++;
-        return next;
-    }
-
-    ResourceUsageTag()
-        : submit_index(kUnsubmittedPrimary), index(0), secondary_index(0), command(CMD_NONE), secondary_command(CMD_NONE) {}
-    ResourceUsageTag(uint64_t index_, CMD_TYPE command_, bool is_primary = true)
-        : submit_index(is_primary ? kUnsubmittedPrimary : kUnexecutedSecondary),
-          index(index_),
-          secondary_index(0),
-          command(command_),
-          secondary_command(CMD_NONE) {}
-
-    ResourceUsageTag(uint32_t reset_count, uint32_t command_num, CMD_TYPE command_, bool is_primary = true)
-        : index(EncodeSequenceId(reset_count, command_num, 0)), command(command_) {}
+    ResourceUsageTag() = default;
+    ResourceUsageTag(TagIndex index_, Count seq_num_, Count sub_command_, CMD_TYPE command_)
+        : index(index_), command(command_), seq_num(seq_num_), sub_command(sub_command_) {}
 };
 
 struct HazardResult {
@@ -236,6 +184,23 @@ class ResourceAccessState : public SyncStageAccess {
     };
     using OrderingBarriers = std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)>;
 
+    struct FirstAccess {
+        ResourceUsageTag tag;
+        SyncStageAccessIndex usage_index;
+        SyncOrdering ordering_rule;
+        FirstAccess(const ResourceUsageTag &tag_, SyncStageAccessIndex usage_index_, SyncOrdering ordering_rule_)
+            : tag(tag_), usage_index(usage_index_), ordering_rule(ordering_rule_){};
+        FirstAccess(const FirstAccess &other) = default;
+        FirstAccess(FirstAccess &&other) = default;
+        FirstAccess &operator=(const FirstAccess &rhs) = default;
+        FirstAccess &operator=(FirstAccess &&rhs) = default;
+
+        bool operator==(const FirstAccess &rhs) const {
+            return (tag == rhs.tag) && (usage_index == rhs.usage_index) && (ordering_rule == rhs.ordering_rule);
+        }
+    };
+    using FirstAccesses = small_vector<FirstAccess, 3>;
+
     // Mutliple read operations can be simlutaneously (and independently) synchronized,
     // given the only the second execution scope creates a dependency chain, we have to track each,
     // but only up to one per pipeline stage (as another read from the *same* stage become more recent,
@@ -303,7 +268,9 @@ class ResourceAccessState : public SyncStageAccess {
           read_execution_barriers(0),
           pending_write_dep_chain(0),
           pending_layout_transition(false),
-          pending_write_barriers(0) {}
+          pending_write_barriers(0),
+          first_accesses_(),
+          first_read_stages_(0U) {}
 
     bool HasPendingState() const {
         return (0 != pending_layout_transition) || pending_write_barriers.any() || (0 != pending_write_dep_chain);
@@ -313,7 +280,7 @@ class ResourceAccessState : public SyncStageAccess {
         bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
                     (last_reads == rhs.last_reads) && (last_read_stages == rhs.last_read_stages) && (write_tag == rhs.write_tag) &&
                     (input_attachment_read == rhs.input_attachment_read) &&
-                    (read_execution_barriers == rhs.read_execution_barriers);
+                    (read_execution_barriers == rhs.read_execution_barriers) && (first_accesses_ == rhs.first_accesses_);
         return same;
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
@@ -356,6 +323,8 @@ class ResourceAccessState : public SyncStageAccess {
     }
     VkPipelineStageFlags GetOrderedStages(const OrderingBarrier &ordering) const;
 
+    void UpdateFirst(const ResourceUsageTag &tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule);
+
     static const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) {
         return kOrderingRules[static_cast<size_t>(ordering_enum)];
     }
@@ -382,6 +351,8 @@ class ResourceAccessState : public SyncStageAccess {
     VkPipelineStageFlags pending_write_dep_chain;
     bool pending_layout_transition;
     SyncStageAccessFlags pending_write_barriers;
+    FirstAccesses first_accesses_;
+    VkPipelineStageFlags first_read_stages_;
 
     static OrderingBarriers kOrderingRules;
 };
@@ -528,23 +499,18 @@ class AccessContext {
         }
     }
 
-    bool ValidateLayoutTransitions(const SyncValidator &sync_state,
-
-                                   const RENDER_PASS_STATE &rp_state,
-
-                                   const VkRect2D &render_area,
-
-                                   uint32_t subpass, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
-                                   const char *func_name) const;
-    bool ValidateLoadOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                               uint32_t subpass, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
-                               const char *func_name) const;
-    bool ValidateStoreOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                uint32_t subpass, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
-                                const char *func_name) const;
-    bool ValidateResolveOperations(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                                   const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
-                                   uint32_t subpass) const;
+    bool ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+                                   const VkRect2D &render_area, uint32_t subpass,
+                                   const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name) const;
+    bool ValidateLoadOperation(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+                               const VkRect2D &render_area, uint32_t subpass,
+                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name) const;
+    bool ValidateStoreOperation(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+                                const VkRect2D &render_area, uint32_t subpass,
+                                const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name) const;
+    bool ValidateResolveOperations(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+                                   const VkRect2D &render_area, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                   const char *func_name, uint32_t subpass) const;
 
     void SetStartTag(const ResourceUsageTag &tag) { start_tag_ = tag; }
     template <typename Action>
@@ -574,19 +540,22 @@ class RenderPassAccessContext {
   public:
     RenderPassAccessContext() : rp_state_(nullptr), current_subpass_(0) {}
 
-    bool ValidateDrawSubpassAttachment(const SyncValidator &sync_state, const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area,
-                                       const char *func_name) const;
+    bool ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, const CMD_BUFFER_STATE &cmd,
+                                       const VkRect2D &render_area, const char *func_name) const;
     void RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area, const ResourceUsageTag &tag);
-    bool ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area, const char *command_name) const;
-    bool ValidateEndRenderPass(const SyncValidator &sync_state, const VkRect2D &render_area, const char *func_name) const;
-    bool ValidateFinalSubpassLayoutTransitions(const SyncValidator &sync_state, const VkRect2D &render_area,
+    bool ValidateNextSubpass(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
+                             const char *command_name) const;
+    bool ValidateEndRenderPass(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
+                               const char *func_name) const;
+    bool ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
                                                const char *func_name) const;
 
     void RecordLayoutTransitions(const ResourceUsageTag &tag);
     void RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag);
     void RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state, const AccessContext *external_context,
                                VkQueueFlags queue_flags, const ResourceUsageTag &tag);
-    void RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &tag);
+    void RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &prev_subpass_tag,
+                           const ResourceUsageTag &next_subpass_tag);
     void RecordEndRenderPass(AccessContext *external_context, const VkRect2D &render_area, const ResourceUsageTag &tag);
 
     AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
@@ -606,7 +575,9 @@ class RenderPassAccessContext {
 class CommandBufferAccessContext {
   public:
     CommandBufferAccessContext()
-        : command_number_(0),
+        : access_index_(0),
+          command_number_(0),
+          subcommand_number_(0),
           reset_count_(0),
           render_pass_contexts_(),
           cb_access_context_(),
@@ -622,7 +593,9 @@ class CommandBufferAccessContext {
     }
 
     void Reset() {
+        access_index_ = 0;
         command_number_ = 0;
+        subcommand_number_ = 0;
         reset_count_++;
         cb_access_context_.Reset();
         render_pass_contexts_.clear();
@@ -631,6 +604,7 @@ class CommandBufferAccessContext {
         event_state_.clear();
     }
 
+    std::string FormatUsage(const HazardResult &hazard) const;
     AccessContext *GetCurrentAccessContext() { return current_context_; }
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
@@ -653,8 +627,8 @@ class CommandBufferAccessContext {
     void RecordDrawSubpassAttachment(const ResourceUsageTag &tag);
     bool ValidateNextSubpass(const char *func_name) const;
     bool ValidateEndRenderpass(const char *func_name) const;
-    void RecordNextSubpass(const RENDER_PASS_STATE &render_pass, const ResourceUsageTag &tag);
-    void RecordEndRenderPass(const RENDER_PASS_STATE &render_pass, const ResourceUsageTag &tag);
+    void RecordNextSubpass(const RENDER_PASS_STATE &render_pass, CMD_TYPE command);
+    void RecordEndRenderPass(const RENDER_PASS_STATE &render_pass, CMD_TYPE command);
 
     bool ValidateSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
     void RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask, const ResourceUsageTag &tag);
@@ -674,20 +648,45 @@ class CommandBufferAccessContext {
     CMD_BUFFER_STATE *GetCommandBufferState() { return cb_state_.get(); }
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
+    inline ResourceUsageTag::TagIndex NextAccessIndex() { return access_index_++; }
+
+    inline ResourceUsageTag NextSubcommandTag(CMD_TYPE command) {
+        ResourceUsageTag next(NextAccessIndex(), command_number_, subcommand_number_++, command);
+        return next;
+    }
+
     inline ResourceUsageTag NextCommandTag(CMD_TYPE command) {
-        // TODO: add command encoding to ResourceUsageTag.
-        // What else we what to include.  Do we want some sort of "parent" or global sequence number
         command_number_++;
+        subcommand_number_ = 0;
         // The lowest bit is a sub-command number used to separate operations at the end of the previous renderpass
         // from the start of the new one in VkCmdNextRenderpass().
-        ResourceUsageTag next(reset_count_, command_number_, command);
+        ResourceUsageTag next(NextAccessIndex(), command_number_, subcommand_number_, command);
         return next;
+    }
+
+    const CMD_BUFFER_STATE &GetCBState() const {
+        assert(cb_state_);
+        return *(cb_state_.get());
+    }
+    CMD_BUFFER_STATE &GetCBState() {
+        assert(cb_state_);
+        return *(cb_state_.get());
+    }
+    const SyncValidator &GetSyncState() const {
+        assert(sync_state_);
+        return *sync_state_;
+    }
+    SyncValidator &GetSyncState() {
+        assert(sync_state_);
+        return *sync_state_;
     }
 
   private:
     SyncEventState *GetEventState(VkEvent);
     const SyncEventState *GetEventState(VkEvent) const;
+    ResourceUsageTag::TagIndex access_index_;
     uint32_t command_number_;
+    uint32_t subcommand_number_;
     uint32_t reset_count_;
     std::vector<RenderPassAccessContext> render_pass_contexts_;
     AccessContext cb_access_context_;
@@ -895,14 +894,15 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                    VkFilter filter) override;
     void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) override;
 
-    bool ValidateIndirectBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, const VkDeviceSize struct_size,
-                                const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
+    bool ValidateIndirectBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
+                                VkCommandBuffer commandBuffer, const VkDeviceSize struct_size, const VkBuffer buffer,
+                                const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
                                 const char *function) const;
     void RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
                               const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
 
-    bool ValidateCountBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                             const char *function) const;
+    bool ValidateCountBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
+                             VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, const char *function) const;
     void RecordCountBuffer(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset);
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const override;

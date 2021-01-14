@@ -35,7 +35,6 @@
 //
 // NOTE: Unlike std::vector which only requires T to be CopyAssignable and CopyConstructable, small_vector requires T to be
 //       MoveAssignable and MoveConstructable
-// NOTE: As implemented currently violates C++ standard restriction that clear cannot alter capacity
 // NOTE: Unlike std::vector, iterators are invalidated by move assignment between small_vector objects effectively the
 //       "small string" allocation functions as an incompatible allocator.
 template <typename T, size_t N, typename size_type = uint8_t>
@@ -98,14 +97,22 @@ class small_vector {
         if (this != &other) {
             reserve(other.size_);  // reserve doesn't shrink!
             auto dest = GetWorkingStore();
-            for (const auto &value : other) {
-                *dest = value;
-                ++dest;
+            auto source = other.GetWorkingStore();
+
+            const auto overlap = std::min(size_, other.size_);
+            // Copy assign anywhere we have objects in this
+            for (size_type i = 0; i < overlap; i++) {
+                dest[i] = source[i];
             }
-            // Any entries in *this past other_size_ must be cleaned up...
+
+            // Copy construct anywhere we *don't* have objects in this
+            for (size_type i = overlap; i < other.size_; i++) {
+                new (dest + i) value_type(source[i]);
+            }
+
+            // Any entries in this past other_size_ must be cleaned up...
             for (size_type i = other.size_; i < size_; i++) {
-                dest->~value_type();
-                ++dest;
+                dest[i].~value_type();
             }
             size_ = other.size_;
         }
@@ -128,7 +135,7 @@ class small_vector {
                 iterator dest;
                 if (large_store_) {
                     // If this is using large store do a wholesale clobber of it.
-                    clear();
+                    ClearAndReset();
                     dest = GetWorkingStore();
                 } else {
                     // This is also using small store, so move assign where both have valid values
@@ -170,11 +177,22 @@ class small_vector {
         assert(pos < size_);
         return GetWorkingStore()[pos];
     }
-
     const_reference operator[](size_type pos) const {
         assert(pos < size_);
         return GetWorkingStore()[pos];
     }
+
+    // Like std::vector::back, calling back on an empty container causes undefined behavior
+    reference back() {
+        assert(size_ > 0);
+        return GetWorkingStore()[size_ - 1];
+    }
+    const_reference back() const {
+        assert(size_ > 0);
+        return GetWorkingStore()[size_ - 1];
+    }
+
+    bool empty() const { return size_ == 0; }
 
     template <class... Args>
     void emplace_back(Args &&...args) {
@@ -200,14 +218,11 @@ class small_vector {
         // No shrink here.
     }
 
-    // NOTE: As implemented currently violates C++ standard restriction that clear cannot alter capacity.
     void clear() {
         auto working_store = GetWorkingStore();
         for (size_type i = 0; i < size_; i++) {
             working_store[i].~value_type();
         }
-        large_store_.reset();
-        capacity_ = kSmallCapacity;
         size_ = 0;
     }
 
@@ -228,6 +243,12 @@ class small_vector {
     inline pointer GetWorkingStore() {
         BackingStore *store = large_store_ ? large_store_.get() : small_store_;
         return reinterpret_cast<pointer>(store);
+    }
+
+    void ClearAndReset() {
+        clear();
+        large_store_.reset();
+        capacity_ = kSmallCapacity;
     }
 
     struct alignas(alignof(value_type)) BackingStore {
