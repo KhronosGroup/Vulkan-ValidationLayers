@@ -902,7 +902,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 '    };',
                 '',
                 '    typedef layer_data::unordered_map<std::string,%s> %s;' % (info_type, info_map_type),
-                '    static const %s &get_info(const char *name) {' %info_type,
+                '    static const %s &get_info_map() {' %info_map_type,
                 '        static const %s info_map = {' % info_map_type ])
             struct.extend([
                 '            {"VK_VERSION_1_1", %sInfo(&%sExtensions::vk_feature_version_1_1, {})},' % (type, type)])
@@ -922,9 +922,14 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             struct.extend([
                 '        };',
                 '',
+                '        return info_map;',
+                '    }',
+                '',
+                '    static const %s &get_info(const char *name) {' % info_type,
                 '        static const %s empty_info {nullptr, %s()};' % (info_type, req_vec_type),
-                '        %s::const_iterator info = info_map.find(name);' % info_map_type,
-                '        if ( info != info_map.cend()) {',
+                '        const auto &ext_map = %s::get_info_map();' % struct_type,
+                '        const auto info = ext_map.find(name);',
+                '        if ( info != ext_map.cend()) {',
                 '            return info->second;',
                 '        }',
                 '        return empty_info;',

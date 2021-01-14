@@ -110,7 +110,7 @@ struct InstanceExtensions {
     };
 
     typedef layer_data::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
-    static const InstanceInfo &get_info(const char *name) {
+    static const InstanceInfoMap &get_info_map() {
         static const InstanceInfoMap info_map = {
             {"VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})},
             {"VK_VERSION_1_2", InstanceInfo(&InstanceExtensions::vk_feature_version_1_2, {})},
@@ -203,9 +203,14 @@ struct InstanceExtensions {
 #endif
         };
 
+        return info_map;
+    }
+
+    static const InstanceInfo &get_info(const char *name) {
         static const InstanceInfo empty_info {nullptr, InstanceReqVec()};
-        InstanceInfoMap::const_iterator info = info_map.find(name);
-        if ( info != info_map.cend()) {
+        const auto &ext_map = InstanceExtensions::get_info_map();
+        const auto info = ext_map.find(name);
+        if ( info != ext_map.cend()) {
             return info->second;
         }
         return empty_info;
@@ -553,7 +558,7 @@ struct DeviceExtensions : public InstanceExtensions {
     };
 
     typedef layer_data::unordered_map<std::string,DeviceInfo> DeviceInfoMap;
-    static const DeviceInfo &get_info(const char *name) {
+    static const DeviceInfoMap &get_info_map() {
         static const DeviceInfoMap info_map = {
             {"VK_VERSION_1_1", DeviceInfo(&DeviceExtensions::vk_feature_version_1_1, {})},
             {"VK_VERSION_1_2", DeviceInfo(&DeviceExtensions::vk_feature_version_1_2, {})},
@@ -985,9 +990,14 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE3_EXTENSION_NAME}}})},
         };
 
+        return info_map;
+    }
+
+    static const DeviceInfo &get_info(const char *name) {
         static const DeviceInfo empty_info {nullptr, DeviceReqVec()};
-        DeviceInfoMap::const_iterator info = info_map.find(name);
-        if ( info != info_map.cend()) {
+        const auto &ext_map = DeviceExtensions::get_info_map();
+        const auto info = ext_map.find(name);
+        if ( info != ext_map.cend()) {
             return info->second;
         }
         return empty_info;
