@@ -195,6 +195,7 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
             }
 
             local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment);
+            WrapPnextChainHandles(layer_data, local_pCreateInfos[idx0].pNext);
 
             if (pCreateInfos[idx0].basePipelineHandle) {
                 local_pCreateInfos[idx0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[idx0].basePipelineHandle);

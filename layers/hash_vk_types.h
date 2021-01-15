@@ -1,6 +1,6 @@
-/* Copyright (c) 2019 The Khronos Group Inc.
- * Copyright (c) 2019 Valve Corporation
- * Copyright (c) 2019 LunarG, Inc.
+/* Copyright (c) 2021 The Khronos Group Inc.
+ * Copyright (c) 2021 Valve Corporation
+ * Copyright (c) 2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 // Includes everything needed for overloading std::hash
 #include "hash_util.h"
 
+#include <string.h>
 #include <vulkan/vulkan.h>
 #include "vk_safe_struct.h"
 #include <vector>
@@ -98,5 +99,83 @@ struct hash<VkImageSubresourceRange> {
     }
 };
 }  // namespace std
+
+// these comparisons, do not take extensions into account
+// VkPipelineTessellationStateCreateInfo
+static bool operator==(const VkPipelineTessellationStateCreateInfo &lhs, const VkPipelineTessellationStateCreateInfo &rhs) {
+    return (lhs.flags == rhs.flags) && (lhs.patchControlPoints == rhs.patchControlPoints);
+}
+
+// VkPipelineVertexInputStateCreateInfo
+static bool operator==(const VkPipelineVertexInputStateCreateInfo &lhs, const VkPipelineVertexInputStateCreateInfo &rhs) {
+    if ((lhs.flags != rhs.flags) || (lhs.vertexBindingDescriptionCount != rhs.vertexBindingDescriptionCount) ||
+        (lhs.vertexAttributeDescriptionCount != rhs.vertexAttributeDescriptionCount)) {
+        return false;
+    }
+
+    return hash_util::equal_unordered_arrays(lhs.vertexBindingDescriptionCount, lhs.pVertexBindingDescriptions,
+                                             rhs.pVertexBindingDescriptions) &&
+           hash_util::equal_unordered_arrays(lhs.vertexAttributeDescriptionCount, lhs.pVertexAttributeDescriptions,
+                                             rhs.pVertexAttributeDescriptions);
+};
+
+// VkPipelineInputAssemblyStateCreateInfo
+static bool operator==(const VkPipelineInputAssemblyStateCreateInfo &lhs, const VkPipelineInputAssemblyStateCreateInfo &rhs) {
+    return (lhs.flags == rhs.flags) && (lhs.topology == rhs.topology) &&
+           (lhs.primitiveRestartEnable == rhs.primitiveRestartEnable);
+}
+
+// VkPipelineViewportStateCreateInfo
+static bool operator==(const VkPipelineViewportStateCreateInfo &lhs, const VkPipelineViewportStateCreateInfo &rhs) {
+    if ((lhs.flags != rhs.flags) || (lhs.viewportCount != rhs.viewportCount) || (lhs.scissorCount != rhs.scissorCount) ||
+        !hash_util::similar_for_nullity(lhs.pViewports, rhs.pViewports) ||
+        !hash_util::similar_for_nullity(lhs.pScissors, rhs.pScissors)) {
+        return false;
+    }
+    return (!lhs.pScissors || memcmp(lhs.pScissors, rhs.pScissors, sizeof(VkRect2D) * lhs.scissorCount) == 0) &&
+           (!lhs.pViewports || memcmp(lhs.pViewports, rhs.pViewports, sizeof(VkViewport) * lhs.viewportCount) == 0);
+};
+
+// VkPipelineRasterizationStateCreateInfo
+static bool operator==(const VkPipelineRasterizationStateCreateInfo &lhs, const VkPipelineRasterizationStateCreateInfo &rhs) {
+    return memcmp(&lhs.flags, &rhs.flags, sizeof(VkPipelineRasterizationStateCreateInfo) - offsetof(VkPipelineRasterizationStateCreateInfo, flags)) == 0;
+};
+
+// VkPipelineMultisampleStateCreateInfo
+static bool operator==(const VkPipelineMultisampleStateCreateInfo &lhs, const VkPipelineMultisampleStateCreateInfo &rhs) {
+    if ((lhs.rasterizationSamples != rhs.rasterizationSamples) || (lhs.sampleShadingEnable != rhs.sampleShadingEnable) ||
+        (lhs.minSampleShading != rhs.minSampleShading) || (lhs.alphaToCoverageEnable != rhs.alphaToCoverageEnable) ||
+        (lhs.alphaToOneEnable != rhs.alphaToOneEnable) || !hash_util::similar_for_nullity(lhs.pSampleMask, rhs.pSampleMask)) {
+        return false;
+    }
+    uint32_t mask_count = lhs.rasterizationSamples & VK_SAMPLE_COUNT_64_BIT ? 2 : 1;
+    return (!lhs.pSampleMask || memcmp(lhs.pSampleMask, rhs.pSampleMask, sizeof(VkSampleMask) * mask_count) == 0);
+};
+
+// VkPipelineDepthStencilStateCreateInfo
+static bool operator==(const VkPipelineDepthStencilStateCreateInfo &lhs, const VkPipelineDepthStencilStateCreateInfo &rhs) {
+    return memcmp(&lhs.flags, &rhs.flags,
+                  sizeof(VkPipelineDepthStencilStateCreateInfo) - offsetof(VkPipelineDepthStencilStateCreateInfo, flags)) == 0;
+};
+
+// VkPipelineColorBlendStateCreateInfo
+static bool operator==(const VkPipelineColorBlendStateCreateInfo &lhs, const VkPipelineColorBlendStateCreateInfo &rhs) {
+    if ((lhs.flags != rhs.flags) || (lhs.logicOpEnable != rhs.logicOpEnable) || (lhs.logicOp != rhs.logicOp) ||
+            (lhs.attachmentCount != rhs.attachmentCount)) {
+        return false;
+    }
+
+    return (!lhs.attachmentCount ||
+            memcmp(lhs.pAttachments, rhs.pAttachments, sizeof(VkPipelineColorBlendAttachmentState) * lhs.attachmentCount) == 0) &&
+           memcmp(lhs.blendConstants, rhs.blendConstants, sizeof(float) * 4) == 0;
+};
+
+// VkPipelineDynamicStateCreateInfo
+static bool operator==(const VkPipelineDynamicStateCreateInfo &lhs, const VkPipelineDynamicStateCreateInfo &rhs) {
+    if ((lhs.flags != rhs.flags) && (lhs.dynamicStateCount != rhs.dynamicStateCount)) {
+        return false;
+    }
+    return hash_util::equal_unordered_arrays(lhs.dynamicStateCount, lhs.pDynamicStates, rhs.pDynamicStates);
+};
 
 #endif  // HASH_VK_TYPES_H_

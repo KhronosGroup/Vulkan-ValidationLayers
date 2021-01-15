@@ -64,6 +64,7 @@
 #include "shader_validation.h"
 #include "vk_layer_utils.h"
 #include "command_counter.h"
+#include "hash_vk_types.h"
 
 static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
     return (layout == non_normal) ? normal : layout;
@@ -730,7 +731,7 @@ std::string DynamicStateString(CBStatusFlags input_value) {
 
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
-                                               const PIPELINE_STATE *pPipeline, const char *caller) const {
+                                               const PIPELINE_STATE *pPipeline, const char *caller, const void* cmd_custom_info) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
@@ -762,9 +763,26 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
 
     // Verify vertex binding
-    if (pPipeline->vertex_binding_descriptions_.size() > 0) {
-        for (size_t i = 0; i < pPipeline->vertex_binding_descriptions_.size(); i++) {
-            const auto vertex_binding = pPipeline->vertex_binding_descriptions_[i].binding;
+    const auto &current_vertex_state = pPipeline->getVertexState(state.shader_group);
+
+    // generated commands should only take bindings into account that are flagged active in the 
+    // active indirectCommandsLayout.
+    const std::unordered_set<uint32_t> *generated_vertex_bindings = nullptr;
+    if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV) {
+        const VkGeneratedCommandsInfoNV *generated_cmds_info = reinterpret_cast<const VkGeneratedCommandsInfoNV *>(cmd_custom_info);
+        const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
+            GetIndirectCommandsLayoutStateNV(generated_cmds_info->indirectCommandsLayout);
+        generated_vertex_bindings = &ind_state->generated_vertex_bindings;
+    }
+
+    if (current_vertex_state.binding_descriptions_.size() > 0) {
+        for (size_t i = 0; i < current_vertex_state.binding_descriptions_.size(); i++) {
+            const auto vertex_binding = current_vertex_state.binding_descriptions_[i].binding;
+            if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV &&
+                generated_vertex_bindings->find(vertex_binding) != generated_vertex_bindings->cend()) {
+                continue;
+            }
+
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
                 skip |= LogError(pCB->commandBuffer, vuid.vertex_binding,
                                  "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
@@ -785,17 +803,22 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
 
         // Verify vertex attribute address alignment
-        for (size_t i = 0; i < pPipeline->vertex_attribute_descriptions_.size(); i++) {
-            const auto &attribute_description = pPipeline->vertex_attribute_descriptions_[i];
+        for (size_t i = 0; i < current_vertex_state.attribute_descriptions_.size(); i++) {
+            const auto &attribute_description = current_vertex_state.attribute_descriptions_[i];
             const auto vertex_binding = attribute_description.binding;
             const auto attribute_offset = attribute_description.offset;
 
-            const auto &vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(vertex_binding);
-            if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
+            if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV &&
+                generated_vertex_bindings->find(vertex_binding) != generated_vertex_bindings->cend()) {
+                continue;
+            }
+
+            const auto &vertex_binding_map_it = current_vertex_state.binding_to_index_map_.find(vertex_binding);
+            if ((vertex_binding_map_it != current_vertex_state.binding_to_index_map_.cend()) &&
                 (vertex_binding < current_vtx_bfr_binding_info.size()) &&
                 ((current_vtx_bfr_binding_info[vertex_binding].buffer_state) ||
                  enabled_features.robustness2_features.nullDescriptor)) {
-                auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
+                auto vertex_buffer_stride = current_vertex_state.binding_descriptions_[vertex_binding_map_it->second].stride;
                 if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
                     vertex_buffer_stride = static_cast<uint32_t>(current_vtx_bfr_binding_info[vertex_binding].stride);
                     uint32_t attribute_binding_extent =
@@ -813,7 +836,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 // Use 1 as vertex/instance index to use buffer stride as well
                 const auto attrib_address = vertex_buffer_offset + vertex_buffer_stride + attribute_offset;
 
-                VkDeviceSize vtx_attrib_req_alignment = pPipeline->vertex_attribute_alignments_[i];
+                VkDeviceSize vtx_attrib_req_alignment = current_vertex_state.attribute_alignments_[i];
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer);
@@ -1085,7 +1108,8 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
 
 // Validate overall state at the time of a draw call
 bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
-                                         const VkPipelineBindPoint bind_point, const char *function) const {
+                                         const VkPipelineBindPoint bind_point, const char *function,
+                                         const void *cmd_custom_info) const {
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &state = cb_node->lastBound[lv_bind_point];
@@ -1217,7 +1241,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Check general pipeline state that needs to be validated at drawtime
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
-        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pipe, function);
+        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pipe, function, cmd_custom_info);
     }
 
     // Verify if push constants have been set
@@ -1238,6 +1262,30 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
                     continue;
                 }
+
+                if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV) {
+                    // look for pushconstants in the indirect commands layout ranges first
+                    // if those fail, we check what is bound in the cmdbuffers
+
+                    const VkGeneratedCommandsInfoNV *generated_cmds_info =
+                        reinterpret_cast<const VkGeneratedCommandsInfoNV *>(cmd_custom_info);
+                    const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
+                        GetIndirectCommandsLayoutStateNV(generated_cmds_info->indirectCommandsLayout);
+
+                    const auto it = ind_state->push_constant_data_update.find(stage.stage_flag);
+                    if (it == ind_state->push_constant_data_update.end()) {
+                        // This error has been printed in ValidatePushConstantUsage.
+                        break;
+                    }
+
+                    uint32_t issue_index = 0;
+                    const auto ret =
+                        ValidatePushConstantSetUpdate(it->second, entrypoint->push_constant_used_in_shader, issue_index);
+                    if (ret == PC_Byte_Updated) {
+                        break;
+                    }
+                }
+
                 const auto it = cb_node->push_constant_data_update.find(stage.stage_flag);
                 if (it == cb_node->push_constant_data_update.end()) {
                     // This error has been printed in ValidatePushConstantUsage.
@@ -1310,7 +1358,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
         }
 
         // Validate vertex inputs
-        for (const auto desc : pipeline->vertex_binding_descriptions_) {
+        for (const auto desc : pipeline->vertex_state.binding_descriptions_) {
             if ((desc.stride < phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) ||
                 ((desc.stride % phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) != 0)) {
                 skip |= LogError(
@@ -1323,10 +1371,10 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
 
         // Validate vertex attributes
         if (VK_FALSE == enabled_features.portability_subset_features.vertexAttributeAccessBeyondStride) {
-            for (const auto attrib : pipeline->vertex_attribute_descriptions_) {
-                const auto vertex_binding_map_it = pipeline->vertex_binding_to_index_map_.find(attrib.binding);
-                if (vertex_binding_map_it != pipeline->vertex_binding_to_index_map_.cend()) {
-                    const auto desc = pipeline->vertex_binding_descriptions_[vertex_binding_map_it->second];
+            for (const auto attrib : pipeline->vertex_state.attribute_descriptions_) {
+                const auto vertex_binding_map_it = pipeline->vertex_state.binding_to_index_map_.find(attrib.binding);
+                if (vertex_binding_map_it != pipeline->vertex_state.binding_to_index_map_.cend()) {
+                    const auto desc = pipeline->vertex_state.binding_descriptions_[vertex_binding_map_it->second];
                     if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
                         skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
                                          "Invalid Pipeline CreateInfo[%d] (portability error): (attribute.offset + "
@@ -1456,9 +1504,30 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    if (ValidateGraphicsPipelineShaderState(pPipeline)) {
-        skip = true;
+    auto create_info = pPipeline->graphicsPipelineCI.ptr();
+    auto shader_groups_info = device_extensions.vk_nv_device_generated_commands
+                                 ? lvl_find_in_chain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(create_info->pNext)
+                                 : NULL;
+    uint32_t group_count = shader_groups_info ? shader_groups_info->groupCount : 1;
+
+    for (uint32_t group_index = 0; group_index < group_count; group_index++) {
+        if (ValidateGraphicsPipelineShaderState(pPipeline, group_index)) {
+            if (group_index) {
+                LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-02882",
+                         "Invalid Pipeline CreateInfo State: invalid shaders provided for shader group %d", group_index);
+            }
+            skip = true;
+        }
+        if (group_index) {
+            // in mesh pipeline can ignore task stage
+            if ((pPipeline->shader_groups[group_index].active_shaders & ~VK_SHADER_STAGE_TASK_BIT_NV) !=
+                (pPipeline->active_shaders & ~VK_SHADER_STAGE_TASK_BIT_NV)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-02883",
+                                 "Invalid Pipeline CreateInfo State: active shader stages mismatch at shader group %d", group_index);
+            }
+        }
     }
+
     // Each shader's stage must be unique
     if (pPipeline->duplicate_shaders) {
         for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
@@ -1652,25 +1721,147 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pPipeline->graphicsPipelineCI.pVertexInputState) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
-                         "Invalid Pipeline CreateInfo[%u] State: Missing pVertexInputState.", pipelineIndex);
+    for (uint32_t groupIndex = 0; groupIndex < group_count; groupIndex++) {
+        auto vi = groupIndex == 0 ? create_info->pVertexInputState : shader_groups_info->pGroups[groupIndex].pVertexInputState;
+
+
+        if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !vi) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
+                             "Invalid Pipeline CreateInfo State: Missing pVertexInputState.");
+        }
+
+        if (vi != NULL) {
+            for (uint32_t j = 0; j < vi->vertexAttributeDescriptionCount; j++) {
+                VkFormat format = vi->pVertexAttributeDescriptions[j].format;
+                // Internal call to get format info.  Still goes through layers, could potentially go directly to ICD.
+                VkFormatProperties properties;
+                DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &properties);
+                if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+                    if (groupIndex) {
+                        skip |= LogError(
+                            device, "VUID-VkVertexInputAttributeDescription-format-00623",
+                            "vkCreateGraphicsPipelines: "
+                            "pCreateInfo[%d].pShaderGroupsInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].format "
+                            "(%s) is not a supported vertex buffer format.",
+                            pipelineIndex, groupIndex, j, string_VkFormat(format));
+                    } else {
+                        skip |= LogError(
+                            device, "VUID-VkVertexInputAttributeDescription-format-00623",
+                            "vkCreateGraphicsPipelines: pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].format "
+                            "(%s) is not a supported vertex buffer format.",
+                            pipelineIndex, j, string_VkFormat(format));
+                    }
+                }
+            }
+        }
     }
 
-    auto vi = pPipeline->graphicsPipelineCI.pVertexInputState;
-    if (vi != NULL) {
-        for (uint32_t j = 0; j < vi->vertexAttributeDescriptionCount; j++) {
-            VkFormat format = vi->pVertexAttributeDescriptions[j].format;
-            // Internal call to get format info.  Still goes through layers, could potentially go directly to ICD.
-            VkFormatProperties properties;
-            DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &properties);
-            if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
-                skip |=
-                    LogError(device, "VUID-VkVertexInputAttributeDescription-format-00623",
-                             "vkCreateGraphicsPipelines: pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].format "
-                             "(%s) is not a supported vertex buffer format.",
-                             pipelineIndex, j, string_VkFormat(format));
+    if (device_extensions.vk_nv_device_generated_commands &&
+        (!pPipeline->shader_group_references.empty() || !pPipeline->shader_groups.empty())) {
+        const VkGraphicsPipelineCreateInfo *create_info_a = pPipeline->graphicsPipelineCI.ptr();
+        for (size_t i = 0; i < pPipeline->shader_group_references.size(); i++) {
+            skip |= ValidatePipelineReferences(pPipeline->shader_group_references[i].pipeline_state->pipeline,
+                                               "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parameter",
+                                               "vkCreateGraphicsPipelines()");
+
+            const PIPELINE_STATE *reference = pPipeline->shader_group_references[i].pipeline_state.get();
+            const VkGraphicsPipelineCreateInfo *create_info_b = reference->graphicsPipelineCI.ptr();
+
+            // When referenced pipelines are used, they must match in their creation state, except for 
+            // state that is overridden through shader groups and a few exceptions. This requires a deep 
+            // comparison of all known extension structs that the graphics state create info may
+            // reference.
+            //
+            // FIXME As of time of writing only basic structs are compared and therefore validation will not
+            // catch a state mismatch for extension structs. A full implementation would need to add 
+            // comparators for every extension struct, and find the corresponding struct in both
+            // pipelines and ensure a match.
+            // Following structs are known to be missing (as of header version 135)
+            //
+            // "VkPipelineDiscardRectangleStateCreateInfoEXT" structextends="VkGraphicsPipelineCreateInfo"
+            // "VkPipelineRepresentativeFragmentTestStateCreateInfoNV" structextends="VkGraphicsPipelineCreateInfo"
+            // "VkPipelineViewportWScalingStateCreateInfoNV" structextends="VkPipelineViewportStateCreateInfo"
+            // "VkPipelineViewportSwizzleStateCreateInfoNV" structextends="VkPipelineViewportStateCreateInfo"
+            // "VkPipelineViewportExclusiveScissorStateCreateInfoNV" structextends="VkPipelineViewportStateCreateInfo"
+            // "VkPipelineViewportShadingRateImageStateCreateInfoNV" structextends="VkPipelineViewportStateCreateInfo"
+            // "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV" structextends="VkPipelineViewportStateCreateInfo"
+            // "VkPipelineTessellationDomainOriginStateCreateInfo" structextends="VkPipelineTessellationStateCreateInfo"
+            // "VkPipelineCoverageToColorStateCreateInfoNV" structextends="VkPipelineMultisampleStateCreateInfo"
+            // "VkPipelineSampleLocationsStateCreateInfoEXT" structextends="VkPipelineMultisampleStateCreateInfo"
+            // "VkPipelineCoverageReductionStateCreateInfoNV" structextends="VkPipelineMultisampleStateCreateInfo"
+            // "VkPipelineCoverageModulationStateCreateInfoNV" structextends="VkPipelineMultisampleStateCreateInfo"
+            // "VkPipelineRasterizationConservativeStateCreateInfoEXT" structextends="VkPipelineRasterizationStateCreateInfo"
+            // "VkPipelineRasterizationStateStreamCreateInfoEXT" structextends="VkPipelineRasterizationStateCreateInfo"
+            // "VkPipelineRasterizationDepthClipStateCreateInfoEXT" structextends="VkPipelineRasterizationStateCreateInfo"
+            // "VkPipelineRasterizationLineStateCreateInfoEXT" structextends="VkPipelineRasterizationStateCreateInfo"
+            // "VkPipelineColorBlendAdvancedStateCreateInfoEXT" structextends="VkPipelineColorBlendStateCreateInfo"
+
+            if (((create_info_a->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
+                                           VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) !=
+                 (create_info_b->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
+                                           VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)))) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                                 "Invalid Pipeline CreateInfo: common state for shader groups must match: flags mismatch.");
             }
+            if (create_info_a->renderPass != create_info_b->renderPass || create_info_a->subpass != create_info_b->subpass) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: renderPass or subpass mismatch.");
+            }
+            if (create_info_a->layout != create_info_b->layout) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                                 "Invalid Pipeline CreateInfo: common state for shader groups must match: layout mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pInputAssemblyState, create_info_b->pInputAssemblyState) ||
+                (create_info_a->pInputAssemblyState &&
+                 !(*create_info_a->pInputAssemblyState == *create_info_b->pInputAssemblyState))) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: pInputAssemblyState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pViewportState, create_info_b->pViewportState) ||
+                (create_info_a->pViewportState && !(*create_info_a->pViewportState == *create_info_b->pViewportState))) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                             "Invalid Pipeline CreateInfo: common state for shader groups must match: pViewportState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pRasterizationState, create_info_b->pRasterizationState) ||
+                (create_info_a->pRasterizationState &&
+                 !(*create_info_a->pRasterizationState == *create_info_b->pRasterizationState))) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: pRasterizationState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pMultisampleState, create_info_b->pMultisampleState) ||
+                (create_info_a->pMultisampleState && !(*create_info_a->pMultisampleState == *create_info_b->pMultisampleState))) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                             "Invalid Pipeline CreateInfo: common state for shader groups must match: pMultisampleState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pDepthStencilState, create_info_b->pDepthStencilState) ||
+                (create_info_a->pDepthStencilState &&
+                 !(*create_info_a->pDepthStencilState == *create_info_b->pDepthStencilState))) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: pDepthStencilState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pColorBlendState, create_info_b->pColorBlendState) ||
+                (create_info_a->pColorBlendState && !(*create_info_a->pColorBlendState == *create_info_b->pColorBlendState))) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                             "Invalid Pipeline CreateInfo: common state for shader groups must match: pColorBlendState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pDynamicState, create_info_b->pDynamicState) ||
+                (create_info_a->pDynamicState && !(*create_info_a->pDynamicState == *create_info_b->pDynamicState))) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                                 "Invalid Pipeline CreateInfo: common state for shader groups must match: pDynamicState mismatch.");
+            }
+        }
+
+        if (pPipeline->effective_shader_group_count > phys_dev_ext_props.device_generated_cmds_props.maxGraphicsShaderGroupCount) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-groupCount-02880",
+                             "Invalid Pipeline CreateInfo: the sum of all shader groups (including referenced) must stay within "
+                             "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::maxGraphicsShaderGroupCount.");
         }
     }
 
@@ -4728,9 +4919,9 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
 
             // Find the corresponding binding description and validate input rate setting
             bool failed_01871 = true;
-            for (size_t k = 0; k < pipe_state->vertex_binding_descriptions_.size(); k++) {
-                if ((vibdd->binding == pipe_state->vertex_binding_descriptions_[k].binding) &&
-                    (VK_VERTEX_INPUT_RATE_INSTANCE == pipe_state->vertex_binding_descriptions_[k].inputRate)) {
+            for (size_t k = 0; k < pipe_state->vertex_state.binding_descriptions_.size(); k++) {
+                if ((vibdd->binding == pipe_state->vertex_state.binding_descriptions_[k].binding) &&
+                    (VK_VERTEX_INPUT_RATE_INSTANCE == pipe_state->vertex_state.binding_descriptions_[k].inputRate)) {
                     failed_01871 = false;
                     break;
                 }
@@ -5933,6 +6124,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             skip |= ValidateGraphicsPipelineBindPoint(cb_state, pipeline_state);
         }
     }
+
+    skip |= ValidatePipelineReferences(pipeline, "VUID-vkCmdBindPipeline-pipeline-parameter", "vkCmdBindPipeline()");
 
     return skip;
 }
@@ -14832,6 +15025,265 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device,
+                                                               const VkIndirectCommandsLayoutCreateInfoNV *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               VkIndirectCommandsLayoutNV *pIndirectCommandsLayout) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < pCreateInfo->tokenCount; i++) {
+        const auto &token = pCreateInfo->pTokens[i];
+        switch (token.tokenType) {
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV: {
+                VkPipelineLayout layout = token.pushconstantPipelineLayout;
+                uint32_t offset = token.pushconstantOffset;
+                uint32_t size = token.pushconstantSize;
+                VkShaderStageFlags stageFlags = token.pushconstantShaderStageFlags;
+                const auto &ranges = *GetPipelineLayout(layout)->push_constant_ranges;
+
+                VkShaderStageFlags found_stages = 0;
+                for (const auto &range : ranges) {
+                    if ((offset >= range.offset) && (offset + size <= range.offset + range.size)) {
+                        VkShaderStageFlags matching_stages = range.stageFlags & stageFlags;
+                        if (matching_stages != range.stageFlags) {
+                            skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02982",
+                                             "vkCreateIndirectCommandsLayoutNV() token %u: stageFlags (0x%" PRIx32
+                                             ", offset (%" PRIu32 "), and size (%" PRIu32
+                                             "),  must contain all stages in overlapping VkPushConstantRange stageFlags (0x%" PRIx32
+                                             "), offset (%" PRIu32 "), and size (%" PRIu32 ") in %s.",
+                                             i, (uint32_t)stageFlags, offset, size, (uint32_t)range.stageFlags, range.offset,
+                                             range.size, report_data->FormatHandle(layout).c_str());
+                        }
+
+                        // Accumulate all stages we've found
+                        found_stages = matching_stages | found_stages;
+                    }
+                }
+                if (found_stages != stageFlags) {
+                    uint32_t missing_stages = ~found_stages & stageFlags;
+                    skip |=
+                        LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02983",
+                                 "vkCreateIndirectCommandsLayoutNV() token %u: stageFlags = 0x%" PRIx32
+                                 ", VkPushConstantRange in %s overlapping offset = %d and size = %d, do not contain "
+                                 "stageFlags 0x%" PRIx32 ".",
+                                 i, (uint32_t)stageFlags, report_data->FormatHandle(layout).c_str(), offset, size, missing_stages);
+                }
+            } break;
+            default:
+                break;
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidatePipelineReferences(VkPipeline pipeline, const char *vuid, const char *apiName) const {
+    const PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
+    for (auto piperef : pipeline_state->referenced_pipelines) {
+        const auto *piperef_state = GetPipelineState(piperef);
+        if (!piperef_state) {
+            LogError(device, vuid, "%s cannot use pipeline object %s, as it references invalid pipelines.",
+                     apiName, report_data->FormatHandle(pipeline).c_str());
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
+                                                                         const VkGeneratedCommandsMemoryRequirementsInfoNV *pInfo,
+                                                                         VkMemoryRequirements2 *pMemoryRequirements) const {
+    bool skip = false;
+
+    skip |= ValidatePipelineReferences(pInfo->pipeline, "VUID-VkGeneratedCommandsMemoryRequirementsInfoNV-pipeline-parameter",
+                                       "vkGetGeneratedCommandsMemoryRequirementsNV()");
+
+    return skip;
+}
+
+bool CoreChecks::ValidateGeneratedCommandsBufferNV(VkCommandBuffer commandBuffer, VkBuffer buffer, const char *bufferName,
+                                                   const char *vuidBound, const char *vuidFlag, const char *apiName) const {
+    bool skip = false;
+
+    if (buffer) {
+        const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, apiName, vuidBound);
+        if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT)) {
+            skip |=
+                LogError(commandBuffer, vuidFlag, "%s %s must have VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT set.", apiName, bufferName);
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV *pGenInfo,
+                                                 bool isPreprocess, const char *apiName) const {
+    bool skip = false;
+
+    const PIPELINE_STATE *pipeline_state = GetPipelineState(pGenInfo->pipeline);
+    const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state = GetIndirectCommandsLayoutStateNV(pGenInfo->indirectCommandsLayout);
+
+    if (ind_state->hasShaderGroups && pipeline_state->effective_shader_group_count <= 1) {
+        skip |=
+            LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-indirectCommandsLayout-02913",
+                     "%s if VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV is used, the pipeline must have multiple shader groups",
+                     apiName);
+    }
+
+    if (ind_state->hasShaderGroups && !(pipeline_state->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV)) {
+        skip |= LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-indirectCommandsLayout-02913",
+                         "%s if VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV is used, the pipeline must have "
+                         "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV set",
+                         apiName);
+    }
+
+    if (ind_state->createInfo.streamCount != pGenInfo->streamCount) {
+        skip |= LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-streamCount-02916",
+                         "%s streamCount must match indirectCommandsLayout's streamCount", apiName);
+    }
+
+    for (uint32_t i = 0; i < ind_state->createInfo.tokenCount; i++) {
+        if (ind_state->createInfo.pTokens[i].tokenType == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV &&
+            ind_state->createInfo.pTokens[i].pushconstantPipelineLayout != pipeline_state->graphicsPipelineCI.layout) {
+            skip |=
+                LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-indirectCommandsLayout-02915",
+                         "%s the indirectCommandsLayout's pushconstantPipelineLayout must match the pipeline's layout.", apiName);
+        }
+    }
+    if (pGenInfo->sequencesIndexBuffer &&
+        !(ind_state->createInfo.flags & VK_INDIRECT_COMMANDS_LAYOUT_USAGE_INDEXED_SEQUENCES_BIT_NV)) {
+        skip |= LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-sequencesIndexBuffer-02924",
+                         "%s the indirectCommandsLayout's must have VK_INDIRECT_COMMANDS_LAYOUT_USAGE_INDEXED_SEQUENCES_BIT_NV if "
+                         "sequencesIndexBuffer is used.",
+                         apiName);
+    }
+
+    skip |= ValidateGeneratedCommandsBufferNV(commandBuffer, pGenInfo->preprocessBuffer, "preprocessBuffer",
+                                              "VUID-VkGeneratedCommandsInfoNV-preprocessBuffer-02971",
+                                              "VUID-VkGeneratedCommandsInfoNV-preprocessBuffer-02918", apiName);
+    skip |= ValidateGeneratedCommandsBufferNV(commandBuffer, pGenInfo->sequencesIndexBuffer, "sequencesIndexBuffer",
+                                              "VUID-VkGeneratedCommandsInfoNV-sequencesIndexBuffer-02973",
+                                              "VUID-VkGeneratedCommandsInfoNV-sequencesIndexBuffer-02925", apiName);
+    skip |= ValidateGeneratedCommandsBufferNV(commandBuffer, pGenInfo->sequencesCountBuffer, "sequencesCountBuffer",
+                                              "VUID-VkGeneratedCommandsInfoNV-sequencesCountBuffer-02972",
+                                              "VUID-VkGeneratedCommandsInfoNV-sequencesCountBuffer-02923", apiName);
+
+    for (uint32_t i = 0; i < pGenInfo->streamCount; i++) {
+        skip |= ValidateGeneratedCommandsBufferNV(commandBuffer, pGenInfo->pStreams[i].buffer, "pStreams[].buffer",
+                                                  "VUID-VkIndirectCommandsStreamNV-buffer-02975",
+                                                  "VUID-VkIndirectCommandsStreamNV-buffer-02942", apiName);
+    }
+
+    skip |= ValidatePipelineReferences(pGenInfo->pipeline, "VUID-VkGeneratedCommandsInfoNV-pipeline-parameter", apiName);
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
+                                                                 const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) const {
+    bool skip = false;
+
+    const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
+        GetIndirectCommandsLayoutStateNV(pGeneratedCommandsInfo->indirectCommandsLayout);
+
+    skip |= ValidateGeneratedCommandsInfoNV(commandBuffer, pGeneratedCommandsInfo, true, "vkCmdExecutePreprocessCommandsNV()");
+
+    if (!(ind_state->createInfo.flags & VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_NV)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdPreprocessGeneratedCommandsNV-pGeneratedCommandsInfo-02927",
+                         "vkCmdPreprocessGeneratedCommandsNV() the indirectCommandsLayout's must have "
+                         "VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_NV set.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                              const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) const {
+    bool skip = false;
+
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const auto lv_bind_point = ConvertToLvlBindPoint(pGeneratedCommandsInfo->pipelineBindPoint);
+    const PIPELINE_STATE *pPipe = cb_state->lastBound[lv_bind_point].pipeline_state;
+
+    if (pPipe != GetPipelineState(pGeneratedCommandsInfo->pipeline)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdExecuteGeneratedCommandsNV-pipeline-02909",
+                         "vkCmdExecuteGeneratedCommandsNV() provided pipeline must match current bound pipeline.");
+    }
+
+    skip |= ValidateGeneratedCommandsInfoNV(commandBuffer, pGeneratedCommandsInfo, false, "vkCmdExecuteGeneratedCommandsNV()");
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_EXECUTEGENERATEDCOMMANDSNV,
+                                "vkCmdExecuteGeneratedCommandsNV()", VK_QUEUE_GRAPHICS_BIT, pGeneratedCommandsInfo);
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                             VkPipeline pipeline, uint32_t groupIndex) const {
+    bool skip = false;
+
+    const auto *pipeline_state = GetPipelineState(pipeline);
+    assert(pipeline_state);
+
+    if (groupIndex && groupIndex >= pipeline_state->effective_shader_group_count) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindPipelineShaderGroupNV-groupIndex-02893",
+                         "vkCmdBindPipelineShaderGroupNV(): groupIndex %d outside of effective groups %d for %s.", groupIndex,
+                         pipeline_state->effective_shader_group_count, report_data->FormatHandle(pipeline_state->pipeline).c_str());
+    }
+
+    if (PreCallValidateCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindPipelineShaderGroupNV-groupIndex-02895",
+                         "vkCmdBindPipelineShaderGroupNV() must yield a valid state for the pipeline");
+        skip = true;
+    }
+
+    return skip;
+}
+
+void PIPELINE_STATE::initVertexState(VertexState &vertex_state, const VkPipelineVertexInputStateCreateInfo *pVICI) {
+    if (pVICI->vertexBindingDescriptionCount) {
+        vertex_state.binding_descriptions_ = std::vector<VkVertexInputBindingDescription>(
+            pVICI->pVertexBindingDescriptions, pVICI->pVertexBindingDescriptions + pVICI->vertexBindingDescriptionCount);
+
+        vertex_state.binding_to_index_map_.reserve(pVICI->vertexBindingDescriptionCount);
+        for (uint32_t i = 0; i < pVICI->vertexBindingDescriptionCount; ++i) {
+            vertex_state.binding_to_index_map_[pVICI->pVertexBindingDescriptions[i].binding] = i;
+        }
+    }
+    if (pVICI->vertexAttributeDescriptionCount) {
+        vertex_state.attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
+            pVICI->pVertexAttributeDescriptions, pVICI->pVertexAttributeDescriptions + pVICI->vertexAttributeDescriptionCount);
+        for (uint32_t i = 0; i < pVICI->vertexAttributeDescriptionCount; ++i) {
+            const auto attribute_format = pVICI->pVertexAttributeDescriptions[i].format;
+            VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attribute_format);
+            if (FormatElementIsTexel(attribute_format)) {
+                vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attribute_format));
+            }
+            vertex_state.attribute_alignments_.push_back(vtx_attrib_req_alignment);
+        }
+    }
+}
+
+const PIPELINE_STATE::VertexState &PIPELINE_STATE::getVertexState(uint32_t groupIndex) const {
+    assert(groupIndex < effective_shader_group_count);
+
+    if (groupIndex == 0) {
+        return vertex_state;
+    } else if (groupIndex < shader_groups.size()) {
+        return shader_groups[groupIndex].vertex_state;
+    } else {
+        for (size_t i = 0; i < shader_group_references.size(); i++) {
+            if (groupIndex >= shader_group_references[i].lower_shader_group &&
+                groupIndex < shader_group_references[i].upper_shader_group) {
+                return shader_group_references[i].pipeline_state->getVertexState(groupIndex -
+                                                                                 shader_group_references[i].lower_shader_group);
+            }
+        }
+    }
+
+    return vertex_state;
+}
+
 void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                           std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
     reset();
@@ -14865,35 +15317,52 @@ void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_da
     }
 
     if (graphicsPipelineCI.pVertexInputState) {
-        const auto vici = graphicsPipelineCI.pVertexInputState;
-        if (vici->vertexBindingDescriptionCount) {
-            this->vertex_binding_descriptions_ = std::vector<VkVertexInputBindingDescription>(
-                vici->pVertexBindingDescriptions, vici->pVertexBindingDescriptions + vici->vertexBindingDescriptionCount);
-
-            this->vertex_binding_to_index_map_.reserve(vici->vertexBindingDescriptionCount);
-            for (uint32_t i = 0; i < vici->vertexBindingDescriptionCount; ++i) {
-                this->vertex_binding_to_index_map_[vici->pVertexBindingDescriptions[i].binding] = i;
-            }
-        }
-        if (vici->vertexAttributeDescriptionCount) {
-            this->vertex_attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
-                vici->pVertexAttributeDescriptions, vici->pVertexAttributeDescriptions + vici->vertexAttributeDescriptionCount);
-            for (uint32_t i = 0; i < vici->vertexAttributeDescriptionCount; ++i) {
-                const auto attribute_format = vici->pVertexAttributeDescriptions[i].format;
-                VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attribute_format);
-                if (FormatElementIsTexel(attribute_format)) {
-                    vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attribute_format));
-                }
-                this->vertex_attribute_alignments_.push_back(vtx_attrib_req_alignment);
-            }
-        }
+        initVertexState(vertex_state, graphicsPipelineCI.pVertexInputState->ptr());
     }
+
     if (graphicsPipelineCI.pColorBlendState) {
         const auto cbci = graphicsPipelineCI.pColorBlendState;
         if (cbci->attachmentCount) {
             this->attachments =
                 std::vector<VkPipelineColorBlendAttachmentState>(cbci->pAttachments, cbci->pAttachments + cbci->attachmentCount);
         }
+    }
+
+    auto pShaderGroupsInfo = lvl_find_in_chain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(pCreateInfo->pNext);
+    if (pShaderGroupsInfo) {
+        uint32_t groupCount = pShaderGroupsInfo->groupCount;
+        this->shader_groups.resize(groupCount);
+
+        for (uint32_t groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+            auto &shaderGroup = this->shader_groups[groupIndex];
+            shaderGroup.stage_state.resize(pShaderGroupsInfo->pGroups[groupIndex].stageCount);
+            for (uint32_t i = 0; i < pShaderGroupsInfo->pGroups[groupIndex].stageCount; i++) {
+                const VkPipelineShaderStageCreateInfo *pPSSCI = &pShaderGroupsInfo->pGroups[groupIndex].pStages[i];
+                shaderGroup.duplicate_shaders |= shaderGroup.active_shaders & pPSSCI->stage;
+                shaderGroup.active_shaders |= pPSSCI->stage;
+
+                state_data->RecordPipelineShaderStage(pPSSCI, this, &shaderGroup.stage_state[i]);
+            }
+            this->duplicate_shaders |= shaderGroup.duplicate_shaders;
+            this->active_shaders |= shaderGroup.active_shaders;
+            if (pShaderGroupsInfo->pGroups[groupIndex].pVertexInputState) {
+                initVertexState(shaderGroup.vertex_state, pShaderGroupsInfo->pGroups[groupIndex].pVertexInputState);
+            }
+        }
+
+        this->shader_group_references.resize(pShaderGroupsInfo->pipelineCount);
+        for (uint32_t i = 0; i < pShaderGroupsInfo->pipelineCount; i++) {
+            this->shader_group_references[i].pipeline_state =
+                state_data->GetShared<PIPELINE_STATE>(pShaderGroupsInfo->pPipelines[i]);
+            this->shader_group_references[i].lower_shader_group = groupCount;
+            groupCount += this->shader_group_references[i].pipeline_state->effective_shader_group_count;
+            this->shader_group_references[i].upper_shader_group = groupCount;
+
+            this->referenced_pipelines.insert(pShaderGroupsInfo->pPipelines[i]);
+            this->shader_group_references[i].pipeline_state->appendReferencedPipelines(this->referenced_pipelines);
+        }
+
+        effective_shader_group_count = groupCount;
     }
     rp_state = rpstate;
 }

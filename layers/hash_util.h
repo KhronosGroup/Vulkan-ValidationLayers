@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,21 @@ namespace hash_util {
 template <typename T>
 bool similar_for_nullity(const T *const lhs, const T *const rhs) {
     return ((lhs != nullptr) && (rhs != nullptr)) || ((lhs == nullptr) && (rhs == nullptr));
+}
+
+template <typename T>
+bool equal_unordered_arrays(uint32_t count, const T *const lhs, const T *const rhs) {
+    uint32_t match_count = 0;
+
+    for (uint32_t i = 0; i < count; i++) {
+        for (uint32_t n = 0; n < count; n++) {
+            if (memcmp(&lhs[i], &rhs[n], sizeof(T)) == 0) {
+                match_count++;
+            }
+        }
+    }
+
+    return count == match_count;
 }
 
 // Wrap std hash to avoid manual casts for the holes in std::hash (in C++11)

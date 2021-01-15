@@ -266,7 +266,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdDrawInstance(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance, CMD_TYPE cmd_type,
                                  const char* caller) const;
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
-                             const char* caller, VkQueueFlags queue_flags) const;
+                             const char* caller, VkQueueFlags queue_flags, const void* cmd_custom_info = nullptr) const;
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
                                    VkDeviceSize memoryOffset, const char* api_name) const;
@@ -376,9 +376,9 @@ class CoreChecks : public ValidationStateTracker {
                                            QFOTransferCBScoreboards<VkImageMemoryBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<VkBufferMemoryBarrier>* qfo_buffer_scoreboards) const;
     bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE* pCB, CMD_TYPE cmd_type,
-                                       const PIPELINE_STATE* pPipeline, const char* caller) const;
+                                       const PIPELINE_STATE* pPipeline, const char* caller, const void* cmd_custom_info) const;
     bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
-                                 const VkPipelineBindPoint bind_point, const char* function) const;
+                                 const VkPipelineBindPoint bind_point, const char* function, const void* cmd_custom_info) const;
     static bool ValidateEventStageMask(const ValidationStateTracker* state_data, const CMD_BUFFER_STATE* pCB, size_t eventCount,
                                        size_t firstEventIndex, VkPipelineStageFlags sourceStageMask,
                                        EventToStageMap* localEventToStageMap);
@@ -438,7 +438,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkCopyDescriptorSet* p_cds, const char* func_name) const;
 
     // Stuff from shader_validation
-    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
+    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline, uint32_t groupIndex = 0) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE* pPipeline, const CMD_BUFFER_STATE* pCB,
                                                     const char* caller, const DrawDispatchVuid& vuid) const;
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
@@ -1448,6 +1448,24 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                                      const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) const override;
 
+
+    bool PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) const override;
+    bool ValidatePipelineReferences(VkPipeline pipeline, const char* vuid, const char* apiName) const;
+    bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
+                                                                 const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements) const override;
+    bool ValidateGeneratedCommandsBufferNV(VkCommandBuffer commandBuffer, VkBuffer buffer, const char* bufferName,
+                                           const char* vuidBound, const char* vuidFlag, const char* apiName) const;
+    bool ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo,
+                                         bool isPreprocess, const char* apiName) const;
+    bool PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const override;
+    bool PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                      const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const override;
+
+    bool PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                        VkPipeline pipeline, uint32_t groupIndex) const override;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
         VkDevice device, const struct AHardwareBuffer* buffer,
