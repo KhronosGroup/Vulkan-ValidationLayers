@@ -1418,8 +1418,6 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     uint32_t small_indexed_draw_call_count;
 
     bool transform_feedback_active{false};
-
-    const std::unordered_set<uint32_t>* generated_vertex_bindings = nullptr;
 };
 
 static inline const QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
@@ -1501,6 +1499,11 @@ public:
   safe_VkIndirectCommandsLayoutCreateInfoNV createInfo;
   bool hasShaderGroups = false;
   std::unordered_set<uint32_t> generated_vertex_bindings;
+
+  std::map<VkShaderStageFlagBits, std::vector<uint8_t>>
+    push_constant_data_update;  // vector's value is enum PushConstantByteState.
+  VkPipelineLayout push_constant_pipeline_layout_set;
+
   INDIRECT_COMMANDS_LAYOUT_STATE(VkIndirectCommandsLayoutNV cmdsLayout, const VkIndirectCommandsLayoutCreateInfoNV *pCreateInfo)
     : indirectCmdsLayout(cmdsLayout), createInfo(pCreateInfo){};
 };

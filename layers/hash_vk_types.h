@@ -127,11 +127,13 @@ static bool operator==(const VkPipelineInputAssemblyStateCreateInfo &lhs, const 
 
 // VkPipelineViewportStateCreateInfo
 static bool operator==(const VkPipelineViewportStateCreateInfo &lhs, const VkPipelineViewportStateCreateInfo &rhs) {
-    if ((lhs.flags != rhs.flags) || (lhs.viewportCount != rhs.viewportCount) || (lhs.scissorCount != rhs.scissorCount)) {
+    if ((lhs.flags != rhs.flags) || (lhs.viewportCount != rhs.viewportCount) || (lhs.scissorCount != rhs.scissorCount) ||
+        !hash_util::similar_for_nullity(lhs.pViewports, rhs.pViewports) ||
+        !hash_util::similar_for_nullity(lhs.pScissors, rhs.pScissors)) {
         return false;
     }
-    return (!lhs.scissorCount || memcmp(lhs.pScissors, rhs.pScissors, sizeof(VkRect2D) * lhs.scissorCount) == 0) &&
-           (!lhs.viewportCount || memcmp(lhs.pViewports, rhs.pViewports, sizeof(VkViewport) * lhs.viewportCount) == 0);
+    return (!lhs.pScissors || memcmp(lhs.pScissors, rhs.pScissors, sizeof(VkRect2D) * lhs.scissorCount) == 0) &&
+           (!lhs.pViewports || memcmp(lhs.pViewports, rhs.pViewports, sizeof(VkViewport) * lhs.viewportCount) == 0);
 };
 
 // VkPipelineRasterizationStateCreateInfo
@@ -170,19 +172,10 @@ static bool operator==(const VkPipelineColorBlendStateCreateInfo &lhs, const VkP
 
 // VkPipelineDynamicStateCreateInfo
 static bool operator==(const VkPipelineDynamicStateCreateInfo &lhs, const VkPipelineDynamicStateCreateInfo &rhs) {
-    if ((lhs.flags == rhs.flags) && (lhs.dynamicStateCount == rhs.dynamicStateCount)) {
+    if ((lhs.flags != rhs.flags) && (lhs.dynamicStateCount != rhs.dynamicStateCount)) {
         return false;
     }
-    uint32_t match_count = 0;
-    for (uint32_t i = 0; i < lhs.dynamicStateCount; i++) {
-      for (uint32_t n = 0; n < rhs.dynamicStateCount; n++){
-        if (lhs.pDynamicStates[i] == rhs.pDynamicStates[n]) {
-            match_count++;
-            break;
-        }
-      }
-    }
-    return match_count == lhs.dynamicStateCount;
+    return hash_util::equal_unordered_arrays(lhs.dynamicStateCount, lhs.pDynamicStates, rhs.pDynamicStates);
 };
 
 #endif  // HASH_VK_TYPES_H_

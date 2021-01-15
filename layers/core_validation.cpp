@@ -731,7 +731,7 @@ std::string DynamicStateString(CBStatusFlags input_value) {
 
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
-                                               const PIPELINE_STATE *pPipeline, const char *caller) const {
+                                               const PIPELINE_STATE *pPipeline, const char *caller, const void* cmd_custom_info) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
@@ -765,11 +765,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     // Verify vertex binding
     const auto &current_vertex_state = pPipeline->getVertexState(state.shader_group);
 
+    // generated commands should only take bindings into account that are flagged active in the 
+    // active indirectCommandsLayout.
+    const std::unordered_set<uint32_t> *generated_vertex_bindings = nullptr;
+    if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV) {
+        const VkGeneratedCommandsInfoNV *generated_cmds_info = reinterpret_cast<const VkGeneratedCommandsInfoNV *>(cmd_custom_info);
+        const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
+            GetIndirectCommandsLayoutStateNV(generated_cmds_info->indirectCommandsLayout);
+        generated_vertex_bindings = &ind_state->generated_vertex_bindings;
+    }
+
     if (current_vertex_state.binding_descriptions_.size() > 0) {
         for (size_t i = 0; i < current_vertex_state.binding_descriptions_.size(); i++) {
             const auto vertex_binding = current_vertex_state.binding_descriptions_[i].binding;
             if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV &&
-                pCB->generated_vertex_bindings->find(vertex_binding) != pCB->generated_vertex_bindings->cend()) {
+                generated_vertex_bindings->find(vertex_binding) != generated_vertex_bindings->cend()) {
                 continue;
             }
 
@@ -799,7 +809,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto attribute_offset = attribute_description.offset;
 
             if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV &&
-                pCB->generated_vertex_bindings->find(vertex_binding) != pCB->generated_vertex_bindings->cend()) {
+                generated_vertex_bindings->find(vertex_binding) != generated_vertex_bindings->cend()) {
                 continue;
             }
 
@@ -1098,7 +1108,8 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
 
 // Validate overall state at the time of a draw call
 bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
-                                         const VkPipelineBindPoint bind_point, const char *function) const {
+                                         const VkPipelineBindPoint bind_point, const char *function,
+                                         const void *cmd_custom_info) const {
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &state = cb_node->lastBound[lv_bind_point];
@@ -1230,7 +1241,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Check general pipeline state that needs to be validated at drawtime
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
-        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pipe, function);
+        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pipe, function, cmd_custom_info);
     }
 
     // Verify if push constants have been set
@@ -1251,6 +1262,30 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
                     continue;
                 }
+
+                if (cmd_type == CMD_EXECUTEGENERATEDCOMMANDSNV) {
+                    // look for pushconstants in the indirect commands layout ranges first
+                    // if those fail, we check what is bound in the cmdbuffers
+
+                    const VkGeneratedCommandsInfoNV *generated_cmds_info =
+                        reinterpret_cast<const VkGeneratedCommandsInfoNV *>(cmd_custom_info);
+                    const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
+                        GetIndirectCommandsLayoutStateNV(generated_cmds_info->indirectCommandsLayout);
+
+                    const auto it = ind_state->push_constant_data_update.find(stage.stage_flag);
+                    if (it == ind_state->push_constant_data_update.end()) {
+                        // This error has been printed in ValidatePushConstantUsage.
+                        break;
+                    }
+
+                    uint32_t issue_index = 0;
+                    const auto ret =
+                        ValidatePushConstantSetUpdate(it->second, entrypoint->push_constant_used_in_shader, issue_index);
+                    if (ret == PC_Byte_Updated) {
+                        break;
+                    }
+                }
+
                 const auto it = cb_node->push_constant_data_update.find(stage.stage_flag);
                 if (it == cb_node->push_constant_data_update.end()) {
                     // This error has been printed in ValidatePushConstantUsage.
@@ -1764,28 +1799,62 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
             if (((create_info_a->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
                                            VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) !=
                  (create_info_b->flags & ~(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_DERIVATIVE_BIT |
-                                           VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT))) ||
-                create_info_a->renderPass != create_info_b->renderPass || create_info_a->subpass != create_info_b->subpass ||
-                create_info_a->layout != create_info_b->layout ||
-                !hash_util::similar_for_nullity(create_info_a->pInputAssemblyState, create_info_b->pInputAssemblyState) ||
-                !hash_util::similar_for_nullity(create_info_a->pViewportState, create_info_b->pViewportState) ||
-                !hash_util::similar_for_nullity(create_info_a->pRasterizationState, create_info_b->pRasterizationState) ||
-                !hash_util::similar_for_nullity(create_info_a->pMultisampleState, create_info_b->pMultisampleState) ||
-                !hash_util::similar_for_nullity(create_info_a->pDepthStencilState, create_info_b->pDepthStencilState) ||
-                !hash_util::similar_for_nullity(create_info_a->pColorBlendState, create_info_b->pColorBlendState) ||
-                !hash_util::similar_for_nullity(create_info_a->pDynamicState, create_info_b->pDynamicState) ||
+                                           VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)))) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                                 "Invalid Pipeline CreateInfo: common state for shader groups must match: flags mismatch.");
+            }
+            if (create_info_a->renderPass != create_info_b->renderPass || create_info_a->subpass != create_info_b->subpass) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: renderPass or subpass mismatch.");
+            }
+            if (create_info_a->layout != create_info_b->layout) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                                 "Invalid Pipeline CreateInfo: common state for shader groups must match: layout mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pInputAssemblyState, create_info_b->pInputAssemblyState) ||
                 (create_info_a->pInputAssemblyState &&
-                 !(*create_info_a->pInputAssemblyState == *create_info_b->pInputAssemblyState)) ||
-                (create_info_a->pViewportState && !(*create_info_a->pViewportState == *create_info_b->pViewportState)) ||
+                 !(*create_info_a->pInputAssemblyState == *create_info_b->pInputAssemblyState))) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: pInputAssemblyState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pViewportState, create_info_b->pViewportState) ||
+                (create_info_a->pViewportState && !(*create_info_a->pViewportState == *create_info_b->pViewportState))) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                             "Invalid Pipeline CreateInfo: common state for shader groups must match: pViewportState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pRasterizationState, create_info_b->pRasterizationState) ||
                 (create_info_a->pRasterizationState &&
-                 !(*create_info_a->pRasterizationState == *create_info_b->pRasterizationState)) ||
-                (create_info_a->pMultisampleState && !(*create_info_a->pMultisampleState == *create_info_b->pMultisampleState)) ||
+                 !(*create_info_a->pRasterizationState == *create_info_b->pRasterizationState))) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: pRasterizationState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pMultisampleState, create_info_b->pMultisampleState) ||
+                (create_info_a->pMultisampleState && !(*create_info_a->pMultisampleState == *create_info_b->pMultisampleState))) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                             "Invalid Pipeline CreateInfo: common state for shader groups must match: pMultisampleState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pDepthStencilState, create_info_b->pDepthStencilState) ||
                 (create_info_a->pDepthStencilState &&
-                 !(*create_info_a->pDepthStencilState == *create_info_b->pDepthStencilState)) ||
-                (create_info_a->pColorBlendState && !(*create_info_a->pColorBlendState == *create_info_b->pColorBlendState)) ||
+                 !(*create_info_a->pDepthStencilState == *create_info_b->pDepthStencilState))) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                    "Invalid Pipeline CreateInfo: common state for shader groups must match: pDepthStencilState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pColorBlendState, create_info_b->pColorBlendState) ||
+                (create_info_a->pColorBlendState && !(*create_info_a->pColorBlendState == *create_info_b->pColorBlendState))) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
+                             "Invalid Pipeline CreateInfo: common state for shader groups must match: pColorBlendState mismatch.");
+            }
+            if (!hash_util::similar_for_nullity(create_info_a->pDynamicState, create_info_b->pDynamicState) ||
                 (create_info_a->pDynamicState && !(*create_info_a->pDynamicState == *create_info_b->pDynamicState))) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-02886",
-                                 "Invalid Pipeline CreateInfo: common state for shader groups must match.");
+                                 "Invalid Pipeline CreateInfo: common state for shader groups must match: pDynamicState mismatch.");
             }
         }
 
@@ -15019,7 +15088,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, 
     bool skip = false;
 
     const PIPELINE_STATE *pipeline_state = GetPipelineState(pGenInfo->pipeline);
-    const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state = GetIndirectCommandsLayoutState(pGenInfo->indirectCommandsLayout);
+    const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state = GetIndirectCommandsLayoutStateNV(pGenInfo->indirectCommandsLayout);
 
     if (ind_state->hasShaderGroups && pipeline_state->effective_shader_group_count <= 1) {
         skip |=
@@ -15028,7 +15097,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, 
                      apiName);
     }
 
-    if (ind_state->hasShaderGroups && !(pipeline_state->computePipelineCI.flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV)) {
+    if (ind_state->hasShaderGroups && !(pipeline_state->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV)) {
         skip |= LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-indirectCommandsLayout-02913",
                          "%s if VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV is used, the pipeline must have "
                          "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV set",
@@ -15082,7 +15151,7 @@ bool CoreChecks::PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer
     bool skip = false;
 
     const INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
-        GetIndirectCommandsLayoutState(pGeneratedCommandsInfo->indirectCommandsLayout);
+        GetIndirectCommandsLayoutStateNV(pGeneratedCommandsInfo->indirectCommandsLayout);
 
     skip |= ValidateGeneratedCommandsInfoNV(commandBuffer, pGeneratedCommandsInfo, true, "vkCmdExecutePreprocessCommandsNV()");
 
@@ -15110,7 +15179,7 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer co
 
     skip |= ValidateGeneratedCommandsInfoNV(commandBuffer, pGeneratedCommandsInfo, false, "vkCmdExecuteGeneratedCommandsNV()");
     skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_EXECUTEGENERATEDCOMMANDSNV,
-                                "vkCmdExecuteGeneratedCommandsNV()", VK_QUEUE_GRAPHICS_BIT);
+                                "vkCmdExecuteGeneratedCommandsNV()", VK_QUEUE_GRAPHICS_BIT, pGeneratedCommandsInfo);
     return skip;
 }
 

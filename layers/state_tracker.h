@@ -613,10 +613,10 @@ class ValidationStateTracker : public ValidationObject {
     ACCELERATION_STRUCTURE_STATE_KHR* GetAccelerationStructureStateKHR(VkAccelerationStructureKHR as) {
         return Get<ACCELERATION_STRUCTURE_STATE_KHR>(as);
     }
-    const INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutState(VkIndirectCommandsLayoutNV ind) const {
+    const INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutStateNV(VkIndirectCommandsLayoutNV ind) const {
         return Get<INDIRECT_COMMANDS_LAYOUT_STATE>(ind);
     }
-    INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutState(VkIndirectCommandsLayoutNV ind) {
+    INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutStateNV(VkIndirectCommandsLayoutNV ind) {
         return Get<INDIRECT_COMMANDS_LAYOUT_STATE>(ind);
     }
     const SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) const { return Get<SURFACE_STATE>(surface); }
@@ -1230,8 +1230,6 @@ class ValidationStateTracker : public ValidationObject {
                                                        const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) override;
     void PreCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                                     const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) override;
-    void PostCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                                     const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) override;
     void PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                    VkPipeline pipeline, uint32_t groupIndex) override;
     // WSI

@@ -5690,7 +5690,7 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
                                      index);
                 }
                 had_shader = true;
-            }
+            } break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV: {
                 if (had_state) {
                     skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02933",
@@ -5704,7 +5704,7 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
                                      "must have a non-zero indirectStateFlags.");
                 }
                 had_state = true;
-            }
+            } break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV: {
                 alignment = 8;
             } break;

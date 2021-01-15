@@ -624,14 +624,14 @@ const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const
 
 // Generic function to handle validation for all CmdDraw* type functions
 bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
-                                     const char *caller, VkQueueFlags queue_flags) const {
+                                     const char *caller, VkQueueFlags queue_flags, const void* cmd_custom_info) const {
     bool skip = false;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const CMD_BUFFER_STATE *cb_state = GetCBState(cmd_buffer);
     if (cb_state) {
         skip |= ValidateCmdQueueFlags(cb_state, caller, queue_flags, vuid.queue_flag);
         skip |= ValidateCmd(cb_state, cmd_type, caller);
-        skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point, caller);
+        skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point, caller, cmd_custom_info);
         skip |= (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) ? OutsideRenderPass(cb_state, caller, vuid.inside_renderpass)
                                                                 : InsideRenderPass(cb_state, caller, vuid.inside_renderpass);
     }

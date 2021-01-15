@@ -1344,6 +1344,10 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
             base_ptr = GetAccelerationStructureStateKHR(object_struct.Cast<VkAccelerationStructureKHR>());
             break;
         }
+        case kVulkanObjectTypeIndirectCommandsLayoutNV: {
+            base_ptr = GetIndirectCommandsLayoutStateNV(object_struct.Cast<VkIndirectCommandsLayoutNV>());
+            break;
+        }
         case kVulkanObjectTypeUnknown:
             // This can happen if an element of the object_bindings vector has been
             // zeroed out, after an object is destroyed.
@@ -4025,7 +4029,7 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuff
 void ValidationStateTracker::PreCallRecordCmdPreprocessGeneratedCommandsNV(
     VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    INDIRECT_COMMANDS_LAYOUT_STATE *ind_state = GetIndirectCommandsLayoutState(pGeneratedCommandsInfo->indirectCommandsLayout);
+    INDIRECT_COMMANDS_LAYOUT_STATE *ind_state = GetIndirectCommandsLayoutStateNV(pGeneratedCommandsInfo->indirectCommandsLayout);
     PIPELINE_STATE *pipe_state = GetPipelineState(pGeneratedCommandsInfo->pipeline);
     assert(ind_state);
     assert(pipe_state);
@@ -4044,18 +4048,11 @@ void ValidationStateTracker::PreCallRecordCmdExecuteGeneratedCommandsNV(VkComman
                                                                         const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
-        GetIndirectCommandsLayoutState(pGeneratedCommandsInfo->indirectCommandsLayout);
+        GetIndirectCommandsLayoutStateNV(pGeneratedCommandsInfo->indirectCommandsLayout);
     assert(ind_state);
-    cb_state->generated_vertex_bindings = &ind_state->generated_vertex_bindings;
 
     AddCommandBufferBinding(ind_state->cb_bindings,
                             VulkanTypedHandle(pGeneratedCommandsInfo->indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNV), cb_state);
-}
-
-void ValidationStateTracker::PostCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                                                         const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->generated_vertex_bindings = nullptr;
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer,
@@ -5256,6 +5253,29 @@ void ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutNV(VkDevi
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV:
                 ind_state->generated_vertex_bindings.insert(pCreateInfo->pTokens[i].vertexBindingUnit);
                 break;
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV: {
+                uint32_t offset = pCreateInfo->pTokens[i].pushconstantOffset;
+                uint32_t size = pCreateInfo->pTokens[i].pushconstantSize;
+
+                ind_state->push_constant_pipeline_layout_set = pCreateInfo->pTokens[i].pushconstantPipelineLayout;
+
+                auto flags = pCreateInfo->pTokens[i].pushconstantShaderStageFlags;
+                uint32_t bit_shift = 0;
+                while (flags) {
+                    if (flags & 1) {
+                        VkShaderStageFlagBits flag = static_cast<VkShaderStageFlagBits>(1 << bit_shift);
+                        const auto it = ind_state->push_constant_data_update.find(flag);
+
+                        if (it != ind_state->push_constant_data_update.end()) {
+                            std::memset(it->second.data() + offset, PC_Byte_Updated, static_cast<std::size_t>(size));
+                        }
+                    }
+                    flags = flags >> 1;
+                    ++bit_shift;
+                }
+
+                break;
+            }
             default:
                 break;
         }
@@ -5268,7 +5288,7 @@ void ValidationStateTracker::PreCallRecordDestroyIndirectCommandsLayoutNV(VkDevi
                                                                           VkIndirectCommandsLayoutNV indirectCommandsLayout,
                                                                           const VkAllocationCallbacks *pAllocator) {
     if (!indirectCommandsLayout) return;
-    auto ind_state = GetIndirectCommandsLayoutState(indirectCommandsLayout);
+    auto ind_state = GetIndirectCommandsLayoutStateNV(indirectCommandsLayout);
     if (ind_state) {
         ind_state->destroyed = true;
         indirectCommandsLayoutMap.erase(indirectCommandsLayout);
