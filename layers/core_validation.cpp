@@ -1463,7 +1463,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     if (pPipeline->duplicate_shaders) {
         for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
             if (pPipeline->duplicate_shaders & stage) {
-                skip |= LogError(device, kVUID_Core_DrawState_InvalidPipelineCreateState,
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-00726",
                                  "Invalid Pipeline CreateInfo[%u] State: Multiple shaders provided for stage %s", pipelineIndex,
                                  string_VkShaderStageFlagBits(VkShaderStageFlagBits(stage)));
             }
@@ -2724,7 +2724,7 @@ bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE *cb_node, const Vu
     if (!found) {
         LogObjectList objlist(cb_node->commandBuffer);
         objlist.add(object);
-        skip = LogError(objlist, kVUID_Core_DrawState_InvalidQueueFamily,
+        skip = LogError(objlist, "VUID-vkQueueSubmit-pSubmits-04626",
                         "vkQueueSubmit: %s contains %s which was not created allowing concurrent access to "
                         "this queue family %d.",
                         report_data->FormatHandle(cb_node->commandBuffer).c_str(), report_data->FormatHandle(object).c_str(),

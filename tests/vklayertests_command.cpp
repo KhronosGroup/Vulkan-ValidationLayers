@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -5810,7 +5810,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     // some mock ICD json files are missing a valid stride value
     if (tf_properties.maxTransformFeedbackBufferDataStride > 0) {
         // non-4 multiple stride
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-offset");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568");
         fpvkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 1, 4);
         m_errorMonitor->VerifyFound();
     }

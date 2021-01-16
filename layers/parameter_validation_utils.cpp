@@ -5262,8 +5262,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCo
     }
 
     if ((counterOffset % 4) != 0) {
-        // TODO - Update when header are updated
-        skip |= LogError(commandBuffer, "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-offset",
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568",
                          "vkCmdDrawIndirectByteCountEXT(): offset (%" PRIu64 ") must be a multiple of 4.", counterOffset);
     }
 

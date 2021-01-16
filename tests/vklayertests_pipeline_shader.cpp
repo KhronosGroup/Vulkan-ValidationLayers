@@ -48,14 +48,12 @@ TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
     // Set polygonMode to POINT while the non-solid fill mode feature is disabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_POINT;
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit,
-                                      "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
+    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413");
 
     // Set polygonMode to LINE while the non-solid fill mode feature is disabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_LINE;
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit,
-                                      "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
+    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413");
 
     // Set polygonMode to FILL_RECTANGLE_NV while the extension is not enabled.
     // Introduce failure by setting unsupported polygon mode
@@ -4041,7 +4039,7 @@ TEST_F(VkLayerTest, CreatePipelineDuplicateStage) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), helper.vs_->GetStageCreateInfo(),
                                  helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Multiple shaders provided for stage VK_SHADER_STAGE_VERTEX_BIT");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-00726");
 }
 
 TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
@@ -4053,7 +4051,7 @@ TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "No entrypoint found named `foo`");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
 }
 
 TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
