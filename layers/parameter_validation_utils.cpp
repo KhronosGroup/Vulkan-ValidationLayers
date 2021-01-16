@@ -427,6 +427,18 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             }
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
         }
+
+        // Check features are enabled if matching extension is passed in as well
+        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+            const char *extension = pCreateInfo->ppEnabledExtensionNames[i];
+            if ((0 == strncmp(extension, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
+                (vulkan_11_features->shaderDrawParameters == VK_FALSE)) {
+                skip |= LogError(
+                    instance, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-04476",
+                    "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan11Features::shaderDrawParameters is not VK_TRUE.",
+                    VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+            }
+        }
     }
 
     const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
