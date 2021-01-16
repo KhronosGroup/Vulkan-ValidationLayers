@@ -394,11 +394,11 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         }
 
         if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
-            if (!device_extensions->vk_ext_inline_uniform_block) {
+            if (!inline_uniform_block_features->inlineUniformBlock) {
                 skip |= val_obj->LogError(
-                    val_obj->device, "UNASSIGNED-Extension not enabled",
-                    "Creating VkDescriptorSetLayout with descriptor type  VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
-                    "but extension %s is missing",
+                    val_obj->device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04604",
+                    "Creating VkDescriptorSetLayout with descriptor type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
+                    "but inlineUniformBlock is not enabled",
                     VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
             } else {
                 if ((binding_info.descriptorCount % 4) != 0) {
