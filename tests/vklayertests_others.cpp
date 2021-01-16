@@ -2821,7 +2821,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
 
     if (m_device->queue_props.size() > 2) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "which was not created allowing concurrent");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pSubmits-04626");
 
         // Create buffer shared to queue families 1 and 2, but submitted on queue family 0
         buffCI.queueFamilyIndexCount = 2;
