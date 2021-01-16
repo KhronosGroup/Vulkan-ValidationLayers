@@ -1352,6 +1352,10 @@ HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, V
     const auto src_access_scope = SyncStageAccess::AccessScope(src_stage_accesses, barrier.srcAccessMask);
     return DetectImageBarrierHazard(image, src_exec_scope, src_access_scope, subresource_range, kDetectAll);
 }
+HazardResult AccessContext::DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const {
+    return DetectImageBarrierHazard(*image_barrier.image.get(), image_barrier.barrier.src_exec_scope,
+                                    image_barrier.barrier.src_access_scope, image_barrier.subresource_range, kDetectAll);
+}
 
 template <typename Flags, typename Map>
 SyncStageAccessFlags AccessScopeImpl(Flags flag_mask, const Map &map) {
@@ -3428,7 +3432,8 @@ VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const OrderingBarrier
 void ResourceAccessState::UpdateFirst(const ResourceUsageTag &tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule) {
     // Only record until we record a write.
     if (first_accesses_.empty() || IsRead(first_accesses_.back().usage_index)) {
-        const VkPipelineStageFlags usage_stage = IsRead(usage_index) ? PipelineStageBit(usage_index) : 0U;
+        const VkPipelineStageFlags usage_stage =
+            IsRead(usage_index) ? static_cast<VkPipelineStageFlags>(PipelineStageBit(usage_index)) : 0U;
         if (0 == (usage_stage & first_read_stages_)) {
             // If this is a read we haven't seen or a write, record.
             first_read_stages_ |= usage_stage;
@@ -3449,52 +3454,6 @@ void SyncValidator::FreeCommandBufferCallback(VkCommandBuffer command_buffer) {
     if (access_found != cb_access_state.end()) {
         access_found->second->Reset();
         cb_access_state.erase(access_found);
-    }
-}
-
-void SyncValidator::ApplyGlobalBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst,
-                                        uint32_t memory_barrier_count, const VkMemoryBarrier *pMemoryBarriers,
-                                        const ResourceUsageTag &tag) {
-    std::vector<PipelineBarrierOp> barrier_ops;
-    barrier_ops.reserve(std::min<uint32_t>(1, memory_barrier_count));
-    for (uint32_t barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
-        const auto &barrier = pMemoryBarriers[barrier_index];
-        SyncBarrier sync_barrier(barrier, src, dst);
-        barrier_ops.emplace_back(sync_barrier, false);
-    }
-    if (0 == memory_barrier_count) {
-        // If there are no global memory barriers, force an exec barrier
-        barrier_ops.emplace_back(SyncBarrier(src, dst), false);
-    }
-    ApplyBarrierOpsFunctor<PipelineBarrierOp> barriers_functor(true /* resolve */, barrier_ops, tag);
-    context->ApplyGlobalBarriers(barriers_functor);
-}
-
-void SyncValidator::ApplyBufferBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst,
-                                        uint32_t barrier_count, const VkBufferMemoryBarrier *barriers) {
-    for (uint32_t index = 0; index < barrier_count; index++) {
-        auto barrier = barriers[index];  // barrier is a copy
-        const auto *buffer = Get<BUFFER_STATE>(barrier.buffer);
-        if (!buffer) continue;
-        barrier.size = GetBufferWholeSize(*buffer, barrier.offset, barrier.size);
-        const ResourceAccessRange range = MakeRange(barrier);
-        const SyncBarrier sync_barrier(barrier, src, dst);
-        const ApplyBarrierFunctor<PipelineBarrierOp> update_action({sync_barrier, false /* layout_transition */});
-        context->UpdateResourceAccess(*buffer, range, update_action);
-    }
-}
-
-void SyncValidator::ApplyImageBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst,
-                                       uint32_t barrier_count, const VkImageMemoryBarrier *barriers, const ResourceUsageTag &tag) {
-    for (uint32_t index = 0; index < barrier_count; index++) {
-        const auto &barrier = barriers[index];
-        const auto *image = Get<IMAGE_STATE>(barrier.image);
-        if (!image) continue;
-        auto subresource_range = NormalizeSubresourceRange(image->createInfo, barrier.subresourceRange);
-        bool layout_transition = barrier.oldLayout != barrier.newLayout;
-        const SyncBarrier sync_barrier(barrier, src, dst);
-        const ApplyBarrierFunctor<PipelineBarrierOp> barrier_action({sync_barrier, layout_transition});
-        context->UpdateResourceAccess(*image, subresource_range, barrier_action);
     }
 }
 
@@ -3782,29 +3741,10 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     assert(cb_access_context);
     if (!cb_access_context) return skip;
 
-    const auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-    if (!context) return skip;
-
-    const auto src_stage_mask = ExpandPipelineStages(cb_access_context->GetQueueFlags(), srcStageMask);
-    const auto src_exec_scope = WithEarlierPipelineStages(src_stage_mask);
-    auto src_stage_accesses = AccessScopeByStage(src_stage_mask);
-    // Validate Image Layout transitions
-    for (uint32_t index = 0; index < imageMemoryBarrierCount; index++) {
-        const auto &barrier = pImageMemoryBarriers[index];
-        if (barrier.newLayout == barrier.oldLayout) continue;  // Only interested in layout transitions at this point.
-        const auto *image_state = Get<IMAGE_STATE>(barrier.image);
-        if (!image_state) continue;
-        const auto hazard = context->DetectImageBarrierHazard(*image_state, src_exec_scope, src_stage_accesses, barrier);
-        if (hazard.hazard) {
-            // PHASE1 TODO -- add tag information to log msg when useful.
-            skip |= LogError(barrier.image, string_SyncHazardVUID(hazard.hazard),
-                             "vkCmdPipelineBarrier: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.",
-                             string_SyncHazard(hazard.hazard), index, report_data->FormatHandle(barrier.image).c_str(),
-                             cb_access_context->FormatUsage(hazard).c_str());
-        }
-    }
-
+    SyncOpPipelineBarrier pipeline_barrier(*this, cb_access_context->GetQueueFlags(), srcStageMask, dstStageMask, dependencyFlags,
+                                           memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                           imageMemoryBarrierCount, pImageMemoryBarriers);
+    skip = pipeline_barrier.Validate(*cb_access_context);
     return skip;
 }
 
@@ -3818,26 +3758,11 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffe
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return;
-    const auto tag = cb_access_context->NextCommandTag(CMD_PIPELINEBARRIER);
-    auto access_context = cb_access_context->GetCurrentAccessContext();
-    assert(access_context);
-    if (!access_context) return;
 
-    auto src = SyncExecScope::MakeSrc(cb_access_context->GetQueueFlags(), srcStageMask);
-    auto dst = SyncExecScope::MakeDst(cb_access_context->GetQueueFlags(), dstStageMask);
-
-    // These two apply barriers one at a time as the are restricted to the resource ranges specified per each barrier,
-    // but do not update the dependency chain information (but set the "pending" state) // s.t. the order independence
-    // of the barriers is maintained.
-    ApplyBufferBarriers(access_context, src, dst, bufferMemoryBarrierCount, pBufferMemoryBarriers);
-    ApplyImageBarriers(access_context, src, dst, imageMemoryBarrierCount, pImageMemoryBarriers, tag);
-
-    // Apply the global barriers last as is it walks all memory, it can also clean up the "pending" state without requiring an
-    // additional pass, updating the dependency chains *last* as it goes along.
-    // This is needed to guarantee order independence of the three lists.
-    ApplyGlobalBarriers(access_context, src, dst, memoryBarrierCount, pMemoryBarriers, tag);
-
-    cb_access_context->ApplyGlobalBarriersToEvents(src, dst);
+    SyncOpPipelineBarrier pipeline_barrier(*this, cb_access_context->GetQueueFlags(), srcStageMask, dstStageMask, dependencyFlags,
+                                           memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                           imageMemoryBarrierCount, pImageMemoryBarriers);
+    pipeline_barrier.Record(cb_access_context, cb_access_context->NextCommandTag(CMD_PIPELINEBARRIER));
 }
 
 void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
@@ -5383,4 +5308,131 @@ bool SyncEventState::HasBarrier(VkPipelineStageFlags stageMask, VkPipelineStageF
     bool has_barrier = (last_command == CMD_NONE) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
                        (barriers & exec_scope_arg) || (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     return has_barrier;
+}
+
+SyncOpPipelineBarrier::SyncOpPipelineBarrier(const SyncValidator &sync_state, VkQueueFlags queue_flags,
+                                             VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                             VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
+                                             const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                                             const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                             const VkImageMemoryBarrier *pImageMemoryBarriers)
+    : dependency_flags_(dependencyFlags),
+      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, srcStageMask)),
+      dst_exec_scope_(SyncExecScope::MakeDst(queue_flags, dstStageMask)) {
+    // Translate the API parameters into structures SyncVal understands directly, and dehandle for safer/faster replay.
+    MakeMemoryBarriers(src_exec_scope_, dst_exec_scope_, dependencyFlags, memoryBarrierCount, pMemoryBarriers);
+    MakeBufferMemoryBarriers(sync_state, src_exec_scope_, dst_exec_scope_, dependencyFlags, bufferMemoryBarrierCount,
+                             pBufferMemoryBarriers);
+    MakeImageMemoryBarriers(sync_state, src_exec_scope_, dst_exec_scope_, dependencyFlags, imageMemoryBarrierCount,
+                            pImageMemoryBarriers);
+}
+
+bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_context) const {
+    bool skip = false;
+    const auto *context = cb_context.GetCurrentAccessContext();
+    assert(context);
+    if (!context) return skip;
+    // Validate Image Layout transitions
+    for (const auto image_barrier : image_memory_barriers_) {
+        if (image_barrier.new_layout == image_barrier.old_layout) continue;  // Only interested in layout transitions at this point.
+        const auto *image_state = image_barrier.image.get();
+        if (!image_state) continue;
+        const auto hazard = context->DetectImageBarrierHazard(image_barrier);
+        if (hazard.hazard) {
+            // PHASE1 TODO -- add tag information to log msg when useful.
+            const auto &sync_state = cb_context.GetSyncState();
+            const auto image_handle = image_state->image;
+            skip |= sync_state.LogError(image_handle, string_SyncHazardVUID(hazard.hazard),
+                                        "vkCmdPipelineBarrier: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.",
+                                        string_SyncHazard(hazard.hazard), image_barrier.index,
+                                        sync_state.report_data->FormatHandle(image_handle).c_str(),
+                                        cb_context.FormatUsage(hazard).c_str());
+        }
+    }
+
+    return skip;
+}
+
+void SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const {
+    auto context = cb_context->GetCurrentAccessContext();
+    assert(context);
+    // Apply buffer barriers to the pending state
+    for (const auto &buffer_barrier : buffer_memory_barriers_) {
+        const auto *buffer = buffer_barrier.buffer.get();
+        if (!buffer) continue;
+        const ApplyBarrierFunctor<PipelineBarrierOp> update_action({buffer_barrier.barrier, false /* layout_transition */});
+        context->UpdateResourceAccess(*buffer, buffer_barrier.range, update_action);
+    }
+
+    // Apply buffer barriers to the pending state
+    for (const auto &image_barrier : image_memory_barriers_) {
+        const auto *image = image_barrier.image.get();
+        if (!image) continue;
+        bool layout_transition = image_barrier.old_layout != image_barrier.new_layout;
+        const ApplyBarrierFunctor<PipelineBarrierOp> barrier_action({image_barrier.barrier, layout_transition});
+        context->UpdateResourceAccess(*image, image_barrier.subresource_range, barrier_action);
+    }
+
+    // Apply buffer barriers to the pending state and resolve
+    std::vector<PipelineBarrierOp> barrier_ops;
+    barrier_ops.reserve(memory_barriers_.size());
+    for (const auto &memory_barrier : memory_barriers_) {
+        barrier_ops.emplace_back(memory_barrier, false /* layout transition */);
+    }
+    ApplyBarrierOpsFunctor<PipelineBarrierOp> barriers_functor(true /* resolve */, barrier_ops, tag);
+    context->ApplyGlobalBarriers(barriers_functor);
+
+    cb_context->ApplyGlobalBarriersToEvents(src_exec_scope_, dst_exec_scope_);
+}
+
+void SyncOpPipelineBarrier::MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst,
+                                               VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
+                                               const VkMemoryBarrier *memory_barriers) {
+    memory_barriers_.reserve(std::min<uint32_t>(1, memory_barrier_count));
+    for (uint32_t barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
+        const auto &barrier = memory_barriers[barrier_index];
+        SyncBarrier sync_barrier(barrier, src, dst);
+        memory_barriers_.emplace_back(sync_barrier);
+    }
+    if (0 == memory_barrier_count) {
+        // If there are no global memory barriers, force an exec barrier
+        memory_barriers_.emplace_back(SyncBarrier(src, dst));
+    }
+}
+
+void SyncOpPipelineBarrier::MakeBufferMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src,
+                                                     const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
+                                                     uint32_t barrier_count, const VkBufferMemoryBarrier *barriers) {
+    buffer_memory_barriers_.reserve(barrier_count);
+    for (uint32_t index = 0; index < barrier_count; index++) {
+        const auto &barrier = barriers[index];
+        auto buffer = sync_state.GetShared<BUFFER_STATE>(barrier.buffer);
+        if (buffer) {
+            const auto barrier_size = GetBufferWholeSize(*buffer, barrier.offset, barrier.size);
+            const auto range = MakeRange(barrier.offset, barrier_size);
+            const SyncBarrier sync_barrier(barrier, src, dst);
+            buffer_memory_barriers_.emplace_back(buffer, sync_barrier, range);
+        } else {
+            buffer_memory_barriers_.emplace_back();
+        }
+    }
+}
+
+void SyncOpPipelineBarrier::MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src,
+                                                    const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
+                                                    uint32_t barrier_count, const VkImageMemoryBarrier *barriers) {
+    image_memory_barriers_.reserve(barrier_count);
+    for (uint32_t index = 0; index < barrier_count; index++) {
+        const auto &barrier = barriers[index];
+        const auto image = sync_state.GetShared<IMAGE_STATE>(barrier.image);
+        if (image) {
+            auto subresource_range = NormalizeSubresourceRange(image->createInfo, barrier.subresourceRange);
+            const SyncBarrier sync_barrier(barrier, src, dst);
+            image_memory_barriers_.emplace_back(image, index, sync_barrier, barrier.oldLayout, barrier.newLayout,
+                                                subresource_range);
+        } else {
+            image_memory_barriers_.emplace_back();
+            image_memory_barriers_.back().index = index;  // Just in case we're interested in the ones we skipped.
+        }
+    }
 }
