@@ -33,6 +33,7 @@
 class SyncValidator;
 class ResourceAccessState;
 class CommandBufferAccessContext;
+using CommandBufferAccessContextShared = std::shared_ptr<CommandBufferAccessContext>;
 
 enum SyncHazard {
     NONE = 0,
@@ -361,6 +362,73 @@ using ResourceAccessRangeMap = sparse_container::range_map<VkDeviceSize, Resourc
 using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
 
+using SyncMemoryBarrier = SyncBarrier;
+struct SyncBufferMemoryBarrier {
+    using Buffer = std::shared_ptr<const BUFFER_STATE>;
+    Buffer buffer;
+    SyncBarrier barrier;
+    ResourceAccessRange range;
+    SyncBufferMemoryBarrier(const Buffer &buffer_, const SyncBarrier &barrier_, const ResourceAccessRange &range_)
+        : buffer(buffer_), barrier(barrier_), range(range_) {}
+    SyncBufferMemoryBarrier() = default;
+};
+
+struct SyncImageMemoryBarrier {
+    using Image = std::shared_ptr<const IMAGE_STATE>;
+    Image image;
+    uint32_t index;
+    SyncBarrier barrier;
+    VkImageLayout old_layout;
+    VkImageLayout new_layout;
+    VkImageSubresourceRange subresource_range;
+    SyncImageMemoryBarrier(const Image &image_, uint32_t index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
+                           VkImageLayout new_layout_, const VkImageSubresourceRange &subresource_range_)
+        : image(image_),
+          index(index_),
+          barrier(barrier_),
+          old_layout(old_layout_),
+          new_layout(new_layout_),
+          subresource_range(subresource_range_) {}
+
+    SyncImageMemoryBarrier() = default;
+};
+
+class SyncOpBase {
+  public:
+    SyncOpBase() {}
+    virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
+    virtual void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const = 0;
+};
+
+class SyncOpPipelineBarrier : public SyncOpBase {
+  public:
+    SyncOpPipelineBarrier(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
+                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
+                          const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                          const VkImageMemoryBarrier *pImageMemoryBarriers);
+
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+
+  protected:
+    void MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
+                            uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers);
+    void MakeBufferMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
+                                  VkDependencyFlags dependencyFlags, uint32_t bufferMemoryBarrierCount,
+                                  const VkBufferMemoryBarrier *pBufferMemoryBarriers);
+    void MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
+                                 VkDependencyFlags dependencyFlags, uint32_t imageMemoryBarrierCount,
+                                 const VkImageMemoryBarrier *pImageMemoryBarriers);
+
+    VkDependencyFlags dependency_flags_;
+    SyncExecScope src_exec_scope_;
+    SyncExecScope dst_exec_scope_;
+    std::vector<SyncMemoryBarrier> memory_barriers_;
+    std::vector<SyncBufferMemoryBarrier> buffer_memory_barriers_;
+    std::vector<SyncImageMemoryBarrier> image_memory_barriers_;
+};
+
 class AccessContext {
   public:
     enum DetectOptions : uint32_t {
@@ -413,6 +481,7 @@ class AccessContext {
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                           const SyncStageAccessFlags &src_stage_accesses,
                                           const VkImageMemoryBarrier &barrier) const;
+    HazardResult DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const IMAGE_VIEW_STATE *attach_view) const;
 
     void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
@@ -584,7 +653,9 @@ class CommandBufferAccessContext {
           current_context_(&cb_access_context_),
           current_renderpass_context_(),
           cb_state_(),
-          queue_flags_() {}
+          queue_flags_(),
+          event_state_(),
+          destroyed_(false) {}
     CommandBufferAccessContext(SyncValidator &sync_validator, std::shared_ptr<CMD_BUFFER_STATE> &cb_state, VkQueueFlags queue_flags)
         : CommandBufferAccessContext() {
         cb_state_ = cb_state;
@@ -603,6 +674,8 @@ class CommandBufferAccessContext {
         current_renderpass_context_ = nullptr;
         event_state_.clear();
     }
+    void MarkDestroyed() { destroyed_ = true; }
+    bool IsDestroyed() const { return destroyed_; }
 
     std::string FormatUsage(const HazardResult &hazard) const;
     AccessContext *GetCurrentAccessContext() { return current_context_; }
@@ -697,6 +770,7 @@ class CommandBufferAccessContext {
 
     VkQueueFlags queue_flags_;
     std::unordered_map<VkEvent, std::unique_ptr<SyncEventState>> event_state_;
+    bool destroyed_;
 };
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
@@ -704,26 +778,34 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
     using StateTracker = ValidationStateTracker;
 
-    using StateTracker::AccessorTraitsTypes;
-    std::unordered_map<VkCommandBuffer, std::unique_ptr<CommandBufferAccessContext>> cb_access_state;
-    CommandBufferAccessContext *GetAccessContextImpl(VkCommandBuffer command_buffer, bool do_insert) {
+    std::unordered_map<VkCommandBuffer, CommandBufferAccessContextShared> cb_access_state;
+
+    CommandBufferAccessContextShared GetAccessContextImpl(VkCommandBuffer command_buffer, bool do_insert) {
         auto found_it = cb_access_state.find(command_buffer);
         if (found_it == cb_access_state.end()) {
-            if (!do_insert) return nullptr;
+            if (!do_insert) return CommandBufferAccessContextShared();
             // If we don't have one, make it.
             auto cb_state = GetShared<CMD_BUFFER_STATE>(command_buffer);
             assert(cb_state.get());
             auto queue_flags = GetQueueFlags(*cb_state);
-            std::unique_ptr<CommandBufferAccessContext> context(new CommandBufferAccessContext(*this, cb_state, queue_flags));
+            std::shared_ptr<CommandBufferAccessContext> context(new CommandBufferAccessContext(*this, cb_state, queue_flags));
             auto insert_pair = cb_access_state.insert(std::make_pair(command_buffer, std::move(context)));
             found_it = insert_pair.first;
         }
-        return found_it->second.get();
+        return found_it->second;
     }
+
     CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) {
-        return GetAccessContextImpl(command_buffer, true);  // true -> do_insert on not found
+        return GetAccessContextImpl(command_buffer, true).get();  // true -> do_insert on not found
     }
     CommandBufferAccessContext *GetAccessContextNoInsert(VkCommandBuffer command_buffer) {
+        return GetAccessContextImpl(command_buffer, false).get();  // false -> don't do_insert on not found
+    }
+
+    CommandBufferAccessContextShared GetAccessContextShared(VkCommandBuffer command_buffer) {
+        return GetAccessContextImpl(command_buffer, true);  // true -> do_insert on not found
+    }
+    CommandBufferAccessContextShared GetAccessContextSharedNoInsert(VkCommandBuffer command_buffer) {
         return GetAccessContextImpl(command_buffer, false);  // false -> don't do_insert on not found
     }
 
@@ -734,15 +816,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
         }
         return found_it->second.get();
     }
-
-    void ApplyGlobalBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst,
-                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag);
-
-    void ApplyBufferBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst, uint32_t barrier_count,
-                             const VkBufferMemoryBarrier *barriers);
-
-    void ApplyImageBarriers(AccessContext *context, const SyncExecScope &src, const SyncExecScope &dst, uint32_t barrier_count,
-                            const VkImageMemoryBarrier *barriers, const ResourceUsageTag &tag);
 
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
     void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
