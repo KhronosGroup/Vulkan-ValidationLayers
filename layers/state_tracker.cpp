@@ -641,6 +641,9 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
                                                                                      : format_properties.optimalTilingFeatures;
     }
 
+    auto usage_create_info = LvlFindInChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
+    image_view_state->inherited_usage = (usage_create_info) ? usage_create_info->usage : image_state->createInfo.usage;
+
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
     image_view_state->filter_cubic_props = LvlInitStruct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
     if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
@@ -650,7 +653,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         image_format_info.type = image_state->createInfo.imageType;
         image_format_info.format = image_state->createInfo.format;
         image_format_info.tiling = image_state->createInfo.tiling;
-        image_format_info.usage = image_state->createInfo.usage;
+        image_format_info.usage = image_view_state->inherited_usage;
         image_format_info.flags = image_state->createInfo.flags;
 
         auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>(&image_view_state->filter_cubic_props);
