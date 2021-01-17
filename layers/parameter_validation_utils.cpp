@@ -6594,3 +6594,16 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevice device,
+                                                                         const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
+                                                                         const VkAllocationCallbacks *pAllocator,
+                                                                         VkPrivateDataSlotEXT *pPrivateDataSlot) const {
+    bool skip = false;
+    const auto *private_data_features = LvlFindInChain<VkPhysicalDevicePrivateDataFeaturesEXT>(device_createinfo_pnext);
+    if (private_data_features && private_data_features->privateData == VK_FALSE) {
+        skip |= LogError(device, "VUID-vkCreatePrivateDataSlotEXT-privateData-04564",
+                         "vkCreatePrivateDataSlotEXT(): The privateData feature must be enabled.");
+    }
+    return skip;
+}

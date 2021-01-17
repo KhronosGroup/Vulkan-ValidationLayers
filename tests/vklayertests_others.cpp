@@ -160,6 +160,14 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
 TEST_F(VkLayerTest, PrivateDataExtTest) {
     TEST_DESCRIPTION("Test private data extension use.");
 
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
@@ -173,7 +181,21 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto private_data_features = LvlInitStruct<VkPhysicalDevicePrivateDataFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&private_data_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (private_data_features.privateData == VK_FALSE) {
+        printf("%s privateData feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     PFN_vkDestroyPrivateDataSlotEXT pfn_vkDestroyPrivateDataSlotEXT =
         (PFN_vkDestroyPrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyPrivateDataSlotEXT");

@@ -1657,5 +1657,8 @@ class StatelessValidation : public ValidationObject {
                                                                      const uint32_t *pMaxPrimitiveCounts,
                                                                      VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo) const;
 
+    bool manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator,
+                                                        VkPrivateDataSlotEXT *pPrivateDataSlot) const;
 #include "parameter_validation.h"
 };  // Class StatelessValidation
