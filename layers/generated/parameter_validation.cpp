@@ -13015,6 +13015,7 @@ bool StatelessValidation::PreCallValidateCreatePrivateDataSlotEXT(
         }
     }
     skip |= validate_required_pointer("vkCreatePrivateDataSlotEXT", "pPrivateDataSlot", pPrivateDataSlot, "VUID-vkCreatePrivateDataSlotEXT-pPrivateDataSlot-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
     return skip;
 }
 

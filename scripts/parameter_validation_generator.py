@@ -239,7 +239,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkBuildAccelerationStructuresKHR',
             'vkGetAccelerationStructureBuildSizesKHR',
             'vkCmdWriteAccelerationStructuresPropertiesNV',
-            'vkCreateDisplayModeKHR'
+            'vkCreateDisplayModeKHR',
+            'vkCreatePrivateDataSlotEXT'
             ]
 
         # Commands to ignore
