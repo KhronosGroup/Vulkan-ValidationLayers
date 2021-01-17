@@ -534,6 +534,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     VkFormatFeatureFlags format_features;
+    VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
     std::shared_ptr<IMAGE_STATE> image_state;
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;

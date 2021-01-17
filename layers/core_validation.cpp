@@ -10876,8 +10876,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                 const safe_VkRenderPassCreateInfo2 *render_pass_create_info =
                     &GetRenderPassState(pRenderPassBeginInfo->renderPass)->createInfo;
                 for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
-                    const VkImageViewCreateInfo *image_view_create_info =
-                        &GetImageViewState(render_pass_attachment_begin_info->pAttachments[i])->create_info;
+                    const auto image_view_state = GetImageViewState(render_pass_attachment_begin_info->pAttachments[i]);
+                    const VkImageViewCreateInfo *image_view_create_info = &image_view_state->create_info;
                     const VkFramebufferAttachmentImageInfo *framebuffer_attachment_image_info =
                         &framebuffer_attachments_create_info->pAttachmentImageInfos[i];
                     const VkImageCreateInfo *image_create_info = &GetImageState(image_view_create_info->image)->createInfo;
@@ -10889,11 +10889,21 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          func_name, i, image_create_info->flags, i, framebuffer_attachment_image_info->flags);
                     }
 
-                    if (framebuffer_attachment_image_info->usage != image_create_info->usage) {
-                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-04627",
-                                         "%s: Image view #%u created from an image with usage set as 0x%X, "
-                                         "but image info #%u used to create the framebuffer had usage set as 0x%X",
-                                         func_name, i, image_create_info->usage, i, framebuffer_attachment_image_info->usage);
+                    if (framebuffer_attachment_image_info->usage != image_view_state->inherited_usage) {
+                        // Give clearer message if this error is due to the "inherited" part or not
+                        if (image_create_info->usage == image_view_state->inherited_usage) {
+                            skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-04627",
+                                             "%s: Image view #%u created from an image with usage set as 0x%X, "
+                                             "but image info #%u used to create the framebuffer had usage set as 0x%X",
+                                             func_name, i, image_create_info->usage, i, framebuffer_attachment_image_info->usage);
+                        } else {
+                            skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-04627",
+                                             "%s: Image view #%u created from an image with usage set as 0x%X but using "
+                                             "VkImageViewUsageCreateInfo the inherited usage is the subset 0x%X "
+                                             "and the image info #%u used to create the framebuffer had usage set as 0x%X",
+                                             func_name, i, image_create_info->usage, image_view_state->inherited_usage, i,
+                                             framebuffer_attachment_image_info->usage);
+                        }
                     }
 
                     if (framebuffer_attachment_image_info->width != image_create_info->extent.width) {
