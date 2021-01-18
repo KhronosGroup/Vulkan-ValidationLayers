@@ -854,7 +854,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 ss << caller << ": Dynamic viewport(s) ";
                 ListBits(ss, missing_viewport_mask);
                 ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetViewport().";
-                skip |= LogError(device, kVUID_Core_DrawState_ViewportScissorMismatch, "%s", ss.str().c_str());
+                skip |= LogError(device, vuid.dynamic_state, "%s", ss.str().c_str());
             }
         }
 
@@ -866,7 +866,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 ss << caller << ": Dynamic scissor(s) ";
                 ListBits(ss, missing_scissor_mask);
                 ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetScissor().";
-                skip |= LogError(device, kVUID_Core_DrawState_ViewportScissorMismatch, "%s", ss.str().c_str());
+                skip |= LogError(device, vuid.dynamic_state, "%s", ss.str().c_str());
             }
         }
 
