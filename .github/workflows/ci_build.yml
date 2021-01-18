@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Valve Corporation
-# Copyright (c) 2020 LunarG, Inc.
+# Copyright (c) 2020-2021 Valve Corporation
+# Copyright (c) 2020-2021 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -71,10 +71,6 @@ jobs:
             cc: "clang", cxx: "clang++"
           }
     steps:
-    - name: Select and Set Up CMake Version
-      uses: jwlawson/actions-setup-cmake@v1.4
-      with:
-        cmake-version: '3.10.2'
     - name: Clone repository
       uses: actions/checkout@v1
     - name: Install build dependencies
@@ -82,7 +78,7 @@ jobs:
         sudo apt-get -qq update
         sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                               libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                              libxcb-randr0-dev python-pathlib
+                              libxcb-randr0-dev python-pathlib cmake
     - name: Build and Test Vulkan-ValidationLayers 
       run: |
         python3 scripts/github_ci_win_linux.py --config ${{ matrix.config.type }}
@@ -100,10 +96,6 @@ jobs:
             cc: "gcc", cxx: "g++"
           }
     steps:
-    - name: Select and Set Up CMake Version
-      uses: jwlawson/actions-setup-cmake@v1.4
-      with:
-        cmake-version: '3.10.2'
     - name: Clone repository
       uses: actions/checkout@v1
     - name: Install build dependencies
@@ -111,7 +103,7 @@ jobs:
         sudo apt-get -qq update
         sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                               libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                              libxcb-randr0-dev python-pathlib
+                              libxcb-randr0-dev python-pathlib cmake
     - name: Build Vulkan-ValidationLayers Using Ninja
       run: |
         python3 scripts/github_ci_gn.py
@@ -136,10 +128,6 @@ jobs:
             ndk: r21d,
           }
     steps:
-    - name: Select and Set Up CMake Version
-      uses: jwlawson/actions-setup-cmake@v1.4
-      with:
-        cmake-version: '3.10.2'
     - name: Clone repository
       uses: actions/checkout@v1
     - name: Build ValidationLayers
