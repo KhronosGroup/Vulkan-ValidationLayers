@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,6 +87,9 @@ class EVENT_STATE : public BASE_NODE {
   public:
     int write_in_use = 0;
     VkPipelineStageFlags stageMask = VkPipelineStageFlags(0);
+    VkEvent event = VK_NULL_HANDLE;
+    EVENT_STATE(VkEvent event_) : event(event_) {}
+    EVENT_STATE() = default;
 };
 
 class QUEUE_STATE {
