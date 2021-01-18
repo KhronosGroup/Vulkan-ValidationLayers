@@ -12958,9 +12958,15 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         const auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
+            // VU currently is 2-in-1, covers being a valid index and valid layout
+            const char *validation_error = (device_extensions.vk_khr_shared_presentable_image)
+                                               ? "VUID-VkPresentInfoKHR-pImageIndices-01430"
+                                               : "VUID-VkPresentInfoKHR-pImageIndices-01296";
+
+            // Check if index is even possible to be acquired to give better error message
             if (pPresentInfo->pImageIndices[i] >= swapchain_data->images.size()) {
                 skip |= LogError(
-                    pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainInvalidImage,
+                    pPresentInfo->pSwapchains[i], validation_error,
                     "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
                     i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
             } else {
@@ -12968,7 +12974,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 const auto image_state = GetImageState(image);
 
                 if (!image_state->acquired) {
-                    skip |= LogError(pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainImageNotAcquired,
+                    skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
                                      "vkQueuePresentKHR: pSwapchains[%u] image index %u has not been acquired.", i,
                                      pPresentInfo->pImageIndices[i]);
                 }
@@ -12978,9 +12984,6 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     for (auto layout : layouts) {
                         if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) && (!device_extensions.vk_khr_shared_presentable_image ||
                                                                             (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
-                            const char *validation_error = (device_extensions.vk_khr_shared_presentable_image)
-                                                               ? "VUID-VkPresentInfoKHR-pImageIndices-01430"
-                                                               : "VUID-VkPresentInfoKHR-pImageIndices-01296";
                             skip |= LogError(queue, validation_error,
                                              "vkQueuePresentKHR(): pSwapchains[%u] images passed to present must be in layout "
                                              "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
