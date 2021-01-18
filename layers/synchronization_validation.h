@@ -30,10 +30,11 @@
 #include "synchronization_validation_types.h"
 #include "state_tracker.h"
 
-class SyncValidator;
-class ResourceAccessState;
+class AccessContext;
 class CommandBufferAccessContext;
 using CommandBufferAccessContextShared = std::shared_ptr<CommandBufferAccessContext>;
+class ResourceAccessState;
+class SyncValidator;
 
 enum SyncHazard {
     NONE = 0,
@@ -163,15 +164,25 @@ struct SyncEventState {
     VkPipelineStageFlags barriers;
     SyncExecScope scope;
     ResourceUsageTag first_scope_tag;
+    bool destroyed;
     std::array<ScopeMap, static_cast<size_t>(AccessAddressType::kTypeCount)> first_scope;
     SyncEventState(const EventPointer &event_state)
-        : event(event_state), last_command(CMD_NONE), unsynchronized_set(CMD_NONE), barriers(0U), scope() {}
+        : event(event_state),
+          last_command(CMD_NONE),
+          unsynchronized_set(CMD_NONE),
+          barriers(0U),
+          scope(),
+          first_scope_tag(),
+          destroyed((event_state.get() == nullptr) || event_state->destroyed) {}
     SyncEventState() : SyncEventState(EventPointer()) {}
     void ResetFirstScope();
     const ScopeMap &FirstScope(AccessAddressType address_type) const { return first_scope[static_cast<size_t>(address_type)]; }
     IgnoreReason IsIgnoredByWait(VkPipelineStageFlags srcStageMask) const;
     bool HasBarrier(VkPipelineStageFlags stageMask, VkPipelineStageFlags exec_scope) const;
 };
+using SyncEventStateShared = std::shared_ptr<SyncEventState>;
+using SyncEventStateConstShared = std::shared_ptr<const SyncEventState>;
+using SyncEventsContext = std::unordered_map<VkEvent, SyncEventStateShared>;
 
 // To represent ordering guarantees such as rasterization and store
 
@@ -368,6 +379,9 @@ struct SyncBufferMemoryBarrier {
     Buffer buffer;
     SyncBarrier barrier;
     ResourceAccessRange range;
+    bool IsLayoutTransition() const { return false; }
+    const ResourceAccessRange &Range() const { return range; };
+    const BUFFER_STATE *GetState() const { return buffer.get(); }
     SyncBufferMemoryBarrier(const Buffer &buffer_, const SyncBarrier &barrier_, const ResourceAccessRange &range_)
         : buffer(buffer_), barrier(barrier_), range(range_) {}
     SyncBufferMemoryBarrier() = default;
@@ -375,12 +389,21 @@ struct SyncBufferMemoryBarrier {
 
 struct SyncImageMemoryBarrier {
     using Image = std::shared_ptr<const IMAGE_STATE>;
+    struct SubImageRange {
+        VkImageSubresourceRange subresource_range;
+        VkOffset3D offset;
+        VkExtent3D extent;
+    };
     Image image;
     uint32_t index;
     SyncBarrier barrier;
     VkImageLayout old_layout;
     VkImageLayout new_layout;
-    VkImageSubresourceRange subresource_range;
+    SubImageRange range;
+
+    bool IsLayoutTransition() const { return old_layout != new_layout; }
+    const SubImageRange &Range() const { return range; };
+    const IMAGE_STATE *GetState() const { return image.get(); }
     SyncImageMemoryBarrier(const Image &image_, uint32_t index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
                            VkImageLayout new_layout_, const VkImageSubresourceRange &subresource_range_)
         : image(image_),
@@ -388,8 +411,7 @@ struct SyncImageMemoryBarrier {
           barrier(barrier_),
           old_layout(old_layout_),
           new_layout(new_layout_),
-          subresource_range(subresource_range_) {}
-
+          range({subresource_range_, VkOffset3D{0, 0, 0}, image->createInfo.extent}) {}
     SyncImageMemoryBarrier() = default;
 };
 
@@ -400,16 +422,20 @@ class SyncOpBase {
     virtual void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const = 0;
 };
 
-class SyncOpPipelineBarrier : public SyncOpBase {
-  public:
-    SyncOpPipelineBarrier(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
-                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                          const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                          const VkImageMemoryBarrier *pImageMemoryBarriers);
+class SyncOpBarriers : public SyncOpBase {
+  protected:
+    template <typename Barriers, typename FunctorFactory>
+    static void ApplyBarriers(const Barriers &barriers, const FunctorFactory &factory, const ResourceUsageTag &tag,
+                              AccessContext *context);
+    template <typename Barriers, typename FunctorFactory>
+    static void ApplyGlobalBarriers(const Barriers &barriers, const FunctorFactory &factory, const ResourceUsageTag &tag,
+                                    AccessContext *access_context);
 
-    bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+    SyncOpBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
+                   VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
+                   const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                   const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                   const VkImageMemoryBarrier *pImageMemoryBarriers);
 
   protected:
     void MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
@@ -427,6 +453,34 @@ class SyncOpPipelineBarrier : public SyncOpBase {
     std::vector<SyncMemoryBarrier> memory_barriers_;
     std::vector<SyncBufferMemoryBarrier> buffer_memory_barriers_;
     std::vector<SyncImageMemoryBarrier> image_memory_barriers_;
+};
+
+class SyncOpPipelineBarrier : public SyncOpBarriers {
+  public:
+    SyncOpPipelineBarrier(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
+                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
+                          const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                          const VkImageMemoryBarrier *pImageMemoryBarriers);
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+};
+
+class SyncOpWaitEvents : public SyncOpBarriers {
+  public:
+    SyncOpWaitEvents(const CommandBufferAccessContext &cb_context, VkQueueFlags queue_flags, uint32_t eventCount,
+                     const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                     uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                     const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                     const VkImageMemoryBarrier *pImageMemoryBarriers);
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+
+  protected:
+    // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
+    // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
+    std::vector<SyncEventStateShared> events_;
+    void MakeEventsList(const CommandBufferAccessContext &cb_context, uint32_t event_count, const VkEvent *events);
 };
 
 class AccessContext {
@@ -542,7 +596,7 @@ class AccessContext {
     void UpdateResourceAccess(const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range, const Action action);
 
     template <typename Action>
-    void ApplyGlobalBarriers(const Action &barrier_action);
+    void ApplyToContext(const Action &barrier_action);
     static AccessAddressType ImageAddressType(const IMAGE_STATE &image);
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
@@ -679,15 +733,12 @@ class CommandBufferAccessContext {
 
     std::string FormatUsage(const HazardResult &hazard) const;
     AccessContext *GetCurrentAccessContext() { return current_context_; }
+    SyncEventsContext *GetCurrectEventsContext() { return &event_state_; }
+    const SyncEventsContext *GetCurrectEventsContext() const { return &event_state_; }
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
-    void ApplyBufferBarriers(const SyncEventState &sync_event, const SyncExecScope &dst, uint32_t barrier_count,
-                             const VkBufferMemoryBarrier *barriers);
-    void ApplyGlobalBarriers(SyncEventState &sync_event, const SyncExecScope &dst, uint32_t memory_barrier_count,
-                             const VkMemoryBarrier *pMemoryBarriers, const ResourceUsageTag &tag);
     void ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst);
-    void ApplyImageBarriers(const SyncEventState &sync_event, const SyncExecScope &dst, uint32_t barrier_count,
-                            const VkImageMemoryBarrier *barriers, const ResourceUsageTag &tag);
+
     bool ValidateBeginRenderPass(const RENDER_PASS_STATE &render_pass, const VkRenderPassBeginInfo *pRenderPassBegin,
                                  const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const;
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
@@ -707,15 +758,6 @@ class CommandBufferAccessContext {
     void RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask, const ResourceUsageTag &tag);
     bool ValidateResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
     void RecordResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
-    bool ValidateWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
-                            VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                            uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) const;
-    void RecordWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                          VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                          const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                          const VkImageMemoryBarrier *pImageMemoryBarriers, const ResourceUsageTag &tag);
     void RecordDestroyEvent(VkEvent event);
 
     CMD_BUFFER_STATE *GetCommandBufferState() { return cb_state_.get(); }
@@ -754,7 +796,11 @@ class CommandBufferAccessContext {
         return *sync_state_;
     }
 
+    const SyncEventStateShared GetEventStateConstCastShared(VkEvent) const;
+
   private:
+    SyncEventStateShared &GetEventStateShared(VkEvent);
+    const SyncEventStateConstShared GetEventStateShared(VkEvent) const;
     SyncEventState *GetEventState(VkEvent);
     const SyncEventState *GetEventState(VkEvent) const;
     ResourceUsageTag::TagIndex access_index_;
@@ -769,7 +815,7 @@ class CommandBufferAccessContext {
     SyncValidator *sync_state_;
 
     VkQueueFlags queue_flags_;
-    std::unordered_map<VkEvent, std::unique_ptr<SyncEventState>> event_state_;
+    SyncEventsContext event_state_;
     bool destroyed_;
 };
 
