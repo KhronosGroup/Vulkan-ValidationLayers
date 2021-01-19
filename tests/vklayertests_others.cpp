@@ -254,6 +254,38 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkLayerTest, PrivateDataFeature) {
+    TEST_DESCRIPTION("Test privateData feature not being enabled.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%s Test not supported by MockICD, skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PRIVATE_DATA_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
+        return;
+    }
+    // feature not enabled
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCreatePrivateDataSlotEXT vkCreatePrivateDataSlotEXT =
+        (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
+
+    VkPrivateDataSlotEXT data_slot;
+    VkPrivateDataSlotCreateInfoEXT data_create_info;
+    data_create_info.sType = VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT;
+    data_create_info.pNext = NULL;
+    data_create_info.flags = 0;
+    m_errorMonitor->SetUnexpectedError("VUID-vkCreatePrivateDataSlotEXT-privateData-04564");
+    vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, CustomStypeStructString) {
     TEST_DESCRIPTION("Positive Test for ability to specify custom pNext structs using a list (string)");
 
