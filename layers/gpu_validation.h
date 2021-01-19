@@ -100,6 +100,10 @@ class GpuAssisted : public ValidationStateTracker {
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
 
+    void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
+    bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
+    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer);
+
   public:
     GpuAssisted() { container_type = LayerObjectTypeGpuAssisted; }
 
@@ -157,6 +161,8 @@ class GpuAssisted : public ValidationStateTracker {
                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                       uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                       uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const override;
+    bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                          const VkDependencyInfoKHR* pDependencyInfos) const override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, void* cb_state_data) override;
     void CreateAccelerationStructureBuildValidationState(GpuAssisted* device_GpuAssisted);
@@ -215,6 +221,10 @@ class GpuAssisted : public ValidationStateTracker {
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) override;
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result) override;
+    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
+                                      VkFence fence) override;
+    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                       VkResult result) override;
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance) override;
     void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,

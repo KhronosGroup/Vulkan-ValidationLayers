@@ -21,6 +21,7 @@
 #include "layer_chassis_dispatch.h"
 #include "best_practices_error_enums.h"
 #include "shader_validation.h"
+#include "sync_utils.h"
 
 #include <string>
 #include <bitset>
@@ -1012,7 +1013,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     return skip;
 }
 
-bool BestPractices::CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) const {
+bool BestPractices::CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags flags) const {
     bool skip = false;
 
     if (flags & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) {
@@ -1022,6 +1023,30 @@ bool BestPractices::CheckPipelineStageFlags(std::string api_name, const VkPipeli
         skip |= LogWarning(device, kVUID_BestPractices_PipelineStageFlags,
                            "You are using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT when %s is called\n", api_name.c_str());
     }
+
+    return skip;
+}
+
+bool BestPractices::CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags2KHR flags) const {
+    bool skip = false;
+
+    if (flags & VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR) {
+        skip |= LogWarning(device, kVUID_BestPractices_PipelineStageFlags,
+                           "You are using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR when %s is called\n", api_name.c_str());
+    } else if (flags & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR) {
+        skip |= LogWarning(device, kVUID_BestPractices_PipelineStageFlags,
+                           "You are using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR when %s is called\n", api_name.c_str());
+    }
+
+    return skip;
+}
+
+bool BestPractices::CheckDependencyInfo(const std::string& api_name, const VkDependencyInfoKHR& dep_info) const {
+    bool skip = false;
+    auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
+
+    skip |= CheckPipelineStageFlags(api_name, stage_masks.src);
+    skip |= CheckPipelineStageFlags(api_name, stage_masks.dst);
 
     return skip;
 }
@@ -1048,6 +1073,19 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreCount; semaphore++) {
             skip |= CheckPipelineStageFlags("vkQueueSubmit", pSubmits[submit].pWaitDstStageMask[semaphore]);
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
+                                                   VkFence fence) const {
+    bool skip = false;
+
+    for (uint32_t submit = 0; submit < submitCount; submit++) {
+        for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreInfoCount; semaphore++) {
+            skip |= CheckPipelineStageFlags("vkQueueSubmit2KHR", pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
         }
     }
 
@@ -1096,11 +1134,25 @@ bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     return skip;
 }
 
+bool BestPractices::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                   const VkDependencyInfoKHR* pDependencyInfo) const {
+    return CheckDependencyInfo("vkCmdSetEvent2KHR", *pDependencyInfo);
+}
+
 bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
                                                  VkPipelineStageFlags stageMask) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdResetEvent", stageMask);
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                     VkPipelineStageFlags2KHR stageMask) const {
+    bool skip = false;
+
+    skip |= CheckPipelineStageFlags("vkCmdResetEvent2KHR", stageMask);
 
     return skip;
 }
@@ -1120,6 +1172,16 @@ bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
+bool BestPractices::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                                     const VkDependencyInfoKHR* pDependencyInfos) const {
+    bool skip = false;
+    for (uint32_t i = 0; i < eventCount; i++) {
+        skip = CheckDependencyInfo("vkCmdWaitEvents2KHR", pDependencyInfos[i]);
+    }
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                       VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -1135,11 +1197,25 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     return skip;
 }
 
+bool BestPractices::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkDependencyInfoKHR* pDependencyInfo) const {
+    return CheckDependencyInfo("vkCmdPipelineBarrier2KHR", *pDependencyInfo);
+}
+
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                      VkQueryPool queryPool, uint32_t query) const {
     bool skip = false;
 
-    skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp", pipelineStage);
+    skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp", static_cast<VkPipelineStageFlags>(pipelineStage));
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
+                                                         VkQueryPool queryPool, uint32_t query) const {
+    bool skip = false;
+
+    skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp2KHR", pipelineStage);
 
     return skip;
 }

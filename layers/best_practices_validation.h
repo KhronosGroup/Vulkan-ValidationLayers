@@ -184,27 +184,41 @@ class BestPractices : public ValidationStateTracker {
                                                void* pipe_state) const override;
     bool ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const;
 
-    bool CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) const;
+    bool CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags flags) const;
+    bool CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags2KHR flags) const;
+    bool CheckDependencyInfo(const std::string& api_name, const VkDependencyInfoKHR& dep_info) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
                                     VkFence fence) const override;
+    bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
+                                        VkFence fence) const override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                            const VkCommandBufferBeginInfo* pBeginInfo) const override;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const override;
+    bool PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                        const VkDependencyInfoKHR* pDependencyInfo) const override;
     bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const override;
+    bool PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                          VkPipelineStageFlags2KHR stageMask) const override;
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                       VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                       uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                       uint32_t imageMemoryBarrierCount,
                                       const VkImageMemoryBarrier* pImageMemoryBarriers) const override;
+    bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                          const VkDependencyInfoKHR* pDependencyInfos) const override;
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                            VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                            uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                            uint32_t imageMemoryBarrierCount,
                                            const VkImageMemoryBarrier* pImageMemoryBarriers) const override;
+    bool PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
+                                               const VkDependencyInfoKHR* pDependencyInfo) const override;
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                           VkQueryPool queryPool, uint32_t query) const override;
+    bool PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
+                                              VkQueryPool queryPool, uint32_t query) const override;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                        VkPipeline pipeline) override;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,

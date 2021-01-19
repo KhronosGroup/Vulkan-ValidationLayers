@@ -24,6 +24,7 @@
 #include "spirv-tools/instrument.hpp"
 #include "layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
+#include "sync_utils.h"
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |
@@ -1052,6 +1053,24 @@ bool GpuAssisted::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, ui
     return false;
 }
 
+bool GpuAssisted::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                   const VkDependencyInfoKHR *pDependencyInfos) const {
+    VkPipelineStageFlags2KHR srcStageMask = 0;
+
+    for (uint32_t i = 0; i < eventCount; i++) {
+        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
+        srcStageMask = stage_masks.src;
+    }
+
+    if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
+        ReportSetupProblem(commandBuffer,
+                           "CmdWaitEvents2KHR recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
+                           "GPU_Assisted validation waits on queue completion. "
+                           "This wait could block the host's signaling of this event, resulting in deadlock.");
+    }
+    return false;
+}
+
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                             VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
@@ -1410,16 +1429,55 @@ void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
     }
 }
 
+void GpuAssisted::PreRecordCommandBuffer(VkCommandBuffer command_buffer) {
+    auto cb_node = GetCBState(command_buffer);
+    UpdateInstrumentationBuffer(cb_node);
+    for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+        UpdateInstrumentationBuffer(secondary_cmd_buffer);
+    }
+}
+
 void GpuAssisted::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
-            UpdateInstrumentationBuffer(cb_node);
-            for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-                UpdateInstrumentationBuffer(secondary_cmd_buffer);
-            }
+            PreRecordCommandBuffer(submit->pCommandBuffers[i]);
         }
+    }
+}
+void GpuAssisted::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                               VkFence fence) {
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+            PreRecordCommandBuffer(submit->pCommandBufferInfos[i].commandBuffer);
+        }
+    }
+}
+
+bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
+    bool buffers_present = false;
+    auto cb_node = GetCBState(command_buffer);
+
+    if (GetBufferInfo(cb_node->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) {
+        buffers_present = true;
+    }
+    for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+        if (GetBufferInfo(secondary_cmd_buffer->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) {
+            buffers_present = true;
+        }
+    }
+    return buffers_present;
+}
+
+void GpuAssisted::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
+    auto cb_node = GetCBState(command_buffer);
+
+    UtilProcessInstrumentationBuffer(queue, cb_node, this);
+    ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
+    for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+        UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
+        ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
     }
 }
 
@@ -1436,13 +1494,7 @@ void GpuAssisted::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
-            if (GetBufferInfo(cb_node->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) buffers_present = true;
-            for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-                if (GetBufferInfo(secondary_cmd_buffer->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) {
-                    buffers_present = true;
-                }
-            }
+            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBuffers[i]);
         }
     }
     if (!buffers_present) return;
@@ -1454,13 +1506,34 @@ void GpuAssisted::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
-            UtilProcessInstrumentationBuffer(queue, cb_node, this);
-            ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
-            for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-                UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
-                ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
-            }
+            ProcessCommandBuffer(queue, submit->pCommandBuffers[i]);
+        }
+    }
+}
+
+void GpuAssisted::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                VkFence fence, VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
+
+    if (aborted || (result != VK_SUCCESS)) return;
+    bool buffers_present = false;
+    // Don't QueueWaitIdle if there's nothing to process
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBufferInfos[i].commandBuffer);
+        }
+    }
+    if (!buffers_present) return;
+
+    UtilSubmitBarrier(queue, this);
+
+    DispatchQueueWaitIdle(queue);
+
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
+            ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer);
         }
     }
 }
