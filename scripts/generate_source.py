@@ -45,6 +45,7 @@ def main(argv):
                    '-quiet',
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
+                                              "chassis_dispatch_helper.h",
                                               "layer_chassis_dispatch.cpp",
                                               "layer_chassis_dispatch.h",
                                               "object_tracker.cpp",
