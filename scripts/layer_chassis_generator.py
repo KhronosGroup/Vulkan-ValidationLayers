@@ -103,16 +103,17 @@ class LayerChassisGeneratorOptions(GeneratorOptions):
                 emitExtensions = emitExtensions,
                 emitSpirv = emitSpirv,
                 sortProcedure = sortProcedure)
-        self.prefixText      = prefixText
-        self.genFuncPointers = genFuncPointers
-        self.protectFile     = protectFile
-        self.protectFeature  = protectFeature
-        self.apicall         = apicall
-        self.apientry        = apientry
-        self.apientryp       = apientryp
-        self.indentFuncProto = indentFuncProto
+        self.prefixText        = prefixText
+        self.genFuncPointers   = genFuncPointers
+        self.protectFile       = protectFile
+        self.protectFeature    = protectFeature
+        self.apicall           = apicall
+        self.apientry          = apientry
+        self.apientryp         = apientryp
+        self.indentFuncProto   = indentFuncProto
         self.indentFuncPointer = indentFuncPointer
-        self.alignFuncParam  = alignFuncParam
+        self.alignFuncParam    = alignFuncParam
+        self.helper_file_type  = helper_file_type
 
 # LayerChassisOutputGenerator - subclass of OutputGenerator.
 # Generates a LayerFactory layer that intercepts all API entrypoints
@@ -355,6 +356,7 @@ class ValidationObject {
     public:
         uint32_t api_version;
         debug_report_data* report_data = nullptr;
+        std::vector<std::vector<ValidationObject*>> intercept_vectors;
 
         VkLayerInstanceDispatchTable instance_dispatch_table;
         VkLayerDispatchTable device_dispatch_table;
@@ -378,6 +380,8 @@ class ValidationObject {
         ValidationObject(){};
         // Destructor
         virtual ~ValidationObject() {};
+
+        void InitObjectDispatchVectors();
 
         ReadWriteLock validation_object_mutex;
         virtual read_lock_guard_t read_lock() {
@@ -656,7 +660,7 @@ class ValidationObject {
  * Author: Mark Lobodzinski <mark@lunarg.com>
  */"""
 
-    inline_custom_source_preamble = """
+    inline_custom_source_preamble_1 = """
 
 #include <string.h>
 #include <mutex>
@@ -682,12 +686,16 @@ bool wrap_handles = true;
 #include "best_practices_validation.h"
 #include "core_validation.h"
 #include "corechecks_optick_instrumentation.h"
+#include "command_counter.h"
 #include "gpu_validation.h"
 #include "object_lifetime_validation.h"
 #include "debug_printf.h"
 #include "stateless_validation.h"
 #include "synchronization_validation.h"
 #include "thread_safety.h"
+
+// This header file must be included after the above validation object class definitions
+#include "chassis_dispatch_helper.h"
 
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
@@ -696,8 +704,9 @@ std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 static const bool use_optick_instrumentation = true;
 #else
 static const bool use_optick_instrumentation = false;
-#endif
+#endif"""
 
+    inline_custom_source_preamble_2 = """
 namespace vulkan_layer_chassis {
 
 using std::unordered_map;
@@ -1149,6 +1158,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         auto lock = intercept->write_lock();
         intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, result);
     }
+
+    device_interceptor->InitObjectDispatchVectors();
 
     DeviceExtensionWhitelist(device_interceptor, pCreateInfo, *pDevice);
 
@@ -1702,6 +1713,49 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
     return VK_SUCCESS;
 }"""
 
+    inline_dispatch_vector_macro_defs = """
+
+#define INTERCEPTIDNAME(name) InterceptId ## name
+#define BUILD_DISPATCH_VECTOR(name) \\
+    for (auto item : object_dispatch) { \\
+        auto intercept_vector = &intercept_vectors[INTERCEPTIDNAME(name)];  \\
+        switch (item->container_type) { \\
+            case LayerObjectTypeThreading:  \\
+                if (typeid(&ThreadSafety::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);  \\
+                break;  \\
+            case LayerObjectTypeParameterValidation:    \\
+                if (typeid(&StatelessValidation::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);   \\
+                break;  \\
+            case LayerObjectTypeObjectTracker:  \\
+                if (typeid(&ObjectLifetimes::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);   \\
+                break;  \\
+            case LayerObjectTypeCoreValidation: \\
+                if (typeid(&CoreChecks::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);    \\
+                break;  \\
+            case LayerObjectTypeCommandCounter: \\
+                if (typeid(&CommandCounter::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);    \\
+                break;  \\
+            case LayerObjectTypeBestPractices:  \\
+                if (typeid(&BestPractices::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);     \\
+                break;  \\
+            case LayerObjectTypeGpuAssisted:    \\
+                if (typeid(&GpuAssisted::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);   \\
+                break;  \\
+            case LayerObjectTypeDebugPrintf:    \\
+                if (typeid(&DebugPrintf::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);   \\
+                break;  \\
+            case LayerObjectTypeSyncValidation: \\
+                if (typeid(&SyncValidator::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);     \\
+                break;  \\
+            case LayerObjectTypeInstance: \\
+            case LayerObjectTypeDevice:   \\
+                break;  \\
+            default:    \\
+                /* Chassis codegen needs to be updated for unknown validation object type */ \\
+                assert(0);  \\
+        }   \\
+    }"""
+
 
     def __init__(self,
                  errFile = sys.stderr,
@@ -1711,7 +1765,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         # Internal state - accumulators for different inner block text
         self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
         self.intercepts = []
-        self.layer_factory = ''                     # String containing base layer factory class definition
+        self.intercept_enums = ''
+        self.dispatch_vector_fcns = ''
+        self.virtual_fcn_defs = ''
 
     # Check if the parameter passed in is a pointer to an array
     def paramIsArray(self, param):
@@ -1732,22 +1788,28 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         # Output Copyright
         write(self.inline_copyright_message, file=self.outFile)
         # Multiple inclusion protection
-        self.header = False
-        if (self.genOpts.filename and 'h' == self.genOpts.filename[-1]):
-            self.header = True
+        self.chassis_header = False
+        self.helper_header = False
+        self.chassis_source = False
+        if ('layer_chassis_header' == self.genOpts.helper_file_type):
+            self.chassis_header = True
             write('#pragma once', file=self.outFile)
             self.newline()
-        if self.header:
             write(self.inline_custom_header_preamble, file=self.outFile)
+        elif ('layer_chassis_helper_header' == self.genOpts.helper_file_type):
+            self.helper_header = True
+            write('#pragma once', file=self.outFile)
         else:
-            write(self.inline_custom_source_preamble, file=self.outFile)
-        self.layer_factory += self.inline_custom_header_class_definition
+            self.chassis_source = True
+            write(self.inline_custom_source_preamble_1, file=self.outFile)
+            write(self.inline_custom_source_preamble_2, file=self.outFile)
+
     #
     #
     def endFile(self):
         # Finish C++ namespace and multiple inclusion protection
         self.newline()
-        if not self.header:
+        if self.chassis_source:
             # Record intercepted procedures
             write('// Map of intercepted ApiName to its associated function data', file=self.outFile)
             write('#ifdef _MSC_VER', file=self.outFile)
@@ -1758,15 +1820,35 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             write('};\n', file=self.outFile)
             self.newline()
             write('} // namespace vulkan_layer_chassis', file=self.outFile)
-        if self.header:
-            self.newline()
-            # Output Layer Factory Class Definitions
-            self.layer_factory += self.inline_custom_validation_class_definitions
-            self.layer_factory += '};\n\n'
-            self.layer_factory += 'extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;'
-            write(self.layer_factory, file=self.outFile)
-        else:
             write(self.inline_custom_source_postamble, file=self.outFile)
+        elif self.chassis_header:
+            self.newline()
+            chassis_hdr_content = ''
+            chassis_hdr_content += self.inline_custom_header_class_definition
+            chassis_hdr_content += self.virtual_fcn_defs
+            chassis_hdr_content += self.inline_custom_validation_class_definitions
+            chassis_hdr_content += '};\n\n'
+            chassis_hdr_content += 'extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;'
+            write(chassis_hdr_content, file=self.outFile)
+        elif self.helper_header:
+            self.newline()
+            helper_content =  '// This source code creates dispatch vectors for each chassis api intercept,\n'
+            helper_content += '// i.e., PreCallValidateFoo, PreCallRecordFoo, PostCallRecordFoo, etc., ensuring that \n'
+            helper_content += '// each vector contains only the validation objects that override that particular base \n'
+            helper_content += '// class virtual function. Preventing non-overridden calls from reaching the default\n'
+            helper_content += '// functions saved about 5% in multithreaded applications.\n\n'
+            helper_content += 'typedef enum InterceptId{\n'
+            helper_content += self.intercept_enums
+            helper_content += '    InterceptIdCount,\n'
+            helper_content += '} InterceptId;\n'
+            helper_content += self.inline_dispatch_vector_macro_defs
+            helper_content += '\n\n'
+            helper_content += 'void ValidationObject::InitObjectDispatchVectors() {\n'
+            helper_content += '    intercept_vectors.resize(InterceptIdCount);\n\n'
+            helper_content += self.dispatch_vector_fcns;
+            helper_content += '};\n'
+            write(helper_content, file=self.outFile)
+
         # Finish processing in superclass
         OutputGenerator.endFile(self)
 
@@ -1781,22 +1863,23 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 
     def endFeature(self):
         # Actually write the interface to the output file.
-        if (self.emit):
-            self.newline()
-            # If type declarations are needed by other features based on this one, it may be necessary to suppress the ExtraProtect,
-            # or move it below the 'for section...' loop.
-            if (self.featureExtraProtect != None):
-                write('#ifdef', self.featureExtraProtect, file=self.outFile)
-            for section in self.TYPE_SECTIONS:
-                contents = self.sections[section]
-                if contents:
-                    write('\n'.join(contents), file=self.outFile)
-                    self.newline()
-            if (self.sections['command']):
-                write('\n'.join(self.sections['command']), end=u'', file=self.outFile)
+        if not self.helper_header:
+            if (self.emit):
                 self.newline()
-            if (self.featureExtraProtect != None):
-                write('#endif //', self.featureExtraProtect, file=self.outFile)
+                # If type declarations are needed by other features based on this one, it may be necessary to suppress the ExtraProtect,
+                # or move it below the 'for section...' loop.
+                if (self.featureExtraProtect != None):
+                    write('#ifdef', self.featureExtraProtect, file=self.outFile)
+                for section in self.TYPE_SECTIONS:
+                    contents = self.sections[section]
+                    if contents:
+                        write('\n'.join(contents), file=self.outFile)
+                        self.newline()
+                if (self.sections['command']):
+                    write('\n'.join(self.sections['command']), end=u'', file=self.outFile)
+                    self.newline()
+                if (self.featureExtraProtect != None):
+                    write('#endif //', self.featureExtraProtect, file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFeature(self)
     #
@@ -1860,113 +1943,135 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         if name in ignore_functions:
             return
 
-        if self.header: # In the header declare all intercepts
+        dispatchable_type = cmdinfo.elem.find('param/type').text
+
+        if self.chassis_header: # In the header declare all intercepts
             self.appendSection('command', '')
             self.appendSection('command', self.makeCDecls(cmdinfo.elem)[0])
             if (self.featureExtraProtect != None):
-                self.layer_factory += '#ifdef %s\n' % self.featureExtraProtect
+                self.virtual_fcn_defs += '#ifdef %s\n' % self.featureExtraProtect
             # Update base class with virtual function declarations
             if 'ValidationCache' not in name:
-                self.layer_factory += self.BaseClassCdecl(cmdinfo.elem, name)
+                self.virtual_fcn_defs += self.BaseClassCdecl(cmdinfo.elem, name)
             if (self.featureExtraProtect != None):
-                self.layer_factory += '#endif\n'
-            return
+                self.virtual_fcn_defs += '#endif\n'
+        elif self.helper_header:
+            if (self.featureExtraProtect != None):
+                self.dispatch_vector_fcns += '#ifdef %s\n' % self.featureExtraProtect
+            if name not in self.manual_functions and dispatchable_type != 'VkInstance' and dispatchable_type != 'VkPhysicalDevice':
+                fcn_name = name[2:]
+                self.intercept_enums += '    InterceptIdPreCallValidate%s,\n' % fcn_name
+                self.intercept_enums += '    InterceptIdPreCallRecord%s,\n' % fcn_name
+                self.intercept_enums += '    InterceptIdPostCallRecord%s,\n' % fcn_name
 
-        dispatchable_type = cmdinfo.elem.find('param/type').text
-        special_case_instance_APIs = [
-            'vkCreateInstance',
-            'vkEnumerateInstanceVersion',
-            'vkEnumerateInstanceLayerProperties',
-            'vkEnumerateInstanceExtensionProperties',
-            ]
-        if dispatchable_type == 'VkInstance' or name in special_case_instance_APIs:
-            function_type = 'kFuncTypeInst'
-        elif dispatchable_type == 'VkPhysicalDevice':
-            function_type = 'kFuncTypePdev'
-        else:
-            function_type = 'kFuncTypeDev'
+                for prefix in ['PreCallValidate', 'PreCallRecord', 'PostCallRecord']:
+                    self.dispatch_vector_fcns += '    BUILD_DISPATCH_VECTOR(%s%s);\n' % (prefix, name[2:])
+            if (self.featureExtraProtect != None):
+                self.dispatch_vector_fcns += '#endif\n'
+        elif self.chassis_source:
+            special_case_instance_APIs = [
+                'vkCreateInstance',
+                'vkEnumerateInstanceVersion',
+                'vkEnumerateInstanceLayerProperties',
+                'vkEnumerateInstanceExtensionProperties',
+                ]
+            if dispatchable_type == 'VkInstance' or name in special_case_instance_APIs:
+                function_type = 'kFuncTypeInst'
+            elif dispatchable_type == 'VkPhysicalDevice':
+                function_type = 'kFuncTypePdev'
+            else:
+                function_type = 'kFuncTypeDev'
 
-        if name in self.manual_functions:
+            if name in self.manual_functions:
+                if (self.featureExtraProtect != None):
+                    self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
+                self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, function_type, name[2:]) ]
+                if (self.featureExtraProtect != None):
+                    self.intercepts += [ '#endif' ]
+                return
+            # Record that the function will be intercepted
             if (self.featureExtraProtect != None):
                 self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
             self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, function_type, name[2:]) ]
             if (self.featureExtraProtect != None):
                 self.intercepts += [ '#endif' ]
-            return
-        # Record that the function will be intercepted
-        if (self.featureExtraProtect != None):
-            self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
-        self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, function_type, name[2:]) ]
-        if (self.featureExtraProtect != None):
-            self.intercepts += [ '#endif' ]
-        OutputGenerator.genCmd(self, cmdinfo, name, alias)
-        #
-        decls = self.makeCDecls(cmdinfo.elem)
-        self.appendSection('command', '')
-        self.appendSection('command', '%s {' % decls[0][:-1])
-        # Setup common to call wrappers. First parameter is always dispatchable
-        dispatchable_name = cmdinfo.elem.find('param/name').text
-        self.appendSection('command', '    auto layer_data = GetLayerDataPtr(get_dispatch_key(%s), layer_data_map);' % (dispatchable_name))
-        api_function_name = cmdinfo.elem.attrib.get('name')
-        params = cmdinfo.elem.findall('param/name')
-        paramstext = ', '.join([str(param.text) for param in params])
-        API = api_function_name.replace('vk','Dispatch') + '('
+            OutputGenerator.genCmd(self, cmdinfo, name, alias)
+            #
+            decls = self.makeCDecls(cmdinfo.elem)
+            self.appendSection('command', '')
+            self.appendSection('command', '%s {' % decls[0][:-1])
+            # Setup common to call wrappers. First parameter is always dispatchable
+            dispatchable_name = cmdinfo.elem.find('param/name').text
+            self.appendSection('command', '    auto layer_data = GetLayerDataPtr(get_dispatch_key(%s), layer_data_map);' % (dispatchable_name))
+            api_function_name = cmdinfo.elem.attrib.get('name')
+            params = cmdinfo.elem.findall('param/name')
+            paramstext = ', '.join([str(param.text) for param in params])
+            API = api_function_name.replace('vk','Dispatch') + '('
 
-        # Declare result variable, if any.
-        return_map = {
-            'PFN_vkVoidFunction': 'return nullptr;',
-            'VkBool32': 'return VK_FALSE;',
-            'VkDeviceAddress': 'return 0;',
-            'VkDeviceSize': 'return 0;',
-            'VkResult': 'return VK_ERROR_VALIDATION_FAILED_EXT;',
-            'void': 'return;',
-            'uint32_t': 'return 0;',
-            'uint64_t': 'return 0;'
-            }
-        resulttype = cmdinfo.elem.find('proto/type')
-        assignresult = ''
-        if (resulttype.text != 'void'):
-            assignresult = resulttype.text + ' result = '
+            # Declare result variable, if any.
+            return_map = {
+                'PFN_vkVoidFunction': 'return nullptr;',
+                'VkBool32': 'return VK_FALSE;',
+                'VkDeviceAddress': 'return 0;',
+                'VkDeviceSize': 'return 0;',
+                'VkResult': 'return VK_ERROR_VALIDATION_FAILED_EXT;',
+                'void': 'return;',
+                'uint32_t': 'return 0;',
+                'uint64_t': 'return 0;'
+                }
+            resulttype = cmdinfo.elem.find('proto/type')
+            assignresult = ''
+            if (resulttype.text != 'void'):
+                assignresult = resulttype.text + ' result = '
 
-        # Set up skip and locking
-        self.appendSection('command', '    bool skip = false;')
+            # Set up skip and locking
+            self.appendSection('command', '    bool skip = false;')
 
-        # Generate pre-call validation source code
-        self.appendSection('command', '    %s' % self.precallvalidate_loop)
-        self.appendSection('command', '        auto lock = intercept->read_lock();')
-        self.appendSection('command', '        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidate%s(%s);' % (api_function_name[2:], paramstext))
-        self.appendSection('command', '        if (skip) %s' % return_map[resulttype.text])
-        self.appendSection('command', '    }')
+            # Generate pre-call validation source code
+            if dispatchable_type != 'VkInstance' and dispatchable_type != 'VkPhysicalDevice':
+                self.appendSection('command', '    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidate%s]) {' % api_function_name[2:])
+            else:
+                self.appendSection('command', '    for (auto intercept : layer_data->object_dispatch) {')
+            self.appendSection('command', '        auto lock = intercept->read_lock();')
+            self.appendSection('command', '        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidate%s(%s);' % (api_function_name[2:], paramstext))
+            self.appendSection('command', '        if (skip) %s' % return_map[resulttype.text])
+            self.appendSection('command', '    }')
 
-        # Generate pre-call state recording source code
-        self.appendSection('command', '    %s' % self.precallrecord_loop)
-        self.appendSection('command', '        auto lock = intercept->write_lock();')
-        self.appendSection('command', '        intercept->PreCallRecord%s(%s);' % (api_function_name[2:], paramstext))
-        self.appendSection('command', '    }')
+            # Generate pre-call state recording source code
+            if dispatchable_type != 'VkInstance' and dispatchable_type != 'VkPhysicalDevice':
+                self.appendSection('command', '    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecord%s]) {' % api_function_name[2:])
+            else:
+                self.appendSection('command', '    for (auto intercept : layer_data->object_dispatch) {')
+            self.appendSection('command', '        auto lock = intercept->write_lock();')
+            self.appendSection('command', '        intercept->PreCallRecord%s(%s);' % (api_function_name[2:], paramstext))
+            self.appendSection('command', '    }')
 
-        # Insert pre-dispatch debug utils function call
-        if name in self.pre_dispatch_debug_utils_functions:
-            self.appendSection('command', '    %s' % self.pre_dispatch_debug_utils_functions[name])
+            # Insert pre-dispatch debug utils function call
+            if name in self.pre_dispatch_debug_utils_functions:
+                self.appendSection('command', '    %s' % self.pre_dispatch_debug_utils_functions[name])
 
-        # Output dispatch (down-chain) function call
-        self.appendSection('command', '    ' + assignresult + API + paramstext + ');')
+            # Output dispatch (down-chain) function call
+            self.appendSection('command', '    ' + assignresult + API + paramstext + ');')
 
-        # Insert post-dispatch debug utils function call
-        if name in self.post_dispatch_debug_utils_functions:
-            self.appendSection('command', '    %s' % self.post_dispatch_debug_utils_functions[name])
+            # Insert post-dispatch debug utils function call
+            if name in self.post_dispatch_debug_utils_functions:
+                self.appendSection('command', '    %s' % self.post_dispatch_debug_utils_functions[name])
 
-        # Generate post-call object processing source code
-        self.appendSection('command', '    %s' % self.postcallrecord_loop)
-        returnparam = ''
-        if (resulttype.text == 'VkResult' or resulttype.text == 'VkDeviceAddress'):
-            returnparam = ', result'
-        self.appendSection('command', '        auto lock = intercept->write_lock();')
-        self.appendSection('command', '        intercept->PostCallRecord%s(%s%s);' % (api_function_name[2:], paramstext, returnparam))
-        self.appendSection('command', '    }')
-        # Return result variable, if any.
-        if (resulttype.text != 'void'):
-            self.appendSection('command', '    return result;')
-        self.appendSection('command', '}')
+            # Generate post-call object processing source code
+            if dispatchable_type != 'VkInstance' and dispatchable_type != 'VkPhysicalDevice':
+                self.appendSection('command', '    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecord%s]) {' % api_function_name[2:])
+            else:
+                self.appendSection('command', '    for (auto intercept : layer_data->object_dispatch) {')
+            returnparam = ''
+            if (resulttype.text == 'VkResult' or resulttype.text == 'VkDeviceAddress'):
+                returnparam = ', result'
+            self.appendSection('command', '        auto lock = intercept->write_lock();')
+            self.appendSection('command', '        intercept->PostCallRecord%s(%s%s);' % (api_function_name[2:], paramstext, returnparam))
+            self.appendSection('command', '    }')
+            # Return result variable, if any.
+            if (resulttype.text != 'void'):
+                self.appendSection('command', '    return result;')
+            self.appendSection('command', '}')
     #
     # Override makeProtoName to drop the "vk" prefix
     def makeProtoName(self, name, tail):

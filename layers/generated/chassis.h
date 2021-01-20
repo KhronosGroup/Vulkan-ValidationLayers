@@ -2926,6 +2926,7 @@ class ValidationObject {
     public:
         uint32_t api_version;
         debug_report_data* report_data = nullptr;
+        std::vector<std::vector<ValidationObject*>> intercept_vectors;
 
         VkLayerInstanceDispatchTable instance_dispatch_table;
         VkLayerDispatchTable device_dispatch_table;
@@ -2949,6 +2950,8 @@ class ValidationObject {
         ValidationObject(){};
         // Destructor
         virtual ~ValidationObject() {};
+
+        void InitObjectDispatchVectors();
 
         ReadWriteLock validation_object_mutex;
         virtual read_lock_guard_t read_lock() {

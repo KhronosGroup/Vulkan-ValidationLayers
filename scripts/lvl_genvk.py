@@ -642,6 +642,35 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
+    # Layer chassis related generation structs
+    # Options for layer chassis header
+    genOpts['chassis_dispatch_helper.h'] = [
+          LayerChassisOutputGenerator,
+          LayerChassisGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'chassis_dispatch_helper.h',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            emitSpirv         = None,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            helper_file_type  = 'layer_chassis_helper_header',
+            expandEnumerants = False)
+        ]
+
+
+
     # Options for layer chassis dispatch source file
     genOpts['layer_chassis_dispatch.cpp'] = [
           LayerChassisDispatchOutputGenerator,
