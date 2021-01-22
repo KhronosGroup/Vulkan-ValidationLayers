@@ -1594,7 +1594,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
         if (!IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BIAS) &&
             (pPipeline->graphicsPipelineCI.pRasterizationState->depthBiasClamp != 0.0) && (!enabled_features.core.depthBiasClamp)) {
-            skip |= LogError(device, kVUID_Core_DrawState_InvalidFeature,
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00754",
                              "vkCreateGraphicsPipelines() pCreateInfo[%u]: the depthBiasClamp device feature is disabled: the "
                              "depthBiasClamp member "
                              "of the VkPipelineRasterizationStateCreateInfo structure must be set to 0.0 unless the "

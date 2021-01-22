@@ -68,7 +68,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidCommandBufferSimu
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidDescriptorSet = "UNASSIGNED-CoreValidation-DrawState-InvalidDescriptorSet";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidEvent = "UNASSIGNED-CoreValidation-DrawState-InvalidEvent";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidExtents = "UNASSIGNED-CoreValidation-DrawState-InvalidExtents";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFeature = "UNASSIGNED-CoreValidation-DrawState-InvalidFeature";
+// static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFeature = "UNASSIGNED-CoreValidation-DrawState-InvalidFeature";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFence = "UNASSIGNED-CoreValidation-DrawState-InvalidFence";
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImage = "UNASSIGNED-CoreValidation-DrawState-InvalidImage";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageAspect = "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect";
