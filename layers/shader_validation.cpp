@@ -3322,7 +3322,8 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
         insn++;
     }
 
-    if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
+    if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
+        pipeline->graphicsPipelineCI.pViewportState) {
         if (!IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
             pipeline->graphicsPipelineCI.pViewportState->viewportCount > 1 && primitiverate_written) {
             skip |= LogError(pipeline->pipeline,
