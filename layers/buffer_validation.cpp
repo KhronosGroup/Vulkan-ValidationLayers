@@ -2172,6 +2172,24 @@ void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
     }
 }
 
+bool CoreChecks::ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, VkClearDepthStencilValue clearValue,
+                                                const char *apiName) const {
+    bool skip = false;
+
+    // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
+    if (!device_extensions.vk_ext_depth_range_unrestricted) {
+        if (!(clearValue.depth >= 0.0) || !(clearValue.depth <= 1.0)) {
+            // Also VUID-VkClearDepthStencilValue-depth-00022
+            skip |= LogError(commandBuffer, "VUID-VkClearDepthStencilValue-depth-02506",
+                             "%s: VK_EXT_depth_range_unrestricted extension is not enabled and VkClearDepthStencilValue::depth "
+                             "(=%f) is not within the [0.0, 1.0] range.",
+                             apiName, clearValue.depth);
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                           const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
                                                           const VkImageSubresourceRange *pRanges) const {
@@ -2191,6 +2209,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             skip |= ValidateImageFormatFeatureFlags(image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearDepthStencilImage",
                                                     "VUID-vkCmdClearDepthStencilImage-image-01994");
         }
+        skip |= ValidateClearDepthStencilValue(commandBuffer, *pDepthStencil, "vkCmdClearDepthStencilImage()");
         skip |= InsideRenderPass(cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
         skip |= ValidateProtectedImage(cb_node, image_state, "vkCmdClearDepthStencilImage()",
                                        "VUID-vkCmdClearDepthStencilImage-commandBuffer-01807");
@@ -3372,6 +3391,10 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     }
                 } else {
                     fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
+                }
+                if (subpass_depth) {
+                    skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc->clearValue.depthStencil,
+                                                           "vkCmdClearAttachments()");
                 }
             }
             if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
