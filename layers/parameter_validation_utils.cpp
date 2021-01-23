@@ -1784,6 +1784,20 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            if (has_dynamic_viewport_with_count && has_dynamic_viewport) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04132",
+                                 "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT and "
+                                 "VK_DYNAMIC_STATE_VIEWPORT both listed in pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                 i);
+            }
+
+            if (has_dynamic_scissor_with_count && has_dynamic_scissor) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133",
+                                 "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_SCISSOR "
+                                 "both listed in pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                 i);
+            }
+
             auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
             if ((feedback_struct != nullptr) &&
                 (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
