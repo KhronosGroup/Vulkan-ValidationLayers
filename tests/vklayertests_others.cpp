@@ -10751,6 +10751,35 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
+    // Verify non-count and count dynamic states aren't used together
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        const VkDynamicState dyn_states[] = {
+            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT, VK_DYNAMIC_STATE_VIEWPORT,  // viewports
+            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT, VK_DYNAMIC_STATE_SCISSOR     // scissors
+        };
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+        dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dyn_state_ci.dynamicStateCount = 2;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+
+        pipe.dyn_state_ci_.pDynamicStates = &dyn_states[0];  // viewports
+        pipe.vp_state_ci_.viewportCount = 0;
+        pipe.vp_state_ci_.scissorCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04132");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+
+        pipe.dyn_state_ci_.pDynamicStates = &dyn_states[2];  // scissors
+        pipe.vp_state_ci_.viewportCount = 1;
+        pipe.vp_state_ci_.scissorCount = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
     const VkDynamicState dyn_states[] = {
         VK_DYNAMIC_STATE_CULL_MODE_EXT,           VK_DYNAMIC_STATE_FRONT_FACE_EXT,
         VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,  VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
