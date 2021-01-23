@@ -1623,13 +1623,39 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                  "and subpass uses a depth/stencil attachment.",
                                  pipelineIndex);
 
-                } else if ((pPipeline->graphicsPipelineCI.pDepthStencilState->depthBoundsTestEnable == VK_TRUE) &&
-                           (!enabled_features.core.depthBounds)) {
-                    skip |= LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",
+                } else if (pPipeline->graphicsPipelineCI.pDepthStencilState->depthBoundsTestEnable == VK_TRUE) {
+                    if (!enabled_features.core.depthBounds) {
+                        skip |=
+                            LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",
                                      "vkCreateGraphicsPipelines() pCreateInfo[%u]: the depthBounds device feature is disabled: the "
                                      "depthBoundsTestEnable member of the VkPipelineDepthStencilStateCreateInfo structure must be "
                                      "set to VK_FALSE.",
                                      pipelineIndex);
+                    }
+
+                    // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
+                    if (!device_extensions.vk_ext_depth_range_unrestricted &&
+                        !IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BOUNDS)) {
+                        const float minDepthBounds = pPipeline->graphicsPipelineCI.pDepthStencilState->minDepthBounds;
+                        const float maxDepthBounds = pPipeline->graphicsPipelineCI.pDepthStencilState->maxDepthBounds;
+                        // Also VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00755
+                        if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
+                            skip |=
+                                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510",
+                                         "vkCreateGraphicsPipelines() pCreateInfo[%u]: VK_EXT_depth_range_unrestricted extension "
+                                         "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
+                                         "true, and pDepthStencilState::minDepthBounds (=%f) is not within the [0.0, 1.0] range.",
+                                         minDepthBounds);
+                        }
+                        if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
+                            skip |=
+                                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510",
+                                         "vkCreateGraphicsPipelines() pCreateInfo[%u]: VK_EXT_depth_range_unrestricted extension "
+                                         "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
+                                         "true, and pDepthStencilState::maxDepthBounds (=%f) is not within the [0.0, 1.0] range.",
+                                         maxDepthBounds);
+                        }
+                    }
                 }
             }
 
@@ -6656,6 +6682,25 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBounds-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_SETDEPTHBOUNDS, "vkCmdSetDepthBounds()");
+
+    // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
+    if (!device_extensions.vk_ext_depth_range_unrestricted) {
+        if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
+            // Also VUID-vkCmdSetDepthBounds-minDepthBounds-00600
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBounds-minDepthBounds-02508",
+                             "vkCmdSetDepthBounds(): VK_EXT_depth_range_unrestricted extension is not enabled and minDepthBounds "
+                             "(=%f) is not within the [0.0, 1.0] range.",
+                             minDepthBounds);
+        }
+
+        if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
+            // Also VUID-vkCmdSetDepthBounds-maxDepthBounds-00601
+            skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBounds-maxDepthBounds-02509",
+                             "vkCmdSetDepthBounds(): VK_EXT_depth_range_unrestricted extension is not enabled and maxDepthBounds "
+                             "(=%f) is not within the [0.0, 1.0] range.",
+                             maxDepthBounds);
+        }
+    }
     return skip;
 }
 
@@ -11077,6 +11122,11 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
             if (FormatSpecificLoadAndStoreOpSettings(attachment->format, attachment->loadOp, attachment->stencilLoadOp,
                                                      VK_ATTACHMENT_LOAD_OP_CLEAR)) {
                 clear_op_size = static_cast<uint32_t>(i) + 1;
+
+                if (FormatHasDepth(attachment->format)) {
+                    skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
+                                                           function_name);
+                }
             }
         }
 
