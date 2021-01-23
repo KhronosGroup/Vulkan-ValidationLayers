@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -151,6 +151,18 @@ static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_b
             "VUID-vkCmdCopyImageToBuffer-baseArrayLayer-00213",
             "VUID-VkCopyBufferToImageInfo2KHR-baseArrayLayer-00213",
             "VUID-VkCopyImageToBufferInfo2KHR-baseArrayLayer-00213",
+        }},
+        {"04052", {
+            "VUID-vkCmdCopyBufferToImage-commandBuffer-04052",
+            "VUID-vkCmdCopyImageToBuffer-commandBuffer-04052",
+            "VUID-VkCopyBufferToImageInfo2KHR-commandBuffer-04052",
+            "VUID-VkCopyImageToBufferInfo2KHR-commandBuffer-04052",
+        }},
+        {"04053", {
+            "VUID-vkCmdCopyBufferToImage-srcImage-04053",
+            "VUID-vkCmdCopyImageToBuffer-srcImage-04053",
+            "VUID-VkCopyBufferToImageInfo2KHR-srcImage-04053",
+            "VUID-VkCopyImageToBufferInfo2KHR-srcImage-04053",
         }}
     };
     // clang-format on
@@ -5490,18 +5502,27 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
 
         // If the the calling command's VkImage parameter's format is not a depth/stencil format,
         // then bufferOffset must be a multiple of the calling command's VkImage parameter's element size
-        uint32_t element_size = FormatElementSize(image_format, region_aspect_mask);
+        const uint32_t element_size = FormatElementSize(image_format, region_aspect_mask);
+        const VkDeviceSize bufferOffset = pRegions[i].bufferOffset;
 
-        // If not depth/stencil and not multi-plane
-        if ((!FormatIsDepthAndStencil(image_format) && !FormatIsMultiplane(image_format)) &&
-            SafeModulo(pRegions[i].bufferOffset, element_size) != 0) {
-            vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
-                       ? GetBufferImageCopyCommandVUID("01558", image_to_buffer, is_2khr)
-                       : GetBufferImageCopyCommandVUID("00193", image_to_buffer, is_2khr);
-            skip |= LogError(image_state->image, vuid,
-                             "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
-                             " must be a multiple of this format's texel size (%" PRIu32 ").",
-                             function, i, pRegions[i].bufferOffset, element_size);
+        if (FormatIsDepthOrStencil(image_format)) {
+            if (SafeModulo(bufferOffset, 4) != 0) {
+                skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("04053", image_to_buffer, is_2khr),
+                                 "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
+                                 " must be a multiple 4 if using a depth/stencil format (%s).",
+                                 function, i, bufferOffset, string_VkFormat(image_format));
+            }
+        } else {
+            // If not depth/stencil and not multi-plane
+            if (!FormatIsMultiplane(image_format) && (SafeModulo(bufferOffset, element_size) != 0)) {
+                vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+                           ? GetBufferImageCopyCommandVUID("01558", image_to_buffer, is_2khr)
+                           : GetBufferImageCopyCommandVUID("00193", image_to_buffer, is_2khr);
+                skip |= LogError(image_state->image, vuid,
+                                 "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
+                                 " must be a multiple of this format's texel size (%" PRIu32 ").",
+                                 function, i, bufferOffset, element_size);
+            }
         }
 
         //  BufferRowLength must be 0, or greater than or equal to the width member of imageExtent
@@ -5608,11 +5629,11 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
 
             // bufferOffset must be a multiple of block size (linear bytes)
             uint32_t block_size_in_bytes = FormatElementSize(image_format);
-            if (SafeModulo(pRegions[i].bufferOffset, block_size_in_bytes) != 0) {
+            if (SafeModulo(bufferOffset, block_size_in_bytes) != 0) {
                 skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("00206", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] bufferOffset (0x%" PRIxLEAST64
                                  ") must be a multiple of the compressed image's texel block size (%" PRIu32 ")..",
-                                 function, i, pRegions[i].bufferOffset, block_size_in_bytes);
+                                 function, i, bufferOffset, block_size_in_bytes);
             }
 
             // imageExtent width must be a multiple of block width, or extent+offset width must equal subresource width
@@ -5668,15 +5689,32 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 // Know aspect mask is valid
                 const VkFormat compatible_format = FindMultiplaneCompatibleFormat(image_format, region_aspect_mask);
                 const uint32_t compatible_size = FormatElementSize(compatible_format);
-                if (SafeModulo(pRegions[i].bufferOffset, compatible_size) != 0) {
+                if (SafeModulo(bufferOffset, compatible_size) != 0) {
                     skip |= LogError(
                         image_state->image, GetBufferImageCopyCommandVUID("01559", image_to_buffer, is_2khr),
                         "%s: pRegion[%d]->bufferOffset is 0x%" PRIxLEAST64
                         " but must be a multiple of the multi-plane compatible format's texel size (%u) for plane %u (%s).",
-                        function, i, pRegions[i].bufferOffset, element_size, GetPlaneIndex(region_aspect_mask),
+                        function, i, bufferOffset, element_size, GetPlaneIndex(region_aspect_mask),
                         string_VkFormat(compatible_format));
                 }
             }
+        }
+
+        // TODO - Don't use ValidateCmdQueueFlags due to currently not having way to add more descriptive message
+        const COMMAND_POOL_STATE *command_pool = cb_node->command_pool.get();
+        assert(command_pool != nullptr);
+        const uint32_t queue_family_index = command_pool->queueFamilyIndex;
+        const VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queue_family_index].queueFlags;
+        if (((queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == 0) && (SafeModulo(bufferOffset, 4) != 0)) {
+            LogObjectList objlist(cb_node->commandBuffer);
+            objlist.add(command_pool->commandPool);
+            skip |= LogError(image_state->image, GetBufferImageCopyCommandVUID("04052", image_to_buffer, is_2khr),
+                             "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
+                             " must be a multiple 4 because the command buffer %s was allocated from the command pool %s "
+                             "which was created with queueFamilyIndex %u, which doesn't contain the VK_QUEUE_GRAPHICS_BIT or "
+                             "VK_QUEUE_COMPUTE_BIT flag.",
+                             function, i, bufferOffset, report_data->FormatHandle(cb_node->commandBuffer).c_str(),
+                             report_data->FormatHandle(command_pool->commandPool).c_str(), queue_family_index);
         }
     }
 
