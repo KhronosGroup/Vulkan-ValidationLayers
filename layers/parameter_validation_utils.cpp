@@ -1511,11 +1511,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             bool has_dynamic_depth_bounds_test_enable = false;
             bool has_dynamic_stencil_test_enable = false;
             bool has_dynamic_stencil_op = false;
-            if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
-                skip |=
-                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03377",
-                             "vkCreateGraphicsPipelines: flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR");
-            }
             if (pCreateInfos[i].pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
@@ -2800,7 +2795,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
-            if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+            const VkPipelineCreateFlags flags = pCreateInfos[i].flags;
+            if (flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
                 if (pCreateInfos[i].basePipelineIndex != -1) {
                     if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
                         skip |=
@@ -2829,13 +2825,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      i, pCreateInfos[i].basePipelineIndex, createInfoCount);
                     }
                 }
-            }
-
-            if ((pCreateInfos[i].flags & VK_PIPELINE_CREATE_DISPATCH_BASE) != 0) {
-                skip |= LogError(
-                    device, "VUID-VkGraphicsPipelineCreateInfo-flags-00764",
-                    "vkCreateGraphicsPipelines parameter pCreateInfos[%u]->flags must not contain VK_PIPELINE_CREATE_DISPATCH_BASE",
-                    i);
             }
 
             if (pCreateInfos[i].pRasterizationState) {
@@ -2876,6 +2865,60 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "].pRasterizationState->lineWidth (=%f) is not 1.0.",
                                      i, i, pCreateInfos[i].pRasterizationState->lineWidth);
                 }
+            }
+
+            // Validate no flags not allowed are used
+            if ((flags & VK_PIPELINE_CREATE_DISPATCH_BASE) != 0) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-flags-00764",
+                    "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include VK_PIPELINE_CREATE_DISPATCH_BASE", i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-flags-03371",
+                    "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR", i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03372",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR",
+                                 i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03373",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR",
+                                 i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03374",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR",
+                                 i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03375",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR",
+                                 i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03376",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR",
+                                 i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03377",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR",
+                                 i);
+            }
+            if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR) != 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03577",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%u]->flags must not include "
+                                 "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR",
+                                 i);
             }
         }
     }
