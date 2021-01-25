@@ -2451,6 +2451,8 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationSt
                                                               const void *pData, VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
+    inline_infos_khr.resize(create_info.descriptorUpdateEntryCount);
+    inline_infos_nv.resize(create_info.descriptorUpdateEntryCount);
     desc_writes.reserve(create_info.descriptorUpdateEntryCount);  // emplaced, so reserved without initialization
     VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
                                               ? create_info.descriptorSetLayout
@@ -2515,6 +2517,24 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationSt
                     write_entry.descriptorCount = inline_info->dataSize;
                     // skip the rest of the array, they just represent bytes in the update
                     j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
+                    VkWriteDescriptorSetAccelerationStructureKHR *inline_info_khr = &inline_infos_khr[i];
+                    inline_info_khr->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                    inline_info_khr->pNext = nullptr;
+                    inline_info_khr->accelerationStructureCount = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    inline_info_khr->pAccelerationStructures = reinterpret_cast<VkAccelerationStructureKHR *>(update_entry);
+                    write_entry.pNext = inline_info_khr;
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
+                    VkWriteDescriptorSetAccelerationStructureNV *inline_info_nv = &inline_infos_nv[i];
+                    inline_info_nv->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+                    inline_info_nv->pNext = nullptr;
+                    inline_info_nv->accelerationStructureCount = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    inline_info_nv->pAccelerationStructures = reinterpret_cast<VkAccelerationStructureNV *>(update_entry);
+                    write_entry.pNext = inline_info_nv;
                     break;
                 }
                 default:

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -573,6 +573,8 @@ bool ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE const *buf
 struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
     std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
+    std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
+    std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
     DecodedTemplateUpdate(const ValidationStateTracker *device_data, VkDescriptorSet descriptorSet,
                           const TEMPLATE_STATE *template_state, const void *pData,
                           VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
