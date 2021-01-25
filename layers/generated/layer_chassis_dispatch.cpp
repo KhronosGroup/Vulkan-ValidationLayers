@@ -749,6 +749,20 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
                     // to break out of the loop
                     j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                 } break;
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:{
+                    auto accstruct_nv_handle = reinterpret_cast<VkAccelerationStructureNV *>(update_entry);
+                    allocation_size = std::max(allocation_size, offset + sizeof(VkAccelerationStructureNV ));
+
+                    VkAccelerationStructureNV  wrapped_entry = layer_data->Unwrap(*accstruct_nv_handle);
+                    template_entries.emplace_back(offset, kVulkanObjectTypeAccelerationStructureNV, CastToUint64(wrapped_entry), 0);
+                } break;
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
+                    auto accstruct_khr_handle = reinterpret_cast<VkAccelerationStructureKHR *>(update_entry);
+                    allocation_size = std::max(allocation_size, offset + sizeof(VkAccelerationStructureKHR ));
+
+                    VkAccelerationStructureKHR  wrapped_entry = layer_data->Unwrap(*accstruct_khr_handle);
+                    template_entries.emplace_back(offset, kVulkanObjectTypeAccelerationStructureKHR, CastToUint64(wrapped_entry), 0);
+                } break;
                 default:
                     assert(0);
                     break;
@@ -780,6 +794,12 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
                     break;
                 case kVulkanObjectTypeBufferView:
                     *(reinterpret_cast<VkBufferView *>(destination)) = CastFromUint64<VkBufferView>(source);
+                    break;
+                case kVulkanObjectTypeAccelerationStructureKHR:
+                    *(reinterpret_cast<VkAccelerationStructureKHR *>(destination)) = CastFromUint64<VkAccelerationStructureKHR>(source);
+                    break;
+                case kVulkanObjectTypeAccelerationStructureNV:
+                    *(reinterpret_cast<VkAccelerationStructureNV *>(destination)) = CastFromUint64<VkAccelerationStructureNV>(source);
                     break;
                 default:
                     assert(0);
