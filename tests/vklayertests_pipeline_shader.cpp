@@ -1982,6 +1982,83 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
     vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
 }
 
+TEST_F(VkLayerTest, SetDepthRangeUnrestricted) {
+    TEST_DESCRIPTION("Test setting minDepthBounds and maxDepthBounds without VK_EXT_depth_range_unrestricted");
+
+    // Extension doesn't have feature bit, so not enabling extension invokes restrictions
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    if (VK_TRUE != device_features.depthBounds) {
+        printf("%s Test requires unsupported  depthBounds feature.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Need to set format framework uses for InitRenderTarget
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    if (m_depth_stencil_fmt == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt,
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = {};
+    ds_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds_ci.pNext = NULL;
+    ds_ci.depthTestEnable = VK_TRUE;
+    ds_ci.depthBoundsTestEnable = VK_TRUE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.ds_ci_ = ds_ci;
+    pipe.InitState();
+
+    pipe.ds_ci_.minDepthBounds = 1.5f;
+    pipe.ds_ci_.maxDepthBounds = 1.0f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.ds_ci_.minDepthBounds = 1.0f;
+    pipe.ds_ci_.maxDepthBounds = 1.5f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    // Add dynamic depth stencil state instead
+    pipe.ds_ci_.minDepthBounds = 0.0f;
+    pipe.ds_ci_.maxDepthBounds = 0.0f;
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_BOUNDS};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-minDepthBounds-02508");
+    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 1.5f, 0.0f);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-maxDepthBounds-02509");
+    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 0.0f, 1.5f);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 1.0f, 1.0f);
+    m_errorMonitor->VerifyNotFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
     TEST_DESCRIPTION("Test VUIDs added with VK_EXT_vertex_attribute_divisor extension.");
 
