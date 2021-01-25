@@ -2113,6 +2113,14 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
                                  buffer_128k.handle(), 1, &ds_region);
         m_errorMonitor->VerifyFound();
 
+        ds_region.bufferOffset = 5;
+        ds_region.imageExtent = {64, 64, 1};  // need smaller so offset works
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-srcImage-04053");
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), ds_image_2D.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                 buffer_128k.handle(), 1, &ds_region);
+        m_errorMonitor->VerifyFound();
+        ds_region.imageExtent = {256, 256, 1};
+
         // Stencil copies that should succeed
         ds_region.bufferOffset = 0;
         ds_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -5011,6 +5019,53 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
                                  1, &region);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
+    TEST_DESCRIPTION(
+        "Allocate a command buffer on a queue that does not support graphics/compute and try to issue an invalid image copy to "
+        "buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Should be left with a tranfser queue
+    uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    if (queueFamilyIndex == UINT32_MAX) {
+        printf("%s Non-graphics/compute queue family not found; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+               VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    // Allocate buffers
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k to have more then enough to copy
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {16, 16, 1};
+    region.bufferOffset = 5;
+
+    // Create command pool on a non-graphics queue
+    VkCommandPoolObj command_pool(m_device, queueFamilyIndex);
+
+    // Setup command buffer on pool
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    command_buffer.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-bufferOffset-00193");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-04052");
+    vk::CmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                             &region);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, ExecuteDiffertQueueFlagsSecondaryCB) {
