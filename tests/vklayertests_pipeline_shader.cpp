@@ -7920,7 +7920,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
 
 TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
-
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
@@ -7965,12 +7965,12 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
         void main() {}
     )glsl";
 
-    VkShaderObj rgen_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_KHR, this, "main");
-    VkShaderObj ahit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_KHR, this, "main");
-    VkShaderObj chit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, this, "main");
-    VkShaderObj miss_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_MISS_BIT_KHR, this, "main");
-    VkShaderObj intr_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_KHR, this, "main");
-    VkShaderObj call_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_KHR, this, "main");
+    VkShaderObj rgen_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_KHR, this, "main", false, nullptr, 4);
+    VkShaderObj ahit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_KHR, this, "main", false, nullptr, 4);
+    VkShaderObj chit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, this, "main", false, nullptr, 4);
+    VkShaderObj miss_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_MISS_BIT_KHR, this, "main", false, nullptr, 4);
+    VkShaderObj intr_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_KHR, this, "main", false, nullptr, 4);
+    VkShaderObj call_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_KHR, this, "main", false, nullptr, 4);
 
     m_errorMonitor->VerifyNotFound();
 
