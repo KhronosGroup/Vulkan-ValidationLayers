@@ -728,8 +728,10 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
             // or the view could have been destroyed
             continue;
         }
+        // // This is a record time only path
+        const bool record_time_validate = true;
         result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer, attachments,
-                                                   subpasses, caller, vuids);
+                                                   subpasses, record_time_validate, caller, vuids);
     }
     return result;
 }
@@ -738,8 +740,8 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                   const std::vector<uint32_t> &dynamic_offsets,
                                                   std::pair<const uint32_t, DescriptorRequirement> &binding_info,
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
-                                                  const std::vector<SUBPASS_INFO> &subpasses, const char *caller,
-                                                  const DrawDispatchVuid &vuids) const {
+                                                  const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
+                                                  const char *caller, const DrawDispatchVuid &vuids) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -927,7 +929,8 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             bool hit_error = false;
                             VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
                                               image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
-                                              caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                                              record_time_validate, caller, kVUIDUndefined,
+                                              "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                             if (hit_error) {
                                 auto set = descriptor_set->GetSet();
                                 return LogError(

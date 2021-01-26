@@ -689,7 +689,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                                                                    : nullptr;
 
             if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
-                LayoutUseCheckAndMessage layout_check(subresource_map);
+                                    // This is a record time only path.
+                LayoutUseCheckAndMessage layout_check(subresource_map, true /* record_time_verify*/);
                 bool subres_skip = false;
                 auto pos = subresource_map->Find(view_state->normalized_subresource_range);
                 // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
@@ -816,19 +817,25 @@ void CoreChecks::TransitionSubpassLayouts(CMD_BUFFER_STATE *pCB, const RENDER_PA
 // 2. Transition from initialLayout to layout used in subpass 0
 void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, const RENDER_PASS_STATE *render_pass_state,
                                                   FRAMEBUFFER_STATE *framebuffer_state) {
-    // First transition into initialLayout
+    // First record expected initialLayout as a potential initial layout usage.
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto *view_state = GetActiveAttachmentImageViewState(cb_state, i);
         if (view_state) {
-            VkImageLayout stencil_layout = kInvalidLayout;
+            IMAGE_STATE *image_state = view_state->image_state.get();
+            const auto initial_layout = rpci->pAttachments[i].initialLayout;
             const auto *attachment_description_stencil_layout =
                 LvlFindInChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
-                stencil_layout = attachment_description_stencil_layout->stencilInitialLayout;
+                const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
+                VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
+                sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                SetImageInitialLayout(cb_state, *image_state, sub_range, initial_layout);
+                sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                SetImageInitialLayout(cb_state, *image_state, sub_range, stencil_initial_layout);
+            } else {
+                SetImageInitialLayout(cb_state, *image_state, view_state->normalized_subresource_range, initial_layout);
             }
-
-            SetImageViewLayout(cb_state, *view_state, rpci->pAttachments[i].initialLayout, stencil_layout);
         }
     }
     // Now transition for first subpass (index 0)
@@ -1027,7 +1034,8 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
                 // subresource.
             } else if (subresource_map && !QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
                 bool subres_skip = false;
-                LayoutUseCheckAndMessage layout_check(subresource_map);
+                // This is a record time only path
+                LayoutUseCheckAndMessage layout_check(subresource_map, true /* record_time_validate */);
                 VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier.subresourceRange);
                 // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
                 // the next "constant value" range
@@ -1367,10 +1375,13 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     }
 }
 
+// Record time verfies preferentially agains the most recent image layout state.  Submit time validation
+// verifies against the recorded command buffers *initial* use.
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
                                    const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
-                                   VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
-                                   const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) const {
+                                   VkImageLayout explicit_layout, VkImageLayout optimal_layout, bool record_time_verify,
+                                   const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code,
+                                   bool *error) const {
     if (disabled[image_layout_validation]) return false;
     assert(cb_node);
     assert(image_state);
@@ -1380,10 +1391,12 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
     const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image);
     if (subresource_map) {
         bool subres_skip = false;
-        LayoutUseCheckAndMessage layout_check(subresource_map, aspect_mask);
+        LayoutUseCheckAndMessage layout_check(subresource_map, record_time_verify, aspect_mask);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
-        // the next "constant value" range
-        for (auto pos = subresource_map->Find(range); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
+        // the next "constant value" range.  At queue submit time tell Find to create an iterator that always returns intitial
+        // use information.
+        for (auto pos = subresource_map->Find(range, !record_time_verify); !(pos.AtEnd()) && !subres_skip;
+             pos.IncrementInterval()) {
             if (!layout_check.Check(pos->subresource, explicit_layout, pos->current_layout, pos->initial_layout)) {
                 *error = true;
                 subres_skip |= LogError(cb_node->commandBuffer, layout_mismatch_msg_code,
@@ -1429,8 +1442,10 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
                                    const VkImageSubresourceLayers &subLayers, VkImageLayout explicit_layout,
                                    VkImageLayout optimal_layout, const char *caller, const char *layout_invalid_msg_code,
                                    const char *layout_mismatch_msg_code, bool *error) const {
-    return VerifyImageLayout(cb_node, image_state, RangeFromLayers(subLayers), explicit_layout, optimal_layout, caller,
-                             layout_invalid_msg_code, layout_mismatch_msg_code, error);
+    // This is a record time only path
+    const bool record_time_verify = true;
+    return VerifyImageLayout(cb_node, image_state, RangeFromLayers(subLayers), explicit_layout, optimal_layout, record_time_verify,
+                             caller, layout_invalid_msg_code, layout_mismatch_msg_code, error);
 }
 
 void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -2096,7 +2111,8 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
     const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state->image);
     if (subresource_map) {
         bool subres_skip = false;
-        LayoutUseCheckAndMessage layout_check(subresource_map);
+        // This is a record time only path
+        LayoutUseCheckAndMessage layout_check(subresource_map, true /* record_time_verify */);
         VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range

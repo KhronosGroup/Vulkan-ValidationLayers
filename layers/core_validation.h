@@ -403,7 +403,7 @@ class CoreChecks : public ValidationStateTracker {
                                           const std::vector<uint32_t>& dynamic_offsets,
                                           std::pair<const uint32_t, DescriptorRequirement>& binding_info, VkFramebuffer framebuffer,
                                           const std::vector<IMAGE_VIEW_STATE*>* attachments,
-                                          const std::vector<SUBPASS_INFO>& subpasses, const char* caller,
+                                          const std::vector<SUBPASS_INFO>& subpasses, bool record_time_validate, const char* caller,
                                           const DrawDispatchVuid& vuids) const;
 
     // Validate contents of a CopyUpdate
@@ -554,14 +554,14 @@ class CoreChecks : public ValidationStateTracker {
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                            VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                           const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
-                           bool* error) const;
+                           bool record_time_verfiy, const char* caller, const char* layout_invalid_msg_code,
+                           const char* layout_mismatch_msg_code, bool* error) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
-                           VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
+                           VkImageLayout explicit_layout, VkImageLayout optimal_layout, bool record_time_verify, const char* caller,
                            const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) const {
-        return VerifyImageLayout(cb_node, image_state, range, 0, explicit_layout, optimal_layout, caller, layout_invalid_msg_code,
-                                 layout_mismatch_msg_code, error);
+        return VerifyImageLayout(cb_node, image_state, range, 0, explicit_layout, optimal_layout, record_time_verify, caller,
+                                 layout_invalid_msg_code, layout_mismatch_msg_code, error);
     }
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
@@ -1479,16 +1479,22 @@ struct LayoutUseCheckAndMessage {
     const static VkImageAspectFlags kDepthOrStencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     const ImageSubresourceLayoutMap* layout_map;
     const VkImageAspectFlags aspect_mask;
+    const bool record_time_verify;
     const char* message;
     VkImageLayout layout;
 
     LayoutUseCheckAndMessage() = delete;
-    LayoutUseCheckAndMessage(const ImageSubresourceLayoutMap* layout_map_, const VkImageAspectFlags aspect_mask_ = 0)
-        : layout_map(layout_map_), aspect_mask{aspect_mask_}, message(nullptr), layout(kInvalidLayout) {}
+    LayoutUseCheckAndMessage(const ImageSubresourceLayoutMap* layout_map_, bool record_time_verify_,
+                             const VkImageAspectFlags aspect_mask_ = 0)
+        : layout_map(layout_map_),
+          aspect_mask{aspect_mask_},
+          record_time_verify(record_time_verify_),
+          message(nullptr),
+          layout(kInvalidLayout) {}
     bool Check(const VkImageSubresource& subres, VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
         message = nullptr;
         layout = kInvalidLayout;  // Success status
-        if (current_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
+        if (record_time_verify && (current_layout != kInvalidLayout) && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
             message = "previous known";
             layout = current_layout;
         } else if ((initial_layout != kInvalidLayout) && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
@@ -1497,7 +1503,7 @@ struct LayoutUseCheckAndMessage {
             assert(initial_layout_state);  // If we have an initial layout, we better have a state for it
             if (!((initial_layout_state->aspect_mask & kDepthOrStencil) &&
                   ImageLayoutMatches(initial_layout_state->aspect_mask, check, initial_layout))) {
-                message = "previously used";
+                message = record_time_verify ? "previously used" : "initial use";
                 layout = initial_layout;
             }
         }
