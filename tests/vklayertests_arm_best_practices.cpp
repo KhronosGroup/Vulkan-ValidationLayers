@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -908,7 +908,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
 
     CreateComputePipelineHelper pipe(*this);
 
-    auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
+    auto make_pipeline_with_shader = [this](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
         VkDescriptorSetLayoutBinding sampler_binding = {};
         sampler_binding.binding = 0;
         sampler_binding.descriptorCount = 1;
@@ -925,15 +925,17 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
         pipe.CreateComputePipeline(true, false);
     };
 
+    auto* this_ptr = this;  // Required for older compilers with c++20 compatibility
     auto test_spatial_locality = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage,
                                      bool positive_test, const std::vector<std::string>& allowed = {}) {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                             "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-spatial-locality");
+        this_ptr->m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+            "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-spatial-locality");
         make_pipeline_with_shader(pipe, stage);
         if (positive_test) {
-            m_errorMonitor->VerifyFound();
+            this_ptr->m_errorMonitor->VerifyFound();
         } else {
-            m_errorMonitor->VerifyNotFound();
+            this_ptr->m_errorMonitor->VerifyNotFound();
         }
     };
 

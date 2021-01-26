@@ -7865,10 +7865,11 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const char *fun
         for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
             const auto &img_barrier = pImageMemBarriers[i];
             // Secondary CB case w/o FB specified delay validation
+            auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
             cb_state->cmd_execute_commands_functions.emplace_back(
                 [=](const CMD_BUFFER_STATE *primary_cb, const FRAMEBUFFER_STATE *fb) {
-                    return ValidateImageBarrierAttachment(func_name, cb_state, fb, active_subpass, sub_desc, rp_state->renderPass,
-                                                          i, img_barrier, primary_cb);
+                    return this_ptr->ValidateImageBarrierAttachment(func_name, cb_state, fb, active_subpass, sub_desc,
+                                                                    rp_state->renderPass, i, img_barrier, primary_cb);
                 });
         }
     }
@@ -12981,7 +12982,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
         // TODO: this is technically wrong on many levels, but requires massive cleanup
         if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called) {
             const uint32_t acquired_images = static_cast<uint32_t>(
-                std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(), [=](SWAPCHAIN_IMAGE image) {
+                std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(), [this](SWAPCHAIN_IMAGE image) {
                     auto const state = GetImageState(image.image);
                     return (state && state->acquired);
                 }));
