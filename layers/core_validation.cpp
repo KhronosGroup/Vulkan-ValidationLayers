@@ -3081,9 +3081,12 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::string error;
                             std::vector<uint32_t> dynamic_offsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            skip |= ValidateDescriptorSetBindingData(
-                                cb_node, set_node, dynamic_offsets, binding_info, cmd_info.framebuffer, cmd_info.attachments.get(),
-                                *cmd_info.subpasses.get(), function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
+                            // This submit time not record time...
+                            const bool record_time_validate = false;
+                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamic_offsets, binding_info,
+                                                                     cmd_info.framebuffer, cmd_info.attachments.get(),
+                                                                     *cmd_info.subpasses.get(), record_time_validate,
+                                                                     function.c_str(), GetDrawDispatchVuid(cmd_info.cmd_type));
                         }
                     }
                 }

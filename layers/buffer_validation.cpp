@@ -816,19 +816,25 @@ void CoreChecks::TransitionSubpassLayouts(CMD_BUFFER_STATE *pCB, const RENDER_PA
 // 2. Transition from initialLayout to layout used in subpass 0
 void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, const RENDER_PASS_STATE *render_pass_state,
                                                   FRAMEBUFFER_STATE *framebuffer_state) {
-    // First transition into initialLayout
+    // First record expected initialLayout as a potential initial layout usage.
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto *view_state = GetActiveAttachmentImageViewState(cb_state, i);
         if (view_state) {
-            VkImageLayout stencil_layout = kInvalidLayout;
+            IMAGE_STATE *image_state = view_state->image_state.get();
+            const auto initial_layout = rpci->pAttachments[i].initialLayout;
             const auto *attachment_description_stencil_layout =
                 LvlFindInChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
-                stencil_layout = attachment_description_stencil_layout->stencilInitialLayout;
+                const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
+                VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
+                sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                SetImageInitialLayout(cb_state, *image_state, sub_range, initial_layout);
+                sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                SetImageInitialLayout(cb_state, *image_state, sub_range, stencil_initial_layout);
+            } else {
+                SetImageInitialLayout(cb_state, *image_state, view_state->normalized_subresource_range, initial_layout);
             }
-
-            SetImageViewLayout(cb_state, *view_state, rpci->pAttachments[i].initialLayout, stencil_layout);
         }
     }
     // Now transition for first subpass (index 0)
