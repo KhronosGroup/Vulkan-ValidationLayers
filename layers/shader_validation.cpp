@@ -3738,10 +3738,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
     auto create_info = pipeline->graphicsPipelineCI.ptr();
 
-    const SHADER_MODULE_STATE *shaders[32];
-    memset(shaders, 0, sizeof(shaders));
+    std::array<const SHADER_MODULE_STATE *, 32> shaders;
+    std::fill(shaders.begin(), shaders.end(), nullptr);
     spirv_inst_iter entrypoints[32];
-    memset(entrypoints, 0, sizeof(entrypoints));
     bool skip = false;
 
     for (uint32_t i = 0; i < create_info->stageCount; i++) {
