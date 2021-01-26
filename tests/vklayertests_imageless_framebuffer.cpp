@@ -345,6 +345,25 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageViewMismatchTests) {
     renderPassAttachmentBeginInfo.pAttachments = &imageView;
     imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 1;
+    vk::CreateImageView(m_device->device(), &imageViewCreateInfo, nullptr, &imageView2);
+    renderPassAttachmentBeginInfo.pAttachments = &imageView2;
+    framebufferAttachmentImageInfo.height = framebufferAttachmentImageInfo.height / 2;
+    framebufferAttachmentImageInfo.width = framebufferAttachmentImageInfo.width / 2;
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    renderPassBeginInfo.framebuffer = framebuffer;
+    vk::BeginCommandBuffer(m_commandBuffer->handle(), &cmd_begin_info);
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyNotFound();
+    vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
+    vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+    vk::DestroyImageView(m_device->device(), imageView2, nullptr);
+    renderPassAttachmentBeginInfo.pAttachments = &imageView;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    framebufferAttachmentImageInfo.height = framebufferAttachmentImageInfo.height * 2;
+    framebufferAttachmentImageInfo.width = framebufferAttachmentImageInfo.width * 2;
+
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
     vk::DestroyImageView(m_device->device(), imageView, nullptr);
     vk::DestroyImageView(m_device->device(), imageViewSubset, nullptr);
