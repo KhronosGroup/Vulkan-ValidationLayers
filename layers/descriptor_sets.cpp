@@ -728,8 +728,10 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
             // or the view could have been destroyed
             continue;
         }
+        // // This is a record time only path
+        const bool record_time_validate = true;
         result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer, attachments,
-                                                   subpasses, caller, vuids);
+                                                   subpasses, record_time_validate, caller, vuids);
     }
     return result;
 }
@@ -738,8 +740,8 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                   const std::vector<uint32_t> &dynamic_offsets,
                                                   std::pair<const uint32_t, DescriptorRequirement> &binding_info,
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
-                                                  const std::vector<SUBPASS_INFO> &subpasses, const char *caller,
-                                                  const DrawDispatchVuid &vuids) const {
+                                                  const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
+                                                  const char *caller, const DrawDispatchVuid &vuids) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -919,7 +921,9 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             }
                         }
 
-                        if (!disabled[image_layout_validation]) {
+                        // NOTE: Submit time validation of UPDATE_AFTER_BIND image layout is not possible with the
+                        // image layout tracking as currently implemented, so only record_time_validation is done
+                        if (!disabled[image_layout_validation] && record_time_validate) {
                             auto image_node = image_view_state->image_state.get();
                             assert(image_node);
                             // Verify Image Layout
