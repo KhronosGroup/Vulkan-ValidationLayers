@@ -4110,4 +4110,8 @@ void AdjustValidatorOptions(const DeviceExtensions device_extensions, const Devi
     if (device_extensions.vk_ext_scalar_block_layout && enabled_features.core12.scalarBlockLayout == VK_TRUE) {
         options.SetScalarBlockLayout(true);
     }
+    if (device_extensions.vk_khr_workgroup_memory_explicit_layout &&
+        enabled_features.workgroup_memory_explicit_layout_features.workgroupMemoryExplicitLayoutScalarBlockLayout) {
+        options.SetWorkgroupScalarBlockLayout(true);
+    }
 }
