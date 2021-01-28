@@ -156,7 +156,7 @@ enum class AccessAddressType : uint32_t { kLinear = 0, kIdealized = 1, kMaxType 
 
 struct SyncEventState {
     enum IgnoreReason { NotIgnored = 0, ResetWaitRace, SetRace, MissingStageBits };
-    using EventPointer = std::shared_ptr<EVENT_STATE>;
+    using EventPointer = std::shared_ptr<const EVENT_STATE>;
     using ScopeMap = sparse_container::range_map<VkDeviceSize, bool>;
     EventPointer event;
     CMD_TYPE last_command;  // Only Event commands are valid here.
@@ -166,8 +166,9 @@ struct SyncEventState {
     ResourceUsageTag first_scope_tag;
     bool destroyed;
     std::array<ScopeMap, static_cast<size_t>(AccessAddressType::kTypeCount)> first_scope;
-    SyncEventState(const EventPointer &event_state)
-        : event(event_state),
+    template <typename EventPointerType>
+    SyncEventState(EventPointerType &&event_state)
+        : event(std::forward<EventPointerType>(event_state)),
           last_command(CMD_NONE),
           unsynchronized_set(CMD_NONE),
           barriers(0U),
@@ -182,7 +183,49 @@ struct SyncEventState {
 };
 using SyncEventStateShared = std::shared_ptr<SyncEventState>;
 using SyncEventStateConstShared = std::shared_ptr<const SyncEventState>;
-using SyncEventsContext = std::unordered_map<VkEvent, SyncEventStateShared>;
+class SyncEventsContext {
+  public:
+    using Map = std::unordered_map<const EVENT_STATE *, SyncEventStateShared>;
+    using iterator = Map::iterator;
+    using const_iterator = Map::const_iterator;
+
+    SyncEventState *GetFromShared(const SyncEventState::EventPointer &event_state) {
+        const auto find_it = map_.find(event_state.get());
+        if (find_it == map_.end()) {
+            const auto *event_plain_ptr = event_state.get();
+            auto sync_state = SyncEventStateShared(new SyncEventState(event_state));
+            auto insert_pair = map_.insert(std::make_pair(event_plain_ptr, std::move(sync_state)));
+            return insert_pair.first->second.get();
+        }
+        return find_it->second.get();
+    }
+
+    const SyncEventState *Get(const EVENT_STATE *event_state) const {
+        const auto find_it = map_.find(event_state);
+        if (find_it == map_.end()) {
+            return nullptr;
+        }
+        return find_it->second.get();
+    }
+
+    // stl style naming for range-for support
+    inline iterator begin() { return map_.begin(); }
+    inline const_iterator begin() const { return map_.begin(); }
+    inline iterator end() { return map_.end(); }
+    inline const_iterator end() const { return map_.end(); }
+
+    void Destroy(const EVENT_STATE *event_state) {
+        auto sync_it = map_.find(event_state);
+        if (sync_it != map_.end()) {
+            sync_it->second->destroyed = true;
+            map_.erase(sync_it);
+        }
+    }
+    void Clear() { map_.clear(); }
+
+  private:
+    Map map_;
+};
 
 // To represent ordering guarantees such as rasterization and store
 
@@ -468,9 +511,9 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
 
 class SyncOpWaitEvents : public SyncOpBarriers {
   public:
-    SyncOpWaitEvents(const CommandBufferAccessContext &cb_context, VkQueueFlags queue_flags, uint32_t eventCount,
-                     const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                     uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+    SyncOpWaitEvents(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount, const VkEvent *pEvents,
+                     VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
+                     const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                      const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                      const VkImageMemoryBarrier *pImageMemoryBarriers);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
@@ -479,8 +522,8 @@ class SyncOpWaitEvents : public SyncOpBarriers {
   protected:
     // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
     // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
-    std::vector<SyncEventStateShared> events_;
-    void MakeEventsList(const CommandBufferAccessContext &cb_context, uint32_t event_count, const VkEvent *events);
+    std::vector<std::shared_ptr<const EVENT_STATE>> events_;
+    void MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events);
 };
 
 class AccessContext {
@@ -708,7 +751,7 @@ class CommandBufferAccessContext {
           current_renderpass_context_(),
           cb_state_(),
           queue_flags_(),
-          event_state_(),
+          events_context_(),
           destroyed_(false) {}
     CommandBufferAccessContext(SyncValidator &sync_validator, std::shared_ptr<CMD_BUFFER_STATE> &cb_state, VkQueueFlags queue_flags)
         : CommandBufferAccessContext() {
@@ -726,15 +769,15 @@ class CommandBufferAccessContext {
         render_pass_contexts_.clear();
         current_context_ = &cb_access_context_;
         current_renderpass_context_ = nullptr;
-        event_state_.clear();
+        events_context_.Clear();
     }
     void MarkDestroyed() { destroyed_ = true; }
     bool IsDestroyed() const { return destroyed_; }
 
     std::string FormatUsage(const HazardResult &hazard) const;
     AccessContext *GetCurrentAccessContext() { return current_context_; }
-    SyncEventsContext *GetCurrectEventsContext() { return &event_state_; }
-    const SyncEventsContext *GetCurrectEventsContext() const { return &event_state_; }
+    SyncEventsContext *GetCurrentEventsContext() { return &events_context_; }
+    const SyncEventsContext *GetCurrentEventsContext() const { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
     void ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst);
@@ -796,13 +839,7 @@ class CommandBufferAccessContext {
         return *sync_state_;
     }
 
-    const SyncEventStateShared GetEventStateConstCastShared(VkEvent) const;
-
   private:
-    SyncEventStateShared &GetEventStateShared(VkEvent);
-    const SyncEventStateConstShared GetEventStateShared(VkEvent) const;
-    SyncEventState *GetEventState(VkEvent);
-    const SyncEventState *GetEventState(VkEvent) const;
     ResourceUsageTag::TagIndex access_index_;
     uint32_t command_number_;
     uint32_t subcommand_number_;
@@ -815,7 +852,7 @@ class CommandBufferAccessContext {
     SyncValidator *sync_state_;
 
     VkQueueFlags queue_flags_;
-    SyncEventsContext event_state_;
+    SyncEventsContext events_context_;
     bool destroyed_;
 };
 

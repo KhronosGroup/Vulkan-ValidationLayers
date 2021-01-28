@@ -1779,7 +1779,10 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
 
 void CommandBufferAccessContext::ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst) {
     const bool all_commands_bit = 0 != (src.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    for (auto &event_pair : event_state_) {
+
+    auto *events_context = GetCurrentEventsContext();
+    assert(events_context);
+    for (auto &event_pair : *events_context) {
         assert(event_pair.second);  // Shouldn't be storing empty
         auto &sync_event = *event_pair.second;
         // Events don't happen at a stage, so we need to check and store the unexpanded ALL_COMMANDS if set for inter-event-calls
@@ -2215,7 +2218,10 @@ bool CommandBufferAccessContext::ValidateSetEvent(VkCommandBuffer commandBuffer,
     // I'll put this here just in case we need to pass this in for future extension support
     const auto cmd = CMD_SETEVENT;
     bool skip = false;
-    const auto *sync_event = GetEventState(event);
+    const auto *event_state = sync_state_->Get<EVENT_STATE>(event);
+    if (!event_state) return skip;
+
+    const auto *sync_event = GetCurrentEventsContext()->Get(event_state);
     if (!sync_event) return false;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     const char *const reset_set =
@@ -2262,7 +2268,10 @@ bool CommandBufferAccessContext::ValidateSetEvent(VkCommandBuffer commandBuffer,
 
 void CommandBufferAccessContext::RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                 const ResourceUsageTag &tag) {
-    auto *sync_event = GetEventState(event);
+    auto event_state_shared = sync_state_->GetShared<EVENT_STATE>(event);
+    if (!event_state_shared.get()) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    auto *sync_event = GetCurrentEventsContext()->GetFromShared(event_state_shared);
     if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // NOTE: We're going to simply record the sync scope here, as anything else would be implementation defined/undefined
@@ -2304,7 +2313,10 @@ bool CommandBufferAccessContext::ValidateResetEvent(VkCommandBuffer commandBuffe
     bool skip = false;
     // TODO: EVENTS:
     // What is it we need to check... that we've had a reset since a set?  Set/Set seems ill formed...
-    const auto *sync_event = GetEventState(event);
+    auto event_state = sync_state_->Get<EVENT_STATE>(event);
+    if (!event_state) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    const auto *sync_event = GetCurrentEventsContext()->Get(event_state);
     if (!sync_event) return false;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     const char *const set_wait =
@@ -2340,7 +2352,10 @@ bool CommandBufferAccessContext::ValidateResetEvent(VkCommandBuffer commandBuffe
 
 void CommandBufferAccessContext::RecordResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     const auto cmd = CMD_RESETEVENT;
-    auto *sync_event = GetEventState(event);
+    auto event_state_shared = sync_state_->GetShared<EVENT_STATE>(event);
+    if (!event_state_shared.get()) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    auto *sync_event = GetCurrentEventsContext()->GetFromShared(event_state_shared);
     if (!sync_event) return;
 
     // Clear out the first sync scope, any races vs. wait or set are reported, so we'll keep the bookkeeping simple assuming
@@ -2358,56 +2373,10 @@ void CommandBufferAccessContext::RecordResetEvent(VkCommandBuffer commandBuffer,
 
 void CommandBufferAccessContext::RecordDestroyEvent(VkEvent event) {
     // Erase is okay with the key not being
-    auto event_it = event_state_.find(event);
-    if (event_it != event_state_.end()) {
-        SyncEventStateShared &sync_event = event_it->second;
-        if (sync_event) {
-            sync_event->destroyed = true;
-        }
-        event_state_.erase(event_it);
+    const auto *event_state = sync_state_->Get<EVENT_STATE>(event);
+    if (event_state) {
+        GetCurrentEventsContext()->Destroy(event_state);
     }
-}
-
-SyncEventStateShared &CommandBufferAccessContext::GetEventStateShared(VkEvent event) {
-    SyncEventStateShared &event_state = event_state_[event];
-    if (!event_state) {
-        auto event_atate = sync_state_->GetShared<EVENT_STATE>(event);
-        event_state.reset(new SyncEventState(event_atate));
-    }
-    return event_state;
-}
-
-const SyncEventStateShared CommandBufferAccessContext::GetEventStateConstCastShared(VkEvent event) const {
-    auto event_it = event_state_.find(event);
-    if (event_it == event_state_.cend()) {
-        return SyncEventStateShared();
-    }
-    return event_it->second;
-}
-
-const SyncEventStateConstShared CommandBufferAccessContext::GetEventStateShared(VkEvent event) const {
-    auto event_it = event_state_.find(event);
-    if (event_it == event_state_.cend()) {
-        return SyncEventStateConstShared();
-    }
-    return event_it->second;
-}
-
-SyncEventState *CommandBufferAccessContext::GetEventState(VkEvent event) {
-    auto &event_up = event_state_[event];
-    if (!event_up) {
-        auto event_atate = sync_state_->GetShared<EVENT_STATE>(event);
-        event_up.reset(new SyncEventState(event_atate));
-    }
-    return event_up.get();
-}
-
-const SyncEventState *CommandBufferAccessContext::GetEventState(VkEvent event) const {
-    auto event_it = event_state_.find(event);
-    if (event_it == event_state_.cend()) {
-        return nullptr;
-    }
-    return event_it->second.get();
 }
 
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context,
@@ -5082,7 +5051,7 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
     assert(cb_context);
     if (!cb_context) return skip;
 
-    SyncOpWaitEvents wait_events_op(*cb_context, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask,
+    SyncOpWaitEvents wait_events_op(*this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask,
                                     memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                     imageMemoryBarrierCount, pImageMemoryBarriers);
     return wait_events_op.Validate(*cb_context);
@@ -5104,7 +5073,7 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
     if (!cb_context) return;
 
     const auto tag = cb_context->NextCommandTag(CMD_WAITEVENTS);
-    SyncOpWaitEvents wait_events_op(*cb_context, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask,
+    SyncOpWaitEvents wait_events_op(*this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask,
                                     memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                     imageMemoryBarrierCount, pImageMemoryBarriers);
     return wait_events_op.Record(cb_context, tag);
@@ -5313,15 +5282,15 @@ void SyncOpBarriers::MakeImageMemoryBarriers(const SyncValidator &sync_state, co
     }
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(const CommandBufferAccessContext &cb_context, VkQueueFlags queue_flags, uint32_t eventCount,
+SyncOpWaitEvents::SyncOpWaitEvents(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
                                    const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                    uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers)
-    : SyncOpBarriers(cb_context.GetSyncState(), queue_flags, srcStageMask, dstStageMask, VkDependencyFlags(0U), memoryBarrierCount,
+    : SyncOpBarriers(sync_state, queue_flags, srcStageMask, dstStageMask, VkDependencyFlags(0U), memoryBarrierCount,
                      pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                      pImageMemoryBarriers) {
-    MakeEventsList(cb_context, eventCount, pEvents);
+    MakeEventsList(sync_state, eventCount, pEvents);
 }
 
 bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) const {
@@ -5341,11 +5310,15 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
 
     VkPipelineStageFlags event_stage_masks = 0U;
     bool events_not_found = false;
-    for (const auto &sync_event_shared : events_) {
-        const auto sync_event = sync_event_shared.get();
+    const auto *events_context = cb_context.GetCurrentEventsContext();
+    assert(events_context);
+    for (const auto &sync_event_pair : *events_context) {
+        const auto *sync_event = sync_event_pair.second.get();
         if (!sync_event) {
             // NOTE PHASE2: This is where we'll need queue submit time validation to come back and check the srcStageMask bits
-            events_not_found = true;  // Demote "extra_stage_bits" error to warning, to avoid false positives.
+            //              or solve this with replay creating the SyncEventState in the queue context... also this will be a
+            //              new validation error... wait without previously submitted set event...
+            events_not_found = true;  // Demote "extra_stage_bits" error to warning, to avoid false positives at *record time*
 
             continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
         }
@@ -5494,6 +5467,9 @@ void SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context, const Reso
     auto *access_context = cb_context->GetCurrentAccessContext();
     assert(access_context);
     if (!access_context) return;
+    auto *events_context = cb_context->GetCurrentEventsContext();
+    assert(events_context);
+    if (!events_context) return;
 
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
@@ -5503,9 +5479,9 @@ void SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context, const Reso
     const auto &dst = dst_exec_scope_;
     // TODO... this needs change the SyncEventContext it's using depending on whether this is replay... the recorded
     // sync_event will be in the recorded context, but we need to update the sync_events in the current context....
-    for (auto &sync_event_shared : events_) {
-        const auto sync_event = sync_event_shared.get();
-        if (!sync_event) continue;
+    for (auto &event_shared : events_) {
+        if (!event_shared.get()) continue;
+        auto *sync_event = events_context->GetFromShared(event_shared);
 
         sync_event->last_command = CMD_WAITEVENTS;
 
@@ -5533,9 +5509,9 @@ void SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context, const Reso
     access_context->ApplyToContext(apply_pending_action);
 }
 
-void SyncOpWaitEvents::MakeEventsList(const CommandBufferAccessContext &cb_context, uint32_t event_count, const VkEvent *events) {
+void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events) {
     events_.reserve(event_count);
     for (uint32_t event_index = 0; event_index < event_count; event_index++) {
-        events_.emplace_back(cb_context.GetEventStateConstCastShared(events[event_index]));
+        events_.emplace_back(sync_state.GetShared<EVENT_STATE>(events[event_index]));
     }
 }
