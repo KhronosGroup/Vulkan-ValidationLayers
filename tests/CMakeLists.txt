@@ -132,6 +132,9 @@ if (PORTABILITY_TESTS_USE_DEVSIM)
 endif()
 
 # Specify target_link_libraries
+target_link_libraries(vk_layer_validation_tests
+                      PRIVATE VkLayer_utils)
+
 if(WIN32)
     set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
