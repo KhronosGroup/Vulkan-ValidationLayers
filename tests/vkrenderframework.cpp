@@ -470,6 +470,18 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 
     vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
     debug_reporter_.Create(instance_);
+
+    static bool driver_printed = false;
+    if (GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "" && !driver_printed) {
+        if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+            auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
+            auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
+            vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+            printf("Driver Name = %s\n", driver_properties.driverName);
+            printf("Driver Info = %s\n", driver_properties.driverInfo);
+        }
+        driver_printed = true;
+    }
 }
 
 void VkRenderFramework::ShutdownFramework() {
