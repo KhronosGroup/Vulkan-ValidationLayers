@@ -3392,7 +3392,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                     if (pnext_struct->accelerationStructureCount == 0) {
                         skip |= LogError(device,
                                          "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
-                                         "%s(): accelerationStructureCount must be greater than 0 .");
+                                         "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
                     }
                     const auto *robustness2_features =
                         LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
@@ -3402,7 +3402,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                                 skip |= LogError(device,
                                                  "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580",
                                                  "%s(): If the nullDescriptor feature is not enabled, each member of "
-                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.");
+                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.", vkCallingFunction);
                             }
                         }
                     }
@@ -3429,7 +3429,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                     if (pnext_struct->accelerationStructureCount == 0) {
                         skip |= LogError(device,
                                          "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
-                                         "%s(): accelerationStructureCount must be greater than 0 .");
+                                         "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
                     }
                     const auto *robustness2_features =
                         LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
@@ -3439,7 +3439,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                                 skip |= LogError(device,
                                                  "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749",
                                                  "%s(): If the nullDescriptor feature is not enabled, each member of "
-                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.");
+                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.", vkCallingFunction);
                             }
                         }
                     }

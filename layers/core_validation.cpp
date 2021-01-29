@@ -1646,7 +1646,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                          "vkCreateGraphicsPipelines() pCreateInfo[%u]: VK_EXT_depth_range_unrestricted extension "
                                          "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
                                          "true, and pDepthStencilState::minDepthBounds (=%f) is not within the [0.0, 1.0] range.",
-                                         minDepthBounds);
+                                         pipelineIndex, minDepthBounds);
                         }
                         if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
                             skip |=
@@ -1654,7 +1654,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                          "vkCreateGraphicsPipelines() pCreateInfo[%u]: VK_EXT_depth_range_unrestricted extension "
                                          "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
                                          "true, and pDepthStencilState::maxDepthBounds (=%f) is not within the [0.0, 1.0] range.",
-                                         maxDepthBounds);
+                                         pipelineIndex, maxDepthBounds);
                         }
                     }
                 }
@@ -1868,7 +1868,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                          "reduction mode (%s), pMultisampleState->rasterizationSamples (%u), sample counts for "
                                          "the subpass color and depth/stencil attachments is not a valid combination returned by "
                                          "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV.",
-                                         pipelineIndex, string_VkCoverageReductionModeNV(coverage_reduction_mode));
+                                         pipelineIndex, string_VkCoverageReductionModeNV(coverage_reduction_mode), raster_samples);
                     }
                 }
             }
