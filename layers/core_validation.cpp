@@ -5906,11 +5906,11 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             if (!image_state) continue;
 
             const VkFormat format = pipeline_state->rp_state->createInfo.pAttachments[attachment].format;
+            const VkFormatFeatureFlags format_features = GetPotentialFormatFeatures(format);
 
             if (pipeline_state->graphicsPipelineCI.pRasterizationState &&
                 !pipeline_state->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable &&
-                pipeline_state->attachments[i].blendEnable &&
-                !(image_state->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+                pipeline_state->attachments[i].blendEnable && !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-02023",
                                  "vkCreateGraphicsPipelines(): pipeline.pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
                                  "].blendEnable is VK_TRUE but format %s associated with this attached image (%s) does "
