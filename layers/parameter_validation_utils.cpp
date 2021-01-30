@@ -1776,6 +1776,14 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                         has_dynamic_stencil_op = true;
                     }
+                    if (dynamic_state == VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) {
+                        // Not allowed for graphics pipelines
+                        skip |= LogError(
+                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03578",
+                            "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR was listed the "
+                            "pCreateInfos[%d].pDynamicState->pDynamicStates[%d] but not allowed in graphic pipelines.",
+                            i, state_index);
+                    }
                 }
             }
 
