@@ -2175,164 +2175,6 @@ void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &re
     current_renderpass_context_ = nullptr;
 }
 
-bool CommandBufferAccessContext::ValidateSetEvent(VkCommandBuffer commandBuffer, VkEvent event,
-                                                  VkPipelineStageFlags stageMask) const {
-    // I'll put this here just in case we need to pass this in for future extension support
-    const auto cmd = CMD_SETEVENT;
-    bool skip = false;
-    const auto *event_state = sync_state_->Get<EVENT_STATE>(event);
-    if (!event_state) return skip;
-
-    const auto *sync_event = GetCurrentEventsContext()->Get(event_state);
-    if (!sync_event) return false;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    const char *const reset_set =
-        "%s: %s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
-        "hazards.";
-    const char *const wait =
-        "%s: %s %s operation following %s without intervening vkCmdResetEvent, may result in data hazard and is ignored.";
-
-    const auto exec_scope = sync_utils::WithEarlierPipelineStages(sync_utils::ExpandPipelineStages(stageMask, GetQueueFlags()));
-    if (!sync_event->HasBarrier(stageMask, exec_scope)) {
-        const char *vuid = nullptr;
-        const char *message = nullptr;
-        switch (sync_event->last_command) {
-            case CMD_RESETEVENT:
-                // Needs a barrier between reset and set
-                vuid = "SYNC-vkCmdSetEvent-missingbarrier-reset";
-                message = reset_set;
-                break;
-            case CMD_SETEVENT:
-                // Needs a barrier between set and set
-                vuid = "SYNC-vkCmdSetEvent-missingbarrier-set";
-                message = reset_set;
-                break;
-            case CMD_WAITEVENTS:
-                // Needs a barrier or is in second execution scope
-                vuid = "SYNC-vkCmdSetEvent-missingbarrier-wait";
-                message = wait;
-                break;
-            default:
-                // The only other valid last command that wasn't one.
-                assert(sync_event->last_command == CMD_NONE);
-                break;
-        }
-        if (vuid) {
-            assert(nullptr != message);
-            const char *const cmd_name = CommandTypeString(cmd);
-            skip |= sync_state_->LogError(event, vuid, message, cmd_name, sync_state_->report_data->FormatHandle(event).c_str(),
-                                          cmd_name, CommandTypeString(sync_event->last_command));
-        }
-    }
-
-    return skip;
-}
-
-void CommandBufferAccessContext::RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                                const ResourceUsageTag &tag) {
-    auto event_state_shared = sync_state_->GetShared<EVENT_STATE>(event);
-    if (!event_state_shared.get()) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    auto *sync_event = GetCurrentEventsContext()->GetFromShared(event_state_shared);
-    if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    // NOTE: We're going to simply record the sync scope here, as anything else would be implementation defined/undefined
-    //       and we're issuing errors re: missing barriers between event commands, which if the user fixes would fix
-    //       any issues caused by naive scope setting here.
-
-    // What happens with two SetEvent is that one cannot know what group of operations will be waited for.
-    // Given:
-    //     Stuff1; SetEvent; Stuff2; SetEvent; WaitEvents;
-    // WaitEvents cannot know which of Stuff1, Stuff2, or both has completed execution.
-    auto scope = SyncExecScope::MakeSrc(GetQueueFlags(), stageMask);
-
-    if (!sync_event->HasBarrier(stageMask, scope.exec_scope)) {
-        sync_event->unsynchronized_set = sync_event->last_command;
-        sync_event->ResetFirstScope();
-    } else if (sync_event->scope.exec_scope == 0) {
-        // We only set the scope if there isn't one
-        sync_event->scope = scope;
-
-        auto set_scope = [&sync_event](AccessAddressType address_type, const ResourceAccessRangeMap::value_type &access) {
-            auto &scope_map = sync_event->first_scope[static_cast<size_t>(address_type)];
-            if (access.second.InSourceScopeOrChain(sync_event->scope.exec_scope, sync_event->scope.valid_accesses)) {
-                scope_map.insert(scope_map.end(), std::make_pair(access.first, true));
-            }
-        };
-        GetCurrentAccessContext()->ForAll(set_scope);
-        sync_event->unsynchronized_set = CMD_NONE;
-        sync_event->first_scope_tag = tag;
-    }
-    sync_event->last_command = CMD_SETEVENT;
-    sync_event->barriers = 0U;
-}
-
-bool CommandBufferAccessContext::ValidateResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
-                                                    VkPipelineStageFlags stageMask) const {
-    // I'll put this here just in case we need to pass this in for future extension support
-    const auto cmd = CMD_RESETEVENT;
-
-    bool skip = false;
-    // TODO: EVENTS:
-    // What is it we need to check... that we've had a reset since a set?  Set/Set seems ill formed...
-    auto event_state = sync_state_->Get<EVENT_STATE>(event);
-    if (!event_state) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    const auto *sync_event = GetCurrentEventsContext()->Get(event_state);
-    if (!sync_event) return false;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    const char *const set_wait =
-        "%s: %s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
-        "hazards.";
-    const char *message = set_wait;  // Only one message this call.
-    const auto exec_scope = sync_utils::WithEarlierPipelineStages(sync_utils::ExpandPipelineStages(stageMask, GetQueueFlags()));
-    if (!sync_event->HasBarrier(stageMask, exec_scope)) {
-        const char *vuid = nullptr;
-        switch (sync_event->last_command) {
-            case CMD_SETEVENT:
-                // Needs a barrier between set and reset
-                vuid = "SYNC-vkCmdResetEvent-missingbarrier-set";
-                break;
-            case CMD_WAITEVENTS: {
-                // Needs to be in the barriers chain (either because of a barrier, or because of dstStageMask
-                vuid = "SYNC-vkCmdResetEvent-missingbarrier-wait";
-                break;
-            }
-            default:
-                // The only other valid last command that wasn't one.
-                assert((sync_event->last_command == CMD_NONE) || (sync_event->last_command == CMD_RESETEVENT));
-                break;
-        }
-        if (vuid) {
-            const char *const cmd_name = CommandTypeString(cmd);
-            skip |= sync_state_->LogError(event, vuid, message, cmd_name, sync_state_->report_data->FormatHandle(event).c_str(),
-                                          cmd_name, CommandTypeString(sync_event->last_command));
-        }
-    }
-    return skip;
-}
-
-void CommandBufferAccessContext::RecordResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    const auto cmd = CMD_RESETEVENT;
-    auto event_state_shared = sync_state_->GetShared<EVENT_STATE>(event);
-    if (!event_state_shared.get()) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
-
-    auto *sync_event = GetCurrentEventsContext()->GetFromShared(event_state_shared);
-    if (!sync_event) return;
-
-    // Clear out the first sync scope, any races vs. wait or set are reported, so we'll keep the bookkeeping simple assuming
-    // the safe case
-    for (const auto address_type : kAddressTypes) {
-        sync_event->first_scope[static_cast<size_t>(address_type)].clear();
-    }
-
-    // Update the event state
-    sync_event->last_command = cmd;
-    sync_event->unsynchronized_set = CMD_NONE;
-    sync_event->ResetFirstScope();
-    sync_event->barriers = 0U;
-}
-
 void CommandBufferAccessContext::RecordDestroyEvent(VkEvent event) {
     // Erase is okay with the key not being
     const auto *event_state = sync_state_->Get<EVENT_STATE>(event);
@@ -4970,7 +4812,8 @@ bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     assert(cb_context);
     if (!cb_context) return skip;
 
-    return cb_context->ValidateSetEvent(commandBuffer, event, stageMask);
+    SyncOpSetEvent set_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
+    return set_event_op.Validate(*cb_context);
 }
 
 void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
@@ -4978,8 +4821,9 @@ void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkE
     auto *cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
     if (!cb_context) return;
+    SyncOpSetEvent set_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
     const auto tag = cb_context->NextCommandTag(CMD_SETEVENT);
-    cb_context->RecordSetEvent(commandBuffer, event, stageMask, tag);
+    set_event_op.Record(cb_context, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
@@ -4989,7 +4833,8 @@ bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
     assert(cb_context);
     if (!cb_context) return skip;
 
-    return cb_context->ValidateResetEvent(commandBuffer, event, stageMask);
+    SyncOpResetEvent reset_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
+    return reset_event_op.Validate(*cb_context);
 }
 
 void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
@@ -4998,7 +4843,9 @@ void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, V
     assert(cb_context);
     if (!cb_context) return;
 
-    cb_context->RecordResetEvent(commandBuffer, event, stageMask);
+    const auto tag = cb_context->NextCommandTag(CMD_RESETEVENT);
+    SyncOpResetEvent reset_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
+    reset_event_op.Record(cb_context, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -5476,4 +5323,165 @@ void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t 
     for (uint32_t event_index = 0; event_index < event_count; event_index++) {
         events_.emplace_back(sync_state.GetShared<EVENT_STATE>(events[event_index]));
     }
+}
+
+SyncOpResetEvent::SyncOpResetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+                                   VkPipelineStageFlags stageMask)
+    : event_(sync_state.GetShared<EVENT_STATE>(event)), exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
+
+bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
+    const auto cmd = CMD_RESETEVENT;
+    auto *events_context = cb_context.GetCurrentEventsContext();
+    assert(events_context);
+    bool skip = false;
+    if (!events_context) return skip;
+
+    const auto &sync_state = cb_context.GetSyncState();
+    const auto *sync_event = events_context->Get(event_);
+    if (!sync_event) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    const char *const set_wait =
+        "%s: %s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
+        "hazards.";
+    const char *message = set_wait;  // Only one message this call.
+    if (!sync_event->HasBarrier(exec_scope_.mask_param, exec_scope_.exec_scope)) {
+        const char *vuid = nullptr;
+        switch (sync_event->last_command) {
+            case CMD_SETEVENT:
+                // Needs a barrier between set and reset
+                vuid = "SYNC-vkCmdResetEvent-missingbarrier-set";
+                break;
+            case CMD_WAITEVENTS: {
+                // Needs to be in the barriers chain (either because of a barrier, or because of dstStageMask
+                vuid = "SYNC-vkCmdResetEvent-missingbarrier-wait";
+                break;
+            }
+            default:
+                // The only other valid last command that wasn't one.
+                assert((sync_event->last_command == CMD_NONE) || (sync_event->last_command == CMD_RESETEVENT));
+                break;
+        }
+        if (vuid) {
+            const char *const cmd_name = CommandTypeString(cmd);
+            skip |= sync_state.LogError(event_->event, vuid, message, cmd_name,
+                                        sync_state.report_data->FormatHandle(event_->event).c_str(), cmd_name,
+                                        CommandTypeString(sync_event->last_command));
+        }
+    }
+    return skip;
+}
+
+void SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const {
+    const auto cmd = CMD_RESETEVENT;
+
+    auto *events_context = cb_context->GetCurrentEventsContext();
+    assert(events_context);
+    if (!events_context) return;
+
+    auto *sync_event = events_context->GetFromShared(event_);
+    if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    // Update the event state
+    sync_event->last_command = cmd;
+    sync_event->unsynchronized_set = CMD_NONE;
+    sync_event->ResetFirstScope();
+    sync_event->barriers = 0U;
+}
+
+SyncOpSetEvent::SyncOpSetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+                               VkPipelineStageFlags stageMask)
+    : event_(sync_state.GetShared<EVENT_STATE>(event)), src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
+
+bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
+    // I'll put this here just in case we need to pass this in for future extension support
+    const auto cmd = CMD_SETEVENT;
+    bool skip = false;
+
+    const auto &sync_state = cb_context.GetSyncState();
+    auto *events_context = cb_context.GetCurrentEventsContext();
+    assert(events_context);
+    if (!events_context) return skip;
+
+    const auto *sync_event = events_context->Get(event_);
+    if (!sync_event) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    const char *const reset_set =
+        "%s: %s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
+        "hazards.";
+    const char *const wait =
+        "%s: %s %s operation following %s without intervening vkCmdResetEvent, may result in data hazard and is ignored.";
+
+    if (!sync_event->HasBarrier(src_exec_scope_.mask_param, src_exec_scope_.exec_scope)) {
+        const char *vuid = nullptr;
+        const char *message = nullptr;
+        switch (sync_event->last_command) {
+            case CMD_RESETEVENT:
+                // Needs a barrier between reset and set
+                vuid = "SYNC-vkCmdSetEvent-missingbarrier-reset";
+                message = reset_set;
+                break;
+            case CMD_SETEVENT:
+                // Needs a barrier between set and set
+                vuid = "SYNC-vkCmdSetEvent-missingbarrier-set";
+                message = reset_set;
+                break;
+            case CMD_WAITEVENTS:
+                // Needs a barrier or is in second execution scope
+                vuid = "SYNC-vkCmdSetEvent-missingbarrier-wait";
+                message = wait;
+                break;
+            default:
+                // The only other valid last command that wasn't one.
+                assert(sync_event->last_command == CMD_NONE);
+                break;
+        }
+        if (vuid) {
+            assert(nullptr != message);
+            const char *const cmd_name = CommandTypeString(cmd);
+            skip |= sync_state.LogError(event_->event, vuid, message, cmd_name,
+                                        sync_state.report_data->FormatHandle(event_->event).c_str(), cmd_name,
+                                        CommandTypeString(sync_event->last_command));
+        }
+    }
+
+    return skip;
+}
+
+void SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const {
+    auto *events_context = cb_context->GetCurrentEventsContext();
+    auto *access_context = cb_context->GetCurrentAccessContext();
+    assert(events_context);
+    if (!events_context) return;
+
+    auto *sync_event = events_context->GetFromShared(event_);
+    if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+
+    // NOTE: We're going to simply record the sync scope here, as anything else would be implementation defined/undefined
+    //       and we're issuing errors re: missing barriers between event commands, which if the user fixes would fix
+    //       any issues caused by naive scope setting here.
+
+    // What happens with two SetEvent is that one cannot know what group of operations will be waited for.
+    // Given:
+    //     Stuff1; SetEvent; Stuff2; SetEvent; WaitEvents;
+    // WaitEvents cannot know which of Stuff1, Stuff2, or both has completed execution.
+
+    if (!sync_event->HasBarrier(src_exec_scope_.mask_param, src_exec_scope_.exec_scope)) {
+        sync_event->unsynchronized_set = sync_event->last_command;
+        sync_event->ResetFirstScope();
+    } else if (sync_event->scope.exec_scope == 0) {
+        // We only set the scope if there isn't one
+        sync_event->scope = src_exec_scope_;
+
+        auto set_scope = [&sync_event](AccessAddressType address_type, const ResourceAccessRangeMap::value_type &access) {
+            auto &scope_map = sync_event->first_scope[static_cast<size_t>(address_type)];
+            if (access.second.InSourceScopeOrChain(sync_event->scope.exec_scope, sync_event->scope.valid_accesses)) {
+                scope_map.insert(scope_map.end(), std::make_pair(access.first, true));
+            }
+        };
+        access_context->ForAll(set_scope);
+        sync_event->unsynchronized_set = CMD_NONE;
+        sync_event->first_scope_tag = tag;
+    }
+    sync_event->last_command = CMD_SETEVENT;
+    sync_event->barriers = 0U;
 }

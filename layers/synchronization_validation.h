@@ -192,6 +192,8 @@ class SyncEventsContext {
     SyncEventState *GetFromShared(const SyncEventState::EventPointer &event_state) {
         const auto find_it = map_.find(event_state.get());
         if (find_it == map_.end()) {
+            if (!event_state.get()) return nullptr;
+
             const auto *event_plain_ptr = event_state.get();
             auto sync_state = SyncEventStateShared(new SyncEventState(event_state));
             auto insert_pair = map_.insert(std::make_pair(event_plain_ptr, std::move(sync_state)));
@@ -207,6 +209,7 @@ class SyncEventsContext {
         }
         return find_it->second.get();
     }
+    const SyncEventState *Get(const SyncEventState::EventPointer &event_state) const { return Get(event_state.get()); }
 
     // stl style naming for range-for support
     inline iterator begin() { return map_.begin(); }
@@ -527,6 +530,27 @@ class SyncOpWaitEvents : public SyncOpBarriers {
     void MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events);
 };
 
+class SyncOpResetEvent : public SyncOpBase {
+  public:
+    SyncOpResetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event, VkPipelineStageFlags stageMask);
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+
+  private:
+    std::shared_ptr<const EVENT_STATE> event_;
+    SyncExecScope exec_scope_;
+};
+
+class SyncOpSetEvent : public SyncOpBase {
+  public:
+    SyncOpSetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event, VkPipelineStageFlags stageMask);
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+
+  private:
+    std::shared_ptr<const EVENT_STATE> event_;
+    SyncExecScope src_exec_scope_;
+};
 class AccessContext {
   public:
     enum DetectOptions : uint32_t {
@@ -797,11 +821,6 @@ class CommandBufferAccessContext {
     bool ValidateEndRenderpass(const char *func_name) const;
     void RecordNextSubpass(const RENDER_PASS_STATE &render_pass, CMD_TYPE command);
     void RecordEndRenderPass(const RENDER_PASS_STATE &render_pass, CMD_TYPE command);
-
-    bool ValidateSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
-    void RecordSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask, const ResourceUsageTag &tag);
-    bool ValidateResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
-    void RecordResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     void RecordDestroyEvent(VkEvent event);
 
     CMD_BUFFER_STATE *GetCommandBufferState() { return cb_state_.get(); }
