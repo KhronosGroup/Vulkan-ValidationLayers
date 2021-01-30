@@ -5722,11 +5722,11 @@ TEST_F(VkLayerTest, InvalidBarriers) {
 
         // DEPTH bit must be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
-        conc_test("Depth-only image formats must have the VK_IMAGE_ASPECT_DEPTH_BIT set.");
+        conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
 
         // No bits other than DEPTH may be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-        conc_test("Depth-only image formats can have only the VK_IMAGE_ASPECT_DEPTH_BIT set.");
+        conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     }
 
     // Now test stencil-only
@@ -5742,7 +5742,8 @@ TEST_F(VkLayerTest, InvalidBarriers) {
 
         // Use of COLOR aspect on depth image is error
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        conc_test("Stencil-only image formats must have the VK_IMAGE_ASPECT_STENCIL_BIT set.");
+        // must have the VK_IMAGE_ASPECT_STENCIL_BIT set
+        conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     }
 
     // Finally test color
@@ -9459,7 +9460,7 @@ TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
     // The image format check comes 2nd in validation so we trigger it first,
     //  then when we cause aspect fail next, bad format check will be preempted
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Combination depth/stencil image formats can have only the ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
