@@ -1036,7 +1036,8 @@ class PIPELINE_STATE : public BASE_NODE {
             return graphicsPipelineCI.flags;
         else if (computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
             return computePipelineCI.flags;
-        else if (raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV)
+        else if ((raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) ||
+                 (raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR))
             return raytracingPipelineCI.flags;
         else
             return 0;
