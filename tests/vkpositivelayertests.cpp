@@ -1081,6 +1081,8 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
     uint32_t prop_count = 0;
     vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
     if (prop_count != 0) {
+        // only grab first plane property
+        prop_count = 1;
         VkDisplayPlanePropertiesKHR display_plane_props = {};
         // Create a VkDisplayKHR object
         vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, &display_plane_props);
@@ -10957,7 +10959,7 @@ void main() {
 layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
   vec3 v;
 };
-  
+
 layout(push_constant, scalar) uniform pushConstants {
   layout(offset=8) VectorBuffer vb;
 } pcs;
