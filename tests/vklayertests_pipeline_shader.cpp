@@ -8727,6 +8727,30 @@ TEST_F(VkLayerTest, DuplicateDynamicStates) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, NonGraphicsDynamicStates) {
+    TEST_DESCRIPTION("Create a pipeline with non graphics dynamic states set.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDynamicState dynamic_state = VK_DYNAMIC_STATE_MAX_ENUM;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.dyn_state_ci_ = {};
+    pipe.dyn_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    pipe.dyn_state_ci_.pNext = nullptr;
+    pipe.dyn_state_ci_.flags = 0;
+    pipe.dyn_state_ci_.dynamicStateCount = 1;
+    pipe.dyn_state_ci_.pDynamicStates = &dynamic_state;
+
+    dynamic_state = VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03578");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 
