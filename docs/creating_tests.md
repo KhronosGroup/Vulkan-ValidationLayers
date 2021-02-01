@@ -8,7 +8,7 @@ The first rule is to make sure you are actually running the tests on the built v
 
 Make sure you have the correct `VK_LAYER_PATH` set on Windows or Linux (on Android the layers are baked into the APK so there is nothing to worry about)
 
-```
+```bash
 export VK_LAYER_PATH=/path/to/Vulkan-ValidationLayers/build/layers/
 ```
 
@@ -26,7 +26,7 @@ The `VkRenderFramework` class is "base class" that abstract most things in order
 
 For most tests, it is as simple as going
 
-```
+```cpp
 ASSERT_NO_FATAL_FAILURE(Init());
 
 // or
@@ -43,8 +43,9 @@ There are other useful helper functions such as `InitSurface()`, `InitSwapchain(
 
 Adding extension support is quite easy.
 
-Here is an example of adding VK_KHR_sampler_ycbcr_conversion with all the extensions it requires as well
-```
+Here is an example of adding `VK_KHR_sampler_ycbcr_conversion` with all the extensions it requires as well. Note, most extensions will have only 1 or 2 dependency extensions needed
+
+```cpp
 bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
 if (mp_extensions) {
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -71,7 +72,7 @@ The pattern breaks down to
 - Init Framework which creates `VkInstance`
 - Check and add Device extensions to list
 - Init State which creates the `VkDevice`
-- **Optional** skip if test is not worth moving out without extension support
+- **Optional**: skip if test is not worth moving out without extension support
 
 ### Vulkan Version
 
@@ -79,13 +80,13 @@ As [raised in a previous issue](https://github.com/KhronosGroup/Vulkan-Validatio
 
 If a certain version of Vulkan is needed a test writer can call
 
-```
+```cpp
 SetTargetApiVersion(VK_API_VERSION_1_1);
 ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 ```
 
 Later in the test it can also be checked
-```
+```cpp
 if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
     // ...
 }
@@ -95,7 +96,7 @@ if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
 
 A common case for checking the version is in order to find how to correctly get extension function pointers.
 
-```
+```cpp
 // Create aliased function pointers for 1.0 and 1.1+ contexts
 PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
 if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
@@ -117,14 +118,14 @@ This small class handles checking all things to VUID and are ultimately what wil
 The few common patterns that will cover 99% of cases are:
 
 - For checking a call invokes an VUID error
-```
+```cpp
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
 vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
 m_errorMonitor->VerifyFound();
 ```
 
 - For making sure there is no error (positive test)
-```
+```cpp
 m_errorMonitor->ExpectSuccess();
 vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
 m_errorMonitor->VerifyNotFound();
@@ -132,7 +133,7 @@ m_errorMonitor->VerifyNotFound();
 
 - When it is possible another VUID will be triggered that you are not testing. This usually happens due to making something invalid can cause a chain effect causing other things to be invalid as well.
     - Note: If the `SetUnexpectedError` is never called it will not fail the test
-```
+```cpp
 m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryRequirementsInfo2-image-01590");
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-02280");
 vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
@@ -141,7 +142,7 @@ m_errorMonitor->VerifyFound();
 
 - When you expect multpile VUID to be triggered. This is also be a case if you expect the same VUID to be called twice.
     - Note: If both VUID are not found the test will fail
-```
+```cpp
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00905");
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00907");
 vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -150,7 +151,7 @@ m_errorMonitor->VerifyFound();
 
 - When a VUID is dependent on an extension being present
     - Note: The start of the test might already have a boolean that checks for extension support
-```
+```cpp
 const char* vuid = DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ? "VUID-vkCmdCopyImage-dstImage-01733" : "VUID-vkCmdCopyImage-dstImage-01733";
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
 m_commandBuffer->CopyImage(image_2.image(), VK_IMAGE_LAYOUT_GENERAL, image_1.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
@@ -164,7 +165,7 @@ m_errorMonitor->VerifyFound();
 There are times a test writer will want to test a case where an implementation returns a certain support for a format feature or limit. Instead of just hoping to find a device that supports a certain case, there is the Device Profiles API layer. This layer will allow a test writer to inject certain values for format features and/or limits.
 
 Here is an example of how To enable it to allow overriding format features (limits are the same idea, just different function names):
-```
+```cpp
 if (!EnableDeviceProfileLayer()) {
     printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
     return;
@@ -183,7 +184,7 @@ if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOri
 ```
 
 This is an example of injecting the `VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT` feature for the `VK_FORMAT_R32G32B32A32_UINT` format. This will force the Validations Layers to act as if the implementation had support for this feature later in the test's code.
-```
+```cpp
 fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, &formatProps);
 formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, formatProps);
@@ -196,7 +197,7 @@ To allow a much higher coverage of testing the Validation Layers a test writer c
 Both the Device Simulation Layer and MockICD can be found in the Vulkan SDK, otherwise, they will need to be cloned from [VulkanTools](https://github.com/LunarG/VulkanTools/blob/master/layersvt/VkLayer_device_simulation.json.in) and [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools/tree/master/icd) respectfully. Currently, you will need to build the MockICD from source (found in Vulkan SDK or in a local copy somewhere)
 
 Here is an example of setting up and running the Device Simulation layer with MockICD on a Linux environment
-```
+```bash
 export VULKAN_SDK=/path/to/vulkansdk
 export VVL=/path/to/Vulkan-ValidationLayers
 
@@ -214,6 +215,11 @@ export VK_ICD_FILENAMES=/path/to/Vulkan-Tools/build/icd/VkICD_mock_icd.json
 # Set device simulation profile to a valid json file
 # There are a set of profiles used in CI in the device_profiles folder
 export VK_DEVSIM_FILENAME=$VVL/tests/device_profiles/mobile_chip.json
+
+# Needed or else the code `IsPlatform(kMockICD)` will not work
+# Also allows profiles to use extensions exposed in .json profile file
+# More details - https://github.com/LunarG/VulkanTools/issues/985
+export VK_DEVSIM_MODIFY_EXTENSION_LIST=1
 
 # Running tests just need the extra --devsim added
 $VVL/build/tests/vk_layer_validation_tests --devsim --gtest_filter=TestName
