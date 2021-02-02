@@ -28,6 +28,7 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <algorithm>
 
 // A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.
 // Useful in in situations where the needed size is unknown, but the typical size is known  If size increases beyond the
