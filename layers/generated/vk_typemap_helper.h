@@ -2165,6 +2165,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KH
     typedef VkPipelineLibraryCreateInfoKHR Type;
 };
 
+// Map type VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR> {
+    typedef VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR Type;
+};
+
+// Map type VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR> {
+    typedef VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR Type;
+};
+
 // Map type VkBufferCopy2KHR to id VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR
 template <> struct LvlTypeMap<VkBufferCopy2KHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR;

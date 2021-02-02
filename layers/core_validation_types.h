@@ -1503,6 +1503,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_feature;
     VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_feature;
     VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering;
+    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };

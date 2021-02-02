@@ -477,6 +477,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_variable_pointers{kNotEnabled};
     ExtEnabled vk_khr_vulkan_memory_model{kNotEnabled};
     ExtEnabled vk_khr_win32_keyed_mutex{kNotEnabled};
+    ExtEnabled vk_khr_workgroup_memory_explicit_layout{kNotEnabled};
+    ExtEnabled vk_khr_zero_initialize_workgroup_memory{kNotEnabled};
     ExtEnabled vk_nvx_image_view_handle{kNotEnabled};
     ExtEnabled vk_nvx_multiview_per_view_attributes{kNotEnabled};
     ExtEnabled vk_nv_acquire_winrt_display{kNotEnabled};
@@ -831,6 +833,10 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_KHR_WIN32_KEYED_MUTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_win32_keyed_mutex, {{
                            {&DeviceExtensions::vk_khr_external_memory_win32, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}}})),
 #endif
+            std::make_pair(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_workgroup_memory_explicit_layout, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_zero_initialize_workgroup_memory, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nvx_image_view_handle, {})),
             std::make_pair(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nvx_multiview_per_view_attributes, {{
                            {&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME}}})),
@@ -899,7 +905,7 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})),
-            std::make_pair(VK_QCOM_rotated_copy_commands_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_rotated_copy_commands, {{
+            std::make_pair(VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_rotated_copy_commands, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_copy_commands_2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})),
             std::make_pair(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_valve_mutable_descriptor_type, {{
@@ -1172,6 +1178,8 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_KHR_WIN32_KEYED_MUTEX_EXTENSION_NAME,
 #endif
+    VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME,
+    VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME,
     VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME,
     VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -1215,7 +1223,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME,
     VK_QCOM_render_pass_store_ops_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
-    VK_QCOM_rotated_copy_commands_EXTENSION_NAME,
+    VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME,
     VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
 };
 

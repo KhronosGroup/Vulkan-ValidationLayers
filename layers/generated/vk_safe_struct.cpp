@@ -19629,6 +19629,127 @@ void safe_VkPipelineLibraryCreateInfoKHR::initialize(const safe_VkPipelineLibrar
     }
 }
 
+safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    shaderZeroInitializeWorkgroupMemory(in_struct->shaderZeroInitializeWorkgroupMemory)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    shaderZeroInitializeWorkgroupMemory = copy_src.shaderZeroInitializeWorkgroupMemory;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR& safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::operator=(const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderZeroInitializeWorkgroupMemory = copy_src.shaderZeroInitializeWorkgroupMemory;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::~safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::initialize(const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    shaderZeroInitializeWorkgroupMemory = in_struct->shaderZeroInitializeWorkgroupMemory;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::initialize(const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    shaderZeroInitializeWorkgroupMemory = copy_src->shaderZeroInitializeWorkgroupMemory;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    workgroupMemoryExplicitLayout(in_struct->workgroupMemoryExplicitLayout),
+    workgroupMemoryExplicitLayoutScalarBlockLayout(in_struct->workgroupMemoryExplicitLayoutScalarBlockLayout),
+    workgroupMemoryExplicitLayout8BitAccess(in_struct->workgroupMemoryExplicitLayout8BitAccess),
+    workgroupMemoryExplicitLayout16BitAccess(in_struct->workgroupMemoryExplicitLayout16BitAccess)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    workgroupMemoryExplicitLayout = copy_src.workgroupMemoryExplicitLayout;
+    workgroupMemoryExplicitLayoutScalarBlockLayout = copy_src.workgroupMemoryExplicitLayoutScalarBlockLayout;
+    workgroupMemoryExplicitLayout8BitAccess = copy_src.workgroupMemoryExplicitLayout8BitAccess;
+    workgroupMemoryExplicitLayout16BitAccess = copy_src.workgroupMemoryExplicitLayout16BitAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::operator=(const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    workgroupMemoryExplicitLayout = copy_src.workgroupMemoryExplicitLayout;
+    workgroupMemoryExplicitLayoutScalarBlockLayout = copy_src.workgroupMemoryExplicitLayoutScalarBlockLayout;
+    workgroupMemoryExplicitLayout8BitAccess = copy_src.workgroupMemoryExplicitLayout8BitAccess;
+    workgroupMemoryExplicitLayout16BitAccess = copy_src.workgroupMemoryExplicitLayout16BitAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::~safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::initialize(const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    workgroupMemoryExplicitLayout = in_struct->workgroupMemoryExplicitLayout;
+    workgroupMemoryExplicitLayoutScalarBlockLayout = in_struct->workgroupMemoryExplicitLayoutScalarBlockLayout;
+    workgroupMemoryExplicitLayout8BitAccess = in_struct->workgroupMemoryExplicitLayout8BitAccess;
+    workgroupMemoryExplicitLayout16BitAccess = in_struct->workgroupMemoryExplicitLayout16BitAccess;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::initialize(const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    workgroupMemoryExplicitLayout = copy_src->workgroupMemoryExplicitLayout;
+    workgroupMemoryExplicitLayoutScalarBlockLayout = copy_src->workgroupMemoryExplicitLayoutScalarBlockLayout;
+    workgroupMemoryExplicitLayout8BitAccess = copy_src->workgroupMemoryExplicitLayout8BitAccess;
+    workgroupMemoryExplicitLayout16BitAccess = copy_src->workgroupMemoryExplicitLayout16BitAccess;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkBufferCopy2KHR::safe_VkBufferCopy2KHR(const VkBufferCopy2KHR* in_struct) :
     sType(in_struct->sType),
     srcOffset(in_struct->srcOffset),
@@ -37238,6 +37359,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
             safe_pNext = new safe_VkDebugReportCallbackCreateInfoEXT(reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT *>(pNext));
             break;
@@ -38075,6 +38202,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkDebugReportCallbackCreateInfoEXT *>(header);

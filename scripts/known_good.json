@@ -6,7 +6,7 @@
       "sub_dir" : "glslang",
       "build_dir" : "glslang/build",
       "install_dir" : "glslang/build/install",
-      "commit" : "dd69df7f3dac26362e10b0f38efb9e47990f7537",
+      "commit" : "386b4fcb28e5cc2987c26c1250f0ba8200eed8fa",
       "prebuild" : [
         "python update_glslang_sources.py"
       ],
@@ -20,7 +20,7 @@
       "sub_dir": "Vulkan-Headers",
       "build_dir": "Vulkan-Headers/build",
       "install_dir": "Vulkan-Headers/build/install",
-      "commit": "v1.2.166"
+      "commit": "v1.2.169"
     },
     {
       "name": "SPIRV-Headers",
@@ -28,7 +28,7 @@
       "sub_dir": "SPIRV-Headers",
       "build_dir": "SPIRV-Headers/build",
       "install_dir": "SPIRV-Headers/build/install",
-      "commit": "f027d53ded7e230e008d37c8b47ede7cd308e19d"
+      "commit": "faa570afbc91ac73d594d787486bcf8f2df1ace0"
     }
   ],
   "install_names" : {

@@ -249,6 +249,10 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             feature_name = feature.get('name')
             if 'VK_VERSION_1_0' == feature_name:
                 continue
+            feature_supported = feature.get('supported')
+            # If feature is not yet supported, skip it
+            if feature_supported == 'disabled':
+                continue
             for require_element in feature.findall('require'):
                 for command in require_element.findall('command'):
                     command_name = command.get('name')

@@ -84,6 +84,8 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_atomic_float_feature.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_image_atomic_int64_feature.*ptr; }) {}
+    FeaturePointer(VkBool32 VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::*ptr)
+        : IsEnabled([=](const DeviceFeatures &features) { return features.workgroup_memory_explicit_layout_features.*ptr; }) {}
 };
 
 // Each instance of the struct will only have a singel field non-null
@@ -238,6 +240,9 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityVariablePointersStorageBuffer, {0, &VkPhysicalDeviceVulkan11Features::variablePointersStorageBuffer, nullptr, ""}},
     {spv::CapabilityVulkanMemoryModel, {0, &VkPhysicalDeviceVulkan12Features::vulkanMemoryModel, nullptr, ""}},
     {spv::CapabilityVulkanMemoryModelDeviceScope, {0, &VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope, nullptr, ""}},
+    {spv::CapabilityWorkgroupMemoryExplicitLayout16BitAccessKHR, {0, &VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::workgroupMemoryExplicitLayout16BitAccess, nullptr, ""}},
+    {spv::CapabilityWorkgroupMemoryExplicitLayout8BitAccessKHR, {0, &VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::workgroupMemoryExplicitLayout8BitAccess, nullptr, ""}},
+    {spv::CapabilityWorkgroupMemoryExplicitLayoutKHR, {0, &VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR::workgroupMemoryExplicitLayout, nullptr, ""}},
 };
 // clang-format on
 
@@ -272,6 +277,8 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_KHR_float_controls", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_KHR_float_controls", {0, nullptr, &DeviceExtensions::vk_khr_shader_float_controls, ""}},
     {"SPV_KHR_fragment_shading_rate", {0, nullptr, &DeviceExtensions::vk_khr_fragment_shading_rate, ""}},
+    {"SPV_KHR_multiview", {VK_API_VERSION_1_1, nullptr, nullptr, ""}},
+    {"SPV_KHR_multiview", {0, nullptr, &DeviceExtensions::vk_khr_multiview, ""}},
     {"SPV_KHR_non_semantic_info", {0, nullptr, &DeviceExtensions::vk_khr_shader_non_semantic_info, ""}},
     {"SPV_KHR_physical_storage_buffer", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_KHR_physical_storage_buffer", {0, nullptr, &DeviceExtensions::vk_khr_buffer_device_address, ""}},
@@ -290,6 +297,7 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_KHR_variable_pointers", {0, nullptr, &DeviceExtensions::vk_khr_variable_pointers, ""}},
     {"SPV_KHR_vulkan_memory_model", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_KHR_vulkan_memory_model", {0, nullptr, &DeviceExtensions::vk_khr_vulkan_memory_model, ""}},
+    {"SPV_KHR_workgroup_memory_explicit_layout", {0, nullptr, &DeviceExtensions::vk_khr_workgroup_memory_explicit_layout, ""}},
     {"SPV_NVX_multiview_per_view_attributes", {0, nullptr, &DeviceExtensions::vk_nvx_multiview_per_view_attributes, ""}},
     {"SPV_NV_compute_shader_derivatives", {0, nullptr, &DeviceExtensions::vk_nv_compute_shader_derivatives, ""}},
     {"SPV_NV_cooperative_matrix", {0, nullptr, &DeviceExtensions::vk_nv_cooperative_matrix, ""}},
@@ -542,6 +550,12 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "VulkanMemoryModel";
          case spv::CapabilityVulkanMemoryModelDeviceScope:
             return "VulkanMemoryModelDeviceScope";
+         case spv::CapabilityWorkgroupMemoryExplicitLayout16BitAccessKHR:
+            return "WorkgroupMemoryExplicitLayout16BitAccessKHR";
+         case spv::CapabilityWorkgroupMemoryExplicitLayout8BitAccessKHR:
+            return "WorkgroupMemoryExplicitLayout8BitAccessKHR";
+         case spv::CapabilityWorkgroupMemoryExplicitLayoutKHR:
+            return "WorkgroupMemoryExplicitLayoutKHR";
         default:
             return "Unhandled OpCapability";
     };

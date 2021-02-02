@@ -127,6 +127,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceShadingRateImageFeaturesNV', 'layer' : 'shading_rate_image'},
             {'vulkan' : 'VkPhysicalDeviceShaderAtomicFloatFeaturesEXT', 'layer' : 'shader_atomic_float_feature'},
             {'vulkan' : 'VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT', 'layer' : 'shader_image_atomic_int64_feature'},
+            {'vulkan' : 'VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR', 'layer' : 'workgroup_memory_explicit_layout_features'},
         ]
 
         # Properties are harder to handle genearted without generating a template for every property struct type

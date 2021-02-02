@@ -414,7 +414,6 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetRayTracingPipelineStackSizeKHR(VkCom
 
 const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkAcquireFullScreenExclusiveModeEXT", "VK_EXT_full_screen_exclusive"},
-    {"vkAcquireImageANDROID", "VK_ANDROID_native_buffer"},
     {"vkAcquireNextImage2KHR", "VK_KHR_swapchain"},
     {"vkAcquireNextImageKHR", "VK_KHR_swapchain"},
     {"vkAcquirePerformanceConfigurationINTEL", "VK_INTEL_performance_query"},
@@ -605,8 +604,6 @@ const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkGetSemaphoreWin32HandleKHR", "VK_KHR_external_semaphore_win32"},
     {"vkGetShaderInfoAMD", "VK_AMD_shader_info"},
     {"vkGetSwapchainCounterEXT", "VK_EXT_display_control"},
-    {"vkGetSwapchainGrallocUsage2ANDROID", "VK_ANDROID_native_buffer"},
-    {"vkGetSwapchainGrallocUsageANDROID", "VK_ANDROID_native_buffer"},
     {"vkGetSwapchainImagesKHR", "VK_KHR_swapchain"},
     {"vkGetSwapchainStatusKHR", "VK_KHR_shared_presentable_image"},
     {"vkGetValidationCacheDataEXT", "VK_EXT_validation_cache"},
@@ -621,7 +618,6 @@ const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkQueueInsertDebugUtilsLabelEXT", "VK_EXT_debug_utils"},
     {"vkQueuePresentKHR", "VK_KHR_swapchain"},
     {"vkQueueSetPerformanceConfigurationINTEL", "VK_INTEL_performance_query"},
-    {"vkQueueSignalReleaseImageANDROID", "VK_ANDROID_native_buffer"},
     {"vkRegisterDeviceEventEXT", "VK_EXT_display_control"},
     {"vkRegisterDisplayEventEXT", "VK_EXT_display_control"},
     {"vkReleaseFullScreenExclusiveModeEXT", "VK_EXT_full_screen_exclusive"},

@@ -4391,6 +4391,39 @@ struct safe_VkPipelineLibraryCreateInfoKHR {
     VkPipelineLibraryCreateInfoKHR const *ptr() const { return reinterpret_cast<VkPipelineLibraryCreateInfoKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderZeroInitializeWorkgroupMemory;
+    safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR& operator=(const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR();
+    ~safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR();
+    void initialize(const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* copy_src);
+    VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *>(this); }
+    VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 workgroupMemoryExplicitLayout;
+    VkBool32 workgroupMemoryExplicitLayoutScalarBlockLayout;
+    VkBool32 workgroupMemoryExplicitLayout8BitAccess;
+    VkBool32 workgroupMemoryExplicitLayout16BitAccess;
+    safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR(const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& operator=(const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR();
+    ~safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR();
+    void initialize(const VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR* copy_src);
+    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR *>(this); }
+    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR const *>(this); }
+};
+
 struct safe_VkBufferCopy2KHR {
     VkStructureType sType;
     const void* pNext;
