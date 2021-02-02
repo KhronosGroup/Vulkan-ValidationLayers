@@ -193,6 +193,8 @@ set(CORE_VALIDATION_LIBRARY_FILES
     core_validation.cpp
     core_validation.h
     core_validation_error_enums.h
+    core_error_location.h
+    core_error_location.cpp
     core_validation_types.h
     drawdispatch.cpp
     convert_to_renderpass2.cpp
@@ -202,6 +204,8 @@ set(CORE_VALIDATION_LIBRARY_FILES
     buffer_validation.h
     shader_validation.cpp
     shader_validation.h
+    sync_vuid_maps.cpp
+    sync_vuid_maps.h
     generated/spirv_validation_helper.cpp
     generated/synchronization_validation_types.cpp
     gpu_validation.cpp

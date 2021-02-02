@@ -5971,8 +5971,9 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     }
 
     // Attempt barrier where srcAccessMask is not supported by srcStageMask
-    // Have lower-order bit that's supported (shader write), but higher-order bit not supported to verify multi-bit validation
-    conc_test.buffer_barrier_.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    // Have bit that's supported (transfer write), and another that isn't to verify multi-bit validation
+    conc_test.buffer_barrier_.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+    conc_test.buffer_barrier_.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     conc_test.buffer_barrier_.offset = 0;
     conc_test.buffer_barrier_.size = VK_WHOLE_SIZE;
     conc_test("", "VUID-vkCmdPipelineBarrier-srcAccessMask-02815");
@@ -6092,8 +6093,8 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
         excl_test.Init(nullptr);
 
         // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
-        excl_test("UNASSIGNED-CoreValidation-vkImageMemoryBarrier-sharing-mode-exclusive-same-family",
-                  "UNASSIGNED-CoreValidation-vkBufferMemoryBarrier-sharing-mode-exclusive-same-family", other_family, other_family,
+        excl_test("UNASSIGNED-CoreValidation-VkImageMemoryBarrier-sharing-mode-exclusive-same-family",
+                  "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family", other_family, other_family,
                   false, submit_family);
 
         // true -> positive test (testing both the index logic and the QFO transfer tracking.
