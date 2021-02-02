@@ -9100,7 +9100,40 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
 
 TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
     TEST_DESCRIPTION("Create renderpass and CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT");
-    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->ExpectSuccess();
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)) {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
+               VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+
+    auto vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)) {
+        printf("%s requires %s.\n", kSkipPrefix, VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+        return;
+    }
+    auto cond_rendering_feature = LvlInitStruct<VkPhysicalDeviceConditionalRenderingFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&cond_rendering_feature);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (cond_rendering_feature.conditionalRendering == VK_FALSE) {
+        printf("%s conditionalRendering feature not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // A renderpass with a single subpass that declared a self-dependency
     VkAttachmentDescription attach[] = {

@@ -826,6 +826,31 @@ def makeGenOpts(args):
             helper_file_type  = 'synchronization_helper_header')
         ]
 
+    genOpts['synchronization_validation_types.cpp'] = [
+          HelperFileOutputGenerator,
+          HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'synchronization_validation_types.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            emitSpirv         = None,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False,
+            helper_file_type  = 'synchronization_helper_source')
+        ]
+
     # Options for spirv_validation_helper code-generated header
     genOpts['spirv_validation_helper.cpp'] = [
           SpirvValidationHelperOutputGenerator,

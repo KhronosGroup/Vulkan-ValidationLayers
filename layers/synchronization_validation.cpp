@@ -24,6 +24,7 @@
 #include <memory>
 #include <bitset>
 #include "synchronization_validation.h"
+#include "sync_utils.h"
 
 const static std::array<AccessAddressType, static_cast<size_t>(AccessAddressType::kTypeCount)> kAddressTypes = {
     AccessAddressType::kLinear, AccessAddressType::kIdealized};
@@ -420,47 +421,6 @@ class FilteredGeneratorGenerator {
 };
 
 using EventImageRangeGenerator = FilteredGeneratorGenerator<SyncEventState::ScopeMap, subresource_adapter::ImageRangeGenerator>;
-
-// Expand the pipeline stage without regard to whether the are valid w.r.t. queue or extension
-VkPipelineStageFlags ExpandPipelineStages(VkQueueFlags queue_flags, VkPipelineStageFlags stage_mask) {
-    VkPipelineStageFlags expanded = stage_mask;
-    if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask) {
-        expanded = expanded & ~VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        for (const auto &all_commands : syncAllCommandStagesByQueueFlags) {
-            if (all_commands.first & queue_flags) {
-                expanded |= all_commands.second;
-            }
-        }
-    }
-    if (VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT & stage_mask) {
-        expanded = expanded & ~VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        expanded |= syncAllCommandStagesByQueueFlags.at(VK_QUEUE_GRAPHICS_BIT) & ~VK_PIPELINE_STAGE_HOST_BIT;
-    }
-    return expanded;
-}
-
-VkPipelineStageFlags RelatedPipelineStages(VkPipelineStageFlags stage_mask,
-                                           const std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> &map) {
-    VkPipelineStageFlags unscanned = stage_mask;
-    VkPipelineStageFlags related = 0;
-    for (const auto &entry : map) {
-        const auto &stage = entry.first;
-        if (stage & unscanned) {
-            related = related | entry.second;
-            unscanned = unscanned & ~stage;
-            if (!unscanned) break;
-        }
-    }
-    return related;
-}
-
-VkPipelineStageFlags WithEarlierPipelineStages(VkPipelineStageFlags stage_mask) {
-    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages);
-}
-
-VkPipelineStageFlags WithLaterPipelineStages(VkPipelineStageFlags stage_mask) {
-    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages);
-}
 
 static const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 
@@ -2230,7 +2190,7 @@ bool CommandBufferAccessContext::ValidateSetEvent(VkCommandBuffer commandBuffer,
     const char *const wait =
         "%s: %s %s operation following %s without intervening vkCmdResetEvent, may result in data hazard and is ignored.";
 
-    const auto exec_scope = WithEarlierPipelineStages(ExpandPipelineStages(GetQueueFlags(), stageMask));
+    const auto exec_scope = sync_utils::WithEarlierPipelineStages(sync_utils::ExpandPipelineStages(stageMask, GetQueueFlags()));
     if (!sync_event->HasBarrier(stageMask, exec_scope)) {
         const char *vuid = nullptr;
         const char *message = nullptr;
@@ -2323,7 +2283,7 @@ bool CommandBufferAccessContext::ValidateResetEvent(VkCommandBuffer commandBuffe
         "%s: %s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
         "hazards.";
     const char *message = set_wait;  // Only one message this call.
-    const auto exec_scope = WithEarlierPipelineStages(ExpandPipelineStages(GetQueueFlags(), stageMask));
+    const auto exec_scope = sync_utils::WithEarlierPipelineStages(sync_utils::ExpandPipelineStages(stageMask, GetQueueFlags()));
     if (!sync_event->HasBarrier(stageMask, exec_scope)) {
         const char *vuid = nullptr;
         switch (sync_event->last_command) {
@@ -2725,8 +2685,8 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
 SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags mask_param) {
     SyncExecScope result;
     result.mask_param = mask_param;
-    result.expanded_mask = ExpandPipelineStages(queue_flags, mask_param);
-    result.exec_scope = WithEarlierPipelineStages(result.expanded_mask);
+    result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
+    result.exec_scope = sync_utils::WithEarlierPipelineStages(result.expanded_mask);
     result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.exec_scope);
     return result;
 }
@@ -2734,8 +2694,8 @@ SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFl
 SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags mask_param) {
     SyncExecScope result;
     result.mask_param = mask_param;
-    result.expanded_mask = ExpandPipelineStages(queue_flags, mask_param);
-    result.exec_scope = WithLaterPipelineStages(result.expanded_mask);
+    result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
+    result.exec_scope = sync_utils::WithLaterPipelineStages(result.expanded_mask);
     result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.exec_scope);
     return result;
 }
@@ -5344,7 +5304,7 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
                     const char *const cmd_name = CommandTypeString(cmd);
                     const char *const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
                     const char *const message =
-                        "%s: %s Unsychronized %s calls result in race conditions w.r.t. event signalling, % %s";
+                        "%s: %s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
                     const char *const reason = "First synchronization scope is undefined.";
                     skip |= sync_state.LogError(event, vuid, message, cmd_name, sync_state.report_data->FormatHandle(event).c_str(),
                                                 CommandTypeString(sync_event->last_command), reason, ignored);

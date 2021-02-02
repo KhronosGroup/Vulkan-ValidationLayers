@@ -64,6 +64,7 @@
 #include "shader_validation.h"
 #include "vk_layer_utils.h"
 #include "command_counter.h"
+#include "sync_utils.h"
 
 static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
     return (layout == non_normal) ? normal : layout;
@@ -7041,109 +7042,9 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     return skip;
 }
 
-// Return input pipeline stage flags, expanded for individual bits if VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT is set
-static VkPipelineStageFlags ExpandPipelineStageFlags(const DeviceExtensions &extensions, VkPipelineStageFlags inflags) {
-    if (~inflags & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) return inflags;
-
-    return (inflags & ~VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) |
-           (VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
-            (extensions.vk_nv_mesh_shader ? (VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV | VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV) : 0) |
-            VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-            VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-            VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
-            (extensions.vk_ext_conditional_rendering ? VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT : 0) |
-            (extensions.vk_ext_transform_feedback ? VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT : 0) |
-            (extensions.vk_nv_shading_rate_image ? VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV : 0) |
-            (extensions.vk_ext_fragment_density_map ? VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT : 0) |
-            (extensions.vk_ext_fragment_density_map_2 ? VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT : 0));
-}
-
 static bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags inflags) {
     return (inflags & ~(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
                         VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)) != 0;
-}
-
-static int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlagBits flag) {
-    // Note that the list (and lookup) ignore invalid-for-enabled-extension condition.  This should be checked elsewhere
-    // and would greatly complicate this intentionally simple implementation
-    // clang-format off
-    const VkPipelineStageFlagBits ordered_array[] = {
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-        VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-        VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT,
-        VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT,
-        VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT,
-        VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT,
-
-        // Including the task/mesh shaders here is not technically correct, as they are in a
-        // separate logical pipeline - but it works for the case this is currently used, and
-        // fixing it would require significant rework and end up with the code being far more
-        // verbose for no practical gain.
-        // However, worth paying attention to this if using this function in a new way.
-        VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV,
-        VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
-
-        VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV,
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-    };
-    // clang-format on
-
-    const int ordered_array_length = sizeof(ordered_array) / sizeof(VkPipelineStageFlagBits);
-
-    for (int i = 0; i < ordered_array_length; ++i) {
-        if (ordered_array[i] == flag) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-// The following two functions technically have O(N^2) complexity, but it's for a value of O that's largely
-// stable and also rather tiny - this could definitely be rejigged to work more efficiently, but the impact
-// on runtime is currently negligible, so it wouldn't gain very much.
-// If we add a lot more graphics pipeline stages, this set of functions should be rewritten to accomodate.
-static VkPipelineStageFlagBits GetLogicallyEarliestGraphicsPipelineStage(VkPipelineStageFlags inflags) {
-    VkPipelineStageFlagBits earliest_bit = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    int earliest_bit_order = GetGraphicsPipelineStageLogicalOrdinal(earliest_bit);
-
-    for (std::size_t i = 0; i < sizeof(VkPipelineStageFlagBits); ++i) {
-        VkPipelineStageFlagBits current_flag = static_cast<VkPipelineStageFlagBits>((inflags & 0x1u) << i);
-        if (current_flag) {
-            int new_order = GetGraphicsPipelineStageLogicalOrdinal(current_flag);
-            if (new_order != -1 && new_order < earliest_bit_order) {
-                earliest_bit_order = new_order;
-                earliest_bit = current_flag;
-            }
-        }
-        inflags = inflags >> 1;
-    }
-    return earliest_bit;
-}
-
-static VkPipelineStageFlagBits GetLogicallyLatestGraphicsPipelineStage(VkPipelineStageFlags inflags) {
-    VkPipelineStageFlagBits latest_bit = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    int latest_bit_order = GetGraphicsPipelineStageLogicalOrdinal(latest_bit);
-
-    for (std::size_t i = 0; i < sizeof(VkPipelineStageFlagBits); ++i) {
-        if (inflags & 0x1u) {
-            int new_order = GetGraphicsPipelineStageLogicalOrdinal(static_cast<VkPipelineStageFlagBits>((inflags & 0x1u) << i));
-            if (new_order != -1 && new_order > latest_bit_order) {
-                latest_bit_order = new_order;
-                latest_bit = static_cast<VkPipelineStageFlagBits>((inflags & 0x1u) << i);
-            }
-        }
-        inflags = inflags >> 1;
-    }
-    return latest_bit;
 }
 
 // Verify image barrier image state and that the image is consistent with FB image
@@ -7303,10 +7204,13 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const char *funcName, const 
         const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
         // Look for matching mask in any self-dependency
         bool stage_mask_match = false;
+        auto disabled_stage_mask = sync_utils::DisabledPipelineStages(enabled_features);
         for (const auto self_dep_index : self_dependencies) {
             const auto &sub_dep = dependencies[self_dep_index];
-            const auto &sub_src_stage_mask = ExpandPipelineStageFlags(device_extensions, sub_dep.srcStageMask);
-            const auto &sub_dst_stage_mask = ExpandPipelineStageFlags(device_extensions, sub_dep.dstStageMask);
+            const auto sub_src_stage_mask =
+                sync_utils::ExpandPipelineStages(sub_dep.srcStageMask, sync_utils::kAllQueueTypes, disabled_stage_mask);
+            const auto sub_dst_stage_mask =
+                sync_utils::ExpandPipelineStages(sub_dep.dstStageMask, sync_utils::kAllQueueTypes, disabled_stage_mask);
             stage_mask_match = ((sub_src_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
                                 (src_stage_mask == (sub_src_stage_mask & src_stage_mask))) &&
                                ((sub_dst_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
@@ -7388,97 +7292,19 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const char *funcName, const 
     return skip;
 }
 
-// Array to mask individual accessMask to corresponding stageMask
-//  accessMask active bit position (0-31) maps to index
-const static VkPipelineStageFlags kAccessMaskToPipeStage[28] = {
-    // VK_ACCESS_INDIRECT_COMMAND_READ_BIT = 0
-    VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-    // VK_ACCESS_INDEX_READ_BIT = 1
-    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-    // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT = 2
-    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-    // VK_ACCESS_UNIFORM_READ_BIT = 3
-    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-        VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV |
-        VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV,
-    // VK_ACCESS_INPUT_ATTACHMENT_READ_BIT = 4
-    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-    // VK_ACCESS_SHADER_READ_BIT = 5
-    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-        VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV |
-        VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV |
-        VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-    // VK_ACCESS_SHADER_WRITE_BIT = 6
-    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-        VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV |
-        VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV,
-    // VK_ACCESS_COLOR_ATTACHMENT_READ_BIT = 7
-    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    // VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT = 8
-    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    // VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT = 9
-    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-    // VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT = 10
-    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-    // VK_ACCESS_TRANSFER_READ_BIT = 11
-    VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-    // VK_ACCESS_TRANSFER_WRITE_BIT = 12
-    VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-    // VK_ACCESS_HOST_READ_BIT = 13
-    VK_PIPELINE_STAGE_HOST_BIT,
-    // VK_ACCESS_HOST_WRITE_BIT = 14
-    VK_PIPELINE_STAGE_HOST_BIT,
-    // VK_ACCESS_MEMORY_READ_BIT = 15
-    VK_ACCESS_FLAG_BITS_MAX_ENUM,  // Always match
-    // VK_ACCESS_MEMORY_WRITE_BIT = 16
-    VK_ACCESS_FLAG_BITS_MAX_ENUM,  // Always match
-    // VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV = 17
-    VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV,
-    // VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV = 18
-    VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV,
-    // VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT = 19
-    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    // VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT = 20
-    VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
-    // VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR = 21
-    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV |
-        VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV | VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-        VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-        VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-    // VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR = 22
-    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-    // VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV = VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR = 23
-    VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV,
-    // VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT = 24
-    VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT,
-    // VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT = 25
-    VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT,
-    // VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT = 26
-    VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-    // VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT = 27
-    VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT,
-};
-
 // Verify that all bits of access_mask are supported by the src_stage_mask
-static bool ValidateAccessMaskPipelineStage(const DeviceExtensions &extensions, VkAccessFlags access_mask,
+static bool ValidateAccessMaskPipelineStage(const DeviceFeatures &features, VkQueueFlags queue_flags, VkAccessFlags access_mask,
                                             VkPipelineStageFlags stage_mask) {
     // Early out if all commands set, or access_mask NULL
     if ((stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) || (0 == access_mask)) return true;
 
-    stage_mask = ExpandPipelineStageFlags(extensions, stage_mask);
-    int index = 0;
-    // for each of the set bits in access_mask, make sure that supporting stage mask bit(s) are set
-    while (access_mask) {
-        index = (u_ffs(access_mask) - 1);
-        assert(index >= 0);
-        // Must have "!= 0" compare to prevent warning from MSVC
-        if ((kAccessMaskToPipeStage[index] & stage_mask) == 0) return false;  // early out
-        access_mask &= ~(1 << index);                                         // Mask off bit that's been checked
-    }
-    return true;
+    // or if only generic memory accesses are specified (or we got a 0 mask)
+    access_mask &= ~(VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT);
+    if (access_mask == 0) return true;
+
+    auto expanded_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags, sync_utils::DisabledPipelineStages(features));
+    auto valid_accesses = sync_utils::CompatibleAccessMask(expanded_stages);
+    return ((access_mask & ~valid_accesses) == 0);
 }
 
 namespace barrier_queue_families {
@@ -7708,14 +7534,15 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
                                   const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                   const VkImageMemoryBarrier *pImageMemBarriers) const {
     bool skip = false;
+    auto queue_flags = GetQueueFlags(*cb_state);
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const auto &mem_barrier = pMemBarriers[i];
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.srcAccessMask, src_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, queue_flags, mem_barrier.srcAccessMask, src_stage_mask)) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdPipelineBarrier-srcAccessMask-02815",
                              "%s: pMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName, i,
                              mem_barrier.srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, queue_flags, mem_barrier.dstAccessMask, dst_stage_mask)) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdPipelineBarrier-dstAccessMask-02816",
                              "%s: pMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName, i,
                              mem_barrier.dstAccessMask, dst_stage_mask);
@@ -7723,12 +7550,12 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
         const auto &mem_barrier = pImageMemBarriers[i];
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.srcAccessMask, src_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, queue_flags, mem_barrier.srcAccessMask, src_stage_mask)) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdPipelineBarrier-srcAccessMask-02815",
                              "%s: pImageMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName, i,
                              mem_barrier.srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, queue_flags, mem_barrier.dstAccessMask, dst_stage_mask)) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdPipelineBarrier-dstAccessMask-02816",
                              "%s: pImageMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName, i,
                              mem_barrier.dstAccessMask, dst_stage_mask);
@@ -7756,12 +7583,12 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const auto &mem_barrier = pBufferMemBarriers[i];
 
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.srcAccessMask, src_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, queue_flags, mem_barrier.srcAccessMask, src_stage_mask)) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdPipelineBarrier-srcAccessMask-02815",
                              "%s: pBufferMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName,
                              i, mem_barrier.srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, queue_flags, mem_barrier.dstAccessMask, dst_stage_mask)) {
             skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdPipelineBarrier-dstAccessMask-02816",
                              "%s: pBufferMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName,
                              i, mem_barrier.dstAccessMask, dst_stage_mask);
@@ -7835,52 +7662,25 @@ bool CoreChecks::ValidateEventStageMask(const ValidationStateTracker *state_data
     return skip;
 }
 
-// Note that we only check bits that HAVE required queueflags -- don't care entries are skipped
-static std::unordered_map<VkPipelineStageFlags, VkQueueFlags> supported_pipeline_stages_table = {
-    {VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
-    {VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
-    {VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_QUEUE_GRAPHICS_BIT},
-    {VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_QUEUE_COMPUTE_BIT},
-    {VK_PIPELINE_STAGE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT},
-    {VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
-    {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT}};
-
-static const VkPipelineStageFlags kStageFlagBitArray[] = {VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV,
-                                                          VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-                                                          VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-                                                          VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-                                                          VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT,
-                                                          VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT,
-                                                          VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT,
-                                                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                                          VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                                                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                                                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                                          VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                                          VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
-                                                          VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
+static const VkQueueFlagBits kQueueTypeArray[] = {VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT};
 
 bool CoreChecks::CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask,
                                                   VkQueueFlags queue_flags, const char *function, const char *src_or_dest,
                                                   const char *error_code) const {
     bool skip = false;
+    auto supported_flags = sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, queue_flags);
+
+    auto expanded = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
+
+    auto bad_flags = expanded & ~supported_flags;
+
     // Lookup each bit in the stagemask and check for overlap between its table bits and queue_flags
-    for (const auto &item : kStageFlagBitArray) {
-        if (stage_mask & item) {
-            if ((supported_pipeline_stages_table[item] & queue_flags) == 0) {
-                skip |= LogError(command_buffer, error_code,
-                                 "%s(): %s flag %s is not compatible with the queue family properties of this command buffer.",
-                                 function, src_or_dest, string_VkPipelineStageFlagBits(static_cast<VkPipelineStageFlagBits>(item)));
-            }
+    for (size_t i = 0; i < sizeof(bad_flags) * 8; i++) {
+        VkPipelineStageFlags item = (1ULL << i) & bad_flags;
+        if (item) {
+            skip |= LogError(command_buffer, error_code,
+                             "%s(): %s flag %s is not compatible with the queue family properties of this command buffer.",
+                             function, src_or_dest, string_VkPipelineStageFlagBits(static_cast<VkPipelineStageFlagBits>(item)));
         }
     }
     return skip;
@@ -9620,8 +9420,8 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
 
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2 &dependency = pCreateInfo->pDependencies[i];
-        VkPipelineStageFlagBits latest_src_stage = GetLogicallyLatestGraphicsPipelineStage(dependency.srcStageMask);
-        VkPipelineStageFlagBits earliest_dst_stage = GetLogicallyEarliestGraphicsPipelineStage(dependency.dstStageMask);
+        auto latest_src_stage = sync_utils::GetLogicallyLatestGraphicsPipelineStage(dependency.srcStageMask);
+        auto earliest_dst_stage = sync_utils::GetLogicallyEarliestGraphicsPipelineStage(dependency.dstStageMask);
 
         // The first subpass here serves as a good proxy for "is multiview enabled" - since all view masks need to be non-zero if
         // any are, which enables multiview.
@@ -9675,13 +9475,14 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                                  i, dependency.srcSubpass);
             } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) ||
                         HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask)) &&
-                       (GetGraphicsPipelineStageLogicalOrdinal(latest_src_stage) >
-                        GetGraphicsPipelineStageLogicalOrdinal(earliest_dst_stage))) {
+                       (sync_utils::GetGraphicsPipelineStageLogicalOrdinal(latest_src_stage) >
+                        sync_utils::GetGraphicsPipelineStageLogicalOrdinal(earliest_dst_stage))) {
                 vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-03087" : "VUID-VkSubpassDependency-srcSubpass-00867";
                 skip |= LogError(
                     device, vuid,
                     "Dependency %u specifies a self-dependency from logically-later stage (%s) to a logically-earlier stage (%s).",
-                    i, string_VkPipelineStageFlagBits(latest_src_stage), string_VkPipelineStageFlagBits(earliest_dst_stage));
+                    i, string_VkPipelineStageFlags(latest_src_stage).c_str(),
+                    string_VkPipelineStageFlags(earliest_dst_stage).c_str());
             } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) == false) &&
                        (HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask) == false) &&
                        ((dependency.dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT) == 0)) {
@@ -10394,7 +10195,8 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
                 "VUID-VkSubpassDependency-dstStageMask-02102");
         }
 
-        if (!ValidateAccessMaskPipelineStage(device_extensions, dependency.srcAccessMask, dependency.srcStageMask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, sync_utils::kAllQueueTypes, dependency.srcAccessMask,
+                                             dependency.srcStageMask)) {
             vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcAccessMask-03088" : "VUID-VkSubpassDependency-srcAccessMask-00868";
             skip |=
                 LogError(device, vuid,
@@ -10402,7 +10204,8 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
                          function_name, i, dependency.srcAccessMask, dependency.srcStageMask);
         }
 
-        if (!ValidateAccessMaskPipelineStage(device_extensions, dependency.dstAccessMask, dependency.dstStageMask)) {
+        if (!ValidateAccessMaskPipelineStage(enabled_features, sync_utils::kAllQueueTypes, dependency.dstAccessMask,
+                                             dependency.dstStageMask)) {
             vuid = use_rp2 ? "VUID-VkSubpassDependency2-dstAccessMask-03089" : "VUID-VkSubpassDependency-dstAccessMask-00869";
             skip |=
                 LogError(device, vuid,
