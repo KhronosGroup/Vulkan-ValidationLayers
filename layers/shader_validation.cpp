@@ -3734,14 +3734,17 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE *pipeline, const CMD_BUFFER_STATE *pCB,
-                                                            const char *caller, const DrawDispatchVuid &vuid) const {
-    auto create_info = pipeline->graphicsPipelineCI.ptr();
+void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeline_state) {
+    auto create_info = pipeline_state->graphicsPipelineCI.ptr();
+
+    if (phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports ||
+        !IsDynamic(pipeline_state, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT)) {
+        return;
+    }
 
     std::array<const SHADER_MODULE_STATE *, 32> shaders;
     std::fill(shaders.begin(), shaders.end(), nullptr);
     spirv_inst_iter entrypoints[32];
-    bool skip = false;
 
     for (uint32_t i = 0; i < create_info->stageCount; i++) {
         auto stage = &create_info->pStages[i];
@@ -3751,30 +3754,45 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 
         if (stage->stage == VK_SHADER_STAGE_VERTEX_BIT || stage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
             stage->stage == VK_SHADER_STAGE_MESH_BIT_NV) {
-            if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-                IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
-                spirv_inst_iter insn = entrypoints[stage_id];
-                bool primitiverate_written = false;
+            spirv_inst_iter insn = entrypoints[stage_id];
+            bool primitiverate_written = false;
 
-                while (!primitiverate_written && (insn.opcode() != spv::OpFunction)) {
-                    if (insn.opcode() == spv::OpMemberDecorate) {
-                        if (insn.word(3) == spv::DecorationBuiltIn) {
-                            if (insn.word(4) == spv::BuiltInPrimitiveShadingRateKHR) {
-                                primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
-                            }
-                        }
-                    } else if (insn.opcode() == spv::OpDecorate) {
-                        if (insn.word(2) == spv::DecorationBuiltIn) {
-                            if (insn.word(3) == spv::BuiltInPrimitiveShadingRateKHR) {
-                                primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
-                            }
+            while (!primitiverate_written && (insn.opcode() != spv::OpFunction)) {
+                if (insn.opcode() == spv::OpMemberDecorate) {
+                    if (insn.word(3) == spv::DecorationBuiltIn) {
+                        if (insn.word(4) == spv::BuiltInPrimitiveShadingRateKHR) {
+                            primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
                         }
                     }
-
-                    insn++;
+                } else if (insn.opcode() == spv::OpDecorate) {
+                    if (insn.word(2) == spv::DecorationBuiltIn) {
+                        if (insn.word(3) == spv::BuiltInPrimitiveShadingRateKHR) {
+                            primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
+                        }
+                    }
                 }
 
-                if (primitiverate_written) {
+                insn++;
+            }
+            if (primitiverate_written) {
+                pipeline_state->wrote_primitive_shading_rate.insert(stage->stage);
+            }
+        }
+    }
+}
+
+bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE *pipeline, const CMD_BUFFER_STATE *pCB,
+                                                            const char *caller, const DrawDispatchVuid &vuid) const {
+    auto create_info = pipeline->graphicsPipelineCI.ptr();
+    bool skip = false;
+
+    for (uint32_t i = 0; i < create_info->stageCount; i++) {
+        auto stage = &create_info->pStages[i];
+        if (stage->stage == VK_SHADER_STAGE_VERTEX_BIT || stage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
+            stage->stage == VK_SHADER_STAGE_MESH_BIT_NV) {
+            if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
+                IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
+                if (pipeline->wrote_primitive_shading_rate.find(stage->stage) != pipeline->wrote_primitive_shading_rate.end()) {
                     skip |=
                         LogError(pipeline->pipeline, vuid.viewport_count_primitive_shading_rate,
                                  "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
