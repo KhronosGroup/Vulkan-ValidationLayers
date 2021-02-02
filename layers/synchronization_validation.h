@@ -464,9 +464,14 @@ struct SyncImageMemoryBarrier {
 
 class SyncOpBase {
   public:
-    SyncOpBase() {}
+    SyncOpBase() : cmd_(CMD_NONE) {}
+    SyncOpBase(CMD_TYPE cmd) : cmd_(cmd) {}
+    const char *CmdName() const { return CommandTypeString(cmd_); }
     virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
-    virtual void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const = 0;
+    virtual void Record(CommandBufferAccessContext *cb_context) const = 0;
+
+  protected:
+    CMD_TYPE cmd_;
 };
 
 class SyncOpBarriers : public SyncOpBase {
@@ -478,7 +483,7 @@ class SyncOpBarriers : public SyncOpBase {
     static void ApplyGlobalBarriers(const Barriers &barriers, const FunctorFactory &factory, const ResourceUsageTag &tag,
                                     AccessContext *access_context);
 
-    SyncOpBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
+    SyncOpBarriers(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
                    VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
                    const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                    const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
@@ -504,24 +509,24 @@ class SyncOpBarriers : public SyncOpBase {
 
 class SyncOpPipelineBarrier : public SyncOpBarriers {
   public:
-    SyncOpPipelineBarrier(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
-                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                          const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+    SyncOpPipelineBarrier(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+                          VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                           const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                           const VkImageMemoryBarrier *pImageMemoryBarriers);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+    void Record(CommandBufferAccessContext *cb_context) const override;
 };
 
 class SyncOpWaitEvents : public SyncOpBarriers {
   public:
-    SyncOpWaitEvents(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount, const VkEvent *pEvents,
-                     VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                     const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+    SyncOpWaitEvents(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
+                     const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                     uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                      const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                      const VkImageMemoryBarrier *pImageMemoryBarriers);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+    void Record(CommandBufferAccessContext *cb_context) const override;
 
   protected:
     // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
@@ -532,9 +537,10 @@ class SyncOpWaitEvents : public SyncOpBarriers {
 
 class SyncOpResetEvent : public SyncOpBase {
   public:
-    SyncOpResetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event, VkPipelineStageFlags stageMask);
+    SyncOpResetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+                     VkPipelineStageFlags stageMask);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+    void Record(CommandBufferAccessContext *cb_context) const override;
 
   private:
     std::shared_ptr<const EVENT_STATE> event_;
@@ -543,9 +549,10 @@ class SyncOpResetEvent : public SyncOpBase {
 
 class SyncOpSetEvent : public SyncOpBase {
   public:
-    SyncOpSetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event, VkPipelineStageFlags stageMask);
+    SyncOpSetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+                   VkPipelineStageFlags stageMask);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const override;
+    void Record(CommandBufferAccessContext *cb_context) const override;
 
   private:
     std::shared_ptr<const EVENT_STATE> event_;

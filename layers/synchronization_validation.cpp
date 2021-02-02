@@ -3341,9 +3341,10 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     assert(cb_access_context);
     if (!cb_access_context) return skip;
 
-    SyncOpPipelineBarrier pipeline_barrier(*this, cb_access_context->GetQueueFlags(), srcStageMask, dstStageMask, dependencyFlags,
-                                           memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                           imageMemoryBarrierCount, pImageMemoryBarriers);
+    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(), srcStageMask,
+                                           dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
+                                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                           pImageMemoryBarriers);
     skip = pipeline_barrier.Validate(*cb_access_context);
     return skip;
 }
@@ -3359,10 +3360,11 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffe
     assert(cb_access_context);
     if (!cb_access_context) return;
 
-    SyncOpPipelineBarrier pipeline_barrier(*this, cb_access_context->GetQueueFlags(), srcStageMask, dstStageMask, dependencyFlags,
-                                           memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                           imageMemoryBarrierCount, pImageMemoryBarriers);
-    pipeline_barrier.Record(cb_access_context, cb_access_context->NextCommandTag(CMD_PIPELINEBARRIER));
+    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(), srcStageMask,
+                                           dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
+                                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                           pImageMemoryBarriers);
+    pipeline_barrier.Record(cb_access_context);
 }
 
 void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
@@ -4812,7 +4814,7 @@ bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     assert(cb_context);
     if (!cb_context) return skip;
 
-    SyncOpSetEvent set_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
+    SyncOpSetEvent set_event_op(CMD_SETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
     return set_event_op.Validate(*cb_context);
 }
 
@@ -4821,9 +4823,8 @@ void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkE
     auto *cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
     if (!cb_context) return;
-    SyncOpSetEvent set_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
-    const auto tag = cb_context->NextCommandTag(CMD_SETEVENT);
-    set_event_op.Record(cb_context, tag);
+    SyncOpSetEvent set_event_op(CMD_SETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
+    set_event_op.Record(cb_context);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
@@ -4833,7 +4834,7 @@ bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
     assert(cb_context);
     if (!cb_context) return skip;
 
-    SyncOpResetEvent reset_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
+    SyncOpResetEvent reset_event_op(CMD_RESETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
     return reset_event_op.Validate(*cb_context);
 }
 
@@ -4843,9 +4844,8 @@ void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, V
     assert(cb_context);
     if (!cb_context) return;
 
-    const auto tag = cb_context->NextCommandTag(CMD_RESETEVENT);
-    SyncOpResetEvent reset_event_op(*this, cb_context->GetQueueFlags(), event, stageMask);
-    reset_event_op.Record(cb_context, tag);
+    SyncOpResetEvent reset_event_op(CMD_RESETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
+    reset_event_op.Record(cb_context);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -4860,9 +4860,9 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
     assert(cb_context);
     if (!cb_context) return skip;
 
-    SyncOpWaitEvents wait_events_op(*this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask,
-                                    memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                    imageMemoryBarrierCount, pImageMemoryBarriers);
+    SyncOpWaitEvents wait_events_op(CMD_WAITEVENTS, *this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask,
+                                    dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
     return wait_events_op.Validate(*cb_context);
 }
 
@@ -4881,11 +4881,10 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
     assert(cb_context);
     if (!cb_context) return;
 
-    const auto tag = cb_context->NextCommandTag(CMD_WAITEVENTS);
-    SyncOpWaitEvents wait_events_op(*this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask,
-                                    memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                    imageMemoryBarrierCount, pImageMemoryBarriers);
-    return wait_events_op.Record(cb_context, tag);
+    SyncOpWaitEvents wait_events_op(CMD_WAITEVENTS, *this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask,
+                                    dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    return wait_events_op.Record(cb_context);
 }
 
 void SyncEventState::ResetFirstScope() {
@@ -4917,12 +4916,14 @@ bool SyncEventState::HasBarrier(VkPipelineStageFlags stageMask, VkPipelineStageF
     return has_barrier;
 }
 
-SyncOpBarriers::SyncOpBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
-                               VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
+SyncOpBarriers::SyncOpBarriers(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+                               VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                               VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
                                const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                                const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                                const VkImageMemoryBarrier *pImageMemoryBarriers)
-    : dependency_flags_(dependencyFlags),
+    : SyncOpBase(cmd),
+      dependency_flags_(dependencyFlags),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, srcStageMask)),
       dst_exec_scope_(SyncExecScope::MakeDst(queue_flags, dstStageMask)) {
     // Translate the API parameters into structures SyncVal understands directly, and dehandle for safer/faster replay.
@@ -4933,13 +4934,13 @@ SyncOpBarriers::SyncOpBarriers(const SyncValidator &sync_state, VkQueueFlags que
                             pImageMemoryBarriers);
 }
 
-SyncOpPipelineBarrier::SyncOpPipelineBarrier(const SyncValidator &sync_state, VkQueueFlags queue_flags,
+SyncOpPipelineBarrier::SyncOpPipelineBarrier(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                              VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                              VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
                                              const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                                              const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                                              const VkImageMemoryBarrier *pImageMemoryBarriers)
-    : SyncOpBarriers(sync_state, queue_flags, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
+    : SyncOpBarriers(cmd, sync_state, queue_flags, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
                      bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers) {}
 
 bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_context) const {
@@ -5030,9 +5031,10 @@ void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const Functor
     }
 }
 
-void SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const {
+void SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) const {
     SyncOpPipelineBarrierFunctorFactory factory;
     auto *access_context = cb_context->GetCurrentAccessContext();
+    const auto tag = cb_context->NextCommandTag(cmd_);
     ApplyBarriers(buffer_memory_barriers_, factory, tag, access_context);
     ApplyBarriers(image_memory_barriers_, factory, tag, access_context);
     ApplyGlobalBarriers(memory_barriers_, factory, tag, access_context);
@@ -5091,29 +5093,27 @@ void SyncOpBarriers::MakeImageMemoryBarriers(const SyncValidator &sync_state, co
     }
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
+SyncOpWaitEvents::SyncOpWaitEvents(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
                                    const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                    uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers)
-    : SyncOpBarriers(sync_state, queue_flags, srcStageMask, dstStageMask, VkDependencyFlags(0U), memoryBarrierCount,
+    : SyncOpBarriers(cmd, sync_state, queue_flags, srcStageMask, dstStageMask, VkDependencyFlags(0U), memoryBarrierCount,
                      pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                      pImageMemoryBarriers) {
     MakeEventsList(sync_state, eventCount, pEvents);
 }
 
 bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) const {
-    const auto cmd = CMD_WAITEVENTS;
     const char *const ignored = "Wait operation is ignored for this event.";
     bool skip = false;
     const auto &sync_state = cb_context.GetSyncState();
     const auto command_buffer_handle = cb_context.GetCBState().commandBuffer;
 
     if (src_exec_scope_.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
-        const char *const cmd_name = CommandTypeString(cmd);
         const char *const vuid = "SYNC-vkCmdWaitEvents-hostevent-unsupported";
         skip = sync_state.LogInfo(command_buffer_handle, vuid,
-                                  "%s, srcStageMask includes %s, unsupported by synchronization validaton.", cmd_name,
+                                  "%s, srcStageMask includes %s, unsupported by synchronization validaton.", CmdName(),
                                   string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), ignored);
     }
 
@@ -5139,37 +5139,37 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
         if (ignore_reason) {
             switch (ignore_reason) {
                 case SyncEventState::ResetWaitRace: {
-                    const char *const cmd_name = CommandTypeString(cmd);
                     const char *const vuid = "SYNC-vkCmdWaitEvents-missingbarrier-reset";
                     const char *const message =
                         "%s: %s %s operation following %s without intervening execution barrier, may cause race condition. %s";
-                    skip |= sync_state.LogError(event, vuid, message, cmd_name, sync_state.report_data->FormatHandle(event).c_str(),
-                                                cmd_name, CommandTypeString(sync_event->last_command), ignored);
+                    skip |=
+                        sync_state.LogError(event, vuid, message, CmdName(), sync_state.report_data->FormatHandle(event).c_str(),
+                                            CmdName(), CommandTypeString(sync_event->last_command), ignored);
                     break;
                 }
                 case SyncEventState::SetRace: {
                     // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for this
                     // event
-                    const char *const cmd_name = CommandTypeString(cmd);
                     const char *const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
                     const char *const message =
                         "%s: %s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
                     const char *const reason = "First synchronization scope is undefined.";
-                    skip |= sync_state.LogError(event, vuid, message, cmd_name, sync_state.report_data->FormatHandle(event).c_str(),
-                                                CommandTypeString(sync_event->last_command), reason, ignored);
+                    skip |=
+                        sync_state.LogError(event, vuid, message, CmdName(), sync_state.report_data->FormatHandle(event).c_str(),
+                                            CommandTypeString(sync_event->last_command), reason, ignored);
                     break;
                 }
                 case SyncEventState::MissingStageBits: {
                     const VkPipelineStageFlags missing_bits = sync_event->scope.mask_param & ~src_exec_scope_.mask_param;
                     // Issue error message that event waited for is not in wait events scope
-                    const char *const cmd_name = CommandTypeString(cmd);
                     const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
                     const char *const message =
                         "%s: %s stageMask 0x%" PRIx32 " includes bits not present in srcStageMask 0x%" PRIx32
                         ". Bits missing from srcStageMask %s. %s";
-                    skip |= sync_state.LogError(event, vuid, message, cmd_name, sync_state.report_data->FormatHandle(event).c_str(),
-                                                sync_event->scope.mask_param, src_exec_scope_.mask_param,
-                                                string_VkPipelineStageFlags(missing_bits).c_str(), ignored);
+                    skip |=
+                        sync_state.LogError(event, vuid, message, CmdName(), sync_state.report_data->FormatHandle(event).c_str(),
+                                            sync_event->scope.mask_param, src_exec_scope_.mask_param,
+                                            string_VkPipelineStageFlags(missing_bits).c_str(), ignored);
                     break;
                 }
                 default:
@@ -5188,9 +5188,8 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
                     context->DetectImageBarrierHazard(*image_state, sync_event->scope.exec_scope, src_access_scope,
                                                       subresource_range, *sync_event, AccessContext::DetectOptions::kDetectAll);
                 if (hazard.hazard) {
-                    const char *const cmd_name = CommandTypeString(cmd);
                     skip |= sync_state.LogError(image_state->image, string_SyncHazardVUID(hazard.hazard),
-                                                "%s: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.", cmd_name,
+                                                "%s: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.", CmdName(),
                                                 string_SyncHazard(hazard.hazard), image_memory_barrier.index,
                                                 sync_state.report_data->FormatHandle(image_state->image).c_str(),
                                                 cb_context.FormatUsage(hazard).c_str());
@@ -5204,16 +5203,15 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
     const auto extra_stage_bits = (src_exec_scope_.mask_param & ~VK_PIPELINE_STAGE_HOST_BIT) & ~event_stage_masks;
     if (extra_stage_bits) {
         // Issue error message that event waited for is not in wait events scope
-        const char *const cmd_name = CommandTypeString(cmd);
         const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
         const char *const message =
             "%s: srcStageMask 0x%" PRIx32 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         if (events_not_found) {
-            skip |= sync_state.LogInfo(command_buffer_handle, vuid, message, cmd_name, src_exec_scope_.mask_param,
+            skip |= sync_state.LogInfo(command_buffer_handle, vuid, message, CmdName(), src_exec_scope_.mask_param,
                                        string_VkPipelineStageFlags(extra_stage_bits).c_str(),
                                        " vkCmdSetEvent may be in previously submitted command buffer.");
         } else {
-            skip |= sync_state.LogError(command_buffer_handle, vuid, message, cmd_name, src_exec_scope_.mask_param,
+            skip |= sync_state.LogError(command_buffer_handle, vuid, message, CmdName(), src_exec_scope_.mask_param,
                                         string_VkPipelineStageFlags(extra_stage_bits).c_str(), "");
         }
     }
@@ -5272,7 +5270,8 @@ struct SyncOpWaitEventsFunctorFactory {
     SyncEventState *sync_event;
 };
 
-void SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const {
+void SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) const {
+    const auto tag = cb_context->NextCommandTag(cmd_);
     auto *access_context = cb_context->GetCurrentAccessContext();
     assert(access_context);
     if (!access_context) return;
@@ -5325,12 +5324,13 @@ void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t 
     }
 }
 
-SyncOpResetEvent::SyncOpResetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+SyncOpResetEvent::SyncOpResetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                    VkPipelineStageFlags stageMask)
-    : event_(sync_state.GetShared<EVENT_STATE>(event)), exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
+    : SyncOpBase(cmd),
+      event_(sync_state.GetShared<EVENT_STATE>(event)),
+      exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
 bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
-    const auto cmd = CMD_RESETEVENT;
     auto *events_context = cb_context.GetCurrentEventsContext();
     assert(events_context);
     bool skip = false;
@@ -5362,18 +5362,15 @@ bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) co
                 break;
         }
         if (vuid) {
-            const char *const cmd_name = CommandTypeString(cmd);
-            skip |= sync_state.LogError(event_->event, vuid, message, cmd_name,
-                                        sync_state.report_data->FormatHandle(event_->event).c_str(), cmd_name,
+            skip |= sync_state.LogError(event_->event, vuid, message, CmdName(),
+                                        sync_state.report_data->FormatHandle(event_->event).c_str(), CmdName(),
                                         CommandTypeString(sync_event->last_command));
         }
     }
     return skip;
 }
 
-void SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const {
-    const auto cmd = CMD_RESETEVENT;
-
+void SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) const {
     auto *events_context = cb_context->GetCurrentEventsContext();
     assert(events_context);
     if (!events_context) return;
@@ -5382,19 +5379,20 @@ void SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context, const Reso
     if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // Update the event state
-    sync_event->last_command = cmd;
+    sync_event->last_command = cmd_;
     sync_event->unsynchronized_set = CMD_NONE;
     sync_event->ResetFirstScope();
     sync_event->barriers = 0U;
 }
 
-SyncOpSetEvent::SyncOpSetEvent(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+SyncOpSetEvent::SyncOpSetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                VkPipelineStageFlags stageMask)
-    : event_(sync_state.GetShared<EVENT_STATE>(event)), src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
+    : SyncOpBase(cmd),
+      event_(sync_state.GetShared<EVENT_STATE>(event)),
+      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
 bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
     // I'll put this here just in case we need to pass this in for future extension support
-    const auto cmd = CMD_SETEVENT;
     bool skip = false;
 
     const auto &sync_state = cb_context.GetSyncState();
@@ -5437,9 +5435,8 @@ bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) cons
         }
         if (vuid) {
             assert(nullptr != message);
-            const char *const cmd_name = CommandTypeString(cmd);
-            skip |= sync_state.LogError(event_->event, vuid, message, cmd_name,
-                                        sync_state.report_data->FormatHandle(event_->event).c_str(), cmd_name,
+            skip |= sync_state.LogError(event_->event, vuid, message, CmdName(),
+                                        sync_state.report_data->FormatHandle(event_->event).c_str(), CmdName(),
                                         CommandTypeString(sync_event->last_command));
         }
     }
@@ -5447,7 +5444,8 @@ bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) cons
     return skip;
 }
 
-void SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context, const ResourceUsageTag &tag) const {
+void SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) const {
+    const auto tag = cb_context->NextCommandTag(cmd_);
     auto *events_context = cb_context->GetCurrentEventsContext();
     auto *access_context = cb_context->GetCurrentAccessContext();
     assert(events_context);
