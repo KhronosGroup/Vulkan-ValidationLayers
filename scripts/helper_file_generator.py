@@ -273,7 +273,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                         if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
                             item_name = elem.get('name')
                             self.core_object_types.append(item_name)
-        elif self.helper_file_type == 'synchronization_helper_header':
+        elif self.helper_file_type == 'synchronization_helper_header' or self.helper_file_type == 'synchronization_helper_source':
             if groupName in sync_val_gen.sync_enum_types:
                 self.sync_enum[groupName] = []
                 for elem in groupElem.findall('enum'):
@@ -1876,7 +1876,10 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
     #
     # Generate the type map
     def GenerateSyncHelperHeader(self):
-        return sync_val_gen.GenSyncTypeHelper(self)
+        return sync_val_gen.GenSyncTypeHelper(self, False)
+
+    def GenerateSyncHelperSource(self):
+        return sync_val_gen.GenSyncTypeHelper(self, True)
 
     #
     # Create a helper file and return it as a string
@@ -1895,6 +1898,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             return self.GenerateTypeMapHelperHeader()
         elif self.helper_file_type == 'synchronization_helper_header':
             return self.GenerateSyncHelperHeader()
+        elif self.helper_file_type == 'synchronization_helper_source':
+            return self.GenerateSyncHelperSource()
         elif self.helper_file_type == 'optick_instrumentation_header':
             return self.GenerateCcOptickInstrumentationHelperHeader()
         elif self.helper_file_type == 'optick_instrumentation_source':

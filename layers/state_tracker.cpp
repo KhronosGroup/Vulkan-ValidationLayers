@@ -1922,6 +1922,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.shader_clock_feature = *shader_clock_feature;
     }
 
+    const auto *conditional_rendering_features =
+        LvlFindInChain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(pCreateInfo->pNext);
+    if (conditional_rendering_features) {
+        state_tracker->enabled_features.conditional_rendering = *conditional_rendering_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);

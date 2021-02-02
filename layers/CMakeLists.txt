@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2020 Valve Corporation
-# Copyright (c) 2014-2020 LunarG, Inc.
+# Copyright (c) 2014-2021 Valve Corporation
+# Copyright (c) 2014-2021 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -179,7 +179,9 @@ set(CHASSIS_LIBRARY_FILES
     range_vector.h
     vk_layer_settings_ext.h
     subresource_adapter.cpp
-    subresource_adapter.h)
+    subresource_adapter.h
+    sync_utils.cpp
+    sync_utils.h)
 
 set(CORE_VALIDATION_LIBRARY_FILES
     core_validation.cpp
@@ -195,6 +197,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     shader_validation.cpp
     shader_validation.h
     generated/spirv_validation_helper.cpp
+    generated/synchronization_validation_types.cpp
     gpu_validation.cpp
     generated/corechecks_optick_instrumentation.cpp
     xxhash.c)

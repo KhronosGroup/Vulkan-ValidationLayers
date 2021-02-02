@@ -23,6 +23,7 @@
 
 #include "parameter_name.h"
 #include "vk_typemap_helper.h"
+#include "sync_utils.h"
 
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
@@ -871,27 +872,12 @@ class StatelessValidation : public ValidationObject {
     bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const RenderPassCreateInfoGeneric *pCreateInfo,
                                       uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags stages, const char *vuid,
                                       const char *target, const char *func_name) const {
-        const VkPipelineStageFlags kCommonStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        const VkPipelineStageFlags kFramebufferStages =
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        const VkPipelineStageFlags kPrimitiveShadingPipelineStages =
-            kCommonStages | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
-            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-            VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-            VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV | kFramebufferStages;
-        const VkPipelineStageFlags kMeshShadingPipelineStages =
-            kCommonStages | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV |
-            VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV | kFramebufferStages;
-        const VkPipelineStageFlags kFragmentDensityStages = VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
-        const VkPipelineStageFlags kConditionalRenderingStages = VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
-        const VkPipelineStageFlags kCommandProcessingPipelineStages = kCommonStages | VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV;
-
-        const VkPipelineStageFlags kGraphicsStages = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | kPrimitiveShadingPipelineStages |
-                                                     kMeshShadingPipelineStages | kFragmentDensityStages |
-                                                     kConditionalRenderingStages | kCommandProcessingPipelineStages;
-
         bool skip = false;
+        // make sure we consider all of the expanded and un-expanded graphics bits to be valid
+        const auto kExcludeStages = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        const auto kGraphicsStages = (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) |
+                                      VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) &
+                                     ~kExcludeStages;
 
         const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
             if (subpass == VK_SUBPASS_EXTERNAL)
