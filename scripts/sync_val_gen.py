@@ -660,9 +660,18 @@ def BitSuffixed(name):
 
  # Create the stage/access combination from the legal uses of access with stages
 def CreateStageAccessCombinations(config, stage_order, stage_access_types):
-    index = 0;
+    index = 1;
     enum_prefix = config['enum_prefix']
     stage_accesses = []
+    none_stage_access = enum_prefix + 'ACCESS_INDEX_NONE'
+    stage_accesses.append({
+                    'stage_access': none_stage_access,
+                    'stage_access_string' : '"' + none_stage_access + '"',
+                    'stage_access_bit': None,
+                    'index': 0,
+                    'stage': 'VK_PIPELINE_STAGE_2_NONE_KHR',
+                    'access': 'VK_ACCESS_2_NONE_KHR',
+                    'is_read': None}) #tri-state logic hack...
     for stage in stage_order:
         mini_stage = stage.lstrip()
         if mini_stage.startswith(enum_prefix):
@@ -731,14 +740,14 @@ def StageAccessEnums(stage_accesses, config):
     # The stage/access combinations as bit mask
     output.append('// Unique bit for each  stage/access combination')
     if not config['is_source']:
-        output.extend([ '{}static const {} {} = ({}(1) << {});'.format('', sync_mask_name, e['stage_access_bit'], sync_mask_name, e['stage_access'])  for e in stage_accesses])
+        output.extend([ '{}static const {} {} = ({}(1) << {});'.format('', sync_mask_name, e['stage_access_bit'], sync_mask_name, e['stage_access'])  for e in stage_accesses if e['stage_access_bit'] is not None])
     output.append('')
 
     map_name = var_prefix + 'StageAccessIndexByStageAccessBit'
     output.append('// Map of the StageAccessIndices from the StageAccess Bit')
     if config['is_source']:
         output.append('const std::unordered_map<{}, {}> {}  = {{'.format(sync_mask_name, ordinal_name, map_name))
-        output.extend([ '{}{{ {}, {} }},'.format(indent, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses])
+        output.extend([ '{}{{ {}, {} }},'.format(indent, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses if e['stage_access_bit'] is not None])
         output.append('};')
     else:
         output.append('extern const std::unordered_map<{}, {}> {};'.format(sync_mask_name, ordinal_name, map_name))
@@ -760,11 +769,14 @@ def StageAccessEnums(stage_accesses, config):
     if config['is_source']:
         output.append('const std::array<{}, {}> {} {{ {{'.format(sa_info_type, len(stage_accesses), sa_info_var))
         fields_format ='{tab}{tab}{}'
-        fields = ['stage_access_string', 'stage', 'access', 'stage_access', 'stage_access_bit']
+        fields = ['stage_access_string', 'stage', 'access', 'stage_access']
         for entry in stage_accesses:
             output.append(indent+'{')
-            output.append (',\n'.join([fields_format.format(entry[field], tab=indent)  for field in fields]))
-            output.append('\n' + indent +'},')
+            for field in fields:
+                output.append(fields_format.format(entry[field], tab=indent) + ',')
+            bit = entry['stage_access_bit']
+            output.append(fields_format.format(bit if bit is not None else "SyncStageAccessFlags(0)", tab=indent))
+            output.append(indent +'},')
         output.append('} };')
     else:
         output.append('extern const std::array<{}, {}> {};'.format(sa_info_type, len(stage_accesses), sa_info_var))
@@ -882,14 +894,15 @@ def GenerateStaticMask(name, desc, bits, config):
     if not config['is_source']:
         variable_format = 'static const {sync_mask_name} {var_prefix}StageAccess{}Mask = ( //  {}'
         output = [variable_format.format(name, desc, **config)]
-        output.append(config['indent'] + sep.join(bits))
+        output.append(config['indent'] + sep.join([b for b in bits if b is not None]))
         output.extend([');', ''])
         return output
     return []
 
 def ReadWriteMasks(stage_access_combinations, config):
-    read_list = [ e['stage_access_bit'] for e in stage_access_combinations if e['is_read']  == 'true']
-    write_list = [ e['stage_access_bit'] for e in stage_access_combinations if e['is_read'] != 'true']
+    # tri-state logic hack to keep the NONE stage access index out of these masks.
+    read_list = [ e['stage_access_bit'] for e in stage_access_combinations if e['is_read']  == 'true' and e['is_read'] is not None]
+    write_list = [ e['stage_access_bit'] for e in stage_access_combinations if e['is_read'] != 'true' and e['is_read'] is not None]
     output = ['// Constants defining the mask of all read and write stage_access states']
     output.extend(GenerateStaticMask('Read',  'Mask of all read StageAccess bits', read_list, config))
     output.extend(GenerateStaticMask('Write',  'Mask of all write StageAccess bits', write_list, config))
