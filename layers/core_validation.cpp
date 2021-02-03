@@ -14279,6 +14279,13 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
     skip |= ValidateCmd(cb_state, CMD_COPYACCELERATIONSTRUCTURETOMEMORYKHR, "vkCmdCopyAccelerationStructureToMemoryKHR()");
     skip |= InsideRenderPass(cb_state, "vkCmdCopyAccelerationStructureToMemoryKHR()",
                              "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-renderpass");
+
+    const auto *accel_state = GetAccelerationStructureStateKHR(pInfo->src);
+    if (accel_state) {
+        const auto *buffer_state = GetBufferState(accel_state->create_infoKHR.buffer);
+        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdCopyAccelerationStructureToMemoryKHR",
+                                              "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
+    }
     return skip;
 }
 
