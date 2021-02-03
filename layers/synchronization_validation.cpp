@@ -5099,7 +5099,7 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
     assert(context);
     if (!context) return skip;
     // Validate Image Layout transitions
-    for (const auto image_barrier : image_memory_barriers_) {
+    for (const auto &image_barrier : image_memory_barriers_) {
         if (image_barrier.new_layout == image_barrier.old_layout) continue;  // Only interested in layout transitions at this point.
         const auto *image_state = image_barrier.image.get();
         if (!image_state) continue;

@@ -7662,8 +7662,6 @@ bool CoreChecks::ValidateEventStageMask(const ValidationStateTracker *state_data
     return skip;
 }
 
-static const VkQueueFlagBits kQueueTypeArray[] = {VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT};
-
 bool CoreChecks::CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask,
                                                   VkQueueFlags queue_flags, const char *function, const char *src_or_dest,
                                                   const char *error_code) const {

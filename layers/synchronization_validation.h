@@ -235,6 +235,7 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags exec_scope;
         SyncStageAccessFlags access_scope;
         OrderingBarrier() = default;
+        OrderingBarrier(VkPipelineStageFlags es, SyncStageAccessFlags as) : exec_scope(es), access_scope(as) {}
         OrderingBarrier &operator=(const OrderingBarrier &) = default;
     };
     using OrderingBarriers = std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)>;
