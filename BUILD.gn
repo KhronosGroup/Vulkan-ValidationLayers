@@ -53,8 +53,13 @@ config("vulkan_internal_config") {
     "API_NAME=\"Vulkan\"",
     "VK_ENABLE_BETA_EXTENSIONS",
   ]
+
+  cflags = []
   if (is_clang || !is_win) {
-    cflags = [ "-Wno-unused-function" ]
+    cflags += [ "-Wno-unused-function" ]
+  }
+  if (is_clang && is_mac) {
+    cflags += [ "-Wno-unguarded-availability-new" ]
   }
   if (is_linux) {
     defines += [
