@@ -1367,7 +1367,18 @@ VkFormatFeatureFlags ValidationStateTracker::GetPotentialFormatFeatures(VkFormat
             VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
                                                                         nullptr};
             format_properties_2.pNext = (void *)&drm_properties_list;
+
+            // First call is to get the number of modifiers compatible with the queried format
             DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &format_properties_2);
+
+            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
+            drm_properties.resize(drm_properties_list.drmFormatModifierCount);
+            drm_properties_list.pDrmFormatModifierProperties = drm_properties.data();
+
+            // Second call, now with an allocated array in pDrmFormatModifierProperties, is to get the modifiers
+            // compatible with the queried format
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &format_properties_2);
+
             for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
                 format_features |= drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
             }
