@@ -7587,7 +7587,7 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
         }
 
         if (image_data) {
-            skip |= ValidateMemoryIsBoundToImage(image_data, funcName, "VUID-VkBufferMemoryBarrier-buffer-01931");
+            skip |= ValidateMemoryIsBoundToImage(image_data, funcName, "VUID-VkImageMemoryBarrier-image-01932");
 
             const auto aspect_mask = mem_barrier.subresourceRange.aspectMask;
             skip |= ValidateImageAspectMask(image_data->image, image_data->createInfo.format, aspect_mask, funcName);
