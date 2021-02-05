@@ -26,11 +26,15 @@
 #include "synchronization_validation.h"
 #include "sync_utils.h"
 
+static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
+
 const static std::array<AccessAddressType, static_cast<size_t>(AccessAddressType::kTypeCount)> kAddressTypes = {
     AccessAddressType::kLinear, AccessAddressType::kIdealized};
 
 static constexpr AccessAddressType GetAccessAddressType(const BUFFER_STATE &) { return AccessAddressType::kLinear; };
-static AccessAddressType GetAccessAddressType(const IMAGE_STATE &image) { return AccessContext::ImageAddressType(image); }
+static AccessAddressType GetAccessAddressType(const IMAGE_STATE &image) {
+    return SimpleBinding(image) ? AccessContext::ImageAddressType(image) : AccessAddressType::kIdealized;
+}
 
 static const char *string_SyncHazardVUID(SyncHazard hazard) {
     switch (hazard) {
@@ -215,8 +219,6 @@ static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, Re
 static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) {
     return bindable.binding.offset + bindable.binding.mem_state->fake_base_address;
 }
-
-static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
 
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
     if (size == VK_WHOLE_SIZE) {
@@ -5144,7 +5146,7 @@ struct SyncOpPipelineBarrierFunctorFactory {
         return (range + base_address);
     }
     ImageRange MakeRangeGen(const IMAGE_STATE &image, const SyncImageMemoryBarrier::SubImageRange &range) const {
-        if (!SimpleBinding(image)) subresource_adapter::ImageRangeGenerator();
+        if (!SimpleBinding(image)) return subresource_adapter::ImageRangeGenerator();
 
         const auto base_address = ResourceBaseAddress(image);
         subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), range.subresource_range, range.offset,
