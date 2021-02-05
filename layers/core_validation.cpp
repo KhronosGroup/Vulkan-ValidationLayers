@@ -2912,11 +2912,14 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
                                                                          : "VUID-vkQueueSubmit-pWaitSemaphores-00069";
 
     for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
-        skip |=
-            ValidateStageMaskGsTsEnables(submit->pWaitDstStageMask[i], "vkQueueSubmit()",
-                                         "VUID-VkSubmitInfo-pWaitDstStageMask-00076", "VUID-VkSubmitInfo-pWaitDstStageMask-00077",
-                                         "VUID-VkSubmitInfo-pWaitDstStageMask-02089", "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
-        skip |= ValidateStageMaskHost(submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
+        if (submit->pWaitDstStageMask) {
+            skip |= ValidateStageMaskGsTsEnables(
+                submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00076",
+                "VUID-VkSubmitInfo-pWaitDstStageMask-00077", "VUID-VkSubmitInfo-pWaitDstStageMask-02089",
+                "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
+            skip |=
+                ValidateStageMaskHost(submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
+        }
         VkSemaphore semaphore = submit->pWaitSemaphores[i];
         const auto *semaphore_state = GetSemaphoreState(semaphore);
         if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE && !timeline_semaphore_submit_info) {
