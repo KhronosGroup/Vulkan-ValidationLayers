@@ -248,6 +248,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitViewport();
     bool InitSurface();
     bool InitSurface(float width, float height);
+    void InitSwapchainInfo();
     bool InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     bool InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -305,8 +306,14 @@ class VkRenderFramework : public VkTestFramework {
     VkFramebufferCreateInfo m_framebuffer_info;
     std::vector<VkImageView> m_framebuffer_attachments;
 
+    // WSI items
     VkSurfaceKHR m_surface;
     VkSwapchainKHR m_swapchain;
+    VkSurfaceCapabilitiesKHR m_surface_capabilities;
+    std::vector<VkSurfaceFormatKHR> m_surface_formats;
+    std::vector<VkPresentModeKHR> m_surface_present_modes;
+    VkCompositeAlphaFlagBitsKHR m_surface_composite_alpha;
+
     std::vector<VkViewport> m_viewports;
     std::vector<VkRect2D> m_scissors;
     float m_lineWidth;
