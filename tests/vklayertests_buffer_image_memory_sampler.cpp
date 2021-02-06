@@ -12548,44 +12548,22 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
         return;
     }
-
-    VkSurfaceCapabilitiesKHR capabilities;
-    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), m_surface, &capabilities);
-
-    uint32_t format_count;
-    vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, nullptr);
-    vector<VkSurfaceFormatKHR> formats;
-    if (format_count != 0) {
-        formats.resize(format_count);
-        vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, formats.data());
-    }
-
-    uint32_t present_mode_count;
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, nullptr);
-    vector<VkPresentModeKHR> present_modes;
-    if (present_mode_count != 0) {
-        present_modes.resize(present_mode_count);
-        vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, present_modes.data());
-    }
+    InitSwapchainInfo();
 
     VkSwapchainCreateInfoKHR good_create_info = {};
     good_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     good_create_info.pNext = 0;
     good_create_info.surface = m_surface;
-    good_create_info.minImageCount = capabilities.minImageCount;
-    good_create_info.imageFormat = formats[0].format;
-    good_create_info.imageColorSpace = formats[0].colorSpace;
-    good_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
+    good_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    good_create_info.imageFormat = m_surface_formats[0].format;
+    good_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    good_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
     good_create_info.imageArrayLayers = 1;
     good_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     good_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     good_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    good_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
-#else
-    good_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-#endif
-    good_create_info.presentMode = present_modes[0];
+    good_create_info.compositeAlpha = m_surface_composite_alpha;
+    good_create_info.presentMode = m_surface_present_modes[0];
     good_create_info.clipped = VK_FALSE;
     good_create_info.oldSwapchain = 0;
 
@@ -12601,15 +12579,15 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
     }};
 
     for (uint32_t i = 0; i < kImageUsageFlags.size() && !found_bad_usage; ++i) {
-        if ((capabilities.supportedUsageFlags & kImageUsageFlags[i]) != 0) {
-            for (uint32_t j = 0; j < format_count; ++j) {
+        if ((m_surface_capabilities.supportedUsageFlags & kImageUsageFlags[i]) != 0) {
+            for (size_t j = 0; j < m_surface_formats.size(); ++j) {
                 VkImageFormatProperties image_format_properties = {};
                 VkResult image_format_properties_result = vk::GetPhysicalDeviceImageFormatProperties(
-                    m_device->phy().handle(), formats[j].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL, kImageUsageFlags[i], 0,
-                    &image_format_properties);
+                    m_device->phy().handle(), m_surface_formats[j].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                    kImageUsageFlags[i], 0, &image_format_properties);
 
                 if (image_format_properties_result != VK_SUCCESS) {
-                    create_info_bad_usage.imageFormat = formats[j].format;
+                    create_info_bad_usage.imageFormat = m_surface_formats[j].format;
                     create_info_bad_usage.imageUsage = kImageUsageFlags[i];
                     found_bad_usage = true;
                     break;

@@ -656,6 +656,33 @@ bool VkRenderFramework::InitSurface(float width, float height) {
     return (m_surface == VK_NULL_HANDLE) ? false : true;
 }
 
+// Makes query to get information about swapchain needed to create a valid swapchain object each test creating a swapchain will need
+void VkRenderFramework::InitSwapchainInfo() {
+    const VkPhysicalDevice physicalDevice = gpu();
+
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, m_surface, &m_surface_capabilities);
+
+    uint32_t format_count;
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &format_count, nullptr);
+    if (format_count != 0) {
+        m_surface_formats.resize(format_count);
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &format_count, m_surface_formats.data());
+    }
+
+    uint32_t present_mode_count;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &present_mode_count, nullptr);
+    if (present_mode_count != 0) {
+        m_surface_present_modes.resize(present_mode_count);
+        vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &present_mode_count, m_surface_present_modes.data());
+    }
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    m_surface_composite_alpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+#else
+    m_surface_composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+#endif
+}
+
 bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform) {
     if (InitSurface()) {
         return InitSwapchain(m_surface, imageUsage, preTransform);
@@ -665,43 +692,22 @@ bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTra
 
 bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
                                       VkSurfaceTransformFlagBitsKHR preTransform) {
-    VkSurfaceCapabilitiesKHR capabilities;
-    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), surface, &capabilities);
-
-    uint32_t format_count;
-    vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, nullptr);
-    vector<VkSurfaceFormatKHR> formats;
-    if (format_count != 0) {
-        formats.resize(format_count);
-        vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, formats.data());
-    }
-
-    uint32_t present_mode_count;
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count, nullptr);
-    vector<VkPresentModeKHR> present_modes;
-    if (present_mode_count != 0) {
-        present_modes.resize(present_mode_count);
-        vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count, present_modes.data());
-    }
+    InitSwapchainInfo();
 
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchain_create_info.pNext = 0;
     swapchain_create_info.surface = surface;
-    swapchain_create_info.minImageCount = capabilities.minImageCount;
-    swapchain_create_info.imageFormat = formats[0].format;
-    swapchain_create_info.imageColorSpace = formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.preTransform = preTransform;
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
-#else
-    swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-#endif
-    swapchain_create_info.presentMode = present_modes[0];
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = m_surface_present_modes[0];
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 

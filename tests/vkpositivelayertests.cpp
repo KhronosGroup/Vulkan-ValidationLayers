@@ -9958,90 +9958,69 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSurface()) {
+        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
+        return;
+    }
+    InitSwapchainInfo();
 
-    if (InitSurface()) {
-        auto surface = m_surface;
-        VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    auto surface = m_surface;
+    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
-        VkSurfaceCapabilitiesKHR capabilities;
-        vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), surface, &capabilities);
+    VkSwapchainCreateInfoKHR swapchain_create_info = {};
+    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchain_create_info.pNext = 0;
+    swapchain_create_info.surface = surface;
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = m_surface_present_modes[0];
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
 
-        uint32_t format_count;
-        vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, nullptr);
-        vector<VkSurfaceFormatKHR> formats;
-        if (format_count != 0) {
-            formats.resize(format_count);
-            vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, formats.data());
-        }
+    swapchain_create_info.queueFamilyIndexCount = 4094967295;  // This SHOULD get ignored
+    uint32_t bogus_int = 99;
+    swapchain_create_info.pQueueFamilyIndices = &bogus_int;
 
-        uint32_t present_mode_count;
-        vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count, nullptr);
-        vector<VkPresentModeKHR> present_modes;
-        if (present_mode_count != 0) {
-            present_modes.resize(present_mode_count);
-            vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count,
-                                                        present_modes.data());
-        }
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
-        VkSwapchainCreateInfoKHR swapchain_create_info = {};
-        swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        swapchain_create_info.pNext = 0;
-        swapchain_create_info.surface = surface;
-        swapchain_create_info.minImageCount = capabilities.minImageCount;
-        swapchain_create_info.imageFormat = formats[0].format;
-        swapchain_create_info.imageColorSpace = formats[0].colorSpace;
-        swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
-        swapchain_create_info.imageArrayLayers = 1;
-        swapchain_create_info.imageUsage = imageUsage;
-        swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        swapchain_create_info.preTransform = preTransform;
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-        swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
-#else
-        swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-#endif
-        swapchain_create_info.presentMode = present_modes[0];
-        swapchain_create_info.clipped = VK_FALSE;
-        swapchain_create_info.oldSwapchain = 0;
+    // Create another device, create another swapchain, and use this one for oldSwapchain
+    // It is legal to include an 'oldSwapchain' object that is from a different device
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = {};
+    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
 
-        swapchain_create_info.queueFamilyIndexCount = 4094967295;  // This SHOULD get ignored
-        uint32_t bogus_int = 99;
-        swapchain_create_info.pQueueFamilyIndices = &bogus_int;
+    VkDeviceCreateInfo device_ci = {};
+    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
 
-        vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    VkDevice test_device;
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
 
-        // Create another device, create another swapchain, and use this one for oldSwapchain
-        // It is legal to include an 'oldSwapchain' object that is from a different device
-        const float q_priority[] = {1.0f};
-        VkDeviceQueueCreateInfo queue_ci = {};
-        queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_ci.queueFamilyIndex = 0;
-        queue_ci.queueCount = 1;
-        queue_ci.pQueuePriorities = q_priority;
+    swapchain_create_info.oldSwapchain = m_swapchain;
+    VkSwapchainKHR new_swapchain;
+    vk::CreateSwapchainKHR(test_device, &swapchain_create_info, nullptr, &new_swapchain);
 
-        VkDeviceCreateInfo device_ci = {};
-        device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        device_ci.queueCreateInfoCount = 1;
-        device_ci.pQueueCreateInfos = &queue_ci;
-        device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
-        device_ci.enabledExtensionCount = m_device_extension_names.size();
+    vk::DestroySwapchainKHR(test_device, new_swapchain, nullptr);
 
-        VkDevice test_device;
-        vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
+    vk::DestroyDevice(test_device, nullptr);
 
-        swapchain_create_info.oldSwapchain = m_swapchain;
-        VkSwapchainKHR new_swapchain;
-        vk::CreateSwapchainKHR(test_device, &swapchain_create_info, nullptr, &new_swapchain);
-
-        vk::DestroySwapchainKHR(test_device, new_swapchain, nullptr);
-
-        vk::DestroyDevice(test_device, nullptr);
-
-        if (m_surface != VK_NULL_HANDLE) {
-            vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
-            m_surface = VK_NULL_HANDLE;
-        }
+    if (m_surface != VK_NULL_HANDLE) {
+        vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
+        m_surface = VK_NULL_HANDLE;
     }
 }
 
