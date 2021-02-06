@@ -243,9 +243,10 @@ std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRende
     return std::make_pair(count, attachments);
 }
 
-std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetAttachmentViews(const VkRenderPassBeginInfo &rp_begin,
-                                                                                 const FRAMEBUFFER_STATE &fb_state) const {
-    std::vector<const IMAGE_VIEW_STATE *> views;
+template <typename ImageViewPointer, typename Get>
+std::vector<ImageViewPointer> GetAttachmentViewsImpl(const VkRenderPassBeginInfo &rp_begin, const FRAMEBUFFER_STATE &fb_state,
+                                                     const Get &get_fn) {
+    std::vector<ImageViewPointer> views;
 
     const auto count_attachment = GetFramebufferAttachments(rp_begin, fb_state);
     const auto attachment_count = count_attachment.first;
@@ -253,10 +254,22 @@ std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetAttachmentViews
     views.resize(attachment_count, nullptr);
     for (uint32_t i = 0; i < attachment_count; i++) {
         if (attachments[i] != VK_NULL_HANDLE) {
-            views[i] = Get<IMAGE_VIEW_STATE>(attachments[i]);
+            views[i] = get_fn(attachments[i]);
         }
     }
     return views;
+}
+
+std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetAttachmentViews(const VkRenderPassBeginInfo &rp_begin,
+                                                                                 const FRAMEBUFFER_STATE &fb_state) const {
+    auto get_fn = [this](VkImageView handle) { return this->Get<IMAGE_VIEW_STATE>(handle); };
+    return GetAttachmentViewsImpl<const IMAGE_VIEW_STATE *>(rp_begin, fb_state, get_fn);
+}
+
+std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::GetSharedAttachmentViews(
+    const VkRenderPassBeginInfo &rp_begin, const FRAMEBUFFER_STATE &fb_state) const {
+    auto get_fn = [this](VkImageView handle) { return this->GetShared<IMAGE_VIEW_STATE>(handle); };
+    return GetAttachmentViewsImpl<std::shared_ptr<const IMAGE_VIEW_STATE>>(rp_begin, fb_state, get_fn);
 }
 
 std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetCurrentAttachmentViews(const CMD_BUFFER_STATE &cb_state) const {
