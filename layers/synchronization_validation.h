@@ -33,6 +33,7 @@
 class AccessContext;
 class CommandBufferAccessContext;
 using CommandBufferAccessContextShared = std::shared_ptr<CommandBufferAccessContext>;
+class CommandExecutionContext;
 class ResourceAccessState;
 class SyncValidator;
 
@@ -464,14 +465,16 @@ struct SyncImageMemoryBarrier {
 
 class SyncOpBase {
   public:
-    SyncOpBase() : cmd_(CMD_NONE) {}
-    SyncOpBase(CMD_TYPE cmd) : cmd_(cmd) {}
-    const char *CmdName() const { return CommandTypeString(cmd_); }
+    SyncOpBase() : cmd_(CMD_NONE), name_override_(nullptr) {}
+    SyncOpBase(CMD_TYPE cmd, const char *name_override = nullptr) : cmd_(cmd), name_override_(name_override) {}
+    const char *CmdName() const { return name_override_ ? name_override_ : CommandTypeString(cmd_); }
     virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
     virtual void Record(CommandBufferAccessContext *cb_context) const = 0;
 
   protected:
     CMD_TYPE cmd_;
+    // Some promoted commands alias CMD_TYPE for KHR and non-KHR versions,  also callers to preserve the cmd name as needed
+    const char *name_override_;
 };
 
 class SyncOpBarriers : public SyncOpBase {
@@ -558,6 +561,45 @@ class SyncOpSetEvent : public SyncOpBase {
     std::shared_ptr<const EVENT_STATE> event_;
     SyncExecScope src_exec_scope_;
 };
+
+class SyncOpBeginRenderPass : public SyncOpBase {
+  public:
+    SyncOpBeginRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkRenderPassBeginInfo *pRenderPassBegin,
+                          const VkSubpassBeginInfo *pSubpassBeginInfo, const char *command_name = nullptr);
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context) const override;
+
+  protected:
+    safe_VkRenderPassBeginInfo renderpass_begin_info_;
+    safe_VkSubpassBeginInfo subpass_begin_info_;
+    std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> shared_attachments_;
+    std::vector<const IMAGE_VIEW_STATE *> attachments_;
+    std::shared_ptr<const RENDER_PASS_STATE> rp_state_;
+};
+
+class SyncOpNextSubpass : public SyncOpBase {
+  public:
+    SyncOpNextSubpass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                      const VkSubpassEndInfo *pSubpassEndInfo, const char *name_override = nullptr);
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context) const override;
+
+  protected:
+    safe_VkSubpassBeginInfo subpass_begin_info_;
+    safe_VkSubpassEndInfo subpass_end_info_;
+};
+
+class SyncOpEndRenderPass : public SyncOpBase {
+  public:
+    SyncOpEndRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo,
+                        const char *name_override = nullptr);
+    bool Validate(const CommandBufferAccessContext &cb_context) const override;
+    void Record(CommandBufferAccessContext *cb_context) const override;
+
+  protected:
+    safe_VkSubpassEndInfo subpass_end_info_;
+};
+
 class AccessContext {
   public:
     enum DetectOptions : uint32_t {
@@ -697,16 +739,16 @@ class AccessContext {
         }
     }
 
-    bool ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+    bool ValidateLayoutTransitions(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                    const VkRect2D &render_area, uint32_t subpass,
                                    const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name) const;
-    bool ValidateLoadOperation(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+    bool ValidateLoadOperation(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                const VkRect2D &render_area, uint32_t subpass,
                                const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name) const;
-    bool ValidateStoreOperation(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+    bool ValidateStoreOperation(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                 const VkRect2D &render_area, uint32_t subpass,
                                 const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name) const;
-    bool ValidateResolveOperations(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+    bool ValidateResolveOperations(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                    const VkRect2D &render_area, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
                                    const char *func_name, uint32_t subpass) const;
 
@@ -736,44 +778,66 @@ class AccessContext {
 
 class RenderPassAccessContext {
   public:
-    RenderPassAccessContext() : rp_state_(nullptr), current_subpass_(0) {}
+    RenderPassAccessContext() : rp_state_(nullptr), render_area_(VkRect2D()), current_subpass_(0) {}
+    RenderPassAccessContext(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area, VkQueueFlags queue_flags,
+                            const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const AccessContext *external_context);
 
-    bool ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, const CMD_BUFFER_STATE &cmd,
-                                       const VkRect2D &render_area, const char *func_name) const;
-    void RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area, const ResourceUsageTag &tag);
-    bool ValidateNextSubpass(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
-                             const char *command_name) const;
-    bool ValidateEndRenderPass(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
-                               const char *func_name) const;
-    bool ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
-                                               const char *func_name) const;
+    bool ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd,
+                                       const char *func_name) const;
+    void RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const ResourceUsageTag &tag);
+    bool ValidateNextSubpass(const CommandExecutionContext &ex_context, const char *command_name) const;
+    bool ValidateEndRenderPass(const CommandExecutionContext &ex_context, const char *func_name) const;
+    bool ValidateFinalSubpassLayoutTransitions(const CommandExecutionContext &ex_context, const char *func_name) const;
 
     void RecordLayoutTransitions(const ResourceUsageTag &tag);
-    void RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag);
-    void RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state, const AccessContext *external_context,
-                               VkQueueFlags queue_flags, const ResourceUsageTag &tag);
-    void RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &prev_subpass_tag,
-                           const ResourceUsageTag &next_subpass_tag);
-    void RecordEndRenderPass(AccessContext *external_context, const VkRect2D &render_area, const ResourceUsageTag &tag);
+    void RecordLoadOperations(const ResourceUsageTag &tag);
+    void RecordBeginRenderPass(const ResourceUsageTag &tag);
+    void RecordNextSubpass(const ResourceUsageTag &prev_subpass_tag, const ResourceUsageTag &next_subpass_tag);
+    void RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag &tag);
 
     AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
     const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
     const std::vector<AccessContext> &GetContexts() const { return subpass_contexts_; }
     uint32_t GetCurrentSubpass() const { return current_subpass_; }
     const RENDER_PASS_STATE *GetRenderPassState() const { return rp_state_; }
-    AccessContext *CreateStoreResolveProxy(const VkRect2D &render_area) const;
+    AccessContext *CreateStoreResolveProxy() const;
 
   private:
     const RENDER_PASS_STATE *rp_state_;
+    const VkRect2D render_area_;
     uint32_t current_subpass_;
     std::vector<AccessContext> subpass_contexts_;
     std::vector<const IMAGE_VIEW_STATE *> attachment_views_;
 };
 
-class CommandBufferAccessContext {
+// Command execution context is the base class for command buffer and queue contexts
+// Preventing unintented leakage of subclass specific state, storing enough information
+// for message logging.
+// TODO: determine where to draw the design split for tag tracking (is there anything command to Queues and CB's)
+class CommandExecutionContext {
   public:
-    CommandBufferAccessContext()
-        : access_index_(0),
+    CommandExecutionContext() : sync_state_(nullptr) {}
+    CommandExecutionContext(SyncValidator *sync_validator) : sync_state_(sync_validator) {}
+    virtual ~CommandExecutionContext() = default;
+    const SyncValidator &GetSyncState() const {
+        assert(sync_state_);
+        return *sync_state_;
+    }
+    SyncValidator &GetSyncState() {
+        assert(sync_state_);
+        return *sync_state_;
+    }
+    virtual std::string FormatUsage(const HazardResult &hazard) const = 0;
+
+  protected:
+    SyncValidator *sync_state_;
+};
+
+class CommandBufferAccessContext : public CommandExecutionContext {
+  public:
+    CommandBufferAccessContext(SyncValidator *sync_validator = nullptr)
+        : CommandExecutionContext(sync_validator),
+          access_index_(0),
           command_number_(0),
           subcommand_number_(0),
           reset_count_(0),
@@ -786,11 +850,13 @@ class CommandBufferAccessContext {
           events_context_(),
           destroyed_(false) {}
     CommandBufferAccessContext(SyncValidator &sync_validator, std::shared_ptr<CMD_BUFFER_STATE> &cb_state, VkQueueFlags queue_flags)
-        : CommandBufferAccessContext() {
+        : CommandBufferAccessContext(&sync_validator) {
         cb_state_ = cb_state;
-        sync_state_ = &sync_validator;
         queue_flags_ = queue_flags;
     }
+    ~CommandBufferAccessContext() override = default;
+    CommandExecutionContext &GetExecutionContext() { return *this; }
+    const CommandExecutionContext &GetExecutionContext() const { return *this; }
 
     void Reset() {
         access_index_ = 0;
@@ -806,16 +872,17 @@ class CommandBufferAccessContext {
     void MarkDestroyed() { destroyed_ = true; }
     bool IsDestroyed() const { return destroyed_; }
 
-    std::string FormatUsage(const HazardResult &hazard) const;
+    std::string FormatUsage(const HazardResult &hazard) const override;
     AccessContext *GetCurrentAccessContext() { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() { return &events_context_; }
-    const SyncEventsContext *GetCurrentEventsContext() const { return &events_context_; }
+    RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
     const AccessContext *GetCurrentAccessContext() const { return current_context_; }
-    void RecordBeginRenderPass(const ResourceUsageTag &tag);
+    const SyncEventsContext *GetCurrentEventsContext() const { return &events_context_; }
+    const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
+    void RecordBeginRenderPass(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const ResourceUsageTag &tag);
     void ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst);
 
-    bool ValidateBeginRenderPass(const RENDER_PASS_STATE &render_pass, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                 const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const;
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const ResourceUsageTag &tag);
     bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const char *func_name) const;
@@ -824,13 +891,10 @@ class CommandBufferAccessContext {
     void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag &tag);
     bool ValidateDrawSubpassAttachment(const char *func_name) const;
     void RecordDrawSubpassAttachment(const ResourceUsageTag &tag);
-    bool ValidateNextSubpass(const char *func_name) const;
-    bool ValidateEndRenderpass(const char *func_name) const;
-    void RecordNextSubpass(const RENDER_PASS_STATE &render_pass, CMD_TYPE command);
-    void RecordEndRenderPass(const RENDER_PASS_STATE &render_pass, CMD_TYPE command);
+    void RecordNextSubpass(CMD_TYPE command);
+    void RecordEndRenderPass(CMD_TYPE command);
     void RecordDestroyEvent(VkEvent event);
 
-    CMD_BUFFER_STATE *GetCommandBufferState() { return cb_state_.get(); }
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
     inline ResourceUsageTag::TagIndex NextAccessIndex() { return access_index_++; }
@@ -857,14 +921,6 @@ class CommandBufferAccessContext {
         assert(cb_state_);
         return *(cb_state_.get());
     }
-    const SyncValidator &GetSyncState() const {
-        assert(sync_state_);
-        return *sync_state_;
-    }
-    SyncValidator &GetSyncState() {
-        assert(sync_state_);
-        return *sync_state_;
-    }
 
   private:
     ResourceUsageTag::TagIndex access_index_;
@@ -876,7 +932,6 @@ class CommandBufferAccessContext {
     AccessContext *current_context_;
     RenderPassAccessContext *current_renderpass_context_;
     std::shared_ptr<CMD_BUFFER_STATE> cb_state_;
-    SyncValidator *sync_state_;
 
     VkQueueFlags queue_flags_;
     SyncEventsContext events_context_;
@@ -930,18 +985,18 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
     void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                  const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE command);
-    void RecordCmdNextSubpass(VkCommandBuffer commandBuffer,
-                              const VkSubpassBeginInfo *pSubpassBeginInfo, const VkSubpassEndInfo *pSubpassEndInfo,
-                              CMD_TYPE command);
-    void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE command);
+                                  const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd, const char *cmd_name = nullptr);
+    void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                              const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE command, const char *command_name = nullptr);
+    void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd,
+                                const char *cmd_name = nullptr);
     bool SupressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) override;
 
     bool ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                 const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const;
+                                 const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd, const char *cmd_name = nullptr) const;
 
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                            VkSubpassContents contents) const override;
@@ -998,7 +1053,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                               const VkSubpassBeginInfo *pSubpassBeginInfo) override;
 
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                const VkSubpassEndInfo *pSubpassEndInfo, const char *func_name) const;
+                                const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd, const char *cmd_name = nullptr) const;
     bool PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) const override;
     bool PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                         const VkSubpassEndInfo *pSubpassEndInfo) const override;
@@ -1011,8 +1066,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                           const VkSubpassEndInfo *pSubpassEndInfo) override;
 
-    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                  const char *func_name) const;
+    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd,
+                                  const char *cmd_name = nullptr) const;
     bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const override;
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const override;

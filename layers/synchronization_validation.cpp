@@ -563,11 +563,11 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
 class ValidateResolveAction {
   public:
     ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, const AccessContext &context,
-                          const CommandBufferAccessContext &cb_context, const char *func_name)
+                          const CommandExecutionContext &ex_context, const char *func_name)
         : render_pass_(render_pass),
           subpass_(subpass),
           context_(context),
-          cb_context_(cb_context),
+          ex_context_(ex_context),
           func_name_(func_name),
           skip_(false) {}
     void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
@@ -577,11 +577,11 @@ class ValidateResolveAction {
         hazard = context_.DetectHazard(view, current_usage, ordering_rule, offset, extent, aspect_mask);
         if (hazard.hazard) {
             skip_ |=
-                cb_context_.GetSyncState().LogError(render_pass_, string_SyncHazardVUID(hazard.hazard),
+                ex_context_.GetSyncState().LogError(render_pass_, string_SyncHazardVUID(hazard.hazard),
                                                     "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32
                                                     " to resolve attachment %" PRIu32 ". Access info %s.",
                                                     func_name_, string_SyncHazard(hazard.hazard), subpass_, aspect_name,
-                                                    attachment_name, src_at, dst_at, cb_context_.FormatUsage(hazard).c_str());
+                                                    attachment_name, src_at, dst_at, ex_context_.FormatUsage(hazard).c_str());
         }
     }
     // Providing a mechanism for the constructing caller to get the result of the validation
@@ -591,7 +591,7 @@ class ValidateResolveAction {
     VkRenderPass render_pass_;
     const uint32_t subpass_;
     const AccessContext &context_;
-    const CommandBufferAccessContext &cb_context_;
+    const CommandExecutionContext &ex_context_;
     const char *func_name_;
     bool skip_;
 };
@@ -945,7 +945,7 @@ void AccessContext::ResolveAccessRange(const IMAGE_STATE &image_state, const VkI
 }
 
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
-bool AccessContext::ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                               const VkRect2D &render_area, uint32_t subpass,
                                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
                                               const char *func_name) const {
@@ -975,19 +975,19 @@ bool AccessContext::ValidateLayoutTransitions(const CommandBufferAccessContext &
         }
         auto hazard = DetectSubpassTransitionHazard(*track_back, attachment_views[transition.attachment]);
         if (hazard.hazard) {
-            skip |= cb_context.GetSyncState().LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+            skip |= ex_context.GetSyncState().LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
                                                        "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                        " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                                                        func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
                                                        string_VkImageLayout(transition.old_layout),
                                                        string_VkImageLayout(transition.new_layout),
-                                                       cb_context.FormatUsage(hazard).c_str());
+                                                       ex_context.FormatUsage(hazard).c_str());
         }
     }
     return skip;
 }
 
-bool AccessContext::ValidateLoadOperation(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                           const VkRect2D &render_area, uint32_t subpass,
                                           const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
                                           const char *func_name) const {
@@ -1043,7 +1043,7 @@ bool AccessContext::ValidateLoadOperation(const CommandBufferAccessContext &cb_c
 
             if (hazard.hazard) {
                 auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
-                const auto &sync_state = cb_context.GetSyncState();
+                const auto &sync_state = ex_context.GetSyncState();
                 if (hazard.tag == kCurrentCommandTag) {
                     // Hazard vs. ILT
                     skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
@@ -1055,7 +1055,7 @@ bool AccessContext::ValidateLoadOperation(const CommandBufferAccessContext &cb_c
                                                 "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s. Access info %s.",
                                                 func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string,
-                                                cb_context.FormatUsage(hazard).c_str());
+                                                ex_context.FormatUsage(hazard).c_str());
                 }
             }
         }
@@ -1067,7 +1067,7 @@ bool AccessContext::ValidateLoadOperation(const CommandBufferAccessContext &cb_c
 // because of the ordering guarantees w.r.t. sample access and that the resolve validation hasn't altered the state, because
 // store is part of the same Next/End operation.
 // The latter is handled in layout transistion validation directly
-bool AccessContext::ValidateStoreOperation(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                            const VkRect2D &render_area, uint32_t subpass,
                                            const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
                                            const char *func_name) const {
@@ -1121,22 +1121,22 @@ bool AccessContext::ValidateStoreOperation(const CommandBufferAccessContext &cb_
             if (hazard.hazard) {
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
                 const char *const store_op_string = string_VkAttachmentStoreOp(checked_stencil ? ci.stencilStoreOp : ci.storeOp);
-                skip |= cb_context.GetSyncState().LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                skip |= ex_context.GetSyncState().LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
                                                            "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                            " %s aspect during store with %s %s. Access info %s",
                                                            func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect,
-                                                           op_type_string, store_op_string, cb_context.FormatUsage(hazard).c_str());
+                                                           op_type_string, store_op_string, ex_context.FormatUsage(hazard).c_str());
             }
         }
     }
     return skip;
 }
 
-bool AccessContext::ValidateResolveOperations(const CommandBufferAccessContext &cb_context, const RENDER_PASS_STATE &rp_state,
+bool AccessContext::ValidateResolveOperations(const CommandExecutionContext &ex_context, const RENDER_PASS_STATE &rp_state,
                                               const VkRect2D &render_area,
                                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
                                               uint32_t subpass) const {
-    ValidateResolveAction validate_action(rp_state.renderPass, subpass, *this, cb_context, func_name);
+    ValidateResolveAction validate_action(rp_state.renderPass, subpass, *this, ex_context, func_name);
     ResolveOperation(validate_action, rp_state, render_area, attachment_views, subpass);
     return validate_action.GetSkip();
 }
@@ -1755,44 +1755,6 @@ void CommandBufferAccessContext::ApplyGlobalBarriersToEvents(const SyncExecScope
     }
 }
 
-// Class CommandBufferAccessContext: Keep track of resource access state information for a specific command buffer
-bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE &rp_state,
-
-                                                         const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                         const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const {
-    // Check if any of the layout transitions are hazardous.... but we don't have the renderpass context to work with, so we
-    bool skip = false;
-
-    assert(pRenderPassBegin);
-    if (nullptr == pRenderPassBegin) return skip;
-
-    const uint32_t subpass = 0;
-
-    // Construct the state we can use to validate against... (since validation is const and RecordCmdBeginRenderPass
-    // hasn't happened yet)
-    const std::vector<AccessContext> empty_context_vector;
-    AccessContext temp_context(subpass, queue_flags_, rp_state.subpass_dependencies, empty_context_vector,
-                               const_cast<AccessContext *>(&cb_access_context_));
-
-    // Create a view list
-    const auto fb_state = sync_state_->Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
-    assert(fb_state);
-    if (nullptr == fb_state) return skip;
-    // NOTE: Must not use COMMAND_BUFFER_STATE variant of this as RecordCmdBeginRenderPass hasn't run and thus
-    //       the activeRenderPass.* fields haven't been set.
-    const auto views = sync_state_->GetAttachmentViews(*pRenderPassBegin, *fb_state);
-
-    // Validate transitions
-    skip |= temp_context.ValidateLayoutTransitions(*this, rp_state, pRenderPassBegin->renderArea, subpass, views, func_name);
-
-    // Validate load operations if there were no layout transition hazards
-    if (!skip) {
-        temp_context.RecordLayoutTransitions(rp_state, subpass, views, kCurrentCommandTag);
-        skip |= temp_context.ValidateLoadOperation(*this, rp_state, pRenderPassBegin->renderArea, subpass, views, func_name);
-    }
-
-    return skip;
-}
 
 bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                    const char *func_name) const {
@@ -2116,61 +2078,39 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
 bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(const char *func_name) const {
     bool skip = false;
     if (!current_renderpass_context_) return skip;
-    skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(*this, *cb_state_.get(),
-                                                                       cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
+    skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(GetExecutionContext(), *cb_state_.get(), func_name);
     return skip;
 }
 
 void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsageTag &tag) {
     if (current_renderpass_context_) {
-        current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_.get(), cb_state_->activeRenderPassBeginInfo.renderArea,
-                                                                 tag);
+        current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_.get(), tag);
     }
 }
 
-bool CommandBufferAccessContext::ValidateNextSubpass(const char *func_name) const {
-    bool skip = false;
-    if (!current_renderpass_context_) return skip;
-    skip |= current_renderpass_context_->ValidateNextSubpass(*this, cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
-
-    return skip;
-}
-
-bool CommandBufferAccessContext::ValidateEndRenderpass(const char *func_name) const {
-    // TODO: Things to add here.
-    // Validate Preserve attachments
-    bool skip = false;
-    if (!current_renderpass_context_) return skip;
-    skip |= current_renderpass_context_->ValidateEndRenderPass(*this, cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
-
-    return skip;
-}
-
-void CommandBufferAccessContext::RecordBeginRenderPass(const ResourceUsageTag &tag) {
-    assert(sync_state_);
-    if (!cb_state_) return;
-
+void CommandBufferAccessContext::RecordBeginRenderPass(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                                       const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                                       const ResourceUsageTag &tag) {
     // Create an access context the current renderpass.
-    render_pass_contexts_.emplace_back();
+    render_pass_contexts_.emplace_back(rp_state, render_area, GetQueueFlags(), attachment_views, &cb_access_context_);
     current_renderpass_context_ = &render_pass_contexts_.back();
-    current_renderpass_context_->RecordBeginRenderPass(*sync_state_, *cb_state_, &cb_access_context_, queue_flags_, tag);
+    current_renderpass_context_->RecordBeginRenderPass(tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
 }
 
-void CommandBufferAccessContext::RecordNextSubpass(const RENDER_PASS_STATE &rp_state, CMD_TYPE command) {
+void CommandBufferAccessContext::RecordNextSubpass(CMD_TYPE command) {
     assert(current_renderpass_context_);
     auto prev_tag = NextCommandTag(command);
     auto next_tag = NextSubcommandTag(command);
-    current_renderpass_context_->RecordNextSubpass(cb_state_->activeRenderPassBeginInfo.renderArea, prev_tag, next_tag);
+    current_renderpass_context_->RecordNextSubpass(prev_tag, next_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
 }
 
-void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &render_pass, CMD_TYPE command) {
+void CommandBufferAccessContext::RecordEndRenderPass(CMD_TYPE command) {
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return;
 
-    current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, cb_state_->activeRenderPassBeginInfo.renderArea,
-                                                     NextCommandTag(command));
+    current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, NextCommandTag(command));
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
 }
@@ -2183,11 +2123,10 @@ void CommandBufferAccessContext::RecordDestroyEvent(VkEvent event) {
     }
 }
 
-bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context,
-                                                            const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area,
+bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd,
                                                             const char *func_name) const {
     bool skip = false;
-    const auto &sync_state = cb_context.GetSyncState();
+    const auto &sync_state = ex_context.GetSyncState();
     const auto *pipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe ||
         (pipe->graphicsPipelineCI.pRasterizationState && pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
@@ -2195,8 +2134,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
     }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
-    VkExtent3D extent = CastTo3D(render_area.extent);
-    VkOffset3D offset = CastTo3D(render_area.offset);
+    VkExtent3D extent = CastTo3D(render_area_.extent);
+    VkOffset3D offset = CastTo3D(render_area_.offset);
 
     const auto &current_context = CurrentContext();
     // Subpass's inputAttachment has been done in ValidateDispatchDrawDescriptorSet
@@ -2215,7 +2154,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                             func_name, string_SyncHazard(hazard.hazard),
                                             sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
                                             sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
-                                            location, cb_context.FormatUsage(hazard).c_str());
+                                            location, ex_context.FormatUsage(hazard).c_str());
             }
         }
     }
@@ -2256,7 +2195,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                     func_name, string_SyncHazard(hazard.hazard),
                     sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
                     sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
-                    cb_context.FormatUsage(hazard).c_str());
+                    ex_context.FormatUsage(hazard).c_str());
             }
         }
         if (stencil_write) {
@@ -2270,15 +2209,14 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                     func_name, string_SyncHazard(hazard.hazard),
                     sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
                     sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
-                    cb_context.FormatUsage(hazard).c_str());
+                    ex_context.FormatUsage(hazard).c_str());
             }
         }
     }
     return skip;
 }
 
-void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area,
-                                                          const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const ResourceUsageTag &tag) {
     const auto *pipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe ||
         (pipe->graphicsPipelineCI.pRasterizationState && pipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
@@ -2286,8 +2224,8 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
     }
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
-    VkExtent3D extent = CastTo3D(render_area.extent);
-    VkOffset3D offset = CastTo3D(render_area.offset);
+    VkExtent3D extent = CastTo3D(render_area_.extent);
+    VkOffset3D offset = CastTo3D(render_area_.offset);
 
     auto &current_context = CurrentContext();
     // Subpass's inputAttachment has been done in RecordDispatchDrawDescriptorSet
@@ -2341,46 +2279,46 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
     }
 }
 
-bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
-                                                  const char *func_name) const {
+bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext &ex_context, const char *func_name) const {
     // PHASE1 TODO: Add Validate Preserve attachments
     bool skip = false;
-    skip |= CurrentContext().ValidateResolveOperations(cb_context, *rp_state_, render_area, attachment_views_, func_name,
+    skip |= CurrentContext().ValidateResolveOperations(ex_context, *rp_state_, render_area_, attachment_views_, func_name,
                                                        current_subpass_);
-    skip |= CurrentContext().ValidateStoreOperation(cb_context, *rp_state_, render_area, current_subpass_, attachment_views_,
+    skip |= CurrentContext().ValidateStoreOperation(ex_context, *rp_state_, render_area_, current_subpass_, attachment_views_,
                                                     func_name);
 
     const auto next_subpass = current_subpass_ + 1;
     const auto &next_context = subpass_contexts_[next_subpass];
-    skip |= next_context.ValidateLayoutTransitions(cb_context, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
+    skip |=
+        next_context.ValidateLayoutTransitions(ex_context, *rp_state_, render_area_, next_subpass, attachment_views_, func_name);
     if (!skip) {
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
         // on a copy of the (empty) next context.
         // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
         AccessContext temp_context(next_context);
         temp_context.RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kCurrentCommandTag);
-        skip |= temp_context.ValidateLoadOperation(cb_context, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
+        skip |=
+            temp_context.ValidateLoadOperation(ex_context, *rp_state_, render_area_, next_subpass, attachment_views_, func_name);
     }
     return skip;
 }
-bool RenderPassAccessContext::ValidateEndRenderPass(const CommandBufferAccessContext &cb_context, const VkRect2D &render_area,
-                                                    const char *func_name) const {
+bool RenderPassAccessContext::ValidateEndRenderPass(const CommandExecutionContext &ex_context, const char *func_name) const {
     // PHASE1 TODO: Validate Preserve
     bool skip = false;
-    skip |= CurrentContext().ValidateResolveOperations(cb_context, *rp_state_, render_area, attachment_views_, func_name,
+    skip |= CurrentContext().ValidateResolveOperations(ex_context, *rp_state_, render_area_, attachment_views_, func_name,
                                                        current_subpass_);
-    skip |= CurrentContext().ValidateStoreOperation(cb_context, *rp_state_, render_area, current_subpass_, attachment_views_,
+    skip |= CurrentContext().ValidateStoreOperation(ex_context, *rp_state_, render_area_, current_subpass_, attachment_views_,
                                                     func_name);
-    skip |= ValidateFinalSubpassLayoutTransitions(cb_context, render_area, func_name);
+    skip |= ValidateFinalSubpassLayoutTransitions(ex_context, func_name);
     return skip;
 }
 
-AccessContext *RenderPassAccessContext::CreateStoreResolveProxy(const VkRect2D &render_area) const {
-    return CreateStoreResolveProxyContext(CurrentContext(), *rp_state_, current_subpass_, render_area, attachment_views_);
+AccessContext *RenderPassAccessContext::CreateStoreResolveProxy() const {
+    return CreateStoreResolveProxyContext(CurrentContext(), *rp_state_, current_subpass_, render_area_, attachment_views_);
 }
 
-bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext &cb_context,
-                                                                    const VkRect2D &render_area, const char *func_name) const {
+bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandExecutionContext &ex_context,
+                                                                    const char *func_name) const {
     bool skip = false;
 
     // As validation methods are const and precede the record/update phase, for any tranistions from the current (last)
@@ -2401,7 +2339,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
         if (transition.prev_pass == current_subpass_) {
             if (!proxy_for_current) {
                 // We haven't recorded resolve ofor the current_subpass, so we need to copy current and update it *as if*
-                proxy_for_current.reset(CreateStoreResolveProxy(render_area));
+                proxy_for_current.reset(CreateStoreResolveProxy());
             }
             context = proxy_for_current.get();
         }
@@ -2412,13 +2350,13 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
                                                         merged_barrier.src_access_scope, attach_view->normalized_subresource_range,
                                                         AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.hazard) {
-            skip |= cb_context.GetSyncState().LogError(
+            skip |= ex_context.GetSyncState().LogError(
                 rp_state_->renderPass, string_SyncHazardVUID(hazard.hazard),
                 "%s: Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
                 " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                 func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
                 string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
-                cb_context.FormatUsage(hazard).c_str());
+                ex_context.FormatUsage(hazard).c_str());
         }
     }
     return skip;
@@ -2429,11 +2367,11 @@ void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag &ta
     subpass_contexts_[current_subpass_].RecordLayoutTransitions(*rp_state_, current_subpass_, attachment_views_, tag);
 }
 
-void RenderPassAccessContext::RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag &tag) {
     const auto *attachment_ci = rp_state_->createInfo.pAttachments;
     auto &subpass_context = subpass_contexts_[current_subpass_];
-    VkExtent3D extent = CastTo3D(render_area.extent);
-    VkOffset3D offset = CastTo3D(render_area.offset);
+    VkExtent3D extent = CastTo3D(render_area_.extent);
+    VkOffset3D offset = CastTo3D(render_area_.offset);
 
     for (uint32_t i = 0; i < rp_state_->createInfo.attachmentCount; i++) {
         if (rp_state_->attachment_first_subpass[i] == current_subpass_) {
@@ -2466,29 +2404,29 @@ void RenderPassAccessContext::RecordLoadOperations(const VkRect2D &render_area, 
         }
     }
 }
-
-void RenderPassAccessContext::RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state,
-                                                    const AccessContext *external_context, VkQueueFlags queue_flags,
-                                                    const ResourceUsageTag &tag) {
-    current_subpass_ = 0;
-    rp_state_ = cb_state.activeRenderPass.get();
-    subpass_contexts_.reserve(rp_state_->createInfo.subpassCount);
+RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                                 VkQueueFlags queue_flags,
+                                                 const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                                 const AccessContext *external_context)
+    : rp_state_(&rp_state), render_area_(render_area), current_subpass_(0U), attachment_views_(attachment_views) {
     // Add this for all subpasses here so that they exsist during next subpass validation
+    subpass_contexts_.reserve(rp_state_->createInfo.subpassCount);
     for (uint32_t pass = 0; pass < rp_state_->createInfo.subpassCount; pass++) {
         subpass_contexts_.emplace_back(pass, queue_flags, rp_state_->subpass_dependencies, subpass_contexts_, external_context);
     }
-    attachment_views_ = state.GetCurrentAttachmentViews(cb_state);
-
+}
+void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag &tag) {
+    assert(0 == current_subpass_);
     subpass_contexts_[current_subpass_].SetStartTag(tag);
     RecordLayoutTransitions(tag);
-    RecordLoadOperations(cb_state.activeRenderPassBeginInfo.renderArea, tag);
+    RecordLoadOperations(tag);
 }
 
-void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &prev_subpass_tag,
+void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag &prev_subpass_tag,
                                                 const ResourceUsageTag &next_subpass_tag) {
     // Resolves are against *prior* subpass context and thus *before* the subpass increment
-    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area, attachment_views_, current_subpass_, prev_subpass_tag);
-    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, render_area, attachment_views_, current_subpass_, prev_subpass_tag);
+    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area_, attachment_views_, current_subpass_, prev_subpass_tag);
+    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, render_area_, attachment_views_, current_subpass_, prev_subpass_tag);
 
     // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
     // subpass, so their tag needs to be different from the layout and load operations below.
@@ -2496,14 +2434,13 @@ void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, con
     assert(current_subpass_ < subpass_contexts_.size());
     subpass_contexts_[current_subpass_].SetStartTag(next_subpass_tag);
     RecordLayoutTransitions(next_subpass_tag);
-    RecordLoadOperations(render_area, next_subpass_tag);
+    RecordLoadOperations(next_subpass_tag);
 }
 
-void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const VkRect2D &render_area,
-                                                  const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag &tag) {
     // Add the resolve and store accesses
-    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
-    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
+    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area_, attachment_views_, current_subpass_, tag);
+    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, render_area_, attachment_views_, current_subpass_, tag);
 
     // Export the accesses from the renderpass...
     external_context->ResolveChildContexts(subpass_contexts_);
@@ -3388,15 +3325,13 @@ void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDev
 }
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                            const VkSubpassBeginInfo *pSubpassBeginInfo, const char *func_name) const {
+                                            const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd, const char *cmd_name) const {
     bool skip = false;
-    const auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     auto cb_context = GetAccessContext(commandBuffer);
-
-    if (rp_state && cb_context) {
-        skip |= cb_context->ValidateBeginRenderPass(*rp_state, pRenderPassBegin, pSubpassBeginInfo, func_name);
+    if (cb_context) {
+        SyncOpBeginRenderPass sync_op(cmd, *this, pRenderPassBegin, pSubpassBeginInfo, cmd_name);
+        skip = sync_op.Validate(*cb_context);
     }
-
     return skip;
 }
 
@@ -3405,22 +3340,24 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuf
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, "vkCmdBeginRenderPass");
+    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, CMD_BEGINRENDERPASS);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                        const VkSubpassBeginInfo *pSubpassBeginInfo) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, "vkCmdBeginRenderPass2");
+    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2);
     return skip;
 }
 
+static const char *kBeginRenderPass2KhrName = "vkCmdBeginRenderPass2KHR";
 bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                           const VkRenderPassBeginInfo *pRenderPassBegin,
                                                           const VkSubpassBeginInfo *pSubpassBeginInfo) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, "vkCmdBeginRenderPass2KHR");
+    skip |=
+        ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2, kBeginRenderPass2KhrName);
     return skip;
 }
 
@@ -3436,10 +3373,11 @@ void SyncValidator::PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuff
 }
 
 void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                             const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE command) {
+                                             const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd, const char *cmd_name) {
     auto cb_context = GetAccessContext(commandBuffer);
     if (cb_context) {
-        cb_context->RecordBeginRenderPass(cb_context->NextCommandTag(command));
+        SyncOpBeginRenderPass sync_op(cmd, *this, pRenderPassBegin, pSubpassBeginInfo, cmd_name);
+        sync_op.Record(cb_context);
     }
 }
 
@@ -3461,59 +3399,53 @@ void SyncValidator::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer command
                                                          const VkRenderPassBeginInfo *pRenderPassBegin,
                                                          const VkSubpassBeginInfo *pSubpassBeginInfo) {
     StateTracker::PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2);
+    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2, kBeginRenderPass2KhrName);
 }
 
 bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                           const VkSubpassEndInfo *pSubpassEndInfo, const char *func_name) const {
+                                           const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd, const char *cmd_name) const {
     bool skip = false;
 
     auto cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
-    auto cb_state = cb_context->GetCommandBufferState();
-    if (!cb_state) return skip;
-
-    auto rp_state = cb_state->activeRenderPass;
-    if (!rp_state) return skip;
-
-    skip |= cb_context->ValidateNextSubpass(func_name);
-
-    return skip;
+    if (!cb_context) return skip;
+    SyncOpNextSubpass sync_op(cmd, *this, pSubpassBeginInfo, pSubpassEndInfo, cmd_name);
+    return sync_op.Validate(*cb_context);
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass(commandBuffer, contents);
+    // Convert to a NextSubpass2
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    skip |= ValidateCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, "vkCmdNextSubpass");
+    auto subpass_end_info = LvlInitStruct<VkSubpassEndInfo>();
+    skip |= ValidateCmdNextSubpass(commandBuffer, &subpass_begin_info, &subpass_end_info, CMD_NEXTSUBPASS);
     return skip;
 }
 
+static const char *kNextSubpass2KhrName = "vkCmdNextSubpass2KHR";
 bool SyncValidator::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                       const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, "vkCmdNextSubpass2KHR");
+    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2, kNextSubpass2KhrName);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                    const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, "vkCmdNextSubpass2");
+    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2);
     return skip;
 }
 
 void SyncValidator::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                         const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE command) {
+                                         const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd, const char *cmd_name) {
     auto cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
-    auto cb_state = cb_context->GetCommandBufferState();
-    if (!cb_state) return;
+    if (!cb_context) return;
 
-    auto rp_state = cb_state->activeRenderPass;
-    if (!rp_state) return;
-
-    cb_context->RecordNextSubpass(*rp_state, command);
+    SyncOpNextSubpass sync_op(cmd, *this, pSubpassBeginInfo, pSubpassEndInfo, cmd_name);
+    sync_op.Record(cb_context);
 }
 
 void SyncValidator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
@@ -3532,56 +3464,52 @@ void SyncValidator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer,
 void SyncValidator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                      const VkSubpassEndInfo *pSubpassEndInfo) {
     StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2);
+    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2, kNextSubpass2KhrName);
 }
 
-bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                             const char *func_name) const {
+bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd,
+                                             const char *cmd_name) const {
     bool skip = false;
 
     auto cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
-    auto cb_state = cb_context->GetCommandBufferState();
-    if (!cb_state) return skip;
+    if (!cb_context) return skip;
 
-    auto rp_state = cb_state->activeRenderPass;
-    if (!rp_state) return skip;
-
-    skip |= cb_context->ValidateEndRenderpass(func_name);
+    SyncOpEndRenderPass sync_op(cmd, *this, pSubpassEndInfo, cmd_name);
+    skip |= sync_op.Validate(*cb_context);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer);
-    skip |= ValidateCmdEndRenderPass(commandBuffer, nullptr, "vkEndRenderPass");
+    skip |= ValidateCmdEndRenderPass(commandBuffer, nullptr, CMD_ENDRENDERPASS);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
-    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, "vkEndRenderPass2");
+    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2);
     return skip;
 }
 
+const static char *kEndRenderPass2KhrName = "vkEndRenderPass2KHR";
 bool SyncValidator::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                         const VkSubpassEndInfo *pSubpassEndInfo) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
-    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, "vkEndRenderPass2KHR");
+    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2, kEndRenderPass2KhrName);
     return skip;
 }
 
-void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                           CMD_TYPE command) {
+void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd,
+                                           const char *cmd_name) {
     // Resolve the all subpass contexts to the command buffer contexts
     auto cb_context = GetAccessContext(commandBuffer);
     assert(cb_context);
-    auto cb_state = cb_context->GetCommandBufferState();
-    if (!cb_state) return;
+    if (!cb_context) return;
 
-    const auto *rp_state = cb_state->activeRenderPass.get();
-    if (!rp_state) return;
-
-    cb_context->RecordEndRenderPass(*rp_state, command);
+    SyncOpEndRenderPass sync_op(cmd, *this, pSubpassEndInfo, cmd_name);
+    sync_op.Record(cb_context);
+    return;
 }
 
 // Simple heuristic rule to detect WAW operations representing algorithmically safe or increment
@@ -3603,7 +3531,7 @@ void SyncValidator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffe
 }
 
 void SyncValidator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2);
+    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2, kEndRenderPass2KhrName);
     StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
@@ -5482,4 +5410,112 @@ void SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) const {
     }
     sync_event->last_command = CMD_SETEVENT;
     sync_event->barriers = 0U;
+}
+
+SyncOpBeginRenderPass::SyncOpBeginRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state,
+                                             const VkRenderPassBeginInfo *pRenderPassBegin,
+                                             const VkSubpassBeginInfo *pSubpassBeginInfo, const char *cmd_name)
+    : SyncOpBase(cmd, cmd_name) {
+    if (pRenderPassBegin) {
+        rp_state_ = sync_state.GetShared<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+        renderpass_begin_info_ = safe_VkRenderPassBeginInfo(pRenderPassBegin);
+        const auto *fb_state = sync_state.Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+        if (fb_state) {
+            shared_attachments_ = sync_state.GetSharedAttachmentViews(*renderpass_begin_info_.ptr(), *fb_state);
+            // TODO: Revisit this when all attachment validation is through SyncOps to see if we can discard the plain pointer copy
+            // Note that this a safe to presist as long as shared_attachments is not cleared
+            attachments_.reserve(shared_attachments_.size());
+            for (const auto attachment : shared_attachments_) {
+                attachments_.emplace_back(attachment.get());
+            }
+        }
+        if (pSubpassBeginInfo) {
+            subpass_begin_info_ = safe_VkSubpassBeginInfo(pSubpassBeginInfo);
+        }
+    }
+}
+
+bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_context) const {
+    // Check if any of the layout transitions are hazardous.... but we don't have the renderpass context to work with, so we
+    bool skip = false;
+
+    assert(rp_state_.get());
+    if (nullptr == rp_state_.get()) return skip;
+    auto &rp_state = *rp_state_.get();
+
+    const uint32_t subpass = 0;
+
+    // Construct the state we can use to validate against... (since validation is const and RecordCmdBeginRenderPass
+    // hasn't happened yet)
+    const std::vector<AccessContext> empty_context_vector;
+    AccessContext temp_context(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependencies, empty_context_vector,
+                               cb_context.GetCurrentAccessContext());
+
+    // Validate attachment operations
+    if (attachments_.size() == 0) return skip;
+    const auto &render_area = renderpass_begin_info_.renderArea;
+    skip |= temp_context.ValidateLayoutTransitions(cb_context, rp_state, render_area, subpass, attachments_, CmdName());
+
+    // Validate load operations if there were no layout transition hazards
+    if (!skip) {
+        temp_context.RecordLayoutTransitions(rp_state, subpass, attachments_, kCurrentCommandTag);
+        skip |= temp_context.ValidateLoadOperation(cb_context, rp_state, render_area, subpass, attachments_, CmdName());
+    }
+
+    return skip;
+}
+
+void SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) const {
+    // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
+    assert(rp_state_.get());
+    if (nullptr == rp_state_.get()) return;
+    const auto tag = cb_context->NextCommandTag(cmd_);
+    cb_context->RecordBeginRenderPass(*rp_state_.get(), renderpass_begin_info_.renderArea, attachments_, tag);
+}
+
+SyncOpNextSubpass::SyncOpNextSubpass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                     const VkSubpassEndInfo *pSubpassEndInfo, const char *name_override)
+    : SyncOpBase(cmd, name_override) {
+    if (pSubpassBeginInfo) {
+        subpass_begin_info_.initialize(pSubpassBeginInfo);
+    }
+    if (pSubpassEndInfo) {
+        subpass_end_info_.initialize(pSubpassEndInfo);
+    }
+}
+
+bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext &cb_context) const {
+    bool skip = false;
+    const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
+    if (!renderpass_context) return skip;
+
+    skip |= renderpass_context->ValidateNextSubpass(cb_context.GetExecutionContext(), CmdName());
+    return skip;
+}
+
+void SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) const {
+    // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
+    cb_context->RecordNextSubpass(cmd_);
+}
+
+SyncOpEndRenderPass::SyncOpEndRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo,
+                                         const char *name_override)
+    : SyncOpBase(cmd, name_override) {
+    if (pSubpassEndInfo) {
+        subpass_end_info_.initialize(pSubpassEndInfo);
+    }
+}
+
+bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context) const {
+    bool skip = false;
+    const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
+
+    if (!renderpass_context) return skip;
+    skip |= renderpass_context->ValidateEndRenderPass(cb_context.GetExecutionContext(), CmdName());
+    return skip;
+}
+
+void SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) const {
+    // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
+    cb_context->RecordEndRenderPass(cmd_);
 }
