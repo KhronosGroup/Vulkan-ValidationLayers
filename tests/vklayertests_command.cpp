@@ -7601,7 +7601,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     ASSERT_VK_SUCCESS(err);
 
     // Use protected resources in unprotected command buffer
-    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_protected, 1024);
+    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_protected, 0, 1024);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[0], sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -7695,7 +7695,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     m_commandBuffer->end();
 
     // Use unprotected resources in protected command buffer
-    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected, 1024);
+    g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected, 0, 1024);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[1], sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();

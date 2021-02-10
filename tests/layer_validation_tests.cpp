@@ -1347,13 +1347,13 @@ void OneOffDescriptorSet::Clear() {
     descriptor_writes.clear();
 }
 
-void OneOffDescriptorSet::WriteDescriptorBufferInfo(int blinding, VkBuffer buffer, VkDeviceSize size,
+void OneOffDescriptorSet::WriteDescriptorBufferInfo(int blinding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
                                                     VkDescriptorType descriptorType, uint32_t count) {
     const auto index = buffer_infos.size();
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer;
-    buffer_info.offset = 0;
+    buffer_info.offset = offset;
     buffer_info.range = size;
 
     for (uint32_t i = 0; i < count; ++i) {
