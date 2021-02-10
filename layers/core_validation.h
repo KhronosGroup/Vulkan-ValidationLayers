@@ -351,9 +351,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const char* apiName) const;
     bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
     bool OutsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
-    bool ValidateDynamicOffsetAlignment(const VkCommandBuffer command_buffer, const VkDescriptorSetLayoutBinding* binding,
-                                        VkDescriptorType test_type, VkDeviceSize alignment, const uint32_t* pDynamicOffsets,
-                                        const char* err_msg, const char* limit_name, uint32_t* offset_idx) const;
 
     bool ValidateImageSampleCount(const IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
                                   const std::string& msgCode) const;

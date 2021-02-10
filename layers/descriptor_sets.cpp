@@ -100,8 +100,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
             non_empty_bindings_.insert(binding_num);
         }
 
-        if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-            binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+        if (IsDyanmicDescriptor(binding_info.descriptorType)) {
             binding_to_dyn_count[binding_num] = binding_info.descriptorCount;
             dynamic_descriptor_count_ += binding_info.descriptorCount;
             binding_type_stats_.dynamic_buffer_count++;
@@ -545,8 +544,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                             "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingVariableDescriptorCount-03014",
                             "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
-                    if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-                         binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+                    if (IsDyanmicDescriptor(binding_info.descriptorType)) {
                         skip |= val_obj->LogError(val_obj->device,
                                                   "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03015",
                                                   "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
@@ -804,39 +802,6 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
                                                     report_data->FormatHandle(buffer).c_str(),
                                                     report_data->FormatHandle(mem_binding->mem).c_str());
-                                }
-                            }
-                        }
-                        if (descriptor->IsDynamic()) {
-                            // Validate that dynamic offsets are within the buffer
-                            auto buffer_size = buffer_node->createInfo.size;
-                            auto range = static_cast<const BufferDescriptor *>(descriptor)->GetRange();
-                            auto desc_offset = static_cast<const BufferDescriptor *>(descriptor)->GetOffset();
-                            auto dyn_offset = dynamic_offsets[binding_it.GetDynamicOffsetIndex() + array_idx];
-                            if (VK_WHOLE_SIZE == range) {
-                                if ((dyn_offset + desc_offset) > buffer_size) {
-                                    auto set = descriptor_set->GetSet();
-                                    return LogError(set, vuids.descriptor_valid,
-                                                    "%s encountered the following validation error at %s time: Descriptor in "
-                                                    "binding #%" PRIu32 " index %" PRIu32
-                                                    " is using buffer %s with update range of VK_WHOLE_SIZE has dynamic offset "
-                                                    "%" PRIu32 " combined with offset %" PRIu64
-                                                    " that oversteps the buffer size of %" PRIu64 ".",
-                                                    report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                                    report_data->FormatHandle(buffer).c_str(), dyn_offset, desc_offset,
-                                                    buffer_size);
-                                }
-                            } else {
-                                if ((dyn_offset + desc_offset + range) > buffer_size) {
-                                    auto set = descriptor_set->GetSet();
-                                    return LogError(
-                                        set, vuids.descriptor_valid,
-                                        "%s encountered the following validation error at %s time: "
-                                        "Descriptor in binding #%" PRIu32 " index %" PRIu32
-                                        " is uses buffer %s with dynamic offset %" PRIu32 " combined with offset %" PRIu64
-                                        " and range %" PRIu64 " that oversteps the buffer size of %" PRIu64 ".",
-                                        report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                        report_data->FormatHandle(buffer).c_str(), dyn_offset, desc_offset, range, buffer_size);
                                 }
                             }
                         }
@@ -1826,8 +1791,7 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
         }
         // Caching criteria differs per type.
         // If image_layout have changed , the image descriptors need to be validated against them.
-        if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
-            (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+        if (IsDyanmicDescriptor(layout_binding->descriptorType)) {
             FilterOneBindingReq(binding_req_pair, out_req, dynamic_buffers, stats.dynamic_buffer_count);
         } else if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
                    (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
@@ -1864,8 +1828,7 @@ void cvdescriptorset::DescriptorSet::UpdateValidationCache(const CMD_BUFFER_STAT
             continue;
         }
         // Caching criteria differs per type.
-        if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
-            (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+        if (IsDyanmicDescriptor(layout_binding->descriptorType)) {
             dynamic_buffers.emplace(binding);
         } else if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
                    (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
@@ -2243,14 +2206,8 @@ cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type)
     : storage_(false), dynamic_(false), offset_(0), range_(0) {
     updated = false;
     descriptor_class = GeneralBuffer;
-    if (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC == type) {
-        dynamic_ = true;
-    } else if (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER == type) {
-        storage_ = true;
-    } else if (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC == type) {
-        dynamic_ = true;
-        storage_ = true;
-    }
+    dynamic_ = IsDyanmicDescriptor(type);
+    storage_ = ((VK_DESCRIPTOR_TYPE_STORAGE_BUFFER == type) || (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC == type));
 }
 void cvdescriptorset::BufferDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                     const uint32_t index) {

@@ -382,6 +382,10 @@ bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, cons
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
                                            const DeviceExtensions *device_extensions);
 
+inline bool IsDyanmicDescriptor(VkDescriptorType type) {
+    return ((type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC));
+}
+
 class SamplerDescriptor : public Descriptor {
   public:
     SamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *);

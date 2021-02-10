@@ -4714,8 +4714,7 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
     // 1. No dynamicOffset supplied
     // 2. Too many dynamicOffsets supplied
     // 3. Dynamic offset oversteps buffer being updated
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         " requires 1 dynamicOffsets, but only 0 dynamicOffsets are left in pDynamicOffsets ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -4749,15 +4748,15 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, NULL);
     m_errorMonitor->VerifyFound();
-    uint32_t pDynOff[2] = {512, 756};
+    uint32_t pDynOff[2] = {0, 756};
     // Now cause error b/c too many dynOffsets in array for # of dyn descriptors
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Attempting to bind 1 descriptorSets with 1 dynamic descriptors, but ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 2, pDynOff);
     m_errorMonitor->VerifyFound();
+    pDynOff[0] = 512;
     // Finally cause error due to dynamicOffset being too big
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, " dynamic offset 512 combined with offset 0 and range 1024 that oversteps the buffer size of 1024");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     // Create PSO to be used for draw-time errors below
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragUniformShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -4777,7 +4776,6 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
     // /w range 1024 & size 1024
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 1, pDynOff);
-    m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
