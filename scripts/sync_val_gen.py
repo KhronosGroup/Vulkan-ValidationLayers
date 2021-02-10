@@ -33,7 +33,10 @@ host_stage = 'VK_PIPELINE_STAGE_HOST_BIT'
 top_stage ='VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT'
 bot_stage ='VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT'
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.135
+# Snipped from chapters/synchronization.txt -- tag v1.2.169
+# manual fixups:
+# -pending "Add XFB stage as valid for XFB_COUNTER_READ access" fix
+# -use VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV instead of the KHR name
 snippet_access_types_supported = '''
 [[synchronization-access-types-supported]]
 .Supported access types
@@ -41,6 +44,9 @@ snippet_access_types_supported = '''
 |====
 |Access flag                                                  | Supported pipeline stages
 |ename:VK_ACCESS_INDIRECT_COMMAND_READ_BIT                    | ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+ifdef::VK_KHR_acceleration_structure[]
+, ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+endif::VK_KHR_acceleration_structure[]
 |ename:VK_ACCESS_INDEX_READ_BIT                               | ename:VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
 |ename:VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT                    | ename:VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
 
@@ -48,27 +54,30 @@ snippet_access_types_supported = '''
 ifdef::VK_NV_mesh_shader[]
                                                                ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
 endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
                                                                ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
                                                                ename:VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, ename:VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, or ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 
 |ename:VK_ACCESS_SHADER_READ_BIT                              |
+ifdef::VK_KHR_acceleration_structure[]
+                                                               ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+endif::VK_KHR_acceleration_structure[]
 ifdef::VK_NV_mesh_shader[]
                                                                ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
 endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
                                                                ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
                                                                ename:VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, ename:VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, or ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 
 |ename:VK_ACCESS_SHADER_WRITE_BIT                             |
 ifdef::VK_NV_mesh_shader[]
                                                                ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
 endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
                                                                ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
                                                                ename:VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, ename:VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, or ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 
 |ename:VK_ACCESS_INPUT_ATTACHMENT_READ_BIT                    | ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
@@ -77,7 +86,9 @@ endif::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
 |ename:VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT            | ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, or ename:VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
 |ename:VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT           | ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, or ename:VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
 |ename:VK_ACCESS_TRANSFER_READ_BIT                            | ename:VK_PIPELINE_STAGE_TRANSFER_BIT
+ifdef::VK_KHR_acceleration_structure[or ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR]
 |ename:VK_ACCESS_TRANSFER_WRITE_BIT                           | ename:VK_PIPELINE_STAGE_TRANSFER_BIT
+ifdef::VK_KHR_acceleration_structure[or ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR]
 |ename:VK_ACCESS_HOST_READ_BIT                                | ename:VK_PIPELINE_STAGE_HOST_BIT
 |ename:VK_ACCESS_HOST_WRITE_BIT                               | ename:VK_PIPELINE_STAGE_HOST_BIT
 |ename:VK_ACCESS_MEMORY_READ_BIT                              | Any
@@ -92,18 +103,31 @@ endif::VK_NV_device_generated_commands[]
 ifdef::VK_EXT_conditional_rendering[]
 |ename:VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT           | ename:VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT
 endif::VK_EXT_conditional_rendering[]
-ifdef::VK_NV_shading_rate_image[]
+ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
 |ename:VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV               | ename:VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV
-endif::VK_NV_shading_rate_image[]
+endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
 ifdef::VK_EXT_transform_feedback[]
 |ename:VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT             | ename:VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT
 |ename:VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT     | ename:VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT
-|ename:VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT      | ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+|ename:VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT      | ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, or ename:VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT
 endif::VK_EXT_transform_feedback[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
-|ename:VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR          | ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, or ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+ifdef::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
+|ename:VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR          |
+ifdef::VK_KHR_ray_query[]
+ifdef::VK_NV_mesh_shader[]
+                                                               ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
+endif::VK_NV_mesh_shader[]
+                                                               ename:VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, ename:VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, ename:VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+endif::VK_KHR_ray_query[]
+ifdef::VK_KHR_ray_tracing_pipeline[]
+ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
+endif::VK_KHR_ray_tracing_pipeline[]
+ifdef::VK_KHR_ray_tracing_pipeline,VK_KHR_ray_query[]
+ or
+endif::VK_KHR_ray_tracing_pipeline,VK_KHR_ray_query[]
+ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
 |ename:VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR         | ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+endif::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
 ifdef::VK_EXT_fragment_density_map[]
 |ename:VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT            | ename:VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT
 endif::VK_EXT_fragment_density_map[]
@@ -180,20 +204,19 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.135
+# Snipped from chapters/synchronization.txt -- tag v1.2.169
+# manual fixups:
+# - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
+# - make sure each pipeline section starts with "For"
 snippet_pipeline_stages_order = '''
-[[synchronization-pipeline-stages-types]]
-The order and set of pipeline stages executed by a given command is
-determined by the command's pipeline type, as described below:
+[[synchronization-pipeline-stages-types]][[synchronization-pipeline-graphics]]
+<<pipelines-graphics, Graphics pipelines>> are executable on queues
+supporting ename:VK_QUEUE_GRAPHICS_BIT.
+Stages executed by graphics pipelines can: only be specified in commands
+recorded for queues supporting ename:VK_QUEUE_GRAPHICS_BIT.
 
-ifndef::VK_NV_mesh_shader[]
-For the graphics pipeline, the following stages occur in this order:
-endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_mesh_shader[]
-For the graphics primitive shading pipeline, the following stages occur in
-this order:
-endif::VK_NV_mesh_shader[]
-
+For the graphics primitive pipeline executes the following stages, with the logical ordering of the
+stages matching the order specified here:
   * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
   * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
   * ename:VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
@@ -204,9 +227,9 @@ endif::VK_NV_mesh_shader[]
 ifdef::VK_EXT_transform_feedback[]
   * ename:VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT
 endif::VK_EXT_transform_feedback[]
-ifdef::VK_NV_shading_rate_image[]
+ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV
-endif::VK_NV_shading_rate_image[]
+endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
   * ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
   * ename:VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
@@ -214,22 +237,29 @@ endif::VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 
 ifdef::VK_NV_mesh_shader[]
-For the graphics mesh shading pipeline, the following stages occur in this
-order:
+For the graphics mesh pipeline executes the following stages, with the logical
+ordering of the stages matching the order specified here:
 
   * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
   * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
   * ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV
   * ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV
-ifdef::VK_NV_shading_rate_image[]
+ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV
-endif::VK_NV_shading_rate_image[]
+endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
   * ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
   * ename:VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
   * ename:VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
   * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 endif::VK_NV_mesh_shader[]
+
+For the compute pipeline, the following stages occur in this order:
+
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+  * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+  * ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 
 ifdef::VK_EXT_fragment_density_map[]
 For graphics pipeline commands executing in a render pass with a fragment
@@ -242,15 +272,8 @@ ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT:
   * ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
 endif::VK_EXT_fragment_density_map[]
 
-For the compute pipeline, the following stages occur in this order:
-
-  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-  * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
-  * ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-
 ifdef::VK_EXT_conditional_rendering[]
-The conditional rendering stage is formally part of both the graphics, and
+For the conditional rendering stage is formally part of both the graphics, and
 the compute pipeline.
 The pipeline stage where the predicate read happens has unspecified order
 relative to other stages of these pipelines:
@@ -278,30 +301,37 @@ order:
   * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 endif::VK_NV_device_generated_commands[]
 
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
-For the ray tracing shader pipeline, only one pipeline stage occurs, so no
+ifdef::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
+For acceleration structure operations, only one pipeline stage occurs, so no
 order is guaranteed:
 
-  * ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR
-
-For ray tracing acceleration structure operations, only one pipeline stage
-occurs, so no order is guaranteed:
-
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
   * ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+endif::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
 
+ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
+For the ray tracing shader pipeline, the following stages occur in this
+order:
+
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+  * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+  * ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+
+endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
 '''
 
 pipeline_name_labels = {
-    'GRAPHICS': 'For the graphics primitive shading pipeline',
-    'MESH': 'For the graphics mesh shading pipeline',
+    'GRAPHICS': 'For the graphics primitive pipeline',
+    'MESH': 'For the graphics mesh pipeline',
     'COMPUTE': 'For the compute pipeline',
     'TRANSFER': 'For the transfer pipeline',
     'HOST': 'For host operations, only one pipeline',
     'COMMAND_PROCESS': 'For the command preprocessing pipeline',
-    'RAY_TRACING_SHADE': 'For the ray tracing shader pipelin',
-    'ACCELERATION_STRUCTURE': 'For ray tracing acceleration structure operations'
+    'RAY_TRACING_SHADE': 'For the ray tracing shader pipeline',
+    'ACCELERATION_STRUCTURE': 'For acceleration structure operations'
 }
 
 def StageOrderListFromSet(stage_order, stage_set):
@@ -518,7 +548,7 @@ def InBitOrder(tag, enum_elem):
     return in_bit_order
 
 
-# As of tag v1.2.135
+# As of tag v1.2.169
 snippet_pipeline_stages_supported = '''
 [[synchronization-pipeline-stages-supported]]
 .Supported pipeline stage flags
@@ -551,17 +581,19 @@ endif::VK_EXT_transform_feedback[]
 ifdef::VK_NV_device_generated_commands[]
 |ename:VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV            | ename:VK_QUEUE_GRAPHICS_BIT or ename:VK_QUEUE_COMPUTE_BIT
 endif::VK_NV_device_generated_commands[]
-ifdef::VK_NV_shading_rate_image[]
+ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
 |ename:VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV            | ename:VK_QUEUE_GRAPHICS_BIT
-endif::VK_NV_shading_rate_image[]
+endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
 ifdef::VK_NV_mesh_shader[]
 |ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
 endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
-|ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR           | ename:VK_QUEUE_COMPUTE_BIT
+ifdef::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
 |ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | ename:VK_QUEUE_COMPUTE_BIT
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing[]
+endif::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
+ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
+|ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR           | ename:VK_QUEUE_COMPUTE_BIT
+endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
 ifdef::VK_EXT_fragment_density_map[]
 |ename:VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT     | ename:VK_QUEUE_GRAPHICS_BIT
 endif::VK_EXT_fragment_density_map[]
