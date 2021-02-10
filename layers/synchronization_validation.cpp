@@ -5425,7 +5425,7 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(CMD_TYPE cmd, const SyncValidator &
             // TODO: Revisit this when all attachment validation is through SyncOps to see if we can discard the plain pointer copy
             // Note that this a safe to presist as long as shared_attachments is not cleared
             attachments_.reserve(shared_attachments_.size());
-            for (const auto attachment : shared_attachments_) {
+            for (const auto &attachment : shared_attachments_) {
                 attachments_.emplace_back(attachment.get());
             }
         }
