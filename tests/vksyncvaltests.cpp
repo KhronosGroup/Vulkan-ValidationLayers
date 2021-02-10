@@ -1242,7 +1242,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
                                            {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        });
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 2048);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, 2048);
     descriptor_set.WriteDescriptorImageInfo(1, imageview_c, sampler_c, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);

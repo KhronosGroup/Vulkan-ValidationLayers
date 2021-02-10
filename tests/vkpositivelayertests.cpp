@@ -2868,7 +2868,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     VkConstantBufferObj buffer(m_device, sizeof(bo_data), (const void *)&bo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Update descriptor set
-    descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), sizeof(bo_data));
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), 0, sizeof(bo_data));
     descriptor_set.UpdateDescriptorSets();
 
     PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =

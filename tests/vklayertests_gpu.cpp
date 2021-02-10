@@ -598,9 +598,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
                                                   {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 4);
-    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
+    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
     descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -1591,10 +1591,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
     ASSERT_VK_SUCCESS(
         vk::CreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &compute_pipeline_ci, nullptr, &compute_pipeline));
 
-    normal_descriptor_set.WriteDescriptorBufferInfo(0, normal_descriptor_buffer.handle(), 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    normal_descriptor_set.WriteDescriptorBufferInfo(0, normal_descriptor_buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     normal_descriptor_set.UpdateDescriptorSets();
 
-    output_descriptor_set.WriteDescriptorBufferInfo(0, output_descriptor_buffer.handle(), output_descriptor_buffer_size,
+    output_descriptor_set.WriteDescriptorBufferInfo(0, output_descriptor_buffer.handle(), 0, output_descriptor_buffer_size,
                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     output_descriptor_set.UpdateDescriptorSets();
 
