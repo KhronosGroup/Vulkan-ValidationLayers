@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2020 The Khronos Group Inc.
- * Copyright (c) 2019-2020 Valve Corporation
- * Copyright (c) 2019-2020 LunarG, Inc.
- * Copyright (C) 2019-2020 Google Inc.
+/* Copyright (c) 2019-2021 The Khronos Group Inc.
+ * Copyright (c) 2019-2021 Valve Corporation
+ * Copyright (c) 2019-2021 LunarG, Inc.
+ * Copyright (C) 2019-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,12 +178,14 @@ RangeEncoder::RangeEncoder(const VkImageSubresourceRange& full_range, const Aspe
     PopulateFunctionPointers();
 }
 
+#ifndef NDEBUG
 static bool IsValid(const RangeEncoder& encoder, const VkImageSubresourceRange& bounds) {
     const auto& limits = encoder.Limits();
     return (((bounds.aspectMask & limits.aspectMask) == bounds.aspectMask) &&
             (bounds.baseMipLevel + bounds.levelCount <= limits.mipLevel) &&
             (bounds.baseArrayLayer + bounds.layerCount <= limits.arrayLayer));
 }
+#endif
 
 // Create an iterator like "generator" that for each increment produces the next index range matching the
 // next contiguous (in index space) section of the VkImageSubresourceRange
@@ -371,7 +373,9 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
       offset_(offset),
       extent_(extent),
       base_address_(base_address) {
+#ifndef NDEBUG
     assert(IsValid(*encoder_, subres_range_));
+#endif
     if (SubresourceRangeIsEmpty(subres_range) || ExtentIsEmpty(extent)) {
         // Empty range forces empty position -- no operations other than deref for empty check are valid
         pos_ = {0, 0};
