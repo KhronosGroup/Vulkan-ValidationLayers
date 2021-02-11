@@ -1,11 +1,11 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2020 LunarG, Inc. -->
+<!-- Copyright 2015-2021 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
 [2]: https://www.khronos.org/vulkan/
 
-# Synchronization Validation Design Documentation (alpha/phase1 release)
+# Synchronization Validation Design Documentation (phase1 release)
 
 [![Creative Commons][3]][4]
 
@@ -237,10 +237,31 @@ Several of the lookups below require tracking and comparing non-unique collectio
 
 The implementation used is a wrapper to std::map (which is typically implemented as a red-black tree), that implements a non-overlapping 1 dimensional range map.  Conversion to and from subresource address space is performed by a “encoder”/”generator” classes the create a set of single-dimensional ranges from subresource range definitions.  For buffer and linear images, the index for the interval tree represents  device memory in an idealized/simplified memory allocation scheme for VkDeviceMemory allocations.  For tiled/opaque images, the index represents an idealized memory range, not corresponding to device memory in any way.
 
+### VK_KHR_synchronization2
+
+Synchronization validation uses the pipeline stages and access masks defined in this extension, even when the extension is not enabled.  This is mostly transparent to the user, except that a few pipeline stages and access masks are split, to give more fine grained visibility into the  pipeline. This lets the validation code give better output in some cases. For example, a hazard caused by a vkCmdCopy() command will record its access as COPY_TRANSFER_READ or COPY_TRANSFER_WRITE, rather than TRANSFER_TRANSFER_READ or TRANSFER_TRANSFER_WRITE. A pipeline barrier using VK_PIPELINE_STAGE_TRANSFER_BIT should still fix this hazard.
+
+For convenience,  the tables below show the pipeline stages and access masks affected:
+
+| Vulkan 1.2 Pipeline Stage          | Synchronization2 Pipeline Stages                             |
+| ---------------------------------- | ------------------------------------------------------------ |
+| VK_PIPELINE_STAGE_TRANSFER_BIT     | VK_PIPELINE_STAGE_2_COPY_BIT_KHR				VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR				VK_PIPELINE_STAGE_2_BLIT_BIT_KHR				VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR |
+| VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR 				    VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR |
+
+
+
+| Vulkan 1.2 Access Mask     | Synchronization2 Access Masks                                |
+| -------------------------- | ------------------------------------------------------------ |
+| VK_ACCESS_SHADER_READ_BIT  | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR |
+| VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR                     |
+
+   These stages also affect the Stage / Access map described in the next section.
+
+ 
 
 ### Memory Usage Specification
 
-Vulkan classifies memory access by pipeline stage and access. However for purposes of tracking specific access, availability, and visibility state changes the two masks would allow for aliasing that could hide hazards.   In order to avoid that aliasing, the valid combinations of Stage and Access flags can be combined into memory usages-- with each represented by a unique index (currently 55 valid combinations) )and tracked with single bit within a mask(list in roughly pipeline order). 
+Vulkan classifies memory access by pipeline stage and access. However for purposes of tracking specific access, availability, and visibility state changes the two masks would allow for aliasing that could hide hazards.   In order to avoid that aliasing, the valid combinations of Stage and Access flags can be combined into memory usages-- with each represented by a unique index (currently 79 valid combinations) )and tracked with single bit within a mask(list in roughly pipeline order). 
 
 <table>
   <tr>
@@ -252,65 +273,72 @@ Vulkan classifies memory access by pipeline stage and access. However for purpos
   <tr>
    <td>Draw Indirect
    </td>
-   <td>DRAW_INDIRECT_INDIRECT_COMMAND_READ
-<p>
-DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT
+   <td> DRAW_INDIRECT_INDIRECT_COMMAND_READ<br>
+        DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT
    </td>
   </tr>
   <tr>
-   <td>Vertex Input
+   <td>Index Input
    </td>
-   <td>VERTEX_INPUT_INDEX_READ
-<p>
-VERTEX_INPUT_VERTEX_ATTRIBUTE_READ
+   <td> INDEX_INPUT_INDEX_READ
+   </td>
+  </tr>
+  <tr>
+ </tr>
+  <tr>
+   <td>Vertex Attribute Input
+   </td>
+   <td>
+        VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ
    </td>
   </tr>
   <tr>
    <td>Vertex Shader
    </td>
-   <td>VERTEX_SHADER_SHADER_READ
-<p>
-VERTEX_SHADER_SHADER_WRITE
-<p>
-VERTEX_SHADER_UNIFORM_READ
+   <td> VERTEX_SHADER_SHADER_READ<br>
+        VERTEX_SHADER_ACCELERATION_STRUCTURE_READ<br>
+       VERTEX_SHADER_SHADER_SAMPLED_READ<br>
+       VERTEX_SHADER_SHADER_STORAGE_READ<br>
+       VERTEX_SHADER_SHADER_STORAGE_WRITE<br>
+       VERTEX_SHADER_UNIFORM_READ
    </td>
   </tr>
   <tr>
    <td>Tessellation Control
    </td>
-   <td>TESSELLATION_CONTROL_SHADER_SHADER_READ
-<p>
-TESSELLATION_CONTROL_SHADER_SHADER_WRITE
-<p>
-TESSELLATION_CONTROL_SHADER_UNIFORM_READ
+   <td> TESSELLATION_CONTROL_SHADER_ACCELERATION_STRUCTURE_READ<br>
+        TESSELLATION_CONTROL_SHADER_SHADER_SAMPLED_READ<br>
+        TESSELLATION_CONTROL_SHADER_SHADER_STORAGE_READ<br>
+        TESSELLATION_CONTROL_SHADER_SHADER_STORAGE_WRITE<br>
+        TESSELLATION_CONTROL_SHADER_UNIFORM_READ
    </td>
   </tr>
   <tr>
    <td>Tessellation Evaluation
    </td>
-   <td>TESSELLATION_EVALUATION_SHADER_SHADER_READ
-<p>
-TESSELLATION_EVALUATION_SHADER_SHADER_WRITE
-<p>
-TESSELLATION_EVALUATION_SHADER_UNIFORM_READ
+   <td> TESSELLATION_EVALUATION_SHADER_ACCELERATION_STRUCTURE_READ<br>
+        TESSELLATION_EVALUATION_SHADER_SHADER_SAMPLED_READ<br>
+        TESSELLATION_EVALUATION_SHADER_SHADER_STORAGE_READ<br>
+        TESSELLATION_EVALUATION_SHADER_SHADER_STORAGE_WRITE<br>
+        TESSELLATION_EVALUATION_SHADER_UNIFORM_READ
    </td>
   </tr>
   <tr>
    <td>Geometry Shader
    </td>
-   <td>GEOMETRY_SHADER_SHADER_READ
-<p>
-GEOMETRY_SHADER_SHADER_WRITE
-<p>
-GEOMETRY_SHADER_UNIFORM_READ
+   <td> GEOMETRY_SHADER_ACCELERATION_STRUCTURE_READ<br>
+        GEOMETRY_SHADER_SHADER_SAMPLED_READ<br>
+        GEOMETRY_SHADER_SHADER_STORAGE_READ<br>
+        GEOMETRY_SHADER_SHADER_STORAGE_WRITE<br>
+        GEOMETRY_SHADER_UNIFORM_READ
    </td>
   </tr>
   <tr>
    <td>Transform Feedback
    </td>
-   <td>TRANSFORM_FEEDBACK_EXT_TRANSFORM_FEEDBACK_COUNTER_WRITE_EXT
-<p>
-TRANSFORM_FEEDBACK_EXT_TRANSFORM_FEEDBACK_WRITE_EXT
+   <td> TRANSFORM_FEEDBACK_BIT_EXT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT<br>
+        TRANSFORM_FEEDBACK_BIT_EXT_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT<br>
+        TRANSFORM_FEEDBACK_BIT_EXT_TRANSFORM_FEEDBACK_WRITE_BIT_EXT
    </td>
   </tr>
   <tr>
@@ -322,110 +350,133 @@ TRANSFORM_FEEDBACK_EXT_TRANSFORM_FEEDBACK_WRITE_EXT
   <tr>
    <td>Task Shader
    </td>
-   <td>TASK_SHADER_NV_SHADER_READ
-<p>
-TASK_SHADER_NV_SHADER_WRITE
-<p>
-TASK_SHADER_NV_UNIFORM_READ
+   <td> TASK_SHADER_NV_ACCELERATION_STRUCTURE_READ<br>
+        TASK_SHADER_NV_SHADER_SAMPLED_READ<br>
+        TASK_SHADER_NV_SHADER_STORAGE_READ<br>
+        TASK_SHADER_NV_SHADER_STORAGE_WRITE<br>
+        TASK_SHADER_NV_UNIFORM_READ
    </td>
   </tr>
   <tr>
    <td>Mesh Shader
    </td>
-   <td>MESH_SHADER_NV_SHADER_READ
-<p>
-MESH_SHADER_NV_SHADER_WRITE
-<p>
-MESH_SHADER_NV_UNIFORM_READ
+   <td> MESH_SHADER_NV_ACCELERATION_STRUCTURE_READ<br>
+        MESH_SHADER_NV_SHADER_SAMPLED_READ<br>
+        MESH_SHADER_NV_SHADER_STORAGE_READ<br>
+        MESH_SHADER_NV_SHADER_STORAGE_WRITE<br>
+        MESH_SHADER_NV_UNIFORM_READ
    </td>
   </tr>
   <tr>
    <td>Shading Rate
    </td>
-   <td>SHADING_RATE_IMAGE_NV_SHADING_RATE_IMAGE_READ_NV
+   <td>
+   FRAGMENT_SHADING_RATE_ATTACHMENT_FRAGMENT_SHADING_RATE_ATTACHMENT_READ
    </td>
   </tr>
   <tr>
    <td>Early Fragement Tests
    </td>
-   <td>EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ
-<p>
-EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE
+   <td> EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ<br>
+        EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE
    </td>
   </tr>
   <tr>
    <td>Fragment Shader
    </td>
-   <td>FRAGMENT_SHADER_INPUT_ATTACHMENT_READ
-<p>
-FRAGMENT_SHADER_SHADER_READ
-<p>
-FRAGMENT_SHADER_SHADER_WRITE
-<p>
-FRAGMENT_SHADER_UNIFORM_READ
+   <td> FRAGMENT_SHADER_ACCELERATION_STRUCTURE_READ <br>
+        FRAGMENT_SHADER_INPUT_ATTACHMENT_READ<br>
+        FRAGMENT_SHADER_SHADER_SAMPLED_READ<br>
+        FRAGMENT_SHADER_SHADER_STORAGE_READ<br>
+        FRAGMENT_SHADER_SHADER_STORAGE_WRITE<br>
+        FRAGMENT_SHADER_UNIFORM_READ
    </td>
   </tr>
   <tr>
    <td>Late Fragment Tests
    </td>
-   <td>LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ
-<p>
-LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE
+   <td>
+        LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ<br>
+        LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE
    </td>
   </tr>
   <tr>
    <td>Color Attachment Output
    </td>
-   <td>COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
-<p>
-COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_NONCOHERENT_EXT
-<p>
-COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE
+   <td>
+        COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ<br>
+        COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_NONCOHERENT_EXT<br>
+        COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE
    </td>
   </tr>
   <tr>
    <td>Compute Shader
    </td>
-   <td>COMPUTE_SHADER_SHADER_READ
-<p>
-COMPUTE_SHADER_SHADER_WRITE
-<p>
-COMPUTE_SHADER_UNIFORM_READ
+   <td>
+        COMPUTE_SHADER_ACCELERATION_STRUCTURE_READ<br>
+        COMPUTE_SHADER_SHADER_SAMPLED_READ<br>
+        COMPUTE_SHADER_SHADER_STORAGE_READ<br>
+        COMPUTE_SHADER_SHADER_STORAGE_WRITE<br>
+        COMPUTE_SHADER_UNIFORM_READ
    </td>
   </tr>
   <tr>
-   <td>Transfer
+   <td>Copy
    </td>
-   <td>TRANSFER_TRANSFER_READ
-<p>
-TRANSFER_TRANSFER_WRITE
+   <td>
+        COPY_TRANSFER_READ<br>
+        COPY_TRANSFER_WRITE
+   </td>
+  </tr>
+  <tr>
+   <td>Resolve
+   </td>
+   <td>
+        RESOLVE_TRANSFER_READ<br>
+        RESOLVE_TRANSFER_WRITE
+   </td>
+  </tr>
+  <tr>
+   <td>Blit
+   </td>
+   <td>
+        BLIT_TRANSFER_READ<br>
+        BLIT_TRANSFER_WRITE
+   </td>
+  </tr>
+  <tr>
+   <td>Clear
+   </td>
+   <td>
+        CLEAR_TRANSFER_WRITE
    </td>
   </tr>
   <tr>
    <td>Command Preprocess
    </td>
-   <td>COMMAND_PREPROCESS_NV_COMMAND_PREPROCESS_READ_NV
-<p>
-COMMAND_PREPROCESS_NV_COMMAND_PREPROCESS_WRITE_NV
+   <td>
+        COMMAND_PREPROCESS_NV_COMMAND_PREPROCESS_READ_NV<br>
+        COMMAND_PREPROCESS_NV_COMMAND_PREPROCESS_WRITE_NV
    </td>
   </tr>
   <tr>
    <td>Host Memory Access
    </td>
-   <td>HOST_HOST_READ
-<p>
-HOST_HOST_WRITE
+   <td>
+        HOST_HOST_READ<br>
+        HOST_HOST_WRITE
    </td>
   </tr>
   <tr>
    <td>Barrier operations
    </td>
-   <td>IMAGE_LAYOUT_TRANSITION
-<p>
-QUEUE_FAMILY_OWNERSHIP_TRANSFER
+   <td>
+        IMAGE_LAYOUT_TRANSITION<br>
+        QUEUE_FAMILY_OWNERSHIP_TRANSFER
    </td>
   </tr>
 </table>
+
 Note that of interest is also the “pipeline type” (compute, graphics, or transfer) of the action causing this memory access. It is needed when determining logically “earlier” and “later” stages of the pipeline for apply synchronization scope updates. This information is code-generated from parsing of the Vulkan specification, with appropriate snippets *manually* update within the code generation scripts.
 
 
@@ -1055,7 +1106,6 @@ These are read only, but as the actual indices and vertices referenced are only 
 
 The stage/access for each bound descriptor referenced by a draw or dispatch call is determined by the shader stage, access control decoration and descriptor type.  For those descriptors that _can_ be stored to, access of read vs. write is determined by the “GLSL readonly” or Spir-V NonWritable decoration.  An binding not marked as readonly, and legal for store or atomic operations will be treated as a write access.
 
-
 <table>
   <tr>
    <td>Descriptor Type
@@ -1066,7 +1116,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>Operations
    </td>
-   <td><code>VK_ACCESS_..._BIT</code>
+   <td><code>VK_ACCESS_2_..._BIT_KHR</code>
    </td>
   </tr>
   <tr>
@@ -1078,7 +1128,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>load, store, and atomic
    </td>
-   <td><code>SHADER_READ(WRITE) </code>
+   <td><code>SHADER_STORAGE_READ(WRITE) </code>
    </td>
   </tr>
   <tr>
@@ -1090,7 +1140,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>sampling
    </td>
-   <td><code>SHADER_READ</code>
+   <td><code>SHADER_SAMPLED_READ</code>
    </td>
   </tr>
   <tr>
@@ -1102,7 +1152,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>sampling
    </td>
-   <td><code>SHADER_READ</code>
+   <td><code>SHADER_SAMPLED_READ</code>
    </td>
   </tr>
   <tr>
@@ -1114,7 +1164,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>load
    </td>
-   <td><code>SHADER_READ</code>
+   <td><code>SHADER_STORAGE_READ</code>
    </td>
   </tr>
   <tr>
@@ -1126,7 +1176,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>load, store, and atomic
    </td>
-   <td><code>SHADER_READ(WRITE) </code>
+   <td><code>SHADER_STORAGE_READ(WRITE) </code>
    </td>
   </tr>
   <tr>
@@ -1138,7 +1188,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>load, store, and atomic
    </td>
-   <td><code>SHADER_READ(WRITE) </code>
+   <td><code>SHADER_STORAGE_READ(WRITE) </code>
    </td>
   </tr>
   <tr>
@@ -1150,7 +1200,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>load
    </td>
-   <td><code>SHADER_READ</code>
+   <td><code>SHADER_STORAGE_READ</code>
    </td>
   </tr>
   <tr>
@@ -1162,7 +1212,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>load
    </td>
-   <td><code>SHADER_READ</code>
+   <td><code>SHADER_STORAGE_READ</code>
    </td>
   </tr>
   <tr>
@@ -1174,7 +1224,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>load, store, and atomic
    </td>
-   <td><code>SHADER_READ(WRITE)</code>
+   <td><code>SHADER_STORAGE_READ(WRITE)</code>
    </td>
   </tr>
   <tr>
@@ -1186,7 +1236,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>
    </td>
-   <td><code>SHADER_READ</code>
+   <td><code>SHADER_STORAGE_READ</code>
    </td>
   </tr>
   <tr>
@@ -1210,7 +1260,7 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
    </td>
    <td>Shaders read-only access
    </td>
-   <td><code>SHADER_READ</code>
+   <td><code>SHADER_STORAGE_READ</code>
    </td>
   </tr>
 </table>
@@ -1234,7 +1284,6 @@ Color attachment use is controlled by the fragment shader output declarations an
 ##### Depth/Stencil Attachments
 
 Depth/Stencil Attachment usage is controlled by `VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable `and various parameter of `VkPipelineDepthStencilStateCreateInfo`. If `rasterizerDiscardEnable` is set,  Depth/Stencil attachments are ignored for hazard detection and state update.  Depth aspect detection and update are controlled by depthTestEnable and depthWriteEnable and the ExecutionMode EarlyFragmentTests. If depthTestEnable is false, depth attachments aspects are ignored. Otherwise the following stage/access are used for the renderArea portion of the depth aspect. \
-
 
 
 <table>
