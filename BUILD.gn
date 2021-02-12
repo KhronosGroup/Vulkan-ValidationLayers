@@ -104,6 +104,7 @@ core_validation_sources = [
   "layers/gpu_utils.h",
   "layers/gpu_validation.cpp",
   "layers/gpu_validation.h",
+  "layers/gpu_vuids.h",
   "layers/image_layout_map.cpp",
   "layers/image_layout_map.h",
   "layers/range_vector.h",
