@@ -647,32 +647,32 @@ class BothRangeMap {
 
     inline iterator begin() {
         if (SmallMode()) {
-            return iterator(small_map_.begin());
+            return iterator(small_map_->begin());
         } else {
-            return iterator(big_map_.begin());
+            return iterator(big_map_->begin());
         }
     }
     inline const_iterator cbegin() const {
         if (SmallMode()) {
-            return const_iterator(small_map_.begin());
+            return const_iterator(small_map_->begin());
         } else {
-            return const_iterator(big_map_.begin());
+            return const_iterator(big_map_->begin());
         }
     }
     inline const_iterator begin() const { return cbegin(); }
 
     inline iterator end() {
         if (SmallMode()) {
-            return iterator(small_map_.end());
+            return iterator(small_map_->end());
         } else {
-            return iterator(big_map_.end());
+            return iterator(big_map_->end());
         }
     }
     inline const_iterator cend() const {
         if (SmallMode()) {
-            return const_iterator(small_map_.end());
+            return const_iterator(small_map_->end());
         } else {
-            return const_iterator(big_map_.end());
+            return const_iterator(big_map_->end());
         }
     }
     inline const_iterator end() const { return cend(); }
@@ -680,36 +680,36 @@ class BothRangeMap {
     inline iterator find(const key_type& key) {
         assert(!Tristate());
         if (SmallMode()) {
-            return iterator(small_map_.find(key));
+            return iterator(small_map_->find(key));
         } else {
-            return iterator(big_map_.find(key));
+            return iterator(big_map_->find(key));
         }
     }
 
     inline const_iterator find(const key_type& key) const {
         assert(!Tristate());
         if (SmallMode()) {
-            return const_iterator(small_map_.find(key));
+            return const_iterator(small_map_->find(key));
         } else {
-            return const_iterator(big_map_.find(key));
+            return const_iterator(big_map_->find(key));
         }
     }
 
     inline iterator find(const index_type& index) {
         assert(!Tristate());
         if (SmallMode()) {
-            return iterator(small_map_.find(index));
+            return iterator(small_map_->find(index));
         } else {
-            return iterator(big_map_.find(index));
+            return iterator(big_map_->find(index));
         }
     }
 
     inline const_iterator find(const index_type& index) const {
         assert(!Tristate());
         if (SmallMode()) {
-            return const_iterator(const_small_map_.find(index));
+            return const_iterator(static_cast<const SmallMap*>(small_map_)->find(index));
         } else {
-            return const_iterator(const_big_map_.find(index));
+            return const_iterator(static_cast<const BigMap*>(big_map_)->find(index));
         }
     }
 
@@ -718,10 +718,10 @@ class BothRangeMap {
         assert(!Tristate());
         if (SmallMode()) {
             assert(hint.SmallMode());
-            small_map_.insert(hint.small_it_, value);
+            small_map_->insert(hint.small_it_, value);
         } else {
             assert(hint.BigMode());
-            big_map_.insert(hint.big_it_, value);
+            big_map_->insert(hint.big_it_, value);
         }
     }
 
@@ -729,25 +729,25 @@ class BothRangeMap {
     iterator split(const iterator whole_it, const index_type& index, const SplitOp& split_op) {
         assert(!Tristate());
         if (SmallMode()) {
-            return small_map_.split(whole_it.small_it_, index, split_op);
+            return small_map_->split(whole_it.small_it_, index, split_op);
         } else {
-            return big_map_.split(whole_it.big_it_, index, split_op);
+            return big_map_->split(whole_it.big_it_, index, split_op);
         }
     }
 
     inline iterator lower_bound(const key_type& key) {
         if (SmallMode()) {
-            return iterator(small_map_.lower_bound(key));
+            return iterator(small_map_->lower_bound(key));
         } else {
-            return iterator(big_map_.lower_bound(key));
+            return iterator(big_map_->lower_bound(key));
         }
     }
 
     inline const_iterator lower_bound(const key_type& key) const {
         if (SmallMode()) {
-            return const_iterator(small_map_.lower_bound(key));
+            return const_iterator(small_map_->lower_bound(key));
         } else {
-            return const_iterator(big_map_.lower_bound(key));
+            return const_iterator(big_map_->lower_bound(key));
         }
     }
 
@@ -755,10 +755,10 @@ class BothRangeMap {
     inline iterator overwrite_range(const iterator& lower, Value&& value) {
         if (SmallMode()) {
             assert(lower.SmallMode());
-            return small_map_.overwrite_range(lower.small_it_, std::forward<Value>(value));
+            return small_map_->overwrite_range(lower.small_it_, std::forward<Value>(value));
         } else {
             assert(lower.BigMode());
-            return big_map_.overwrite_range(lower.big_it_, std::forward<Value>(value));
+            return big_map_->overwrite_range(lower.big_it_, std::forward<Value>(value));
         }
     }
 
@@ -767,41 +767,38 @@ class BothRangeMap {
     BothRangeMapMode GetMode() const { return mode_; }
     const small_map& GetSmallMap() const {
         assert(SmallMode());
-        return small_map_;
+        return *small_map_;
     }
     small_map& GetSmallMap() {
         assert(SmallMode());
-        return small_map_;
+        return *small_map_;
     }
     const big_map& GetBigMap() const {
         assert(BigMode());
-        return big_map_;
+        return *big_map_;
     }
     big_map& GetBigMap() {
         assert(BigMode());
-        return big_map_;
+        return *big_map_;
     }
-    BothRangeMap() : const_big_map_(big_map_), const_small_map_(small_map_), mode_(BothRangeMapMode::kBig) {}
-    BothRangeMap(index_type limit)
-        : big_map_(),
-          small_map_(limit <= N ? limit : 0),
-          const_big_map_(big_map_),
-          const_small_map_(small_map_),
-          mode_(limit <= N ? BothRangeMapMode::kSmall : BothRangeMapMode::kBig) {}
+    BothRangeMap() = delete;
+    BothRangeMap(index_type limit) : mode_(ComputeMode(limit)), big_map_(MakeBigMap()), small_map_(MakeSmallMap(limit)) {}
 
     inline bool empty() const {
         if (SmallMode()) {
-            return small_map_.empty();
+            return small_map_->empty();
         } else {
-            return big_map_.empty();
+            assert(BigMode());
+            return big_map_->empty();
         }
     }
 
     inline size_t size() const {
         if (SmallMode()) {
-            return small_map_.size();
+            return small_map_->size();
         } else {
-            return big_map_.size();
+            assert(BigMode());
+            return big_map_->size();
         }
     }
 
@@ -810,11 +807,29 @@ class BothRangeMap {
     inline bool Tristate() const { return BothRangeMapMode::kTristate == mode_; }
 
   private:
-    BigMap big_map_;
-    SmallMap small_map_;
-    const BigMap& const_big_map_;
-    const SmallMap& const_small_map_;
-    BothRangeMapMode mode_;
+    static BothRangeMapMode ComputeMode(index_type size_limit) {
+        return size_limit <= N ? BothRangeMapMode::kSmall : BothRangeMapMode::kBig;
+    }
+    BigMap* MakeBigMap() {
+        if (BigMode()) {
+            return new (&backing_store) BigMap();
+        }
+        return nullptr;
+    }
+    SmallMap* MakeSmallMap(index_type limit) {
+        if (SmallMode()) {
+            return new (&backing_store) SmallMap(limit);
+        }
+        return nullptr;
+    }
+
+    BothRangeMapMode mode_ = BothRangeMapMode::kTristate;
+    // Must be after mode_ as they use mode for initialization logic
+    BigMap* big_map_ = nullptr;
+    SmallMap* small_map_ = nullptr;
+
+    using Storage = typename std::aligned_union<0, SmallMap, BigMap>::type;
+    Storage backing_store;
 };
 
 }  // namespace subresource_adapter
