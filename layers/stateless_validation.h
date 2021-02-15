@@ -743,8 +743,42 @@ class StatelessValidation : public ValidationObject {
 
     enum FlagType { kRequiredFlags, kOptionalFlags, kRequiredSingleBit, kOptionalSingleBit };
 
+    // helper to implement validation of both 32 bit and 64 bit flags.
+    template <typename FlagTypedef>
+    bool validate_flags_impl(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name,
+                             FlagTypedef all_flags, FlagTypedef value, const FlagType flag_type, const char *vuid,
+                             const char *flags_zero_vuid = nullptr) const {
+        bool skip_call = false;
+
+        if ((value & ~all_flags) != 0) {
+            skip_call |= LogError(device, vuid, "%s: value of %s contains flag bits that are not recognized members of %s",
+                                  api_name, parameter_name.get_name().c_str(), flag_bits_name);
+        }
+
+        const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
+        const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
+        if (required && value == 0) {
+            skip_call |= LogError(device, zero_vuid, "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
+        }
+
+        const auto HasMaxOneBitSet = [](const FlagTypedef f) {
+            // Decrement flips bits from right upto first 1.
+            // Rest stays same, and if there was any other 1s &ded together they would be non-zero. QED
+            return f == 0 || !(f & (f - 1));
+        };
+
+        const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
+        if (is_bits_type && !HasMaxOneBitSet(value)) {
+            skip_call |=
+                LogError(device, vuid, "%s: value of %s contains multiple members of %s when only a single value is allowed",
+                         api_name, parameter_name.get_name().c_str(), flag_bits_name);
+        }
+
+        return skip_call;
+    }
+
     /**
-     * Validate a Vulkan bitmask value.
+     * Validate a 32 bit Vulkan bitmask value.
      *
      * Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
      * for that type.
@@ -761,33 +795,30 @@ class StatelessValidation : public ValidationObject {
      */
     bool validate_flags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags all_flags,
                         VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const {
-        bool skip_call = false;
+        return validate_flags_impl<VkFlags>(api_name, parameter_name, flag_bits_name, all_flags, value, flag_type, vuid,
+                                            flags_zero_vuid);
+    }
 
-        if ((value & ~all_flags) != 0) {
-            skip_call |= LogError(device, vuid, "%s: value of %s contains flag bits that are not recognized members of %s",
-                                  api_name, parameter_name.get_name().c_str(), flag_bits_name);
-        }
-
-        const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
-        const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
-        if (required && value == 0) {
-            skip_call |= LogError(device, zero_vuid, "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
-        }
-
-        const auto HasMaxOneBitSet = [](const VkFlags f) {
-            // Decrement flips bits from right upto first 1.
-            // Rest stays same, and if there was any other 1s &ded together they would be non-zero. QED
-            return f == 0 || !(f & (f - 1));
-        };
-
-        const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
-        if (is_bits_type && !HasMaxOneBitSet(value)) {
-            skip_call |=
-                LogError(device, vuid, "%s: value of %s contains multiple members of %s when only a single value is allowed",
-                         api_name, parameter_name.get_name().c_str(), flag_bits_name);
-        }
-
-        return skip_call;
+    /**
+     * Validate a 64 bit Vulkan bitmask value.
+     *
+     * Generate a warning if a value with a VkFlags64 derived type does not contain valid flag bits
+     * for that type.
+     *
+     * @param api_name Name of API call being validated.
+     * @param parameter_name Name of parameter being validated.
+     * @param flag_bits_name Name of the VkFlags64 type being validated.
+     * @param all_flags A bit mask combining all valid flag bits for the VkFlags64 type being validated.
+     * @param value VkFlags64 value to validate.
+     * @param flag_type The type of flag, like optional, or single bit.
+     * @param vuid VUID used for flag that is outside defined bits (or has more than one bit for Bits type).
+     * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
+     * @return Boolean value indicating that the call should be skipped.
+     */
+    bool validate_flags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags64 all_flags,
+                        VkFlags64 value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const {
+        return validate_flags_impl<VkFlags64>(api_name, parameter_name, flag_bits_name, all_flags, value, flag_type, vuid,
+                                              flags_zero_vuid);
     }
 
     /**

@@ -19629,6 +19629,932 @@ void safe_VkPipelineLibraryCreateInfoKHR::initialize(const safe_VkPipelineLibrar
     }
 }
 
+safe_VkMemoryBarrier2KHR::safe_VkMemoryBarrier2KHR(const VkMemoryBarrier2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcStageMask(in_struct->srcStageMask),
+    srcAccessMask(in_struct->srcAccessMask),
+    dstStageMask(in_struct->dstStageMask),
+    dstAccessMask(in_struct->dstAccessMask)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryBarrier2KHR::safe_VkMemoryBarrier2KHR() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkMemoryBarrier2KHR::safe_VkMemoryBarrier2KHR(const safe_VkMemoryBarrier2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcStageMask = copy_src.srcStageMask;
+    srcAccessMask = copy_src.srcAccessMask;
+    dstStageMask = copy_src.dstStageMask;
+    dstAccessMask = copy_src.dstAccessMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryBarrier2KHR& safe_VkMemoryBarrier2KHR::operator=(const safe_VkMemoryBarrier2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcStageMask = copy_src.srcStageMask;
+    srcAccessMask = copy_src.srcAccessMask;
+    dstStageMask = copy_src.dstStageMask;
+    dstAccessMask = copy_src.dstAccessMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryBarrier2KHR::~safe_VkMemoryBarrier2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryBarrier2KHR::initialize(const VkMemoryBarrier2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcStageMask = in_struct->srcStageMask;
+    srcAccessMask = in_struct->srcAccessMask;
+    dstStageMask = in_struct->dstStageMask;
+    dstAccessMask = in_struct->dstAccessMask;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryBarrier2KHR::initialize(const safe_VkMemoryBarrier2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcStageMask = copy_src->srcStageMask;
+    srcAccessMask = copy_src->srcAccessMask;
+    dstStageMask = copy_src->dstStageMask;
+    dstAccessMask = copy_src->dstAccessMask;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkBufferMemoryBarrier2KHR::safe_VkBufferMemoryBarrier2KHR(const VkBufferMemoryBarrier2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcStageMask(in_struct->srcStageMask),
+    srcAccessMask(in_struct->srcAccessMask),
+    dstStageMask(in_struct->dstStageMask),
+    dstAccessMask(in_struct->dstAccessMask),
+    srcQueueFamilyIndex(in_struct->srcQueueFamilyIndex),
+    dstQueueFamilyIndex(in_struct->dstQueueFamilyIndex),
+    buffer(in_struct->buffer),
+    offset(in_struct->offset),
+    size(in_struct->size)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferMemoryBarrier2KHR::safe_VkBufferMemoryBarrier2KHR() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkBufferMemoryBarrier2KHR::safe_VkBufferMemoryBarrier2KHR(const safe_VkBufferMemoryBarrier2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcStageMask = copy_src.srcStageMask;
+    srcAccessMask = copy_src.srcAccessMask;
+    dstStageMask = copy_src.dstStageMask;
+    dstAccessMask = copy_src.dstAccessMask;
+    srcQueueFamilyIndex = copy_src.srcQueueFamilyIndex;
+    dstQueueFamilyIndex = copy_src.dstQueueFamilyIndex;
+    buffer = copy_src.buffer;
+    offset = copy_src.offset;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferMemoryBarrier2KHR& safe_VkBufferMemoryBarrier2KHR::operator=(const safe_VkBufferMemoryBarrier2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcStageMask = copy_src.srcStageMask;
+    srcAccessMask = copy_src.srcAccessMask;
+    dstStageMask = copy_src.dstStageMask;
+    dstAccessMask = copy_src.dstAccessMask;
+    srcQueueFamilyIndex = copy_src.srcQueueFamilyIndex;
+    dstQueueFamilyIndex = copy_src.dstQueueFamilyIndex;
+    buffer = copy_src.buffer;
+    offset = copy_src.offset;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferMemoryBarrier2KHR::~safe_VkBufferMemoryBarrier2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferMemoryBarrier2KHR::initialize(const VkBufferMemoryBarrier2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcStageMask = in_struct->srcStageMask;
+    srcAccessMask = in_struct->srcAccessMask;
+    dstStageMask = in_struct->dstStageMask;
+    dstAccessMask = in_struct->dstAccessMask;
+    srcQueueFamilyIndex = in_struct->srcQueueFamilyIndex;
+    dstQueueFamilyIndex = in_struct->dstQueueFamilyIndex;
+    buffer = in_struct->buffer;
+    offset = in_struct->offset;
+    size = in_struct->size;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferMemoryBarrier2KHR::initialize(const safe_VkBufferMemoryBarrier2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcStageMask = copy_src->srcStageMask;
+    srcAccessMask = copy_src->srcAccessMask;
+    dstStageMask = copy_src->dstStageMask;
+    dstAccessMask = copy_src->dstAccessMask;
+    srcQueueFamilyIndex = copy_src->srcQueueFamilyIndex;
+    dstQueueFamilyIndex = copy_src->dstQueueFamilyIndex;
+    buffer = copy_src->buffer;
+    offset = copy_src->offset;
+    size = copy_src->size;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkImageMemoryBarrier2KHR::safe_VkImageMemoryBarrier2KHR(const VkImageMemoryBarrier2KHR* in_struct) :
+    sType(in_struct->sType),
+    srcStageMask(in_struct->srcStageMask),
+    srcAccessMask(in_struct->srcAccessMask),
+    dstStageMask(in_struct->dstStageMask),
+    dstAccessMask(in_struct->dstAccessMask),
+    oldLayout(in_struct->oldLayout),
+    newLayout(in_struct->newLayout),
+    srcQueueFamilyIndex(in_struct->srcQueueFamilyIndex),
+    dstQueueFamilyIndex(in_struct->dstQueueFamilyIndex),
+    image(in_struct->image),
+    subresourceRange(in_struct->subresourceRange)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageMemoryBarrier2KHR::safe_VkImageMemoryBarrier2KHR() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkImageMemoryBarrier2KHR::safe_VkImageMemoryBarrier2KHR(const safe_VkImageMemoryBarrier2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    srcStageMask = copy_src.srcStageMask;
+    srcAccessMask = copy_src.srcAccessMask;
+    dstStageMask = copy_src.dstStageMask;
+    dstAccessMask = copy_src.dstAccessMask;
+    oldLayout = copy_src.oldLayout;
+    newLayout = copy_src.newLayout;
+    srcQueueFamilyIndex = copy_src.srcQueueFamilyIndex;
+    dstQueueFamilyIndex = copy_src.dstQueueFamilyIndex;
+    image = copy_src.image;
+    subresourceRange = copy_src.subresourceRange;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageMemoryBarrier2KHR& safe_VkImageMemoryBarrier2KHR::operator=(const safe_VkImageMemoryBarrier2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    srcStageMask = copy_src.srcStageMask;
+    srcAccessMask = copy_src.srcAccessMask;
+    dstStageMask = copy_src.dstStageMask;
+    dstAccessMask = copy_src.dstAccessMask;
+    oldLayout = copy_src.oldLayout;
+    newLayout = copy_src.newLayout;
+    srcQueueFamilyIndex = copy_src.srcQueueFamilyIndex;
+    dstQueueFamilyIndex = copy_src.dstQueueFamilyIndex;
+    image = copy_src.image;
+    subresourceRange = copy_src.subresourceRange;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageMemoryBarrier2KHR::~safe_VkImageMemoryBarrier2KHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageMemoryBarrier2KHR::initialize(const VkImageMemoryBarrier2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    srcStageMask = in_struct->srcStageMask;
+    srcAccessMask = in_struct->srcAccessMask;
+    dstStageMask = in_struct->dstStageMask;
+    dstAccessMask = in_struct->dstAccessMask;
+    oldLayout = in_struct->oldLayout;
+    newLayout = in_struct->newLayout;
+    srcQueueFamilyIndex = in_struct->srcQueueFamilyIndex;
+    dstQueueFamilyIndex = in_struct->dstQueueFamilyIndex;
+    image = in_struct->image;
+    subresourceRange = in_struct->subresourceRange;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageMemoryBarrier2KHR::initialize(const safe_VkImageMemoryBarrier2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    srcStageMask = copy_src->srcStageMask;
+    srcAccessMask = copy_src->srcAccessMask;
+    dstStageMask = copy_src->dstStageMask;
+    dstAccessMask = copy_src->dstAccessMask;
+    oldLayout = copy_src->oldLayout;
+    newLayout = copy_src->newLayout;
+    srcQueueFamilyIndex = copy_src->srcQueueFamilyIndex;
+    dstQueueFamilyIndex = copy_src->dstQueueFamilyIndex;
+    image = copy_src->image;
+    subresourceRange = copy_src->subresourceRange;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDependencyInfoKHR::safe_VkDependencyInfoKHR(const VkDependencyInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    dependencyFlags(in_struct->dependencyFlags),
+    memoryBarrierCount(in_struct->memoryBarrierCount),
+    pMemoryBarriers(nullptr),
+    bufferMemoryBarrierCount(in_struct->bufferMemoryBarrierCount),
+    pBufferMemoryBarriers(nullptr),
+    imageMemoryBarrierCount(in_struct->imageMemoryBarrierCount),
+    pImageMemoryBarriers(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (memoryBarrierCount && in_struct->pMemoryBarriers) {
+        pMemoryBarriers = new safe_VkMemoryBarrier2KHR[memoryBarrierCount];
+        for (uint32_t i = 0; i < memoryBarrierCount; ++i) {
+            pMemoryBarriers[i].initialize(&in_struct->pMemoryBarriers[i]);
+        }
+    }
+    if (bufferMemoryBarrierCount && in_struct->pBufferMemoryBarriers) {
+        pBufferMemoryBarriers = new safe_VkBufferMemoryBarrier2KHR[bufferMemoryBarrierCount];
+        for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
+            pBufferMemoryBarriers[i].initialize(&in_struct->pBufferMemoryBarriers[i]);
+        }
+    }
+    if (imageMemoryBarrierCount && in_struct->pImageMemoryBarriers) {
+        pImageMemoryBarriers = new safe_VkImageMemoryBarrier2KHR[imageMemoryBarrierCount];
+        for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+            pImageMemoryBarriers[i].initialize(&in_struct->pImageMemoryBarriers[i]);
+        }
+    }
+}
+
+safe_VkDependencyInfoKHR::safe_VkDependencyInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR),
+    pNext(nullptr),
+    pMemoryBarriers(nullptr),
+    pBufferMemoryBarriers(nullptr),
+    pImageMemoryBarriers(nullptr)
+{}
+
+safe_VkDependencyInfoKHR::safe_VkDependencyInfoKHR(const safe_VkDependencyInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    dependencyFlags = copy_src.dependencyFlags;
+    memoryBarrierCount = copy_src.memoryBarrierCount;
+    pMemoryBarriers = nullptr;
+    bufferMemoryBarrierCount = copy_src.bufferMemoryBarrierCount;
+    pBufferMemoryBarriers = nullptr;
+    imageMemoryBarrierCount = copy_src.imageMemoryBarrierCount;
+    pImageMemoryBarriers = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (memoryBarrierCount && copy_src.pMemoryBarriers) {
+        pMemoryBarriers = new safe_VkMemoryBarrier2KHR[memoryBarrierCount];
+        for (uint32_t i = 0; i < memoryBarrierCount; ++i) {
+            pMemoryBarriers[i].initialize(&copy_src.pMemoryBarriers[i]);
+        }
+    }
+    if (bufferMemoryBarrierCount && copy_src.pBufferMemoryBarriers) {
+        pBufferMemoryBarriers = new safe_VkBufferMemoryBarrier2KHR[bufferMemoryBarrierCount];
+        for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
+            pBufferMemoryBarriers[i].initialize(&copy_src.pBufferMemoryBarriers[i]);
+        }
+    }
+    if (imageMemoryBarrierCount && copy_src.pImageMemoryBarriers) {
+        pImageMemoryBarriers = new safe_VkImageMemoryBarrier2KHR[imageMemoryBarrierCount];
+        for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+            pImageMemoryBarriers[i].initialize(&copy_src.pImageMemoryBarriers[i]);
+        }
+    }
+}
+
+safe_VkDependencyInfoKHR& safe_VkDependencyInfoKHR::operator=(const safe_VkDependencyInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pMemoryBarriers)
+        delete[] pMemoryBarriers;
+    if (pBufferMemoryBarriers)
+        delete[] pBufferMemoryBarriers;
+    if (pImageMemoryBarriers)
+        delete[] pImageMemoryBarriers;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dependencyFlags = copy_src.dependencyFlags;
+    memoryBarrierCount = copy_src.memoryBarrierCount;
+    pMemoryBarriers = nullptr;
+    bufferMemoryBarrierCount = copy_src.bufferMemoryBarrierCount;
+    pBufferMemoryBarriers = nullptr;
+    imageMemoryBarrierCount = copy_src.imageMemoryBarrierCount;
+    pImageMemoryBarriers = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (memoryBarrierCount && copy_src.pMemoryBarriers) {
+        pMemoryBarriers = new safe_VkMemoryBarrier2KHR[memoryBarrierCount];
+        for (uint32_t i = 0; i < memoryBarrierCount; ++i) {
+            pMemoryBarriers[i].initialize(&copy_src.pMemoryBarriers[i]);
+        }
+    }
+    if (bufferMemoryBarrierCount && copy_src.pBufferMemoryBarriers) {
+        pBufferMemoryBarriers = new safe_VkBufferMemoryBarrier2KHR[bufferMemoryBarrierCount];
+        for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
+            pBufferMemoryBarriers[i].initialize(&copy_src.pBufferMemoryBarriers[i]);
+        }
+    }
+    if (imageMemoryBarrierCount && copy_src.pImageMemoryBarriers) {
+        pImageMemoryBarriers = new safe_VkImageMemoryBarrier2KHR[imageMemoryBarrierCount];
+        for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+            pImageMemoryBarriers[i].initialize(&copy_src.pImageMemoryBarriers[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkDependencyInfoKHR::~safe_VkDependencyInfoKHR()
+{
+    if (pMemoryBarriers)
+        delete[] pMemoryBarriers;
+    if (pBufferMemoryBarriers)
+        delete[] pBufferMemoryBarriers;
+    if (pImageMemoryBarriers)
+        delete[] pImageMemoryBarriers;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDependencyInfoKHR::initialize(const VkDependencyInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    dependencyFlags = in_struct->dependencyFlags;
+    memoryBarrierCount = in_struct->memoryBarrierCount;
+    pMemoryBarriers = nullptr;
+    bufferMemoryBarrierCount = in_struct->bufferMemoryBarrierCount;
+    pBufferMemoryBarriers = nullptr;
+    imageMemoryBarrierCount = in_struct->imageMemoryBarrierCount;
+    pImageMemoryBarriers = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (memoryBarrierCount && in_struct->pMemoryBarriers) {
+        pMemoryBarriers = new safe_VkMemoryBarrier2KHR[memoryBarrierCount];
+        for (uint32_t i = 0; i < memoryBarrierCount; ++i) {
+            pMemoryBarriers[i].initialize(&in_struct->pMemoryBarriers[i]);
+        }
+    }
+    if (bufferMemoryBarrierCount && in_struct->pBufferMemoryBarriers) {
+        pBufferMemoryBarriers = new safe_VkBufferMemoryBarrier2KHR[bufferMemoryBarrierCount];
+        for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
+            pBufferMemoryBarriers[i].initialize(&in_struct->pBufferMemoryBarriers[i]);
+        }
+    }
+    if (imageMemoryBarrierCount && in_struct->pImageMemoryBarriers) {
+        pImageMemoryBarriers = new safe_VkImageMemoryBarrier2KHR[imageMemoryBarrierCount];
+        for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+            pImageMemoryBarriers[i].initialize(&in_struct->pImageMemoryBarriers[i]);
+        }
+    }
+}
+
+void safe_VkDependencyInfoKHR::initialize(const safe_VkDependencyInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    dependencyFlags = copy_src->dependencyFlags;
+    memoryBarrierCount = copy_src->memoryBarrierCount;
+    pMemoryBarriers = nullptr;
+    bufferMemoryBarrierCount = copy_src->bufferMemoryBarrierCount;
+    pBufferMemoryBarriers = nullptr;
+    imageMemoryBarrierCount = copy_src->imageMemoryBarrierCount;
+    pImageMemoryBarriers = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (memoryBarrierCount && copy_src->pMemoryBarriers) {
+        pMemoryBarriers = new safe_VkMemoryBarrier2KHR[memoryBarrierCount];
+        for (uint32_t i = 0; i < memoryBarrierCount; ++i) {
+            pMemoryBarriers[i].initialize(&copy_src->pMemoryBarriers[i]);
+        }
+    }
+    if (bufferMemoryBarrierCount && copy_src->pBufferMemoryBarriers) {
+        pBufferMemoryBarriers = new safe_VkBufferMemoryBarrier2KHR[bufferMemoryBarrierCount];
+        for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
+            pBufferMemoryBarriers[i].initialize(&copy_src->pBufferMemoryBarriers[i]);
+        }
+    }
+    if (imageMemoryBarrierCount && copy_src->pImageMemoryBarriers) {
+        pImageMemoryBarriers = new safe_VkImageMemoryBarrier2KHR[imageMemoryBarrierCount];
+        for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+            pImageMemoryBarriers[i].initialize(&copy_src->pImageMemoryBarriers[i]);
+        }
+    }
+}
+
+safe_VkSemaphoreSubmitInfoKHR::safe_VkSemaphoreSubmitInfoKHR(const VkSemaphoreSubmitInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    semaphore(in_struct->semaphore),
+    value(in_struct->value),
+    stageMask(in_struct->stageMask),
+    deviceIndex(in_struct->deviceIndex)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSemaphoreSubmitInfoKHR::safe_VkSemaphoreSubmitInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkSemaphoreSubmitInfoKHR::safe_VkSemaphoreSubmitInfoKHR(const safe_VkSemaphoreSubmitInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    value = copy_src.value;
+    stageMask = copy_src.stageMask;
+    deviceIndex = copy_src.deviceIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSemaphoreSubmitInfoKHR& safe_VkSemaphoreSubmitInfoKHR::operator=(const safe_VkSemaphoreSubmitInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    value = copy_src.value;
+    stageMask = copy_src.stageMask;
+    deviceIndex = copy_src.deviceIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSemaphoreSubmitInfoKHR::~safe_VkSemaphoreSubmitInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSemaphoreSubmitInfoKHR::initialize(const VkSemaphoreSubmitInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    semaphore = in_struct->semaphore;
+    value = in_struct->value;
+    stageMask = in_struct->stageMask;
+    deviceIndex = in_struct->deviceIndex;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSemaphoreSubmitInfoKHR::initialize(const safe_VkSemaphoreSubmitInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    semaphore = copy_src->semaphore;
+    value = copy_src->value;
+    stageMask = copy_src->stageMask;
+    deviceIndex = copy_src->deviceIndex;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCommandBufferSubmitInfoKHR::safe_VkCommandBufferSubmitInfoKHR(const VkCommandBufferSubmitInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    commandBuffer(in_struct->commandBuffer),
+    deviceMask(in_struct->deviceMask)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCommandBufferSubmitInfoKHR::safe_VkCommandBufferSubmitInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkCommandBufferSubmitInfoKHR::safe_VkCommandBufferSubmitInfoKHR(const safe_VkCommandBufferSubmitInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    commandBuffer = copy_src.commandBuffer;
+    deviceMask = copy_src.deviceMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCommandBufferSubmitInfoKHR& safe_VkCommandBufferSubmitInfoKHR::operator=(const safe_VkCommandBufferSubmitInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    commandBuffer = copy_src.commandBuffer;
+    deviceMask = copy_src.deviceMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCommandBufferSubmitInfoKHR::~safe_VkCommandBufferSubmitInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCommandBufferSubmitInfoKHR::initialize(const VkCommandBufferSubmitInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    commandBuffer = in_struct->commandBuffer;
+    deviceMask = in_struct->deviceMask;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCommandBufferSubmitInfoKHR::initialize(const safe_VkCommandBufferSubmitInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    commandBuffer = copy_src->commandBuffer;
+    deviceMask = copy_src->deviceMask;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSubmitInfo2KHR::safe_VkSubmitInfo2KHR(const VkSubmitInfo2KHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    waitSemaphoreInfoCount(in_struct->waitSemaphoreInfoCount),
+    pWaitSemaphoreInfos(nullptr),
+    commandBufferInfoCount(in_struct->commandBufferInfoCount),
+    pCommandBufferInfos(nullptr),
+    signalSemaphoreInfoCount(in_struct->signalSemaphoreInfoCount),
+    pSignalSemaphoreInfos(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (waitSemaphoreInfoCount && in_struct->pWaitSemaphoreInfos) {
+        pWaitSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[waitSemaphoreInfoCount];
+        for (uint32_t i = 0; i < waitSemaphoreInfoCount; ++i) {
+            pWaitSemaphoreInfos[i].initialize(&in_struct->pWaitSemaphoreInfos[i]);
+        }
+    }
+    if (commandBufferInfoCount && in_struct->pCommandBufferInfos) {
+        pCommandBufferInfos = new safe_VkCommandBufferSubmitInfoKHR[commandBufferInfoCount];
+        for (uint32_t i = 0; i < commandBufferInfoCount; ++i) {
+            pCommandBufferInfos[i].initialize(&in_struct->pCommandBufferInfos[i]);
+        }
+    }
+    if (signalSemaphoreInfoCount && in_struct->pSignalSemaphoreInfos) {
+        pSignalSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[signalSemaphoreInfoCount];
+        for (uint32_t i = 0; i < signalSemaphoreInfoCount; ++i) {
+            pSignalSemaphoreInfos[i].initialize(&in_struct->pSignalSemaphoreInfos[i]);
+        }
+    }
+}
+
+safe_VkSubmitInfo2KHR::safe_VkSubmitInfo2KHR() :
+    sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR),
+    pNext(nullptr),
+    pWaitSemaphoreInfos(nullptr),
+    pCommandBufferInfos(nullptr),
+    pSignalSemaphoreInfos(nullptr)
+{}
+
+safe_VkSubmitInfo2KHR::safe_VkSubmitInfo2KHR(const safe_VkSubmitInfo2KHR& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    waitSemaphoreInfoCount = copy_src.waitSemaphoreInfoCount;
+    pWaitSemaphoreInfos = nullptr;
+    commandBufferInfoCount = copy_src.commandBufferInfoCount;
+    pCommandBufferInfos = nullptr;
+    signalSemaphoreInfoCount = copy_src.signalSemaphoreInfoCount;
+    pSignalSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (waitSemaphoreInfoCount && copy_src.pWaitSemaphoreInfos) {
+        pWaitSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[waitSemaphoreInfoCount];
+        for (uint32_t i = 0; i < waitSemaphoreInfoCount; ++i) {
+            pWaitSemaphoreInfos[i].initialize(&copy_src.pWaitSemaphoreInfos[i]);
+        }
+    }
+    if (commandBufferInfoCount && copy_src.pCommandBufferInfos) {
+        pCommandBufferInfos = new safe_VkCommandBufferSubmitInfoKHR[commandBufferInfoCount];
+        for (uint32_t i = 0; i < commandBufferInfoCount; ++i) {
+            pCommandBufferInfos[i].initialize(&copy_src.pCommandBufferInfos[i]);
+        }
+    }
+    if (signalSemaphoreInfoCount && copy_src.pSignalSemaphoreInfos) {
+        pSignalSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[signalSemaphoreInfoCount];
+        for (uint32_t i = 0; i < signalSemaphoreInfoCount; ++i) {
+            pSignalSemaphoreInfos[i].initialize(&copy_src.pSignalSemaphoreInfos[i]);
+        }
+    }
+}
+
+safe_VkSubmitInfo2KHR& safe_VkSubmitInfo2KHR::operator=(const safe_VkSubmitInfo2KHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pWaitSemaphoreInfos)
+        delete[] pWaitSemaphoreInfos;
+    if (pCommandBufferInfos)
+        delete[] pCommandBufferInfos;
+    if (pSignalSemaphoreInfos)
+        delete[] pSignalSemaphoreInfos;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    waitSemaphoreInfoCount = copy_src.waitSemaphoreInfoCount;
+    pWaitSemaphoreInfos = nullptr;
+    commandBufferInfoCount = copy_src.commandBufferInfoCount;
+    pCommandBufferInfos = nullptr;
+    signalSemaphoreInfoCount = copy_src.signalSemaphoreInfoCount;
+    pSignalSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (waitSemaphoreInfoCount && copy_src.pWaitSemaphoreInfos) {
+        pWaitSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[waitSemaphoreInfoCount];
+        for (uint32_t i = 0; i < waitSemaphoreInfoCount; ++i) {
+            pWaitSemaphoreInfos[i].initialize(&copy_src.pWaitSemaphoreInfos[i]);
+        }
+    }
+    if (commandBufferInfoCount && copy_src.pCommandBufferInfos) {
+        pCommandBufferInfos = new safe_VkCommandBufferSubmitInfoKHR[commandBufferInfoCount];
+        for (uint32_t i = 0; i < commandBufferInfoCount; ++i) {
+            pCommandBufferInfos[i].initialize(&copy_src.pCommandBufferInfos[i]);
+        }
+    }
+    if (signalSemaphoreInfoCount && copy_src.pSignalSemaphoreInfos) {
+        pSignalSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[signalSemaphoreInfoCount];
+        for (uint32_t i = 0; i < signalSemaphoreInfoCount; ++i) {
+            pSignalSemaphoreInfos[i].initialize(&copy_src.pSignalSemaphoreInfos[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkSubmitInfo2KHR::~safe_VkSubmitInfo2KHR()
+{
+    if (pWaitSemaphoreInfos)
+        delete[] pWaitSemaphoreInfos;
+    if (pCommandBufferInfos)
+        delete[] pCommandBufferInfos;
+    if (pSignalSemaphoreInfos)
+        delete[] pSignalSemaphoreInfos;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSubmitInfo2KHR::initialize(const VkSubmitInfo2KHR* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    waitSemaphoreInfoCount = in_struct->waitSemaphoreInfoCount;
+    pWaitSemaphoreInfos = nullptr;
+    commandBufferInfoCount = in_struct->commandBufferInfoCount;
+    pCommandBufferInfos = nullptr;
+    signalSemaphoreInfoCount = in_struct->signalSemaphoreInfoCount;
+    pSignalSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (waitSemaphoreInfoCount && in_struct->pWaitSemaphoreInfos) {
+        pWaitSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[waitSemaphoreInfoCount];
+        for (uint32_t i = 0; i < waitSemaphoreInfoCount; ++i) {
+            pWaitSemaphoreInfos[i].initialize(&in_struct->pWaitSemaphoreInfos[i]);
+        }
+    }
+    if (commandBufferInfoCount && in_struct->pCommandBufferInfos) {
+        pCommandBufferInfos = new safe_VkCommandBufferSubmitInfoKHR[commandBufferInfoCount];
+        for (uint32_t i = 0; i < commandBufferInfoCount; ++i) {
+            pCommandBufferInfos[i].initialize(&in_struct->pCommandBufferInfos[i]);
+        }
+    }
+    if (signalSemaphoreInfoCount && in_struct->pSignalSemaphoreInfos) {
+        pSignalSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[signalSemaphoreInfoCount];
+        for (uint32_t i = 0; i < signalSemaphoreInfoCount; ++i) {
+            pSignalSemaphoreInfos[i].initialize(&in_struct->pSignalSemaphoreInfos[i]);
+        }
+    }
+}
+
+void safe_VkSubmitInfo2KHR::initialize(const safe_VkSubmitInfo2KHR* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    waitSemaphoreInfoCount = copy_src->waitSemaphoreInfoCount;
+    pWaitSemaphoreInfos = nullptr;
+    commandBufferInfoCount = copy_src->commandBufferInfoCount;
+    pCommandBufferInfos = nullptr;
+    signalSemaphoreInfoCount = copy_src->signalSemaphoreInfoCount;
+    pSignalSemaphoreInfos = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (waitSemaphoreInfoCount && copy_src->pWaitSemaphoreInfos) {
+        pWaitSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[waitSemaphoreInfoCount];
+        for (uint32_t i = 0; i < waitSemaphoreInfoCount; ++i) {
+            pWaitSemaphoreInfos[i].initialize(&copy_src->pWaitSemaphoreInfos[i]);
+        }
+    }
+    if (commandBufferInfoCount && copy_src->pCommandBufferInfos) {
+        pCommandBufferInfos = new safe_VkCommandBufferSubmitInfoKHR[commandBufferInfoCount];
+        for (uint32_t i = 0; i < commandBufferInfoCount; ++i) {
+            pCommandBufferInfos[i].initialize(&copy_src->pCommandBufferInfos[i]);
+        }
+    }
+    if (signalSemaphoreInfoCount && copy_src->pSignalSemaphoreInfos) {
+        pSignalSemaphoreInfos = new safe_VkSemaphoreSubmitInfoKHR[signalSemaphoreInfoCount];
+        for (uint32_t i = 0; i < signalSemaphoreInfoCount; ++i) {
+            pSignalSemaphoreInfos[i].initialize(&copy_src->pSignalSemaphoreInfos[i]);
+        }
+    }
+}
+
+safe_VkPhysicalDeviceSynchronization2FeaturesKHR::safe_VkPhysicalDeviceSynchronization2FeaturesKHR(const VkPhysicalDeviceSynchronization2FeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    synchronization2(in_struct->synchronization2)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceSynchronization2FeaturesKHR::safe_VkPhysicalDeviceSynchronization2FeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceSynchronization2FeaturesKHR::safe_VkPhysicalDeviceSynchronization2FeaturesKHR(const safe_VkPhysicalDeviceSynchronization2FeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    synchronization2 = copy_src.synchronization2;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceSynchronization2FeaturesKHR& safe_VkPhysicalDeviceSynchronization2FeaturesKHR::operator=(const safe_VkPhysicalDeviceSynchronization2FeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    synchronization2 = copy_src.synchronization2;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceSynchronization2FeaturesKHR::~safe_VkPhysicalDeviceSynchronization2FeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceSynchronization2FeaturesKHR::initialize(const VkPhysicalDeviceSynchronization2FeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    synchronization2 = in_struct->synchronization2;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceSynchronization2FeaturesKHR::initialize(const safe_VkPhysicalDeviceSynchronization2FeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    synchronization2 = copy_src->synchronization2;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV::safe_VkQueueFamilyCheckpointProperties2NV(const VkQueueFamilyCheckpointProperties2NV* in_struct) :
+    sType(in_struct->sType),
+    checkpointExecutionStageMask(in_struct->checkpointExecutionStageMask)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV::safe_VkQueueFamilyCheckpointProperties2NV() :
+    sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV),
+    pNext(nullptr)
+{}
+
+safe_VkQueueFamilyCheckpointProperties2NV::safe_VkQueueFamilyCheckpointProperties2NV(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src)
+{
+    sType = copy_src.sType;
+    checkpointExecutionStageMask = copy_src.checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV& safe_VkQueueFamilyCheckpointProperties2NV::operator=(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    checkpointExecutionStageMask = copy_src.checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV::~safe_VkQueueFamilyCheckpointProperties2NV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueueFamilyCheckpointProperties2NV::initialize(const VkQueueFamilyCheckpointProperties2NV* in_struct)
+{
+    sType = in_struct->sType;
+    checkpointExecutionStageMask = in_struct->checkpointExecutionStageMask;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkQueueFamilyCheckpointProperties2NV::initialize(const safe_VkQueueFamilyCheckpointProperties2NV* copy_src)
+{
+    sType = copy_src->sType;
+    checkpointExecutionStageMask = copy_src->checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCheckpointData2NV::safe_VkCheckpointData2NV(const VkCheckpointData2NV* in_struct) :
+    sType(in_struct->sType),
+    stage(in_struct->stage),
+    pCheckpointMarker(in_struct->pCheckpointMarker)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCheckpointData2NV::safe_VkCheckpointData2NV() :
+    sType(VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV),
+    pNext(nullptr),
+    pCheckpointMarker(nullptr)
+{}
+
+safe_VkCheckpointData2NV::safe_VkCheckpointData2NV(const safe_VkCheckpointData2NV& copy_src)
+{
+    sType = copy_src.sType;
+    stage = copy_src.stage;
+    pCheckpointMarker = copy_src.pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCheckpointData2NV& safe_VkCheckpointData2NV::operator=(const safe_VkCheckpointData2NV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    stage = copy_src.stage;
+    pCheckpointMarker = copy_src.pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCheckpointData2NV::~safe_VkCheckpointData2NV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCheckpointData2NV::initialize(const VkCheckpointData2NV* in_struct)
+{
+    sType = in_struct->sType;
+    stage = in_struct->stage;
+    pCheckpointMarker = in_struct->pCheckpointMarker;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCheckpointData2NV::initialize(const safe_VkCheckpointData2NV* copy_src)
+{
+    sType = copy_src->sType;
+    stage = copy_src->stage;
+    pCheckpointMarker = copy_src->pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* in_struct) :
     sType(in_struct->sType),
     shaderZeroInitializeWorkgroupMemory(in_struct->shaderZeroInitializeWorkgroupMemory)
@@ -37359,6 +38285,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR:
+            safe_pNext = new safe_VkMemoryBarrier2KHR(reinterpret_cast<const VkMemoryBarrier2KHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceSynchronization2FeaturesKHR(reinterpret_cast<const VkPhysicalDeviceSynchronization2FeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV:
+            safe_pNext = new safe_VkQueueFamilyCheckpointProperties2NV(reinterpret_cast<const VkQueueFamilyCheckpointProperties2NV *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *>(pNext));
             break;
@@ -38202,6 +39137,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR:
+            delete reinterpret_cast<const safe_VkMemoryBarrier2KHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceSynchronization2FeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV:
+            delete reinterpret_cast<const safe_VkQueueFamilyCheckpointProperties2NV *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *>(header);

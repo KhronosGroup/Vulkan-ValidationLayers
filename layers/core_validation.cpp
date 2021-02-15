@@ -5929,7 +5929,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             if (pipeline_state->graphicsPipelineCI.pRasterizationState &&
                 !pipeline_state->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable &&
                 pipeline_state->attachments[i].blendEnable && !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-02023",
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-04717",
                                  "vkCreateGraphicsPipelines(): pipeline.pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
                                  "].blendEnable is VK_TRUE but format %s associated with this attached image (%s) does "
                                  "not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
@@ -7343,19 +7343,19 @@ static const char *vu_summary[] = {"Source or destination queue family must be i
                                    "Source or destination queue family must match submit queue family, if not ignored."};
 
 static const std::string kImageErrorCodes[] = {
-    "VUID-VkImageMemoryBarrier-image-01381",                                              //   kSrcOrDstMustBeIgnore
+    "VUID-VkImageMemoryBarrier-synchronization2-03857",                                   //   kSrcOrDstMustBeIgnore
     "VUID-VkImageMemoryBarrier-image-04071",                                              //   kSpecialOrIgnoreOnly
     "VUID-VkImageMemoryBarrier-image-04072",                                              //   kSrcAndDstValidOrSpecial
-    "VUID-VkImageMemoryBarrier-image-01199",                                              //   kSrcAndDestMustBeIgnore
+    "VUID-VkImageMemoryBarrier-synchronization2-03856",                                   //   kSrcAndDestMustBeIgnore
     "VUID-VkImageMemoryBarrier-image-04069",                                              //   kSrcAndDstBothValid
     "UNASSIGNED-CoreValidation-vkImageMemoryBarrier-sharing-mode-exclusive-same-family",  //   kSubmitQueueMustMatchSrcOrDst
 };
 
 static const std::string kBufferErrorCodes[] = {
-    "VUID-VkBufferMemoryBarrier-buffer-01191",                                             //  kSrcOrDstMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-synchronization2-03853",                                   //  kSrcOrDstMustBeIgnore
     "VUID-VkBufferMemoryBarrier-buffer-04088",                                             //  kSpecialOrIgnoreOnly
     "VUID-VkBufferMemoryBarrier-buffer-04089",                                             //  kSrcAndDstValidOrSpecial
-    "VUID-VkBufferMemoryBarrier-buffer-01190",                                             //  kSrcAndDestMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-synchronization2-03852",                                   //  kSrcAndDestMustBeIgnore
     "VUID-VkBufferMemoryBarrier-buffer-04086",                                             //  kSrcAndDstBothValid
     "UNASSIGNED-CoreValidation-vkBufferMemoryBarrier-sharing-mode-exclusive-same-family",  //  kSubmitQueueMustMatchSrcOrDst
 };

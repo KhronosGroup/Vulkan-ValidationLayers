@@ -1006,6 +1006,14 @@ void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkResult                                    result) override;
 
 
+void PostCallRecordQueueSubmit2KHR(
+    VkQueue                                     queue,
+    uint32_t                                    submitCount,
+    const VkSubmitInfo2KHR*                     pSubmits,
+    VkFence                                     fence,
+    VkResult                                    result) override;
+
+
 void PostCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,

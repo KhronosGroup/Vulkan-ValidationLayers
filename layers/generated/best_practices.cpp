@@ -1775,6 +1775,20 @@ void BestPractices::PostCallRecordGetPipelineExecutableInternalRepresentationsKH
     }
 }
 
+void BestPractices::PostCallRecordQueueSubmit2KHR(
+    VkQueue                                     queue,
+    uint32_t                                    submitCount,
+    const VkSubmitInfo2KHR*                     pSubmits,
+    VkFence                                     fence,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_DEVICE_LOST};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkQueueSubmit2KHR", result, error_codes, success_codes);
+    }
+}
+
 void BestPractices::PostCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,

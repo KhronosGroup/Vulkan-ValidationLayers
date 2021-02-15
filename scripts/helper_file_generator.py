@@ -251,6 +251,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
     def genGroup(self, groupinfo, groupName, alias):
         OutputGenerator.genGroup(self, groupinfo, groupName, alias)
         groupElem = groupinfo.elem
+        bitwidth = int(groupElem.get('bitwidth','32'))
         # For enum_string_header
         if self.helper_file_type == 'enum_string_header':
             value_set = set()
@@ -258,7 +259,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 if elem.get('supported') != 'disabled' and elem.get('alias') is None:
                     value_set.add(elem.get('name'))
             if value_set != set():
-                self.enum_output += self.GenerateEnumStringConversion(groupName, value_set)
+                self.enum_output += self.GenerateEnumStringConversion(groupName, value_set, bitwidth)
         elif self.helper_file_type == 'object_types_header':
             if groupName == 'VkDebugReportObjectTypeEXT':
                 for elem in groupElem.findall('enum'):
@@ -549,13 +550,15 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo, ifdef_protect=self.featureExtraProtect))
     #
     # Enum_string_header: Create a routine to convert an enumerated value into a string
-    def GenerateEnumStringConversion(self, groupName, value_list):
+    def GenerateEnumStringConversion(self, groupName, value_list, bitwidth):
         outstring = '\n'
         if self.featureExtraProtect is not None:
             outstring += '\n#ifdef %s\n\n' % self.featureExtraProtect
-        outstring += 'static inline const char* string_%s(%s input_value)\n' % (groupName, groupName)
+        groupType = 'uint64_t' if bitwidth == 64 else groupName
+
+        outstring += 'static inline const char* string_%s(%s input_value)\n' % (groupName, groupType)
         outstring += '{\n'
-        outstring += '    switch ((%s)input_value)\n' % groupName
+        outstring += '    switch (input_value)\n'
         outstring += '    {\n'
         # Emit these in a repeatable order so file is generated with the same contents each time.
         # This helps compiler caching systems like ccache.
@@ -571,6 +574,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         if (bitsIndex != -1):
             outstring += '\n'
             flagsName = groupName[0:bitsIndex] + "s" +  groupName[bitsIndex+4:]
+            intsuffix = 'ULL' if bitwidth == 64 else 'U'
             outstring += 'static inline std::string string_%s(%s input_value)\n' % (flagsName, flagsName)
             outstring += '{\n'
             outstring += '    std::string ret;\n'
@@ -578,12 +582,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             outstring += '    while(input_value) {\n'
             outstring += '        if (input_value & 1) {\n'
             outstring += '            if( !ret.empty()) ret.append("|");\n'
-            outstring += '            ret.append(string_%s(static_cast<%s>(1 << index)));\n' % (groupName, groupName)
+            outstring += '            ret.append(string_%s(static_cast<%s>(1%s << index)));\n' % (groupName, groupType, intsuffix)
             outstring += '        }\n'
             outstring += '        ++index;\n'
             outstring += '        input_value >>= 1;\n'
             outstring += '    }\n'
-            outstring += '    if( ret.empty()) ret.append(string_%s(static_cast<%s>(0)));\n' % (groupName, groupName)
+            outstring += '    if( ret.empty()) ret.append(string_%s(static_cast<%s>(0)));\n' % (groupName, groupType)
             outstring += '    return ret;\n'
             outstring += '}\n'
 

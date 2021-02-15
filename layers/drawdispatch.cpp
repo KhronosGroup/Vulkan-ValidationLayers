@@ -1017,12 +1017,6 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
             }
         }
         if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable->deviceAddress) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03695",
-                                 "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with flags "
-                                 "that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR, the "
-                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
-            }
             if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
                 skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-flags-03512",
                                  "vkCmdTraceRaysKHR: If the currently bound ray tracing pipeline was created with "
@@ -1093,12 +1087,6 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
             }
         }
         if (pipeline_state->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
-            if (!pHitShaderBindingTable || pHitShaderBindingTable->deviceAddress == 0) {
-                skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03695",
-                                 "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "
-                                 "flags that included VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR, the "
-                                 "deviceAddress member of pHitShaderBindingTable must not be zero.");
-            }
             if (!pHitShaderBindingTable || pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
                 skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-flags-03512",
                                  "vkCmdTraceRaysIndirectKHR: If the currently bound ray tracing pipeline was created with "

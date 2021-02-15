@@ -855,11 +855,11 @@ TEST_F(VkLayerTest, ReservedParameter) {
     // Specify 0 for a reserved VkFlags parameter
     // Expected to trigger an error with
     // parameter_validation::validate_reserved_flags
-    VkEvent event_handle = VK_NULL_HANDLE;
-    VkEventCreateInfo event_info = {};
-    event_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-    event_info.flags = 1;
-    vk::CreateEvent(device(), &event_info, NULL, &event_handle);
+    VkSemaphore sem_handle = VK_NULL_HANDLE;
+    VkSemaphoreCreateInfo sem_info = {};
+    sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    sem_info.flags = 1;
+    vk::CreateSemaphore(device(), &sem_info, NULL, &sem_handle);
     m_errorMonitor->VerifyFound();
 }
 
