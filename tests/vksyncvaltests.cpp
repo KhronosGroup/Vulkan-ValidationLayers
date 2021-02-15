@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (c) 2015-2020 Google, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2021 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,6 +165,103 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     }
 }
 
+TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    } else {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!CheckSynchronization2SupportAndInitState(this)) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
+
+    VkBufferObj buffer_a;
+    VkBufferObj buffer_b;
+    VkBufferObj buffer_c;
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
+
+    VkBufferCopy region = {0, 0, 256};
+    VkBufferCopy front2front = {0, 0, 128};
+    VkBufferCopy front2back = {0, 128, 128};
+    VkBufferCopy back2back = {128, 128, 128};
+
+    auto cb = m_commandBuffer->handle();
+    m_commandBuffer->begin();
+
+    vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    {
+        auto buffer_barrier = lvl_init_struct<VkBufferMemoryBarrier2KHR>();
+        buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        buffer_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
+        buffer_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+        buffer_barrier.buffer = buffer_a.handle();
+        buffer_barrier.offset = 0;
+        buffer_barrier.size = 256;
+        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        dep_info.bufferMemoryBarrierCount = 1;
+        dep_info.pBufferMemoryBarriers = &buffer_barrier;
+        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &back2back);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2back);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_b.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
+
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    {
+        auto mem_barrier = lvl_init_struct<VkMemoryBarrier2KHR>();
+        mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+        mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        dep_info.memoryBarrierCount = 1;
+        dep_info.pMemoryBarriers = &mem_barrier;
+        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        m_errorMonitor->ExpectSuccess();
+
+        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+        mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;  // Protect C but not B
+        mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_b.handle(), buffer_c.handle(), 1, &region);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
+    }
+}
+
 TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -317,6 +414,136 @@ TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
         m_errorMonitor->VerifyFound();
         m_commandBuffer->end();
     }
+}
+
+TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    } else {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!CheckSynchronization2SupportAndInitState(this)) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image_a(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image_a.Init(image_ci);
+    ASSERT_TRUE(image_a.initialized());
+
+    VkImageObj image_b(m_device);
+    image_b.Init(image_ci);
+    ASSERT_TRUE(image_b.initialized());
+
+    VkImageObj image_c(m_device);
+    image_c.Init(image_ci);
+    ASSERT_TRUE(image_c.initialized());
+
+    VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
+    VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
+    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
+    VkOffset3D zero_offset{0, 0, 0};
+    VkOffset3D half_offset{64, 64, 0};
+    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
+    VkExtent3D half_extent{64, 64, 1};    // <-- image type is 2D
+
+    VkImageCopy full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
+    VkImageCopy region_0_to_0 = {layers_0, zero_offset, layers_0, zero_offset, full_extent};
+    VkImageCopy region_0_to_1 = {layers_0, zero_offset, layers_1, zero_offset, full_extent};
+    VkImageCopy region_1_to_1 = {layers_1, zero_offset, layers_1, zero_offset, full_extent};
+    VkImageCopy region_0_front = {layers_0, zero_offset, layers_0, zero_offset, half_extent};
+    VkImageCopy region_0_back = {layers_0, half_offset, layers_0, half_offset, half_extent};
+
+    m_commandBuffer->begin();
+
+    image_c.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    auto cb = m_commandBuffer->handle();
+
+    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    m_errorMonitor->VerifyFound();
+
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    {
+        auto image_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
+        image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        image_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
+        image_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+        image_barrier.image = image_a.handle();
+        image_barrier.subresourceRange = full_subresource_range;
+        image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+        image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        dep_info.imageMemoryBarrierCount = 1;
+        dep_info.pImageMemoryBarriers = &image_barrier;
+        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_0);
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_to_1);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_1);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    m_errorMonitor->VerifyFound();
+
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
+
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    {
+        auto mem_barrier = lvl_init_struct<VkMemoryBarrier2KHR>();
+        mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
+        mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        dep_info.memoryBarrierCount = 1;
+        dep_info.pMemoryBarriers = &mem_barrier;
+        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        m_errorMonitor->ExpectSuccess();
+        vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+        m_errorMonitor->VerifyNotFound();
+
+        // Use barrier to protect last reader, but not last writer...
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+        mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;  // Protects C but not B
+        mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_back);
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->end();
 }
 
 TEST_F(VkSyncValTest, SyncCopyOptimalMultiPlanarHazards) {

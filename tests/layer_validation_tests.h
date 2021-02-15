@@ -210,6 +210,8 @@ bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFra
 // Helper for checking timeline semaphore support and initializing
 bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework);
 
+bool CheckSynchronization2SupportAndInitState(VkRenderFramework *renderFramework);
+
 // Dependent "false" type for the static assert, as GCC will evaluate
 // non-dependent static_asserts even for non-instantiated templates
 template <typename T>
@@ -235,6 +237,7 @@ T NearestSmaller(const T from) {
 class VkLayerTest : public VkRenderFramework {
   public:
     const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
+    const char *kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";
 
     void VKTriangleTest(BsoFailSelect failCase);
 
