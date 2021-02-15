@@ -2969,11 +2969,15 @@ VkPipelineStageFlags ResourceAccessState::GetOrderedStages(const OrderingBarrier
 void ResourceAccessState::UpdateFirst(const ResourceUsageTag &tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule) {
     // Only record until we record a write.
     if (first_accesses_.empty() || IsRead(first_accesses_.back().usage_index)) {
-        const VkPipelineStageFlags usage_stage =
-            IsRead(usage_index) ? static_cast<VkPipelineStageFlags>(PipelineStageBit(usage_index)) : 0U;
-        if (0 == (usage_stage & first_read_stages_)) {
-            // If this is a read we haven't seen or a write, record.
-            first_read_stages_ |= usage_stage;
+        if (IsRead(usage_index)) {
+            const auto usage_stage = static_cast<VkPipelineStageFlags>(PipelineStageBit(usage_index));
+            if (0 == (usage_stage & first_read_stages_)) {
+                // If this is a read we haven't seen record it, and note that we have.
+                first_read_stages_ |= usage_stage;
+                first_accesses_.emplace_back(tag, usage_index, ordering_rule);
+            }
+        } else {
+            // Record the one and only write we will
             first_accesses_.emplace_back(tag, usage_index, ordering_rule);
         }
     }
