@@ -2165,6 +2165,96 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KH
     typedef VkPipelineLibraryCreateInfoKHR Type;
 };
 
+// Map type VkMemoryBarrier2KHR to id VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR
+template <> struct LvlTypeMap<VkMemoryBarrier2KHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR> {
+    typedef VkMemoryBarrier2KHR Type;
+};
+
+// Map type VkBufferMemoryBarrier2KHR to id VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR
+template <> struct LvlTypeMap<VkBufferMemoryBarrier2KHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR> {
+    typedef VkBufferMemoryBarrier2KHR Type;
+};
+
+// Map type VkImageMemoryBarrier2KHR to id VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR
+template <> struct LvlTypeMap<VkImageMemoryBarrier2KHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR> {
+    typedef VkImageMemoryBarrier2KHR Type;
+};
+
+// Map type VkDependencyInfoKHR to id VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR
+template <> struct LvlTypeMap<VkDependencyInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR> {
+    typedef VkDependencyInfoKHR Type;
+};
+
+// Map type VkSemaphoreSubmitInfoKHR to id VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR
+template <> struct LvlTypeMap<VkSemaphoreSubmitInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR> {
+    typedef VkSemaphoreSubmitInfoKHR Type;
+};
+
+// Map type VkCommandBufferSubmitInfoKHR to id VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR
+template <> struct LvlTypeMap<VkCommandBufferSubmitInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR> {
+    typedef VkCommandBufferSubmitInfoKHR Type;
+};
+
+// Map type VkSubmitInfo2KHR to id VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR
+template <> struct LvlTypeMap<VkSubmitInfo2KHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR> {
+    typedef VkSubmitInfo2KHR Type;
+};
+
+// Map type VkPhysicalDeviceSynchronization2FeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceSynchronization2FeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR> {
+    typedef VkPhysicalDeviceSynchronization2FeaturesKHR Type;
+};
+
+// Map type VkQueueFamilyCheckpointProperties2NV to id VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV
+template <> struct LvlTypeMap<VkQueueFamilyCheckpointProperties2NV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV> {
+    typedef VkQueueFamilyCheckpointProperties2NV Type;
+};
+
+// Map type VkCheckpointData2NV to id VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV
+template <> struct LvlTypeMap<VkCheckpointData2NV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV> {
+    typedef VkCheckpointData2NV Type;
+};
+
 // Map type VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR
 template <> struct LvlTypeMap<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR;

@@ -4391,6 +4391,193 @@ struct safe_VkPipelineLibraryCreateInfoKHR {
     VkPipelineLibraryCreateInfoKHR const *ptr() const { return reinterpret_cast<VkPipelineLibraryCreateInfoKHR const *>(this); }
 };
 
+struct safe_VkMemoryBarrier2KHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkPipelineStageFlags2KHR srcStageMask;
+    VkAccessFlags2KHR srcAccessMask;
+    VkPipelineStageFlags2KHR dstStageMask;
+    VkAccessFlags2KHR dstAccessMask;
+    safe_VkMemoryBarrier2KHR(const VkMemoryBarrier2KHR* in_struct);
+    safe_VkMemoryBarrier2KHR(const safe_VkMemoryBarrier2KHR& copy_src);
+    safe_VkMemoryBarrier2KHR& operator=(const safe_VkMemoryBarrier2KHR& copy_src);
+    safe_VkMemoryBarrier2KHR();
+    ~safe_VkMemoryBarrier2KHR();
+    void initialize(const VkMemoryBarrier2KHR* in_struct);
+    void initialize(const safe_VkMemoryBarrier2KHR* copy_src);
+    VkMemoryBarrier2KHR *ptr() { return reinterpret_cast<VkMemoryBarrier2KHR *>(this); }
+    VkMemoryBarrier2KHR const *ptr() const { return reinterpret_cast<VkMemoryBarrier2KHR const *>(this); }
+};
+
+struct safe_VkBufferMemoryBarrier2KHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkPipelineStageFlags2KHR srcStageMask;
+    VkAccessFlags2KHR srcAccessMask;
+    VkPipelineStageFlags2KHR dstStageMask;
+    VkAccessFlags2KHR dstAccessMask;
+    uint32_t srcQueueFamilyIndex;
+    uint32_t dstQueueFamilyIndex;
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    VkDeviceSize size;
+    safe_VkBufferMemoryBarrier2KHR(const VkBufferMemoryBarrier2KHR* in_struct);
+    safe_VkBufferMemoryBarrier2KHR(const safe_VkBufferMemoryBarrier2KHR& copy_src);
+    safe_VkBufferMemoryBarrier2KHR& operator=(const safe_VkBufferMemoryBarrier2KHR& copy_src);
+    safe_VkBufferMemoryBarrier2KHR();
+    ~safe_VkBufferMemoryBarrier2KHR();
+    void initialize(const VkBufferMemoryBarrier2KHR* in_struct);
+    void initialize(const safe_VkBufferMemoryBarrier2KHR* copy_src);
+    VkBufferMemoryBarrier2KHR *ptr() { return reinterpret_cast<VkBufferMemoryBarrier2KHR *>(this); }
+    VkBufferMemoryBarrier2KHR const *ptr() const { return reinterpret_cast<VkBufferMemoryBarrier2KHR const *>(this); }
+};
+
+struct safe_VkImageMemoryBarrier2KHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkPipelineStageFlags2KHR srcStageMask;
+    VkAccessFlags2KHR srcAccessMask;
+    VkPipelineStageFlags2KHR dstStageMask;
+    VkAccessFlags2KHR dstAccessMask;
+    VkImageLayout oldLayout;
+    VkImageLayout newLayout;
+    uint32_t srcQueueFamilyIndex;
+    uint32_t dstQueueFamilyIndex;
+    VkImage image;
+    VkImageSubresourceRange subresourceRange;
+    safe_VkImageMemoryBarrier2KHR(const VkImageMemoryBarrier2KHR* in_struct);
+    safe_VkImageMemoryBarrier2KHR(const safe_VkImageMemoryBarrier2KHR& copy_src);
+    safe_VkImageMemoryBarrier2KHR& operator=(const safe_VkImageMemoryBarrier2KHR& copy_src);
+    safe_VkImageMemoryBarrier2KHR();
+    ~safe_VkImageMemoryBarrier2KHR();
+    void initialize(const VkImageMemoryBarrier2KHR* in_struct);
+    void initialize(const safe_VkImageMemoryBarrier2KHR* copy_src);
+    VkImageMemoryBarrier2KHR *ptr() { return reinterpret_cast<VkImageMemoryBarrier2KHR *>(this); }
+    VkImageMemoryBarrier2KHR const *ptr() const { return reinterpret_cast<VkImageMemoryBarrier2KHR const *>(this); }
+};
+
+struct safe_VkDependencyInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkDependencyFlags dependencyFlags;
+    uint32_t memoryBarrierCount;
+    safe_VkMemoryBarrier2KHR* pMemoryBarriers;
+    uint32_t bufferMemoryBarrierCount;
+    safe_VkBufferMemoryBarrier2KHR* pBufferMemoryBarriers;
+    uint32_t imageMemoryBarrierCount;
+    safe_VkImageMemoryBarrier2KHR* pImageMemoryBarriers;
+    safe_VkDependencyInfoKHR(const VkDependencyInfoKHR* in_struct);
+    safe_VkDependencyInfoKHR(const safe_VkDependencyInfoKHR& copy_src);
+    safe_VkDependencyInfoKHR& operator=(const safe_VkDependencyInfoKHR& copy_src);
+    safe_VkDependencyInfoKHR();
+    ~safe_VkDependencyInfoKHR();
+    void initialize(const VkDependencyInfoKHR* in_struct);
+    void initialize(const safe_VkDependencyInfoKHR* copy_src);
+    VkDependencyInfoKHR *ptr() { return reinterpret_cast<VkDependencyInfoKHR *>(this); }
+    VkDependencyInfoKHR const *ptr() const { return reinterpret_cast<VkDependencyInfoKHR const *>(this); }
+};
+
+struct safe_VkSemaphoreSubmitInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkSemaphore semaphore;
+    uint64_t value;
+    VkPipelineStageFlags2KHR stageMask;
+    uint32_t deviceIndex;
+    safe_VkSemaphoreSubmitInfoKHR(const VkSemaphoreSubmitInfoKHR* in_struct);
+    safe_VkSemaphoreSubmitInfoKHR(const safe_VkSemaphoreSubmitInfoKHR& copy_src);
+    safe_VkSemaphoreSubmitInfoKHR& operator=(const safe_VkSemaphoreSubmitInfoKHR& copy_src);
+    safe_VkSemaphoreSubmitInfoKHR();
+    ~safe_VkSemaphoreSubmitInfoKHR();
+    void initialize(const VkSemaphoreSubmitInfoKHR* in_struct);
+    void initialize(const safe_VkSemaphoreSubmitInfoKHR* copy_src);
+    VkSemaphoreSubmitInfoKHR *ptr() { return reinterpret_cast<VkSemaphoreSubmitInfoKHR *>(this); }
+    VkSemaphoreSubmitInfoKHR const *ptr() const { return reinterpret_cast<VkSemaphoreSubmitInfoKHR const *>(this); }
+};
+
+struct safe_VkCommandBufferSubmitInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkCommandBuffer commandBuffer;
+    uint32_t deviceMask;
+    safe_VkCommandBufferSubmitInfoKHR(const VkCommandBufferSubmitInfoKHR* in_struct);
+    safe_VkCommandBufferSubmitInfoKHR(const safe_VkCommandBufferSubmitInfoKHR& copy_src);
+    safe_VkCommandBufferSubmitInfoKHR& operator=(const safe_VkCommandBufferSubmitInfoKHR& copy_src);
+    safe_VkCommandBufferSubmitInfoKHR();
+    ~safe_VkCommandBufferSubmitInfoKHR();
+    void initialize(const VkCommandBufferSubmitInfoKHR* in_struct);
+    void initialize(const safe_VkCommandBufferSubmitInfoKHR* copy_src);
+    VkCommandBufferSubmitInfoKHR *ptr() { return reinterpret_cast<VkCommandBufferSubmitInfoKHR *>(this); }
+    VkCommandBufferSubmitInfoKHR const *ptr() const { return reinterpret_cast<VkCommandBufferSubmitInfoKHR const *>(this); }
+};
+
+struct safe_VkSubmitInfo2KHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkSubmitFlagsKHR flags;
+    uint32_t waitSemaphoreInfoCount;
+    safe_VkSemaphoreSubmitInfoKHR* pWaitSemaphoreInfos;
+    uint32_t commandBufferInfoCount;
+    safe_VkCommandBufferSubmitInfoKHR* pCommandBufferInfos;
+    uint32_t signalSemaphoreInfoCount;
+    safe_VkSemaphoreSubmitInfoKHR* pSignalSemaphoreInfos;
+    safe_VkSubmitInfo2KHR(const VkSubmitInfo2KHR* in_struct);
+    safe_VkSubmitInfo2KHR(const safe_VkSubmitInfo2KHR& copy_src);
+    safe_VkSubmitInfo2KHR& operator=(const safe_VkSubmitInfo2KHR& copy_src);
+    safe_VkSubmitInfo2KHR();
+    ~safe_VkSubmitInfo2KHR();
+    void initialize(const VkSubmitInfo2KHR* in_struct);
+    void initialize(const safe_VkSubmitInfo2KHR* copy_src);
+    VkSubmitInfo2KHR *ptr() { return reinterpret_cast<VkSubmitInfo2KHR *>(this); }
+    VkSubmitInfo2KHR const *ptr() const { return reinterpret_cast<VkSubmitInfo2KHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceSynchronization2FeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 synchronization2;
+    safe_VkPhysicalDeviceSynchronization2FeaturesKHR(const VkPhysicalDeviceSynchronization2FeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceSynchronization2FeaturesKHR(const safe_VkPhysicalDeviceSynchronization2FeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceSynchronization2FeaturesKHR& operator=(const safe_VkPhysicalDeviceSynchronization2FeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceSynchronization2FeaturesKHR();
+    ~safe_VkPhysicalDeviceSynchronization2FeaturesKHR();
+    void initialize(const VkPhysicalDeviceSynchronization2FeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceSynchronization2FeaturesKHR* copy_src);
+    VkPhysicalDeviceSynchronization2FeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceSynchronization2FeaturesKHR *>(this); }
+    VkPhysicalDeviceSynchronization2FeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceSynchronization2FeaturesKHR const *>(this); }
+};
+
+struct safe_VkQueueFamilyCheckpointProperties2NV {
+    VkStructureType sType;
+    void* pNext;
+    VkPipelineStageFlags2KHR checkpointExecutionStageMask;
+    safe_VkQueueFamilyCheckpointProperties2NV(const VkQueueFamilyCheckpointProperties2NV* in_struct);
+    safe_VkQueueFamilyCheckpointProperties2NV(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src);
+    safe_VkQueueFamilyCheckpointProperties2NV& operator=(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src);
+    safe_VkQueueFamilyCheckpointProperties2NV();
+    ~safe_VkQueueFamilyCheckpointProperties2NV();
+    void initialize(const VkQueueFamilyCheckpointProperties2NV* in_struct);
+    void initialize(const safe_VkQueueFamilyCheckpointProperties2NV* copy_src);
+    VkQueueFamilyCheckpointProperties2NV *ptr() { return reinterpret_cast<VkQueueFamilyCheckpointProperties2NV *>(this); }
+    VkQueueFamilyCheckpointProperties2NV const *ptr() const { return reinterpret_cast<VkQueueFamilyCheckpointProperties2NV const *>(this); }
+};
+
+struct safe_VkCheckpointData2NV {
+    VkStructureType sType;
+    void* pNext;
+    VkPipelineStageFlags2KHR stage;
+    void* pCheckpointMarker;
+    safe_VkCheckpointData2NV(const VkCheckpointData2NV* in_struct);
+    safe_VkCheckpointData2NV(const safe_VkCheckpointData2NV& copy_src);
+    safe_VkCheckpointData2NV& operator=(const safe_VkCheckpointData2NV& copy_src);
+    safe_VkCheckpointData2NV();
+    ~safe_VkCheckpointData2NV();
+    void initialize(const VkCheckpointData2NV* in_struct);
+    void initialize(const safe_VkCheckpointData2NV* copy_src);
+    VkCheckpointData2NV *ptr() { return reinterpret_cast<VkCheckpointData2NV *>(this); }
+    VkCheckpointData2NV const *ptr() const { return reinterpret_cast<VkCheckpointData2NV const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR {
     VkStructureType sType;
     void* pNext;

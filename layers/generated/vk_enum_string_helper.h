@@ -41,7 +41,7 @@
 
 static inline const char* string_VkResult(VkResult input_value)
 {
-    switch ((VkResult)input_value)
+    switch (input_value)
     {
         case VK_ERROR_DEVICE_LOST:
             return "VK_ERROR_DEVICE_LOST";
@@ -126,7 +126,7 @@ static inline const char* string_VkResult(VkResult input_value)
 
 static inline const char* string_VkStructureType(VkStructureType input_value)
 {
-    switch ((VkStructureType)input_value)
+    switch (input_value)
     {
         case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR:
             return "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR";
@@ -204,6 +204,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR";
         case VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER:
             return "VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER";
+        case VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR:
+            return "VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR";
         case VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2:
             return "VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2";
         case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO:
@@ -212,6 +214,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO";
         case VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT:
             return "VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT";
+        case VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV:
+            return "VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV";
         case VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV:
             return "VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV";
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO:
@@ -224,6 +228,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO";
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM:
             return "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM";
+        case VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR";
         case VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO";
         case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
@@ -276,6 +282,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV";
         case VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV:
             return "VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV";
+        case VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR";
         case VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO";
         case VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO_EXT:
@@ -452,6 +460,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2";
         case VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER:
             return "VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER";
+        case VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR:
+            return "VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR";
         case VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2:
             return "VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2";
         case VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO:
@@ -516,6 +526,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO";
         case VK_STRUCTURE_TYPE_MEMORY_BARRIER:
             return "VK_STRUCTURE_TYPE_MEMORY_BARRIER";
+        case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR:
+            return "VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR";
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO:
             return "VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO";
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS:
@@ -800,6 +812,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES_EXT:
@@ -942,6 +956,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR";
         case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL:
             return "VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL";
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV:
+            return "VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV";
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV:
             return "VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2:
@@ -998,6 +1014,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR";
         case VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO";
+        case VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR";
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO:
@@ -1016,6 +1034,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP";
         case VK_STRUCTURE_TYPE_SUBMIT_INFO:
             return "VK_STRUCTURE_TYPE_SUBMIT_INFO";
+        case VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR:
+            return "VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR";
         case VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO:
             return "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO";
         case VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2:
@@ -1085,7 +1105,7 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
 
 static inline const char* string_VkAccessFlagBits(VkAccessFlagBits input_value)
 {
-    switch ((VkAccessFlagBits)input_value)
+    switch (input_value)
     {
         case VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR:
             return "VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR";
@@ -1123,6 +1143,8 @@ static inline const char* string_VkAccessFlagBits(VkAccessFlagBits input_value)
             return "VK_ACCESS_MEMORY_READ_BIT";
         case VK_ACCESS_MEMORY_WRITE_BIT:
             return "VK_ACCESS_MEMORY_WRITE_BIT";
+        case VK_ACCESS_NONE_KHR:
+            return "VK_ACCESS_NONE_KHR";
         case VK_ACCESS_SHADER_READ_BIT:
             return "VK_ACCESS_SHADER_READ_BIT";
         case VK_ACCESS_SHADER_WRITE_BIT:
@@ -1155,7 +1177,7 @@ static inline std::string string_VkAccessFlags(VkAccessFlags input_value)
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkAccessFlagBits(static_cast<VkAccessFlagBits>(1 << index)));
+            ret.append(string_VkAccessFlagBits(static_cast<VkAccessFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -1166,8 +1188,10 @@ static inline std::string string_VkAccessFlags(VkAccessFlags input_value)
 
 static inline const char* string_VkImageLayout(VkImageLayout input_value)
 {
-    switch ((VkImageLayout)input_value)
+    switch (input_value)
     {
+        case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR:
+            return "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR";
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
             return "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL";
         case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
@@ -1190,6 +1214,8 @@ static inline const char* string_VkImageLayout(VkImageLayout input_value)
             return "VK_IMAGE_LAYOUT_PREINITIALIZED";
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             return "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR";
+        case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR:
+            return "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR";
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
             return "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL";
         case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
@@ -1213,7 +1239,7 @@ static inline const char* string_VkImageLayout(VkImageLayout input_value)
 
 static inline const char* string_VkImageAspectFlagBits(VkImageAspectFlagBits input_value)
 {
-    switch ((VkImageAspectFlagBits)input_value)
+    switch (input_value)
     {
         case VK_IMAGE_ASPECT_COLOR_BIT:
             return "VK_IMAGE_ASPECT_COLOR_BIT";
@@ -1249,7 +1275,7 @@ static inline std::string string_VkImageAspectFlags(VkImageAspectFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkImageAspectFlagBits(static_cast<VkImageAspectFlagBits>(1 << index)));
+            ret.append(string_VkImageAspectFlagBits(static_cast<VkImageAspectFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -1260,7 +1286,7 @@ static inline std::string string_VkImageAspectFlags(VkImageAspectFlags input_val
 
 static inline const char* string_VkObjectType(VkObjectType input_value)
 {
-    switch ((VkObjectType)input_value)
+    switch (input_value)
     {
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
             return "VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR";
@@ -1351,7 +1377,7 @@ static inline const char* string_VkObjectType(VkObjectType input_value)
 
 static inline const char* string_VkVendorId(VkVendorId input_value)
 {
-    switch ((VkVendorId)input_value)
+    switch (input_value)
     {
         case VK_VENDOR_ID_CODEPLAY:
             return "VK_VENDOR_ID_CODEPLAY";
@@ -1372,7 +1398,7 @@ static inline const char* string_VkVendorId(VkVendorId input_value)
 
 static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHeaderVersion input_value)
 {
-    switch ((VkPipelineCacheHeaderVersion)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
             return "VK_PIPELINE_CACHE_HEADER_VERSION_ONE";
@@ -1383,7 +1409,7 @@ static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHea
 
 static inline const char* string_VkSystemAllocationScope(VkSystemAllocationScope input_value)
 {
-    switch ((VkSystemAllocationScope)input_value)
+    switch (input_value)
     {
         case VK_SYSTEM_ALLOCATION_SCOPE_CACHE:
             return "VK_SYSTEM_ALLOCATION_SCOPE_CACHE";
@@ -1402,7 +1428,7 @@ static inline const char* string_VkSystemAllocationScope(VkSystemAllocationScope
 
 static inline const char* string_VkInternalAllocationType(VkInternalAllocationType input_value)
 {
-    switch ((VkInternalAllocationType)input_value)
+    switch (input_value)
     {
         case VK_INTERNAL_ALLOCATION_TYPE_EXECUTABLE:
             return "VK_INTERNAL_ALLOCATION_TYPE_EXECUTABLE";
@@ -1413,7 +1439,7 @@ static inline const char* string_VkInternalAllocationType(VkInternalAllocationTy
 
 static inline const char* string_VkFormat(VkFormat input_value)
 {
-    switch ((VkFormat)input_value)
+    switch (input_value)
     {
         case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
             return "VK_FORMAT_A1R5G5B5_UNORM_PACK16";
@@ -1908,7 +1934,7 @@ static inline const char* string_VkFormat(VkFormat input_value)
 
 static inline const char* string_VkFormatFeatureFlagBits(VkFormatFeatureFlagBits input_value)
 {
-    switch ((VkFormatFeatureFlagBits)input_value)
+    switch (input_value)
     {
         case VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR:
             return "VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR";
@@ -1976,7 +2002,7 @@ static inline std::string string_VkFormatFeatureFlags(VkFormatFeatureFlags input
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkFormatFeatureFlagBits(static_cast<VkFormatFeatureFlagBits>(1 << index)));
+            ret.append(string_VkFormatFeatureFlagBits(static_cast<VkFormatFeatureFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -1987,7 +2013,7 @@ static inline std::string string_VkFormatFeatureFlags(VkFormatFeatureFlags input
 
 static inline const char* string_VkImageCreateFlagBits(VkImageCreateFlagBits input_value)
 {
-    switch ((VkImageCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT:
             return "VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT";
@@ -2031,7 +2057,7 @@ static inline std::string string_VkImageCreateFlags(VkImageCreateFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkImageCreateFlagBits(static_cast<VkImageCreateFlagBits>(1 << index)));
+            ret.append(string_VkImageCreateFlagBits(static_cast<VkImageCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2042,7 +2068,7 @@ static inline std::string string_VkImageCreateFlags(VkImageCreateFlags input_val
 
 static inline const char* string_VkSampleCountFlagBits(VkSampleCountFlagBits input_value)
 {
-    switch ((VkSampleCountFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SAMPLE_COUNT_16_BIT:
             return "VK_SAMPLE_COUNT_16_BIT";
@@ -2070,7 +2096,7 @@ static inline std::string string_VkSampleCountFlags(VkSampleCountFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSampleCountFlagBits(static_cast<VkSampleCountFlagBits>(1 << index)));
+            ret.append(string_VkSampleCountFlagBits(static_cast<VkSampleCountFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2081,7 +2107,7 @@ static inline std::string string_VkSampleCountFlags(VkSampleCountFlags input_val
 
 static inline const char* string_VkImageTiling(VkImageTiling input_value)
 {
-    switch ((VkImageTiling)input_value)
+    switch (input_value)
     {
         case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
             return "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT";
@@ -2096,7 +2122,7 @@ static inline const char* string_VkImageTiling(VkImageTiling input_value)
 
 static inline const char* string_VkImageType(VkImageType input_value)
 {
-    switch ((VkImageType)input_value)
+    switch (input_value)
     {
         case VK_IMAGE_TYPE_1D:
             return "VK_IMAGE_TYPE_1D";
@@ -2111,7 +2137,7 @@ static inline const char* string_VkImageType(VkImageType input_value)
 
 static inline const char* string_VkImageUsageFlagBits(VkImageUsageFlagBits input_value)
 {
-    switch ((VkImageUsageFlagBits)input_value)
+    switch (input_value)
     {
         case VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT:
             return "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT";
@@ -2145,7 +2171,7 @@ static inline std::string string_VkImageUsageFlags(VkImageUsageFlags input_value
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkImageUsageFlagBits(static_cast<VkImageUsageFlagBits>(1 << index)));
+            ret.append(string_VkImageUsageFlagBits(static_cast<VkImageUsageFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2156,7 +2182,7 @@ static inline std::string string_VkImageUsageFlags(VkImageUsageFlags input_value
 
 static inline const char* string_VkMemoryHeapFlagBits(VkMemoryHeapFlagBits input_value)
 {
-    switch ((VkMemoryHeapFlagBits)input_value)
+    switch (input_value)
     {
         case VK_MEMORY_HEAP_DEVICE_LOCAL_BIT:
             return "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT";
@@ -2174,7 +2200,7 @@ static inline std::string string_VkMemoryHeapFlags(VkMemoryHeapFlags input_value
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkMemoryHeapFlagBits(static_cast<VkMemoryHeapFlagBits>(1 << index)));
+            ret.append(string_VkMemoryHeapFlagBits(static_cast<VkMemoryHeapFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2185,7 +2211,7 @@ static inline std::string string_VkMemoryHeapFlags(VkMemoryHeapFlags input_value
 
 static inline const char* string_VkMemoryPropertyFlagBits(VkMemoryPropertyFlagBits input_value)
 {
-    switch ((VkMemoryPropertyFlagBits)input_value)
+    switch (input_value)
     {
         case VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD:
             return "VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD";
@@ -2215,7 +2241,7 @@ static inline std::string string_VkMemoryPropertyFlags(VkMemoryPropertyFlags inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkMemoryPropertyFlagBits(static_cast<VkMemoryPropertyFlagBits>(1 << index)));
+            ret.append(string_VkMemoryPropertyFlagBits(static_cast<VkMemoryPropertyFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2226,7 +2252,7 @@ static inline std::string string_VkMemoryPropertyFlags(VkMemoryPropertyFlags inp
 
 static inline const char* string_VkPhysicalDeviceType(VkPhysicalDeviceType input_value)
 {
-    switch ((VkPhysicalDeviceType)input_value)
+    switch (input_value)
     {
         case VK_PHYSICAL_DEVICE_TYPE_CPU:
             return "VK_PHYSICAL_DEVICE_TYPE_CPU";
@@ -2245,7 +2271,7 @@ static inline const char* string_VkPhysicalDeviceType(VkPhysicalDeviceType input
 
 static inline const char* string_VkQueueFlagBits(VkQueueFlagBits input_value)
 {
-    switch ((VkQueueFlagBits)input_value)
+    switch (input_value)
     {
         case VK_QUEUE_COMPUTE_BIT:
             return "VK_QUEUE_COMPUTE_BIT";
@@ -2269,7 +2295,7 @@ static inline std::string string_VkQueueFlags(VkQueueFlags input_value)
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(1 << index)));
+            ret.append(string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2280,7 +2306,7 @@ static inline std::string string_VkQueueFlags(VkQueueFlags input_value)
 
 static inline const char* string_VkDeviceQueueCreateFlagBits(VkDeviceQueueCreateFlagBits input_value)
 {
-    switch ((VkDeviceQueueCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT:
             return "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT";
@@ -2296,7 +2322,7 @@ static inline std::string string_VkDeviceQueueCreateFlags(VkDeviceQueueCreateFla
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDeviceQueueCreateFlagBits(static_cast<VkDeviceQueueCreateFlagBits>(1 << index)));
+            ret.append(string_VkDeviceQueueCreateFlagBits(static_cast<VkDeviceQueueCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2307,7 +2333,7 @@ static inline std::string string_VkDeviceQueueCreateFlags(VkDeviceQueueCreateFla
 
 static inline const char* string_VkPipelineStageFlagBits(VkPipelineStageFlagBits input_value)
 {
-    switch ((VkPipelineStageFlagBits)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
             return "VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR";
@@ -2341,6 +2367,8 @@ static inline const char* string_VkPipelineStageFlagBits(VkPipelineStageFlagBits
             return "VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT";
         case VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV:
             return "VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_NONE_KHR:
+            return "VK_PIPELINE_STAGE_NONE_KHR";
         case VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR:
             return "VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR";
         case VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV:
@@ -2373,7 +2401,7 @@ static inline std::string string_VkPipelineStageFlags(VkPipelineStageFlags input
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineStageFlagBits(static_cast<VkPipelineStageFlagBits>(1 << index)));
+            ret.append(string_VkPipelineStageFlagBits(static_cast<VkPipelineStageFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2384,7 +2412,7 @@ static inline std::string string_VkPipelineStageFlags(VkPipelineStageFlags input
 
 static inline const char* string_VkSparseMemoryBindFlagBits(VkSparseMemoryBindFlagBits input_value)
 {
-    switch ((VkSparseMemoryBindFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SPARSE_MEMORY_BIND_METADATA_BIT:
             return "VK_SPARSE_MEMORY_BIND_METADATA_BIT";
@@ -2400,7 +2428,7 @@ static inline std::string string_VkSparseMemoryBindFlags(VkSparseMemoryBindFlags
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSparseMemoryBindFlagBits(static_cast<VkSparseMemoryBindFlagBits>(1 << index)));
+            ret.append(string_VkSparseMemoryBindFlagBits(static_cast<VkSparseMemoryBindFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2411,7 +2439,7 @@ static inline std::string string_VkSparseMemoryBindFlags(VkSparseMemoryBindFlags
 
 static inline const char* string_VkSparseImageFormatFlagBits(VkSparseImageFormatFlagBits input_value)
 {
-    switch ((VkSparseImageFormatFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SPARSE_IMAGE_FORMAT_ALIGNED_MIP_SIZE_BIT:
             return "VK_SPARSE_IMAGE_FORMAT_ALIGNED_MIP_SIZE_BIT";
@@ -2431,7 +2459,7 @@ static inline std::string string_VkSparseImageFormatFlags(VkSparseImageFormatFla
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSparseImageFormatFlagBits(static_cast<VkSparseImageFormatFlagBits>(1 << index)));
+            ret.append(string_VkSparseImageFormatFlagBits(static_cast<VkSparseImageFormatFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2442,7 +2470,7 @@ static inline std::string string_VkSparseImageFormatFlags(VkSparseImageFormatFla
 
 static inline const char* string_VkFenceCreateFlagBits(VkFenceCreateFlagBits input_value)
 {
-    switch ((VkFenceCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_FENCE_CREATE_SIGNALED_BIT:
             return "VK_FENCE_CREATE_SIGNALED_BIT";
@@ -2458,7 +2486,7 @@ static inline std::string string_VkFenceCreateFlags(VkFenceCreateFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkFenceCreateFlagBits(static_cast<VkFenceCreateFlagBits>(1 << index)));
+            ret.append(string_VkFenceCreateFlagBits(static_cast<VkFenceCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2467,9 +2495,36 @@ static inline std::string string_VkFenceCreateFlags(VkFenceCreateFlags input_val
     return ret;
 }
 
+static inline const char* string_VkEventCreateFlagBits(VkEventCreateFlagBits input_value)
+{
+    switch (input_value)
+    {
+        case VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR:
+            return "VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR";
+        default:
+            return "Unhandled VkEventCreateFlagBits";
+    }
+}
+
+static inline std::string string_VkEventCreateFlags(VkEventCreateFlags input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkEventCreateFlagBits(static_cast<VkEventCreateFlagBits>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkEventCreateFlagBits(static_cast<VkEventCreateFlagBits>(0)));
+    return ret;
+}
+
 static inline const char* string_VkQueryPipelineStatisticFlagBits(VkQueryPipelineStatisticFlagBits input_value)
 {
-    switch ((VkQueryPipelineStatisticFlagBits)input_value)
+    switch (input_value)
     {
         case VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT:
             return "VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT";
@@ -2505,7 +2560,7 @@ static inline std::string string_VkQueryPipelineStatisticFlags(VkQueryPipelineSt
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkQueryPipelineStatisticFlagBits(static_cast<VkQueryPipelineStatisticFlagBits>(1 << index)));
+            ret.append(string_VkQueryPipelineStatisticFlagBits(static_cast<VkQueryPipelineStatisticFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2516,7 +2571,7 @@ static inline std::string string_VkQueryPipelineStatisticFlags(VkQueryPipelineSt
 
 static inline const char* string_VkQueryType(VkQueryType input_value)
 {
-    switch ((VkQueryType)input_value)
+    switch (input_value)
     {
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
             return "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR";
@@ -2543,7 +2598,7 @@ static inline const char* string_VkQueryType(VkQueryType input_value)
 
 static inline const char* string_VkQueryResultFlagBits(VkQueryResultFlagBits input_value)
 {
-    switch ((VkQueryResultFlagBits)input_value)
+    switch (input_value)
     {
         case VK_QUERY_RESULT_64_BIT:
             return "VK_QUERY_RESULT_64_BIT";
@@ -2565,7 +2620,7 @@ static inline std::string string_VkQueryResultFlags(VkQueryResultFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkQueryResultFlagBits(static_cast<VkQueryResultFlagBits>(1 << index)));
+            ret.append(string_VkQueryResultFlagBits(static_cast<VkQueryResultFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2576,7 +2631,7 @@ static inline std::string string_VkQueryResultFlags(VkQueryResultFlags input_val
 
 static inline const char* string_VkBufferCreateFlagBits(VkBufferCreateFlagBits input_value)
 {
-    switch ((VkBufferCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT:
             return "VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT";
@@ -2600,7 +2655,7 @@ static inline std::string string_VkBufferCreateFlags(VkBufferCreateFlags input_v
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkBufferCreateFlagBits(static_cast<VkBufferCreateFlagBits>(1 << index)));
+            ret.append(string_VkBufferCreateFlagBits(static_cast<VkBufferCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2611,7 +2666,7 @@ static inline std::string string_VkBufferCreateFlags(VkBufferCreateFlags input_v
 
 static inline const char* string_VkBufferUsageFlagBits(VkBufferUsageFlagBits input_value)
 {
-    switch ((VkBufferUsageFlagBits)input_value)
+    switch (input_value)
     {
         case VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR:
             return "VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
@@ -2657,7 +2712,7 @@ static inline std::string string_VkBufferUsageFlags(VkBufferUsageFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkBufferUsageFlagBits(static_cast<VkBufferUsageFlagBits>(1 << index)));
+            ret.append(string_VkBufferUsageFlagBits(static_cast<VkBufferUsageFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2668,7 +2723,7 @@ static inline std::string string_VkBufferUsageFlags(VkBufferUsageFlags input_val
 
 static inline const char* string_VkSharingMode(VkSharingMode input_value)
 {
-    switch ((VkSharingMode)input_value)
+    switch (input_value)
     {
         case VK_SHARING_MODE_CONCURRENT:
             return "VK_SHARING_MODE_CONCURRENT";
@@ -2681,7 +2736,7 @@ static inline const char* string_VkSharingMode(VkSharingMode input_value)
 
 static inline const char* string_VkComponentSwizzle(VkComponentSwizzle input_value)
 {
-    switch ((VkComponentSwizzle)input_value)
+    switch (input_value)
     {
         case VK_COMPONENT_SWIZZLE_A:
             return "VK_COMPONENT_SWIZZLE_A";
@@ -2704,7 +2759,7 @@ static inline const char* string_VkComponentSwizzle(VkComponentSwizzle input_val
 
 static inline const char* string_VkImageViewCreateFlagBits(VkImageViewCreateFlagBits input_value)
 {
-    switch ((VkImageViewCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT:
             return "VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT";
@@ -2722,7 +2777,7 @@ static inline std::string string_VkImageViewCreateFlags(VkImageViewCreateFlags i
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkImageViewCreateFlagBits(static_cast<VkImageViewCreateFlagBits>(1 << index)));
+            ret.append(string_VkImageViewCreateFlagBits(static_cast<VkImageViewCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2733,7 +2788,7 @@ static inline std::string string_VkImageViewCreateFlags(VkImageViewCreateFlags i
 
 static inline const char* string_VkImageViewType(VkImageViewType input_value)
 {
-    switch ((VkImageViewType)input_value)
+    switch (input_value)
     {
         case VK_IMAGE_VIEW_TYPE_1D:
             return "VK_IMAGE_VIEW_TYPE_1D";
@@ -2756,7 +2811,7 @@ static inline const char* string_VkImageViewType(VkImageViewType input_value)
 
 static inline const char* string_VkPipelineCacheCreateFlagBits(VkPipelineCacheCreateFlagBits input_value)
 {
-    switch ((VkPipelineCacheCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT:
             return "VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT";
@@ -2772,7 +2827,7 @@ static inline std::string string_VkPipelineCacheCreateFlags(VkPipelineCacheCreat
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineCacheCreateFlagBits(static_cast<VkPipelineCacheCreateFlagBits>(1 << index)));
+            ret.append(string_VkPipelineCacheCreateFlagBits(static_cast<VkPipelineCacheCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2783,7 +2838,7 @@ static inline std::string string_VkPipelineCacheCreateFlags(VkPipelineCacheCreat
 
 static inline const char* string_VkBlendFactor(VkBlendFactor input_value)
 {
-    switch ((VkBlendFactor)input_value)
+    switch (input_value)
     {
         case VK_BLEND_FACTOR_CONSTANT_ALPHA:
             return "VK_BLEND_FACTOR_CONSTANT_ALPHA";
@@ -2830,7 +2885,7 @@ static inline const char* string_VkBlendFactor(VkBlendFactor input_value)
 
 static inline const char* string_VkBlendOp(VkBlendOp input_value)
 {
-    switch ((VkBlendOp)input_value)
+    switch (input_value)
     {
         case VK_BLEND_OP_ADD:
             return "VK_BLEND_OP_ADD";
@@ -2941,7 +2996,7 @@ static inline const char* string_VkBlendOp(VkBlendOp input_value)
 
 static inline const char* string_VkColorComponentFlagBits(VkColorComponentFlagBits input_value)
 {
-    switch ((VkColorComponentFlagBits)input_value)
+    switch (input_value)
     {
         case VK_COLOR_COMPONENT_A_BIT:
             return "VK_COLOR_COMPONENT_A_BIT";
@@ -2963,7 +3018,7 @@ static inline std::string string_VkColorComponentFlags(VkColorComponentFlags inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkColorComponentFlagBits(static_cast<VkColorComponentFlagBits>(1 << index)));
+            ret.append(string_VkColorComponentFlagBits(static_cast<VkColorComponentFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -2974,7 +3029,7 @@ static inline std::string string_VkColorComponentFlags(VkColorComponentFlags inp
 
 static inline const char* string_VkCompareOp(VkCompareOp input_value)
 {
-    switch ((VkCompareOp)input_value)
+    switch (input_value)
     {
         case VK_COMPARE_OP_ALWAYS:
             return "VK_COMPARE_OP_ALWAYS";
@@ -2999,7 +3054,7 @@ static inline const char* string_VkCompareOp(VkCompareOp input_value)
 
 static inline const char* string_VkPipelineCreateFlagBits(VkPipelineCreateFlagBits input_value)
 {
-    switch ((VkPipelineCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT:
             return "VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT";
@@ -3051,7 +3106,7 @@ static inline std::string string_VkPipelineCreateFlags(VkPipelineCreateFlags inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineCreateFlagBits(static_cast<VkPipelineCreateFlagBits>(1 << index)));
+            ret.append(string_VkPipelineCreateFlagBits(static_cast<VkPipelineCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3062,7 +3117,7 @@ static inline std::string string_VkPipelineCreateFlags(VkPipelineCreateFlags inp
 
 static inline const char* string_VkPipelineShaderStageCreateFlagBits(VkPipelineShaderStageCreateFlagBits input_value)
 {
-    switch ((VkPipelineShaderStageCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT:
             return "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT";
@@ -3080,7 +3135,7 @@ static inline std::string string_VkPipelineShaderStageCreateFlags(VkPipelineShad
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineShaderStageCreateFlagBits(static_cast<VkPipelineShaderStageCreateFlagBits>(1 << index)));
+            ret.append(string_VkPipelineShaderStageCreateFlagBits(static_cast<VkPipelineShaderStageCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3091,7 +3146,7 @@ static inline std::string string_VkPipelineShaderStageCreateFlags(VkPipelineShad
 
 static inline const char* string_VkShaderStageFlagBits(VkShaderStageFlagBits input_value)
 {
-    switch ((VkShaderStageFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SHADER_STAGE_ALL:
             return "VK_SHADER_STAGE_ALL";
@@ -3137,7 +3192,7 @@ static inline std::string string_VkShaderStageFlags(VkShaderStageFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkShaderStageFlagBits(static_cast<VkShaderStageFlagBits>(1 << index)));
+            ret.append(string_VkShaderStageFlagBits(static_cast<VkShaderStageFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3148,7 +3203,7 @@ static inline std::string string_VkShaderStageFlags(VkShaderStageFlags input_val
 
 static inline const char* string_VkCullModeFlagBits(VkCullModeFlagBits input_value)
 {
-    switch ((VkCullModeFlagBits)input_value)
+    switch (input_value)
     {
         case VK_CULL_MODE_BACK_BIT:
             return "VK_CULL_MODE_BACK_BIT";
@@ -3170,7 +3225,7 @@ static inline std::string string_VkCullModeFlags(VkCullModeFlags input_value)
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCullModeFlagBits(static_cast<VkCullModeFlagBits>(1 << index)));
+            ret.append(string_VkCullModeFlagBits(static_cast<VkCullModeFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3181,7 +3236,7 @@ static inline std::string string_VkCullModeFlags(VkCullModeFlags input_value)
 
 static inline const char* string_VkDynamicState(VkDynamicState input_value)
 {
-    switch ((VkDynamicState)input_value)
+    switch (input_value)
     {
         case VK_DYNAMIC_STATE_BLEND_CONSTANTS:
             return "VK_DYNAMIC_STATE_BLEND_CONSTANTS";
@@ -3250,7 +3305,7 @@ static inline const char* string_VkDynamicState(VkDynamicState input_value)
 
 static inline const char* string_VkFrontFace(VkFrontFace input_value)
 {
-    switch ((VkFrontFace)input_value)
+    switch (input_value)
     {
         case VK_FRONT_FACE_CLOCKWISE:
             return "VK_FRONT_FACE_CLOCKWISE";
@@ -3263,7 +3318,7 @@ static inline const char* string_VkFrontFace(VkFrontFace input_value)
 
 static inline const char* string_VkVertexInputRate(VkVertexInputRate input_value)
 {
-    switch ((VkVertexInputRate)input_value)
+    switch (input_value)
     {
         case VK_VERTEX_INPUT_RATE_INSTANCE:
             return "VK_VERTEX_INPUT_RATE_INSTANCE";
@@ -3276,7 +3331,7 @@ static inline const char* string_VkVertexInputRate(VkVertexInputRate input_value
 
 static inline const char* string_VkPrimitiveTopology(VkPrimitiveTopology input_value)
 {
-    switch ((VkPrimitiveTopology)input_value)
+    switch (input_value)
     {
         case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
             return "VK_PRIMITIVE_TOPOLOGY_LINE_LIST";
@@ -3307,7 +3362,7 @@ static inline const char* string_VkPrimitiveTopology(VkPrimitiveTopology input_v
 
 static inline const char* string_VkPolygonMode(VkPolygonMode input_value)
 {
-    switch ((VkPolygonMode)input_value)
+    switch (input_value)
     {
         case VK_POLYGON_MODE_FILL:
             return "VK_POLYGON_MODE_FILL";
@@ -3324,7 +3379,7 @@ static inline const char* string_VkPolygonMode(VkPolygonMode input_value)
 
 static inline const char* string_VkStencilOp(VkStencilOp input_value)
 {
-    switch ((VkStencilOp)input_value)
+    switch (input_value)
     {
         case VK_STENCIL_OP_DECREMENT_AND_CLAMP:
             return "VK_STENCIL_OP_DECREMENT_AND_CLAMP";
@@ -3349,7 +3404,7 @@ static inline const char* string_VkStencilOp(VkStencilOp input_value)
 
 static inline const char* string_VkLogicOp(VkLogicOp input_value)
 {
-    switch ((VkLogicOp)input_value)
+    switch (input_value)
     {
         case VK_LOGIC_OP_AND:
             return "VK_LOGIC_OP_AND";
@@ -3390,7 +3445,7 @@ static inline const char* string_VkLogicOp(VkLogicOp input_value)
 
 static inline const char* string_VkBorderColor(VkBorderColor input_value)
 {
-    switch ((VkBorderColor)input_value)
+    switch (input_value)
     {
         case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
             return "VK_BORDER_COLOR_FLOAT_CUSTOM_EXT";
@@ -3415,7 +3470,7 @@ static inline const char* string_VkBorderColor(VkBorderColor input_value)
 
 static inline const char* string_VkFilter(VkFilter input_value)
 {
-    switch ((VkFilter)input_value)
+    switch (input_value)
     {
         case VK_FILTER_CUBIC_IMG:
             return "VK_FILTER_CUBIC_IMG";
@@ -3430,7 +3485,7 @@ static inline const char* string_VkFilter(VkFilter input_value)
 
 static inline const char* string_VkSamplerAddressMode(VkSamplerAddressMode input_value)
 {
-    switch ((VkSamplerAddressMode)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
             return "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER";
@@ -3449,7 +3504,7 @@ static inline const char* string_VkSamplerAddressMode(VkSamplerAddressMode input
 
 static inline const char* string_VkSamplerCreateFlagBits(VkSamplerCreateFlagBits input_value)
 {
-    switch ((VkSamplerCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT:
             return "VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT";
@@ -3467,7 +3522,7 @@ static inline std::string string_VkSamplerCreateFlags(VkSamplerCreateFlags input
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSamplerCreateFlagBits(static_cast<VkSamplerCreateFlagBits>(1 << index)));
+            ret.append(string_VkSamplerCreateFlagBits(static_cast<VkSamplerCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3478,7 +3533,7 @@ static inline std::string string_VkSamplerCreateFlags(VkSamplerCreateFlags input
 
 static inline const char* string_VkSamplerMipmapMode(VkSamplerMipmapMode input_value)
 {
-    switch ((VkSamplerMipmapMode)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_MIPMAP_MODE_LINEAR:
             return "VK_SAMPLER_MIPMAP_MODE_LINEAR";
@@ -3491,7 +3546,7 @@ static inline const char* string_VkSamplerMipmapMode(VkSamplerMipmapMode input_v
 
 static inline const char* string_VkDescriptorPoolCreateFlagBits(VkDescriptorPoolCreateFlagBits input_value)
 {
-    switch ((VkDescriptorPoolCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT:
             return "VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT";
@@ -3511,7 +3566,7 @@ static inline std::string string_VkDescriptorPoolCreateFlags(VkDescriptorPoolCre
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDescriptorPoolCreateFlagBits(static_cast<VkDescriptorPoolCreateFlagBits>(1 << index)));
+            ret.append(string_VkDescriptorPoolCreateFlagBits(static_cast<VkDescriptorPoolCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3522,7 +3577,7 @@ static inline std::string string_VkDescriptorPoolCreateFlags(VkDescriptorPoolCre
 
 static inline const char* string_VkDescriptorType(VkDescriptorType input_value)
 {
-    switch ((VkDescriptorType)input_value)
+    switch (input_value)
     {
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
             return "VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR";
@@ -3561,7 +3616,7 @@ static inline const char* string_VkDescriptorType(VkDescriptorType input_value)
 
 static inline const char* string_VkDescriptorSetLayoutCreateFlagBits(VkDescriptorSetLayoutCreateFlagBits input_value)
 {
-    switch ((VkDescriptorSetLayoutCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE:
             return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE";
@@ -3581,7 +3636,7 @@ static inline std::string string_VkDescriptorSetLayoutCreateFlags(VkDescriptorSe
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDescriptorSetLayoutCreateFlagBits(static_cast<VkDescriptorSetLayoutCreateFlagBits>(1 << index)));
+            ret.append(string_VkDescriptorSetLayoutCreateFlagBits(static_cast<VkDescriptorSetLayoutCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3592,7 +3647,7 @@ static inline std::string string_VkDescriptorSetLayoutCreateFlags(VkDescriptorSe
 
 static inline const char* string_VkAttachmentDescriptionFlagBits(VkAttachmentDescriptionFlagBits input_value)
 {
-    switch ((VkAttachmentDescriptionFlagBits)input_value)
+    switch (input_value)
     {
         case VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT:
             return "VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT";
@@ -3608,7 +3663,7 @@ static inline std::string string_VkAttachmentDescriptionFlags(VkAttachmentDescri
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkAttachmentDescriptionFlagBits(static_cast<VkAttachmentDescriptionFlagBits>(1 << index)));
+            ret.append(string_VkAttachmentDescriptionFlagBits(static_cast<VkAttachmentDescriptionFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3619,7 +3674,7 @@ static inline std::string string_VkAttachmentDescriptionFlags(VkAttachmentDescri
 
 static inline const char* string_VkAttachmentLoadOp(VkAttachmentLoadOp input_value)
 {
-    switch ((VkAttachmentLoadOp)input_value)
+    switch (input_value)
     {
         case VK_ATTACHMENT_LOAD_OP_CLEAR:
             return "VK_ATTACHMENT_LOAD_OP_CLEAR";
@@ -3634,7 +3689,7 @@ static inline const char* string_VkAttachmentLoadOp(VkAttachmentLoadOp input_val
 
 static inline const char* string_VkAttachmentStoreOp(VkAttachmentStoreOp input_value)
 {
-    switch ((VkAttachmentStoreOp)input_value)
+    switch (input_value)
     {
         case VK_ATTACHMENT_STORE_OP_DONT_CARE:
             return "VK_ATTACHMENT_STORE_OP_DONT_CARE";
@@ -3649,7 +3704,7 @@ static inline const char* string_VkAttachmentStoreOp(VkAttachmentStoreOp input_v
 
 static inline const char* string_VkDependencyFlagBits(VkDependencyFlagBits input_value)
 {
-    switch ((VkDependencyFlagBits)input_value)
+    switch (input_value)
     {
         case VK_DEPENDENCY_BY_REGION_BIT:
             return "VK_DEPENDENCY_BY_REGION_BIT";
@@ -3669,7 +3724,7 @@ static inline std::string string_VkDependencyFlags(VkDependencyFlags input_value
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDependencyFlagBits(static_cast<VkDependencyFlagBits>(1 << index)));
+            ret.append(string_VkDependencyFlagBits(static_cast<VkDependencyFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3680,7 +3735,7 @@ static inline std::string string_VkDependencyFlags(VkDependencyFlags input_value
 
 static inline const char* string_VkFramebufferCreateFlagBits(VkFramebufferCreateFlagBits input_value)
 {
-    switch ((VkFramebufferCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT:
             return "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT";
@@ -3696,7 +3751,7 @@ static inline std::string string_VkFramebufferCreateFlags(VkFramebufferCreateFla
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkFramebufferCreateFlagBits(static_cast<VkFramebufferCreateFlagBits>(1 << index)));
+            ret.append(string_VkFramebufferCreateFlagBits(static_cast<VkFramebufferCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3707,7 +3762,7 @@ static inline std::string string_VkFramebufferCreateFlags(VkFramebufferCreateFla
 
 static inline const char* string_VkPipelineBindPoint(VkPipelineBindPoint input_value)
 {
-    switch ((VkPipelineBindPoint)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_BIND_POINT_COMPUTE:
             return "VK_PIPELINE_BIND_POINT_COMPUTE";
@@ -3722,7 +3777,7 @@ static inline const char* string_VkPipelineBindPoint(VkPipelineBindPoint input_v
 
 static inline const char* string_VkRenderPassCreateFlagBits(VkRenderPassCreateFlagBits input_value)
 {
-    switch ((VkRenderPassCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM:
             return "VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM";
@@ -3738,7 +3793,7 @@ static inline std::string string_VkRenderPassCreateFlags(VkRenderPassCreateFlags
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkRenderPassCreateFlagBits(static_cast<VkRenderPassCreateFlagBits>(1 << index)));
+            ret.append(string_VkRenderPassCreateFlagBits(static_cast<VkRenderPassCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3749,7 +3804,7 @@ static inline std::string string_VkRenderPassCreateFlags(VkRenderPassCreateFlags
 
 static inline const char* string_VkSubpassDescriptionFlagBits(VkSubpassDescriptionFlagBits input_value)
 {
-    switch ((VkSubpassDescriptionFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM:
             return "VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM";
@@ -3771,7 +3826,7 @@ static inline std::string string_VkSubpassDescriptionFlags(VkSubpassDescriptionF
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSubpassDescriptionFlagBits(static_cast<VkSubpassDescriptionFlagBits>(1 << index)));
+            ret.append(string_VkSubpassDescriptionFlagBits(static_cast<VkSubpassDescriptionFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3782,7 +3837,7 @@ static inline std::string string_VkSubpassDescriptionFlags(VkSubpassDescriptionF
 
 static inline const char* string_VkCommandPoolCreateFlagBits(VkCommandPoolCreateFlagBits input_value)
 {
-    switch ((VkCommandPoolCreateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_COMMAND_POOL_CREATE_PROTECTED_BIT:
             return "VK_COMMAND_POOL_CREATE_PROTECTED_BIT";
@@ -3802,7 +3857,7 @@ static inline std::string string_VkCommandPoolCreateFlags(VkCommandPoolCreateFla
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCommandPoolCreateFlagBits(static_cast<VkCommandPoolCreateFlagBits>(1 << index)));
+            ret.append(string_VkCommandPoolCreateFlagBits(static_cast<VkCommandPoolCreateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3813,7 +3868,7 @@ static inline std::string string_VkCommandPoolCreateFlags(VkCommandPoolCreateFla
 
 static inline const char* string_VkCommandPoolResetFlagBits(VkCommandPoolResetFlagBits input_value)
 {
-    switch ((VkCommandPoolResetFlagBits)input_value)
+    switch (input_value)
     {
         case VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT:
             return "VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT";
@@ -3829,7 +3884,7 @@ static inline std::string string_VkCommandPoolResetFlags(VkCommandPoolResetFlags
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCommandPoolResetFlagBits(static_cast<VkCommandPoolResetFlagBits>(1 << index)));
+            ret.append(string_VkCommandPoolResetFlagBits(static_cast<VkCommandPoolResetFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3840,7 +3895,7 @@ static inline std::string string_VkCommandPoolResetFlags(VkCommandPoolResetFlags
 
 static inline const char* string_VkCommandBufferLevel(VkCommandBufferLevel input_value)
 {
-    switch ((VkCommandBufferLevel)input_value)
+    switch (input_value)
     {
         case VK_COMMAND_BUFFER_LEVEL_PRIMARY:
             return "VK_COMMAND_BUFFER_LEVEL_PRIMARY";
@@ -3853,7 +3908,7 @@ static inline const char* string_VkCommandBufferLevel(VkCommandBufferLevel input
 
 static inline const char* string_VkCommandBufferUsageFlagBits(VkCommandBufferUsageFlagBits input_value)
 {
-    switch ((VkCommandBufferUsageFlagBits)input_value)
+    switch (input_value)
     {
         case VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT:
             return "VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT";
@@ -3873,7 +3928,7 @@ static inline std::string string_VkCommandBufferUsageFlags(VkCommandBufferUsageF
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCommandBufferUsageFlagBits(static_cast<VkCommandBufferUsageFlagBits>(1 << index)));
+            ret.append(string_VkCommandBufferUsageFlagBits(static_cast<VkCommandBufferUsageFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3884,7 +3939,7 @@ static inline std::string string_VkCommandBufferUsageFlags(VkCommandBufferUsageF
 
 static inline const char* string_VkQueryControlFlagBits(VkQueryControlFlagBits input_value)
 {
-    switch ((VkQueryControlFlagBits)input_value)
+    switch (input_value)
     {
         case VK_QUERY_CONTROL_PRECISE_BIT:
             return "VK_QUERY_CONTROL_PRECISE_BIT";
@@ -3900,7 +3955,7 @@ static inline std::string string_VkQueryControlFlags(VkQueryControlFlags input_v
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkQueryControlFlagBits(static_cast<VkQueryControlFlagBits>(1 << index)));
+            ret.append(string_VkQueryControlFlagBits(static_cast<VkQueryControlFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3911,7 +3966,7 @@ static inline std::string string_VkQueryControlFlags(VkQueryControlFlags input_v
 
 static inline const char* string_VkCommandBufferResetFlagBits(VkCommandBufferResetFlagBits input_value)
 {
-    switch ((VkCommandBufferResetFlagBits)input_value)
+    switch (input_value)
     {
         case VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT:
             return "VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT";
@@ -3927,7 +3982,7 @@ static inline std::string string_VkCommandBufferResetFlags(VkCommandBufferResetF
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCommandBufferResetFlagBits(static_cast<VkCommandBufferResetFlagBits>(1 << index)));
+            ret.append(string_VkCommandBufferResetFlagBits(static_cast<VkCommandBufferResetFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3938,7 +3993,7 @@ static inline std::string string_VkCommandBufferResetFlags(VkCommandBufferResetF
 
 static inline const char* string_VkIndexType(VkIndexType input_value)
 {
-    switch ((VkIndexType)input_value)
+    switch (input_value)
     {
         case VK_INDEX_TYPE_NONE_KHR:
             return "VK_INDEX_TYPE_NONE_KHR";
@@ -3955,7 +4010,7 @@ static inline const char* string_VkIndexType(VkIndexType input_value)
 
 static inline const char* string_VkStencilFaceFlagBits(VkStencilFaceFlagBits input_value)
 {
-    switch ((VkStencilFaceFlagBits)input_value)
+    switch (input_value)
     {
         case VK_STENCIL_FACE_BACK_BIT:
             return "VK_STENCIL_FACE_BACK_BIT";
@@ -3975,7 +4030,7 @@ static inline std::string string_VkStencilFaceFlags(VkStencilFaceFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkStencilFaceFlagBits(static_cast<VkStencilFaceFlagBits>(1 << index)));
+            ret.append(string_VkStencilFaceFlagBits(static_cast<VkStencilFaceFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -3986,7 +4041,7 @@ static inline std::string string_VkStencilFaceFlags(VkStencilFaceFlags input_val
 
 static inline const char* string_VkSubpassContents(VkSubpassContents input_value)
 {
-    switch ((VkSubpassContents)input_value)
+    switch (input_value)
     {
         case VK_SUBPASS_CONTENTS_INLINE:
             return "VK_SUBPASS_CONTENTS_INLINE";
@@ -3999,7 +4054,7 @@ static inline const char* string_VkSubpassContents(VkSubpassContents input_value
 
 static inline const char* string_VkSubgroupFeatureFlagBits(VkSubgroupFeatureFlagBits input_value)
 {
-    switch ((VkSubgroupFeatureFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SUBGROUP_FEATURE_ARITHMETIC_BIT:
             return "VK_SUBGROUP_FEATURE_ARITHMETIC_BIT";
@@ -4031,7 +4086,7 @@ static inline std::string string_VkSubgroupFeatureFlags(VkSubgroupFeatureFlags i
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSubgroupFeatureFlagBits(static_cast<VkSubgroupFeatureFlagBits>(1 << index)));
+            ret.append(string_VkSubgroupFeatureFlagBits(static_cast<VkSubgroupFeatureFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4042,7 +4097,7 @@ static inline std::string string_VkSubgroupFeatureFlags(VkSubgroupFeatureFlags i
 
 static inline const char* string_VkPeerMemoryFeatureFlagBits(VkPeerMemoryFeatureFlagBits input_value)
 {
-    switch ((VkPeerMemoryFeatureFlagBits)input_value)
+    switch (input_value)
     {
         case VK_PEER_MEMORY_FEATURE_COPY_DST_BIT:
             return "VK_PEER_MEMORY_FEATURE_COPY_DST_BIT";
@@ -4064,7 +4119,7 @@ static inline std::string string_VkPeerMemoryFeatureFlags(VkPeerMemoryFeatureFla
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPeerMemoryFeatureFlagBits(static_cast<VkPeerMemoryFeatureFlagBits>(1 << index)));
+            ret.append(string_VkPeerMemoryFeatureFlagBits(static_cast<VkPeerMemoryFeatureFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4075,7 +4130,7 @@ static inline std::string string_VkPeerMemoryFeatureFlags(VkPeerMemoryFeatureFla
 
 static inline const char* string_VkMemoryAllocateFlagBits(VkMemoryAllocateFlagBits input_value)
 {
-    switch ((VkMemoryAllocateFlagBits)input_value)
+    switch (input_value)
     {
         case VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT:
             return "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT";
@@ -4095,7 +4150,7 @@ static inline std::string string_VkMemoryAllocateFlags(VkMemoryAllocateFlags inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkMemoryAllocateFlagBits(static_cast<VkMemoryAllocateFlagBits>(1 << index)));
+            ret.append(string_VkMemoryAllocateFlagBits(static_cast<VkMemoryAllocateFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4106,7 +4161,7 @@ static inline std::string string_VkMemoryAllocateFlags(VkMemoryAllocateFlags inp
 
 static inline const char* string_VkPointClippingBehavior(VkPointClippingBehavior input_value)
 {
-    switch ((VkPointClippingBehavior)input_value)
+    switch (input_value)
     {
         case VK_POINT_CLIPPING_BEHAVIOR_ALL_CLIP_PLANES:
             return "VK_POINT_CLIPPING_BEHAVIOR_ALL_CLIP_PLANES";
@@ -4119,7 +4174,7 @@ static inline const char* string_VkPointClippingBehavior(VkPointClippingBehavior
 
 static inline const char* string_VkTessellationDomainOrigin(VkTessellationDomainOrigin input_value)
 {
-    switch ((VkTessellationDomainOrigin)input_value)
+    switch (input_value)
     {
         case VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT:
             return "VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT";
@@ -4132,7 +4187,7 @@ static inline const char* string_VkTessellationDomainOrigin(VkTessellationDomain
 
 static inline const char* string_VkSamplerYcbcrModelConversion(VkSamplerYcbcrModelConversion input_value)
 {
-    switch ((VkSamplerYcbcrModelConversion)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY:
             return "VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY";
@@ -4151,7 +4206,7 @@ static inline const char* string_VkSamplerYcbcrModelConversion(VkSamplerYcbcrMod
 
 static inline const char* string_VkSamplerYcbcrRange(VkSamplerYcbcrRange input_value)
 {
-    switch ((VkSamplerYcbcrRange)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_YCBCR_RANGE_ITU_FULL:
             return "VK_SAMPLER_YCBCR_RANGE_ITU_FULL";
@@ -4164,7 +4219,7 @@ static inline const char* string_VkSamplerYcbcrRange(VkSamplerYcbcrRange input_v
 
 static inline const char* string_VkChromaLocation(VkChromaLocation input_value)
 {
-    switch ((VkChromaLocation)input_value)
+    switch (input_value)
     {
         case VK_CHROMA_LOCATION_COSITED_EVEN:
             return "VK_CHROMA_LOCATION_COSITED_EVEN";
@@ -4177,7 +4232,7 @@ static inline const char* string_VkChromaLocation(VkChromaLocation input_value)
 
 static inline const char* string_VkDescriptorUpdateTemplateType(VkDescriptorUpdateTemplateType input_value)
 {
-    switch ((VkDescriptorUpdateTemplateType)input_value)
+    switch (input_value)
     {
         case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET:
             return "VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET";
@@ -4190,7 +4245,7 @@ static inline const char* string_VkDescriptorUpdateTemplateType(VkDescriptorUpda
 
 static inline const char* string_VkExternalMemoryHandleTypeFlagBits(VkExternalMemoryHandleTypeFlagBits input_value)
 {
-    switch ((VkExternalMemoryHandleTypeFlagBits)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID";
@@ -4226,7 +4281,7 @@ static inline std::string string_VkExternalMemoryHandleTypeFlags(VkExternalMemor
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalMemoryHandleTypeFlagBits(static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << index)));
+            ret.append(string_VkExternalMemoryHandleTypeFlagBits(static_cast<VkExternalMemoryHandleTypeFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4237,7 +4292,7 @@ static inline std::string string_VkExternalMemoryHandleTypeFlags(VkExternalMemor
 
 static inline const char* string_VkExternalMemoryFeatureFlagBits(VkExternalMemoryFeatureFlagBits input_value)
 {
-    switch ((VkExternalMemoryFeatureFlagBits)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT:
             return "VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT";
@@ -4257,7 +4312,7 @@ static inline std::string string_VkExternalMemoryFeatureFlags(VkExternalMemoryFe
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalMemoryFeatureFlagBits(static_cast<VkExternalMemoryFeatureFlagBits>(1 << index)));
+            ret.append(string_VkExternalMemoryFeatureFlagBits(static_cast<VkExternalMemoryFeatureFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4268,7 +4323,7 @@ static inline std::string string_VkExternalMemoryFeatureFlags(VkExternalMemoryFe
 
 static inline const char* string_VkExternalFenceHandleTypeFlagBits(VkExternalFenceHandleTypeFlagBits input_value)
 {
-    switch ((VkExternalFenceHandleTypeFlagBits)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT:
             return "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT";
@@ -4290,7 +4345,7 @@ static inline std::string string_VkExternalFenceHandleTypeFlags(VkExternalFenceH
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalFenceHandleTypeFlagBits(static_cast<VkExternalFenceHandleTypeFlagBits>(1 << index)));
+            ret.append(string_VkExternalFenceHandleTypeFlagBits(static_cast<VkExternalFenceHandleTypeFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4301,7 +4356,7 @@ static inline std::string string_VkExternalFenceHandleTypeFlags(VkExternalFenceH
 
 static inline const char* string_VkExternalFenceFeatureFlagBits(VkExternalFenceFeatureFlagBits input_value)
 {
-    switch ((VkExternalFenceFeatureFlagBits)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT:
             return "VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT";
@@ -4319,7 +4374,7 @@ static inline std::string string_VkExternalFenceFeatureFlags(VkExternalFenceFeat
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalFenceFeatureFlagBits(static_cast<VkExternalFenceFeatureFlagBits>(1 << index)));
+            ret.append(string_VkExternalFenceFeatureFlagBits(static_cast<VkExternalFenceFeatureFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4330,7 +4385,7 @@ static inline std::string string_VkExternalFenceFeatureFlags(VkExternalFenceFeat
 
 static inline const char* string_VkFenceImportFlagBits(VkFenceImportFlagBits input_value)
 {
-    switch ((VkFenceImportFlagBits)input_value)
+    switch (input_value)
     {
         case VK_FENCE_IMPORT_TEMPORARY_BIT:
             return "VK_FENCE_IMPORT_TEMPORARY_BIT";
@@ -4346,7 +4401,7 @@ static inline std::string string_VkFenceImportFlags(VkFenceImportFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkFenceImportFlagBits(static_cast<VkFenceImportFlagBits>(1 << index)));
+            ret.append(string_VkFenceImportFlagBits(static_cast<VkFenceImportFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4357,7 +4412,7 @@ static inline std::string string_VkFenceImportFlags(VkFenceImportFlags input_val
 
 static inline const char* string_VkSemaphoreImportFlagBits(VkSemaphoreImportFlagBits input_value)
 {
-    switch ((VkSemaphoreImportFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SEMAPHORE_IMPORT_TEMPORARY_BIT:
             return "VK_SEMAPHORE_IMPORT_TEMPORARY_BIT";
@@ -4373,7 +4428,7 @@ static inline std::string string_VkSemaphoreImportFlags(VkSemaphoreImportFlags i
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSemaphoreImportFlagBits(static_cast<VkSemaphoreImportFlagBits>(1 << index)));
+            ret.append(string_VkSemaphoreImportFlagBits(static_cast<VkSemaphoreImportFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4384,7 +4439,7 @@ static inline std::string string_VkSemaphoreImportFlags(VkSemaphoreImportFlags i
 
 static inline const char* string_VkExternalSemaphoreHandleTypeFlagBits(VkExternalSemaphoreHandleTypeFlagBits input_value)
 {
-    switch ((VkExternalSemaphoreHandleTypeFlagBits)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT:
             return "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT";
@@ -4408,7 +4463,7 @@ static inline std::string string_VkExternalSemaphoreHandleTypeFlags(VkExternalSe
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalSemaphoreHandleTypeFlagBits(static_cast<VkExternalSemaphoreHandleTypeFlagBits>(1 << index)));
+            ret.append(string_VkExternalSemaphoreHandleTypeFlagBits(static_cast<VkExternalSemaphoreHandleTypeFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4419,7 +4474,7 @@ static inline std::string string_VkExternalSemaphoreHandleTypeFlags(VkExternalSe
 
 static inline const char* string_VkExternalSemaphoreFeatureFlagBits(VkExternalSemaphoreFeatureFlagBits input_value)
 {
-    switch ((VkExternalSemaphoreFeatureFlagBits)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT:
             return "VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT";
@@ -4437,7 +4492,7 @@ static inline std::string string_VkExternalSemaphoreFeatureFlags(VkExternalSemap
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalSemaphoreFeatureFlagBits(static_cast<VkExternalSemaphoreFeatureFlagBits>(1 << index)));
+            ret.append(string_VkExternalSemaphoreFeatureFlagBits(static_cast<VkExternalSemaphoreFeatureFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4448,7 +4503,7 @@ static inline std::string string_VkExternalSemaphoreFeatureFlags(VkExternalSemap
 
 static inline const char* string_VkDriverId(VkDriverId input_value)
 {
-    switch ((VkDriverId)input_value)
+    switch (input_value)
     {
         case VK_DRIVER_ID_AMD_OPEN_SOURCE:
             return "VK_DRIVER_ID_AMD_OPEN_SOURCE";
@@ -4485,7 +4540,7 @@ static inline const char* string_VkDriverId(VkDriverId input_value)
 
 static inline const char* string_VkShaderFloatControlsIndependence(VkShaderFloatControlsIndependence input_value)
 {
-    switch ((VkShaderFloatControlsIndependence)input_value)
+    switch (input_value)
     {
         case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY:
             return "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY";
@@ -4500,7 +4555,7 @@ static inline const char* string_VkShaderFloatControlsIndependence(VkShaderFloat
 
 static inline const char* string_VkResolveModeFlagBits(VkResolveModeFlagBits input_value)
 {
-    switch ((VkResolveModeFlagBits)input_value)
+    switch (input_value)
     {
         case VK_RESOLVE_MODE_AVERAGE_BIT:
             return "VK_RESOLVE_MODE_AVERAGE_BIT";
@@ -4524,7 +4579,7 @@ static inline std::string string_VkResolveModeFlags(VkResolveModeFlags input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkResolveModeFlagBits(static_cast<VkResolveModeFlagBits>(1 << index)));
+            ret.append(string_VkResolveModeFlagBits(static_cast<VkResolveModeFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4535,7 +4590,7 @@ static inline std::string string_VkResolveModeFlags(VkResolveModeFlags input_val
 
 static inline const char* string_VkDescriptorBindingFlagBits(VkDescriptorBindingFlagBits input_value)
 {
-    switch ((VkDescriptorBindingFlagBits)input_value)
+    switch (input_value)
     {
         case VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT:
             return "VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT";
@@ -4557,7 +4612,7 @@ static inline std::string string_VkDescriptorBindingFlags(VkDescriptorBindingFla
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDescriptorBindingFlagBits(static_cast<VkDescriptorBindingFlagBits>(1 << index)));
+            ret.append(string_VkDescriptorBindingFlagBits(static_cast<VkDescriptorBindingFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4568,7 +4623,7 @@ static inline std::string string_VkDescriptorBindingFlags(VkDescriptorBindingFla
 
 static inline const char* string_VkSamplerReductionMode(VkSamplerReductionMode input_value)
 {
-    switch ((VkSamplerReductionMode)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_REDUCTION_MODE_MAX:
             return "VK_SAMPLER_REDUCTION_MODE_MAX";
@@ -4583,7 +4638,7 @@ static inline const char* string_VkSamplerReductionMode(VkSamplerReductionMode i
 
 static inline const char* string_VkSemaphoreType(VkSemaphoreType input_value)
 {
-    switch ((VkSemaphoreType)input_value)
+    switch (input_value)
     {
         case VK_SEMAPHORE_TYPE_BINARY:
             return "VK_SEMAPHORE_TYPE_BINARY";
@@ -4596,7 +4651,7 @@ static inline const char* string_VkSemaphoreType(VkSemaphoreType input_value)
 
 static inline const char* string_VkSemaphoreWaitFlagBits(VkSemaphoreWaitFlagBits input_value)
 {
-    switch ((VkSemaphoreWaitFlagBits)input_value)
+    switch (input_value)
     {
         case VK_SEMAPHORE_WAIT_ANY_BIT:
             return "VK_SEMAPHORE_WAIT_ANY_BIT";
@@ -4612,7 +4667,7 @@ static inline std::string string_VkSemaphoreWaitFlags(VkSemaphoreWaitFlags input
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSemaphoreWaitFlagBits(static_cast<VkSemaphoreWaitFlagBits>(1 << index)));
+            ret.append(string_VkSemaphoreWaitFlagBits(static_cast<VkSemaphoreWaitFlagBits>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4623,7 +4678,7 @@ static inline std::string string_VkSemaphoreWaitFlags(VkSemaphoreWaitFlags input
 
 static inline const char* string_VkSurfaceTransformFlagBitsKHR(VkSurfaceTransformFlagBitsKHR input_value)
 {
-    switch ((VkSurfaceTransformFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR:
             return "VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR";
@@ -4655,7 +4710,7 @@ static inline std::string string_VkSurfaceTransformFlagsKHR(VkSurfaceTransformFl
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSurfaceTransformFlagBitsKHR(static_cast<VkSurfaceTransformFlagBitsKHR>(1 << index)));
+            ret.append(string_VkSurfaceTransformFlagBitsKHR(static_cast<VkSurfaceTransformFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4666,7 +4721,7 @@ static inline std::string string_VkSurfaceTransformFlagsKHR(VkSurfaceTransformFl
 
 static inline const char* string_VkPresentModeKHR(VkPresentModeKHR input_value)
 {
-    switch ((VkPresentModeKHR)input_value)
+    switch (input_value)
     {
         case VK_PRESENT_MODE_FIFO_KHR:
             return "VK_PRESENT_MODE_FIFO_KHR";
@@ -4687,7 +4742,7 @@ static inline const char* string_VkPresentModeKHR(VkPresentModeKHR input_value)
 
 static inline const char* string_VkColorSpaceKHR(VkColorSpaceKHR input_value)
 {
-    switch ((VkColorSpaceKHR)input_value)
+    switch (input_value)
     {
         case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT:
             return "VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT";
@@ -4728,7 +4783,7 @@ static inline const char* string_VkColorSpaceKHR(VkColorSpaceKHR input_value)
 
 static inline const char* string_VkCompositeAlphaFlagBitsKHR(VkCompositeAlphaFlagBitsKHR input_value)
 {
-    switch ((VkCompositeAlphaFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR:
             return "VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR";
@@ -4750,7 +4805,7 @@ static inline std::string string_VkCompositeAlphaFlagsKHR(VkCompositeAlphaFlagsK
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << index)));
+            ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4761,7 +4816,7 @@ static inline std::string string_VkCompositeAlphaFlagsKHR(VkCompositeAlphaFlagsK
 
 static inline const char* string_VkSwapchainCreateFlagBitsKHR(VkSwapchainCreateFlagBitsKHR input_value)
 {
-    switch ((VkSwapchainCreateFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR:
             return "VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR";
@@ -4781,7 +4836,7 @@ static inline std::string string_VkSwapchainCreateFlagsKHR(VkSwapchainCreateFlag
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSwapchainCreateFlagBitsKHR(static_cast<VkSwapchainCreateFlagBitsKHR>(1 << index)));
+            ret.append(string_VkSwapchainCreateFlagBitsKHR(static_cast<VkSwapchainCreateFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4792,7 +4847,7 @@ static inline std::string string_VkSwapchainCreateFlagsKHR(VkSwapchainCreateFlag
 
 static inline const char* string_VkDeviceGroupPresentModeFlagBitsKHR(VkDeviceGroupPresentModeFlagBitsKHR input_value)
 {
-    switch ((VkDeviceGroupPresentModeFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR:
             return "VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR";
@@ -4814,7 +4869,7 @@ static inline std::string string_VkDeviceGroupPresentModeFlagsKHR(VkDeviceGroupP
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDeviceGroupPresentModeFlagBitsKHR(static_cast<VkDeviceGroupPresentModeFlagBitsKHR>(1 << index)));
+            ret.append(string_VkDeviceGroupPresentModeFlagBitsKHR(static_cast<VkDeviceGroupPresentModeFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4825,7 +4880,7 @@ static inline std::string string_VkDeviceGroupPresentModeFlagsKHR(VkDeviceGroupP
 
 static inline const char* string_VkDisplayPlaneAlphaFlagBitsKHR(VkDisplayPlaneAlphaFlagBitsKHR input_value)
 {
-    switch ((VkDisplayPlaneAlphaFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_DISPLAY_PLANE_ALPHA_GLOBAL_BIT_KHR:
             return "VK_DISPLAY_PLANE_ALPHA_GLOBAL_BIT_KHR";
@@ -4847,7 +4902,7 @@ static inline std::string string_VkDisplayPlaneAlphaFlagsKHR(VkDisplayPlaneAlpha
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDisplayPlaneAlphaFlagBitsKHR(static_cast<VkDisplayPlaneAlphaFlagBitsKHR>(1 << index)));
+            ret.append(string_VkDisplayPlaneAlphaFlagBitsKHR(static_cast<VkDisplayPlaneAlphaFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4858,7 +4913,7 @@ static inline std::string string_VkDisplayPlaneAlphaFlagsKHR(VkDisplayPlaneAlpha
 
 static inline const char* string_VkPeerMemoryFeatureFlagBitsKHR(VkPeerMemoryFeatureFlagBitsKHR input_value)
 {
-    switch ((VkPeerMemoryFeatureFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_PEER_MEMORY_FEATURE_COPY_DST_BIT:
             return "VK_PEER_MEMORY_FEATURE_COPY_DST_BIT";
@@ -4880,7 +4935,7 @@ static inline std::string string_VkPeerMemoryFeatureFlagsKHR(VkPeerMemoryFeature
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPeerMemoryFeatureFlagBitsKHR(static_cast<VkPeerMemoryFeatureFlagBitsKHR>(1 << index)));
+            ret.append(string_VkPeerMemoryFeatureFlagBitsKHR(static_cast<VkPeerMemoryFeatureFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4891,7 +4946,7 @@ static inline std::string string_VkPeerMemoryFeatureFlagsKHR(VkPeerMemoryFeature
 
 static inline const char* string_VkMemoryAllocateFlagBitsKHR(VkMemoryAllocateFlagBitsKHR input_value)
 {
-    switch ((VkMemoryAllocateFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT:
             return "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT";
@@ -4911,7 +4966,7 @@ static inline std::string string_VkMemoryAllocateFlagsKHR(VkMemoryAllocateFlagsK
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkMemoryAllocateFlagBitsKHR(static_cast<VkMemoryAllocateFlagBitsKHR>(1 << index)));
+            ret.append(string_VkMemoryAllocateFlagBitsKHR(static_cast<VkMemoryAllocateFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4922,7 +4977,7 @@ static inline std::string string_VkMemoryAllocateFlagsKHR(VkMemoryAllocateFlagsK
 
 static inline const char* string_VkExternalMemoryHandleTypeFlagBitsKHR(VkExternalMemoryHandleTypeFlagBitsKHR input_value)
 {
-    switch ((VkExternalMemoryHandleTypeFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID";
@@ -4958,7 +5013,7 @@ static inline std::string string_VkExternalMemoryHandleTypeFlagsKHR(VkExternalMe
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalMemoryHandleTypeFlagBitsKHR(static_cast<VkExternalMemoryHandleTypeFlagBitsKHR>(1 << index)));
+            ret.append(string_VkExternalMemoryHandleTypeFlagBitsKHR(static_cast<VkExternalMemoryHandleTypeFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -4969,7 +5024,7 @@ static inline std::string string_VkExternalMemoryHandleTypeFlagsKHR(VkExternalMe
 
 static inline const char* string_VkExternalMemoryFeatureFlagBitsKHR(VkExternalMemoryFeatureFlagBitsKHR input_value)
 {
-    switch ((VkExternalMemoryFeatureFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT:
             return "VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT";
@@ -4989,7 +5044,7 @@ static inline std::string string_VkExternalMemoryFeatureFlagsKHR(VkExternalMemor
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalMemoryFeatureFlagBitsKHR(static_cast<VkExternalMemoryFeatureFlagBitsKHR>(1 << index)));
+            ret.append(string_VkExternalMemoryFeatureFlagBitsKHR(static_cast<VkExternalMemoryFeatureFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5000,7 +5055,7 @@ static inline std::string string_VkExternalMemoryFeatureFlagsKHR(VkExternalMemor
 
 static inline const char* string_VkExternalSemaphoreHandleTypeFlagBitsKHR(VkExternalSemaphoreHandleTypeFlagBitsKHR input_value)
 {
-    switch ((VkExternalSemaphoreHandleTypeFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT:
             return "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT";
@@ -5024,7 +5079,7 @@ static inline std::string string_VkExternalSemaphoreHandleTypeFlagsKHR(VkExterna
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalSemaphoreHandleTypeFlagBitsKHR(static_cast<VkExternalSemaphoreHandleTypeFlagBitsKHR>(1 << index)));
+            ret.append(string_VkExternalSemaphoreHandleTypeFlagBitsKHR(static_cast<VkExternalSemaphoreHandleTypeFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5035,7 +5090,7 @@ static inline std::string string_VkExternalSemaphoreHandleTypeFlagsKHR(VkExterna
 
 static inline const char* string_VkExternalSemaphoreFeatureFlagBitsKHR(VkExternalSemaphoreFeatureFlagBitsKHR input_value)
 {
-    switch ((VkExternalSemaphoreFeatureFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT:
             return "VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT";
@@ -5053,7 +5108,7 @@ static inline std::string string_VkExternalSemaphoreFeatureFlagsKHR(VkExternalSe
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalSemaphoreFeatureFlagBitsKHR(static_cast<VkExternalSemaphoreFeatureFlagBitsKHR>(1 << index)));
+            ret.append(string_VkExternalSemaphoreFeatureFlagBitsKHR(static_cast<VkExternalSemaphoreFeatureFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5064,7 +5119,7 @@ static inline std::string string_VkExternalSemaphoreFeatureFlagsKHR(VkExternalSe
 
 static inline const char* string_VkSemaphoreImportFlagBitsKHR(VkSemaphoreImportFlagBitsKHR input_value)
 {
-    switch ((VkSemaphoreImportFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_SEMAPHORE_IMPORT_TEMPORARY_BIT:
             return "VK_SEMAPHORE_IMPORT_TEMPORARY_BIT";
@@ -5080,7 +5135,7 @@ static inline std::string string_VkSemaphoreImportFlagsKHR(VkSemaphoreImportFlag
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSemaphoreImportFlagBitsKHR(static_cast<VkSemaphoreImportFlagBitsKHR>(1 << index)));
+            ret.append(string_VkSemaphoreImportFlagBitsKHR(static_cast<VkSemaphoreImportFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5091,7 +5146,7 @@ static inline std::string string_VkSemaphoreImportFlagsKHR(VkSemaphoreImportFlag
 
 static inline const char* string_VkDescriptorUpdateTemplateTypeKHR(VkDescriptorUpdateTemplateTypeKHR input_value)
 {
-    switch ((VkDescriptorUpdateTemplateTypeKHR)input_value)
+    switch (input_value)
     {
         case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET:
             return "VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET";
@@ -5104,7 +5159,7 @@ static inline const char* string_VkDescriptorUpdateTemplateTypeKHR(VkDescriptorU
 
 static inline const char* string_VkExternalFenceHandleTypeFlagBitsKHR(VkExternalFenceHandleTypeFlagBitsKHR input_value)
 {
-    switch ((VkExternalFenceHandleTypeFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT:
             return "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT";
@@ -5126,7 +5181,7 @@ static inline std::string string_VkExternalFenceHandleTypeFlagsKHR(VkExternalFen
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalFenceHandleTypeFlagBitsKHR(static_cast<VkExternalFenceHandleTypeFlagBitsKHR>(1 << index)));
+            ret.append(string_VkExternalFenceHandleTypeFlagBitsKHR(static_cast<VkExternalFenceHandleTypeFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5137,7 +5192,7 @@ static inline std::string string_VkExternalFenceHandleTypeFlagsKHR(VkExternalFen
 
 static inline const char* string_VkExternalFenceFeatureFlagBitsKHR(VkExternalFenceFeatureFlagBitsKHR input_value)
 {
-    switch ((VkExternalFenceFeatureFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT:
             return "VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT";
@@ -5155,7 +5210,7 @@ static inline std::string string_VkExternalFenceFeatureFlagsKHR(VkExternalFenceF
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalFenceFeatureFlagBitsKHR(static_cast<VkExternalFenceFeatureFlagBitsKHR>(1 << index)));
+            ret.append(string_VkExternalFenceFeatureFlagBitsKHR(static_cast<VkExternalFenceFeatureFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5166,7 +5221,7 @@ static inline std::string string_VkExternalFenceFeatureFlagsKHR(VkExternalFenceF
 
 static inline const char* string_VkFenceImportFlagBitsKHR(VkFenceImportFlagBitsKHR input_value)
 {
-    switch ((VkFenceImportFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_FENCE_IMPORT_TEMPORARY_BIT:
             return "VK_FENCE_IMPORT_TEMPORARY_BIT";
@@ -5182,7 +5237,7 @@ static inline std::string string_VkFenceImportFlagsKHR(VkFenceImportFlagsKHR inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkFenceImportFlagBitsKHR(static_cast<VkFenceImportFlagBitsKHR>(1 << index)));
+            ret.append(string_VkFenceImportFlagBitsKHR(static_cast<VkFenceImportFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5193,7 +5248,7 @@ static inline std::string string_VkFenceImportFlagsKHR(VkFenceImportFlagsKHR inp
 
 static inline const char* string_VkPerformanceCounterUnitKHR(VkPerformanceCounterUnitKHR input_value)
 {
-    switch ((VkPerformanceCounterUnitKHR)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_COUNTER_UNIT_AMPS_KHR:
             return "VK_PERFORMANCE_COUNTER_UNIT_AMPS_KHR";
@@ -5224,7 +5279,7 @@ static inline const char* string_VkPerformanceCounterUnitKHR(VkPerformanceCounte
 
 static inline const char* string_VkPerformanceCounterScopeKHR(VkPerformanceCounterScopeKHR input_value)
 {
-    switch ((VkPerformanceCounterScopeKHR)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR:
             return "VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR";
@@ -5239,7 +5294,7 @@ static inline const char* string_VkPerformanceCounterScopeKHR(VkPerformanceCount
 
 static inline const char* string_VkPerformanceCounterStorageKHR(VkPerformanceCounterStorageKHR input_value)
 {
-    switch ((VkPerformanceCounterStorageKHR)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_COUNTER_STORAGE_FLOAT32_KHR:
             return "VK_PERFORMANCE_COUNTER_STORAGE_FLOAT32_KHR";
@@ -5260,7 +5315,7 @@ static inline const char* string_VkPerformanceCounterStorageKHR(VkPerformanceCou
 
 static inline const char* string_VkPerformanceCounterDescriptionFlagBitsKHR(VkPerformanceCounterDescriptionFlagBitsKHR input_value)
 {
-    switch ((VkPerformanceCounterDescriptionFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_BIT_KHR:
             return "VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_BIT_KHR";
@@ -5278,7 +5333,7 @@ static inline std::string string_VkPerformanceCounterDescriptionFlagsKHR(VkPerfo
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPerformanceCounterDescriptionFlagBitsKHR(static_cast<VkPerformanceCounterDescriptionFlagBitsKHR>(1 << index)));
+            ret.append(string_VkPerformanceCounterDescriptionFlagBitsKHR(static_cast<VkPerformanceCounterDescriptionFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5289,7 +5344,7 @@ static inline std::string string_VkPerformanceCounterDescriptionFlagsKHR(VkPerfo
 
 static inline const char* string_VkPointClippingBehaviorKHR(VkPointClippingBehaviorKHR input_value)
 {
-    switch ((VkPointClippingBehaviorKHR)input_value)
+    switch (input_value)
     {
         case VK_POINT_CLIPPING_BEHAVIOR_ALL_CLIP_PLANES:
             return "VK_POINT_CLIPPING_BEHAVIOR_ALL_CLIP_PLANES";
@@ -5302,7 +5357,7 @@ static inline const char* string_VkPointClippingBehaviorKHR(VkPointClippingBehav
 
 static inline const char* string_VkTessellationDomainOriginKHR(VkTessellationDomainOriginKHR input_value)
 {
-    switch ((VkTessellationDomainOriginKHR)input_value)
+    switch (input_value)
     {
         case VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT:
             return "VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT";
@@ -5315,7 +5370,7 @@ static inline const char* string_VkTessellationDomainOriginKHR(VkTessellationDom
 
 static inline const char* string_VkSamplerYcbcrModelConversionKHR(VkSamplerYcbcrModelConversionKHR input_value)
 {
-    switch ((VkSamplerYcbcrModelConversionKHR)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY:
             return "VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY";
@@ -5334,7 +5389,7 @@ static inline const char* string_VkSamplerYcbcrModelConversionKHR(VkSamplerYcbcr
 
 static inline const char* string_VkSamplerYcbcrRangeKHR(VkSamplerYcbcrRangeKHR input_value)
 {
-    switch ((VkSamplerYcbcrRangeKHR)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_YCBCR_RANGE_ITU_FULL:
             return "VK_SAMPLER_YCBCR_RANGE_ITU_FULL";
@@ -5347,7 +5402,7 @@ static inline const char* string_VkSamplerYcbcrRangeKHR(VkSamplerYcbcrRangeKHR i
 
 static inline const char* string_VkChromaLocationKHR(VkChromaLocationKHR input_value)
 {
-    switch ((VkChromaLocationKHR)input_value)
+    switch (input_value)
     {
         case VK_CHROMA_LOCATION_COSITED_EVEN:
             return "VK_CHROMA_LOCATION_COSITED_EVEN";
@@ -5360,7 +5415,7 @@ static inline const char* string_VkChromaLocationKHR(VkChromaLocationKHR input_v
 
 static inline const char* string_VkDriverIdKHR(VkDriverIdKHR input_value)
 {
-    switch ((VkDriverIdKHR)input_value)
+    switch (input_value)
     {
         case VK_DRIVER_ID_AMD_OPEN_SOURCE:
             return "VK_DRIVER_ID_AMD_OPEN_SOURCE";
@@ -5397,7 +5452,7 @@ static inline const char* string_VkDriverIdKHR(VkDriverIdKHR input_value)
 
 static inline const char* string_VkShaderFloatControlsIndependenceKHR(VkShaderFloatControlsIndependenceKHR input_value)
 {
-    switch ((VkShaderFloatControlsIndependenceKHR)input_value)
+    switch (input_value)
     {
         case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY:
             return "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY";
@@ -5412,7 +5467,7 @@ static inline const char* string_VkShaderFloatControlsIndependenceKHR(VkShaderFl
 
 static inline const char* string_VkResolveModeFlagBitsKHR(VkResolveModeFlagBitsKHR input_value)
 {
-    switch ((VkResolveModeFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_RESOLVE_MODE_AVERAGE_BIT:
             return "VK_RESOLVE_MODE_AVERAGE_BIT";
@@ -5436,7 +5491,7 @@ static inline std::string string_VkResolveModeFlagsKHR(VkResolveModeFlagsKHR inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkResolveModeFlagBitsKHR(static_cast<VkResolveModeFlagBitsKHR>(1 << index)));
+            ret.append(string_VkResolveModeFlagBitsKHR(static_cast<VkResolveModeFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5447,7 +5502,7 @@ static inline std::string string_VkResolveModeFlagsKHR(VkResolveModeFlagsKHR inp
 
 static inline const char* string_VkSemaphoreTypeKHR(VkSemaphoreTypeKHR input_value)
 {
-    switch ((VkSemaphoreTypeKHR)input_value)
+    switch (input_value)
     {
         case VK_SEMAPHORE_TYPE_BINARY:
             return "VK_SEMAPHORE_TYPE_BINARY";
@@ -5460,7 +5515,7 @@ static inline const char* string_VkSemaphoreTypeKHR(VkSemaphoreTypeKHR input_val
 
 static inline const char* string_VkSemaphoreWaitFlagBitsKHR(VkSemaphoreWaitFlagBitsKHR input_value)
 {
-    switch ((VkSemaphoreWaitFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_SEMAPHORE_WAIT_ANY_BIT:
             return "VK_SEMAPHORE_WAIT_ANY_BIT";
@@ -5476,7 +5531,7 @@ static inline std::string string_VkSemaphoreWaitFlagsKHR(VkSemaphoreWaitFlagsKHR
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSemaphoreWaitFlagBitsKHR(static_cast<VkSemaphoreWaitFlagBitsKHR>(1 << index)));
+            ret.append(string_VkSemaphoreWaitFlagBitsKHR(static_cast<VkSemaphoreWaitFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5487,7 +5542,7 @@ static inline std::string string_VkSemaphoreWaitFlagsKHR(VkSemaphoreWaitFlagsKHR
 
 static inline const char* string_VkFragmentShadingRateCombinerOpKHR(VkFragmentShadingRateCombinerOpKHR input_value)
 {
-    switch ((VkFragmentShadingRateCombinerOpKHR)input_value)
+    switch (input_value)
     {
         case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR:
             return "VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR";
@@ -5506,7 +5561,7 @@ static inline const char* string_VkFragmentShadingRateCombinerOpKHR(VkFragmentSh
 
 static inline const char* string_VkPipelineExecutableStatisticFormatKHR(VkPipelineExecutableStatisticFormatKHR input_value)
 {
-    switch ((VkPipelineExecutableStatisticFormatKHR)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_BOOL32_KHR:
             return "VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_BOOL32_KHR";
@@ -5521,9 +5576,218 @@ static inline const char* string_VkPipelineExecutableStatisticFormatKHR(VkPipeli
     }
 }
 
+static inline const char* string_VkPipelineStageFlagBits2KHR(uint64_t input_value)
+{
+    switch (input_value)
+    {
+        case VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_BLIT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_BLIT_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV:
+            return "VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV";
+        case VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT:
+            return "VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT";
+        case VK_PIPELINE_STAGE_2_COPY_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_COPY_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT:
+            return "VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT";
+        case VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_HOST_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_HOST_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV:
+            return "VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_2_NONE_KHR:
+            return "VK_PIPELINE_STAGE_2_NONE_KHR";
+        case VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV:
+            return "VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT:
+            return "VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT";
+        case VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR";
+        case VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR:
+            return "VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR";
+        default:
+            return "Unhandled VkPipelineStageFlagBits2KHR";
+    }
+}
+
+static inline std::string string_VkPipelineStageFlags2KHR(VkPipelineStageFlags2KHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkPipelineStageFlagBits2KHR(static_cast<uint64_t>(1ULL << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkPipelineStageFlagBits2KHR(static_cast<uint64_t>(0)));
+    return ret;
+}
+
+static inline const char* string_VkAccessFlagBits2KHR(uint64_t input_value)
+{
+    switch (input_value)
+    {
+        case VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR:
+            return "VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR";
+        case VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR";
+        case VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR:
+            return "VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR";
+        case VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT:
+            return "VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT";
+        case VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR";
+        case VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV:
+            return "VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV";
+        case VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV:
+            return "VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV";
+        case VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT:
+            return "VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT";
+        case VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR:
+            return "VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR";
+        case VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR";
+        case VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT:
+            return "VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT";
+        case VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR:
+            return "VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR";
+        case VK_ACCESS_2_HOST_READ_BIT_KHR:
+            return "VK_ACCESS_2_HOST_READ_BIT_KHR";
+        case VK_ACCESS_2_HOST_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_HOST_WRITE_BIT_KHR";
+        case VK_ACCESS_2_INDEX_READ_BIT_KHR:
+            return "VK_ACCESS_2_INDEX_READ_BIT_KHR";
+        case VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT_KHR:
+            return "VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT_KHR";
+        case VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT_KHR:
+            return "VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT_KHR";
+        case VK_ACCESS_2_MEMORY_READ_BIT_KHR:
+            return "VK_ACCESS_2_MEMORY_READ_BIT_KHR";
+        case VK_ACCESS_2_MEMORY_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_MEMORY_WRITE_BIT_KHR";
+        case VK_ACCESS_2_NONE_KHR:
+            return "VK_ACCESS_2_NONE_KHR";
+        case VK_ACCESS_2_SHADER_READ_BIT_KHR:
+            return "VK_ACCESS_2_SHADER_READ_BIT_KHR";
+        case VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR:
+            return "VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR";
+        case VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR:
+            return "VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR";
+        case VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR";
+        case VK_ACCESS_2_SHADER_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_SHADER_WRITE_BIT_KHR";
+        case VK_ACCESS_2_TRANSFER_READ_BIT_KHR:
+            return "VK_ACCESS_2_TRANSFER_READ_BIT_KHR";
+        case VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR:
+            return "VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR";
+        case VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT:
+            return "VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT";
+        case VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT:
+            return "VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT";
+        case VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT:
+            return "VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT";
+        case VK_ACCESS_2_UNIFORM_READ_BIT_KHR:
+            return "VK_ACCESS_2_UNIFORM_READ_BIT_KHR";
+        case VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR:
+            return "VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR";
+        default:
+            return "Unhandled VkAccessFlagBits2KHR";
+    }
+}
+
+static inline std::string string_VkAccessFlags2KHR(VkAccessFlags2KHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkAccessFlagBits2KHR(static_cast<uint64_t>(1ULL << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkAccessFlagBits2KHR(static_cast<uint64_t>(0)));
+    return ret;
+}
+
+static inline const char* string_VkSubmitFlagBitsKHR(VkSubmitFlagBitsKHR input_value)
+{
+    switch (input_value)
+    {
+        case VK_SUBMIT_PROTECTED_BIT_KHR:
+            return "VK_SUBMIT_PROTECTED_BIT_KHR";
+        default:
+            return "Unhandled VkSubmitFlagBitsKHR";
+    }
+}
+
+static inline std::string string_VkSubmitFlagsKHR(VkSubmitFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkSubmitFlagBitsKHR(static_cast<VkSubmitFlagBitsKHR>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkSubmitFlagBitsKHR(static_cast<VkSubmitFlagBitsKHR>(0)));
+    return ret;
+}
+
 static inline const char* string_VkDebugReportFlagBitsEXT(VkDebugReportFlagBitsEXT input_value)
 {
-    switch ((VkDebugReportFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
             return "VK_DEBUG_REPORT_DEBUG_BIT_EXT";
@@ -5547,7 +5811,7 @@ static inline std::string string_VkDebugReportFlagsEXT(VkDebugReportFlagsEXT inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(1 << index)));
+            ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5558,7 +5822,7 @@ static inline std::string string_VkDebugReportFlagsEXT(VkDebugReportFlagsEXT inp
 
 static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectTypeEXT input_value)
 {
-    switch ((VkDebugReportObjectTypeEXT)input_value)
+    switch (input_value)
     {
         case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT:
             return "VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT";
@@ -5639,7 +5903,7 @@ static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectT
 
 static inline const char* string_VkRasterizationOrderAMD(VkRasterizationOrderAMD input_value)
 {
-    switch ((VkRasterizationOrderAMD)input_value)
+    switch (input_value)
     {
         case VK_RASTERIZATION_ORDER_RELAXED_AMD:
             return "VK_RASTERIZATION_ORDER_RELAXED_AMD";
@@ -5652,7 +5916,7 @@ static inline const char* string_VkRasterizationOrderAMD(VkRasterizationOrderAMD
 
 static inline const char* string_VkShaderInfoTypeAMD(VkShaderInfoTypeAMD input_value)
 {
-    switch ((VkShaderInfoTypeAMD)input_value)
+    switch (input_value)
     {
         case VK_SHADER_INFO_TYPE_BINARY_AMD:
             return "VK_SHADER_INFO_TYPE_BINARY_AMD";
@@ -5667,7 +5931,7 @@ static inline const char* string_VkShaderInfoTypeAMD(VkShaderInfoTypeAMD input_v
 
 static inline const char* string_VkExternalMemoryHandleTypeFlagBitsNV(VkExternalMemoryHandleTypeFlagBitsNV input_value)
 {
-    switch ((VkExternalMemoryHandleTypeFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_BIT_NV:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_IMAGE_BIT_NV";
@@ -5689,7 +5953,7 @@ static inline std::string string_VkExternalMemoryHandleTypeFlagsNV(VkExternalMem
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalMemoryHandleTypeFlagBitsNV(static_cast<VkExternalMemoryHandleTypeFlagBitsNV>(1 << index)));
+            ret.append(string_VkExternalMemoryHandleTypeFlagBitsNV(static_cast<VkExternalMemoryHandleTypeFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5700,7 +5964,7 @@ static inline std::string string_VkExternalMemoryHandleTypeFlagsNV(VkExternalMem
 
 static inline const char* string_VkExternalMemoryFeatureFlagBitsNV(VkExternalMemoryFeatureFlagBitsNV input_value)
 {
-    switch ((VkExternalMemoryFeatureFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT_NV:
             return "VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT_NV";
@@ -5720,7 +5984,7 @@ static inline std::string string_VkExternalMemoryFeatureFlagsNV(VkExternalMemory
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkExternalMemoryFeatureFlagBitsNV(static_cast<VkExternalMemoryFeatureFlagBitsNV>(1 << index)));
+            ret.append(string_VkExternalMemoryFeatureFlagBitsNV(static_cast<VkExternalMemoryFeatureFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5731,7 +5995,7 @@ static inline std::string string_VkExternalMemoryFeatureFlagsNV(VkExternalMemory
 
 static inline const char* string_VkValidationCheckEXT(VkValidationCheckEXT input_value)
 {
-    switch ((VkValidationCheckEXT)input_value)
+    switch (input_value)
     {
         case VK_VALIDATION_CHECK_ALL_EXT:
             return "VK_VALIDATION_CHECK_ALL_EXT";
@@ -5744,7 +6008,7 @@ static inline const char* string_VkValidationCheckEXT(VkValidationCheckEXT input
 
 static inline const char* string_VkConditionalRenderingFlagBitsEXT(VkConditionalRenderingFlagBitsEXT input_value)
 {
-    switch ((VkConditionalRenderingFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_CONDITIONAL_RENDERING_INVERTED_BIT_EXT:
             return "VK_CONDITIONAL_RENDERING_INVERTED_BIT_EXT";
@@ -5760,7 +6024,7 @@ static inline std::string string_VkConditionalRenderingFlagsEXT(VkConditionalRen
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkConditionalRenderingFlagBitsEXT(static_cast<VkConditionalRenderingFlagBitsEXT>(1 << index)));
+            ret.append(string_VkConditionalRenderingFlagBitsEXT(static_cast<VkConditionalRenderingFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5771,7 +6035,7 @@ static inline std::string string_VkConditionalRenderingFlagsEXT(VkConditionalRen
 
 static inline const char* string_VkSurfaceCounterFlagBitsEXT(VkSurfaceCounterFlagBitsEXT input_value)
 {
-    switch ((VkSurfaceCounterFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_SURFACE_COUNTER_VBLANK_BIT_EXT:
             return "VK_SURFACE_COUNTER_VBLANK_BIT_EXT";
@@ -5787,7 +6051,7 @@ static inline std::string string_VkSurfaceCounterFlagsEXT(VkSurfaceCounterFlagsE
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkSurfaceCounterFlagBitsEXT(static_cast<VkSurfaceCounterFlagBitsEXT>(1 << index)));
+            ret.append(string_VkSurfaceCounterFlagBitsEXT(static_cast<VkSurfaceCounterFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5798,7 +6062,7 @@ static inline std::string string_VkSurfaceCounterFlagsEXT(VkSurfaceCounterFlagsE
 
 static inline const char* string_VkDisplayPowerStateEXT(VkDisplayPowerStateEXT input_value)
 {
-    switch ((VkDisplayPowerStateEXT)input_value)
+    switch (input_value)
     {
         case VK_DISPLAY_POWER_STATE_OFF_EXT:
             return "VK_DISPLAY_POWER_STATE_OFF_EXT";
@@ -5813,7 +6077,7 @@ static inline const char* string_VkDisplayPowerStateEXT(VkDisplayPowerStateEXT i
 
 static inline const char* string_VkDeviceEventTypeEXT(VkDeviceEventTypeEXT input_value)
 {
-    switch ((VkDeviceEventTypeEXT)input_value)
+    switch (input_value)
     {
         case VK_DEVICE_EVENT_TYPE_DISPLAY_HOTPLUG_EXT:
             return "VK_DEVICE_EVENT_TYPE_DISPLAY_HOTPLUG_EXT";
@@ -5824,7 +6088,7 @@ static inline const char* string_VkDeviceEventTypeEXT(VkDeviceEventTypeEXT input
 
 static inline const char* string_VkDisplayEventTypeEXT(VkDisplayEventTypeEXT input_value)
 {
-    switch ((VkDisplayEventTypeEXT)input_value)
+    switch (input_value)
     {
         case VK_DISPLAY_EVENT_TYPE_FIRST_PIXEL_OUT_EXT:
             return "VK_DISPLAY_EVENT_TYPE_FIRST_PIXEL_OUT_EXT";
@@ -5835,7 +6099,7 @@ static inline const char* string_VkDisplayEventTypeEXT(VkDisplayEventTypeEXT inp
 
 static inline const char* string_VkViewportCoordinateSwizzleNV(VkViewportCoordinateSwizzleNV input_value)
 {
-    switch ((VkViewportCoordinateSwizzleNV)input_value)
+    switch (input_value)
     {
         case VK_VIEWPORT_COORDINATE_SWIZZLE_NEGATIVE_W_NV:
             return "VK_VIEWPORT_COORDINATE_SWIZZLE_NEGATIVE_W_NV";
@@ -5860,7 +6124,7 @@ static inline const char* string_VkViewportCoordinateSwizzleNV(VkViewportCoordin
 
 static inline const char* string_VkDiscardRectangleModeEXT(VkDiscardRectangleModeEXT input_value)
 {
-    switch ((VkDiscardRectangleModeEXT)input_value)
+    switch (input_value)
     {
         case VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT:
             return "VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT";
@@ -5873,7 +6137,7 @@ static inline const char* string_VkDiscardRectangleModeEXT(VkDiscardRectangleMod
 
 static inline const char* string_VkConservativeRasterizationModeEXT(VkConservativeRasterizationModeEXT input_value)
 {
-    switch ((VkConservativeRasterizationModeEXT)input_value)
+    switch (input_value)
     {
         case VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT:
             return "VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT";
@@ -5888,7 +6152,7 @@ static inline const char* string_VkConservativeRasterizationModeEXT(VkConservati
 
 static inline const char* string_VkDebugUtilsMessageSeverityFlagBitsEXT(VkDebugUtilsMessageSeverityFlagBitsEXT input_value)
 {
-    switch ((VkDebugUtilsMessageSeverityFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             return "VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT";
@@ -5910,7 +6174,7 @@ static inline std::string string_VkDebugUtilsMessageSeverityFlagsEXT(VkDebugUtil
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDebugUtilsMessageSeverityFlagBitsEXT(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(1 << index)));
+            ret.append(string_VkDebugUtilsMessageSeverityFlagBitsEXT(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5921,7 +6185,7 @@ static inline std::string string_VkDebugUtilsMessageSeverityFlagsEXT(VkDebugUtil
 
 static inline const char* string_VkDebugUtilsMessageTypeFlagBitsEXT(VkDebugUtilsMessageTypeFlagBitsEXT input_value)
 {
-    switch ((VkDebugUtilsMessageTypeFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
             return "VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT";
@@ -5941,7 +6205,7 @@ static inline std::string string_VkDebugUtilsMessageTypeFlagsEXT(VkDebugUtilsMes
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDebugUtilsMessageTypeFlagBitsEXT(static_cast<VkDebugUtilsMessageTypeFlagBitsEXT>(1 << index)));
+            ret.append(string_VkDebugUtilsMessageTypeFlagBitsEXT(static_cast<VkDebugUtilsMessageTypeFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -5952,7 +6216,7 @@ static inline std::string string_VkDebugUtilsMessageTypeFlagsEXT(VkDebugUtilsMes
 
 static inline const char* string_VkSamplerReductionModeEXT(VkSamplerReductionModeEXT input_value)
 {
-    switch ((VkSamplerReductionModeEXT)input_value)
+    switch (input_value)
     {
         case VK_SAMPLER_REDUCTION_MODE_MAX:
             return "VK_SAMPLER_REDUCTION_MODE_MAX";
@@ -5967,7 +6231,7 @@ static inline const char* string_VkSamplerReductionModeEXT(VkSamplerReductionMod
 
 static inline const char* string_VkBlendOverlapEXT(VkBlendOverlapEXT input_value)
 {
-    switch ((VkBlendOverlapEXT)input_value)
+    switch (input_value)
     {
         case VK_BLEND_OVERLAP_CONJOINT_EXT:
             return "VK_BLEND_OVERLAP_CONJOINT_EXT";
@@ -5982,7 +6246,7 @@ static inline const char* string_VkBlendOverlapEXT(VkBlendOverlapEXT input_value
 
 static inline const char* string_VkCoverageModulationModeNV(VkCoverageModulationModeNV input_value)
 {
-    switch ((VkCoverageModulationModeNV)input_value)
+    switch (input_value)
     {
         case VK_COVERAGE_MODULATION_MODE_ALPHA_NV:
             return "VK_COVERAGE_MODULATION_MODE_ALPHA_NV";
@@ -5999,7 +6263,7 @@ static inline const char* string_VkCoverageModulationModeNV(VkCoverageModulation
 
 static inline const char* string_VkValidationCacheHeaderVersionEXT(VkValidationCacheHeaderVersionEXT input_value)
 {
-    switch ((VkValidationCacheHeaderVersionEXT)input_value)
+    switch (input_value)
     {
         case VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT:
             return "VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT";
@@ -6010,7 +6274,7 @@ static inline const char* string_VkValidationCacheHeaderVersionEXT(VkValidationC
 
 static inline const char* string_VkDescriptorBindingFlagBitsEXT(VkDescriptorBindingFlagBitsEXT input_value)
 {
-    switch ((VkDescriptorBindingFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT:
             return "VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT";
@@ -6032,7 +6296,7 @@ static inline std::string string_VkDescriptorBindingFlagsEXT(VkDescriptorBinding
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDescriptorBindingFlagBitsEXT(static_cast<VkDescriptorBindingFlagBitsEXT>(1 << index)));
+            ret.append(string_VkDescriptorBindingFlagBitsEXT(static_cast<VkDescriptorBindingFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6043,7 +6307,7 @@ static inline std::string string_VkDescriptorBindingFlagsEXT(VkDescriptorBinding
 
 static inline const char* string_VkShadingRatePaletteEntryNV(VkShadingRatePaletteEntryNV input_value)
 {
-    switch ((VkShadingRatePaletteEntryNV)input_value)
+    switch (input_value)
     {
         case VK_SHADING_RATE_PALETTE_ENTRY_16_INVOCATIONS_PER_PIXEL_NV:
             return "VK_SHADING_RATE_PALETTE_ENTRY_16_INVOCATIONS_PER_PIXEL_NV";
@@ -6076,7 +6340,7 @@ static inline const char* string_VkShadingRatePaletteEntryNV(VkShadingRatePalett
 
 static inline const char* string_VkCoarseSampleOrderTypeNV(VkCoarseSampleOrderTypeNV input_value)
 {
-    switch ((VkCoarseSampleOrderTypeNV)input_value)
+    switch (input_value)
     {
         case VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV:
             return "VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV";
@@ -6093,7 +6357,7 @@ static inline const char* string_VkCoarseSampleOrderTypeNV(VkCoarseSampleOrderTy
 
 static inline const char* string_VkRayTracingShaderGroupTypeKHR(VkRayTracingShaderGroupTypeKHR input_value)
 {
-    switch ((VkRayTracingShaderGroupTypeKHR)input_value)
+    switch (input_value)
     {
         case VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR:
             return "VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR";
@@ -6108,7 +6372,7 @@ static inline const char* string_VkRayTracingShaderGroupTypeKHR(VkRayTracingShad
 
 static inline const char* string_VkRayTracingShaderGroupTypeNV(VkRayTracingShaderGroupTypeNV input_value)
 {
-    switch ((VkRayTracingShaderGroupTypeNV)input_value)
+    switch (input_value)
     {
         case VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR:
             return "VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR";
@@ -6123,7 +6387,7 @@ static inline const char* string_VkRayTracingShaderGroupTypeNV(VkRayTracingShade
 
 static inline const char* string_VkGeometryTypeKHR(VkGeometryTypeKHR input_value)
 {
-    switch ((VkGeometryTypeKHR)input_value)
+    switch (input_value)
     {
         case VK_GEOMETRY_TYPE_AABBS_KHR:
             return "VK_GEOMETRY_TYPE_AABBS_KHR";
@@ -6138,7 +6402,7 @@ static inline const char* string_VkGeometryTypeKHR(VkGeometryTypeKHR input_value
 
 static inline const char* string_VkGeometryTypeNV(VkGeometryTypeNV input_value)
 {
-    switch ((VkGeometryTypeNV)input_value)
+    switch (input_value)
     {
         case VK_GEOMETRY_TYPE_AABBS_KHR:
             return "VK_GEOMETRY_TYPE_AABBS_KHR";
@@ -6153,7 +6417,7 @@ static inline const char* string_VkGeometryTypeNV(VkGeometryTypeNV input_value)
 
 static inline const char* string_VkAccelerationStructureTypeKHR(VkAccelerationStructureTypeKHR input_value)
 {
-    switch ((VkAccelerationStructureTypeKHR)input_value)
+    switch (input_value)
     {
         case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR:
             return "VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR";
@@ -6168,7 +6432,7 @@ static inline const char* string_VkAccelerationStructureTypeKHR(VkAccelerationSt
 
 static inline const char* string_VkAccelerationStructureTypeNV(VkAccelerationStructureTypeNV input_value)
 {
-    switch ((VkAccelerationStructureTypeNV)input_value)
+    switch (input_value)
     {
         case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR:
             return "VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR";
@@ -6183,7 +6447,7 @@ static inline const char* string_VkAccelerationStructureTypeNV(VkAccelerationStr
 
 static inline const char* string_VkGeometryFlagBitsKHR(VkGeometryFlagBitsKHR input_value)
 {
-    switch ((VkGeometryFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR:
             return "VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR";
@@ -6201,7 +6465,7 @@ static inline std::string string_VkGeometryFlagsKHR(VkGeometryFlagsKHR input_val
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkGeometryFlagBitsKHR(static_cast<VkGeometryFlagBitsKHR>(1 << index)));
+            ret.append(string_VkGeometryFlagBitsKHR(static_cast<VkGeometryFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6212,7 +6476,7 @@ static inline std::string string_VkGeometryFlagsKHR(VkGeometryFlagsKHR input_val
 
 static inline const char* string_VkGeometryFlagBitsNV(VkGeometryFlagBitsNV input_value)
 {
-    switch ((VkGeometryFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR:
             return "VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR";
@@ -6230,7 +6494,7 @@ static inline std::string string_VkGeometryFlagsNV(VkGeometryFlagsNV input_value
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkGeometryFlagBitsNV(static_cast<VkGeometryFlagBitsNV>(1 << index)));
+            ret.append(string_VkGeometryFlagBitsNV(static_cast<VkGeometryFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6241,7 +6505,7 @@ static inline std::string string_VkGeometryFlagsNV(VkGeometryFlagsNV input_value
 
 static inline const char* string_VkGeometryInstanceFlagBitsKHR(VkGeometryInstanceFlagBitsKHR input_value)
 {
-    switch ((VkGeometryInstanceFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR:
             return "VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR";
@@ -6263,7 +6527,7 @@ static inline std::string string_VkGeometryInstanceFlagsKHR(VkGeometryInstanceFl
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkGeometryInstanceFlagBitsKHR(static_cast<VkGeometryInstanceFlagBitsKHR>(1 << index)));
+            ret.append(string_VkGeometryInstanceFlagBitsKHR(static_cast<VkGeometryInstanceFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6274,7 +6538,7 @@ static inline std::string string_VkGeometryInstanceFlagsKHR(VkGeometryInstanceFl
 
 static inline const char* string_VkGeometryInstanceFlagBitsNV(VkGeometryInstanceFlagBitsNV input_value)
 {
-    switch ((VkGeometryInstanceFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR:
             return "VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR";
@@ -6296,7 +6560,7 @@ static inline std::string string_VkGeometryInstanceFlagsNV(VkGeometryInstanceFla
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkGeometryInstanceFlagBitsNV(static_cast<VkGeometryInstanceFlagBitsNV>(1 << index)));
+            ret.append(string_VkGeometryInstanceFlagBitsNV(static_cast<VkGeometryInstanceFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6307,7 +6571,7 @@ static inline std::string string_VkGeometryInstanceFlagsNV(VkGeometryInstanceFla
 
 static inline const char* string_VkBuildAccelerationStructureFlagBitsKHR(VkBuildAccelerationStructureFlagBitsKHR input_value)
 {
-    switch ((VkBuildAccelerationStructureFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR:
             return "VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR";
@@ -6331,7 +6595,7 @@ static inline std::string string_VkBuildAccelerationStructureFlagsKHR(VkBuildAcc
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkBuildAccelerationStructureFlagBitsKHR(static_cast<VkBuildAccelerationStructureFlagBitsKHR>(1 << index)));
+            ret.append(string_VkBuildAccelerationStructureFlagBitsKHR(static_cast<VkBuildAccelerationStructureFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6342,7 +6606,7 @@ static inline std::string string_VkBuildAccelerationStructureFlagsKHR(VkBuildAcc
 
 static inline const char* string_VkBuildAccelerationStructureFlagBitsNV(VkBuildAccelerationStructureFlagBitsNV input_value)
 {
-    switch ((VkBuildAccelerationStructureFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR:
             return "VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR";
@@ -6366,7 +6630,7 @@ static inline std::string string_VkBuildAccelerationStructureFlagsNV(VkBuildAcce
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkBuildAccelerationStructureFlagBitsNV(static_cast<VkBuildAccelerationStructureFlagBitsNV>(1 << index)));
+            ret.append(string_VkBuildAccelerationStructureFlagBitsNV(static_cast<VkBuildAccelerationStructureFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6377,7 +6641,7 @@ static inline std::string string_VkBuildAccelerationStructureFlagsNV(VkBuildAcce
 
 static inline const char* string_VkCopyAccelerationStructureModeKHR(VkCopyAccelerationStructureModeKHR input_value)
 {
-    switch ((VkCopyAccelerationStructureModeKHR)input_value)
+    switch (input_value)
     {
         case VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR:
             return "VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR";
@@ -6394,7 +6658,7 @@ static inline const char* string_VkCopyAccelerationStructureModeKHR(VkCopyAccele
 
 static inline const char* string_VkCopyAccelerationStructureModeNV(VkCopyAccelerationStructureModeNV input_value)
 {
-    switch ((VkCopyAccelerationStructureModeNV)input_value)
+    switch (input_value)
     {
         case VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR:
             return "VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR";
@@ -6411,7 +6675,7 @@ static inline const char* string_VkCopyAccelerationStructureModeNV(VkCopyAcceler
 
 static inline const char* string_VkAccelerationStructureMemoryRequirementsTypeNV(VkAccelerationStructureMemoryRequirementsTypeNV input_value)
 {
-    switch ((VkAccelerationStructureMemoryRequirementsTypeNV)input_value)
+    switch (input_value)
     {
         case VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV:
             return "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV";
@@ -6426,7 +6690,7 @@ static inline const char* string_VkAccelerationStructureMemoryRequirementsTypeNV
 
 static inline const char* string_VkQueueGlobalPriorityEXT(VkQueueGlobalPriorityEXT input_value)
 {
-    switch ((VkQueueGlobalPriorityEXT)input_value)
+    switch (input_value)
     {
         case VK_QUEUE_GLOBAL_PRIORITY_HIGH_EXT:
             return "VK_QUEUE_GLOBAL_PRIORITY_HIGH_EXT";
@@ -6443,7 +6707,7 @@ static inline const char* string_VkQueueGlobalPriorityEXT(VkQueueGlobalPriorityE
 
 static inline const char* string_VkTimeDomainEXT(VkTimeDomainEXT input_value)
 {
-    switch ((VkTimeDomainEXT)input_value)
+    switch (input_value)
     {
         case VK_TIME_DOMAIN_CLOCK_MONOTONIC_EXT:
             return "VK_TIME_DOMAIN_CLOCK_MONOTONIC_EXT";
@@ -6460,7 +6724,7 @@ static inline const char* string_VkTimeDomainEXT(VkTimeDomainEXT input_value)
 
 static inline const char* string_VkMemoryOverallocationBehaviorAMD(VkMemoryOverallocationBehaviorAMD input_value)
 {
-    switch ((VkMemoryOverallocationBehaviorAMD)input_value)
+    switch (input_value)
     {
         case VK_MEMORY_OVERALLOCATION_BEHAVIOR_ALLOWED_AMD:
             return "VK_MEMORY_OVERALLOCATION_BEHAVIOR_ALLOWED_AMD";
@@ -6475,7 +6739,7 @@ static inline const char* string_VkMemoryOverallocationBehaviorAMD(VkMemoryOvera
 
 static inline const char* string_VkPipelineCreationFeedbackFlagBitsEXT(VkPipelineCreationFeedbackFlagBitsEXT input_value)
 {
-    switch ((VkPipelineCreationFeedbackFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT_EXT:
             return "VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT_EXT";
@@ -6495,7 +6759,7 @@ static inline std::string string_VkPipelineCreationFeedbackFlagsEXT(VkPipelineCr
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineCreationFeedbackFlagBitsEXT(static_cast<VkPipelineCreationFeedbackFlagBitsEXT>(1 << index)));
+            ret.append(string_VkPipelineCreationFeedbackFlagBitsEXT(static_cast<VkPipelineCreationFeedbackFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6506,7 +6770,7 @@ static inline std::string string_VkPipelineCreationFeedbackFlagsEXT(VkPipelineCr
 
 static inline const char* string_VkPerformanceConfigurationTypeINTEL(VkPerformanceConfigurationTypeINTEL input_value)
 {
-    switch ((VkPerformanceConfigurationTypeINTEL)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_CONFIGURATION_TYPE_COMMAND_QUEUE_METRICS_DISCOVERY_ACTIVATED_INTEL:
             return "VK_PERFORMANCE_CONFIGURATION_TYPE_COMMAND_QUEUE_METRICS_DISCOVERY_ACTIVATED_INTEL";
@@ -6517,7 +6781,7 @@ static inline const char* string_VkPerformanceConfigurationTypeINTEL(VkPerforman
 
 static inline const char* string_VkQueryPoolSamplingModeINTEL(VkQueryPoolSamplingModeINTEL input_value)
 {
-    switch ((VkQueryPoolSamplingModeINTEL)input_value)
+    switch (input_value)
     {
         case VK_QUERY_POOL_SAMPLING_MODE_MANUAL_INTEL:
             return "VK_QUERY_POOL_SAMPLING_MODE_MANUAL_INTEL";
@@ -6528,7 +6792,7 @@ static inline const char* string_VkQueryPoolSamplingModeINTEL(VkQueryPoolSamplin
 
 static inline const char* string_VkPerformanceOverrideTypeINTEL(VkPerformanceOverrideTypeINTEL input_value)
 {
-    switch ((VkPerformanceOverrideTypeINTEL)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_OVERRIDE_TYPE_FLUSH_GPU_CACHES_INTEL:
             return "VK_PERFORMANCE_OVERRIDE_TYPE_FLUSH_GPU_CACHES_INTEL";
@@ -6541,7 +6805,7 @@ static inline const char* string_VkPerformanceOverrideTypeINTEL(VkPerformanceOve
 
 static inline const char* string_VkPerformanceParameterTypeINTEL(VkPerformanceParameterTypeINTEL input_value)
 {
-    switch ((VkPerformanceParameterTypeINTEL)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_PARAMETER_TYPE_HW_COUNTERS_SUPPORTED_INTEL:
             return "VK_PERFORMANCE_PARAMETER_TYPE_HW_COUNTERS_SUPPORTED_INTEL";
@@ -6554,7 +6818,7 @@ static inline const char* string_VkPerformanceParameterTypeINTEL(VkPerformancePa
 
 static inline const char* string_VkPerformanceValueTypeINTEL(VkPerformanceValueTypeINTEL input_value)
 {
-    switch ((VkPerformanceValueTypeINTEL)input_value)
+    switch (input_value)
     {
         case VK_PERFORMANCE_VALUE_TYPE_BOOL_INTEL:
             return "VK_PERFORMANCE_VALUE_TYPE_BOOL_INTEL";
@@ -6573,7 +6837,7 @@ static inline const char* string_VkPerformanceValueTypeINTEL(VkPerformanceValueT
 
 static inline const char* string_VkToolPurposeFlagBitsEXT(VkToolPurposeFlagBitsEXT input_value)
 {
-    switch ((VkToolPurposeFlagBitsEXT)input_value)
+    switch (input_value)
     {
         case VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT:
             return "VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT";
@@ -6601,7 +6865,7 @@ static inline std::string string_VkToolPurposeFlagsEXT(VkToolPurposeFlagsEXT inp
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkToolPurposeFlagBitsEXT(static_cast<VkToolPurposeFlagBitsEXT>(1 << index)));
+            ret.append(string_VkToolPurposeFlagBitsEXT(static_cast<VkToolPurposeFlagBitsEXT>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6612,7 +6876,7 @@ static inline std::string string_VkToolPurposeFlagsEXT(VkToolPurposeFlagsEXT inp
 
 static inline const char* string_VkValidationFeatureEnableEXT(VkValidationFeatureEnableEXT input_value)
 {
-    switch ((VkValidationFeatureEnableEXT)input_value)
+    switch (input_value)
     {
         case VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT:
             return "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT";
@@ -6631,7 +6895,7 @@ static inline const char* string_VkValidationFeatureEnableEXT(VkValidationFeatur
 
 static inline const char* string_VkValidationFeatureDisableEXT(VkValidationFeatureDisableEXT input_value)
 {
-    switch ((VkValidationFeatureDisableEXT)input_value)
+    switch (input_value)
     {
         case VK_VALIDATION_FEATURE_DISABLE_ALL_EXT:
             return "VK_VALIDATION_FEATURE_DISABLE_ALL_EXT";
@@ -6654,7 +6918,7 @@ static inline const char* string_VkValidationFeatureDisableEXT(VkValidationFeatu
 
 static inline const char* string_VkComponentTypeNV(VkComponentTypeNV input_value)
 {
-    switch ((VkComponentTypeNV)input_value)
+    switch (input_value)
     {
         case VK_COMPONENT_TYPE_FLOAT16_NV:
             return "VK_COMPONENT_TYPE_FLOAT16_NV";
@@ -6685,7 +6949,7 @@ static inline const char* string_VkComponentTypeNV(VkComponentTypeNV input_value
 
 static inline const char* string_VkScopeNV(VkScopeNV input_value)
 {
-    switch ((VkScopeNV)input_value)
+    switch (input_value)
     {
         case VK_SCOPE_DEVICE_NV:
             return "VK_SCOPE_DEVICE_NV";
@@ -6702,7 +6966,7 @@ static inline const char* string_VkScopeNV(VkScopeNV input_value)
 
 static inline const char* string_VkCoverageReductionModeNV(VkCoverageReductionModeNV input_value)
 {
-    switch ((VkCoverageReductionModeNV)input_value)
+    switch (input_value)
     {
         case VK_COVERAGE_REDUCTION_MODE_MERGE_NV:
             return "VK_COVERAGE_REDUCTION_MODE_MERGE_NV";
@@ -6718,7 +6982,7 @@ static inline const char* string_VkCoverageReductionModeNV(VkCoverageReductionMo
 
 static inline const char* string_VkFullScreenExclusiveEXT(VkFullScreenExclusiveEXT input_value)
 {
-    switch ((VkFullScreenExclusiveEXT)input_value)
+    switch (input_value)
     {
         case VK_FULL_SCREEN_EXCLUSIVE_ALLOWED_EXT:
             return "VK_FULL_SCREEN_EXCLUSIVE_ALLOWED_EXT";
@@ -6736,7 +7000,7 @@ static inline const char* string_VkFullScreenExclusiveEXT(VkFullScreenExclusiveE
 
 static inline const char* string_VkLineRasterizationModeEXT(VkLineRasterizationModeEXT input_value)
 {
-    switch ((VkLineRasterizationModeEXT)input_value)
+    switch (input_value)
     {
         case VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT:
             return "VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT";
@@ -6753,7 +7017,7 @@ static inline const char* string_VkLineRasterizationModeEXT(VkLineRasterizationM
 
 static inline const char* string_VkIndirectStateFlagBitsNV(VkIndirectStateFlagBitsNV input_value)
 {
-    switch ((VkIndirectStateFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_INDIRECT_STATE_FLAG_FRONTFACE_BIT_NV:
             return "VK_INDIRECT_STATE_FLAG_FRONTFACE_BIT_NV";
@@ -6769,7 +7033,7 @@ static inline std::string string_VkIndirectStateFlagsNV(VkIndirectStateFlagsNV i
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkIndirectStateFlagBitsNV(static_cast<VkIndirectStateFlagBitsNV>(1 << index)));
+            ret.append(string_VkIndirectStateFlagBitsNV(static_cast<VkIndirectStateFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6780,7 +7044,7 @@ static inline std::string string_VkIndirectStateFlagsNV(VkIndirectStateFlagsNV i
 
 static inline const char* string_VkIndirectCommandsTokenTypeNV(VkIndirectCommandsTokenTypeNV input_value)
 {
-    switch ((VkIndirectCommandsTokenTypeNV)input_value)
+    switch (input_value)
     {
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV:
             return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV";
@@ -6805,7 +7069,7 @@ static inline const char* string_VkIndirectCommandsTokenTypeNV(VkIndirectCommand
 
 static inline const char* string_VkIndirectCommandsLayoutUsageFlagBitsNV(VkIndirectCommandsLayoutUsageFlagBitsNV input_value)
 {
-    switch ((VkIndirectCommandsLayoutUsageFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_NV:
             return "VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_NV";
@@ -6825,7 +7089,7 @@ static inline std::string string_VkIndirectCommandsLayoutUsageFlagsNV(VkIndirect
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkIndirectCommandsLayoutUsageFlagBitsNV(static_cast<VkIndirectCommandsLayoutUsageFlagBitsNV>(1 << index)));
+            ret.append(string_VkIndirectCommandsLayoutUsageFlagBitsNV(static_cast<VkIndirectCommandsLayoutUsageFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6836,7 +7100,7 @@ static inline std::string string_VkIndirectCommandsLayoutUsageFlagsNV(VkIndirect
 
 static inline const char* string_VkDeviceMemoryReportEventTypeEXT(VkDeviceMemoryReportEventTypeEXT input_value)
 {
-    switch ((VkDeviceMemoryReportEventTypeEXT)input_value)
+    switch (input_value)
     {
         case VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATE_EXT:
             return "VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATE_EXT";
@@ -6855,7 +7119,7 @@ static inline const char* string_VkDeviceMemoryReportEventTypeEXT(VkDeviceMemory
 
 static inline const char* string_VkDeviceDiagnosticsConfigFlagBitsNV(VkDeviceDiagnosticsConfigFlagBitsNV input_value)
 {
-    switch ((VkDeviceDiagnosticsConfigFlagBitsNV)input_value)
+    switch (input_value)
     {
         case VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV:
             return "VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV";
@@ -6875,7 +7139,7 @@ static inline std::string string_VkDeviceDiagnosticsConfigFlagsNV(VkDeviceDiagno
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDeviceDiagnosticsConfigFlagBitsNV(static_cast<VkDeviceDiagnosticsConfigFlagBitsNV>(1 << index)));
+            ret.append(string_VkDeviceDiagnosticsConfigFlagBitsNV(static_cast<VkDeviceDiagnosticsConfigFlagBitsNV>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6886,7 +7150,7 @@ static inline std::string string_VkDeviceDiagnosticsConfigFlagsNV(VkDeviceDiagno
 
 static inline const char* string_VkFragmentShadingRateTypeNV(VkFragmentShadingRateTypeNV input_value)
 {
-    switch ((VkFragmentShadingRateTypeNV)input_value)
+    switch (input_value)
     {
         case VK_FRAGMENT_SHADING_RATE_TYPE_ENUMS_NV:
             return "VK_FRAGMENT_SHADING_RATE_TYPE_ENUMS_NV";
@@ -6899,7 +7163,7 @@ static inline const char* string_VkFragmentShadingRateTypeNV(VkFragmentShadingRa
 
 static inline const char* string_VkFragmentShadingRateNV(VkFragmentShadingRateNV input_value)
 {
-    switch ((VkFragmentShadingRateNV)input_value)
+    switch (input_value)
     {
         case VK_FRAGMENT_SHADING_RATE_16_INVOCATIONS_PER_PIXEL_NV:
             return "VK_FRAGMENT_SHADING_RATE_16_INVOCATIONS_PER_PIXEL_NV";
@@ -6932,7 +7196,7 @@ static inline const char* string_VkFragmentShadingRateNV(VkFragmentShadingRateNV
 
 static inline const char* string_VkBuildAccelerationStructureModeKHR(VkBuildAccelerationStructureModeKHR input_value)
 {
-    switch ((VkBuildAccelerationStructureModeKHR)input_value)
+    switch (input_value)
     {
         case VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR:
             return "VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR";
@@ -6945,7 +7209,7 @@ static inline const char* string_VkBuildAccelerationStructureModeKHR(VkBuildAcce
 
 static inline const char* string_VkAccelerationStructureBuildTypeKHR(VkAccelerationStructureBuildTypeKHR input_value)
 {
-    switch ((VkAccelerationStructureBuildTypeKHR)input_value)
+    switch (input_value)
     {
         case VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR:
             return "VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR";
@@ -6960,7 +7224,7 @@ static inline const char* string_VkAccelerationStructureBuildTypeKHR(VkAccelerat
 
 static inline const char* string_VkAccelerationStructureCreateFlagBitsKHR(VkAccelerationStructureCreateFlagBitsKHR input_value)
 {
-    switch ((VkAccelerationStructureCreateFlagBitsKHR)input_value)
+    switch (input_value)
     {
         case VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR:
             return "VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR";
@@ -6976,7 +7240,7 @@ static inline std::string string_VkAccelerationStructureCreateFlagsKHR(VkAcceler
     while(input_value) {
         if (input_value & 1) {
             if( !ret.empty()) ret.append("|");
-            ret.append(string_VkAccelerationStructureCreateFlagBitsKHR(static_cast<VkAccelerationStructureCreateFlagBitsKHR>(1 << index)));
+            ret.append(string_VkAccelerationStructureCreateFlagBitsKHR(static_cast<VkAccelerationStructureCreateFlagBitsKHR>(1U << index)));
         }
         ++index;
         input_value >>= 1;
@@ -6987,7 +7251,7 @@ static inline std::string string_VkAccelerationStructureCreateFlagsKHR(VkAcceler
 
 static inline const char* string_VkAccelerationStructureCompatibilityKHR(VkAccelerationStructureCompatibilityKHR input_value)
 {
-    switch ((VkAccelerationStructureCompatibilityKHR)input_value)
+    switch (input_value)
     {
         case VK_ACCELERATION_STRUCTURE_COMPATIBILITY_COMPATIBLE_KHR:
             return "VK_ACCELERATION_STRUCTURE_COMPATIBILITY_COMPATIBLE_KHR";
@@ -7000,7 +7264,7 @@ static inline const char* string_VkAccelerationStructureCompatibilityKHR(VkAccel
 
 static inline const char* string_VkShaderGroupShaderKHR(VkShaderGroupShaderKHR input_value)
 {
-    switch ((VkShaderGroupShaderKHR)input_value)
+    switch (input_value)
     {
         case VK_SHADER_GROUP_SHADER_ANY_HIT_KHR:
             return "VK_SHADER_GROUP_SHADER_ANY_HIT_KHR";

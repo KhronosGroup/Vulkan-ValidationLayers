@@ -643,6 +643,30 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetPipelineExecutableInternalRepresentationsKHR,
     InterceptIdPreCallRecordGetPipelineExecutableInternalRepresentationsKHR,
     InterceptIdPostCallRecordGetPipelineExecutableInternalRepresentationsKHR,
+    InterceptIdPreCallValidateCmdSetEvent2KHR,
+    InterceptIdPreCallRecordCmdSetEvent2KHR,
+    InterceptIdPostCallRecordCmdSetEvent2KHR,
+    InterceptIdPreCallValidateCmdResetEvent2KHR,
+    InterceptIdPreCallRecordCmdResetEvent2KHR,
+    InterceptIdPostCallRecordCmdResetEvent2KHR,
+    InterceptIdPreCallValidateCmdWaitEvents2KHR,
+    InterceptIdPreCallRecordCmdWaitEvents2KHR,
+    InterceptIdPostCallRecordCmdWaitEvents2KHR,
+    InterceptIdPreCallValidateCmdPipelineBarrier2KHR,
+    InterceptIdPreCallRecordCmdPipelineBarrier2KHR,
+    InterceptIdPostCallRecordCmdPipelineBarrier2KHR,
+    InterceptIdPreCallValidateCmdWriteTimestamp2KHR,
+    InterceptIdPreCallRecordCmdWriteTimestamp2KHR,
+    InterceptIdPostCallRecordCmdWriteTimestamp2KHR,
+    InterceptIdPreCallValidateQueueSubmit2KHR,
+    InterceptIdPreCallRecordQueueSubmit2KHR,
+    InterceptIdPostCallRecordQueueSubmit2KHR,
+    InterceptIdPreCallValidateCmdWriteBufferMarker2AMD,
+    InterceptIdPreCallRecordCmdWriteBufferMarker2AMD,
+    InterceptIdPostCallRecordCmdWriteBufferMarker2AMD,
+    InterceptIdPreCallValidateGetQueueCheckpointData2NV,
+    InterceptIdPreCallRecordGetQueueCheckpointData2NV,
+    InterceptIdPostCallRecordGetQueueCheckpointData2NV,
     InterceptIdPreCallValidateCmdCopyBuffer2KHR,
     InterceptIdPreCallRecordCmdCopyBuffer2KHR,
     InterceptIdPostCallRecordCmdCopyBuffer2KHR,
@@ -1723,6 +1747,30 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineExecutableInternalRepresentationsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineExecutableInternalRepresentationsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineExecutableInternalRepresentationsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetEvent2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetEvent2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetEvent2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdResetEvent2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdResetEvent2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdResetEvent2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdWaitEvents2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdWaitEvents2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdWaitEvents2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdPipelineBarrier2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdPipelineBarrier2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdPipelineBarrier2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdWriteTimestamp2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdWriteTimestamp2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdWriteTimestamp2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateQueueSubmit2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordQueueSubmit2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordQueueSubmit2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdWriteBufferMarker2AMD);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdWriteBufferMarker2AMD);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdWriteBufferMarker2AMD);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetQueueCheckpointData2NV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetQueueCheckpointData2NV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetQueueCheckpointData2NV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdCopyBuffer2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdCopyBuffer2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdCopyBuffer2KHR);
