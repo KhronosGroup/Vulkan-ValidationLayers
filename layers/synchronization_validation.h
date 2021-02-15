@@ -145,6 +145,9 @@ struct SyncBarrier {
     SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst);
 
     SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &barrier);
+    // template constructor for sync2 barriers
+    template <typename Barrier>
+    SyncBarrier(VkQueueFlags queue_flags, const Barrier &barrier);
 
     void Merge(const SyncBarrier &other) {
         src_exec_scope |= other.src_exec_scope;
@@ -486,6 +489,8 @@ class SyncOpBarriers : public SyncOpBase {
                    const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                    const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                    const VkImageMemoryBarrier *pImageMemoryBarriers);
+    SyncOpBarriers(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+                   const VkDependencyInfoKHR &pDependencyInfo);
 
   protected:
     void MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
@@ -496,6 +501,13 @@ class SyncOpBarriers : public SyncOpBase {
     void MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
                                  VkDependencyFlags dependencyFlags, uint32_t imageMemoryBarrierCount,
                                  const VkImageMemoryBarrier *pImageMemoryBarriers);
+
+    void MakeMemoryBarriers(VkQueueFlags queue_flags, VkDependencyFlags dependency_flags, uint32_t barrier_count,
+                            const VkMemoryBarrier2KHR *barriers);
+    void MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
+                                  uint32_t barrier_count, const VkBufferMemoryBarrier2KHR *barriers);
+    void MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
+                                 uint32_t barrier_count, const VkImageMemoryBarrier2KHR *barriers);
 
     VkDependencyFlags dependency_flags_;
     SyncExecScope src_exec_scope_;
@@ -512,6 +524,8 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
                           uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                           const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                           const VkImageMemoryBarrier *pImageMemoryBarriers);
+    SyncOpPipelineBarrier(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+                          const VkDependencyInfoKHR &pDependencyInfo);
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     void Record(CommandBufferAccessContext *cb_context) const override;
 };
@@ -1037,6 +1051,10 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) override;
 
+    bool PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
+                                               const VkDependencyInfoKHR *pDependencyInfo) const override;
+    void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) override;
+
     void PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
                                           VkResult result) override;
 
@@ -1272,4 +1290,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                      uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) override;
+    bool PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
+                                                 VkDeviceSize dstOffset, uint32_t marker) const override;
+    void PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
+                                               VkDeviceSize dstOffset, uint32_t marker) override;
 };
