@@ -6612,14 +6612,24 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // *  -2 Cmd buf submit of image w/ layout not matching first use w/ subresource
     // *  -3 Cmd buf submit of image w/ layout not matching first use w/o subresource
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    } else {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
     bool copy_commands2 = false;
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
         copy_commands2 = true;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (!CheckSynchronization2SupportAndInitState(this)) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
 
     PFN_vkCmdCopyImage2KHR vkCmdCopyImage2Function = nullptr;
     if (copy_commands2) {
@@ -6845,8 +6855,22 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_commandBuffer->ClearDepthStencilImage(depth_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &depth_clear_value, 1, &clear_range);
     m_errorMonitor->VerifyFound();
 
-    // Now cause error due to bad image layout transition in PipelineBarrier
     VkImageMemoryBarrier image_barrier[1] = {};
+    // In synchronization2, if oldLayout == newLayout, we're not doing an ILT and these fields don't need to match
+    // the image's layout.
+    image_barrier[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    image_barrier[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier[0].newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier[0].image = src_image.handle();
+    image_barrier[0].subresourceRange.layerCount = image_create_info.arrayLayers;
+    image_barrier[0].subresourceRange.levelCount = image_create_info.mipLevels;
+    image_barrier[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->ExpectSuccess();
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                           NULL, 0, NULL, 1, image_barrier);
+    m_errorMonitor->VerifyNotFound();
+
+    // Now cause error due to bad image layout transition in PipelineBarrier
     image_barrier[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     image_barrier[0].oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     image_barrier[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
