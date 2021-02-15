@@ -26,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <iostream>
 
 #include "vk_enum_string_helper.h"
 #include "vk_format_utils.h"
@@ -350,7 +351,34 @@ static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
                                 VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL);
 }
 
+static VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_mask, VkImageLayout layout) {
+    if (layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR) {
+        if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
+            layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+            layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        } else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+            layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+            layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+        }
+    } else if (layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+        if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
+            layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+            layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        } else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+            layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+            layout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+        }
+    }
+    return layout;
+}
+
 static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
+    a = NormalizeSynchronization2Layout(aspect_mask, a);
+    b = NormalizeSynchronization2Layout(aspect_mask, b);
     bool matches = (a == b);
     if (!matches) {
         // Relaxed rules when referencing *only* the depth or stencil aspects
@@ -1006,8 +1034,11 @@ bool CoreChecks::ValidateBarriersToImages(const CoreErrorLocation &outer_loc, co
                 auto subres_it = subres_map.find(img_barrier.subresourceRange);
                 if (subres_it != subres_map.end()) {
                     auto &entry = subres_it->second;
-                    if ((entry.barrier->newLayout != img_barrier.oldLayout) &&
-                        (img_barrier.oldLayout != VK_IMAGE_LAYOUT_UNDEFINED)) {
+                    auto entry_layout =
+                        NormalizeSynchronization2Layout(entry.barrier->subresourceRange.aspectMask, entry.barrier->newLayout);
+                    auto old_layout =
+                        NormalizeSynchronization2Layout(img_barrier.subresourceRange.aspectMask, img_barrier.oldLayout);
+                    if ((entry_layout != old_layout) && (old_layout != VK_IMAGE_LAYOUT_UNDEFINED)) {
                         const VkImageSubresourceRange &range = img_barrier.subresourceRange;
                         const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
                         skip = LogError(
@@ -1091,7 +1122,9 @@ bool CoreChecks::ValidateBarriersToImages(const CoreErrorLocation &outer_loc, co
                 // the next "constant value" range
                 for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
                     const auto &value = *pos;
-                    if (!layout_check.Check(value.subresource, img_barrier.oldLayout, value.current_layout, value.initial_layout)) {
+                    auto old_layout =
+                        NormalizeSynchronization2Layout(img_barrier.subresourceRange.aspectMask, img_barrier.oldLayout);
+                    if (!layout_check.Check(value.subresource, old_layout, value.current_layout, value.initial_layout)) {
                         const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
                         subres_skip = LogError(cb_state->commandBuffer, vuid,
                                                "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
@@ -1537,9 +1570,16 @@ template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uin
 template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
                                                  const VkImageMemoryBarrier2KHR *barrier);
 
+VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_mask, VkImageLayout layout);
+
 template <typename ImgBarrier>
 void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state,
                                              const ImgBarrier &mem_barrier, bool is_release_op) {
+    if (enabled_features.synchronization2_features.synchronization2) {
+        if (mem_barrier.oldLayout == mem_barrier.newLayout) {
+            return;
+        }
+    }
     VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier.subresourceRange);
     const auto &image_create_info = image_state->createInfo;
 
@@ -1551,7 +1591,8 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
         normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
     }
 
-    VkImageLayout initial_layout = mem_barrier.oldLayout;
+    VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
+    VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);
 
     // Layout transitions in external instance are not tracked, so don't validate initial layout.
     if (QueueFamilyIsExternal(mem_barrier.srcQueueFamilyIndex)) {
@@ -1559,9 +1600,9 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     }
 
     if (is_release_op) {
-        SetImageInitialLayout(cb_state, *image_state, normalized_isr, mem_barrier.oldLayout);
+        SetImageInitialLayout(cb_state, *image_state, normalized_isr, initial_layout);
     } else {
-        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, initial_layout);
+        SetImageLayout(cb_state, *image_state, normalized_isr, new_layout, initial_layout);
     }
 }
 
@@ -5314,11 +5355,19 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const CoreEr
 
     skip |= ValidateQFOTransferBarrierUniqueness(loc, cb_state, mem_barrier, cb_state->qfo_transfer_image_barriers);
 
-    if (mem_barrier.newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier.newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
-        auto layout_loc = loc.dot(Field::newLayout);
-        const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadLayout);
-        skip |= LogError(cb_state->commandBuffer, vuid, "%s Image Layout cannot be transitioned to UNDEFINED or PREINITIALIZED.",
+    bool is_ilt = true;
+    if (enabled_features.synchronization2_features.synchronization2) {
+        is_ilt = mem_barrier.oldLayout != mem_barrier.newLayout;
+    }
+
+    if (is_ilt) {
+        if (mem_barrier.newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier.newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
+            auto layout_loc = loc.dot(Field::newLayout);
+            const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadLayout);
+            skip |=
+                LogError(cb_state->commandBuffer, vuid, "%s Image Layout cannot be transitioned to UNDEFINED or PREINITIALIZED.",
                          layout_loc.Message().c_str());
+        }
     }
 
     auto image_data = GetImageState(mem_barrier.image);
