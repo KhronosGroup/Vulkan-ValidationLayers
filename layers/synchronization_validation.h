@@ -131,9 +131,9 @@ struct SyncExecScope {
 };
 
 struct SyncBarrier {
-    VkPipelineStageFlags2KHR src_exec_scope;
+    SyncExecScope src_exec_scope;
     SyncStageAccessFlags src_access_scope;
-    VkPipelineStageFlags2KHR dst_exec_scope;
+    SyncExecScope dst_exec_scope;
     SyncStageAccessFlags dst_access_scope;
     SyncBarrier() = default;
     SyncBarrier(const SyncBarrier &other) = default;
@@ -150,9 +150,11 @@ struct SyncBarrier {
     SyncBarrier(VkQueueFlags queue_flags, const Barrier &barrier);
 
     void Merge(const SyncBarrier &other) {
-        src_exec_scope |= other.src_exec_scope;
+        // Note that after merge, only the exec_scope and access_scope fields are fully valid
+        // TODO: Do we need to update any of the other fields?  Merging has limited application.
+        src_exec_scope.exec_scope |= other.src_exec_scope.exec_scope;
         src_access_scope |= other.src_access_scope;
-        dst_exec_scope |= other.dst_exec_scope;
+        dst_exec_scope.exec_scope |= other.dst_exec_scope.exec_scope;
         dst_access_scope |= other.dst_access_scope;
     }
 };
