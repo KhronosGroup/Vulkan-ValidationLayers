@@ -1331,7 +1331,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, V
     return DetectImageBarrierHazard(image, src_exec_scope, src_access_scope, subresource_range, kDetectAll);
 }
 HazardResult AccessContext::DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const {
-    return DetectImageBarrierHazard(*image_barrier.image.get(), image_barrier.barrier.src_exec_scope,
+    return DetectImageBarrierHazard(*image_barrier.image.get(), image_barrier.barrier.src_exec_scope.exec_scope,
                                     image_barrier.barrier.src_access_scope, image_barrier.range.subresource_range, kDetectAll);
 }
 
@@ -1695,12 +1695,12 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track
     // Do the detection against the specific prior context independent of other contexts.  (Synchronous only)
     // Hazard detection for the transition can be against the merged of the barriers (it only uses src_...)
     const auto merged_barrier = MergeBarriers(track_back.barriers);
-    HazardResult hazard =
-        track_back.context->DetectImageBarrierHazard(*image_state, merged_barrier.src_exec_scope, merged_barrier.src_access_scope,
-                                                     attach_view->normalized_subresource_range, kDetectPrevious);
+    HazardResult hazard = track_back.context->DetectImageBarrierHazard(*image_state, merged_barrier.src_exec_scope.exec_scope,
+                                                                       merged_barrier.src_access_scope,
+                                                                       attach_view->normalized_subresource_range, kDetectPrevious);
     if (!hazard.hazard) {
         // The Async hazard check is against the current context's async set.
-        hazard = DetectImageBarrierHazard(*image_state, merged_barrier.src_exec_scope, merged_barrier.src_access_scope,
+        hazard = DetectImageBarrierHazard(*image_state, merged_barrier.src_exec_scope.exec_scope, merged_barrier.src_access_scope,
                                           attach_view->normalized_subresource_range, kDetectAsync);
     }
 
@@ -2347,7 +2347,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
 
         // Use the merged barrier for the hazard check (safe since it just considers the src (first) scope.
         const auto merged_barrier = MergeBarriers(trackback.barriers);
-        auto hazard = context->DetectImageBarrierHazard(*attach_view->image_state, merged_barrier.src_exec_scope,
+        auto hazard = context->DetectImageBarrierHazard(*attach_view->image_state, merged_barrier.src_exec_scope.exec_scope,
                                                         merged_barrier.src_access_scope, attach_view->normalized_subresource_range,
                                                         AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.hazard) {
@@ -2483,17 +2483,17 @@ SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFl
 }
 
 SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst) {
-    src_exec_scope = src.exec_scope;
+    src_exec_scope = src;
     src_access_scope = 0;
-    dst_exec_scope = dst.exec_scope;
+    dst_exec_scope = dst;
     dst_access_scope = 0;
 }
 
 template <typename Barrier>
 SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst) {
-    src_exec_scope = src.exec_scope;
+    src_exec_scope = src;
     src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, barrier.srcAccessMask);
-    dst_exec_scope = dst.exec_scope;
+    dst_exec_scope = dst;
     dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask);
 }
 
@@ -2501,20 +2501,20 @@ SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &s
     const auto barrier = lvl_find_in_chain<VkMemoryBarrier2KHR>(subpass.pNext);
     if (barrier) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
-        src_exec_scope = src.exec_scope;
+        src_exec_scope = src;
         src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, barrier->srcAccessMask);
 
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier->dstStageMask);
-        dst_exec_scope = dst.exec_scope;
+        dst_exec_scope = dst;
         dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, barrier->dstAccessMask);
 
     } else {
         auto src = SyncExecScope::MakeSrc(queue_flags, subpass.srcStageMask);
-        src_exec_scope = src.exec_scope;
+        src_exec_scope = src;
         src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, subpass.srcAccessMask);
 
         auto dst = SyncExecScope::MakeDst(queue_flags, subpass.dstStageMask);
-        dst_exec_scope = dst.exec_scope;
+        dst_exec_scope = dst;
         dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, subpass.dstAccessMask);
     }
 }
@@ -2878,9 +2878,9 @@ void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_t
     //       transistion, under the theory of "most recent access".  If the read/write *isn't* safe
     //       vs. this layout transition DetectBarrierHazard should report it.  We treat the layout
     //       transistion *as* a write and in scope with the barrier (it's before visibility).
-    if (layout_transition || WriteInSourceScopeOrChain(barrier.src_exec_scope, barrier.src_access_scope)) {
+    if (layout_transition || WriteInSourceScopeOrChain(barrier.src_exec_scope.exec_scope, barrier.src_access_scope)) {
         pending_write_barriers |= barrier.dst_access_scope;
-        pending_write_dep_chain |= barrier.dst_exec_scope;
+        pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
     }
     // Track layout transistion as pending as we can't modify last_write until all barriers processed
     pending_layout_transition |= layout_transition;
@@ -2890,8 +2890,8 @@ void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_t
         // don't need to be tracked as we're just going to zero them.
         for (auto &read_access : last_reads) {
             // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync scope
-            if (barrier.src_exec_scope & (read_access.stage | read_access.barriers)) {
-                read_access.pending_dep_chain |= barrier.dst_exec_scope;
+            if (barrier.src_exec_scope.exec_scope & (read_access.stage | read_access.barriers)) {
+                read_access.pending_dep_chain |= barrier.dst_exec_scope.exec_scope;
             }
         }
     }
@@ -2908,7 +2908,7 @@ void ResourceAccessState::ApplyBarrier(const ResourceUsageTag &scope_tag, const 
     // errors w.r.t. "most recent" accesses.
     if (layout_transition || ((write_tag.IsBefore(scope_tag)) && (barrier.src_access_scope & last_write).any())) {
         pending_write_barriers |= barrier.dst_access_scope;
-        pending_write_dep_chain |= barrier.dst_exec_scope;
+        pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
     }
     // Track layout transistion as pending as we can't modify last_write until all barriers processed
     pending_layout_transition |= layout_transition;
@@ -2924,8 +2924,9 @@ void ResourceAccessState::ApplyBarrier(const ResourceUsageTag &scope_tag, const 
             // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
             // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
             // TODO: eliminate the false positive by including write/read-stages "in scope" information in SetEvents first_scope
-            if (read_access.tag.IsBefore(scope_tag) && (barrier.src_exec_scope & (read_access.stage | read_access.barriers))) {
-                read_access.pending_dep_chain |= barrier.dst_exec_scope;
+            if (read_access.tag.IsBefore(scope_tag) &&
+                (barrier.src_exec_scope.exec_scope & (read_access.stage | read_access.barriers))) {
+                read_access.pending_dep_chain |= barrier.dst_exec_scope.exec_scope;
             }
         }
     }
@@ -5275,7 +5276,7 @@ struct SyncOpWaitEventsFunctorFactory {
     // Need to restrict to only valid exec and access scope for this event
     // Pass by value is intentional to get a copy we can change without modifying the passed barrier
     SyncBarrier RestrictToEvent(SyncBarrier barrier) const {
-        barrier.src_exec_scope = sync_event->scope.exec_scope & barrier.src_exec_scope;
+        barrier.src_exec_scope.exec_scope = sync_event->scope.exec_scope & barrier.src_exec_scope.exec_scope;
         barrier.src_access_scope = sync_event->scope.valid_accesses & barrier.src_access_scope;
         return barrier;
     }
