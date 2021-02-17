@@ -5499,7 +5499,41 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const CoreE
 
 bool CoreChecks::ValidateSubpassBarrier(const LogObjectList &objects, const CoreErrorLocation &loc, VkQueueFlags queue_flags,
                                         const VkSubpassDependency2 &barrier) const {
-    return CoreChecks::ValidateMemoryBarrier(objects, loc, kGeneral, queue_flags, barrier);
+    bool skip = false;
+    const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(barrier.pNext);
+    if (mem_barrier) {
+        if (enabled_features.synchronization2_features.synchronization2) {
+            if (barrier.srcAccessMask != 0) {
+                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcAccessMask",
+                                 "%s is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                                 loc.dot(Field::srcAccessMask).Message().c_str());
+            }
+            if (barrier.dstAccessMask != 0) {
+                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstAccessMask",
+                                 "%s dstAccessMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                                 loc.dot(Field::dstAccessMask).Message().c_str());
+            }
+            if (barrier.srcStageMask != 0 || barrier.dstStageMask != 0) {
+                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcStageMask",
+                                 "%s srcStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                                 loc.dot(Field::srcStageMask).Message().c_str());
+            }
+            if (barrier.dstStageMask != 0) {
+                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstStageMask",
+                                 "%s dstStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                                 loc.dot(Field::dstStageMask).Message().c_str());
+            }
+
+            skip |= CoreChecks::ValidateMemoryBarrier(objects, loc.dot(Field::pNext), kGeneral, queue_flags, *mem_barrier);
+            return skip;
+        } else {
+            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-pNext",
+                             "%s a VkMemoryBarrier2KHR is present in pNext but synchronization2 is not enabled.",
+                             loc.Message().c_str());
+        }
+    }
+    skip |= CoreChecks::ValidateMemoryBarrier(objects, loc, kGeneral, queue_flags, barrier);
+    return skip;
 }
 
 bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state, const VkFormat view_format,
