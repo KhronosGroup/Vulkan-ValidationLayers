@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016, 2020 The Khronos Group Inc.
- * Copyright (c) 2015-2016, 2020 Valve Corporation
- * Copyright (c) 2015-2016, 2020 LunarG, Inc.
+ * Copyright (c) 2015-2016, 2020-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2020-2021 Valve Corporation
+ * Copyright (c) 2015-2016, 2020-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -446,6 +446,25 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         return barrier;
     }
 
+    VkBufferMemoryBarrier2KHR buffer_memory_barrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
+                                                    VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkDeviceSize offset,
+                                                    VkDeviceSize size) const {
+        VkBufferMemoryBarrier2KHR barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
+        barrier.buffer = handle();
+        barrier.srcStageMask = src_stage;
+        barrier.dstStageMask = dst_stage;
+        barrier.srcAccessMask = src_access;
+        barrier.dstAccessMask = dst_access;
+        barrier.offset = offset;
+        barrier.size = size;
+        if (create_info_.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        }
+        return barrier;
+    }
+
   private:
     VkBufferCreateInfo create_info_;
 
@@ -517,6 +536,27 @@ class Image : public internal::NonDispHandle<VkImage> {
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcAccessMask = output_mask;
         barrier.dstAccessMask = input_mask;
+        barrier.oldLayout = old_layout;
+        barrier.newLayout = new_layout;
+        barrier.image = handle();
+        barrier.subresourceRange = range;
+        barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+        barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+        return barrier;
+    }
+
+    VkImageMemoryBarrier2KHR image_memory_barrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
+                                                  VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access,
+                                                  VkImageLayout old_layout, VkImageLayout new_layout,
+                                                  const VkImageSubresourceRange &range,
+                                                  uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                                  uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) const {
+        VkImageMemoryBarrier2KHR barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
+        barrier.srcStageMask = src_stage;
+        barrier.dstStageMask = dst_stage;
+        barrier.srcAccessMask = src_access;
+        barrier.dstAccessMask = dst_access;
         barrier.oldLayout = old_layout;
         barrier.newLayout = new_layout;
         barrier.image = handle();
