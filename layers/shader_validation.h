@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,14 +45,14 @@ struct spirv_inst_iter {
         return result;
     }
 
-    uint32_t opcode() { return *it & 0x0ffffu; }
+    uint32_t opcode() const { return *it & 0x0ffffu; }
 
     uint32_t const &word(unsigned n) const {
         assert(n < len());
         return it[n];
     }
 
-    uint32_t offset() { return (uint32_t)(it - zero); }
+    uint32_t offset() const { return (uint32_t)(it - zero); }
 
     spirv_inst_iter() {}
 

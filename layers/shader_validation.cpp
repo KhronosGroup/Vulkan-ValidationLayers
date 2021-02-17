@@ -215,6 +215,13 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 break;
             }
 
+            // Copy operations
+            case spv::OpCopyLogical:
+            case spv::OpCopyObject: {
+                def_index[insn.word(2)] = insn.offset();
+                break;
+            }
+
             default:
                 // We don't care about any other defs for now.
                 break;
@@ -311,18 +318,36 @@ static char const *StorageClassName(unsigned sc) {
     }
 }
 
-// Get the value of an integral constant
-unsigned GetConstantValue(SHADER_MODULE_STATE const *src, unsigned id) {
+// If the instruction at id is a constant or copy of a constant, returns a valid iterator pointing to that instruction.
+// Otherwise, returns src->end().
+spirv_inst_iter GetConstantDef(SHADER_MODULE_STATE const *src, unsigned id) {
     auto value = src->get_def(id);
-    assert(value != src->end());
 
-    if (value.opcode() != spv::OpConstant) {
+    // If id is a copy, see where it was copied from
+    if ((src->end() != value) && ((value.opcode() == spv::OpCopyObject) || (value.opcode() == spv::OpCopyLogical))) {
+        id = value.word(3);
+        value = src->get_def(id);
+    }
+
+    if ((src->end() != value) && (value.opcode() == spv::OpConstant)) {
+        return value;
+    }
+    return src->end();
+}
+
+// Assumes itr points to an OpConstant instruction
+uint32_t GetConstantValue(const spirv_inst_iter &itr) { return itr.word(3); }
+
+// Either returns the constant value described by the instruction at id, or 1
+uint32_t GetConstantValue(SHADER_MODULE_STATE const *src, unsigned id) {
+    auto value = GetConstantDef(src, id);
+
+    if (src->end() == value) {
         // TODO: Either ensure that the specialization transform is already performed on a module we're
         //       considering here, OR -- specialize on the fly now.
         return 1;
     }
-
-    return value.word(3);
+    return GetConstantValue(value);
 }
 
 static void DescribeTypeInner(std::ostringstream &ss, SHADER_MODULE_STATE const *src, unsigned type) {
@@ -1145,12 +1170,13 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                                 if (accesschain_it->second.first != id) {
                                     continue;
                                 }
-                                if (used_operators.load_members.end() !=
-                                    used_operators.load_members.find(accesschain_it->second.second)) {
-                                    // image_index isn't a constant, skip.
+
+                                const auto const_itr = GetConstantDef(module, accesschain_it->second.second);
+                                if (const_itr == module->end()) {
+                                    // access chain index not a constant, skip.
                                     break;
                                 }
-                                image_index = GetConstantValue(module, accesschain_it->second.second);
+                                image_index = GetConstantValue(const_itr);
                             }
                         }
                     }
@@ -1162,14 +1188,15 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
                         uint32_t sampler_id = load_it->second;
                         uint32_t sampler_index = 0;
                         auto accesschain_it = used_operators.accesschain_members.find(load_it->second);
+
                         if (accesschain_it != used_operators.accesschain_members.end()) {
-                            if (used_operators.load_members.end() !=
-                                used_operators.load_members.find(accesschain_it->second.second)) {
-                                // sampler_index isn't a constant, skip.
+                            const auto const_itr = GetConstantDef(module, accesschain_it->second.second);
+                            if (const_itr == module->end()) {
+                                // access chain index representing sampler index is not a constant, skip.
                                 break;
                             }
-                            sampler_id = accesschain_it->second.first;
-                            sampler_index = GetConstantValue(module, accesschain_it->second.second);
+                            sampler_id = const_itr.offset();
+                            sampler_index = GetConstantValue(const_itr);
                         }
                         auto sampler_dec = module->get_decorations(sampler_id);
                         if (image_index >= out_interface_var.samplers_used_by_image.size()) {
