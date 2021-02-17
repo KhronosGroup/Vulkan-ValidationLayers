@@ -33,7 +33,7 @@ host_stage = 'VK_PIPELINE_STAGE_2_HOST_BIT_KHR'
 top_stage ='VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR'
 bot_stage ='VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR'
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.169
+# Snipped from chapters/synchronization.txt -- tag v1.2.170
 # manual fixups:
 # -pending "Add XFB stage as valid for XFB_COUNTER_READ access" fix
 snippet_access_types_supported = '''
@@ -215,7 +215,7 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.169
+# Snipped from chapters/synchronization.txt -- tag v1.2.170
 # manual fixups:
 # - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
 # - make sure each pipeline section starts with "For"
@@ -585,7 +585,7 @@ def InBitOrder(tag, enum_elem):
     return in_bit_order
 
 
-# As of tag v1.2.169
+# As of tag v1.2.170
 snippet_pipeline_stages_supported = '''
 [[synchronization-pipeline-stages-supported]]
 .Supported pipeline stage flags
