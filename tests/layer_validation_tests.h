@@ -670,7 +670,7 @@ VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, Vk
 // Descriptor Indexing properties helper
 VkPhysicalDeviceDescriptorIndexingProperties GetDescriptorIndexingProperties(VkInstance instance, VkPhysicalDevice gpu);
 
-class BarrierQueueFamilyTestHelper {
+class BarrierQueueFamilyBase {
   public:
     struct QueueFamilyObjs {
         uint32_t index;
@@ -691,9 +691,7 @@ class BarrierQueueFamilyTestHelper {
         void Reset();
     };
 
-    BarrierQueueFamilyTestHelper(Context *context);
-    // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
-    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
+    BarrierQueueFamilyBase(Context *context) : context_(context), image_(context->layer_test->DeviceObj()) {}
 
     QueueFamilyObjs *GetQueueFamilyInfo(Context *context, uint32_t qfi);
 
@@ -703,16 +701,38 @@ class BarrierQueueFamilyTestHelper {
         DOUBLE_COMMAND_BUFFER,
     };
 
+    static const uint32_t kInvalidQueueFamily = UINT32_MAX;
+    Context *context_;
+    VkImageObj image_;
+    VkBufferObj buffer_;
+};
+
+class BarrierQueueFamilyTestHelper : public BarrierQueueFamilyBase {
+  public:
+    BarrierQueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}
+    // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
+    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
+
     void operator()(std::string img_err, std::string buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
                     uint32_t dst = VK_QUEUE_FAMILY_IGNORED, bool positive = false,
                     uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE);
 
-    static const uint32_t kInvalidQueueFamily = UINT32_MAX;
-    Context *context_;
-    VkImageObj image_;
     VkImageMemoryBarrier image_barrier_;
-    VkBufferObj buffer_;
     VkBufferMemoryBarrier buffer_barrier_;
+};
+
+class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
+  public:
+    Barrier2QueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}
+    // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
+    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
+
+    void operator()(std::string img_err, std::string buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
+                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, bool positive = false,
+                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE);
+
+    VkImageMemoryBarrier2KHR image_barrier_;
+    VkBufferMemoryBarrier2KHR buffer_barrier_;
 };
 
 struct DebugUtilsLabelCheckData {
@@ -759,9 +779,15 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, VkP
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier);
 
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
+                              const VkImageMemoryBarrier2KHR *img_barrier);
+
 void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
                             VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
                             const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier);
+
+void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
+                            const VkBufferMemoryBarrier2KHR *buf_barrier, const VkImageMemoryBarrier2KHR *img_barrier);
 
 VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits = nullptr);
 

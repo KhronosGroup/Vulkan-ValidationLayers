@@ -386,6 +386,27 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, 
     ValidOwnershipTransferOp(monitor, cb_to, src_stages, dst_stages, buf_barrier, img_barrier);
 }
 
+void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
+                              const VkImageMemoryBarrier2KHR *img_barrier) {
+    monitor->ExpectSuccess();
+    cb->begin();
+    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
+    dep_info.pBufferMemoryBarriers = buf_barrier;
+    dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
+    dep_info.pImageMemoryBarriers = img_barrier;
+    cb->PipelineBarrier2KHR(&dep_info);
+    cb->end();
+    cb->QueueCommandBuffer();  // Implicitly waits
+    monitor->VerifyNotFound();
+}
+
+void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
+                            const VkBufferMemoryBarrier2KHR *buf_barrier, const VkImageMemoryBarrier2KHR *img_barrier) {
+    ValidOwnershipTransferOp(monitor, cb_from, buf_barrier, img_barrier);
+    ValidOwnershipTransferOp(monitor, cb_to, buf_barrier, img_barrier);
+}
+
 VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits) {
     VkImageFormatProperties tmp_limits;
     limits = limits ? limits : &tmp_limits;
@@ -762,7 +783,7 @@ bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
     if (!sync2_features.synchronization2) {
         return false;
     }
-    framework->InitState(nullptr, &features2);
+    framework->InitState(nullptr, &features2,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     return true;
 }
 
@@ -1968,15 +1989,15 @@ namespace chain_util {
 const void *ExtensionChain::Head() const { return head_; }
 }  // namespace chain_util
 
-BarrierQueueFamilyTestHelper::QueueFamilyObjs::~QueueFamilyObjs() {
+BarrierQueueFamilyBase::QueueFamilyObjs::~QueueFamilyObjs() {
     delete command_buffer2;
     delete command_buffer;
     delete command_pool;
     delete queue;
 }
 
-void BarrierQueueFamilyTestHelper::QueueFamilyObjs::Init(VkDeviceObj *device, uint32_t qf_index, VkQueue qf_queue,
-                                                         VkCommandPoolCreateFlags cp_flags) {
+void BarrierQueueFamilyBase::QueueFamilyObjs::Init(VkDeviceObj *device, uint32_t qf_index, VkQueue qf_queue,
+                                                   VkCommandPoolCreateFlags cp_flags) {
     index = qf_index;
     queue = new VkQueueObj(qf_queue, qf_index);
     command_pool = new VkCommandPoolObj(device, qf_index, cp_flags);
@@ -1984,8 +2005,7 @@ void BarrierQueueFamilyTestHelper::QueueFamilyObjs::Init(VkDeviceObj *device, ui
     command_buffer2 = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
 };
 
-BarrierQueueFamilyTestHelper::Context::Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices)
-    : layer_test(test) {
+BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices) : layer_test(test) {
     if (0 == queue_family_indices.size()) {
         return;  // This is invalid
     }
@@ -2000,15 +2020,12 @@ BarrierQueueFamilyTestHelper::Context::Context(VkLayerTest *test, const std::vec
     Reset();
 }
 
-void BarrierQueueFamilyTestHelper::Context::Reset() {
+void BarrierQueueFamilyBase::Context::Reset() {
     layer_test->DeviceObj()->wait();
     for (auto &qf : queue_families) {
         vk::ResetCommandPool(layer_test->device(), qf.second.command_pool->handle(), 0);
     }
 }
-
-BarrierQueueFamilyTestHelper::BarrierQueueFamilyTestHelper(Context *context)
-    : context_(context), image_(context->layer_test->DeviceObj()) {}
 
 void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
     VkDeviceObj *device_obj = context_->layer_test->DeviceObj();
@@ -2027,7 +2044,26 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
     buffer_barrier_ = buffer_.buffer_memory_barrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);
 }
 
-BarrierQueueFamilyTestHelper::QueueFamilyObjs *BarrierQueueFamilyTestHelper::GetQueueFamilyInfo(Context *context, uint32_t qfi) {
+void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
+    VkDeviceObj *device_obj = context_->layer_test->DeviceObj();
+
+    image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families,
+                image_memory);
+
+    ASSERT_TRUE(image_.initialized());
+
+    image_barrier_ = image_.image_memory_barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                                 VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, image_.Layout(),
+                                                 image_.Layout(), image_.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
+
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer_.init_as_src_and_dst(*device_obj, 256, mem_prop, families, buffer_memory);
+    ASSERT_TRUE(buffer_.initialized());
+    buffer_barrier_ = buffer_.buffer_memory_barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                                    VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);
+}
+
+BarrierQueueFamilyBase::QueueFamilyObjs *BarrierQueueFamilyBase::GetQueueFamilyInfo(Context *context, uint32_t qfi) {
     QueueFamilyObjs *qf;
 
     auto qf_it = context->queue_families.find(qfi);
@@ -2058,6 +2094,52 @@ void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string b
         for (int repeat = 0; repeat < (mod == Modifier::DOUBLE_RECORD ? 2 : 1); repeat++) {
             vk::CmdPipelineBarrier(command_buffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                    VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &buffer_barrier_, 1, &image_barrier_);
+        }
+        command_buffer->end();
+        command_buffer = qf->command_buffer2;  // Second pass (if any) goes to the secondary command_buffer.
+    }
+
+    if (queue_family_index != kInvalidQueueFamily) {
+        if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
+            // the Fence resolves to VK_NULL_HANLE... i.e. no fence
+            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vk_testing::Fence(), positive);
+        } else {
+            qf->command_buffer->QueueCommandBuffer(positive);  // Check for success on positive tests only
+        }
+    }
+
+    if (positive) {
+        monitor.VerifyNotFound();
+    } else {
+        monitor.VerifyFound();
+    }
+    context_->Reset();
+};
+
+void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst, bool positive,
+                                               uint32_t queue_family_index, Modifier mod) {
+    auto &monitor = context_->layer_test->Monitor();
+    if (img_err.length()) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, img_err);
+    if (buf_err.length()) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, buf_err);
+
+    image_barrier_.srcQueueFamilyIndex = src;
+    image_barrier_.dstQueueFamilyIndex = dst;
+    buffer_barrier_.srcQueueFamilyIndex = src;
+    buffer_barrier_.dstQueueFamilyIndex = dst;
+
+    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &buffer_barrier_;
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &image_barrier_;
+
+    QueueFamilyObjs *qf = GetQueueFamilyInfo(context_, queue_family_index);
+
+    VkCommandBufferObj *command_buffer = qf->command_buffer;
+    for (int cb_repeat = 0; cb_repeat < (mod == Modifier::DOUBLE_COMMAND_BUFFER ? 2 : 1); cb_repeat++) {
+        command_buffer->begin();
+        for (int repeat = 0; repeat < (mod == Modifier::DOUBLE_RECORD ? 2 : 1); repeat++) {
+            command_buffer->PipelineBarrier2KHR(&dep_info);
         }
         command_buffer->end();
         command_buffer = qf->command_buffer2;  // Second pass (if any) goes to the secondary command_buffer.
