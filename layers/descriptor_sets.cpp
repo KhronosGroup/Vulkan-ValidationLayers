@@ -872,7 +872,10 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
 
                         if (binding_info.second.samplers_used_by_image.size() > index) {
                             for (auto &sampler : binding_info.second.samplers_used_by_image[index]) {
-                                if (sampler.second) {
+                                // NOTE: This check _shouldn't_ be necessary due to the checks made in IsSpecificDescriptorType in
+                                //       shader_validation.cpp. However, without this check some traces still crash.
+                                if (sampler.second &&
+                                    (sampler.second->GetClass() == cvdescriptorset::DescriptorClass::PlainSampler)) {
                                     const auto *sampler_state =
                                         static_cast<const cvdescriptorset::SamplerDescriptor *>(sampler.second)->GetSamplerState();
                                     if (sampler_state) sampler_states.emplace_back(sampler_state);
