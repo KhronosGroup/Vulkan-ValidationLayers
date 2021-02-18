@@ -334,6 +334,64 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
     }
 }
 
+static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
+    return (layout == non_normal) ? normal : layout;
+}
+
+static VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
+static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL);
+}
+
+static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
+    bool matches = (a == b);
+    if (!matches) {
+        // Relaxed rules when referencing *only* the depth or stencil aspects
+        if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+            matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
+        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+            matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
+        }
+    }
+    return matches;
+}
+
+// Utility type for ForRange callbacks
+struct LayoutUseCheckAndMessage {
+    const static VkImageAspectFlags kDepthOrStencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    const ImageSubresourceLayoutMap *layout_map;
+    const VkImageAspectFlags aspect_mask;
+    const char *message;
+    VkImageLayout layout;
+
+    LayoutUseCheckAndMessage() = delete;
+    LayoutUseCheckAndMessage(const ImageSubresourceLayoutMap *layout_map_, const VkImageAspectFlags aspect_mask_ = 0)
+        : layout_map(layout_map_), aspect_mask{aspect_mask_}, message(nullptr), layout(kInvalidLayout) {}
+    bool Check(const VkImageSubresource &subres, VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
+        message = nullptr;
+        layout = kInvalidLayout;  // Success status
+        if (current_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
+            message = "previous known";
+            layout = current_layout;
+        } else if ((initial_layout != kInvalidLayout) && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
+            // To check the relaxed rule matching we need to see how the initial use was used
+            const auto initial_layout_state = layout_map->GetSubresourceInitialLayoutState(subres);
+            assert(initial_layout_state);  // If we have an initial layout, we better have a state for it
+            if (!((initial_layout_state->aspect_mask & kDepthOrStencil) &&
+                  ImageLayoutMatches(initial_layout_state->aspect_mask, check, initial_layout))) {
+                message = "previously used";
+                layout = initial_layout;
+            }
+        }
+        return layout == kInvalidLayout;
+    }
+};
+
 bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const {
     if (image_view == compare_view.image_view) {
         return true;
@@ -1091,13 +1149,6 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
     return skip;
 }
 
-bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, const VkImageMemoryBarrier &barrier) const {
-    if (!IsTransferOp(&barrier)) return false;
-
-    auto pool = cb_state->command_pool.get();
-    return pool && TempIsReleaseOp<VkImageMemoryBarrier, true>(pool, &barrier);
-}
-
 template <typename Barrier>
 bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, const CMD_BUFFER_STATE *cb_state,
                                                       uint32_t barrier_count, const Barrier *barriers) const {
@@ -1208,6 +1259,114 @@ void CoreChecks::RecordBarrierValidationInfo(const char *func_name, CMD_BUFFER_S
                                              const VkImageMemoryBarrier *pImageMemBarriers) {
     RecordBarrierArrayValidationInfo(func_name, cb_state, bufferBarrierCount, pBufferMemBarriers);
     RecordBarrierArrayValidationInfo(func_name, cb_state, imageMemBarrierCount, pImageMemBarriers);
+}
+
+// Verify image barrier image state and that the image is consistent with FB image
+bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER_STATE const *cb_state,
+                                                const FRAMEBUFFER_STATE *framebuffer, uint32_t active_subpass,
+                                                const safe_VkSubpassDescription2 &sub_desc, const VkRenderPass rp_handle,
+                                                uint32_t img_index, const VkImageMemoryBarrier &img_barrier,
+                                                const CMD_BUFFER_STATE *primary_cb_state) const {
+    bool skip = false;
+    const auto *fb_state = framebuffer;
+    assert(fb_state);
+    const auto img_bar_image = img_barrier.image;
+    bool image_match = false;
+    bool sub_image_found = false;  // Do we find a corresponding subpass description
+    VkImageLayout sub_image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    uint32_t attach_index = 0;
+    // Verify that a framebuffer image matches barrier image
+    const auto attachment_count = fb_state->createInfo.attachmentCount;
+    for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
+        auto view_state = GetActiveAttachmentImageViewState(cb_state, attachment, primary_cb_state);
+        if (view_state && (img_bar_image == view_state->create_info.image)) {
+            image_match = true;
+            attach_index = attachment;
+            break;
+        }
+    }
+    if (image_match) {  // Make sure subpass is referring to matching attachment
+        if (sub_desc.pDepthStencilAttachment && sub_desc.pDepthStencilAttachment->attachment == attach_index) {
+            sub_image_layout = sub_desc.pDepthStencilAttachment->layout;
+            sub_image_found = true;
+        }
+        if (!sub_image_found && device_extensions.vk_khr_depth_stencil_resolve) {
+            const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
+            if (resolve && resolve->pDepthStencilResolveAttachment &&
+                resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
+                sub_image_layout = resolve->pDepthStencilResolveAttachment->layout;
+                sub_image_found = true;
+            }
+        }
+        if (!sub_image_found) {
+            for (uint32_t j = 0; j < sub_desc.colorAttachmentCount; ++j) {
+                if (sub_desc.pColorAttachments && sub_desc.pColorAttachments[j].attachment == attach_index) {
+                    sub_image_layout = sub_desc.pColorAttachments[j].layout;
+                    sub_image_found = true;
+                    break;
+                }
+                if (!sub_image_found && sub_desc.pResolveAttachments &&
+                    sub_desc.pResolveAttachments[j].attachment == attach_index) {
+                    sub_image_layout = sub_desc.pResolveAttachments[j].layout;
+                    sub_image_found = true;
+                    break;
+                }
+            }
+        }
+        if (!sub_image_found) {
+            skip |= LogError(rp_handle, "VUID-vkCmdPipelineBarrier-image-04073",
+                             "%s: Barrier pImageMemoryBarriers[%d].%s is not referenced by the VkSubpassDescription for "
+                             "active subpass (%d) of current %s.",
+                             funcName, img_index, report_data->FormatHandle(img_bar_image).c_str(), active_subpass,
+                             report_data->FormatHandle(rp_handle).c_str());
+        }
+    } else {  // !image_match
+        skip |=
+            LogError(fb_state->framebuffer, "VUID-vkCmdPipelineBarrier-image-04073",
+                     "%s: Barrier pImageMemoryBarriers[%d].%s does not match an image from the current %s.", funcName, img_index,
+                     report_data->FormatHandle(img_bar_image).c_str(), report_data->FormatHandle(fb_state->framebuffer).c_str());
+    }
+    if (img_barrier.oldLayout != img_barrier.newLayout) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdPipelineBarrier-oldLayout-01181",
+                         "%s: As the Image Barrier for %s is being executed within a render pass instance, oldLayout must "
+                         "equal newLayout yet they are %s and %s.",
+                         funcName, report_data->FormatHandle(img_barrier.image).c_str(),
+                         string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(img_barrier.newLayout));
+    } else {
+        if (sub_image_found && sub_image_layout != img_barrier.oldLayout) {
+            LogObjectList objlist(rp_handle);
+            objlist.add(img_bar_image);
+            skip |= LogError(objlist, "VUID-vkCmdPipelineBarrier-oldLayout-01181",
+                             "%s: Barrier pImageMemoryBarriers[%d].%s is referenced by the VkSubpassDescription for active "
+                             "subpass (%d) of current %s as having layout %s, but image barrier has layout %s.",
+                             funcName, img_index, report_data->FormatHandle(img_bar_image).c_str(), active_subpass,
+                             report_data->FormatHandle(rp_handle).c_str(), string_VkImageLayout(sub_image_layout),
+                             string_VkImageLayout(img_barrier.oldLayout));
+        }
+    }
+    return skip;
+}
+
+void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const char *func_name, CMD_BUFFER_STATE *cb_state,
+                                                                 uint32_t imageMemBarrierCount,
+                                                                 const VkImageMemoryBarrier *pImageMemBarriers) {
+    // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
+    if ((cb_state->activeRenderPass) && (VK_NULL_HANDLE == cb_state->activeFramebuffer) &&
+        (VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state->createInfo.level)) {
+        const auto active_subpass = cb_state->activeSubpass;
+        const auto rp_state = cb_state->activeRenderPass;
+        const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
+        for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
+            const auto &img_barrier = pImageMemBarriers[i];
+            // Secondary CB case w/o FB specified delay validation
+            auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
+            cb_state->cmd_execute_commands_functions.emplace_back(
+                [=](const CMD_BUFFER_STATE *primary_cb, const FRAMEBUFFER_STATE *fb) {
+                    return this_ptr->ValidateImageBarrierAttachment(func_name, cb_state, fb, active_subpass, sub_desc,
+                                                                    rp_state->renderPass, i, img_barrier, primary_cb);
+                });
+        }
+    }
 }
 
 template <typename BarrierRecord, typename Scoreboard>
@@ -4867,6 +5026,227 @@ bool CoreChecks::ValidateImageBarrierSubresourceRange(const IMAGE_STATE *image_s
 
     return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers, subresourceRange,
                                          cmd_name, param_name, "arrayLayers", image_state->image, subresource_range_error_codes);
+}
+
+namespace barrier_queue_families {
+enum VuIndex {
+    kSrcOrDstMustBeIgnore,
+    kSpecialOrIgnoreOnly,
+    kSrcAndDstValidOrSpecial,
+    kSrcAndDestMustBeIgnore,
+    kSrcAndDstBothValid,
+    kSubmitQueueMustMatchSrcOrDst
+};
+static const char *vu_summary[] = {"Source or destination queue family must be ignored.",
+                                   "Source or destination queue family must be special or ignored.",
+                                   "Destination queue family must be ignored if source queue family is.",
+                                   "Destination queue family must be valid, ignored, or special.",
+                                   "Source queue family must be valid, ignored, or special.",
+                                   "Source and destination queue family must both be ignored.",
+                                   "Source and destination queue family must both be ignore or both valid.",
+                                   "Source or destination queue family must match submit queue family, if not ignored."};
+
+static const std::string kImageErrorCodes[] = {
+    "VUID-VkImageMemoryBarrier-synchronization2-03857",                                   //   kSrcOrDstMustBeIgnore
+    "VUID-VkImageMemoryBarrier-image-04071",                                              //   kSpecialOrIgnoreOnly
+    "VUID-VkImageMemoryBarrier-image-04072",                                              //   kSrcAndDstValidOrSpecial
+    "VUID-VkImageMemoryBarrier-synchronization2-03856",                                   //   kSrcAndDestMustBeIgnore
+    "VUID-VkImageMemoryBarrier-image-04069",                                              //   kSrcAndDstBothValid
+    "UNASSIGNED-CoreValidation-vkImageMemoryBarrier-sharing-mode-exclusive-same-family",  //   kSubmitQueueMustMatchSrcOrDst
+};
+
+static const std::string kBufferErrorCodes[] = {
+    "VUID-VkBufferMemoryBarrier-synchronization2-03853",                                   //  kSrcOrDstMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-04088",                                             //  kSpecialOrIgnoreOnly
+    "VUID-VkBufferMemoryBarrier-buffer-04089",                                             //  kSrcAndDstValidOrSpecial
+    "VUID-VkBufferMemoryBarrier-synchronization2-03852",                                   //  kSrcAndDestMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-04086",                                             //  kSrcAndDstBothValid
+    "UNASSIGNED-CoreValidation-vkBufferMemoryBarrier-sharing-mode-exclusive-same-family",  //  kSubmitQueueMustMatchSrcOrDst
+};
+
+class ValidatorState {
+  public:
+    ValidatorState(const ValidationStateTracker *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                   const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
+        : device_data_(device_data),
+          func_name_(func_name),
+          command_buffer_(cb_state->commandBuffer),
+          barrier_handle_(barrier_handle),
+          sharing_mode_(sharing_mode),
+          val_codes_(barrier_handle.type == kVulkanObjectTypeImage ? kImageErrorCodes : kBufferErrorCodes),
+          limit_(static_cast<uint32_t>(device_data->physical_device_state->queue_family_properties.size())),
+          mem_ext_(IsExtEnabled(device_data->device_extensions.vk_khr_external_memory)) {}
+
+    // Log the messages using boilerplate from object state, and Vu specific information from the template arg
+    // One and two family versions, in the single family version, Vu holds the name of the passed parameter
+    bool LogMsg(VuIndex vu_index, uint32_t family, const char *param_name) const {
+        const std::string &val_code = val_codes_[vu_index];
+        const char *annotation = GetFamilyAnnotation(family);
+        return device_data_->LogError(command_buffer_, val_code,
+                                      "%s: Barrier using %s %s created with sharingMode %s, has %s %u%s. %s", func_name_,
+                                      GetTypeString(), device_data_->report_data->FormatHandle(barrier_handle_).c_str(),
+                                      GetModeString(), param_name, family, annotation, vu_summary[vu_index]);
+    }
+
+    bool LogMsg(VuIndex vu_index, uint32_t src_family, uint32_t dst_family) const {
+        const std::string &val_code = val_codes_[vu_index];
+        const char *src_annotation = GetFamilyAnnotation(src_family);
+        const char *dst_annotation = GetFamilyAnnotation(dst_family);
+        return device_data_->LogError(
+            command_buffer_, val_code,
+            "%s: Barrier using %s %s created with sharingMode %s, has srcQueueFamilyIndex %u%s and dstQueueFamilyIndex %u%s. %s",
+            func_name_, GetTypeString(), device_data_->report_data->FormatHandle(barrier_handle_).c_str(), GetModeString(),
+            src_family, src_annotation, dst_family, dst_annotation, vu_summary[vu_index]);
+    }
+
+    // This abstract Vu can only be tested at submit time, thus we need a callback from the closure containing the needed
+    // data. Note that the mem_barrier is copied to the closure as the lambda lifespan exceed the guarantees of validity for
+    // application input.
+    static bool ValidateAtQueueSubmit(const QUEUE_STATE *queue_state, const ValidationStateTracker *device_data,
+                                      uint32_t src_family, uint32_t dst_family, const ValidatorState &val) {
+        uint32_t queue_family = queue_state->queueFamilyIndex;
+        if ((src_family != queue_family) && (dst_family != queue_family)) {
+            const std::string &val_code = val.val_codes_[kSubmitQueueMustMatchSrcOrDst];
+            const char *src_annotation = val.GetFamilyAnnotation(src_family);
+            const char *dst_annotation = val.GetFamilyAnnotation(dst_family);
+            return device_data->LogError(
+                queue_state->queue, val_code,
+                "%s: Barrier submitted to queue with family index %u, using %s %s created with sharingMode %s, has "
+                "srcQueueFamilyIndex %u%s and dstQueueFamilyIndex %u%s. %s",
+                "vkQueueSubmit", queue_family, val.GetTypeString(),
+                device_data->report_data->FormatHandle(val.barrier_handle_).c_str(), val.GetModeString(), src_family,
+                src_annotation, dst_family, dst_annotation, vu_summary[kSubmitQueueMustMatchSrcOrDst]);
+        }
+        return false;
+    }
+    // Logical helpers for semantic clarity
+    inline bool KhrExternalMem() const { return mem_ext_; }
+    inline bool IsValid(uint32_t queue_family) const { return (queue_family < limit_); }
+    inline bool IsValidOrSpecial(uint32_t queue_family) const {
+        return IsValid(queue_family) || (mem_ext_ && QueueFamilyIsExternal(queue_family));
+    }
+
+    // Helpers for LogMsg
+    const char *GetModeString() const { return string_VkSharingMode(sharing_mode_); }
+
+    // Descriptive text for the various types of queue family index
+    const char *GetFamilyAnnotation(uint32_t family) const {
+        const char *external = " (VK_QUEUE_FAMILY_EXTERNAL)";
+        const char *foreign = " (VK_QUEUE_FAMILY_FOREIGN_EXT)";
+        const char *ignored = " (VK_QUEUE_FAMILY_IGNORED)";
+        const char *valid = " (VALID)";
+        const char *invalid = " (INVALID)";
+        switch (family) {
+            case VK_QUEUE_FAMILY_EXTERNAL:
+                return external;
+            case VK_QUEUE_FAMILY_FOREIGN_EXT:
+                return foreign;
+            case VK_QUEUE_FAMILY_IGNORED:
+                return ignored;
+            default:
+                if (IsValid(family)) {
+                    return valid;
+                }
+                return invalid;
+        };
+    }
+    const char *GetTypeString() const { return object_string[barrier_handle_.type]; }
+    VkSharingMode GetSharingMode() const { return sharing_mode_; }
+
+  protected:
+    const ValidationStateTracker *device_data_;
+    const char *const func_name_;
+    const VkCommandBuffer command_buffer_;
+    const VulkanTypedHandle barrier_handle_;
+    const VkSharingMode sharing_mode_;
+    const std::string *val_codes_;
+    const uint32_t limit_;
+    const bool mem_ext_;
+};
+
+bool Validate(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state, const ValidatorState &val,
+              const uint32_t src_queue_family, const uint32_t dst_queue_family) {
+    bool skip = false;
+
+    const bool mode_concurrent = val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT;
+    const bool src_ignored = QueueFamilyIsIgnored(src_queue_family);
+    const bool dst_ignored = QueueFamilyIsIgnored(dst_queue_family);
+    if (val.KhrExternalMem()) {
+        if (mode_concurrent) {
+            if (!(src_ignored || dst_ignored)) {
+                skip |= val.LogMsg(kSrcOrDstMustBeIgnore, src_queue_family, dst_queue_family);
+            }
+            if ((src_ignored && !(dst_ignored || QueueFamilyIsExternal(dst_queue_family))) ||
+                (dst_ignored && !(src_ignored || QueueFamilyIsExternal(src_queue_family)))) {
+                skip |= val.LogMsg(kSpecialOrIgnoreOnly, src_queue_family, dst_queue_family);
+            }
+        } else {
+            // VK_SHARING_MODE_EXCLUSIVE
+            if (src_queue_family != dst_queue_family) {
+                if (!val.IsValidOrSpecial(dst_queue_family)) {
+                    skip |= val.LogMsg(kSrcAndDstValidOrSpecial, dst_queue_family, "dstQueueFamilyIndex");
+                }
+                if (!val.IsValidOrSpecial(src_queue_family)) {
+                    skip |= val.LogMsg(kSrcAndDstValidOrSpecial, src_queue_family, "srcQueueFamilyIndex");
+                }
+            }
+        }
+    } else {
+        // No memory extension
+        if (mode_concurrent) {
+            if (!src_ignored || !dst_ignored) {
+                skip |= val.LogMsg(kSrcAndDestMustBeIgnore, src_queue_family, dst_queue_family);
+            }
+        } else {
+            // VK_SHARING_MODE_EXCLUSIVE
+            if ((src_queue_family != dst_queue_family) && !(val.IsValid(src_queue_family) && val.IsValid(dst_queue_family))) {
+                skip |= val.LogMsg(kSrcAndDstBothValid, src_queue_family, dst_queue_family);
+            }
+        }
+    }
+    return skip;
+}
+}  // namespace barrier_queue_families
+
+bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const ValidationStateTracker *state_data, const QUEUE_STATE *queue_state,
+                                                   const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                                                   const VulkanTypedHandle &typed_handle, uint32_t src_queue_family,
+                                                   uint32_t dst_queue_family) {
+    using barrier_queue_families::ValidatorState;
+    ValidatorState val(state_data, func_name, cb_state, typed_handle, VK_SHARING_MODE_CONCURRENT);
+    return ValidatorState::ValidateAtQueueSubmit(queue_state, state_data, src_queue_family, dst_queue_family, val);
+}
+
+// Type specific wrapper for image barriers
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                                              const VkImageMemoryBarrier &barrier, const IMAGE_STATE *state_data) const {
+    // State data is required
+    if (!state_data) {
+        return false;
+    }
+
+    // Create the validator state from the image state
+    barrier_queue_families::ValidatorState val(this, func_name, cb_state, VulkanTypedHandle(barrier.image, kVulkanObjectTypeImage),
+                                               state_data->createInfo.sharingMode);
+    const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
+    const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
+    return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
+}
+
+// Type specific wrapper for buffer barriers
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                                              const VkBufferMemoryBarrier &barrier, const BUFFER_STATE *state_data) const {
+    // State data is required
+    if (!state_data) {
+        return false;
+    }
+
+    // Create the validator state from the buffer state
+    barrier_queue_families::ValidatorState val(
+        this, func_name, cb_state, VulkanTypedHandle(barrier.buffer, kVulkanObjectTypeBuffer), state_data->createInfo.sharingMode);
+    const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
+    const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
+    return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
 bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state, const VkFormat view_format,
