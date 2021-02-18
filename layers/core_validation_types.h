@@ -609,8 +609,6 @@ class SWAPCHAIN_NODE : public BASE_NODE {
         : createInfo(pCreateInfo), swapchain(swapchain) {}
 };
 
-extern bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b);
-
 // Store the DAG.
 struct DAGNode {
     uint32_t pass;
