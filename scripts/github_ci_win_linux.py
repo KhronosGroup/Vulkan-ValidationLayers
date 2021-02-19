@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Valve Corporation
-# Copyright (c) 2020 LunarG, Inc.
+# Copyright (c) 2020-2021 Valve Corporation
+# Copyright (c) 2020-2021 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ def CreateBuildDirectory(dir_path):
 def CheckVVLCodegenConsistency():
     print("Check Generated Source Code Consistency")
     gen_check_cmd = 'python3 scripts/generate_source.py --verify %s/Vulkan-Headers/registry' % EXTERNAL_DIR
-    return subprocess.call(gen_check_cmd.split(" "), cwd=common_ci.PROJECT_ROOT)
+    common_ci.RunShellCmd(gen_check_cmd)
 
 #
 # Prepare the Validation Layers for testing
@@ -167,7 +167,7 @@ def RunVVLTests(args):
     lvt_env['LD_LIBRARY_PATH'] = '%s/Vulkan-Loader/%s/loader' % (EXTERNAL_DIR, BUILD_DIR_NAME)
     lvt_env['VK_LAYER_PATH'] = '%s/%s/layers' % (common_ci.PROJECT_ROOT, BUILD_DIR_NAME)
     lvt_env['VK_ICD_FILENAMES'] = '%s/Vulkan-Tools/%s/icd/VkICD_mock_icd.json' % (EXTERNAL_DIR, BUILD_DIR_NAME)
-    subprocess.call(lvt_cmd.split(" "), env=lvt_env)
+    subprocess.check_call(lvt_cmd.split(" "), env=lvt_env)
 
 #
 # Module Entrypoint
@@ -181,13 +181,12 @@ def main():
             ', '.join(CONFIGURATIONS)))
     args = parser.parse_args()
 
-    ret_code = 0
     try:
         BuildVVL(args)
-        ret_code = CheckVVLCodegenConsistency()
         BuildLoader(args)
         BuildMockICD(args)
         RunVVLTests(args)
+        CheckVVLCodegenConsistency()
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
@@ -196,7 +195,7 @@ def main():
         print('An unkown error occured: %s', unknown_error)
         sys.exit(1)
 
-    sys.exit(ret_code)
+    sys.exit(0)
 
 if __name__ == '__main__':
   main()
