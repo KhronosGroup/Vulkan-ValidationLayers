@@ -82,7 +82,8 @@ const std::string &GetImageBarrierVUID(const CoreErrorLocation &loc, ImageError 
 enum class SubmitError {
     kTimelineSemSmallValue,
     kSemAlreadySignalled,
-    kSemCannotBeSignalled,
+    kBinaryCannotBeSignalled,
+    kTimelineCannotBeSignalled,
     kTimelineSemMaxDiff,
     kProtectedFeatureDisabled,
     kBadUnprotectedSubmit,

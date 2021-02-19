@@ -780,10 +780,15 @@ static const std::map<SubmitError, std::vector<std::string>> kSubmitErrors{
          "VUID-vkQueueBindSparse-pSignalSemaphores-01115",
          "VUID-vkQueueSubmit2KHR-semaphore-03868",
      }},
-    {SubmitError::kSemCannotBeSignalled,
+    {SubmitError::kBinaryCannotBeSignalled,
      {
-         "VUID-vkQueueSubmit-pWaitSemaphores-03238"
+         "VUID-vkQueueSubmit-pWaitSemaphores-00069",
          "VUID-vkQueueSubmit2KHR-semaphore-03872",
+     }},
+    {SubmitError::kTimelineCannotBeSignalled,
+     {
+         "VUID-vkQueueSubmit-pWaitSemaphores-03238",
+         "VUID-vkQueueSubmit2KHR-semaphore-03873",
      }},
     {SubmitError::kTimelineSemMaxDiff,
      {

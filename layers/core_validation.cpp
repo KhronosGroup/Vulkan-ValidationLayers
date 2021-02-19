@@ -2895,7 +2895,8 @@ struct SemaphoreSubmitState {
             (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             if (unsignaled_semaphores.count(semaphore) ||
                 (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled) && !core->SemaphoreWasSignaled(semaphore))) {
-                const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSemCannotBeSignalled);
+                auto error = core->device_extensions.vk_khr_timeline_semaphore ? SubmitError::kTimelineCannotBeSignalled : SubmitError::kBinaryCannotBeSignalled;
+                const auto &vuid = GetQueueSubmitVUID(loc, error);
                 skip |= core->LogError(
                     objlist, pSemaphore->scope == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
                     "%s Queue %s is waiting on semaphore (%s) that has no way to be signaled.", loc.Message().c_str(),
