@@ -11114,3 +11114,69 @@ void main() {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, OpCopyObjectSampler) {
+    TEST_DESCRIPTION("Reproduces a use case involving GL_EXT_nonuniform_qualifier and image samplers found in Doom Eternal trace");
+
+    // https://github.com/KhronosGroup/glslang/pull/1762 appears to be the change that introduces the OpCopyObject in this context.
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (VK_TRUE != features12.shaderStorageTexelBufferArrayNonUniformIndexing) {
+        printf(
+            "%s VkPhysicalDeviceVulkan12Features::shaderStorageTexelBufferArrayNonUniformIndexing not supported and is required. "
+            "Skipping.",
+            kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *vertex_source = R"glsl(
+#version 450
+
+layout(location=0) out int idx;
+
+void main() {
+    idx = 0;
+    gl_Position = vec4(0.0);
+}
+        )glsl";
+    const VkShaderObj vs(m_device, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    const char *fragment_source = R"glsl(
+#version 450
+#extension GL_EXT_nonuniform_qualifier : require
+
+layout(set=0, binding=0) uniform sampler s;
+layout(set=0, binding=1) uniform texture2D t[1];
+layout(location=0) in flat int idx;
+
+layout(location=0) out vec4 frag_color;
+
+void main() {
+    // Using nonuniformEXT on the index into the image array creates the OpCopyObject instead of an OpLoad, which
+    // was causing problems with how constants are identified.
+	frag_color = texture(sampler2D(t[nonuniformEXT(idx)], s), vec2(0.0));
+}
+
+    )glsl";
+    const VkShaderObj fs(m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", false, nullptr, 5);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+    };
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}
