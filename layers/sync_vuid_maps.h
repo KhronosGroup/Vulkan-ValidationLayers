@@ -23,6 +23,7 @@
 #include <vulkan/vulkan_core.h>
 
 struct CoreErrorLocation;
+struct SubresourceRangeErrorCodes;
 
 namespace sync_vuid_maps {
 
@@ -69,15 +70,13 @@ enum class ImageError {
     kNotDepthOrStencilAspect,
     kNotDepthAndStencilAspect,
     kNotSeparateDepthAndStencilAspect,
-    kBadBaseMip,
-    kBadMipCount,
-    kBadBaseLayer,
-    kBadLayerCount,
     kRenderPassMismatch,
     kRenderPassLayoutChange,
 };
 
 const std::string &GetImageBarrierVUID(const CoreErrorLocation &loc, ImageError error);
+
+const SubresourceRangeErrorCodes& GetSubResourceVUIDs(const CoreErrorLocation &loc);
 
 enum class SubmitError {
     kTimelineSemSmallValue,
