@@ -36,6 +36,7 @@ bot_stage ='VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR'
 # Snipped from chapters/synchronization.txt -- tag v1.2.170
 # manual fixups:
 # -pending "Add XFB stage as valid for XFB_COUNTER_READ access" fix
+# -removed ifdefs in table line for ACCELERATION_STRUCTURE_READ_BIT to 'fix' parsing
 snippet_access_types_supported = '''
 [[synchronization-access-types-supported]]
 .Supported access types
@@ -124,19 +125,8 @@ ifdef::VK_EXT_transform_feedback[]
 endif::VK_EXT_transform_feedback[]
 ifdef::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
 |ename:VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR          |
-ifdef::VK_KHR_ray_query[]
-ifdef::VK_NV_mesh_shader[]
                                                                ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV,
-endif::VK_NV_mesh_shader[]
-                                                               ename:VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR,
-endif::VK_KHR_ray_query[]
-ifdef::VK_KHR_ray_tracing_pipeline[]
-ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_KHR_ray_tracing_pipeline[]
-ifdef::VK_KHR_ray_tracing_pipeline,VK_KHR_ray_query[]
- or
-endif::VK_KHR_ray_tracing_pipeline,VK_KHR_ray_query[]
-ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+                                                               ename:VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
 |ename:VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR         | ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
 endif::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
 ifdef::VK_EXT_fragment_density_map[]
