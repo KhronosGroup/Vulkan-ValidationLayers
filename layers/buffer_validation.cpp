@@ -5091,18 +5091,9 @@ bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE *image_
 
 bool CoreChecks::ValidateImageBarrierSubresourceRange(const CoreErrorLocation &loc, const IMAGE_STATE *image_state,
                                                       const VkImageSubresourceRange &subresourceRange) const {
-    SubresourceRangeErrorCodes subresource_range_error_codes = {};
-    using sync_vuid_maps::GetImageBarrierVUID;
-    using sync_vuid_maps::ImageError;
-
-    subresource_range_error_codes.base_mip_err = GetImageBarrierVUID(loc, ImageError::kBadBaseMip).c_str();
-    subresource_range_error_codes.mip_count_err = GetImageBarrierVUID(loc, ImageError::kBadMipCount).c_str();
-    subresource_range_error_codes.base_layer_err = GetImageBarrierVUID(loc, ImageError::kBadBaseLayer).c_str();
-    subresource_range_error_codes.layer_count_err = GetImageBarrierVUID(loc, ImageError::kBadLayerCount).c_str();
-
     return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers, subresourceRange,
                                          loc.StringFuncName().c_str(), loc.StringField().c_str(), "arrayLayers", image_state->image,
-                                         subresource_range_error_codes);
+                                         sync_vuid_maps::GetSubResourceVUIDs(loc));
 }
 
 namespace barrier_queue_families {
