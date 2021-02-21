@@ -109,3 +109,29 @@ const std::string& CoreErrorLocation::String(Field field) {
     assert(entry != table.end());
     return entry->second;
 }
+
+CoreErrorLocationCapture::CoreErrorLocationCapture(const CoreErrorLocation& loc) { Capture(loc, 1); }
+
+const CoreErrorLocation* CoreErrorLocationCapture::Capture(const CoreErrorLocation& loc, CaptureStore::size_type depth) {
+    const CoreErrorLocation* prev_capture = nullptr;
+    if (loc.prev) {
+        prev_capture = Capture(*loc.prev, depth + 1);
+    } else {
+        capture.reserve(depth);
+    }
+
+    capture.emplace_back(loc);
+    capture.back().prev = prev_capture;
+    return &(capture.back());
+}
+
+void CoreErrorLocation::AppendFields(std::stringstream* out) const {
+    if (prev) {
+        prev->AppendFields(out);
+        *out << ".";
+    }
+    *out << String(field_name);
+    if (index != CoreErrorLocation::kNoIndex) {
+        *out << "[" << index << "]";
+    }
+}
