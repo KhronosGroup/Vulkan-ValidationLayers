@@ -38,7 +38,7 @@
 //       MoveAssignable and MoveConstructable
 // NOTE: Unlike std::vector, iterators are invalidated by move assignment between small_vector objects effectively the
 //       "small string" allocation functions as an incompatible allocator.
-template <typename T, size_t N, typename size_type = uint8_t>
+template <typename T, size_t N, typename SizeType = uint8_t>
 class small_vector {
   public:
     using value_type = T;
@@ -48,6 +48,7 @@ class small_vector {
     using const_pointer = const value_type *;
     using iterator = pointer;
     using const_iterator = const_pointer;
+    using size_type = SizeType;
     static const size_type kSmallCapacity = N;
     static const size_type kMaxCapacity = std::numeric_limits<size_type>::max();
     static_assert(N <= kMaxCapacity, "size must be less than size_type::max");

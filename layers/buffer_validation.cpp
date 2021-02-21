@@ -1272,10 +1272,11 @@ void CoreChecks::RecordBarrierValidationInfo(const CoreErrorLocation &loc, CMD_B
         bool mode_concurrent = handle_state ? handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT : false;
         if (!mode_concurrent) {
             const auto typed_handle = BarrierTypedHandle(barrier);
+            CoreErrorLocationCapture loc_capture(loc);
             cb_state->queue_submit_functions.emplace_back(
-                [loc, cb_state, typed_handle, src_queue_family, dst_queue_family](const ValidationStateTracker *device_data,
-                                                                                  const QUEUE_STATE *queue_state) {
-                    return ValidateConcurrentBarrierAtSubmit(loc, device_data, queue_state, cb_state, typed_handle,
+                [loc_capture, cb_state, typed_handle, src_queue_family, dst_queue_family](const ValidationStateTracker *device_data,
+                                                                                          const QUEUE_STATE *queue_state) {
+                    return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
                                                              src_queue_family, dst_queue_family);
                 });
         }
@@ -1400,10 +1401,14 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const CoreError
         const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
         // Secondary CB case w/o FB specified delay validation
         auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
-        cb_state->cmd_execute_commands_functions.emplace_back([=](const CMD_BUFFER_STATE *primary_cb, const FRAMEBUFFER_STATE *fb) {
-            return this_ptr->ValidateImageBarrierAttachment(loc, cb_state, fb, active_subpass, sub_desc, rp_state->renderPass,
-                                                            barrier, primary_cb);
-        });
+        CoreErrorLocationCapture loc_capture(loc);
+        const auto render_pass = rp_state->renderPass;
+        cb_state->cmd_execute_commands_functions.emplace_back(
+            [this_ptr, loc_capture, cb_state, active_subpass, sub_desc, render_pass, barrier](const CMD_BUFFER_STATE *primary_cb,
+                                                                                              const FRAMEBUFFER_STATE *fb) {
+                return this_ptr->ValidateImageBarrierAttachment(loc_capture.Get(), cb_state, fb, active_subpass, sub_desc,
+                                                                render_pass, barrier, primary_cb);
+            });
     }
 }
 
