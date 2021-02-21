@@ -10761,7 +10761,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          func_name, i, view_width, i, framebuffer_attachment_image_info->width);
                     }
 
-                    uint32_t view_height = image_create_info->extent.width >> image_view_create_info->subresourceRange.baseMipLevel;
+                    uint32_t view_height =
+                        image_create_info->extent.height >> image_view_create_info->subresourceRange.baseMipLevel;
                     if (framebuffer_attachment_image_info->height != view_height) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03212",
                                          "%s: Image view #%u created from an image subresource with height set as %u, "
