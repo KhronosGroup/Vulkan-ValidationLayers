@@ -12316,6 +12316,7 @@ static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInf
 
 bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo,
                                          const SURFACE_STATE *surface_state, const SWAPCHAIN_NODE *old_swapchain_state) const {
+    VkSurfaceKHR surface = pCreateInfo->surface;
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
     if (!instance_extensions.vk_khr_android_surface) {
@@ -12339,7 +12340,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     if (old_swapchain_state) {
-        if (old_swapchain_state->createInfo.surface != pCreateInfo->surface) {
+        if (old_swapchain_state->createInfo.surface != surface) {
             if (LogError(pCreateInfo->oldSwapchain, "VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933",
                          "%s: pCreateInfo->oldSwapchain's surface is not pCreateInfo->surface", func_name)) {
                 return true;
@@ -12362,8 +12363,10 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     auto physical_device_state = GetPhysicalDeviceState();
+    const PhysicalDeviceSurfaceCapabilities surface_capabilities = physical_device_state->surface_capabilities.at(surface);
+
     bool skip = false;
-    VkSurfaceTransformFlagBitsKHR current_transform = physical_device_state->surfaceCapabilities.currentTransform;
+    VkSurfaceTransformFlagBitsKHR current_transform = surface_capabilities.base.currentTransform;
     if ((pCreateInfo->preTransform & current_transform) != pCreateInfo->preTransform) {
         skip |= LogPerformanceWarning(physical_device, kVUID_Core_Swapchain_PreTransform,
                                       "%s: pCreateInfo->preTransform (%s) doesn't match the currentTransform (%s) returned by "
@@ -12373,46 +12376,47 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                                       string_VkSurfaceTransformFlagBitsKHR(current_transform));
     }
 
-    VkSurfaceCapabilitiesKHR capabilities{};
-    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->phys_device, pCreateInfo->surface, &capabilities);
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
-    if (pCreateInfo->minImageCount < capabilities.minImageCount) {
+    if (pCreateInfo->minImageCount < surface_capabilities.base.minImageCount) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271",
                      "%s called with minImageCount = %d, which is outside the bounds returned by "
                      "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                     func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount)) {
+                     func_name, pCreateInfo->minImageCount, surface_capabilities.base.minImageCount,
+                     surface_capabilities.base.maxImageCount)) {
             return true;
         }
     }
 
-    if ((capabilities.maxImageCount > 0) && (pCreateInfo->minImageCount > capabilities.maxImageCount)) {
+    if ((surface_capabilities.base.maxImageCount > 0) && (pCreateInfo->minImageCount > surface_capabilities.base.maxImageCount)) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-minImageCount-01272",
                      "%s called with minImageCount = %d, which is outside the bounds returned by "
                      "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                     func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount)) {
+                     func_name, pCreateInfo->minImageCount, surface_capabilities.base.minImageCount,
+                     surface_capabilities.base.maxImageCount)) {
             return true;
         }
     }
 
     // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
-    if ((pCreateInfo->imageExtent.width < capabilities.minImageExtent.width) ||
-        (pCreateInfo->imageExtent.width > capabilities.maxImageExtent.width) ||
-        (pCreateInfo->imageExtent.height < capabilities.minImageExtent.height) ||
-        (pCreateInfo->imageExtent.height > capabilities.maxImageExtent.height)) {
+    if ((pCreateInfo->imageExtent.width < surface_capabilities.base.minImageExtent.width) ||
+        (pCreateInfo->imageExtent.width > surface_capabilities.base.maxImageExtent.width) ||
+        (pCreateInfo->imageExtent.height < surface_capabilities.base.minImageExtent.height) ||
+        (pCreateInfo->imageExtent.height > surface_capabilities.base.maxImageExtent.height)) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
                      "%s called with imageExtent = (%d,%d), which is outside the bounds returned by "
                      "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%d,%d), minImageExtent = (%d,%d), "
                      "maxImageExtent = (%d,%d).",
-                     func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, capabilities.currentExtent.width,
-                     capabilities.currentExtent.height, capabilities.minImageExtent.width, capabilities.minImageExtent.height,
-                     capabilities.maxImageExtent.width, capabilities.maxImageExtent.height)) {
+                     func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height,
+                     surface_capabilities.base.currentExtent.width, surface_capabilities.base.currentExtent.height,
+                     surface_capabilities.base.minImageExtent.width, surface_capabilities.base.minImageExtent.height,
+                     surface_capabilities.base.maxImageExtent.width, surface_capabilities.base.maxImageExtent.height)) {
             return true;
         }
     }
     // pCreateInfo->preTransform should have exactly one bit set, and that bit must also be set in
     // VkSurfaceCapabilitiesKHR::supportedTransforms.
     if (!pCreateInfo->preTransform || (pCreateInfo->preTransform & (pCreateInfo->preTransform - 1)) ||
-        !(pCreateInfo->preTransform & capabilities.supportedTransforms)) {
+        !(pCreateInfo->preTransform & surface_capabilities.base.supportedTransforms)) {
         // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
         // it up a little at a time, and then log it:
         std::string error_string = "";
@@ -12423,7 +12427,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         error_string += str;
         for (int i = 0; i < 32; i++) {
             // Build up the rest of the message:
-            if ((1 << i) & capabilities.supportedTransforms) {
+            if ((1 << i) & surface_capabilities.base.supportedTransforms) {
                 const char *new_str = string_VkSurfaceTransformFlagBitsKHR(static_cast<VkSurfaceTransformFlagBitsKHR>(1 << i));
                 sprintf(str, "    %s\n", new_str);
                 error_string += str;
@@ -12436,7 +12440,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // pCreateInfo->compositeAlpha should have exactly one bit set, and that bit must also be set in
     // VkSurfaceCapabilitiesKHR::supportedCompositeAlpha
     if (!pCreateInfo->compositeAlpha || (pCreateInfo->compositeAlpha & (pCreateInfo->compositeAlpha - 1)) ||
-        !((pCreateInfo->compositeAlpha) & capabilities.supportedCompositeAlpha)) {
+        !((pCreateInfo->compositeAlpha) & surface_capabilities.base.supportedCompositeAlpha)) {
         // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
         // it up a little at a time, and then log it:
         std::string error_string = "";
@@ -12447,7 +12451,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         error_string += str;
         for (int i = 0; i < 32; i++) {
             // Build up the rest of the message:
-            if ((1 << i) & capabilities.supportedCompositeAlpha) {
+            if ((1 << i) & surface_capabilities.base.supportedCompositeAlpha) {
                 const char *new_str = string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << i));
                 sprintf(str, "    %s\n", new_str);
                 error_string += str;
@@ -12457,15 +12461,15 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280", "%s.", error_string.c_str())) return true;
     }
     // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
-    if (pCreateInfo->imageArrayLayers > capabilities.maxImageArrayLayers) {
+    if (pCreateInfo->imageArrayLayers > surface_capabilities.base.maxImageArrayLayers) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
                      "%s called with a non-supported imageArrayLayers (i.e. %d).  Maximum value is %d.", func_name,
-                     pCreateInfo->imageArrayLayers, capabilities.maxImageArrayLayers)) {
+                     pCreateInfo->imageArrayLayers, surface_capabilities.base.maxImageArrayLayers)) {
             return true;
         }
     }
     // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
-    if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & capabilities.supportedUsageFlags)) {
+    if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & surface_capabilities.base.supportedUsageFlags)) {
         const char *validation_error = "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276";
         if ((IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) == true) &&
             ((pCreateInfo->presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) ||
@@ -12475,20 +12479,13 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
         if (LogError(device, validation_error,
                      "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
-                     func_name, pCreateInfo->imageUsage, capabilities.supportedUsageFlags)) {
+                     func_name, pCreateInfo->imageUsage, surface_capabilities.base.supportedUsageFlags)) {
             return true;
         }
     }
 
     if (device_extensions.vk_khr_surface_protected_capabilities && (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
-        VkPhysicalDeviceSurfaceInfo2KHR surface_info = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
-        surface_info.surface = pCreateInfo->surface;
-        VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
-        VkSurfaceCapabilities2KHR surface_capabilities = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
-        surface_capabilities.pNext = &surface_protected_capabilities;
-        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surface_info, &surface_capabilities);
-
-        if (!surface_protected_capabilities.supportsProtected) {
+        if (!surface_capabilities.supportsProtected) {
             if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03187",
                          "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
                          "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.",
@@ -12856,10 +12853,10 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
             // Check if index is even possible to be acquired to give better error message
             if (pPresentInfo->pImageIndices[i] >= swapchain_data->images.size()) {
-                skip |= LogError(
-                    pPresentInfo->pSwapchains[i], validation_error,
-                    "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
-                    i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
+                skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
+                                 "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images "
+                                 "in this swapchain.",
+                                 i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
             } else {
                 auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]].image;
                 const auto image_state = GetImageState(image);
@@ -12885,17 +12882,17 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
             }
 
-            // All physical devices and queue families are required to be able to present to any native window on Android; require
-            // the application to have established support on any other platform.
+            // All physical devices and queue families are required to be able to present to any native window on Android;
+            // require the application to have established support on any other platform.
             if (!instance_extensions.vk_khr_android_surface) {
                 const auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
                 auto support_it = surface_state->gpu_queue_support.find({physical_device, queue_state->queueFamilyIndex});
 
                 if (support_it == surface_state->gpu_queue_support.end()) {
-                    skip |= LogError(
-                        pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainUnsupportedQueue,
-                        "vkQueuePresentKHR: Presenting pSwapchains[%u] image without calling vkGetPhysicalDeviceSurfaceSupportKHR",
-                        i);
+                    skip |= LogError(pPresentInfo->pSwapchains[i], kVUID_Core_DrawState_SwapchainUnsupportedQueue,
+                                     "vkQueuePresentKHR: Presenting pSwapchains[%u] image without calling "
+                                     "vkGetPhysicalDeviceSurfaceSupportKHR",
+                                     i);
                 } else if (!support_it->second) {
                     skip |= LogError(
                         pPresentInfo->pSwapchains[i], "VUID-vkQueuePresentKHR-pSwapchains-01292",
@@ -12929,11 +12926,11 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                          i, j, rect.offset.y, rect.extent.height, swapchain_data->createInfo.imageExtent.height);
                     }
                     if (rect.layer > swapchain_data->createInfo.imageArrayLayers) {
-                        skip |= LogError(
-                            pPresentInfo->pSwapchains[i], "VUID-VkRectLayerKHR-layer-01262",
-                            "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, pRegion[%i].pRectangles[%i], the layer "
-                            "(%i) is greater than the corresponding swapchain's imageArrayLayers (%i).",
-                            i, j, rect.layer, swapchain_data->createInfo.imageArrayLayers);
+                        skip |= LogError(pPresentInfo->pSwapchains[i], "VUID-VkRectLayerKHR-layer-01262",
+                                         "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
+                                         "pRegion[%i].pRectangles[%i], the layer "
+                                         "(%i) is greater than the corresponding swapchain's imageArrayLayers (%i).",
+                                         i, j, rect.layer, swapchain_data->createInfo.imageArrayLayers);
                     }
                 }
             }
@@ -13003,35 +13000,36 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
         }
 
         auto physical_device_state = GetPhysicalDeviceState();
-        // TODO: this is technically wrong on many levels, but requires massive cleanup
-        if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called) {
-            const uint32_t acquired_images = static_cast<uint32_t>(
-                std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(), [this](SWAPCHAIN_IMAGE image) {
-                    auto const state = GetImageState(image.image);
-                    return (state && state->acquired);
-                }));
+        VkSurfaceKHR swapchain_surface = swapchain_data->surface;
+        const PhysicalDeviceSurfaceCapabilities surface_capabilities =
+            physical_device_state->surface_capabilities.at(swapchain_surface);
 
-            const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
-            const auto min_image_count = physical_device_state->surfaceCapabilities.minImageCount;
-            const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
-            if (timeout == UINT64_MAX && too_many_already_acquired) {
-                const char *vuid = "INVALID-vuid";
-                if (cmd_version == CMD_VERSION_1) {
-                    vuid = "VUID-vkAcquireNextImageKHR-swapchain-01802";
-                } else if (cmd_version == CMD_VERSION_2) {
-                    vuid = "VUID-vkAcquireNextImage2KHR-swapchain-01803";
-                } else {
-                    assert(false);
-                }
+        const uint32_t acquired_images = static_cast<uint32_t>(
+            std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(), [this](SWAPCHAIN_IMAGE image) {
+                auto const state = GetImageState(image.image);
+                return (state && state->acquired);
+            }));
 
-                const uint32_t acquirable = swapchain_image_count - min_image_count + 1;
-                skip |= LogError(swapchain, vuid,
-                                 "%s: Application has already previously acquired %" PRIu32 " image%s from swapchain. Only %" PRIu32
-                                 " %s available to be acquired using a timeout of UINT64_MAX (given the swapchain has %" PRIu32
-                                 ", and VkSurfaceCapabilitiesKHR::minImageCount is %" PRIu32 ").",
-                                 func_name, acquired_images, acquired_images > 1 ? "s" : "", acquirable,
-                                 acquirable > 1 ? "are" : "is", swapchain_image_count, min_image_count);
+        const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
+        const auto min_image_count = surface_capabilities.base.minImageCount;
+        const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
+        if (timeout == UINT64_MAX && too_many_already_acquired) {
+            const char *vuid = "INVALID-vuid";
+            if (cmd_version == CMD_VERSION_1) {
+                vuid = "VUID-vkAcquireNextImageKHR-swapchain-01802";
+            } else if (cmd_version == CMD_VERSION_2) {
+                vuid = "VUID-vkAcquireNextImage2KHR-swapchain-01803";
+            } else {
+                assert(false);
             }
+
+            const uint32_t acquirable = swapchain_image_count - min_image_count + 1;
+            skip |= LogError(swapchain, vuid,
+                             "%s: Application has already previously acquired %" PRIu32 " image%s from swapchain. Only %" PRIu32
+                             " %s available to be acquired using a timeout of UINT64_MAX (given the swapchain has %" PRIu32
+                             ", and VkSurfaceCapabilitiesKHR::minImageCount is %" PRIu32 ").",
+                             func_name, acquired_images, acquired_images > 1 ? "s" : "", acquirable, acquirable > 1 ? "are" : "is",
+                             swapchain_image_count, min_image_count);
         }
     }
     return skip;

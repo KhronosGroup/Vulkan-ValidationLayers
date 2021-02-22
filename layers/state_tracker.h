@@ -125,12 +125,18 @@ class QUEUE_FAMILY_PERF_COUNTERS {
     std::vector<VkPerformanceCounterKHR> counters;
 };
 
+// Capabilities tied to both a specific surface and physical device
+struct PhysicalDeviceSurfaceCapabilities {
+    VkSurfaceCapabilitiesKHR base;
+    bool supportsProtected = false;
+    VkImageUsageFlags sharedPresentSupportedUsageFlags;
+};
+
 struct PHYSICAL_DEVICE_STATE {
     safe_VkPhysicalDeviceFeatures2 features2 = {};
     VkPhysicalDevice phys_device = VK_NULL_HANDLE;
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
     std::vector<VkQueueFamilyProperties> queue_family_properties;
-    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     std::vector<VkPresentModeKHR> present_modes;
     std::vector<VkSurfaceFormatKHR> surface_formats;
     uint32_t display_plane_property_count = 0;
@@ -138,8 +144,8 @@ struct PHYSICAL_DEVICE_STATE {
     // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
     std::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
 
+    std::unordered_map<VkSurfaceKHR, PhysicalDeviceSurfaceCapabilities> surface_capabilities;
     // TODO These are currently used by CoreChecks, but should probably be refactored
-    bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
     bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
 };
 
@@ -1364,6 +1370,7 @@ class ValidationStateTracker : public ValidationObject {
                                    PIPELINE_STATE::StageState* stage_state) const;
     void RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
                              RENDER_PASS_STATE* render_pass);
+    void UpdateSurfaceCapabilites(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void RemoveCommandBufferBinding(const VulkanTypedHandle& object, CMD_BUFFER_STATE* cb_node);
     void RemoveBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info);
