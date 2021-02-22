@@ -130,32 +130,23 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
-static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactory(const IMAGE_STATE &image_state) {
-    std::unique_ptr<ImageSubresourceLayoutMap> map(new ImageSubresourceLayoutMap(image_state));
-    return map;
-}
-
 // The const variant only need the image as it is the key for the map
 const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const CMD_BUFFER_STATE *cb_state, VkImage image) {
     auto it = cb_state->image_layout_map.find(image);
     if (it == cb_state->image_layout_map.cend()) {
         return nullptr;
     }
-    return it->second.get();
+    return &it->second;
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
 ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state) {
-    auto it = cb_state->image_layout_map.find(image_state.image);
-    if (it == cb_state->image_layout_map.end()) {
-        // Empty slot... fill it in.
-        auto insert_pair = cb_state->image_layout_map.insert(std::make_pair(image_state.image, LayoutMapFactory(image_state)));
-        assert(insert_pair.second);
-        ImageSubresourceLayoutMap *new_map = insert_pair.first->second.get();
-        assert(new_map);
-        return new_map;
+    auto &layout_map = cb_state->image_layout_map[image_state.image];
+    if (!layout_map) {
+        // Was an empty slot... fill it in.
+        layout_map.emplace(image_state);
     }
-    return it->second.get();
+    return &layout_map;
 }
 
 void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map) {
@@ -11371,7 +11362,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 
-            const auto &sub_cb_subres_map = sub_layout_map_entry.second;
+            const auto *sub_cb_subres_map = &sub_layout_map_entry.second;
             // Validate the initial_uses, that they match the current state of the primary cb, or absent a current state,
             // that the match any initial_layout.
             for (const auto &subres_layout : *sub_cb_subres_map) {

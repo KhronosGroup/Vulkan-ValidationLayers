@@ -5020,7 +5020,7 @@ void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer com
             if (!image_state) continue;  // Can't set layouts of a dead image
 
             auto *cb_subres_map = GetImageSubresourceLayoutMap(cb_state, *image_state);
-            const auto *sub_cb_subres_map = sub_layout_map_entry.second.get();
+            const auto *sub_cb_subres_map = &sub_layout_map_entry.second;
             assert(cb_subres_map && sub_cb_subres_map);  // Non const get and map traversal should never be null
             cb_subres_map->UpdateFrom(*sub_cb_subres_map);
         }
