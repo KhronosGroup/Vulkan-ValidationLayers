@@ -85,6 +85,9 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
   - vkCmdPipelineBarrier.
   - vkCmdSetEvent/vkCmdWaitEvents/vkCmdResetEvent.
   - renderpass/subpass barriers.
+- The `VK_KHR_synchronization2` extension
+  - vkCmdPipelineBarrier2KHR
+  - vkCmdSetEvent2KHR/vkCmdWaitEvents2KHR/vkCmdResetEvent2KHR.
 - Image layout transition hazard and access tracking.
 - Load/Store/Resolve operations within Subpasses.
 
