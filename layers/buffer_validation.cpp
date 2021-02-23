@@ -5370,8 +5370,8 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const CoreEr
 
         skip |= ValidateBarrierQueueFamilies(image_loc, cb_state, mem_barrier, image_data);
 
-        const auto aspect_mask = mem_barrier.subresourceRange.aspectMask;
-        skip |= ValidateImageAspectMask(image_data->image, image_data->createInfo.format, aspect_mask, image_loc.Message().c_str());
+        skip |= ValidateImageAspectMask(image_data->image, image_data->createInfo.format,
+                                        mem_barrier.subresourceRange.aspectMask, loc.StringFuncName().c_str());
 
         skip |= ValidateImageBarrierSubresourceRange(loc.dot(Field::subresourceRange), image_data, mem_barrier.subresourceRange);
     }
