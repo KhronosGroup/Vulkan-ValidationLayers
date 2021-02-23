@@ -109,6 +109,14 @@ class CoreChecks : public ValidationStateTracker {
 
     void IncrementCommandCount(VkCommandBuffer commandBuffer);
 
+    struct SimpleErrorLocation {
+        const char* func_name;
+        const char* vuid;
+        const char* FuncName() const { return func_name; }
+        const std::string Vuid() const { return vuid; }
+        SimpleErrorLocation(const char* func_name_, const char* vuid_) : func_name(func_name_), vuid(vuid_) {}
+    };
+
     bool VerifyQueueStateToSeq(const QUEUE_STATE* initial_queue, uint64_t initial_seq) const;
     bool ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle& typed_handle, const char* apiName) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char* cmd_name, const char* parameter_name, const char* error_code,
@@ -330,6 +338,10 @@ class CoreChecks : public ValidationStateTracker {
                                                  const void* pData) const;
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
+    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const CoreErrorLocation&) const;
+    template <typename Location>
+    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const Location&) const;
+
     bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE_KHR*, const char*, const char*) const;
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
@@ -713,6 +725,9 @@ class CoreChecks : public ValidationStateTracker {
     template <typename T1>
     bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const T1 object, const VulkanTypedHandle& typed_handle,
                                   const char* api_name, const char* error_code) const;
+    template <typename T1, typename Location>
+    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const T1 object, const VulkanTypedHandle& typed_handle,
+                                  const Location& location) const;
 
     bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
                                                const VkImageLayout first_layout, const uint32_t attachment,

@@ -76,6 +76,12 @@ enum class ImageError {
 
 const std::string &GetImageBarrierVUID(const CoreErrorLocation &loc, ImageError error);
 
+struct GetImageBarrierVUIDFunctor {
+    ImageError error;
+    GetImageBarrierVUIDFunctor(ImageError error_) : error(error_) {}
+    const std::string &operator()(const CoreErrorLocation &loc) const { return GetImageBarrierVUID(loc, error); }
+};
+
 const SubresourceRangeErrorCodes& GetSubResourceVUIDs(const CoreErrorLocation &loc);
 
 enum class SubmitError {
