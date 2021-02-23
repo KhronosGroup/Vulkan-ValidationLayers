@@ -188,43 +188,61 @@ template <typename T1>
 bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const T1 object,
                                           const VulkanTypedHandle &typed_handle, const char *api_name,
                                           const char *error_code) const {
+    return VerifyBoundMemoryIsValid<T1, SimpleErrorLocation>(mem_state, object, typed_handle, {api_name, error_code});
+}
+
+template <typename T1, typename Location>
+bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const T1 object,
+                                          const VulkanTypedHandle &typed_handle, const Location &location) const {
     bool result = false;
     auto type_name = object_string[typed_handle.type];
     if (!mem_state) {
-        result |=
-            LogError(object, error_code, "%s: %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
-                     api_name, report_data->FormatHandle(typed_handle).c_str(), type_name + 2);
+        result |= LogError(object, location.Vuid(),
+                           "%s: %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
+                           location.FuncName(), report_data->FormatHandle(typed_handle).c_str(), type_name + 2);
     } else if (mem_state->destroyed) {
-        result |= LogError(object, error_code,
+        result |= LogError(object, location.Vuid(),
                            "%s: %s used with no memory bound and previously bound memory was freed. Memory must not be freed "
                            "prior to this operation.",
-                           api_name, report_data->FormatHandle(typed_handle).c_str());
+                           location.FuncName(), report_data->FormatHandle(typed_handle).c_str());
     }
     return result;
 }
 
 // Check to see if memory was ever bound to this image
+
+bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const CoreErrorLocation &loc) const {
+    using LocationAdapter = CoreErrorLocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>;
+    return ValidateMemoryIsBoundToImage<LocationAdapter>(image_state, LocationAdapter(loc, sync_vuid_maps::ImageError::kNoMemory));
+}
+
 bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const char *api_name, const char *error_code) const {
+    return ValidateMemoryIsBoundToImage<SimpleErrorLocation>(image_state, SimpleErrorLocation(api_name, error_code));
+}
+
+template <typename Location>
+bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const Location &location) const {
+    return false;
     bool result = false;
     if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
         if (image_state->bind_swapchain == VK_NULL_HANDLE) {
             LogObjectList objlist(image_state->image);
             objlist.add(image_state->create_from_swapchain);
             result |= LogError(
-                objlist, error_code,
+                objlist, location.Vuid(),
                 "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
                 "includes VkBindImageMemorySwapchainInfoKHR.",
-                api_name, report_data->FormatHandle(image_state->image).c_str(),
+                location.FuncName(), report_data->FormatHandle(image_state->image).c_str(),
                 report_data->FormatHandle(image_state->create_from_swapchain).c_str());
         } else if (image_state->create_from_swapchain != image_state->bind_swapchain) {
             LogObjectList objlist(image_state->image);
             objlist.add(image_state->create_from_swapchain);
             objlist.add(image_state->bind_swapchain);
             result |=
-                LogError(objlist, error_code,
+                LogError(objlist, location.Vuid(),
                          "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
                          "swapchain",
-                         api_name, report_data->FormatHandle(image_state->image).c_str(),
+                         location.FuncName(), report_data->FormatHandle(image_state->image).c_str(),
                          report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
                          report_data->FormatHandle(image_state->bind_swapchain).c_str());
         }
@@ -232,7 +250,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
         // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         result |= VerifyBoundMemoryIsValid(image_state->binding.mem_state.get(), image_state->image,
-                                           VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), api_name, error_code);
+                                           VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), location);
     }
     return result;
 }
