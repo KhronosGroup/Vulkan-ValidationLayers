@@ -84,15 +84,14 @@ typedef enum DebugCallbackStatusBits {
 typedef VkFlags DebugCallbackStatusFlags;
 
 struct LogObjectList {
-    std::vector<VulkanTypedHandle> object_list;
+    small_vector<VulkanTypedHandle, 4> object_list;
 
     template <typename HANDLE_T>
     void add(HANDLE_T object) {
-        VulkanTypedHandle v_t_handle(object, ConvertCoreObjectToVulkanObject(VkHandleInfo<HANDLE_T>::kVkObjectType));
-        object_list.push_back(v_t_handle);
+        object_list.emplace_back(object, ConvertCoreObjectToVulkanObject(VkHandleInfo<HANDLE_T>::kVkObjectType));
     }
 
-    void add(VulkanTypedHandle typed_handle) { object_list.push_back(typed_handle); }
+    void add(VulkanTypedHandle typed_handle) { object_list.emplace_back(typed_handle); }
 
     template <typename HANDLE_T>
     LogObjectList(HANDLE_T object) {
