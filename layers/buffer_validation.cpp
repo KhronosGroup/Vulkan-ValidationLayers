@@ -377,15 +377,18 @@ static VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags as
 }
 
 static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
-    a = NormalizeSynchronization2Layout(aspect_mask, a);
-    b = NormalizeSynchronization2Layout(aspect_mask, b);
     bool matches = (a == b);
     if (!matches) {
-        // Relaxed rules when referencing *only* the depth or stencil aspects
-        if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
-            matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
-        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
-            matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
+        a = NormalizeSynchronization2Layout(aspect_mask, a);
+        b = NormalizeSynchronization2Layout(aspect_mask, b);
+        matches = (a == b);
+        if (!matches) {
+            // Relaxed rules when referencing *only* the depth or stencil aspects
+            if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+                matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
+            } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+                matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
+            }
         }
     }
     return matches;
@@ -5103,10 +5106,10 @@ using sync_vuid_maps::QueueError;
 
 class ValidatorState {
   public:
-    ValidatorState(const ValidationStateTracker *device_data, const LogObjectList &obj, const CoreErrorLocation &location,
+    ValidatorState(const ValidationStateTracker *device_data, LogObjectList &&obj, const CoreErrorLocation &location,
                    const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
         : device_data_(device_data),
-          objects_(obj),
+          objects_(std::move(obj)),
           loc_(location),
           barrier_handle_(barrier_handle),
           sharing_mode_(sharing_mode),
@@ -5365,8 +5368,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const CoreEr
     if (image_data) {
         auto image_loc = loc.dot(Field::image);
 
-        const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kNoMemory);
-        skip |= ValidateMemoryIsBoundToImage(image_data, loc.StringFuncName().c_str(), vuid.c_str());
+        skip |= ValidateMemoryIsBoundToImage(image_data, loc);
 
         skip |= ValidateBarrierQueueFamilies(image_loc, cb_state, mem_barrier, image_data);
 

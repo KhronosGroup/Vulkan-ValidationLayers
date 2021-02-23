@@ -156,7 +156,7 @@ struct CoreErrorLocation {
     std::string Message() const {
         std::stringstream out;
         out << StringFuncName() << "(): ";
-        for (const auto &f : field_path) {
+        for (const auto& f : field_path) {
             out << String(f.field);
             if (f.index != kNoIndex) {
                 out << "[" << f.index << "]";
@@ -184,11 +184,29 @@ struct CoreErrorLocation {
         return result;
     }
 
-    static const std::string &String(ErrFunc func);
-    static const std::string &String(RefPage refpage);
-    static const std::string &String(Field field);
+    static const std::string& String(ErrFunc func);
+    static const std::string& String(RefPage refpage);
+    static const std::string& String(Field field);
 
-    const std::string &StringFuncName() const { return String(func_name); }
-    const std::string &StringRefPage() const { return String(refpage); }
-    const std::string &StringField() const { return String(field_name); }
+    const std::string& StringFuncName() const { return String(func_name); }
+    const std::string& StringRefPage() const { return String(refpage); }
+    const std::string& StringField() const { return String(field_name); }
+};
+
+template <typename VuidFunctor>
+struct CoreErrorLocationVuidAdapter {
+    const CoreErrorLocation loc;
+    VuidFunctor vuid_functor;
+    const char* FuncName() const {
+        // the returned reference from loc must be valid for lifespan of loc, at least.
+        const std::string& func_name = loc.StringFuncName();
+        return func_name.c_str();
+    }
+    const char* Vuid() const {
+        // the returned reference from functor must be valid for lifespan of vuid_functor, at least.
+        const std::string& vuid = vuid_functor(loc);
+        return vuid.c_str();
+    }
+    template <typename... Args>
+    CoreErrorLocationVuidAdapter(const CoreErrorLocation& loc_, const Args&... args) : loc(loc_), vuid_functor(args...) {}
 };
