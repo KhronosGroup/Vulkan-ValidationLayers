@@ -283,10 +283,11 @@ class CoreChecks : public ValidationStateTracker {
                                          QueryObject query_obj, const char* func_name, VkQueryPool& firstPerfQueryPool,
                                          uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateImportSemaphore(VkSemaphore semaphore, const char* caller_name) const;
-    bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
+    bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags,
+                            uint32_t index, CMD_TYPE cmd,
                             const char* cmd_name, const ValidateBeginQueryVuids* vuids) const;
-    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, CMD_TYPE cmd, const char* cmd_name,
-                             const ValidateEndQueryVuids* vuids) const;
+    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, uint32_t index,
+                             CMD_TYPE cmd, const char* cmd_name, const ValidateEndQueryVuids* vuids) const;
     bool ValidateCmdResetQuery(const CMD_BUFFER_STATE* cb_state, VkQueryPool queryPool, uint32_t firstQuery,
                                uint32_t queryCount) const;
 
