@@ -109,7 +109,7 @@ if(WIN32)
 
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
         set_target_properties(VkLayer_${target} PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
-        target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
+        target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS} NOMINMAX)
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         add_dependencies(VkLayer_${target} VkLayer_utils)
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})

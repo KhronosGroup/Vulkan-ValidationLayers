@@ -291,7 +291,7 @@ add_library(VkLayer_utils
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 if(WIN32)
-    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
     if(MINGW)
         target_compile_definitions(VkLayer_utils PUBLIC "_WIN32_WINNT=0x0600")
     endif()
