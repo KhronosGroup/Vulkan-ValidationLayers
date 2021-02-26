@@ -191,6 +191,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // trees, constant expressions, etc requires jumping all over the instruction stream.
     std::unordered_map<unsigned, unsigned> def_index;
     std::unordered_map<unsigned, decoration_set> decorations;
+    // Find all decoration instructions to prevent relooping module later - many checks need this info
+    std::vector<spirv_inst_iter> decoration_inst;
+    std::vector<spirv_inst_iter> member_decoration_inst;
     struct EntryPoint {
         uint32_t offset;
         VkShaderStageFlagBits stage;
