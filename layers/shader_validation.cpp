@@ -183,10 +183,14 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
             case spv::OpDecorate: {
                 auto target_id = insn.word(1);
                 decorations[target_id].add(insn.word(2), insn.len() > 3u ? insn.word(3) : 0u);
+                decoration_inst.push_back(insn);
             } break;
             case spv::OpGroupDecorate: {
                 auto const &src = decorations[insn.word(1)];
                 for (auto i = 2u; i < insn.len(); i++) decorations[insn.word(i)].merge(src);
+            } break;
+            case spv::OpMemberDecorate: {
+                member_decoration_inst.push_back(insn);
             } break;
 
                 // Entry points ... add to the entrypoint table
@@ -674,8 +678,8 @@ static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, std::ma
     std::unordered_map<unsigned, unsigned> member_patch;
 
     // Walk all the OpMemberDecorate for type's result id -- first pass, collect components.
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
+    for (auto insn : src->member_decoration_inst) {
+        if (insn.word(1) == type.word(1)) {
             unsigned member_index = insn.word(2);
 
             if (insn.word(3) == spv::DecorationComponent) {
@@ -696,8 +700,8 @@ static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, std::ma
     // TODO: correctly handle location assignment from outside
 
     // Second pass -- produce the output, from Location decorations
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
+    for (auto insn : src->member_decoration_inst) {
+        if (insn.word(1) == type.word(1)) {
             unsigned member_index = insn.word(2);
             unsigned member_type_id = type.word(2 + member_index);
 
@@ -794,34 +798,26 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
     std::vector<uint32_t> builtin_struct_members;
     std::vector<uint32_t> builtin_decorations;
 
-    for (auto insn : *src) {
-        switch (insn.opcode()) {
-            // Find all built-in member decorations
-            case spv::OpMemberDecorate:
-                if (insn.word(3) == spv::DecorationBuiltIn) {
-                    builtin_struct_members.push_back(insn.word(1));
-                }
-                break;
-            // Find all built-in decorations
-            case spv::OpDecorate:
-                switch (insn.word(2)) {
-                    case spv::DecorationBlock: {
-                        uint32_t block_id = insn.word(1);
-                        for (auto built_in_block_id : builtin_struct_members) {
-                            // Check if one of the members of the block are built-in -> the block is built-in
-                            if (block_id == built_in_block_id) {
-                                builtin_decorations.push_back(block_id);
-                                break;
-                            }
-                        }
+    for (auto insn : src->member_decoration_inst) {
+        if (insn.word(3) == spv::DecorationBuiltIn) {
+            builtin_struct_members.push_back(insn.word(1));
+        }
+    }
+    for (auto insn : src->decoration_inst) {
+        switch (insn.word(2)) {
+            case spv::DecorationBlock: {
+                uint32_t block_id = insn.word(1);
+                for (auto built_in_block_id : builtin_struct_members) {
+                    // Check if one of the members of the block are built-in -> the block is built-in
+                    if (block_id == built_in_block_id) {
+                        builtin_decorations.push_back(block_id);
                         break;
                     }
-                    case spv::DecorationBuiltIn:
-                        builtin_decorations.push_back(insn.word(1));
-                        break;
-                    default:
-                        break;
                 }
+                break;
+            }
+            case spv::DecorationBuiltIn:
+                builtin_decorations.push_back(insn.word(1));
                 break;
             default:
                 break;
@@ -853,9 +849,8 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
                         builtin_block_members.push_back(spv::BuiltInMax);  // Start with undefined builtin for each struct member.
                     }
                     // These shouldn't be left after replacing.
-                    for (auto insn : *src) {
-                        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == built_in_id &&
-                            insn.word(3) == spv::DecorationBuiltIn) {
+                    for (auto insn : src->member_decoration_inst) {
+                        if (insn.word(1) == built_in_id && insn.word(3) == spv::DecorationBuiltIn) {
                             auto struct_index = insn.word(2);
                             assert(struct_index < builtin_block_members.size());
                             builtin_block_members[struct_index] = insn.word(4);
@@ -873,24 +868,22 @@ static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAt
     SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids) {
     std::vector<std::pair<uint32_t, interface_var>> out;
 
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpDecorate) {
-            if (insn.word(2) == spv::DecorationInputAttachmentIndex) {
-                auto attachment_index = insn.word(3);
-                auto id = insn.word(1);
+    for (auto insn : src->decoration_inst) {
+        if (insn.word(2) == spv::DecorationInputAttachmentIndex) {
+            auto attachment_index = insn.word(3);
+            auto id = insn.word(1);
 
-                if (accessible_ids.count(id)) {
-                    auto def = src->get_def(id);
-                    assert(def != src->end());
-                    if (def.opcode() == spv::OpVariable && def.word(3) == spv::StorageClassUniformConstant) {
-                        auto num_locations = GetLocationsConsumedByType(src, def.word(1), false);
-                        for (unsigned int offset = 0; offset < num_locations; offset++) {
-                            interface_var v = {};
-                            v.id = id;
-                            v.type_id = def.word(1);
-                            v.offset = offset;
-                            out.emplace_back(attachment_index + offset, v);
-                        }
+            if (accessible_ids.count(id)) {
+                auto def = src->get_def(id);
+                assert(def != src->end());
+                if (def.opcode() == spv::OpVariable && def.word(3) == spv::StorageClassUniformConstant) {
+                    auto num_locations = GetLocationsConsumedByType(src, def.word(1), false);
+                    for (unsigned int offset = 0; offset < num_locations; offset++) {
+                        interface_var v = {};
+                        v.id = id;
+                        v.type_id = def.word(1);
+                        v.offset = offset;
+                        out.emplace_back(attachment_index + offset, v);
                     }
                 }
             }
@@ -1213,9 +1206,8 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
         case spv::OpTypeStruct: {
             std::unordered_set<unsigned> nonwritable_members;
             if (module->get_decorations(type.word(1)).flags & decoration_set::buffer_block_bit) is_storage_buffer = true;
-            for (auto insn : *module) {
-                if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1) &&
-                    insn.word(3) == spv::DecorationNonWritable) {
+            for (auto insn : module->member_decoration_inst) {
+                if (insn.word(1) == type.word(1) && insn.word(3) == spv::DecorationNonWritable) {
                     nonwritable_members.insert(insn.word(2));
                 }
             }
@@ -2059,8 +2051,8 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(SHADER_MODULE_STATE const *mod
 
     switch (type.opcode()) {
         case spv::OpTypeStruct: {
-            for (auto insn : *module) {
-                if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
+            for (auto insn : module->decoration_inst) {
+                if (insn.word(1) == type.word(1)) {
                     if (insn.word(2) == spv::DecorationBlock) {
                         if (is_storage_buffer) {
                             ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
