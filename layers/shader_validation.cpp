@@ -3508,7 +3508,9 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
     skip |= ValidateBuiltinLimits(module, accessible_ids, pStage->stage);
-    skip |= ValidateCooperativeMatrix(module, pStage, pipeline);
+    if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
+        skip |= ValidateCooperativeMatrix(module, pStage, pipeline);
+    }
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module, entrypoint, pStage->stage);
     }
