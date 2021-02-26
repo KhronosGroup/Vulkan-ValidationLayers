@@ -4,7 +4,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2020 The Khronos Group Inc.
+ * Copyright (c) 2020-2021 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -561,40 +561,39 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
     };
 };
 
-bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const *src) const {
+bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const *src, spirv_inst_iter& insn) const {
     bool skip = false;
 
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpCapability) {
-            // All capabilities are generated so if it is not in the list it is not supported by Vulkan
-            if (spirvCapabilities.count(insn.word(1)) == 0) {
-                skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01090",
-                    "vkCreateShaderModule(): A SPIR-V Capability (%s) was declared that is not supported by Vulkan.", string_SpvCapability(insn.word(1)));
-                    continue;
-            }
+    if (insn.opcode() == spv::OpCapability) {
+        // All capabilities are generated so if it is not in the list it is not supported by Vulkan
+        if (spirvCapabilities.count(insn.word(1)) == 0) {
+            skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01090",
+                "vkCreateShaderModule(): A SPIR-V Capability (%s) was declared that is not supported by Vulkan.", string_SpvCapability(insn.word(1)));
+            return skip; // no known capability to validate
+        }
 
-            // Each capability has one or more requirements to check
-            // Only one item has to be satisfied and an error only occurs
-            // when all are not satisfied
-            auto caps = spirvCapabilities.equal_range(insn.word(1));
-            bool has_support = false;
-            for (auto it = caps.first; (it != caps.second) && (has_support == false); ++it) {
-                if (it->second.version) {
-                    if (api_version >= it->second.version) {
-                        has_support = true;
-                    }
-                } else if (it->second.feature) {
-                    if (it->second.feature.IsEnabled(enabled_features)) {
-                        has_support = true;
-                    }
-                } else if (it->second.extension) {
-                    if (device_extensions.*(it->second.extension)) {
-                        has_support = true;
-                    }
-                } else if (it->second.property) {
-                    switch (insn.word(1)) {
-                        default:
-                            break;
+        // Each capability has one or more requirements to check
+        // Only one item has to be satisfied and an error only occurs
+        // when all are not satisfied
+        auto caps = spirvCapabilities.equal_range(insn.word(1));
+        bool has_support = false;
+        for (auto it = caps.first; (it != caps.second) && (has_support == false); ++it) {
+            if (it->second.version) {
+                if (api_version >= it->second.version) {
+                    has_support = true;
+                }
+            } else if (it->second.feature) {
+                if (it->second.feature.IsEnabled(enabled_features)) {
+                    has_support = true;
+                }
+            } else if (it->second.extension) {
+                if (device_extensions.*(it->second.extension)) {
+                    has_support = true;
+                }
+            } else if (it->second.property) {
+                switch (insn.word(1)) {
+                    default:
+                        break;
                         case spv::CapabilityDenormFlushToZero:
                             has_support = ((phys_dev_props_core12.shaderDenormFlushToZeroFloat64 & VK_TRUE) != 0);
                             break;
@@ -637,75 +636,72 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
                         case spv::CapabilitySignedZeroInfNanPreserve:
                             has_support = ((phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64 & VK_TRUE) != 0);
                             break;
-                    }
                 }
-            }
-
-            if (has_support == false) {
-                skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                    "vkCreateShaderModule(): The SPIR-V Capability (%s) was declared, but none of the requirements were met to use it.", string_SpvCapability(insn.word(1)));
-                    continue;
-            }
-
-            // Portability checks
-            if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
-                if ((VK_FALSE == enabled_features.portability_subset_features.shaderSampleRateInterpolationFunctions) &&
-                    (spv::CapabilityInterpolationFunction == insn.word(1))) {
-                    skip |= LogError(device, kVUID_Portability_InterpolationFunction,
-                                     "Invalid shader capability (portability error): interpolation functions are not supported "
-                                     "by this platform");
-                }
-            }
-        } else if (insn.opcode() == spv::OpExtension) {
-            static const std::string spv_prefix = "SPV_";
-            std::string extension_name = (char const *)&insn.word(1);
-
-            if (0 == extension_name.compare(0, spv_prefix.size(), spv_prefix)) {
-                if (spirvExtensions.count(extension_name) == 0) {
-                    skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-04146",
-                        "vkCreateShaderModule(): A SPIR-V Extension (%s) was declared that is not supported by Vulkan.", extension_name.c_str());
-                   continue;
-                }
-            } else {
-                skip |= LogError(device, kVUID_Core_Shader_InvalidExtension,
-                    "vkCreateShaderModule(): The SPIR-V code uses the '%s' extension which is not a SPIR-V extension. Please use a SPIR-V"
-                    " extension (https://github.com/KhronosGroup/SPIRV-Registry) for OpExtension instructions. Non-SPIR-V extensions can be"
-                    " recorded in SPIR-V using the OpSourceExtension instruction.", extension_name.c_str());
-                continue;
-            }
-
-            // Each SPIR-V Extension has one or more requirements to check
-            // Only one item has to be satisfied and an error only occurs
-            // when all are not satisfied
-            auto ext = spirvExtensions.equal_range(extension_name);
-            bool has_support = false;
-            for (auto it = ext.first; (it != ext.second) && (has_support == false); ++it) {
-                if (it->second.version) {
-                    if (api_version >= it->second.version) {
-                        has_support = true;
-                    }
-                } else if (it->second.feature) {
-                    if (it->second.feature.IsEnabled(enabled_features)) {
-                        has_support = true;
-                    }
-                } else if (it->second.extension) {
-                    if (device_extensions.*(it->second.extension)) {
-                        has_support = true;
-                    }
-                } else if (it->second.property) {
-                    switch (insn.word(1)) {
-                        default:
-                            break;
-                    }
-                }
-            }
-
-            if (has_support == false) {
-                skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                    "vkCreateShaderModule(): The SPIR-V Extension (%s) was declared, but none of the requirements were met to use it.", extension_name.c_str());
-                    continue;
             }
         }
-    }
+
+        if (has_support == false) {
+            skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01091",
+                "vkCreateShaderModule(): The SPIR-V Capability (%s) was declared, but none of the requirements were met to use it.", string_SpvCapability(insn.word(1)));
+        }
+
+        // Portability checks
+        if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+            if ((VK_FALSE == enabled_features.portability_subset_features.shaderSampleRateInterpolationFunctions) &&
+                (spv::CapabilityInterpolationFunction == insn.word(1))) {
+                skip |= LogError(device, kVUID_Portability_InterpolationFunction,
+                                    "Invalid shader capability (portability error): interpolation functions are not supported "
+                                    "by this platform");
+            }
+        }
+    } else if (insn.opcode() == spv::OpExtension) {
+        static const std::string spv_prefix = "SPV_";
+        std::string extension_name = (char const *)&insn.word(1);
+
+        if (0 == extension_name.compare(0, spv_prefix.size(), spv_prefix)) {
+            if (spirvExtensions.count(extension_name) == 0) {
+                skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-04146",
+                    "vkCreateShaderModule(): A SPIR-V Extension (%s) was declared that is not supported by Vulkan.", extension_name.c_str());
+                return skip; // no known extension to validate
+            }
+        } else {
+            skip |= LogError(device, kVUID_Core_Shader_InvalidExtension,
+                "vkCreateShaderModule(): The SPIR-V code uses the '%s' extension which is not a SPIR-V extension. Please use a SPIR-V"
+                " extension (https://github.com/KhronosGroup/SPIRV-Registry) for OpExtension instructions. Non-SPIR-V extensions can be"
+                " recorded in SPIR-V using the OpSourceExtension instruction.", extension_name.c_str());
+            return skip; // no known extension to validate
+        }
+
+        // Each SPIR-V Extension has one or more requirements to check
+        // Only one item has to be satisfied and an error only occurs
+        // when all are not satisfied
+        auto ext = spirvExtensions.equal_range(extension_name);
+        bool has_support = false;
+        for (auto it = ext.first; (it != ext.second) && (has_support == false); ++it) {
+            if (it->second.version) {
+                if (api_version >= it->second.version) {
+                    has_support = true;
+                }
+            } else if (it->second.feature) {
+                if (it->second.feature.IsEnabled(enabled_features)) {
+                    has_support = true;
+                }
+            } else if (it->second.extension) {
+                if (device_extensions.*(it->second.extension)) {
+                    has_support = true;
+                }
+            } else if (it->second.property) {
+                switch (insn.word(1)) {
+                    default:
+                        break;
+                }
+            }
+        }
+
+        if (has_support == false) {
+            skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-04147",
+                "vkCreateShaderModule(): The SPIR-V Extension (%s) was declared, but none of the requirements were met to use it.", extension_name.c_str());
+        }
+    } //spv::OpExtension
     return skip;
 }

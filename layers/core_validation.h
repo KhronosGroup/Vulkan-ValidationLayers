@@ -486,13 +486,14 @@ class CoreChecks : public ValidationStateTracker {
                                       VkShaderStageFlagBits stage) const;
     bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src,
                                           spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const;
-    bool ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const* src) const;
+    bool ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE const* src, spirv_inst_iter& insn) const;
     bool ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
                                                        bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                               const PIPELINE_STATE* pipeline, spirv_inst_iter entrypoint) const;
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE* pipeline) const;
-    bool ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage) const;
+    bool ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage,
+                                            spirv_inst_iter& insn) const;
     bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                    const PIPELINE_STATE* pipeline) const;
     bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint) const;
@@ -515,7 +516,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const* producer, spirv_inst_iter producer_entrypoint,
                                         shader_stage_attributes const* producer_stage, SHADER_MODULE_STATE const* consumer,
                                         spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;
-    bool ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const* module) const;
+    bool ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const* module, spirv_inst_iter& insn) const;
 
     template <typename RegionType>
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* src_img,
