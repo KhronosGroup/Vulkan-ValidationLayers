@@ -2201,53 +2201,47 @@ bool CoreChecks::ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlag
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *module, VkShaderStageFlagBits stage) const {
+bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *module, VkShaderStageFlagBits stage,
+                                                    spirv_inst_iter &insn) const {
     bool skip = false;
 
-    auto const subgroup_props = phys_dev_props_core11;
-    const VkSubgroupFeatureFlags supported_stages = subgroup_props.subgroupSupportedStages;
-
-    for (auto inst : *module) {
-        // Check anything using a group operation (which currently is only OpGroupNonUnifrom* operations)
-        if (GroupOperation(inst.opcode()) == true) {
-            // Check the quad operations.
-            if ((inst.opcode() == spv::OpGroupNonUniformQuadBroadcast) || (inst.opcode() == spv::OpGroupNonUniformQuadSwap)) {
-                if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
-                    skip |= RequireFeature(subgroup_props.subgroupQuadOperationsInAllStages,
-                                           "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages",
-                                           kVUID_Core_Shader_FeatureNotEnabled);
-                }
+    // Check anything using a group operation (which currently is only OpGroupNonUnifrom* operations)
+    if (GroupOperation(insn.opcode()) == true) {
+        // Check the quad operations.
+        if ((insn.opcode() == spv::OpGroupNonUniformQuadBroadcast) || (insn.opcode() == spv::OpGroupNonUniformQuadSwap)) {
+            if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
+                skip |= RequireFeature(phys_dev_props_core11.subgroupQuadOperationsInAllStages,
+                                       "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages",
+                                       kVUID_Core_Shader_FeatureNotEnabled);
             }
+        }
 
-            uint32_t scope_type = spv::ScopeMax;
-            if (inst.opcode() == spv::OpGroupNonUniformPartitionNV) {
-                // OpGroupNonUniformPartitionNV always assumed subgroup as missing operand
-                scope_type = spv::ScopeSubgroup;
-            } else {
-                // "All <id> used for Scope <id> must be of an OpConstant"
-                auto scope_id = module->get_def(inst.word(3));
-                scope_type = scope_id.word(3);
-            }
+        uint32_t scope_type = spv::ScopeMax;
+        if (insn.opcode() == spv::OpGroupNonUniformPartitionNV) {
+            // OpGroupNonUniformPartitionNV always assumed subgroup as missing operand
+            scope_type = spv::ScopeSubgroup;
+        } else {
+            // "All <id> used for Scope <id> must be of an OpConstant"
+            auto scope_id = module->get_def(insn.word(3));
+            scope_type = scope_id.word(3);
+        }
 
-            if (scope_type == spv::ScopeSubgroup) {
-                // "Group operations with subgroup scope" must have stage support
-                skip |=
-                    RequirePropertyFlag(supported_stages & stage, string_VkShaderStageFlagBits(stage),
+        if (scope_type == spv::ScopeSubgroup) {
+            // "Group operations with subgroup scope" must have stage support
+            const VkSubgroupFeatureFlags supported_stages = phys_dev_props_core11.subgroupSupportedStages;
+            skip |= RequirePropertyFlag(supported_stages & stage, string_VkShaderStageFlagBits(stage),
                                         "VkPhysicalDeviceSubgroupProperties::supportedStages", kVUID_Core_Shader_ExceedDeviceLimit);
+        }
+
+        if (!enabled_features.core12.shaderSubgroupExtendedTypes) {
+            auto type = module->get_def(insn.word(1));
+
+            if (type.opcode() == spv::OpTypeVector) {
+                // Get the element type
+                type = module->get_def(type.word(2));
             }
 
-            if (!enabled_features.core12.shaderSubgroupExtendedTypes) {
-                auto type = module->get_def(inst.word(1));
-
-                if (type.opcode() == spv::OpTypeVector) {
-                    // Get the element type
-                    type = module->get_def(type.word(2));
-                }
-
-                if (type.opcode() == spv::OpTypeBool) {
-                    break;
-                }
-
+            if (type.opcode() != spv::OpTypeBool) {
                 // Both OpTypeInt and OpTypeFloat the width is in the 2nd word.
                 const uint32_t width = type.word(2);
 
@@ -3391,27 +3385,24 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
 }
 
 // Validate runtime usage of various opcodes that depends on what Vulkan properties or features are exposed
-bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module) const {
+bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module, spirv_inst_iter &insn) const {
     bool skip = false;
 
-    for (auto insn : *module) {
-        switch (insn.opcode()) {
-            case spv::OpReadClockKHR: {
-                auto scope_id = module->get_def(insn.word(3));
-                auto scope_type = scope_id.word(3);
-                // if scope isn't Subgroup or Device, spirv-val will catch
-                if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_feature.shaderSubgroupClock == VK_FALSE)) {
-                    skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderSubgroupClock",
-                                     "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.",
-                                     report_data->FormatHandle(module->vk_shader_module).c_str());
-                } else if ((scope_type == spv::ScopeDevice) &&
-                           (enabled_features.shader_clock_feature.shaderDeviceClock == VK_FALSE)) {
-                    skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderDeviceClock",
-                                     "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.",
-                                     report_data->FormatHandle(module->vk_shader_module).c_str());
-                }
-                break;
+    switch (insn.opcode()) {
+        case spv::OpReadClockKHR: {
+            auto scope_id = module->get_def(insn.word(3));
+            auto scope_type = scope_id.word(3);
+            // if scope isn't Subgroup or Device, spirv-val will catch
+            if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_feature.shaderSubgroupClock == VK_FALSE)) {
+                skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderSubgroupClock",
+                                 "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.",
+                                 report_data->FormatHandle(module->vk_shader_module).c_str());
+            } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shader_clock_feature.shaderDeviceClock == VK_FALSE)) {
+                skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderDeviceClock",
+                                 "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.",
+                                 report_data->FormatHandle(module->vk_shader_module).c_str());
             }
+            break;
         }
     }
     return skip;
@@ -3498,13 +3489,18 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     bool has_writable_descriptor = stage_state.has_writable_descriptor;
     auto &descriptor_uses = stage_state.descriptor_uses;
 
-    // Validate shader capabilities against enabled device features
-    skip |= ValidateShaderCapabilitiesAndExtensions(module);
+    // The following tries to limit the number of passes through the shader module. The validation passes in here are "stateless"
+    // and mainly only checking the instruction in detail for a single operation
+    for (auto insn : *module) {
+        skip |= ValidateShaderCapabilitiesAndExtensions(module, insn);
+        skip |= ValidatePropertiesAndFeatures(module, insn);
+        skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, insn);
+    }
+
     skip |=
         ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, has_writable_descriptor, stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
-    skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(pStage);
     skip |= ValidatePushConstantUsage(*pipeline, module, pStage);
@@ -3516,7 +3512,6 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module, entrypoint, pStage->stage);
     }
-    skip |= ValidatePropertiesAndFeatures(module);
 
     std::string vuid_layout_mismatch;
     if (pipeline->graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO) {
