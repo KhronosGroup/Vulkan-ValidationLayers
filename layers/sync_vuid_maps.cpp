@@ -610,7 +610,12 @@ static const std::vector<std::string> kQueueCapErrors{
 
 const std::string &GetStageQueueCapVUID(const CoreErrorLocation &loc, VkPipelineStageFlags2KHR bit) {
     // no per-bit lookups needed
-    return FindVUID(loc.refpage, loc.field_name, kQueueCapErrors);
+    const auto& result = FindVUID(loc.refpage, loc.field_name, kQueueCapErrors);
+    if (!result.empty()) {
+        return result;
+    }
+    const auto& result2 = FindVUID(loc.StringFuncName(), loc.StringField(), kQueueCapErrors);
+    return result2;
 }
 
 static const std::map<QueueError, std::vector<std::string>> kBarrierQueueErrors{
