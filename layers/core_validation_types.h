@@ -605,6 +605,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     bool retired = false;
     bool shared_presentable = false;
     uint32_t get_swapchain_image_count = 0;
+    VkSurfaceKHR surface;
     SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
         : createInfo(pCreateInfo), swapchain(swapchain) {}
 };

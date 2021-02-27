@@ -10132,6 +10132,69 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
     }
 }
 
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+TEST_F(VkPositiveLayerTest, MultipleXcbSurfaces) {
+    TEST_DESCRIPTION("Test making multiple XCB Surfaces");
+
+    if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME) &&
+        InstanceExtensionSupported(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+        m_instance_extension_names.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+    } else {
+        printf("%s test required extensions not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    m_errorMonitor->ExpectSuccess();
+
+    xcb_connection_t *connection = xcb_connect(NULL, NULL);
+    if (connection == nullptr) {
+        printf("%s xcb_connect failed\n", kSkipPrefix);
+        return;
+    }
+
+    VkSurfaceKHR surface0;
+    VkSurfaceKHR surface1;
+
+    xcb_window_t window0 = xcb_generate_id(connection);
+    xcb_window_t window1 = xcb_generate_id(connection);
+    VkXcbSurfaceCreateInfoKHR surface_create_info = {};
+    surface_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surface_create_info.connection = connection;
+    surface_create_info.window = window0;
+    ASSERT_VK_SUCCESS(vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface0));
+
+    surface_create_info.window = window1;
+    ASSERT_VK_SUCCESS(vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface1));
+
+    // to force framework to query both formats for valid usage
+    m_surface = surface0;
+    InitSwapchainInfo();
+    m_surface = surface1;
+    InitSwapchainInfo();
+    m_surface = VK_NULL_HANDLE;
+
+    if (surface0 != VK_NULL_HANDLE) {
+        vk::DestroySurfaceKHR(instance(), surface0, nullptr);
+        surface0 = VK_NULL_HANDLE;
+    }
+    if (surface1 != VK_NULL_HANDLE) {
+        vk::DestroySurfaceKHR(instance(), surface1, nullptr);
+        surface1 = VK_NULL_HANDLE;
+    }
+    m_errorMonitor->VerifyNotFound();
+}
+#endif
+
 TEST_F(VkPositiveLayerTest, Storage8and16bit) {
     TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
     m_errorMonitor->ExpectSuccess();

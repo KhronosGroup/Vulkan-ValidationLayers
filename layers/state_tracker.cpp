@@ -5224,6 +5224,7 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
             VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
             swapchain_state->shared_presentable = true;
         }
+        swapchain_state->surface = pCreateInfo->surface;
         surface_state->swapchain = swapchain_state.get();
         swapchainMap[*pSwapchain] = std::move(swapchain_state);
     } else {
@@ -5431,6 +5432,48 @@ void ValidationStateTracker::PreCallRecordDestroySurfaceKHR(VkInstance instance,
     surface_map.erase(surface);
 }
 
+// Updates the surface for a given physical device
+void ValidationStateTracker::UpdateSurfaceCapabilites(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+
+    PhysicalDeviceSurfaceCapabilities capabilities;
+    // if app is enabling VK_KHR_get_surface_capabilities2 they might be using a pNext value in it
+    if (!instance_extensions.vk_khr_get_surface_capabilities_2) {
+        // This function requires VK_KHR_swapchain (which requires VK_KHR_surface) so function will be available
+        DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->phys_device, surface, &capabilities.base);
+    } else {
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info_2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, nullptr, surface};
+        VkSurfaceCapabilities2KHR surface_capabilities_2 = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
+
+        // Extensions that might be chained for the extensions that are exposed
+        void **lastPNext = &surface_capabilities_2.pNext;
+        VkSharedPresentSurfaceCapabilitiesKHR shared_presentable = {VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR};
+        VkSurfaceProtectedCapabilitiesKHR surface_protected = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
+        if (device_extensions.vk_khr_shared_presentable_image) {
+            *lastPNext = &shared_presentable;
+            lastPNext = &shared_presentable.pNext;
+        }
+        if (instance_extensions.vk_khr_surface_protected_capabilities) {
+            *lastPNext = &surface_protected;
+            // VkSurfaceProtectedCapabilitiesKHR pNext is a const for some reason so make last in chain
+        }
+
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surface_info_2,
+                                                         &surface_capabilities_2);
+
+        // set any fields from pNext items
+        capabilities.base = surface_capabilities_2.surfaceCapabilities;
+        if (device_extensions.vk_khr_shared_presentable_image) {
+            capabilities.sharedPresentSupportedUsageFlags = shared_presentable.sharedPresentSupportedUsageFlags;
+        }
+        if (instance_extensions.vk_khr_surface_protected_capabilities) {
+            capabilities.supportsProtected = (surface_protected.supportsProtected == VK_TRUE);
+        }
+    }
+
+    physical_device_state->surface_capabilities[surface] = capabilities;
+}
+
 void ValidationStateTracker::RecordVulkanSurface(VkSurfaceKHR *pSurface) {
     surface_map[*pSurface] = std::make_shared<SURFACE_STATE>(*pSurface);
 }
@@ -5554,10 +5597,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesK
                                                                                    VkResult result) {
     if (VK_SUCCESS != result) return;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    physical_device_state->surfaceCapabilities = *pSurfaceCapabilities;
-
-    // TODO May make sense to move this to BestPractices, but needs further refactoring in CoreChecks first
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
+    physical_device_state->surface_capabilities[surface].base = *pSurfaceCapabilities;
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
@@ -5565,10 +5605,19 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
     VkSurfaceCapabilities2KHR *pSurfaceCapabilities, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    physical_device_state->surfaceCapabilities = pSurfaceCapabilities->surfaceCapabilities;
 
-    // TODO May make sense to move this to BestPractices, but needs further refactoring in CoreChecks first
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
+    PhysicalDeviceSurfaceCapabilities &capabilities = physical_device_state->surface_capabilities[pSurfaceInfo->surface];
+    capabilities.base = pSurfaceCapabilities->surfaceCapabilities;
+
+    const auto *shared_presentable = LvlFindInChain<VkSharedPresentSurfaceCapabilitiesKHR>(pSurfaceCapabilities->pNext);
+    if (shared_presentable) {
+        capabilities.sharedPresentSupportedUsageFlags = shared_presentable->sharedPresentSupportedUsageFlags;
+    }
+
+    const auto *protected_surface = LvlFindInChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext);
+    if (protected_surface) {
+        capabilities.supportsProtected = (protected_surface->supportsProtected == VK_TRUE);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
@@ -5576,19 +5625,17 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                                                                                     VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
                                                                                     VkResult result) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    physical_device_state->surfaceCapabilities.minImageCount = pSurfaceCapabilities->minImageCount;
-    physical_device_state->surfaceCapabilities.maxImageCount = pSurfaceCapabilities->maxImageCount;
-    physical_device_state->surfaceCapabilities.currentExtent = pSurfaceCapabilities->currentExtent;
-    physical_device_state->surfaceCapabilities.minImageExtent = pSurfaceCapabilities->minImageExtent;
-    physical_device_state->surfaceCapabilities.maxImageExtent = pSurfaceCapabilities->maxImageExtent;
-    physical_device_state->surfaceCapabilities.maxImageArrayLayers = pSurfaceCapabilities->maxImageArrayLayers;
-    physical_device_state->surfaceCapabilities.supportedTransforms = pSurfaceCapabilities->supportedTransforms;
-    physical_device_state->surfaceCapabilities.currentTransform = pSurfaceCapabilities->currentTransform;
-    physical_device_state->surfaceCapabilities.supportedCompositeAlpha = pSurfaceCapabilities->supportedCompositeAlpha;
-    physical_device_state->surfaceCapabilities.supportedUsageFlags = pSurfaceCapabilities->supportedUsageFlags;
-
-    // TODO May make sense to move this to BestPractices, but needs further refactoring in CoreChecks first
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
+    PhysicalDeviceSurfaceCapabilities &capabilities = physical_device_state->surface_capabilities[surface];
+    capabilities.base.minImageCount = pSurfaceCapabilities->minImageCount;
+    capabilities.base.maxImageCount = pSurfaceCapabilities->maxImageCount;
+    capabilities.base.currentExtent = pSurfaceCapabilities->currentExtent;
+    capabilities.base.minImageExtent = pSurfaceCapabilities->minImageExtent;
+    capabilities.base.maxImageExtent = pSurfaceCapabilities->maxImageExtent;
+    capabilities.base.maxImageArrayLayers = pSurfaceCapabilities->maxImageArrayLayers;
+    capabilities.base.supportedTransforms = pSurfaceCapabilities->supportedTransforms;
+    capabilities.base.currentTransform = pSurfaceCapabilities->currentTransform;
+    capabilities.base.supportedCompositeAlpha = pSurfaceCapabilities->supportedCompositeAlpha;
+    capabilities.base.supportedUsageFlags = pSurfaceCapabilities->supportedUsageFlags;
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice,
