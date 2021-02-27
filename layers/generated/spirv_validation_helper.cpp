@@ -591,51 +591,62 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
                     has_support = true;
                 }
             } else if (it->second.property) {
+                // support is or'ed as only one has to be supported (if applicable)
                 switch (insn.word(1)) {
+                    case spv::CapabilityDenormFlushToZero:
+                        has_support |= ((phys_dev_props_core12.shaderDenormFlushToZeroFloat16 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderDenormFlushToZeroFloat32 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderDenormFlushToZeroFloat64 & VK_TRUE) != 0);
+                        break;
+                    case spv::CapabilityDenormPreserve:
+                        has_support |= ((phys_dev_props_core12.shaderDenormPreserveFloat16 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderDenormPreserveFloat32 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderDenormPreserveFloat64 & VK_TRUE) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniform:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformArithmetic:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformBallot:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformClustered:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformPartitionedNV:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformQuad:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_QUAD_BIT) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformShuffle:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformShuffleRelative:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) != 0);
+                        break;
+                    case spv::CapabilityGroupNonUniformVote:
+                        has_support |= ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_VOTE_BIT) != 0);
+                        break;
+                    case spv::CapabilityRoundingModeRTE:
+                        has_support |= ((phys_dev_props_core12.shaderRoundingModeRTEFloat16 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderRoundingModeRTEFloat32 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderRoundingModeRTEFloat64 & VK_TRUE) != 0);
+                        break;
+                    case spv::CapabilityRoundingModeRTZ:
+                        has_support |= ((phys_dev_props_core12.shaderRoundingModeRTZFloat16 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderRoundingModeRTZFloat32 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderRoundingModeRTZFloat64 & VK_TRUE) != 0);
+                        break;
+                    case spv::CapabilitySignedZeroInfNanPreserve:
+                        has_support |= ((phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32 & VK_TRUE) != 0);
+                        has_support |= ((phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64 & VK_TRUE) != 0);
+                        break;
                     default:
                         break;
-                        case spv::CapabilityDenormFlushToZero:
-                            has_support = ((phys_dev_props_core12.shaderDenormFlushToZeroFloat64 & VK_TRUE) != 0);
-                            break;
-                        case spv::CapabilityDenormPreserve:
-                            has_support = ((phys_dev_props_core12.shaderDenormPreserveFloat64 & VK_TRUE) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniform:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformArithmetic:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformBallot:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformClustered:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformPartitionedNV:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformQuad:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_QUAD_BIT) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformShuffle:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformShuffleRelative:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) != 0);
-                            break;
-                        case spv::CapabilityGroupNonUniformVote:
-                            has_support = ((phys_dev_props_core11.subgroupSupportedOperations & VK_SUBGROUP_FEATURE_VOTE_BIT) != 0);
-                            break;
-                        case spv::CapabilityRoundingModeRTE:
-                            has_support = ((phys_dev_props_core12.shaderRoundingModeRTEFloat64 & VK_TRUE) != 0);
-                            break;
-                        case spv::CapabilityRoundingModeRTZ:
-                            has_support = ((phys_dev_props_core12.shaderRoundingModeRTZFloat64 & VK_TRUE) != 0);
-                            break;
-                        case spv::CapabilitySignedZeroInfNanPreserve:
-                            has_support = ((phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64 & VK_TRUE) != 0);
-                            break;
                 }
             }
         }
@@ -691,6 +702,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
                     has_support = true;
                 }
             } else if (it->second.property) {
+                // support is or'ed as only one has to be supported (if applicable)
                 switch (insn.word(1)) {
                     default:
                         break;

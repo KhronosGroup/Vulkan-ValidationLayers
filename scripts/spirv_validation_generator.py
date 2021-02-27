@@ -298,12 +298,15 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             propertyStruct = enable['property']['property']
             # Need to make sure to return a boolean value to prevent compiler warning for implicit conversions
             propertyLogic = "(" + propertyStruct + '::' + enable['property']['member'] + ' & ' + enable['property']['value'] + ") != 0"
+            # Property might have multiple items per capability/extension
+            if name not in self.propertyInfo:
+                self.propertyInfo[name] = []
             # Save info later to be printed out
-            self.propertyInfo[name] = {
+            self.propertyInfo[name].append({
                 "logic" : propertyLogic,
                 "struct" : propertyStruct,
                 "isExtension" : isExtension
-            }
+            })
             # For properties, this string is just for human readableness
             output = '{0, nullptr, nullptr, "' + propertyLogic + '"}'
         else:
@@ -375,24 +378,29 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
                     has_support = true;
                 }
             } else if (it->second.property) {
-                switch (insn.word(1)) {
-                    default:
+                // support is or'ed as only one has to be supported (if applicable)
+                switch (insn.word(1)) {'''
+
+        for name, infos in sorted(self.propertyInfo.items()):
+            # Only capabilities here (all items in array are the same)
+            if infos[0]['isExtension'] == True:
+                continue
+
+            # use triple-tick syntax to keep tab alignment for generated code
+            output += '''
+                    case spv::Capability{}:'''.format(name)
+            for info in infos:
+                # Need to string replace property string to create valid C++ logic
+                logic = info['logic'].replace('::', '.')
+                logic = logic.replace(info['struct'], self.propertyMap[info['struct']])
+                output += '''
+                        has_support |= ({});'''.format(logic)
+            output += '''
                         break;'''
 
-        for name, info in sorted(self.propertyInfo.items()):
-            # Only capabilities here
-            if info['isExtension'] == True:
-                continue
-            # Need to string replace property string to create valid C++ logic
-            logic = info['logic'].replace('::', '.')
-            logic = logic.replace(info['struct'], self.propertyMap[info['struct']])
-
-            output += '''
-                        case spv::Capability{}:
-                            has_support = ({});
-                            break;'''.format(name, logic)
-
         output += '''
+                    default:
+                        break;
                 }
             }
         }
@@ -448,24 +456,29 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
                     has_support = true;
                 }
             } else if (it->second.property) {
-                switch (insn.word(1)) {
-                    default:
-                        break;'''
+                // support is or'ed as only one has to be supported (if applicable)
+                switch (insn.word(1)) {'''
 
-        for name, info in sorted(self.propertyInfo.items()):
-            # Only extensions here
-            if info['isExtension'] == False:
+        for name, infos in sorted(self.propertyInfo.items()):
+            # Only extensions here (all items in array are the same)
+            if infos[0]['isExtension'] == False:
                 continue
-            # Need to string replace property string to create valid C++ logic
-            logic = info['logic'].replace('::', '.')
-            logic = logic.replace(info['struct'], self.propertyMap[info['struct']])
 
+            # use triple-tick syntax to keep tab alignment for generated code
             output += '''
-                        case spv::Capability{}:
-                            has_support = ({});
-                            break;'''.format(name, logic)
+                    case spv::Capability{}:'''.format(name)
+            for info in infos:
+                # Need to string replace property string to create valid C++ logic
+                logic = info['logic'].replace('::', '.')
+                logic = logic.replace(info['struct'], self.propertyMap[info['struct']])
+                output += '''
+                    has_support |= ({});'''.format(logic)
+            output += '''
+                    break;'''
 
         output += '''
+                    default:
+                        break;
                 }
             }
         }
