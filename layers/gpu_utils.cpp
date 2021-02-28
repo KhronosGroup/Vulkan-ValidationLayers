@@ -503,7 +503,7 @@ void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint
     uint32_t reported_line_number = 0;
     uint32_t reported_column_number = 0;
     if (shader.words.size() > 0) {
-        for (auto insn : shader) {
+        for (const auto &insn : shader) {
             if (insn.opcode() == spv::OpLine) {
                 reported_file_id = insn.word(1);
                 reported_line_number = insn.word(2);
@@ -528,7 +528,7 @@ void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint
         } else {
             prefix = "Shader validation error occurred ";
         }
-        for (auto insn : shader) {
+        for (const auto &insn : shader) {
             if ((insn.opcode() == spv::OpString) && (insn.len() >= 3) && (insn.word(1) == reported_file_id)) {
                 found_opstring = true;
                 reported_filename = (char *)&insn.word(2);

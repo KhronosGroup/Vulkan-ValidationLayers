@@ -433,8 +433,8 @@ class CoreChecks : public ValidationStateTracker {
                            const char* caller, const DrawDispatchVuid& vuids) const;
     bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets,
-                                          std::pair<const uint32_t, DescriptorRequirement>& binding_info, VkFramebuffer framebuffer,
-                                          const std::vector<IMAGE_VIEW_STATE*>* attachments,
+                                          const std::pair<const uint32_t, DescriptorRequirement>& binding_info,
+                                          VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*>* attachments,
                                           const std::vector<SUBPASS_INFO>& subpasses, bool record_time_validate, const char* caller,
                                           const DrawDispatchVuid& vuids) const;
 

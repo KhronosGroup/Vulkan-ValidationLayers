@@ -1294,7 +1294,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
         }
 
         // Validate vertex inputs
-        for (const auto desc : pipeline->vertex_binding_descriptions_) {
+        for (const auto &desc : pipeline->vertex_binding_descriptions_) {
             if ((desc.stride < phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) ||
                 ((desc.stride % phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment) != 0)) {
                 skip |= LogError(
@@ -1307,7 +1307,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
 
         // Validate vertex attributes
         if (VK_FALSE == enabled_features.portability_subset_features.vertexAttributeAccessBeyondStride) {
-            for (const auto attrib : pipeline->vertex_attribute_descriptions_) {
+            for (const auto &attrib : pipeline->vertex_attribute_descriptions_) {
                 const auto vertex_binding_map_it = pipeline->vertex_binding_to_index_map_.find(attrib.binding);
                 if (vertex_binding_map_it != pipeline->vertex_binding_to_index_map_.cend()) {
                     const auto desc = pipeline->vertex_binding_descriptions_[vertex_binding_map_it->second];
@@ -2172,7 +2172,7 @@ static char const *GetCauseStr(VulkanTypedHandle obj) {
 
 bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, const char *call_source) const {
     bool skip = false;
-    for (auto obj : cb_state->broken_bindings) {
+    for (const auto &obj : cb_state->broken_bindings) {
         const char *cause_str = GetCauseStr(obj);
         string vuid;
         std::ostringstream str;
@@ -2771,7 +2771,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
         skip |= LogError(pCB->commandBuffer, vuid, "%s Command buffer %s must be allocated with VK_COMMAND_BUFFER_LEVEL_PRIMARY.",
                          loc.Message().c_str(), report_data->FormatHandle(pCB->commandBuffer).c_str());
     } else {
-        for (auto sub_cb : pCB->linkedCommandBuffers) {
+        for (const auto *sub_cb : pCB->linkedCommandBuffers) {
             skip |= ValidateQueuedQFOTransfers(sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards);
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((sub_cb->primaryCommandBuffer != pCB->commandBuffer) &&
@@ -2833,7 +2833,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBState(submit->pCommandBuffers[i]);
             if (cb_node) {
-                for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+                for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(secondary_cmd_buffer);
                     RecordQueuedQFOTransfers(secondary_cmd_buffer);
                 }
@@ -2855,7 +2855,7 @@ void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
             auto cb_node = GetCBState(submit->pCommandBufferInfos[i].commandBuffer);
             if (cb_node) {
-                for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
+                for (auto *secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                     UpdateCmdBufImageLayouts(secondaryCmdBuffer);
                     RecordQueuedQFOTransfers(secondaryCmdBuffer);
                 }
@@ -3121,16 +3121,16 @@ struct CommandBufferSubmitState {
                                                         &qfo_image_scoreboards, &qfo_buffer_scoreboards);
         skip |= core->ValidateQueueFamilyIndices(loc, cb_node, queue_state->queue);
 
-        for (auto descriptor_set : cb_node->validate_descriptorsets_in_queuesubmit) {
+        for (const auto &descriptor_set : cb_node->validate_descriptorsets_in_queuesubmit) {
             const cvdescriptorset::DescriptorSet *set_node = core->GetSetNode(descriptor_set.first);
             if (!set_node) {
                 continue;
             }
-            for (auto cmd_info : descriptor_set.second) {
+            for (const auto &cmd_info : descriptor_set.second) {
                 std::string function = loc.StringFuncName();
                 function += ", ";
                 function += cmd_info.function;
-                for (auto binding_info : cmd_info.binding_infos) {
+                for (const auto &binding_info : cmd_info.binding_infos) {
                     std::string error;
                     std::vector<uint32_t> dynamic_offsets;
                     // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
@@ -5313,7 +5313,7 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
     std::valarray<uint32_t> max_sum(0U, DSL_NUM_DESCRIPTOR_GROUPS);  // max descriptor sum among all pipeline stages
     for (auto stage : stage_flags) {
         std::valarray<uint32_t> stage_sum(0U, DSL_NUM_DESCRIPTOR_GROUPS);  // per-stage sums
-        for (auto dsl : set_layouts) {
+        for (const auto &dsl : set_layouts) {
             if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
                 continue;
             }
@@ -5372,7 +5372,7 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
 std::map<uint32_t, uint32_t> GetDescriptorSum(
     const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
     std::map<uint32_t, uint32_t> sum_by_type;
-    for (auto dsl : set_layouts) {
+    for (const auto &dsl : set_layouts) {
         if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
             continue;
         }
@@ -5799,7 +5799,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     if (device_extensions.vk_ext_fragment_density_map_2) {
         uint32_t sum_subsampled_samplers = 0;
-        for (auto dsl : set_layouts) {
+        for (const auto &dsl : set_layouts) {
             // find the number of subsampled samplers across all stages
             // NOTE: this does not use the GetDescriptorSum patter because it needs the GetSamplerState method
             if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
@@ -5844,7 +5844,7 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     bool skip = false;
     const DESCRIPTOR_POOL_STATE *pool = GetDescriptorPoolState(descriptorPool);
     if (pool != nullptr) {
-        for (auto ds : pool->sets) {
+        for (auto *ds : pool->sets) {
             if (ds && ds->in_use.load()) {
                 skip |= LogError(descriptorPool, "VUID-vkResetDescriptorPool-descriptorPool-00313",
                                  "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer.");
@@ -6004,7 +6004,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
     }
 
     skip |= ValidateCmd(cb_state, CMD_ENDCOMMANDBUFFER, "vkEndCommandBuffer()");
-    for (auto query : cb_state->activeQueries) {
+    for (const auto &query : cb_state->activeQueries) {
         skip |= LogError(commandBuffer, "VUID-vkEndCommandBuffer-commandBuffer-00061",
                          "vkEndCommandBuffer(): Ending command buffer with in progress query: %s, query %d.",
                          report_data->FormatHandle(query.pool).c_str(), query.query);
@@ -7878,7 +7878,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
 
     // Check for nexted queries
     if (cb_state->activeQueries.size()) {
-        for (auto a_query : cb_state->activeQueries) {
+        for (const auto &a_query : cb_state->activeQueries) {
             auto active_query_pool_state = GetQueryPoolState(a_query.pool);
             if (active_query_pool_state->createInfo.queryType == query_pool_ci.queryType) {
                 LogObjectList obj_list(cb_state->commandBuffer);
@@ -11209,7 +11209,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
     bool skip = false;
     unordered_set<int> active_types;
     if (!disabled[query_validation]) {
-        for (auto query_object : pCB->activeQueries) {
+        for (const auto &query_object : pCB->activeQueries) {
             auto query_pool_state = GetQueryPoolState(query_object.pool);
             if (query_pool_state) {
                 if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
@@ -11229,7 +11229,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
                 active_types.insert(query_pool_state->createInfo.queryType);
             }
         }
-        for (auto query_object : pSubCB->startedQueries) {
+        for (const auto &query_object : pSubCB->startedQueries) {
             auto query_pool_state = GetQueryPoolState(query_object.pool);
             if (query_pool_state && active_types.count(query_pool_state->createInfo.queryType)) {
                 LogObjectList objlist(pCB->commandBuffer);
@@ -12527,7 +12527,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         bool found_format = false;
         bool found_color_space = false;
         bool found_match = false;
-        for (auto const &format : *surface_formats_ref) {
+        for (const auto &format : *surface_formats_ref) {
             if (pCreateInfo->imageFormat == format.format) {
                 // Validate pCreateInfo->imageColorSpace against VkSurfaceFormatKHR::colorSpace:
                 found_format = true;
