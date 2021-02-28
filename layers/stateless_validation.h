@@ -585,7 +585,7 @@ class StatelessValidation : public ValidationObject {
 
                         // Search custom stype list -- if sType found, skip this entirely
                         bool custom = false;
-                        for (auto item : custom_stype_info) {
+                        for (const auto &item : custom_stype_info) {
                             if (item.first == current->sType) {
                                 custom = true;
                                 break;

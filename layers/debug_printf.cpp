@@ -145,7 +145,7 @@ void DebugPrintf::ResetCommandBuffer(VkCommandBuffer commandBuffer) {
         return;
     }
     auto debug_printf_buffer_list = GetBufferInfo(commandBuffer);
-    for (auto buffer_info : debug_printf_buffer_list) {
+    for (const auto &buffer_info : debug_printf_buffer_list) {
         vmaDestroyBuffer(vmaAllocator, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
         if (buffer_info.desc_set != VK_NULL_HANDLE) {
             desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
@@ -457,7 +457,7 @@ std::string DebugPrintf::FindFormatString(std::vector<unsigned int> pgm, uint32_
     SHADER_MODULE_STATE shader;
     shader.words = pgm;
     if (shader.words.size() > 0) {
-        for (auto insn : shader) {
+        for (const auto &insn : shader) {
             if (insn.opcode() == spv::OpString) {
                 uint32_t offset = insn.offset();
                 if (pgm[offset + 1] == string_id) {
@@ -624,7 +624,7 @@ bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     if (GetBufferInfo(cb_node->commandBuffer).size()) {
         buffers_present = true;
     }
-    for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
+    for (const auto *secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
         if (GetBufferInfo(secondaryCmdBuffer->commandBuffer).size()) {
             buffers_present = true;
         }
@@ -635,7 +635,7 @@ bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
 void DebugPrintf::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
     auto cb_node = GetCBState(command_buffer);
     UtilProcessInstrumentationBuffer(queue, cb_node, this);
-    for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+    for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
     }
 }

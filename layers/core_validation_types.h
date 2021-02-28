@@ -364,7 +364,7 @@ class BINDABLE : public BASE_NODE {
         if (!sparse) {
             if (binding.mem_state) bound_memory_set_.insert(binding.mem_state.get());
         } else {
-            for (auto sb : sparse_bindings) {
+            for (const auto &sb : sparse_bindings) {
                 bound_memory_set_.insert(sb.mem_state.get());
             }
         }

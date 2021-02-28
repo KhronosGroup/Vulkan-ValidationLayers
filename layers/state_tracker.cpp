@@ -476,7 +476,7 @@ void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage 
     const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     InvalidateCommandBuffers(image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
-    for (auto mem_binding : image_state->GetBoundMemory()) {
+    for (auto *mem_binding : image_state->GetBoundMemory()) {
         RemoveImageMemoryRange(image, mem_binding);
     }
     if (image_state->bind_swapchain) {
@@ -717,7 +717,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
     const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
 
     InvalidateCommandBuffers(buffer_state->cb_bindings, obj_struct);
-    for (auto mem_binding : buffer_state->GetBoundMemory()) {
+    for (auto *mem_binding : buffer_state->GetBoundMemory()) {
         RemoveBufferMemoryRange(buffer, mem_binding);
     }
     ClearMemoryObjectBindings(obj_struct);
@@ -1005,7 +1005,7 @@ void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_n
         if (AddCommandBufferBinding(image_state->cb_bindings,
                                     VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage, image_state), cb_node)) {
             // Now update CB binding in MemObj mini CB list
-            for (auto mem_binding : image_state->GetBoundMemory()) {
+            for (auto *mem_binding : image_state->GetBoundMemory()) {
                 // Now update CBInfo's Mem reference list
                 AddCommandBufferBinding(mem_binding->cb_bindings,
                                         VulkanTypedHandle(mem_binding->mem, kVulkanObjectTypeDeviceMemory, mem_binding), cb_node);
@@ -1040,7 +1040,7 @@ void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_
     if (AddCommandBufferBinding(buffer_state->cb_bindings,
                                 VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer, buffer_state), cb_node)) {
         // Now update CB binding in MemObj mini CB list
-        for (auto mem_binding : buffer_state->GetBoundMemory()) {
+        for (auto *mem_binding : buffer_state->GetBoundMemory()) {
             // Now update CBInfo's Mem reference list
             AddCommandBufferBinding(mem_binding->cb_bindings,
                                     VulkanTypedHandle(mem_binding->mem, kVulkanObjectTypeDeviceMemory, mem_binding), cb_node);
@@ -1074,7 +1074,7 @@ void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BU
             as_state->cb_bindings,
             VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureNV, as_state), cb_node)) {
         // Now update CB binding in MemObj mini CB list
-        for (auto mem_binding : as_state->GetBoundMemory()) {
+        for (auto *mem_binding : as_state->GetBoundMemory()) {
             // Now update CBInfo's Mem reference list
             AddCommandBufferBinding(mem_binding->cb_bindings,
                                     VulkanTypedHandle(mem_binding->mem, kVulkanObjectTypeDeviceMemory, mem_binding), cb_node);
@@ -1092,7 +1092,7 @@ void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BU
             as_state->cb_bindings,
             VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureKHR, as_state), cb_node)) {
         // Now update CB binding in MemObj mini CB list
-        for (auto mem_binding : as_state->GetBoundMemory()) {
+        for (auto *mem_binding : as_state->GetBoundMemory()) {
             // Now update CBInfo's Mem reference list
             AddCommandBufferBinding(mem_binding->cb_bindings,
                                     VulkanTypedHandle(mem_binding->mem, kVulkanObjectTypeDeviceMemory, mem_binding), cb_node);
@@ -1268,7 +1268,7 @@ void ValidationStateTracker::FreeDescriptorSet(cvdescriptorset::DescriptorSet *d
 void ValidationStateTracker::DeleteDescriptorSetPools() {
     for (auto ii = descriptorPoolMap.begin(); ii != descriptorPoolMap.end();) {
         // Remove this pools' sets from setMap and delete them
-        for (auto ds : ii->second->sets) {
+        for (auto *ds : ii->second->sets) {
             FreeDescriptorSet(ds);
         }
         ii->second->sets.clear();
@@ -1481,7 +1481,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         }
 
         // Remove reverse command buffer links.
-        for (auto sub_cb : cb_state->linkedCommandBuffers) {
+        for (auto *sub_cb : cb_state->linkedCommandBuffers) {
             sub_cb->linkedCommandBuffers.erase(cb_state);
         }
         cb_state->linkedCommandBuffers.clear();
@@ -1496,7 +1496,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         }
         cb_state->object_bindings.clear();
         // Remove this cmdBuffer's reference from each FrameBuffer's CB ref list
-        for (auto framebuffer : cb_state->framebuffers) {
+        for (auto &framebuffer : cb_state->framebuffers) {
             framebuffer->cb_bindings.erase(cb_state);
         }
         cb_state->framebuffers.clear();
@@ -2160,7 +2160,7 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
 
 // Loop through bound objects and increment their in_use counts.
 void ValidationStateTracker::IncrementBoundObjects(CMD_BUFFER_STATE const *cb_node) {
-    for (auto obj : cb_node->object_bindings) {
+    for (const auto &obj : cb_node->object_bindings) {
         auto base_obj = GetStateStructPtrFromObject(obj);
         if (base_obj) {
             base_obj->in_use.fetch_add(1);
@@ -2187,7 +2187,7 @@ void ValidationStateTracker::IncrementResources(CMD_BUFFER_STATE *cb_node) {
 // Decrement in-use count for objects bound to command buffer
 void ValidationStateTracker::DecrementBoundResources(CMD_BUFFER_STATE const *cb_node) {
     BASE_NODE *base_obj = nullptr;
-    for (auto obj : cb_node->object_bindings) {
+    for (const auto &obj : cb_node->object_bindings) {
         base_obj = GetStateStructPtrFromObject(obj);
         if (base_obj) {
             base_obj->in_use.fetch_sub(1);
@@ -2253,7 +2253,7 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
                 function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &local_query_to_state_map);
             }
 
-            for (auto query_state_pair : local_query_to_state_map) {
+            for (const auto &query_state_pair : local_query_to_state_map) {
                 if (query_state_pair.second == QUERYSTATE_ENDED) {
                     queryToStateMap[query_state_pair.first] = QUERYSTATE_AVAILABLE;
                 }
@@ -2271,10 +2271,10 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
     }
 
     // Roll other queues forward to the highest seq we saw a wait for
-    for (auto qs : other_queue_seqs) {
+    for (const auto &qs : other_queue_seqs) {
         RetireWorkOnQueue(GetQueueState(qs.first), qs.second);
     }
-    for (auto sc : timeline_semaphore_counters) {
+    for (const auto &sc : timeline_semaphore_counters) {
         RetireTimelineSemaphore(sc.first, sc.second);
     }
 }
@@ -2314,7 +2314,7 @@ void ValidationStateTracker::RecordSubmitCommandBuffer(CB_SUBMISSION &submission
     auto cb_node = GetCBState(command_buffer);
     if (cb_node) {
         submission.cbs.push_back(command_buffer);
-        for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+        for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
             submission.cbs.push_back(secondary_cmd_buffer->commandBuffer);
             IncrementResources(secondary_cmd_buffer);
         }
@@ -2327,15 +2327,15 @@ void ValidationStateTracker::RecordSubmitCommandBuffer(CB_SUBMISSION &submission
             function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &local_query_to_state_map);
         }
 
-        for (auto query_state_pair : local_query_to_state_map) {
+        for (const auto &query_state_pair : local_query_to_state_map) {
             queryToStateMap[query_state_pair.first] = query_state_pair.second;
         }
 
-        for (auto &function : cb_node->eventUpdates) {
+        for (const auto &function : cb_node->eventUpdates) {
             function(nullptr, /*do_validate*/ false, &local_event_to_stage_map);
         }
 
-        for (auto eventStagePair : local_event_to_stage_map) {
+        for (const auto &eventStagePair : local_event_to_stage_map) {
             eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
         }
     }
@@ -3056,7 +3056,7 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device,
         // Any bound cmd buffers are now invalid
         InvalidateCommandBuffers(desc_pool_state->cb_bindings, obj_struct);
         // Free sets that were in this pool
-        for (auto ds : desc_pool_state->sets) {
+        for (auto *ds : desc_pool_state->sets) {
             FreeDescriptorSet(ds);
         }
         desc_pool_state->destroyed = true;
@@ -3219,7 +3219,7 @@ void ValidationStateTracker::InvalidateCommandBuffers(small_unordered_map<CMD_BU
 
 void ValidationStateTracker::InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> &cb_nodes,
                                                             const VulkanTypedHandle &obj) {
-    for (auto cb_node : cb_nodes) {
+    for (auto *cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
             cb_node->state = CB_INVALID_INCOMPLETE;
         } else if (cb_node->state == CB_RECORDED) {
@@ -3439,7 +3439,7 @@ PushConstantRangesId GetCanonicalId(const VkPipelineLayoutCreateInfo *info) {
 
     PushConstantRanges ranges;
     ranges.reserve(sorted.size());
-    for (const auto range : sorted) {
+    for (const auto *range : sorted) {
         ranges.emplace_back(*range);
     }
     return push_constant_ranges_dict.look_up(std::move(ranges));
@@ -3496,7 +3496,7 @@ void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, 
     DESCRIPTOR_POOL_STATE *pool = GetDescriptorPoolState(descriptorPool);
     // TODO: validate flags
     // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
-    for (auto ds : pool->sets) {
+    for (auto *ds : pool->sets) {
         FreeDescriptorSet(ds);
     }
     pool->sets.clear();
@@ -3711,7 +3711,7 @@ void ValidationStateTracker::PostCallRecordEndCommandBuffer(VkCommandBuffer comm
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return;
     // Cached validation is specific to a specific recording of a specific command buffer.
-    for (auto descriptor_set : cb_state->validated_descriptor_sets) {
+    for (auto *descriptor_set : cb_state->validated_descriptor_sets) {
         descriptor_set->ClearCachedValidation(cb_state);
     }
     cb_state->validated_descriptor_sets.clear();
@@ -4034,7 +4034,7 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureKHR(VkDevi
     if (as_state) {
         const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureKHR);
         InvalidateCommandBuffers(as_state->cb_bindings, obj_struct);
-        for (auto mem_binding : as_state->GetBoundMemory()) {
+        for (auto *mem_binding : as_state->GetBoundMemory()) {
             RemoveMemoryRange(obj_struct, mem_binding);
         }
         ClearMemoryObjectBindings(obj_struct);
@@ -4051,7 +4051,7 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevic
     if (as_state) {
         const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
         InvalidateCommandBuffers(as_state->cb_bindings, obj_struct);
-        for (auto mem_binding : as_state->GetBoundMemory()) {
+        for (auto *mem_binding : as_state->GetBoundMemory()) {
             RemoveMemoryRange(obj_struct, mem_binding);
         }
         ClearMemoryObjectBindings(obj_struct);
@@ -6247,7 +6247,7 @@ void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CM
         cb_state->push_constant_data.clear();
         cb_state->push_constant_data_update.clear();
         uint32_t size_needed = 0;
-        for (auto push_constant_range : *cb_state->push_constant_data_ranges) {
+        for (const auto &push_constant_range : *cb_state->push_constant_data_ranges) {
             auto size = push_constant_range.offset + push_constant_range.size;
             size_needed = std::max(size_needed, size);
 

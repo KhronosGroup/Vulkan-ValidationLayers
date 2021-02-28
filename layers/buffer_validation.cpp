@@ -489,7 +489,7 @@ bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts)
         return false;
     }
 
-    for (auto entry : *layout_range_map) {
+    for (const auto &entry : *layout_range_map) {
         layouts.push_back(entry.second);
     }
     return true;

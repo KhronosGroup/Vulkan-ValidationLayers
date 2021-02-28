@@ -87,7 +87,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
     bindings_.reserve(binding_count_);
     binding_flags_.reserve(binding_count_);
     binding_to_index_map_.reserve(binding_count_);
-    for (auto input_binding : sorted_bindings) {
+    for (const auto &input_binding : sorted_bindings) {
         // Add to binding and map, s.t. it is robust to invalid duplication of binding_num
         const auto binding_num = input_binding.layout_binding->binding;
         binding_to_index_map_[binding_num] = index++;
@@ -576,9 +576,6 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
 
 void cvdescriptorset::AllocateDescriptorSetsData::Init(uint32_t count) {
     layout_nodes.resize(count);
-    for (auto node : layout_nodes) {
-        node = nullptr;
-    }
 }
 
 cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool_state,
@@ -708,8 +705,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
                                    const char *caller, const DrawDispatchVuid &vuids) const {
     bool result = false;
     VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer : VK_NULL_HANDLE;
-    for (auto binding_pair : bindings) {
-        auto binding = binding_pair.first;
+    for (const auto &binding_pair : bindings) {
+        const auto binding = binding_pair.first;
         DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
         if (binding_it.AtEnd()) {  //  End at construction is the condition for an invalid binding.
             auto set = descriptor_set->GetSet();
@@ -736,7 +733,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
 
 bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
                                                   const std::vector<uint32_t> &dynamic_offsets,
-                                                  std::pair<const uint32_t, DescriptorRequirement> &binding_info,
+                                                  const std::pair<const uint32_t, DescriptorRequirement> &binding_info,
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
                                                   const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
                                                   const char *caller, const DrawDispatchVuid &vuids) const {
@@ -792,7 +789,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     }
                     if (buffer) {
                         if (!buffer_node->sparse) {
-                            for (auto mem_binding : buffer_node->GetBoundMemory()) {
+                            for (const auto *mem_binding : buffer_node->GetBoundMemory()) {
                                 if (mem_binding->destroyed) {
                                     auto set = descriptor_set->GetSet();
                                     return LogError(set, vuids.descriptor_valid,
@@ -931,7 +928,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                 report_data->FormatHandle(set).c_str(), caller, binding, index);
                         }
 
-                        const VkDescriptorType descriptor_type = descriptor_set->GetTypeFromBinding(binding);
+                        const VkDescriptorType descriptor_type = binding_it.GetType();
 
                         // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
                         if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
@@ -1314,7 +1311,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                     report_data->FormatHandle(acc).c_str());
                             }
                         } else {
-                            for (auto mem_binding : acc_node->GetBoundMemory()) {
+                            for (const auto *mem_binding : acc_node->GetBoundMemory()) {
                                 if (mem_binding->destroyed) {
                                     auto set = descriptor_set->GetSet();
                                     return LogError(set, vuids.descriptor_valid,
@@ -1342,7 +1339,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                     report_data->FormatHandle(acc).c_str());
                             }
                         } else {
-                            for (auto mem_binding : acc_node->GetBoundMemory()) {
+                            for (const auto *mem_binding : acc_node->GetBoundMemory()) {
                                 if (mem_binding->destroyed) {
                                     auto set = descriptor_set->GetSet();
                                     return LogError(set, vuids.descriptor_valid,
@@ -1725,7 +1722,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
     CMD_BUFFER_STATE::CmdDrawDispatchInfo cmd_info = {};
-    for (auto binding_req_pair : binding_req_map) {
+    for (const auto &binding_req_pair : binding_req_map) {
         auto index = layout_->GetIndexFromBinding(binding_req_pair.first);
 
         // We aren't validating descriptors created with PARTIALLY_BOUND or UPDATE_AFTER_BIND, so don't record state

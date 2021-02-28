@@ -1010,7 +1010,7 @@ void GpuAssisted::ResetCommandBuffer(VkCommandBuffer commandBuffer) {
         return;
     }
     auto gpuav_buffer_list = GetBufferInfo(commandBuffer);
-    for (auto buffer_info : gpuav_buffer_list) {
+    for (const auto &buffer_info : gpuav_buffer_list) {
         vmaDestroyBuffer(vmaAllocator, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
         if (buffer_info.di_input_mem_block.buffer) {
             vmaDestroyBuffer(vmaAllocator, buffer_info.di_input_mem_block.buffer, buffer_info.di_input_mem_block.allocation);
@@ -1418,7 +1418,7 @@ void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
             VkResult result =
                 vmaMapMemory(vmaAllocator, buffer_info.di_input_mem_block.allocation, reinterpret_cast<void **>(&data));
             if (result == VK_SUCCESS) {
-                for (auto update : buffer_info.di_input_mem_block.update_at_submit) {
+                for (const auto &update : buffer_info.di_input_mem_block.update_at_submit) {
                     if (update.second->updated) {
                         SetDescriptorInitialized(data, update.first, update.second);
                     }
@@ -1432,7 +1432,7 @@ void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
 void GpuAssisted::PreRecordCommandBuffer(VkCommandBuffer command_buffer) {
     auto cb_node = GetCBState(command_buffer);
     UpdateInstrumentationBuffer(cb_node);
-    for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+    for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         UpdateInstrumentationBuffer(secondary_cmd_buffer);
     }
 }
@@ -1462,7 +1462,7 @@ bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     if (GetBufferInfo(cb_node->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) {
         buffers_present = true;
     }
-    for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+    for (const auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         if (GetBufferInfo(secondary_cmd_buffer->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) {
             buffers_present = true;
         }
@@ -1475,7 +1475,7 @@ void GpuAssisted::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_bu
 
     UtilProcessInstrumentationBuffer(queue, cb_node, this);
     ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
-    for (auto secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+    for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
         UtilProcessInstrumentationBuffer(queue, secondary_cmd_buffer, this);
         ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
     }
@@ -1764,7 +1764,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     if (number_of_sets > 0 && (descriptor_indexing || buffer_oob_enabled)) {
         uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
         uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
-        for (auto s : state.per_set) {
+        for (const auto &s : state.per_set) {
             auto desc = s.bound_descriptor_set;
             if (desc && (desc->GetBindingCount() > 0)) {
                 auto bindings = desc->GetLayout()->GetSortedBindingSet();
@@ -1839,7 +1839,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                 // Index of the start of the sets_to_bindings array
                 data_ptr[0] = number_of_sets + binding_count + 1;
 
-                for (auto s : state.per_set) {
+                for (const auto &s : state.per_set) {
                     auto desc = s.bound_descriptor_set;
                     if (desc && (desc->GetBindingCount() > 0)) {
                         auto layout = desc->GetLayout();
@@ -1905,7 +1905,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                 uint32_t bind_counter = number_of_sets + 1;
                 data_ptr[0] = 1;
 
-                for (auto s : state.per_set) {
+                for (const auto &s : state.per_set) {
                     auto desc = s.bound_descriptor_set;
                     if (desc && (desc->GetBindingCount() > 0)) {
                         auto layout = desc->GetLayout();
@@ -1995,7 +1995,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         bda_data[address_index++] = 0;  // NULL address
         bda_data[size_index++] = 0;
 
-        for (auto const &value : buffer_map) {
+        for (const auto &value : buffer_map) {
             bda_data[address_index++] = value.first;
             bda_data[size_index++] = value.second;
         }

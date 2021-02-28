@@ -1,6 +1,6 @@
-/* Copyright (c) 2020 The Khronos Group Inc.
- * Copyright (c) 2020 Valve Corporation
- * Copyright (c) 2020 LunarG, Inc.
+/* Copyright (c) 2020-2021 The Khronos Group Inc.
+ * Copyright (c) 2020-2021 Valve Corporation
+ * Copyright (c) 2020-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ void SetCustomStypeInfo(std::string raw_id_list, std::string delimiter) {
         if ((stype_id != 0) && (struct_size_in_bytes != 0)) {
             bool found = false;
             // Prevent duplicate entries
-            for (auto item : custom_stype_info) {
+            for (const auto &item : custom_stype_info) {
                 if (item.first == stype_id) {
                     found = true;
                     break;
@@ -326,7 +326,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                         auto struct_size = cur_setting.data.arrayInt32.pInt32Array[(j * 2) + 1];
                         bool found = false;
                         // Prevent duplicate entries
-                        for (auto item : custom_stype_info) {
+                        for (const auto &item : custom_stype_info) {
                             if (item.first == stype_id) {
                                 found = true;
                                 break;
