@@ -9609,6 +9609,166 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
     vk::DestroySampler(device(), sampler, nullptr);
 }
 
+TEST_F(VkLayerTest, ShaderFloatControl) {
+    TEST_DESCRIPTION("Test VK_KHR_float_controls");
+
+    // Need 1.1 to get SPIR-V 1.3 since OpExecutionModeId was added in SPIR-V 1.2
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // The issue with revision 4 of this extension should not be an issue with the tests
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+
+    auto shader_float_control = LvlInitStruct<VkPhysicalDeviceFloatControlsProperties>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&shader_float_control);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    // Check for support of 32-bit properties, but only will test if they are not supported
+    // in case all 16/32/64 version are not supported will set SetUnexpectedError for capability check
+    bool signed_zero_inf_nan_preserve = (shader_float_control.shaderSignedZeroInfNanPreserveFloat32 == VK_TRUE);
+    bool denorm_preserve = (shader_float_control.shaderDenormPreserveFloat32 == VK_TRUE);
+    bool denorm_flush_to_zero = (shader_float_control.shaderDenormFlushToZeroFloat32 == VK_TRUE);
+    bool rounding_mode_rte = (shader_float_control.shaderRoundingModeRTEFloat32 == VK_TRUE);
+    bool rounding_mode_rtz = (shader_float_control.shaderRoundingModeRTZFloat32 == VK_TRUE);
+
+    // same body for each shader, only the start is different
+    // this is just "float a = 1.0 + 2.0;" in SPIR-V
+    const std::string source_body = R"(
+             OpExecutionMode %main LocalSize 1 1 1
+             OpSource GLSL 450
+             OpName %main "main"
+     %void = OpTypeVoid
+        %3 = OpTypeFunction %void
+    %float = OpTypeFloat 32
+%pFunction = OpTypePointer Function %float
+  %float_3 = OpConstant %float 3
+     %main = OpFunction %void None %3
+        %5 = OpLabel
+        %6 = OpVariable %pFunction Function
+             OpStore %6 %float_3
+             OpReturn
+             OpFunctionEnd
+)";
+
+    if (!signed_zero_inf_nan_preserve) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability SignedZeroInfNanPreserve
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main SignedZeroInfNanPreserve 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
+        };
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+    }
+
+    if (!denorm_preserve) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability DenormPreserve
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main DenormPreserve 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
+        };
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+    }
+
+    if (!denorm_flush_to_zero) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability DenormFlushToZero
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main DenormFlushToZero 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
+        };
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+    }
+
+    if (!rounding_mode_rte) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability RoundingModeRTE
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main RoundingModeRTE 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
+        };
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+    }
+
+    if (!rounding_mode_rtz) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability RoundingModeRTZ
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main RoundingModeRTZ 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", nullptr, SPV_ENV_VULKAN_1_1));
+        };
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-FeatureNotEnabled");
+    }
+}
+
 TEST_F(VkLayerTest, Storage8and16bit) {
     TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
 
