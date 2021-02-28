@@ -226,6 +226,11 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 break;
             }
 
+            // Execution Mode
+            case spv::OpExecutionMode: {
+                execution_mode_inst[insn.word(1)].push_back(insn);
+            } break;
+
             default:
                 // We don't care about any other defs for now.
                 break;
@@ -2893,8 +2898,9 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
     uint32_t vertices_out = 0;
     uint32_t invocations = 0;
 
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpExecutionMode && insn.word(1) == entrypoint_id) {
+    auto it = src->execution_mode_inst.find(entrypoint_id);
+    if (it != src->execution_mode_inst.end()) {
+        for (auto insn : it->second) {
             auto mode = insn.word(2);
             switch (mode) {
                 case spv::ExecutionModeSignedZeroInfNanPreserve: {
@@ -3200,22 +3206,23 @@ int32_t GetShaderResourceDimensionality(const SHADER_MODULE_STATE *module, const
     }
 }
 
-bool FindLocalSize(SHADER_MODULE_STATE const *src, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) {
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpEntryPoint) {
-            auto execution_model = insn.word(1);
-            auto entrypoint_stage_bits = ExecutionModelToShaderStageFlagBits(execution_model);
-            if (entrypoint_stage_bits == VK_SHADER_STAGE_COMPUTE_BIT) {
-                auto entrypoint_id = insn.word(2);
-                for (auto insn1 : *src) {
-                    if (insn1.opcode() == spv::OpExecutionMode && insn1.word(1) == entrypoint_id &&
-                        insn1.word(2) == spv::ExecutionModeLocalSize) {
-                        local_size_x = insn1.word(3);
-                        local_size_y = insn1.word(4);
-                        local_size_z = insn1.word(5);
-                        return true;
-                    }
-                }
+// Because the following is legal, need the entry point
+//    OpEntryPoint GLCompute %main "name_a"
+//    OpEntryPoint GLCompute %main "name_b"
+bool FindLocalSize(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, uint32_t &local_size_x,
+                   uint32_t &local_size_y, uint32_t &local_size_z) {
+    auto entrypoint_id = entrypoint.word(2);
+    auto it = src->execution_mode_inst.find(entrypoint_id);
+    if (it != src->execution_mode_inst.end()) {
+        for (auto insn : it->second) {
+            // Future Note: For now, Vulkan doesn't have a valid mode that can makes use of OpExecutionModeId
+            // In the future if something like LocalSizeId is supported, the <id> will need to be checked also
+            assert(insn.opcode() == spv::OpExecutionMode);
+            if (insn.word(2) == spv::ExecutionModeLocalSize) {
+                local_size_x = insn.word(3);
+                local_size_y = insn.word(4);
+                local_size_z = insn.word(5);
+                return true;
             }
         }
     }
@@ -3226,8 +3233,9 @@ void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter
     auto entrypoint_id = entrypoint.word(2);
     bool is_point_mode = false;
 
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpExecutionMode && insn.word(1) == entrypoint_id) {
+    auto it = src->execution_mode_inst.find(entrypoint_id);
+    if (it != src->execution_mode_inst.end()) {
+        for (auto insn : it->second) {
             switch (insn.word(2)) {
                 case spv::ExecutionModePointMode:
                     // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
@@ -3570,7 +3578,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         }
     }
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
-        skip |= ValidateComputeWorkGroupSizes(module);
+        skip |= ValidateComputeWorkGroupSizes(module, entrypoint);
     }
     return skip;
 }
@@ -4051,12 +4059,12 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     return skip;
 }
 
-bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader) const {
+bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader, const spirv_inst_iter &entrypoint) const {
     bool skip = false;
     uint32_t local_size_x = 0;
     uint32_t local_size_y = 0;
     uint32_t local_size_z = 0;
-    if (FindLocalSize(shader, local_size_x, local_size_y, local_size_z)) {
+    if (FindLocalSize(shader, entrypoint, local_size_x, local_size_y, local_size_z)) {
         if (local_size_x > phys_dev_props.limits.maxComputeWorkGroupSize[0]) {
             skip |= LogError(shader->vk_shader_module, "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
                              "%s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",

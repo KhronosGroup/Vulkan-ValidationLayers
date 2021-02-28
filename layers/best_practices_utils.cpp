@@ -945,9 +945,12 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const {
     bool skip = false;
     auto* module = GetShaderModuleState(createInfo.stage.module);
+    // Generate warnings about work group sizes based on active resources.
+    auto entrypoint = FindEntrypoint(module, createInfo.stage.pName, createInfo.stage.stage);
+    if (entrypoint == module->end()) return false;
 
     uint32_t x = 1, y = 1, z = 1;
-    FindLocalSize(module, x, y, z);
+    FindLocalSize(module, entrypoint, x, y, z);
 
     uint32_t thread_count = x * y * z;
 
@@ -973,10 +976,6 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       VendorSpecificTag(kBPVendorArm), x, y, z, kThreadGroupDispatchCountAlignmentArm,
                                       kThreadGroupDispatchCountAlignmentArm);
     }
-
-    // Generate warnings about work group sizes based on active resources.
-    auto entrypoint = FindEntrypoint(module, createInfo.stage.pName, createInfo.stage.stage);
-    if (entrypoint == module->end()) return false;
 
     bool has_writeable_descriptors = false;
     bool has_atomic_descriptors = false;
