@@ -5317,7 +5317,7 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
                             (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent-event-03834" : "VUID-vkCmdResetEvent-event-03835";
                         if (ignore_reason == SyncEventState::Reset2WaitRace) {
                             vuid =
-                                (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent-event-03831" : "VUID-vkCmdResetEvent-event-03832";
+                                (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent2KHR-event-03831" : "VUID-vkCmdResetEvent2KHR-event-03832";
                         }
                         const char *const message =
                             "%s: %s %s operation following %s without intervening execution barrier, may cause race condition. %s";
