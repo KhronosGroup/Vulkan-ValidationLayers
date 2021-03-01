@@ -12880,7 +12880,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         if (semaphore_state && !semaphore_state->signaled && !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i])) {
             LogObjectList objlist(queue);
             objlist.add(pPresentInfo->pWaitSemaphores[i]);
-            skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03873",
+            skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
                              "vkQueuePresentKHR: Queue %s is waiting on pWaitSemaphores[%u] (%s) that has no way to be signaled.",
                              report_data->FormatHandle(queue).c_str(), i,
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());

@@ -240,7 +240,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<std::string>> kStage
       "VUID-vkCmdSetEvent-stageMask-04091",
       "VUID-vkCmdWaitEvents-dstStageMask-04091",
       "VUID-vkCmdWaitEvents-srcStageMask-04091",
-      "VUID-vkCmdWriteTimestamp2KHR-pipelineStage-04076",
+      "VUID-vkCmdWriteTimestamp2KHR-pipelineStage-03930",
       "VUID-vkCmdWriteTimestamp-pipelineStage-04076",
       "VUID-VkImageMemoryBarrier2KHR-dstStageMask-03930",
       "VUID-VkImageMemoryBarrier2KHR-srcStageMask-03930",
@@ -585,7 +585,7 @@ const std::string &GetBadAccessFlagsVUID(const CoreErrorLocation &loc, VkAccessF
 }
 
 static const std::vector<std::string> kQueueCapErrors{
-    "VUID-VkSubmitInfo-pWaitDstStageMask-00066",
+    "VUID-vkQueueSubmit-pWaitDstStageMask-00066",
     "VUID-vkCmdBeginRenderPass-srcStageMask-00901",
     "VUID-vkCmdBeginRenderPass-dstStageMask-00901",
     "VUID-vkCmdSetEvent-stageMask-4098",
