@@ -129,6 +129,13 @@ struct function_set {
     function_set() : id(0), offset(0), length(0) {}
 };
 
+struct builtin_set {
+    uint32_t offset;  // offset to instruction (OpDecorate or OpMemberDecorate)
+    spv::BuiltIn builtin;
+
+    builtin_set(uint32_t offset, spv::BuiltIn builtin) : offset(offset), builtin(builtin) {}
+};
+
 struct shader_struct_member {
     uint32_t offset;
     uint32_t size;                                 // A scalar size or a struct size. Not consider array
@@ -194,9 +201,12 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // Find all decoration instructions to prevent relooping module later - many checks need this info
     std::vector<spirv_inst_iter> decoration_inst;
     std::vector<spirv_inst_iter> member_decoration_inst;
-    // Execution are not tied to a entry point and are their own mapping tied to entry point function
-    // <OpEntryPoint function <id> operand> : <Execution Mode Instruction list>
+    // Execution are not tied to an entry point and are their own mapping tied to entry point function
+    // [OpEntryPoint function <id> operand] : [Execution Mode Instruction list]
     std::unordered_map<uint32_t, std::vector<spirv_inst_iter>> execution_mode_inst;
+    // both OpDecorate and OpMemberDecorate builtin instructions
+    std::vector<builtin_set> builtin_decoration_list;
+
     struct EntryPoint {
         uint32_t offset;  // into module to get OpEntryPoint instruction
         VkShaderStageFlagBits stage;
