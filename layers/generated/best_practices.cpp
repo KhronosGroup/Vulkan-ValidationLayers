@@ -2682,6 +2682,24 @@ void BestPractices::PostCallRecordCreateDirectFBSurfaceEXT(
 
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+void BestPractices::PostCallRecordCreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkCreateScreenSurfaceQNX", result, error_codes, success_codes);
+    }
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

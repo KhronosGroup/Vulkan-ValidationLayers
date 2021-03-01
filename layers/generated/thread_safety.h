@@ -4985,6 +4985,22 @@ void PostCallRecordCreateDirectFBSurfaceEXT(
     VkResult                                    result) override;
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+void PreCallRecordCreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) override;
+
+void PostCallRecordCreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface,
+    VkResult                                    result) override;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 void PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

@@ -252,6 +252,14 @@ typedef struct VkLayerInstanceDispatchTable_ {
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT GetPhysicalDeviceDirectFBPresentationSupportEXT;
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
+    // ---- VK_QNX_screen_surface extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    PFN_vkCreateScreenSurfaceQNX CreateScreenSurfaceQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScreenPresentationSupportQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table

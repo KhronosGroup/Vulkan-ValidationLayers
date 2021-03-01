@@ -8392,6 +8392,25 @@ struct safe_VkMutableDescriptorTypeCreateInfoVALVE {
     VkMutableDescriptorTypeCreateInfoVALVE const *ptr() const { return reinterpret_cast<VkMutableDescriptorTypeCreateInfoVALVE const *>(this); }
 };
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+struct safe_VkScreenSurfaceCreateInfoQNX {
+    VkStructureType sType;
+    const void* pNext;
+    VkScreenSurfaceCreateFlagsQNX flags;
+    struct _screen_context* context;
+    struct _screen_window* window;
+    safe_VkScreenSurfaceCreateInfoQNX(const VkScreenSurfaceCreateInfoQNX* in_struct);
+    safe_VkScreenSurfaceCreateInfoQNX(const safe_VkScreenSurfaceCreateInfoQNX& copy_src);
+    safe_VkScreenSurfaceCreateInfoQNX& operator=(const safe_VkScreenSurfaceCreateInfoQNX& copy_src);
+    safe_VkScreenSurfaceCreateInfoQNX();
+    ~safe_VkScreenSurfaceCreateInfoQNX();
+    void initialize(const VkScreenSurfaceCreateInfoQNX* in_struct);
+    void initialize(const safe_VkScreenSurfaceCreateInfoQNX* copy_src);
+    VkScreenSurfaceCreateInfoQNX *ptr() { return reinterpret_cast<VkScreenSurfaceCreateInfoQNX *>(this); }
+    VkScreenSurfaceCreateInfoQNX const *ptr() const { return reinterpret_cast<VkScreenSurfaceCreateInfoQNX const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 union safe_VkDeviceOrHostAddressKHR {
     VkDeviceAddress deviceAddress;
     void* hostAddress;

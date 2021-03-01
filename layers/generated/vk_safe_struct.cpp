@@ -36151,6 +36151,113 @@ void safe_VkMutableDescriptorTypeCreateInfoVALVE::initialize(const safe_VkMutabl
         }
     }
 }
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+
+safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX(const VkScreenSurfaceCreateInfoQNX* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    context(nullptr),
+    window(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->context) {
+        context = new _screen_context(*in_struct->context);
+    }
+    if (in_struct->window) {
+        window = new _screen_window(*in_struct->window);
+    }
+}
+
+safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX() :
+    sType(VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX),
+    pNext(nullptr),
+    context(nullptr),
+    window(nullptr)
+{}
+
+safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX(const safe_VkScreenSurfaceCreateInfoQNX& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.context) {
+        context = new _screen_context(*copy_src.context);
+    }
+    if (copy_src.window) {
+        window = new _screen_window(*copy_src.window);
+    }
+}
+
+safe_VkScreenSurfaceCreateInfoQNX& safe_VkScreenSurfaceCreateInfoQNX::operator=(const safe_VkScreenSurfaceCreateInfoQNX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (context)
+        delete context;
+    if (window)
+        delete window;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.context) {
+        context = new _screen_context(*copy_src.context);
+    }
+    if (copy_src.window) {
+        window = new _screen_window(*copy_src.window);
+    }
+
+    return *this;
+}
+
+safe_VkScreenSurfaceCreateInfoQNX::~safe_VkScreenSurfaceCreateInfoQNX()
+{
+    if (context)
+        delete context;
+    if (window)
+        delete window;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkScreenSurfaceCreateInfoQNX::initialize(const VkScreenSurfaceCreateInfoQNX* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->context) {
+        context = new _screen_context(*in_struct->context);
+    }
+    if (in_struct->window) {
+        window = new _screen_window(*in_struct->window);
+    }
+}
+
+void safe_VkScreenSurfaceCreateInfoQNX::initialize(const safe_VkScreenSurfaceCreateInfoQNX* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->context) {
+        context = new _screen_context(*copy_src->context);
+    }
+    if (copy_src->window) {
+        window = new _screen_window(*copy_src->window);
+    }
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {

@@ -10626,6 +10626,56 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    VkResult result = DispatchCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    struct _screen_window*                      window) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+        if (skip) return VK_FALSE;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+    }
+    VkBool32 result = DispatchGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
@@ -11626,6 +11676,12 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
 #endif
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
     {"vkGetPhysicalDeviceDirectFBPresentationSupportEXT", {kFuncTypePdev, (void*)GetPhysicalDeviceDirectFBPresentationSupportEXT}},
+#endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    {"vkCreateScreenSurfaceQNX", {kFuncTypeInst, (void*)CreateScreenSurfaceQNX}},
+#endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    {"vkGetPhysicalDeviceScreenPresentationSupportQNX", {kFuncTypePdev, (void*)GetPhysicalDeviceScreenPresentationSupportQNX}},
 #endif
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},

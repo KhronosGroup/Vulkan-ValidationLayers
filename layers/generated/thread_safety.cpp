@@ -7375,6 +7375,29 @@ void ThreadSafety::PostCallRecordCreateDirectFBSurfaceEXT(
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+void ThreadSafety::PreCallRecordCreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+    StartReadObjectParentInstance(instance, "vkCreateScreenSurfaceQNX");
+}
+
+void ThreadSafety::PostCallRecordCreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(instance, "vkCreateScreenSurfaceQNX");
+    if (result == VK_SUCCESS) {
+        CreateObjectParentInstance(*pSurface);
+    }
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

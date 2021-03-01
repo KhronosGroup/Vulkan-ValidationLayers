@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 170;
+const uint32_t GeneratedVulkanHeaderVersion = 171;
 
 const DECORATE_UNUSED VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const DECORATE_UNUSED VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -13558,6 +13558,60 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDirectFBPresentationSu
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
 
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+bool StatelessValidation::PreCallValidateCreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) const {
+    bool skip = false;
+    if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateScreenSurfaceQNX", VK_KHR_SURFACE_EXTENSION_NAME);
+    if (!instance_extensions.vk_qnx_screen_surface) skip |= OutputExtensionError("vkCreateScreenSurfaceQNX", VK_QNX_SCREEN_SURFACE_EXTENSION_NAME);
+    skip |= validate_struct_type("vkCreateScreenSurfaceQNX", "pCreateInfo", "VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX", pCreateInfo, VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX, true, "VUID-vkCreateScreenSurfaceQNX-pCreateInfo-parameter", "VUID-VkScreenSurfaceCreateInfoQNX-sType-sType");
+    if (pCreateInfo != NULL)
+    {
+        skip |= validate_struct_pnext("vkCreateScreenSurfaceQNX", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkScreenSurfaceCreateInfoQNX-pNext-pNext", kVUIDUndefined);
+
+        skip |= validate_reserved_flags("vkCreateScreenSurfaceQNX", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkScreenSurfaceCreateInfoQNX-flags-zerobitmask");
+    }
+    if (pAllocator != NULL)
+    {
+        skip |= validate_required_pointer("vkCreateScreenSurfaceQNX", "pAllocator->pfnAllocation", reinterpret_cast<const void*>(pAllocator->pfnAllocation), "VUID-VkAllocationCallbacks-pfnAllocation-00632");
+
+        skip |= validate_required_pointer("vkCreateScreenSurfaceQNX", "pAllocator->pfnReallocation", reinterpret_cast<const void*>(pAllocator->pfnReallocation), "VUID-VkAllocationCallbacks-pfnReallocation-00633");
+
+        skip |= validate_required_pointer("vkCreateScreenSurfaceQNX", "pAllocator->pfnFree", reinterpret_cast<const void*>(pAllocator->pfnFree), "VUID-VkAllocationCallbacks-pfnFree-00634");
+
+        if (pAllocator->pfnInternalAllocation != NULL)
+        {
+            skip |= validate_required_pointer("vkCreateScreenSurfaceQNX", "pAllocator->pfnInternalFree", reinterpret_cast<const void*>(pAllocator->pfnInternalFree), "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+
+        }
+
+        if (pAllocator->pfnInternalFree != NULL)
+        {
+            skip |= validate_required_pointer("vkCreateScreenSurfaceQNX", "pAllocator->pfnInternalAllocation", reinterpret_cast<const void*>(pAllocator->pfnInternalAllocation), "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+
+        }
+    }
+    skip |= validate_required_pointer("vkCreateScreenSurfaceQNX", "pSurface", pSurface, "VUID-vkCreateScreenSurfaceQNX-pSurface-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    struct _screen_window*                      window) const {
+    bool skip = false;
+    if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceScreenPresentationSupportQNX", VK_KHR_SURFACE_EXTENSION_NAME);
+    if (!instance_extensions.vk_qnx_screen_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceScreenPresentationSupportQNX", VK_QNX_SCREEN_SURFACE_EXTENSION_NAME);
+    skip |= validate_required_pointer("vkGetPhysicalDeviceScreenPresentationSupportQNX", "window", window, "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-window-parameter");
+    return skip;
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
 bool StatelessValidation::PreCallValidateCreateAccelerationStructureKHR(
     VkDevice                                    device,

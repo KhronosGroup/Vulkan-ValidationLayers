@@ -6907,6 +6907,42 @@ void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceDirectFBPresen
 }
 
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+bool CoreChecksOptickInstrumented::PreCallValidateCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, result);
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+bool CoreChecksOptickInstrumented::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct _screen_window* window) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct _screen_window* window) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct _screen_window* window) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 bool CoreChecksOptickInstrumented::PreCallValidateCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);

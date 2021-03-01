@@ -98,6 +98,7 @@ struct InstanceExtensions {
     ExtEnabled vk_mvk_macos_surface{kNotEnabled};
     ExtEnabled vk_nn_vi_surface{kNotEnabled};
     ExtEnabled vk_nv_external_memory_capabilities{kNotEnabled};
+    ExtEnabled vk_qnx_screen_surface{kNotEnabled};
 
     struct InstanceReq {
         const ExtEnabled InstanceExtensions::* enabled;
@@ -198,6 +199,10 @@ struct InstanceExtensions {
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})),
 #endif
             std::make_pair(VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_nv_external_memory_capabilities, {})),
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+            std::make_pair(VK_QNX_SCREEN_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_qnx_screen_surface, {{
+                           {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})),
+#endif
         };
 
         static const InstanceInfo empty_info {nullptr, InstanceReqVec()};
@@ -320,6 +325,9 @@ static const std::set<std::string> kInstanceExtensionNames = {
     VK_NN_VI_SURFACE_EXTENSION_NAME,
 #endif
     VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    VK_QNX_SCREEN_SURFACE_EXTENSION_NAME,
+#endif
 };
 
 struct DeviceExtensions : public InstanceExtensions {

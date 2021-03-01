@@ -2136,6 +2136,10 @@ void ValidationObject::InitObjectDispatchVectors() {
 #endif
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 #endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#endif
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

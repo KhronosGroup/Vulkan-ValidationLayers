@@ -4275,6 +4275,17 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_
     typedef VkMutableDescriptorTypeCreateInfoVALVE Type;
 };
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+// Map type VkScreenSurfaceCreateInfoQNX to id VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX
+template <> struct LvlTypeMap<VkScreenSurfaceCreateInfoQNX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX> {
+    typedef VkScreenSurfaceCreateInfoQNX Type;
+};
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkAccelerationStructureGeometryTrianglesDataKHR to id VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR
 template <> struct LvlTypeMap<VkAccelerationStructureGeometryTrianglesDataKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;

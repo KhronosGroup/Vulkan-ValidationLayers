@@ -8067,6 +8067,38 @@ VkBool32 DispatchGetPhysicalDeviceDirectFBPresentationSupportEXT(
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+VkResult DispatchCreateScreenSurfaceQNX(
+    VkInstance                                  instance,
+    const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    if (!wrap_handles) return layer_data->instance_dispatch_table.CreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+    VkResult result = layer_data->instance_dispatch_table.CreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
+    if (VK_SUCCESS == result) {
+        *pSurface = layer_data->WrapNew(*pSurface);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+VkBool32 DispatchGetPhysicalDeviceScreenPresentationSupportQNX(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    struct _screen_window*                      window)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkBool32 result = layer_data->instance_dispatch_table.GetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 VkResult DispatchCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
