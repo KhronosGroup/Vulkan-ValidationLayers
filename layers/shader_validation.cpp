@@ -184,6 +184,10 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 auto target_id = insn.word(1);
                 decorations[target_id].add(insn.word(2), insn.len() > 3u ? insn.word(3) : 0u);
                 decoration_inst.push_back(insn);
+                if (insn.word(2) == spv::DecorationBuiltIn) {
+                    builtin_decoration_list.emplace_back(insn.offset(), static_cast<spv::BuiltIn>(insn.word(3)));
+                }
+
             } break;
             case spv::OpGroupDecorate: {
                 auto const &src = decorations[insn.word(1)];
@@ -191,6 +195,9 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
             } break;
             case spv::OpMemberDecorate: {
                 member_decoration_inst.push_back(insn);
+                if (insn.word(3) == spv::DecorationBuiltIn) {
+                    builtin_decoration_list.emplace_back(insn.offset(), static_cast<spv::BuiltIn>(insn.word(4)));
+                }
             } break;
 
                 // Entry points ... add to the entrypoint table
@@ -812,9 +819,9 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
         switch (insn.word(2)) {
             case spv::DecorationBlock: {
                 uint32_t block_id = insn.word(1);
-                for (auto built_in_block_id : builtin_struct_members) {
+                for (auto builtin_block_id : builtin_struct_members) {
                     // Check if one of the members of the block are built-in -> the block is built-in
-                    if (block_id == built_in_block_id) {
+                    if (block_id == builtin_block_id) {
                         builtin_decorations.push_back(block_id);
                         break;
                     }
@@ -848,14 +855,14 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
 
         // Now find all members belonging to the struct defining the IO block
         if (def.opcode() == spv::OpTypeStruct) {
-            for (auto built_in_id : builtin_decorations) {
-                if (built_in_id == def.word(1)) {
+            for (auto builtin_id : builtin_decorations) {
+                if (builtin_id == def.word(1)) {
                     for (int i = 2; i < static_cast<int>(def.len()); i++) {
                         builtin_block_members.push_back(spv::BuiltInMax);  // Start with undefined builtin for each struct member.
                     }
                     // These shouldn't be left after replacing.
                     for (auto insn : src->member_decoration_inst) {
-                        if (insn.word(1) == built_in_id && insn.word(3) == spv::DecorationBuiltIn) {
+                        if (insn.word(1) == builtin_id && insn.word(3) == spv::DecorationBuiltIn) {
                             auto struct_index = insn.word(2);
                             assert(struct_index < builtin_block_members.size());
                             builtin_block_members[struct_index] = insn.word(4);
@@ -3280,24 +3287,14 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
     bool skip = false;
 
     // Search for PointSize built-in decorations
-    std::vector<uint32_t> pointsize_builtin_offsets;
-    spirv_inst_iter insn = entrypoint;
-    while (!pointsize_written && (insn.opcode() != spv::OpFunction)) {
-        if (insn.opcode() == spv::OpMemberDecorate) {
-            if (insn.word(3) == spv::DecorationBuiltIn) {
-                if (insn.word(4) == spv::BuiltInPointSize) {
-                    pointsize_written = IsBuiltInWritten(src, insn, entrypoint);
-                }
-            }
-        } else if (insn.opcode() == spv::OpDecorate) {
-            if (insn.word(2) == spv::DecorationBuiltIn) {
-                if (insn.word(3) == spv::BuiltInPointSize) {
-                    pointsize_written = IsBuiltInWritten(src, insn, entrypoint);
-                }
+    for (auto set : src->builtin_decoration_list) {
+        auto insn = src->at(set.offset);
+        if (set.builtin == spv::BuiltInPointSize) {
+            pointsize_written = IsBuiltInWritten(src, insn, entrypoint);
+            if (pointsize_written) {
+                break;
             }
         }
-
-        insn++;
     }
 
     if ((stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) &&
@@ -3324,31 +3321,18 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     bool skip = false;
 
     // Check if the primitive shading rate is written
-    spirv_inst_iter insn = entrypoint;
-    while (!(primitiverate_written && viewportindex_written && viewportmask_written) && insn.opcode() != spv::OpFunction) {
-        if (insn.opcode() == spv::OpMemberDecorate) {
-            if (insn.word(3) == spv::DecorationBuiltIn) {
-                if (insn.word(4) == spv::BuiltInPrimitiveShadingRateKHR) {
-                    primitiverate_written = IsBuiltInWritten(src, insn, entrypoint);
-                } else if (insn.word(4) == spv::BuiltInViewportIndex) {
-                    viewportindex_written = IsBuiltInWritten(src, insn, entrypoint);
-                } else if (insn.word(4) == spv::BuiltInViewportMaskNV) {
-                    viewportmask_written = IsBuiltInWritten(src, insn, entrypoint);
-                }
-            }
-        } else if (insn.opcode() == spv::OpDecorate) {
-            if (insn.word(2) == spv::DecorationBuiltIn) {
-                if (insn.word(3) == spv::BuiltInPrimitiveShadingRateKHR) {
-                    primitiverate_written = IsBuiltInWritten(src, insn, entrypoint);
-                } else if (insn.word(3) == spv::BuiltInViewportIndex) {
-                    viewportindex_written = IsBuiltInWritten(src, insn, entrypoint);
-                } else if (insn.word(3) == spv::BuiltInViewportMaskNV) {
-                    viewportmask_written = IsBuiltInWritten(src, insn, entrypoint);
-                }
-            }
+    for (auto set : src->builtin_decoration_list) {
+        auto insn = src->at(set.offset);
+        if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
+            primitiverate_written = IsBuiltInWritten(src, insn, entrypoint);
+        } else if (set.builtin == spv::BuiltInViewportIndex) {
+            viewportindex_written = IsBuiltInWritten(src, insn, entrypoint);
+        } else if (set.builtin == spv::BuiltInViewportMaskNV) {
+            viewportmask_written = IsBuiltInWritten(src, insn, entrypoint);
         }
-
-        insn++;
+        if (primitiverate_written && viewportindex_written && viewportmask_written) {
+            break;
+        }
     }
 
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
@@ -3778,26 +3762,18 @@ void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeli
 
         if (stage->stage == VK_SHADER_STAGE_VERTEX_BIT || stage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
             stage->stage == VK_SHADER_STAGE_MESH_BIT_NV) {
-            spirv_inst_iter insn = entrypoints[stage_id];
             bool primitiverate_written = false;
 
-            while (!primitiverate_written && (insn.opcode() != spv::OpFunction)) {
-                if (insn.opcode() == spv::OpMemberDecorate) {
-                    if (insn.word(3) == spv::DecorationBuiltIn) {
-                        if (insn.word(4) == spv::BuiltInPrimitiveShadingRateKHR) {
-                            primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
-                        }
-                    }
-                } else if (insn.opcode() == spv::OpDecorate) {
-                    if (insn.word(2) == spv::DecorationBuiltIn) {
-                        if (insn.word(3) == spv::BuiltInPrimitiveShadingRateKHR) {
-                            primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
-                        }
-                    }
+            for (auto set : shaders[stage_id]->builtin_decoration_list) {
+                auto insn = shaders[stage_id]->at(set.offset);
+                if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
+                    primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
                 }
-
-                insn++;
+                if (primitiverate_written) {
+                    break;
+                }
             }
+
             if (primitiverate_written) {
                 pipeline_state->wrote_primitive_shading_rate.insert(stage->stage);
             }
