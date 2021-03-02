@@ -22,18 +22,22 @@
 #include <map>
 #include <vulkan/vulkan_core.h>
 
-struct CoreErrorLocation;
+namespace core_error {
+struct Location;
+}
+
 struct SubresourceRangeErrorCodes;
 
 namespace sync_vuid_maps {
+using core_error::Location;
 
 extern const std::map<VkPipelineStageFlags2KHR, std::string> kFeatureNameMap;
 
-const std::string &GetBadFeatureVUID(const CoreErrorLocation &loc, VkPipelineStageFlags2KHR bit);
+const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2KHR bit);
 
-const std::string &GetBadAccessFlagsVUID(const CoreErrorLocation &loc, VkAccessFlags2KHR bit);
+const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR bit);
 
-const std::string &GetStageQueueCapVUID(const CoreErrorLocation &loc, VkPipelineStageFlags2KHR bit);
+const std::string &GetStageQueueCapVUID(const Location &loc, VkPipelineStageFlags2KHR bit);
 
 enum class QueueError {
     kSrcOrDstMustBeIgnore = 0,
@@ -46,9 +50,9 @@ enum class QueueError {
 
 extern const std::map<QueueError, std::string> kQueueErrorSummary;
 
-const std::string &GetBarrierQueueVUID(const CoreErrorLocation &loc, QueueError error);
+const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error);
 
-const std::string &GetBadImageLayoutVUID(const CoreErrorLocation &loc, VkImageLayout layout);
+const std::string &GetBadImageLayoutVUID(const Location &loc, VkImageLayout layout);
 
 enum class BufferError {
     kNoMemory = 0,
@@ -57,7 +61,7 @@ enum class BufferError {
     kSizeZero,
 };
 
-const std::string &GetBufferBarrierVUID(const CoreErrorLocation &loc, BufferError error);
+const std::string &GetBufferBarrierVUID(const Location &loc, BufferError error);
 
 enum class ImageError {
     kNoMemory = 0,
@@ -74,15 +78,15 @@ enum class ImageError {
     kRenderPassLayoutChange,
 };
 
-const std::string &GetImageBarrierVUID(const CoreErrorLocation &loc, ImageError error);
+const std::string &GetImageBarrierVUID(const Location &loc, ImageError error);
 
 struct GetImageBarrierVUIDFunctor {
     ImageError error;
     GetImageBarrierVUIDFunctor(ImageError error_) : error(error_) {}
-    const std::string &operator()(const CoreErrorLocation &loc) const { return GetImageBarrierVUID(loc, error); }
+    const std::string &operator()(const Location &loc) const { return GetImageBarrierVUID(loc, error); }
 };
 
-const SubresourceRangeErrorCodes& GetSubResourceVUIDs(const CoreErrorLocation &loc);
+const SubresourceRangeErrorCodes &GetSubResourceVUIDs(const Location &loc);
 
 enum class SubmitError {
     kTimelineSemSmallValue,
@@ -101,6 +105,6 @@ enum class SubmitError {
     kHostStageMask,
 };
 
-const std::string &GetQueueSubmitVUID(const CoreErrorLocation &loc, SubmitError error);
+const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);
 
 };  // namespace sync_vuid_maps

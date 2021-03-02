@@ -20,11 +20,12 @@
 #include "core_error_location.h"
 #include <map>
 
+namespace core_error {
 #define FUNC_ENTRY(_v) \
-    { ErrFunc::_v, #_v }
-const std::string& CoreErrorLocation::String(ErrFunc func) {
-    static const std::map<ErrFunc, std::string> table{
-        {ErrFunc::Empty, ""},
+    { Func::_v, #_v }
+const std::string& String(Func func) {
+    static const std::map<Func, std::string> table{
+        {Func::Empty, ""},
         FUNC_ENTRY(vkQueueSubmit),
         FUNC_ENTRY(vkQueueSubmit2KHR),
         FUNC_ENTRY(vkCmdSetEvent),
@@ -47,43 +48,43 @@ const std::string& CoreErrorLocation::String(ErrFunc func) {
     return entry->second;
 }
 
-#define REFPAGE_ENTRY(_v) \
-    { RefPage::_v, #_v }
-const std::string& CoreErrorLocation::String(RefPage refpage) {
-    static const std::map<RefPage, std::string> table{
-        {RefPage::Empty, ""},
-        REFPAGE_ENTRY(VkMemoryBarrier),
-        REFPAGE_ENTRY(VkMemoryBarrier2KHR),
-        REFPAGE_ENTRY(VkBufferMemoryBarrier),
-        REFPAGE_ENTRY(VkImageMemoryBarrier),
-        REFPAGE_ENTRY(VkBufferMemoryBarrier2KHR),
-        REFPAGE_ENTRY(VkImageMemoryBarrier2KHR),
-        REFPAGE_ENTRY(VkSubmitInfo),
-        REFPAGE_ENTRY(VkSubmitInfo2KHR),
-        REFPAGE_ENTRY(VkCommandBufferSubmitInfoKHR),
-        REFPAGE_ENTRY(vkCmdSetEvent),
-        REFPAGE_ENTRY(vkCmdSetEvent2KHR),
-        REFPAGE_ENTRY(vkCmdResetEvent),
-        REFPAGE_ENTRY(vkCmdResetEvent2KHR),
-        REFPAGE_ENTRY(vkCmdPipelineBarrier),
-        REFPAGE_ENTRY(vkCmdPipelineBarrier2KHR),
-        REFPAGE_ENTRY(vkCmdWaitEvents),
-        REFPAGE_ENTRY(vkCmdWaitEvents2KHR),
-        REFPAGE_ENTRY(vkCmdWriteTimestamp2),
-        REFPAGE_ENTRY(vkCmdWriteTimestamp2KHR),
-        REFPAGE_ENTRY(VkSubpassDependency),
-        REFPAGE_ENTRY(VkSubpassDependency2),
-        REFPAGE_ENTRY(VkBindSparseInfo),
-        REFPAGE_ENTRY(VkSemaphoreSignalInfo),
+#define STRUCT_ENTRY(_v) \
+    { Struct::_v, #_v }
+const std::string& String(Struct structure) {
+    static const std::map<Struct, std::string> table{
+        {Struct::Empty, ""},
+        STRUCT_ENTRY(VkMemoryBarrier),
+        STRUCT_ENTRY(VkMemoryBarrier2KHR),
+        STRUCT_ENTRY(VkBufferMemoryBarrier),
+        STRUCT_ENTRY(VkImageMemoryBarrier),
+        STRUCT_ENTRY(VkBufferMemoryBarrier2KHR),
+        STRUCT_ENTRY(VkImageMemoryBarrier2KHR),
+        STRUCT_ENTRY(VkSubmitInfo),
+        STRUCT_ENTRY(VkSubmitInfo2KHR),
+        STRUCT_ENTRY(VkCommandBufferSubmitInfoKHR),
+        STRUCT_ENTRY(vkCmdSetEvent),
+        STRUCT_ENTRY(vkCmdSetEvent2KHR),
+        STRUCT_ENTRY(vkCmdResetEvent),
+        STRUCT_ENTRY(vkCmdResetEvent2KHR),
+        STRUCT_ENTRY(vkCmdPipelineBarrier),
+        STRUCT_ENTRY(vkCmdPipelineBarrier2KHR),
+        STRUCT_ENTRY(vkCmdWaitEvents),
+        STRUCT_ENTRY(vkCmdWaitEvents2KHR),
+        STRUCT_ENTRY(vkCmdWriteTimestamp2),
+        STRUCT_ENTRY(vkCmdWriteTimestamp2KHR),
+        STRUCT_ENTRY(VkSubpassDependency),
+        STRUCT_ENTRY(VkSubpassDependency2),
+        STRUCT_ENTRY(VkBindSparseInfo),
+        STRUCT_ENTRY(VkSemaphoreSignalInfo),
     };
-    const auto entry = table.find(refpage);
+    const auto entry = table.find(structure);
     assert(entry != table.end());
     return entry->second;
 }
 
 #define FIELD_ENTRY(_v) \
     { Field::_v, #_v }
-const std::string& CoreErrorLocation::String(Field field) {
+const std::string& String(Field field) {
     static const std::map<Field, std::string> table{
         {Field::Empty, ""},
         FIELD_ENTRY(oldLayout),
@@ -129,10 +130,10 @@ const std::string& CoreErrorLocation::String(Field field) {
     return entry->second;
 }
 
-CoreErrorLocationCapture::CoreErrorLocationCapture(const CoreErrorLocation& loc) { Capture(loc, 1); }
+LocationCapture::LocationCapture(const Location& loc) { Capture(loc, 1); }
 
-const CoreErrorLocation* CoreErrorLocationCapture::Capture(const CoreErrorLocation& loc, CaptureStore::size_type depth) {
-    const CoreErrorLocation* prev_capture = nullptr;
+const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size_type depth) {
+    const Location* prev_capture = nullptr;
     if (loc.prev) {
         prev_capture = Capture(*loc.prev, depth + 1);
     } else {
@@ -144,13 +145,14 @@ const CoreErrorLocation* CoreErrorLocationCapture::Capture(const CoreErrorLocati
     return &(capture.back());
 }
 
-void CoreErrorLocation::AppendFields(std::stringstream* out) const {
+void Location::AppendFields(std::ostream& out) const {
     if (prev) {
         prev->AppendFields(out);
-        *out << ".";
+        out << ".";
     }
-    *out << String(field_name);
-    if (index != CoreErrorLocation::kNoIndex) {
-        *out << "[" << index << "]";
+    out << String(field);
+    if (index != Location::kNoIndex) {
+        out << "[" << index << "]";
     }
 }
+}  // namespace core_error

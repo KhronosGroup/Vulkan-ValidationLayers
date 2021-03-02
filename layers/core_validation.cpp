@@ -73,13 +73,13 @@ extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_sta
                                                         const VkImageMemoryBarrier *barrier);
 extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
                                                         const VkImageMemoryBarrier2KHR *barrier);
-extern template bool CoreChecks::ValidateImageBarrierAttachment(const CoreErrorLocation &loc, CMD_BUFFER_STATE const *cb_state,
+extern template bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_STATE const *cb_state,
                                                                 const FRAMEBUFFER_STATE *framebuffer, uint32_t active_subpass,
                                                                 const safe_VkSubpassDescription2 &sub_desc,
                                                                 const VkRenderPass rp_handle,
                                                                 const VkImageMemoryBarrier &img_barrier,
                                                                 const CMD_BUFFER_STATE *primary_cb_state) const;
-extern template bool CoreChecks::ValidateImageBarrierAttachment(const CoreErrorLocation &loc, CMD_BUFFER_STATE const *cb_state,
+extern template bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_STATE const *cb_state,
                                                                 const FRAMEBUFFER_STATE *framebuffer, uint32_t active_subpass,
                                                                 const safe_VkSubpassDescription2 &sub_desc,
                                                                 const VkRenderPass rp_handle,
@@ -182,9 +182,9 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, 
     return VerifyBoundMemoryIsValid<T1, SimpleErrorLocation>(mem_state, object, typed_handle, {api_name, error_code});
 }
 
-template <typename T1, typename Location>
+template <typename T1, typename LocType>
 bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const T1 object,
-                                          const VulkanTypedHandle &typed_handle, const Location &location) const {
+                                          const VulkanTypedHandle &typed_handle, const LocType &location) const {
     bool result = false;
     auto type_name = object_string[typed_handle.type];
     if (!mem_state) {
@@ -202,8 +202,8 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, 
 
 // Check to see if memory was ever bound to this image
 
-bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const CoreErrorLocation &loc) const {
-    using LocationAdapter = CoreErrorLocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>;
+bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const Location &loc) const {
+    using LocationAdapter = core_error::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>;
     return ValidateMemoryIsBoundToImage<LocationAdapter>(image_state, LocationAdapter(loc, sync_vuid_maps::ImageError::kNoMemory));
 }
 
@@ -211,8 +211,8 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
     return ValidateMemoryIsBoundToImage<SimpleErrorLocation>(image_state, SimpleErrorLocation(api_name, error_code));
 }
 
-template <typename Location>
-bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const Location &location) const {
+template <typename LocType>
+bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const LocType &location) const {
     bool result = false;
     if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
         if (image_state->bind_swapchain == VK_NULL_HANDLE) {
@@ -2567,7 +2567,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
     StateTracker::PreCallRecordDestroyDevice(device, pAllocator);
 }
 
-bool CoreChecks::ValidateStageMaskHost(const CoreErrorLocation &loc, VkPipelineStageFlags2KHR stageMask) const {
+bool CoreChecks::ValidateStageMaskHost(const Location &loc, VkPipelineStageFlags2KHR stageMask) const {
     bool skip = false;
     if ((stageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0) {
         const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, sync_vuid_maps::SubmitError::kHostStageMask);
@@ -2635,7 +2635,7 @@ bool CoreChecks::VerifyQueueStateToFence(VkFence fence) const {
     return false;
 }
 
-bool CoreChecks::ValidateCommandBufferSimultaneousUse(const CoreErrorLocation &loc, const CMD_BUFFER_STATE *pCB,
+bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const CMD_BUFFER_STATE *pCB,
                                                       int current_submit_count) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
@@ -2714,7 +2714,7 @@ bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE *cb_node, const Vu
 
 // Validate that queueFamilyIndices of primary command buffers match this queue
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
-bool CoreChecks::ValidateQueueFamilyIndices(const CoreErrorLocation &loc, const CMD_BUFFER_STATE *pCB, VkQueue queue) const {
+bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFER_STATE *pCB, VkQueue queue) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
@@ -2757,7 +2757,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const CoreErrorLocation &loc, const 
 }
 
 bool CoreChecks::ValidatePrimaryCommandBufferState(
-    const CoreErrorLocation &loc, const CMD_BUFFER_STATE *pCB, int current_submit_count,
+    const Location &loc, const CMD_BUFFER_STATE *pCB, int current_submit_count,
     QFOTransferCBScoreboards<QFOImageTransferBarrier> *qfo_image_scoreboards,
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> *qfo_buffer_scoreboards) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
@@ -2796,9 +2796,9 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 
     skip |= ValidateQueuedQFOTransfers(pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
 
-    const char *vuid = loc.func_name == ErrFunc::vkQueueSubmit ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
-                                                               : "VUID-vkQueueSubmit2KHR-commandBuffer-03876";
-    skip |= ValidateCommandBufferState(pCB, loc.StringFuncName().c_str(), current_submit_count, vuid);
+    const char *vuid = loc.function == Func::vkQueueSubmit ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
+                                                           : "VUID-vkQueueSubmit2KHR-commandBuffer-03876";
+    skip |= ValidateCommandBufferState(pCB, loc.StringFunc().c_str(), current_submit_count, vuid);
     return skip;
 }
 
@@ -2890,7 +2890,7 @@ struct SemaphoreSubmitState {
 
     SemaphoreSubmitState(const CoreChecks *core_, VkQueueFlags queue_flags_) : core(core_), queue_flags(queue_flags_) {}
 
-    bool ValidateWaitSemaphore(const CoreErrorLocation &loc, VkQueue queue, VkSemaphore semaphore, uint64_t value,
+    bool ValidateWaitSemaphore(const core_error::Location &loc, VkQueue queue, VkSemaphore semaphore, uint64_t value,
                                uint32_t device_Index) {
         using sync_vuid_maps::GetQueueSubmitVUID;
         using sync_vuid_maps::SubmitError;
@@ -2920,7 +2920,7 @@ struct SemaphoreSubmitState {
         return skip;
     }
 
-    bool ValidateSignalSemaphore(const CoreErrorLocation &loc, VkQueue queue, VkSemaphore semaphore, uint64_t value,
+    bool ValidateSignalSemaphore(const core_error::Location &loc, VkQueue queue, VkSemaphore semaphore, uint64_t value,
                                  uint32_t deviceIndex) {
         using sync_vuid_maps::GetQueueSubmitVUID;
         using sync_vuid_maps::SubmitError;
@@ -2957,7 +2957,7 @@ struct SemaphoreSubmitState {
 };
 
 bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, VkQueue queue, const VkSubmitInfo *submit,
-                                             const CoreErrorLocation &outer_loc) const {
+                                             const Location &outer_loc) const {
     bool skip = false;
     auto *timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
     for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
@@ -3029,11 +3029,11 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, VkQueu
     return skip;
 }
 bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, VkQueue queue, const VkSubmitInfo2KHR *submit,
-                                             const CoreErrorLocation &outer_loc) const {
+                                             const Location &outer_loc) const {
     bool skip = false;
     for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
         const auto &sem_info = submit->pWaitSemaphoreInfos[i];
-        CoreErrorLocation loc = outer_loc.dot(Field::pWaitSemaphoreInfos, i);
+        Location loc = outer_loc.dot(Field::pWaitSemaphoreInfos, i);
         skip |= ValidatePipelineStage(LogObjectList(sem_info.semaphore), loc.dot(Field::stageMask), state.queue_flags,
                                       sem_info.stageMask);
         skip |= ValidateStageMaskHost(loc.dot(Field::stageMask), sem_info.stageMask);
@@ -3050,8 +3050,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, VkQueu
     return skip;
 }
 
-bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(const CoreErrorLocation &loc, VkSemaphore semaphore,
-                                                             uint64_t value) const {
+bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(const Location &loc, VkSemaphore semaphore, uint64_t value) const {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
@@ -3108,7 +3107,7 @@ struct CommandBufferSubmitState {
 
     CommandBufferSubmitState(const CoreChecks *c, const char *func, const QUEUE_STATE *q) : core(c), queue_state(q) {}
 
-    bool Validate(const CoreErrorLocation &loc, VkCommandBuffer cmd, uint32_t perf_pass) {
+    bool Validate(const core_error::Location &loc, VkCommandBuffer cmd, uint32_t perf_pass) {
         bool skip = false;
         const auto *cb_node = core->GetCBState(cmd);
         if (cb_node == nullptr) {
@@ -3127,7 +3126,7 @@ struct CommandBufferSubmitState {
                 continue;
             }
             for (const auto &cmd_info : descriptor_set.second) {
-                std::string function = loc.StringFuncName();
+                std::string function = loc.StringFunc();
                 function += ", ";
                 function += cmd_info.function;
                 for (const auto &binding_info : cmd_info.binding_infos) {
@@ -3183,7 +3182,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
-        CoreErrorLocation loc(ErrFunc::vkQueueSubmit, RefPage::VkSubmitInfo, Field::pSubmits, submit_idx);
+        Location loc(Func::vkQueueSubmit, Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             skip |= cb_submit_state.Validate(loc.dot(Field::pCommandBuffers, i), submit->pCommandBuffers[i], perf_pass);
         }
@@ -3239,7 +3238,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 
     // Now verify maxTimelineSemaphoreValueDifference
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        CoreErrorLocation loc(ErrFunc::vkQueueSubmit, RefPage::VkSubmitInfo, Field::pSubmits, submit_idx);
+        Location loc(Func::vkQueueSubmit, Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         auto *info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         if (info) {
@@ -3284,7 +3283,7 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
-        CoreErrorLocation loc(ErrFunc::vkQueueSubmit2KHR, RefPage::VkSubmitInfo2KHR, Field::pSubmits, submit_idx);
+        Location loc(Func::vkQueueSubmit2KHR, Struct::VkSubmitInfo2KHR, Field::pSubmits, submit_idx);
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, queue, submit, loc);
 
@@ -3299,7 +3298,7 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
             auto info_loc = loc.dot(Field::pCommandBufferInfos, i);
-            info_loc.refpage = RefPage::VkCommandBufferSubmitInfoKHR;
+            info_loc.structure = Struct::VkCommandBufferSubmitInfoKHR;
             skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), submit->pCommandBufferInfos[i].commandBuffer,
                                              perf_pass);
 
@@ -3336,7 +3335,7 @@ bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
     // Now verify maxTimelineSemaphoreValueDifference
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
-        CoreErrorLocation outer_loc(ErrFunc::vkQueueSubmit2KHR, RefPage::VkSubmitInfo2KHR, Field::pSubmits, submit_idx);
+        Location outer_loc(Func::vkQueueSubmit2KHR, Struct::VkSubmitInfo2KHR, Field::pSubmits, submit_idx);
         // If there are any timeline semaphores, this condition gets checked before the early return above
         for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
             const auto *sem_info = &submit->pWaitSemaphoreInfos[i];
@@ -7226,7 +7225,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
                                       "VUID-vkCmdSetEvent-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_SETEVENT, "vkCmdSetEvent()");
     skip |= InsideRenderPass(cb_state, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-renderpass");
-    CoreErrorLocation loc(ErrFunc::vkCmdSetEvent, RefPage::vkCmdSetEvent, Field::stageMask);
+    Location loc(Func::vkCmdSetEvent, Struct::vkCmdSetEvent, Field::stageMask);
     LogObjectList objects(commandBuffer);
     skip |= ValidatePipelineStage(objects, loc, GetQueueFlags(*cb_state), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
@@ -7245,7 +7244,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
                                       "VUID-vkCmdSetEvent2KHR-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_SETEVENT, func);
     skip |= InsideRenderPass(cb_state, func, "VUID-vkCmdSetEvent2KHR-renderpass");
-    CoreErrorLocation loc(ErrFunc::vkCmdSetEvent2KHR, RefPage::vkCmdSetEvent2KHR, Field::pDependencyInfo);
+    Location loc(Func::vkCmdSetEvent2KHR, Struct::vkCmdSetEvent2KHR, Field::pDependencyInfo);
     if (pDependencyInfo->dependencyFlags != 0) {
         skip |= LogError(objects, "VUID-vkCmdSetEvent2KHR-dependencyFlags-03825", "%s (%s) must be 0",
                          loc.dot(Field::dependencyFlags).Message().c_str(),
@@ -7259,7 +7258,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     LogObjectList objects(commandBuffer);
-    CoreErrorLocation loc(ErrFunc::vkCmdResetEvent, RefPage::vkCmdResetEvent, Field::stageMask);
+    Location loc(Func::vkCmdResetEvent, Struct::vkCmdResetEvent, Field::stageMask);
 
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdResetEvent-commandBuffer-cmdpool");
@@ -7276,7 +7275,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer,
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     LogObjectList objects(commandBuffer);
-    CoreErrorLocation loc(ErrFunc::vkCmdResetEvent2KHR, RefPage::vkCmdResetEvent2KHR, Field::stageMask);
+    Location loc(Func::vkCmdResetEvent2KHR, Struct::vkCmdResetEvent2KHR, Field::stageMask);
 
     bool skip = ValidateCmdQueueFlags(cb_state, func, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdResetEvent2KHR-commandBuffer-cmdpool");
@@ -7294,6 +7293,11 @@ static bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR in
 
 // transient helper struct for checking parts of VUID 02285
 struct RenderPassDepState {
+    using Location = core_error::Location;
+    using Func = core_error::Func;
+    using Struct = core_error::Struct;
+    using Field = core_error::Field;
+
     const CoreChecks *core;
     const std::string func_name;
     const std::string vuid;
@@ -7330,8 +7334,7 @@ struct RenderPassDepState {
         return result;
     }
 
-    bool ValidateStage(const CoreErrorLocation &loc, VkPipelineStageFlags2KHR src_stage_mask,
-                       VkPipelineStageFlags2KHR dst_stage_mask) {
+    bool ValidateStage(const Location &loc, VkPipelineStageFlags2KHR src_stage_mask, VkPipelineStageFlags2KHR dst_stage_mask) {
         // Look for matching mask in any self-dependency
         bool match = false;
         for (const auto self_dep_index : self_dependencies) {
@@ -7367,7 +7370,7 @@ struct RenderPassDepState {
         return !match;
     }
 
-    bool ValidateAccess(const CoreErrorLocation &loc, VkAccessFlags2KHR src_access_mask, VkAccessFlags2KHR dst_access_mask) {
+    bool ValidateAccess(const Location &loc, VkAccessFlags2KHR src_access_mask, VkAccessFlags2KHR dst_access_mask) {
         bool match = false;
 
         for (const auto self_dep_index : self_dependencies) {
@@ -7418,7 +7421,7 @@ struct RenderPassDepState {
 
 // Validate VUs for Pipeline Barriers that are within a renderPass
 // Pre: cb_state->activeRenderPass must be a pointer to valid renderPass state
-bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &outer_loc, const CMD_BUFFER_STATE *cb_state,
+bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
                                                     VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                                                     VkDependencyFlags dependency_flags, uint32_t mem_barrier_count,
                                                     const VkMemoryBarrier *mem_barriers, uint32_t buffer_mem_barrier_count,
@@ -7427,7 +7430,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &out
                                                     const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
     const auto rp_state = cb_state->activeRenderPass;
-    RenderPassDepState state(this, outer_loc.StringFuncName().c_str(), "VUID-vkCmdPipelineBarrier-pDependencies-02285",
+    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                              cb_state->activeSubpass, rp_state->renderPass, enabled_features,
                              rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
     if (state.self_dependencies.size() == 0) {
@@ -7447,13 +7450,13 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &out
     }
     for (uint32_t i = 0; i < mem_barrier_count; ++i) {
         const auto &mem_barrier = mem_barriers[i];
-        CoreErrorLocation loc(outer_loc.func_name, RefPage::VkMemoryBarrier, Field::pMemoryBarriers, i);
+        Location loc(outer_loc.function, Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
         skip |= state.ValidateAccess(loc, mem_barrier.srcAccessMask, mem_barrier.dstAccessMask);
     }
 
     for (uint32_t i = 0; i < image_mem_barrier_count; ++i) {
         const auto &img_barrier = image_barriers[i];
-        CoreErrorLocation loc(outer_loc.func_name, RefPage::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
+        Location loc(outer_loc.function, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         skip |= state.ValidateAccess(loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
 
         if (VK_QUEUE_FAMILY_IGNORED != img_barrier.srcQueueFamilyIndex ||
@@ -7473,11 +7476,11 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &out
     return skip;
 }
 
-bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &outer_loc, const CMD_BUFFER_STATE *cb_state,
+bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
                                                     const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
     const auto rp_state = cb_state->activeRenderPass;
-    RenderPassDepState state(this, outer_loc.StringFuncName().c_str(), "VUID-vkCmdPipelineBarrier2KHR-pDependencies-02285",
+    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2KHR-pDependencies-02285",
                              cb_state->activeSubpass, rp_state->renderPass, enabled_features,
                              rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
 
@@ -7491,7 +7494,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &out
     const auto &sub_desc = rp_state->createInfo.pSubpasses[state.active_subpass];
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
-        CoreErrorLocation loc(outer_loc.func_name, RefPage::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
+        Location loc(outer_loc.function, Struct::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
         skip |= state.ValidateStage(loc, mem_barrier.srcStageMask, mem_barrier.dstStageMask);
         skip |= state.ValidateAccess(loc, mem_barrier.srcAccessMask, mem_barrier.dstAccessMask);
     }
@@ -7503,7 +7506,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &out
     }
     for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; ++i) {
         const auto &img_barrier = dep_info->pImageMemoryBarriers[i];
-        CoreErrorLocation loc(outer_loc.func_name, RefPage::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
+        Location loc(outer_loc.function, Struct::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
 
         skip |= state.ValidateStage(loc, img_barrier.srcStageMask, img_barrier.dstStageMask);
         skip |= state.ValidateAccess(loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
@@ -7525,7 +7528,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const CoreErrorLocation &out
     return skip;
 }
 
-bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList &objects, const CoreErrorLocation &loc,
+bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList &objects, const Location &loc,
                                                             VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     // these are always allowed.
@@ -7573,7 +7576,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objects, const CoreErrorLocation &loc,
+bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objects, const Location &loc,
                                                      VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     if (!enabled_features.synchronization2_features.synchronization2 && stage_mask == 0) {
@@ -7602,7 +7605,7 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &object
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineStage(const LogObjectList &objects, const CoreErrorLocation &loc, VkQueueFlags queue_flags,
+bool CoreChecks::ValidatePipelineStage(const LogObjectList &objects, const Location &loc, VkQueueFlags queue_flags,
                                        VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     skip |= ValidateStageMasksAgainstQueueCapabilities(objects, loc, queue_flags, stage_mask);
@@ -7610,7 +7613,7 @@ bool CoreChecks::ValidatePipelineStage(const LogObjectList &objects, const CoreE
     return skip;
 }
 
-bool CoreChecks::ValidateAccessMask(const LogObjectList &objects, const CoreErrorLocation &loc, VkQueueFlags queue_flags,
+bool CoreChecks::ValidateAccessMask(const LogObjectList &objects, const Location &loc, VkQueueFlags queue_flags,
                                     VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     // Early out if all commands set
@@ -7721,7 +7724,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
 
     auto queue_flags = GetQueueFlags(*cb_state);
     LogObjectList objects(commandBuffer);
-    CoreErrorLocation loc(ErrFunc::vkCmdWaitEvents, RefPage::vkCmdWaitEvents);
+    Location loc(Func::vkCmdWaitEvents, Struct::vkCmdWaitEvents);
     skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
     skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
 
@@ -7742,7 +7745,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
     for (uint32_t i = 0; (i < eventCount) && !skip; i++) {
         LogObjectList objects(commandBuffer);
         objects.add(pEvents[i]);
-        CoreErrorLocation loc(ErrFunc::vkCmdWaitEvents2KHR, RefPage::vkCmdWaitEvents2KHR, Field::pDependencyInfos, i);
+        Location loc(Func::vkCmdWaitEvents2KHR, Struct::vkCmdWaitEvents2KHR, Field::pDependencyInfos, i);
         if (pDependencyInfos[i].dependencyFlags != 0) {
             skip |= LogError(objects, "VUID-vkCmdWaitEvents2KHR-dependencyFlags-03844", "%s (%s) must be 0.",
                              loc.dot(Field::dependencyFlags).Message().c_str(),
@@ -7808,7 +7811,7 @@ void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint
                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    RecordBarriers(ErrFunc::vkCmdWaitEvents, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+    RecordBarriers(Func::vkCmdWaitEvents, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                    pImageMemoryBarriers);
 }
 
@@ -7817,7 +7820,7 @@ void CoreChecks::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, 
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
-        RecordBarriers(ErrFunc::vkCmdWaitEvents2KHR, cb_state, dep_info);
+        RecordBarriers(Func::vkCmdWaitEvents2KHR, cb_state, dep_info);
     }
 }
 
@@ -7833,7 +7836,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
     assert(cb_state);
     LogObjectList objects(commandBuffer);
     auto queue_flags = GetQueueFlags(*cb_state);
-    CoreErrorLocation loc(ErrFunc::vkCmdPipelineBarrier, RefPage::vkCmdPipelineBarrier);
+    Location loc(Func::vkCmdPipelineBarrier, Struct::vkCmdPipelineBarrier);
 
     auto op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                                 pImageMemoryBarriers);
@@ -7875,7 +7878,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
         ComputeBarrierOperationsType(cb_state, pDependencyInfo->bufferMemoryBarrierCount, pDependencyInfo->pBufferMemoryBarriers,
                                      pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 
-    CoreErrorLocation loc(ErrFunc::vkCmdPipelineBarrier2KHR, RefPage::vkCmdPipelineBarrier2KHR, Field::pDependencyInfo);
+    Location loc(Func::vkCmdPipelineBarrier2KHR, Struct::vkCmdPipelineBarrier2KHR, Field::pDependencyInfo);
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdPipelineBarrier2KHR()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdPipelineBarrier-commandBuffer-cmdpool");
@@ -7903,15 +7906,15 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
                                                  const VkImageMemoryBarrier *pImageMemoryBarriers) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
-    RecordBarriers(ErrFunc::vkCmdPipelineBarrier, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                   imageMemoryBarrierCount, pImageMemoryBarriers);
+    RecordBarriers(Func::vkCmdPipelineBarrier, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                   pImageMemoryBarriers);
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 void CoreChecks::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
-    RecordBarriers(ErrFunc::vkCmdPipelineBarrier2KHR, cb_state, *pDependencyInfo);
+    RecordBarriers(Func::vkCmdPipelineBarrier2KHR, cb_state, *pDependencyInfo);
     TransitionImageLayouts(cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
@@ -8479,7 +8482,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
                                       "VUID-vkCmdWriteTimestamp2KHR-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_WRITETIMESTAMP, "vkCmdWriteTimestamp2KHR()");
 
-    CoreErrorLocation loc(ErrFunc::vkCmdWriteTimestamp2KHR, RefPage::vkCmdWriteTimestamp2KHR, Field::stage);
+    Location loc(Func::vkCmdWriteTimestamp2KHR, Struct::vkCmdWriteTimestamp2KHR, Field::stage);
     if ((stage & (stage - 1)) != 0) {
         skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdWriteTimestamp2KHR-stage-03859",
                          "%s (%s) must only set a single pipeline stage.", loc.Message().c_str(),
@@ -8487,7 +8490,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
     }
     skip |= ValidatePipelineStage(LogObjectList(cb_state->commandBuffer), loc, GetQueueFlags(*cb_state), stage);
 
-    loc.field_name = Field::queryPool;
+    loc.field = Field::queryPool;
     const QUERY_POOL_STATE *query_pool_state = GetQueryPoolState(queryPool);
     if ((query_pool_state != nullptr) && (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_TIMESTAMP)) {
         skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdWriteTimestamp2KHR-queryPool-03861",
@@ -10261,11 +10264,11 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
     LogObjectList objects(device);
     auto queue_flags = sync_utils::kAllQueueTypes;
 
-    auto func_name = use_rp2 ? ErrFunc::vkCreateRenderPass2 : ErrFunc::vkCreateRenderPass;
-    auto refpage = use_rp2 ? RefPage::VkSubpassDependency2 : RefPage::VkSubpassDependency;
+    auto func_name = use_rp2 ? Func::vkCreateRenderPass2 : Func::vkCreateRenderPass;
+    auto structure = use_rp2 ? Struct::VkSubpassDependency2 : Struct::VkSubpassDependency;
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
-        CoreErrorLocation loc(func_name, refpage, Field::pDependencies, i);
+        Location loc(func_name, structure, Field::pDependencies, i);
         skip |= ValidateSubpassBarrier(objects, loc, queue_flags, dependency);
     }
     return skip;
@@ -12240,7 +12243,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
     // Now verify maxTimelineSemaphoreValueDifference
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
-        CoreErrorLocation outer_loc(ErrFunc::vkQueueBindSparse, RefPage::VkBindSparseInfo);
+        Location outer_loc(Func::vkQueueBindSparse, Struct::VkBindSparseInfo);
         const VkBindSparseInfo *bind_info = &pBindInfo[bind_idx];
         auto *info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(bind_info->pNext);
         if (info) {
@@ -12295,7 +12298,7 @@ bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSigna
     }
 
     if (!skip) {
-        CoreErrorLocation loc(ErrFunc::vkSignalSemaphore, RefPage::VkSemaphoreSignalInfo, Field::value);
+        Location loc(Func::vkSignalSemaphore, Struct::VkSemaphoreSignalInfo, Field::value);
         skip |= ValidateMaxTimelineSemaphoreValueDifference(loc, pSignalInfo->semaphore, pSignalInfo->value);
     }
 
