@@ -5387,18 +5387,15 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
     auto op_type =
         ComputeBarrierOperationsType(cb_state, bufferBarrierCount, pBufferMemBarriers, imageMemBarrierCount, pImageMemBarriers);
 
-    // NOTE: for vkCmdPipelineBarrier() and vkCmdWaitEvents() the access mask checks use the function name for {refpage}
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const auto &mem_barrier = pMemBarriers[i];
-        Location loc(outer_loc.function, outer_loc.structure, Field::pMemoryBarriers, i);
+        auto loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
         const auto &mem_barrier = pImageMemBarriers[i];
-        Location loc(outer_loc.function, outer_loc.structure, Field::pImageMemoryBarriers, i);
+        auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
-
-        loc.structure = Struct::VkImageMemoryBarrier;
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
     }
     {
@@ -5407,10 +5404,8 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const auto &mem_barrier = pBufferMemBarriers[i];
-        Location loc(outer_loc.function, outer_loc.structure, Field::pBufferMemoryBarriers, i);
+        auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
-
-        loc.structure = Struct::VkBufferMemoryBarrier;
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }
     return skip;
@@ -5427,14 +5422,12 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
     auto queue_flags = GetQueueFlags(*cb_state);
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
-        Location loc = outer_loc.dot(Field::pMemoryBarriers, i);
-        loc.structure = Struct::VkMemoryBarrier2KHR;
+        auto loc = outer_loc.dot(Struct::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
     }
     for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pImageMemoryBarriers[i];
-        Location loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
-        loc.structure = Struct::VkImageMemoryBarrier2KHR;
+        auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
     }
@@ -5445,8 +5438,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
 
     for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pBufferMemoryBarriers[i];
-        Location loc = outer_loc.dot(Field::pBufferMemoryBarriers, i);
-        loc.structure = Struct::VkBufferMemoryBarrier2KHR;
+        auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2KHR, Field::pBufferMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }
