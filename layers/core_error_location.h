@@ -52,7 +52,7 @@ enum class Func {
     vkCmdPipelineBarrier2KHR,
     vkCmdWaitEvents,
     vkCmdWaitEvents2KHR,
-    vkCmdWriteTimestamp2,
+    vkCmdWriteTimestamp,
     vkCmdWriteTimestamp2KHR,
     vkCreateRenderPass,
     vkCreateRenderPass2,
@@ -62,8 +62,6 @@ enum class Func {
 
 const std::string& String(Func func);
 
-// NOTE: there are temporarily function names in the Struct enum, but they will
-// soon be removed by further refactors.
 enum class Struct {
     Empty = 0,
     VkMemoryBarrier,
@@ -75,20 +73,12 @@ enum class Struct {
     VkSubmitInfo,
     VkSubmitInfo2KHR,
     VkCommandBufferSubmitInfoKHR,
-    vkCmdSetEvent,
-    vkCmdSetEvent2KHR,
-    vkCmdResetEvent,
-    vkCmdResetEvent2KHR,
-    vkCmdPipelineBarrier,
-    vkCmdPipelineBarrier2KHR,
-    vkCmdWaitEvents,
-    vkCmdWaitEvents2KHR,
-    vkCmdWriteTimestamp2,
-    vkCmdWriteTimestamp2KHR,
     VkSubpassDependency,
     VkSubpassDependency2,
     VkBindSparseInfo,
     VkSemaphoreSignalInfo,
+    VkSemaphoreSubmitInfoKHR,
+    VkProtectedSubmitInfo,
 };
 
 const std::string& String(Struct s);
@@ -132,6 +122,7 @@ enum class Field {
     dstQueueFamilyIndex,
     queryPool,
     pDependencies,
+    pipelineStage,
 };
 
 const std::string& String(Field field);
@@ -152,8 +143,8 @@ struct Location {
         : function(func), structure(s), field(f), index(i), prev(nullptr) {}
     Location(Func func, Field f = Field::Empty, uint32_t i = kNoIndex)
         : function(func), structure(Struct::Empty), field(f), index(i), prev(nullptr) {}
-    Location(const Location& prev_loc, Field f, uint32_t i)
-        : function(prev_loc.function), structure(prev_loc.structure), field(f), index(i), prev(&prev_loc) {}
+    Location(const Location& prev_loc, Struct s, Field f, uint32_t i)
+        : function(prev_loc.function), structure(s), field(f), index(i), prev(&prev_loc) {}
 
     void AppendFields(std::ostream &out) const;
     std::string Message() const {
@@ -165,8 +156,12 @@ struct Location {
 
     // the dot() method is for walking down into a structure that is being validated
     // eg:  loc.dot(Field::pMemoryBarriers, 5).dot(Field::srcStagemask)
+    Location dot(Struct s, Field sub_field, uint32_t sub_index = kNoIndex) const {
+        Location result(*this, s, sub_field, sub_index);
+        return result;
+    }
     Location dot(Field sub_field, uint32_t sub_index = kNoIndex) const {
-        Location result(*this, sub_field, sub_index);
+        Location result(*this, this->structure, sub_field, sub_index);
         return result;
     }
 
@@ -181,8 +176,8 @@ struct LocationVuidAdapter {
     VuidFunctor vuid_functor;
     const char* FuncName() const {
         // the returned reference from loc must be valid for lifespan of loc, at least.
-        const std::string& func_name = loc.StringFunc();
-        return func_name.c_str();
+        const std::string& function = loc.StringFunc();
+        return function.c_str();
     }
     const char* Vuid() const {
         // the returned reference from functor must be valid for lifespan of vuid_functor, at least.
@@ -203,5 +198,57 @@ struct LocationCapture {
     const Location* Capture(const Location& loc, CaptureStore::size_type depth);
     CaptureStore capture;
 };
+
+// Key for use in tables of VUIDs.
+//
+// Fuzzy match rules:
+//  key.function OR key.structure may be Empty
+//  loc.structure may be Empty
+//  key.field may be Empty
+//  if key.recurse_field is true, key.field can match loc.field or any fields in loc.prev
+//
+struct Key {
+    Func function;
+    Struct structure;
+    Field field;
+    bool recurse_field;
+    Key(Struct r, Field f = Field::Empty, bool recurse = false)
+        : function(Func::Empty), structure(r), field(f), recurse_field(recurse) {}
+    Key(Func fn, Field f = Field::Empty, bool recurse = false)
+        : function(fn), structure(Struct::Empty), field(f), recurse_field(recurse) {}
+};
+
+bool operator==(const Key& key, const Location& loc);
+
+// Entry in a VUID lookup table
+struct Entry {
+    Key k;
+    std::string v;
+};
+
+// look for a matching VUID in a vector or array-ish table
+template <typename Table>
+static const std::string& FindVUID(const Location& loc, const Table& table) {
+    static const std::string empty;
+    auto predicate = [&loc](const Entry& entry) { return entry.k == loc; };
+
+    // consistency check: there should never be more than 1 match in a table
+    assert(std::count_if(table.begin(), table.end(), predicate) <= 1);
+
+    const auto pos = std::find_if(table.begin(), table.end(), predicate);
+    return (pos != table.end()) ? pos->v : empty;
+}
+
+// 2-level look up where the outer container is a map where we need to find
+// different VUIDs for different values of an enum or bitfield
+template <typename OuterKey, typename Table>
+static const std::string& FindVUID(OuterKey key, const Location& loc, const Table& table) {
+    static const std::string empty;
+    const auto entry = table.find(key);
+    if (entry != table.end()) {
+        return FindVUID(loc, entry->second);
+    }
+    return empty;
+}
 
 }  // namespace core_error

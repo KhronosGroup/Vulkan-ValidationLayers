@@ -36,7 +36,7 @@ const std::string& String(Func func) {
         FUNC_ENTRY(vkCmdPipelineBarrier2KHR),
         FUNC_ENTRY(vkCmdWaitEvents),
         FUNC_ENTRY(vkCmdWaitEvents2KHR),
-        FUNC_ENTRY(vkCmdWriteTimestamp2),
+        FUNC_ENTRY(vkCmdWriteTimestamp),
         FUNC_ENTRY(vkCmdWriteTimestamp2KHR),
         FUNC_ENTRY(vkCreateRenderPass),
         FUNC_ENTRY(vkCreateRenderPass2),
@@ -62,16 +62,6 @@ const std::string& String(Struct structure) {
         STRUCT_ENTRY(VkSubmitInfo),
         STRUCT_ENTRY(VkSubmitInfo2KHR),
         STRUCT_ENTRY(VkCommandBufferSubmitInfoKHR),
-        STRUCT_ENTRY(vkCmdSetEvent),
-        STRUCT_ENTRY(vkCmdSetEvent2KHR),
-        STRUCT_ENTRY(vkCmdResetEvent),
-        STRUCT_ENTRY(vkCmdResetEvent2KHR),
-        STRUCT_ENTRY(vkCmdPipelineBarrier),
-        STRUCT_ENTRY(vkCmdPipelineBarrier2KHR),
-        STRUCT_ENTRY(vkCmdWaitEvents),
-        STRUCT_ENTRY(vkCmdWaitEvents2KHR),
-        STRUCT_ENTRY(vkCmdWriteTimestamp2),
-        STRUCT_ENTRY(vkCmdWriteTimestamp2KHR),
         STRUCT_ENTRY(VkSubpassDependency),
         STRUCT_ENTRY(VkSubpassDependency2),
         STRUCT_ENTRY(VkBindSparseInfo),
@@ -124,6 +114,7 @@ const std::string& String(Field field) {
         FIELD_ENTRY(dstQueueFamilyIndex),
         FIELD_ENTRY(queryPool),
         FIELD_ENTRY(pDependencies),
+        FIELD_ENTRY(pipelineStage),
     };
     const auto entry = table.find(field);
     assert(entry != table.end());
@@ -155,4 +146,36 @@ void Location::AppendFields(std::ostream& out) const {
         out << "[" << index << "]";
     }
 }
+
+bool operator==(const Key& key, const Location& loc) {
+    assert(key.function != Func::Empty || key.structure != Struct::Empty);
+    assert(loc.function != Func::Empty);
+    if (key.function != Func::Empty) {
+        if (key.function != loc.function) {
+            return false;
+        }
+    }
+    if (key.structure != Struct::Empty) {
+        if (key.structure != loc.structure) {
+            return false;
+        }
+    }
+    if (key.field == Field::Empty) {
+        return true;
+    }
+    if (key.field == loc.field) {
+        return true;
+    }
+    if (key.recurse_field) {
+        const Location *prev = loc.prev;
+        while (prev != nullptr) {
+            if (key.field == prev->field) {
+                return true;
+            }
+            prev = prev->prev;
+        }
+    }
+    return false;
+}
+
 }  // namespace core_error
