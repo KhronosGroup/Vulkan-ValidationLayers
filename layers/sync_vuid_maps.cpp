@@ -27,6 +27,9 @@
 #include <unordered_map>
 
 namespace sync_vuid_maps {
+using core_error::Field;
+using core_error::Func;
+using core_error::Struct;
 
 const std::map<VkPipelineStageFlags2KHR, std::string> kFeatureNameMap{
     {VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, "geometryShader"},
@@ -60,9 +63,9 @@ static const std::string &FindVUID(const std::string &refpage, const std::string
 }
 
 template <typename Table>
-static const std::string &FindVUID(const RefPage &refpage, const Field &field_name, const Table &table) {
-    const auto &str_ref = CoreErrorLocation::String(refpage);
-    const auto &str_field = CoreErrorLocation::String(field_name);
+static const std::string &FindVUID(const Struct &structure, const Field &field, const Table &table) {
+    const auto &str_ref = core_error::String(structure);
+    const auto &str_field = core_error::String(field);
     return FindVUID(str_ref, str_field, table);
 }
 
@@ -282,10 +285,10 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<std::string>> kStage
       "VUID-vkCmdWaitEvents-dstStageMask-03937"}},
 };
 
-const std::string &GetBadFeatureVUID(const CoreErrorLocation &loc, VkPipelineStageFlags2KHR bit) {
+const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2KHR bit) {
     const auto entry = kStageMaskErrors.find(bit);
     assert(entry != kStageMaskErrors.end());
-    const auto &result = FindVUID(loc.refpage, loc.field_name, entry->second);
+    const auto &result = FindVUID(loc.structure, loc.field, entry->second);
     assert(!result.empty());
     return result;
 }
@@ -571,15 +574,15 @@ static const std::vector<std::string> kFineSyncCommon = {
     "VUID-VkSubpassDependency-srcAccessMask-00868",  "VUID-VkSubpassDependency-dstAccessMask-00869",
     "VUID-VkSubpassDependency2-srcAccessMask-03088", "VUID-VkSubpassDependency2-dstAccessMask-03089",
 };
-const std::string &GetBadAccessFlagsVUID(const CoreErrorLocation &loc, VkAccessFlags2KHR bit) {
+const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR bit) {
     const auto entry = kAccessMask2Common.find(bit);
     if (entry != kAccessMask2Common.end()) {
-        const auto &result = FindVUID(loc.refpage, loc.field_name, entry->second);
+        const auto &result = FindVUID(loc.structure, loc.field, entry->second);
         if (!result.empty()) {
             return result;
         }
     }
-    const auto &result2 = FindVUID(loc.refpage, loc.field_name, kFineSyncCommon);
+    const auto &result2 = FindVUID(loc.structure, loc.field, kFineSyncCommon);
     assert(!result2.empty());
     return result2;
 }
@@ -608,13 +611,13 @@ static const std::vector<std::string> kQueueCapErrors{
     "VUID-vkQueueSubmit2KHR-stageMask-03870",  // TODO: dst
 };
 
-const std::string &GetStageQueueCapVUID(const CoreErrorLocation &loc, VkPipelineStageFlags2KHR bit) {
+const std::string &GetStageQueueCapVUID(const Location &loc, VkPipelineStageFlags2KHR bit) {
     // no per-bit lookups needed
-    const auto& result = FindVUID(loc.refpage, loc.field_name, kQueueCapErrors);
+    const auto &result = FindVUID(loc.structure, loc.field, kQueueCapErrors);
     if (!result.empty()) {
         return result;
     }
-    const auto& result2 = FindVUID(loc.StringFuncName(), loc.StringField(), kQueueCapErrors);
+    const auto &result2 = FindVUID(loc.StringFunc(), loc.StringField(), kQueueCapErrors);
     return result2;
 }
 
@@ -673,12 +676,12 @@ const std::map<QueueError, std::string> kQueueErrorSummary{
      "Source or destination queue family must match submit queue family, if not ignored."},
 };
 
-const std::string &GetBarrierQueueVUID(const CoreErrorLocation &loc, QueueError error) {
+const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error) {
     const auto entry = kBarrierQueueErrors.find(error);
     assert(entry != kBarrierQueueErrors.end());
 
     // NOTE we ignore field_name here because of inconsistencies in the VUIDs.
-    const auto &result = FindVUID(loc.refpage, Field::Empty, entry->second);
+    const auto &result = FindVUID(loc.structure, Field::Empty, entry->second);
     assert(!result.empty());
     return result;
 }
@@ -704,12 +707,12 @@ static const std::map<VkImageLayout, std::array<std::string, 2>> kImageLayoutErr
      {"VUID-VkImageMemoryBarrier-oldLayout-01659", "VUID-VkImageMemoryBarrier2KHR-oldLayout-01659"}},
 };
 
-const std::string &GetBadImageLayoutVUID(const CoreErrorLocation &loc, VkImageLayout layout) {
+const std::string &GetBadImageLayoutVUID(const Location &loc, VkImageLayout layout) {
     const auto entry = kImageLayoutErrors.find(layout);
     assert(entry != kImageLayoutErrors.end());
 
     // NOTE we ignore field_name here these VUIDs always use oldLayout
-    const auto &result = FindVUID(loc.refpage, Field::Empty, entry->second);
+    const auto &result = FindVUID(loc.structure, Field::Empty, entry->second);
     assert(!result.empty());
     return result;
 }
@@ -721,11 +724,11 @@ static const std::map<BufferError, std::array<std::string, 2>> kBufferErrors{
     {BufferError::kSizeZero, {"VUID-VkBufferMemoryBarrier-size-01188", "VUID-VkBufferMemoryBarrier2KHR-size-01188"}},
 };
 
-const std::string &GetBufferBarrierVUID(const CoreErrorLocation &loc, BufferError error) {
+const std::string &GetBufferBarrierVUID(const Location &loc, BufferError error) {
     const auto entry = kBufferErrors.find(error);
     assert(entry != kBufferErrors.end());
 
-    const auto &result = FindVUID(loc.refpage, Field::Empty, entry->second);
+    const auto &result = FindVUID(loc.structure, Field::Empty, entry->second);
     assert(!result.empty());
     return result;
 }
@@ -748,22 +751,22 @@ static const std::map<ImageError, std::vector<std::string>> kImageErrors{
      {"VUID-vkCmdPipelineBarrier-oldLayout-01181", "VUID-vkCmdPipelineBarrier2KHR-oldLayout-01181"}},
 };
 
-const std::string &GetImageBarrierVUID(const CoreErrorLocation &loc, ImageError error) {
+const std::string &GetImageBarrierVUID(const Location &loc, ImageError error) {
     const auto entry = kImageErrors.find(error);
     assert(entry != kImageErrors.end());
 
-    const auto &result = FindVUID(loc.refpage, Field::Empty, entry->second);
+    const auto &result = FindVUID(loc.structure, Field::Empty, entry->second);
     if (!result.empty()) {
         return result;
     }
-    // hack to handle refpage vs. function mismatches in these VUIDS
-    const auto &str_func = loc.StringFuncName();
+    // hack to handle structure vs. function mismatches in these VUIDS
+    const auto &str_func = loc.StringFunc();
     const auto &result2 = FindVUID(str_func, "", entry->second);
     assert(!result2.empty());
     return result2;
 }
 
-const SubresourceRangeErrorCodes& GetSubResourceVUIDs(const CoreErrorLocation &loc) {
+const SubresourceRangeErrorCodes &GetSubResourceVUIDs(const Location &loc) {
     static const SubresourceRangeErrorCodes v1 {
         "VUID-VkImageMemoryBarrier-subresourceRange-01486",
         "VUID-VkImageMemoryBarrier-subresourceRange-01724",
@@ -776,7 +779,7 @@ const SubresourceRangeErrorCodes& GetSubResourceVUIDs(const CoreErrorLocation &l
         "VUID-VkImageMemoryBarrier2KHR-subresourceRange-01488"
         "VUID-VkImageMemoryBarrier2KHR-subresourceRange-01725",
     };
-    return (loc.refpage == RefPage::VkImageMemoryBarrier2KHR) ? v2 : v1;
+    return (loc.structure == Struct::VkImageMemoryBarrier2KHR) ? v2 : v1;
 }
 
 static const std::map<SubmitError, std::vector<std::string>> kSubmitErrors{
@@ -863,15 +866,15 @@ static const std::map<SubmitError, std::vector<std::string>> kSubmitErrors{
      }},
 };
 
-const std::string &GetQueueSubmitVUID(const CoreErrorLocation &loc, SubmitError error) {
+const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
     const auto entry = kSubmitErrors.find(error);
     assert(entry != kSubmitErrors.end());
 
-    const auto &ref_result = FindVUID(loc.refpage, loc.field_name, entry->second);
+    const auto &ref_result = FindVUID(loc.structure, loc.field, entry->second);
     if (!ref_result.empty()) {
         return ref_result;
     }
-    const auto &result = FindVUID(loc.StringFuncName(), loc.StringField(), entry->second);
+    const auto &result = FindVUID(loc.StringFunc(), loc.StringField(), entry->second);
     assert(!result.empty());
     return result;
 }
