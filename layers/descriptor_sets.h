@@ -292,11 +292,6 @@ class DescriptorSetLayout : public BASE_NODE {
         uint32_t GetIndex() const { return index_; }
         bool AtEnd() const { return index_ == layout_->GetBindingCount(); }
 
-        // Return index into dynamic offset array for given binding
-        int32_t GetDynamicOffsetIndex() const {
-            return layout_->GetDynamicOffsetIndexFromBinding(Binding());  //  There is only binding mapped access in layout_
-        }
-
         bool operator==(const ConstBindingIterator &rhs) { return (index_ = rhs.index_) && (layout_ == rhs.layout_); }
 
         ConstBindingIterator &operator++() {
