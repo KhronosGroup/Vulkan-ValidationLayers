@@ -732,7 +732,6 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         mmr.offset = 3;  // Not a multiple of atom_size
         mmr.size = VK_WHOLE_SIZE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-offset-00687");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01389");
         vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
         m_errorMonitor->VerifyFound();
 
@@ -743,6 +742,16 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         mmr.offset = atom_size;
         mmr.size = 2 * atom_size + 1;  // Not a multiple of atom_size
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01390");
+        vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+        m_errorMonitor->VerifyFound();
+
+        // Now with VK_WHOLE_SIZE and a mapping that does not end at a multiple of atom_size nor at the end of the memory.
+        vk::UnmapMemory(m_device->device(), mem);
+        err = vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size + 1, 0, (void **)&pData);
+        ASSERT_VK_SUCCESS(err);
+        mmr.offset = atom_size;
+        mmr.size = VK_WHOLE_SIZE;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01389");
         vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
         m_errorMonitor->VerifyFound();
     }
@@ -779,9 +788,9 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         mmr.memory = mem;
         mmr.offset = atom_size;
         mmr.size = VK_WHOLE_SIZE;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01389");
+        m_errorMonitor->ExpectSuccess();
         vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
-        m_errorMonitor->VerifyFound();
+        m_errorMonitor->VerifyNotFound();
     }
 
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
