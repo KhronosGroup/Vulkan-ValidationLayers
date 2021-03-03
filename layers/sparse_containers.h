@@ -22,7 +22,6 @@
 #define SPARSE_CONTAINERS_H_
 #include <cassert>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 namespace sparse_container {
@@ -91,7 +90,7 @@ class SparseVector {
     typedef IndexType_ IndexType;
     typedef T value_type;
     typedef value_type ValueType;
-    typedef std::unordered_map<IndexType, ValueType> SparseType;
+    typedef layer_data::unordered_map<IndexType, ValueType> SparseType;
     typedef std::vector<ValueType> DenseType;
 
     SparseVector(IndexType start, IndexType end)

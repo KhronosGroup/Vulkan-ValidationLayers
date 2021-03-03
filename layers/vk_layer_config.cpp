@@ -1,8 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014-2020 Valve Software
- * Copyright 2015-2020 Google Inc.
- * Copyright 2019-2020 LunarG, Inc.
+ * Copyright 2014-2021 Valve Software
+ * Copyright 2015-2021 Google Inc.
+ * Copyright 2019-2021 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,6 @@
 #include <string.h>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -135,7 +134,7 @@ VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_na
 }
 
 // Map option strings to flag enum values
-VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(string option, std::unordered_map<string, VkFlags> const &enum_data,
+VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(string option, layer_data::unordered_map<string, VkFlags> const &enum_data,
                                             uint32_t option_default) {
     VkDebugReportFlagsEXT flags = option_default;
     string option_list = layer_config.GetOption(option.c_str());

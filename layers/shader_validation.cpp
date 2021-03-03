@@ -27,10 +27,8 @@
 #include <chrono>
 #include <cinttypes>
 #include <cmath>
-#include <map>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include <spirv/unified1/spirv.hpp>
@@ -685,9 +683,9 @@ static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, std::ma
         return false;
     }
 
-    std::unordered_map<unsigned, unsigned> member_components;
-    std::unordered_map<unsigned, unsigned> member_relaxed_precision;
-    std::unordered_map<unsigned, unsigned> member_patch;
+    layer_data::unordered_map<unsigned, unsigned> member_components;
+    layer_data::unordered_map<unsigned, unsigned> member_relaxed_precision;
+    layer_data::unordered_map<unsigned, unsigned> member_patch;
 
     // Walk all the OpMemberDecorate for type's result id -- first pass, collect components.
     for (auto insn : src->member_decoration_inst) {
@@ -877,7 +875,7 @@ static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE cons
 }
 
 static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
-    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids) {
+    SHADER_MODULE_STATE const *src, layer_data::unordered_set<uint32_t> const &accessible_ids) {
     std::vector<std::pair<uint32_t, interface_var>> out;
 
     for (auto insn : src->decoration_inst) {
@@ -978,8 +976,8 @@ static bool GroupOperation(uint32_t opcode) {
 }
 
 bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<unsigned> &operator_members,
-                             const std::unordered_map<unsigned, unsigned> &load_members,
-                             const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> &accesschain_members) {
+                             const layer_data::unordered_map<unsigned, unsigned> &load_members,
+                             const layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> &accesschain_members) {
     for (auto load_id : operator_members) {
         if (object_id == load_id) return true;
         auto load_it = load_members.find(load_id);
@@ -1017,9 +1015,9 @@ struct shader_module_used_operators {
     std::vector<unsigned> sampler_implicitLod_dref_proj_members;  // sampler Load id
     std::vector<unsigned> sampler_bias_offset_members;            // sampler Load id
     std::vector<std::pair<unsigned, unsigned>> sampledImage_members;  // <image,sampler> Load id
-    std::unordered_map<unsigned, unsigned> load_members;
-    std::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
-    std::unordered_map<unsigned, unsigned> image_texel_pointer_members;
+    layer_data::unordered_map<unsigned, unsigned> load_members;
+    layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
+    layer_data::unordered_map<unsigned, unsigned> image_texel_pointer_members;
 
     shader_module_used_operators() : updated(false) {}
 
@@ -1080,24 +1078,23 @@ struct shader_module_used_operators {
                 }
                 case spv::OpLoad: {
                     // 2: Load id, 3: object id or AccessChain id
-                    load_members.insert(std::make_pair(insn.word(2), insn.word(3)));
+                    load_members.emplace(insn.word(2), insn.word(3));
                     break;
                 }
                 case spv::OpAccessChain: {
                     if (insn.len() == 4) {
                         // If it is for struct, the length is only 4.
                         // 2: AccessChain id, 3: object id
-                        accesschain_members.insert(std::make_pair(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), 0)));
+                        accesschain_members.emplace(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), 0));
                     } else {
                         // 2: AccessChain id, 3: object id, 4: object id of array index
-                        accesschain_members.insert(
-                            std::make_pair(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), insn.word(4))));
+                        accesschain_members.emplace(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
                     }
                     break;
                 }
                 case spv::OpImageTexelPointer: {
                     // 2: ImageTexelPointer id, 3: object id
-                    image_texel_pointer_members.insert(std::make_pair(insn.word(2), insn.word(3)));
+                    image_texel_pointer_members.emplace(insn.word(2), insn.word(3));
                     break;
                 }
                 default: {
@@ -1216,7 +1213,7 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
         }
 
         case spv::OpTypeStruct: {
-            std::unordered_set<unsigned> nonwritable_members;
+            layer_data::unordered_set<unsigned> nonwritable_members;
             if (module->get_decorations(type.word(1)).flags & decoration_set::buffer_block_bit) is_storage_buffer = true;
             for (auto insn : module->member_decoration_inst) {
                 if (insn.word(1) == type.word(1) && insn.word(3) == spv::DecorationNonWritable) {
@@ -1254,7 +1251,7 @@ static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const sp
 }
 
 std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
-    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
+    SHADER_MODULE_STATE const *src, layer_data::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
     bool *has_atomic_descriptor) {
     std::vector<std::pair<descriptor_slot_t, interface_var>> out;
     shader_module_used_operators operators;
@@ -1480,14 +1477,14 @@ void SetPushConstantUsedInShader(SHADER_MODULE_STATE &src) {
     }
 }
 
-std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
+layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
                                                                const VkPipelineShaderStageCreateInfo &stage_info) {
-    std::unordered_set<uint32_t> location_list;
+    layer_data::unordered_set<uint32_t> location_list;
     if (stage_info.stage != VK_SHADER_STAGE_FRAGMENT_BIT) return location_list;
     const auto entrypoint = FindEntrypoint(&module, stage_info.pName, stage_info.stage);
     const auto outputs = CollectInterfaceByLocation(&module, entrypoint, spv::StorageClassOutput, false);
-    std::unordered_set<unsigned> store_members;
-    std::unordered_map<unsigned, unsigned> accesschain_members;
+    layer_data::unordered_set<unsigned> store_members;
+    layer_data::unordered_map<unsigned, unsigned> accesschain_members;
 
     for (auto insn : module) {
         switch (insn.opcode()) {
@@ -1498,7 +1495,7 @@ std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODU
             }
             case spv::OpAccessChain: {
                 // 2: AccessChain id, 3: object id
-                if (insn.word(3)) accesschain_members.insert(std::make_pair(insn.word(2), insn.word(3)));
+                if (insn.word(3)) accesschain_members.emplace(insn.word(2), insn.word(3));
                 break;
             }
             default:
@@ -1537,7 +1534,7 @@ std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODU
 bool CoreChecks::ValidateViConsistency(VkPipelineVertexInputStateCreateInfo const *vi) const {
     // Walk the binding descriptions, which describe the step rate and stride of each vertex buffer.  Each binding should
     // be specified only once.
-    std::unordered_map<uint32_t, VkVertexInputBindingDescription const *> bindings;
+    layer_data::unordered_map<uint32_t, VkVertexInputBindingDescription const *> bindings;
     bool skip = false;
 
     for (unsigned i = 0; i < vi->vertexBindingDescriptionCount; i++) {
@@ -1723,7 +1720,7 @@ static bool IsBuiltInWritten(SHADER_MODULE_STATE const *src, spirv_inst_iter bui
     if (!init_complete && (type == spv::OpMemberDecorate)) return false;
 
     bool found_write = false;
-    std::unordered_set<uint32_t> worklist;
+    layer_data::unordered_set<uint32_t> worklist;
     worklist.insert(entrypoint.word(2));
 
     // Follow instructions in call graph looking for writes to target
@@ -1775,9 +1772,9 @@ static bool IsBuiltInWritten(SHADER_MODULE_STATE const *src, spirv_inst_iter bui
 //
 // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
 // converting parts of this to be generated from the machine-readable spec instead.
-std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) {
-    std::unordered_set<uint32_t> ids;
-    std::unordered_set<uint32_t> worklist;
+layer_data::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) {
+    layer_data::unordered_set<uint32_t> ids;
+    layer_data::unordered_set<uint32_t> worklist;
     worklist.insert(entrypoint.word(2));
 
     while (!worklist.empty()) {
@@ -1966,7 +1963,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, const std::unordered_set<uint32_t> &accessible_ids,
+bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, const layer_data::unordered_set<uint32_t> &accessible_ids,
                                        VkShaderStageFlagBits stage) const {
     bool skip = false;
 
@@ -2635,7 +2632,7 @@ void GetSpecConstantValue(VkPipelineShaderStageCreateInfo const *pStage, uint32_
 // Fill in value with the constant or specialization constant value, if available.
 // Returns true if the value has been accurately filled out.
 static bool GetIntConstantValue(spirv_inst_iter insn, SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
-                                const std::unordered_map<uint32_t, uint32_t> &id_to_spec_id, uint32_t *value) {
+                                const layer_data::unordered_map<uint32_t, uint32_t> &id_to_spec_id, uint32_t *value) {
     auto type_id = src->get_def(insn.word(1));
     if (type_id.opcode() != spv::OpTypeInt || type_id.word(2) != 32) {
         return false;
@@ -2692,9 +2689,9 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
     bool skip = false;
 
     // Map SPIR-V result ID to specialization constant id (SpecId decoration value)
-    std::unordered_map<uint32_t, uint32_t> id_to_spec_id;
+    layer_data::unordered_map<uint32_t, uint32_t> id_to_spec_id;
     // Map SPIR-V result ID to the ID of its type.
-    std::unordered_map<uint32_t, uint32_t> id_to_type_id;
+    layer_data::unordered_map<uint32_t, uint32_t> id_to_type_id;
 
     struct CoopMatType {
         uint32_t scope, rows, cols;
@@ -2704,7 +2701,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
         CoopMatType() : scope(0), rows(0), cols(0), component_type(VK_COMPONENT_TYPE_MAX_ENUM_NV), all_constant(false) {}
 
         void Init(uint32_t id, SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
-                  const std::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {
+                  const layer_data::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {
             spirv_inst_iter insn = src->get_def(id);
             uint32_t component_type_id = insn.word(2);
             uint32_t scope_id = insn.word(3);
@@ -3411,7 +3408,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         // Gather the specialization-constant values.
         auto const &specialization_info = pStage->pSpecializationInfo;
         auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
-        std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;
+        std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
         id_value_map.reserve(specialization_info->mapEntryCount);
         for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
             auto const &map_entry = specialization_info->pMapEntries[i];

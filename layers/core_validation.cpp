@@ -126,8 +126,6 @@ using std::max;
 using std::string;
 using std::stringstream;
 using std::unique_ptr;
-using std::unordered_map;
-using std::unordered_set;
 using std::vector;
 
 // The const variant only need the image as it is the key for the map
@@ -385,7 +383,7 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
                                                      const char *vuid) const {
     bool skip = false;
     if (queue_families) {
-        std::unordered_set<uint32_t> set;
+        layer_data::unordered_set<uint32_t> set;
         for (uint32_t i = 0; i < queue_family_count; ++i) {
             std::string parameter_name = std::string(array_parameter_name) + "[" + std::to_string(i) + "]";
 
@@ -1186,7 +1184,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                         state.per_set[set_index].validated_set_binding_req_map.begin(),
                                         state.per_set[set_index].validated_set_binding_req_map.end(),
-                                        std::inserter(delta_reqs, delta_reqs.begin()));
+                                        layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     result |=
                         ValidateDrawState(descriptor_set, delta_reqs, state.per_set[set_index].dynamicOffsets, cb_node,
                                           cb_node->active_attachments.get(), *cb_node->active_subpasses.get(), function, vuid);
@@ -2436,7 +2434,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                                                 const VkDeviceQueueCreateInfo *infos) const {
     bool skip = false;
 
-    std::unordered_set<uint32_t> queue_family_set;
+    layer_data::unordered_set<uint32_t> queue_family_set;
 
     for (uint32_t i = 0; i < info_count; ++i) {
         const auto requested_queue_family = infos[i].queueFamilyIndex;
@@ -2589,9 +2587,9 @@ bool CoreChecks::VerifyQueueStateToSeq(const QUEUE_STATE *initial_queue, uint64_
     bool skip = false;
 
     // sequence number we want to validate up to, per queue
-    std::unordered_map<const QUEUE_STATE *, uint64_t> target_seqs{{initial_queue, initial_seq}};
+    layer_data::unordered_map<const QUEUE_STATE *, uint64_t> target_seqs{{initial_queue, initial_seq}};
     // sequence number we've completed validation for, per queue
-    std::unordered_map<const QUEUE_STATE *, uint64_t> done_seqs;
+    layer_data::unordered_map<const QUEUE_STATE *, uint64_t> done_seqs;
     std::vector<const QUEUE_STATE *> worklist{initial_queue};
 
     while (worklist.size()) {
@@ -2886,9 +2884,9 @@ bool CoreChecks::SemaphoreWasSignaled(VkSemaphore semaphore) const {
 struct SemaphoreSubmitState {
     const CoreChecks *core;
     VkQueueFlags queue_flags;
-    unordered_set<VkSemaphore> signaled_semaphores;
-    unordered_set<VkSemaphore> unsignaled_semaphores;
-    unordered_set<VkSemaphore> internal_semaphores;
+    layer_data::unordered_set<VkSemaphore> signaled_semaphores;
+    layer_data::unordered_set<VkSemaphore> unsignaled_semaphores;
+    layer_data::unordered_set<VkSemaphore> internal_semaphores;
 
     SemaphoreSubmitState(const CoreChecks *core_, VkQueueFlags queue_flags_) : core(core_), queue_flags(queue_flags_) {}
 
@@ -9265,7 +9263,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 }
 
 static bool FindDependency(const uint32_t index, const uint32_t dependent, const std::vector<DAGNode> &subpass_to_node,
-                           std::unordered_set<uint32_t> &processed_nodes) {
+                           layer_data::unordered_set<uint32_t> &processed_nodes) {
     // If we have already checked this node we have not found a dependency path so return false.
     if (processed_nodes.count(index)) return false;
     processed_nodes.insert(index);
@@ -9307,7 +9305,7 @@ bool CoreChecks::CheckDependencyExists(const VkRenderPass renderpass, const uint
         auto next_elem = std::find(node.next.begin(), node.next.end(), sp.index);
         if (prev_elem == node.prev.end() && next_elem == node.next.end()) {
             // If no dependency exits an implicit dependency still might. If not, throw an error.
-            std::unordered_set<uint32_t> processed_nodes;
+            layer_data::unordered_set<uint32_t> processed_nodes;
             if (!(FindDependency(subpass, sp.index, subpass_to_node, processed_nodes) ||
                   FindDependency(sp.index, subpass, subpass_to_node, processed_nodes))) {
                 skip |=
@@ -9421,7 +9419,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
         }
     }
     // Find for each attachment the subpasses that use them.
-    unordered_set<uint32_t> attachment_indices;
+    layer_data::unordered_set<uint32_t> attachment_indices;
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         attachment_indices.clear();
@@ -9786,7 +9784,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
     // Track when we're observing the first use of an attachment
     std::vector<bool> attach_first_use(pCreateInfo->attachmentCount, true);
     // Track if attachments are used as input as well as another type
-    std::unordered_set<uint32_t> input_attachments;
+    layer_data::unordered_set<uint32_t> input_attachments;
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
@@ -11266,7 +11264,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
 
 bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB, const CMD_BUFFER_STATE *pSubCB) const {
     bool skip = false;
-    unordered_set<int> active_types;
+    layer_data::unordered_set<int> active_types;
     if (!disabled[query_validation]) {
         for (const auto &query_object : pCB->activeQueries) {
             auto query_pool_state = GetQueryPoolState(query_object.pool);
@@ -11323,7 +11321,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     assert(cb_state);
     bool skip = false;
     const CMD_BUFFER_STATE *sub_cb_state = NULL;
-    std::unordered_set<const CMD_BUFFER_STATE *> linked_command_buffers;
+    layer_data::unordered_set<const CMD_BUFFER_STATE *> linked_command_buffers;
 
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = GetCBState(pCommandBuffers[i]);
@@ -11654,7 +11652,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     // Track all image sub resources if they are bound for bind_image_mem_2
     // uint32_t[3] is which index in pBindInfos for max 3 planes
     // Non disjoint images act as a single plane
-    std::unordered_map<VkImage, std::array<uint32_t, 3>> resources_bound;
+    layer_data::unordered_map<VkImage, std::array<uint32_t, 3>> resources_bound;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         if (bind_image_mem_2 == true) {
@@ -12016,7 +12014,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     }
 
     // Check to make sure all disjoint planes were bound
-    for (std::pair<const VkImage, std::array<uint32_t, 3>> &resource : resources_bound) {
+    for (auto &resource : resources_bound) {
         const IMAGE_STATE *image_state = GetImageState(resource.first);
         if (image_state->disjoint == true) {
             uint32_t total_planes = FormatPlaneCount(image_state->createInfo.format);
@@ -12128,9 +12126,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                          "vkQueueBindSparse(): a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.");
     }
 
-    unordered_set<VkSemaphore> signaled_semaphores;
-    unordered_set<VkSemaphore> unsignaled_semaphores;
-    unordered_set<VkSemaphore> internal_semaphores;
+    layer_data::unordered_set<VkSemaphore> signaled_semaphores;
+    layer_data::unordered_set<VkSemaphore> unsignaled_semaphores;
+    layer_data::unordered_set<VkSemaphore> internal_semaphores;
     auto *vuid_error = device_extensions.vk_khr_timeline_semaphore ? "VUID-vkQueueBindSparse-pWaitSemaphores-03245"
                                                                    : kVUID_Core_DrawState_QueueForwardProgress;
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {

@@ -28,7 +28,27 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <map>
+#include <unordered_map>
+#include <set>
 #include <algorithm>
+#include <iterator>
+#include <type_traits>
+
+// namespace aliases to allow map and set implementations to easily be swapped out
+namespace layer_data {
+template <typename T>
+using hash = std::hash<T>;
+
+template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key> >
+using unordered_set = std::unordered_set<Key, Hash, KeyEqual>;
+
+template <typename Key, typename T, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key> >
+using unordered_map = std::unordered_map<Key, T, Hash, KeyEqual>;
+
+template <typename T>
+using insert_iterator = std::insert_iterator<T>;
+};
 
 // A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.
 // Useful in in situations where the needed size is unknown, but the typical size is known  If size increases beyond the
@@ -274,6 +294,8 @@ class small_container {
 
     inner_container_type inner_cont;
 
+    value_type_helper helper;
+
   public:
     small_container() {
         for (int i = 0; i < N; ++i) {
@@ -431,7 +453,7 @@ class small_container {
 
     bool contains(const Key &key) const {
         for (int i = 0; i < N; ++i) {
-            if (small_data_allocated[i] && value_type_helper().compare_equal(small_data[i], key)) {
+            if (small_data_allocated[i] && helper.compare_equal(small_data[i], key)) {
                 return true;
             }
         }
@@ -446,7 +468,7 @@ class small_container {
 
     std::pair<iterator, bool> insert(const value_type &value) {
         for (int i = 0; i < N; ++i) {
-            if (small_data_allocated[i] && value_type_helper().compare_equal(small_data[i], value)) {
+            if (small_data_allocated[i] && helper.compare_equal(small_data[i], value)) {
                 iterator it;
                 it.parent = this;
                 it.index = i;
@@ -454,7 +476,7 @@ class small_container {
             }
         }
         // check size() first to avoid hashing key unnecessarily.
-        auto iter = inner_cont.size() > 0 ? inner_cont.find(value_type_helper().get_key(value)) : inner_cont.end();
+        auto iter = inner_cont.size() > 0 ? inner_cont.find(helper.get_key(value)) : inner_cont.end();
         if (iter != inner_cont.end()) {
             iterator it;
             it.parent = this;
@@ -465,7 +487,7 @@ class small_container {
             for (int i = 0; i < N; ++i) {
                 if (!small_data_allocated[i]) {
                     small_data_allocated[i] = true;
-                    value_type_helper().assign(small_data[i], value);
+                    helper.assign(small_data[i], value);
                     iterator it;
                     it.parent = this;
                     it.index = i;
@@ -483,7 +505,7 @@ class small_container {
 
     typename inner_container_type::size_type erase(const Key &key) {
         for (int i = 0; i < N; ++i) {
-            if (small_data_allocated[i] && value_type_helper().compare_equal(small_data[i], key)) {
+            if (small_data_allocated[i] && helper.compare_equal(small_data[i], key)) {
                 small_data_allocated[i] = false;
                 return 1;
             }
@@ -520,15 +542,16 @@ class small_container {
 
 // Helper function objects to compare/assign/get keys in small_unordered_set/map.
 // This helps to abstract away whether value_type is a Key or a pair<Key, T>.
-template <typename Key, typename T>
+template <typename MapType>
 class value_type_helper_map {
-  public:
-    bool compare_equal(const std::pair<const Key, T> &lhs, const Key &rhs) const { return lhs.first == rhs; }
-    bool compare_equal(const std::pair<const Key, T> &lhs, const std::pair<const Key, T> &rhs) const {
-        return lhs.first == rhs.first;
-    }
+    using PairType = typename MapType::value_type;
+    using Key = typename std::remove_const<typename PairType::first_type>::type;
 
-    void assign(std::pair<const Key, T> &lhs, const std::pair<Key, T> &rhs) const {
+  public:
+    bool compare_equal(const PairType &lhs, const Key &rhs) const { return lhs.first == rhs; }
+    bool compare_equal(const PairType &lhs, const PairType &rhs) const { return lhs.first == rhs.first; }
+
+    void assign(PairType &lhs, const PairType &rhs) const {
         // While the const_cast may be unsatisfactory, we are using small_data as
         // stand-in for placement new and a small-block allocator, so the const_cast
         // is minimal, contained, valid, and allows operators * and -> to avoid copies
@@ -536,7 +559,7 @@ class value_type_helper_map {
         lhs.second = rhs.second;
     }
 
-    Key get_key(const std::pair<const Key, T> &value) const { return value.first; }
+    Key get_key(const PairType &value) const { return value.first; }
 };
 
 template <typename Key>
@@ -551,11 +574,12 @@ class value_type_helper_set {
 
 template <typename Key, typename T, int N = 1>
 class small_unordered_map
-    : public small_container<Key, std::pair<const Key, T>, std::unordered_map<Key, T>, value_type_helper_map<Key, T>, N> {
+    : public small_container<Key, typename layer_data::unordered_map<Key, T>::value_type, layer_data::unordered_map<Key, T>,
+                             value_type_helper_map<layer_data::unordered_map<Key, T>>, N> {
   public:
     T &operator[](const Key &key) {
         for (int i = 0; i < N; ++i) {
-            if (this->small_data_allocated[i] && value_type_helper_map<Key, T>().compare_equal(this->small_data[i], key)) {
+            if (this->small_data_allocated[i] && this->helper.compare_equal(this->small_data[i], key)) {
                 return this->small_data[i].second;
             }
         }
@@ -566,7 +590,7 @@ class small_unordered_map
             for (int i = 0; i < N; ++i) {
                 if (!this->small_data_allocated[i]) {
                     this->small_data_allocated[i] = true;
-                    value_type_helper_map<Key, T>().assign(this->small_data[i], std::make_pair(key, T()));
+                    this->helper.assign(this->small_data[i], {key, T()});
 
                     return this->small_data[i].second;
                 }
@@ -577,7 +601,7 @@ class small_unordered_map
 };
 
 template <typename Key, int N = 1>
-class small_unordered_set : public small_container<Key, Key, std::unordered_set<Key>, value_type_helper_set<Key>, N> {};
+class small_unordered_set : public small_container<Key, Key, layer_data::unordered_set<Key>, value_type_helper_set<Key>, N> {};
 
 // For the given data key, look up the layer_data instance from given layer_data_map
 template <typename DATA_T>
@@ -602,10 +626,8 @@ void FreeLayerDataPtr(void *data_key, small_unordered_map<void *, DATA_T *, 2> &
 template <typename DATA_T>
 DATA_T *GetLayerDataPtr(void *data_key, std::unordered_map<void *, DATA_T *> &layer_data_map) {
     DATA_T *debug_data;
-    typename std::unordered_map<void *, DATA_T *>::const_iterator got;
-
     /* TODO: We probably should lock here, or have caller lock */
-    got = layer_data_map.find(data_key);
+    auto got = layer_data_map.find(data_key);
 
     if (got == layer_data_map.end()) {
         debug_data = new DATA_T;

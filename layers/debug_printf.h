@@ -71,7 +71,7 @@ class DebugPrintf : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features;
 
     uint32_t unique_shader_module_id = 0;
-    std::unordered_map<VkCommandBuffer, std::vector<DPFBufferInfo>> command_buffer_map;
+    layer_data::unordered_map<VkCommandBuffer, std::vector<DPFBufferInfo>> command_buffer_map;
     uint32_t output_buffer_size;
 
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
@@ -90,7 +90,7 @@ class DebugPrintf : public ValidationStateTracker {
     VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
-    std::unordered_map<uint32_t, DPFShaderTracker> shader_map;
+    layer_data::unordered_map<uint32_t, DPFShaderTracker> shader_map;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     VmaAllocator vmaAllocator = {};
     std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;

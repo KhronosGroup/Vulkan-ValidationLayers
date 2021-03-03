@@ -23,7 +23,6 @@
  */
 
 #include <cmath>
-#include <set>
 
 #include "vk_enum_string_helper.h"
 #include "vk_format_utils.h"
@@ -466,8 +465,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
     AddImageStateProps(*is_node, device, physical_device);
 
     is_node->unprotected = ((pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0);
-
-    imageMap.insert(std::make_pair(*pImage, std::move(is_node)));
+    imageMap.emplace(*pImage, std::move(is_node));
 }
 
 void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
@@ -598,7 +596,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
 
     buffer_state->unprotected = ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0);
 
-    bufferMap.insert(std::make_pair(*pBuffer, std::move(buffer_state)));
+    bufferMap.emplace(*pBuffer, std::move(buffer_state));
 }
 
 void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
@@ -612,7 +610,7 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
     DispatchGetPhysicalDeviceFormatProperties(physical_device, pCreateInfo->format, &format_properties);
     buffer_view_state->format_features = format_properties.bufferFeatures;
 
-    bufferViewMap.insert(std::make_pair(*pView, std::move(buffer_view_state)));
+    bufferViewMap.emplace(*pView, std::move(buffer_view_state));
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
@@ -684,7 +682,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
 
         DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
     }
-    imageViewMap.insert(std::make_pair(*pView, std::move(image_view_state)));
+    imageViewMap.emplace(*pView, std::move(image_view_state));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -818,7 +816,7 @@ const IMAGE_VIEW_STATE *ValidationStateTracker::GetActiveAttachmentImageViewStat
     return cb->active_attachments->at(index);
 }
 
-void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state, std::unordered_set<IMAGE_STATE *> *bound_images) {
+void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state, layer_data::unordered_set<IMAGE_STATE *> *bound_images) {
     assert(bound_images);
     for (auto *bound_image : *bound_images) {
         if (bound_image && (bound_image != image_state) && bound_image->IsCompatibleAliasing(image_state)) {
@@ -838,7 +836,7 @@ void ValidationStateTracker::RemoveAliasingImage(IMAGE_STATE *image_state) {
     image_state->aliasing_images.clear();
 }
 
-void ValidationStateTracker::RemoveAliasingImages(const std::unordered_set<IMAGE_STATE *> &bound_images) {
+void ValidationStateTracker::RemoveAliasingImages(const layer_data::unordered_set<IMAGE_STATE *> &bound_images) {
     // This is one way clear. Because the bound_images include cross references, the one way clear loop could clear the whole
     // reference. It doesn't need two ways clear.
     for (auto *bound_image : bound_images) {
@@ -1214,7 +1212,7 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, CMD_TYP
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                         state.per_set[set_index].validated_set_binding_req_map.begin(),
                                         state.per_set[set_index].validated_set_binding_req_map.end(),
-                                        std::inserter(delta_reqs, delta_reqs.begin()));
+                                        layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pipe, delta_reqs, function);
                 } else {
                     descriptor_set->UpdateDrawState(this, cb_state, cmd_type, pipe, binding_req_map, function);
@@ -1392,7 +1390,7 @@ VkFormatFeatureFlags ValidationStateTracker::GetPotentialFormatFeatures(VkFormat
 // Tie the VulkanTypedHandle to the cmd buffer which includes:
 //  Add object_binding to cmd buffer
 //  Add cb_binding to object
-bool ValidationStateTracker::AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE *, int, 8> &cb_bindings,
+bool ValidationStateTracker::AddCommandBufferBinding(BASE_NODE::BindingsType &cb_bindings,
                                                      const VulkanTypedHandle &obj, CMD_BUFFER_STATE *cb_node) {
     if (disabled[command_buffer_state]) {
         return false;
@@ -2113,10 +2111,8 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
-            state_tracker->queue_family_index_map.insert(
-                std::make_pair(queue_create_info.queueFamilyIndex, queue_create_info.queueCount));
-            state_tracker->queue_family_create_flags_map.insert(
-                std::make_pair(queue_create_info.queueFamilyIndex, queue_create_info.flags));
+            state_tracker->queue_family_index_map.emplace(queue_create_info.queueFamilyIndex, queue_create_info.queueCount);
+            state_tracker->queue_family_create_flags_map.emplace( queue_create_info.queueFamilyIndex, queue_create_info.flags);
         }
     }
 }
@@ -2183,8 +2179,8 @@ void ValidationStateTracker::DecrementBoundResources(CMD_BUFFER_STATE const *cb_
 }
 
 void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
-    std::unordered_map<VkQueue, uint64_t> other_queue_seqs;
-    std::unordered_map<VkSemaphore, uint64_t> timeline_semaphore_counters;
+    layer_data::unordered_map<VkQueue, uint64_t> other_queue_seqs;
+    layer_data::unordered_map<VkSemaphore, uint64_t> timeline_semaphore_counters;
 
     // Roll this queue forward, one submission at a time.
     while (pQueue->seq < seq) {
@@ -3137,7 +3133,7 @@ void ValidationStateTracker::PostCallRecordResetFences(VkDevice device, uint32_t
 // InvalidateCommandBuffers and InvalidateLinkedCommandBuffers are essentially
 // the same, except one takes a map and one takes a set, and InvalidateCommandBuffers
 // can also unlink objects from command buffers.
-void ValidationStateTracker::InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE *, int, 8> &cb_nodes,
+void ValidationStateTracker::InvalidateCommandBuffers(BASE_NODE::BindingsType &cb_nodes,
                                                       const VulkanTypedHandle &obj, bool unlink) {
     for (const auto &cb_node_pair : cb_nodes) {
         auto &cb_node = cb_node_pair.first;
@@ -3163,7 +3159,7 @@ void ValidationStateTracker::InvalidateCommandBuffers(small_unordered_map<CMD_BU
     }
 }
 
-void ValidationStateTracker::InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> &cb_nodes,
+void ValidationStateTracker::InvalidateLinkedCommandBuffers(layer_data::unordered_set<CMD_BUFFER_STATE *> &cb_nodes,
                                                             const VulkanTypedHandle &obj) {
     for (auto *cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
@@ -4650,7 +4646,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
         std::vector<bool> &first_is_transition;
         std::vector<uint32_t> &last;
         std::vector<std::vector<RENDER_PASS_STATE::AttachmentTransition>> &subpass_transitions;
-        std::unordered_map<uint32_t, bool> &first_read;
+        layer_data::unordered_map<uint32_t, bool> &first_read;
         const uint32_t attachment_count;
         std::vector<VkImageLayout> attachment_layout;
         std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
@@ -4686,7 +4682,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
                 if (attachment != VK_ATTACHMENT_UNUSED) {
                     const auto layout = attach_ref[j].layout;
                     // Take advantage of the fact that insert won't overwrite, so we'll only write the first time.
-                    first_read.insert(std::make_pair(attachment, is_read));
+                    first_read.emplace(attachment, is_read);
                     if (first[attachment] == VK_SUBPASS_EXTERNAL) {
                         first[attachment] = subpass;
                         const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
@@ -5157,7 +5153,7 @@ void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const Vk
                                                        const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, VkResult result) {
     if (VK_SUCCESS != result) return;
     const auto event = *pEvent;
-    eventMap.insert(std::make_pair(event, std::make_shared<EVENT_STATE>(event, pCreateInfo->flags)));
+    eventMap.emplace(event, std::make_shared<EVENT_STATE>(event, pCreateInfo->flags));
 }
 
 void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,

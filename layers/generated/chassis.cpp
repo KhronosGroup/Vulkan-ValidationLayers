@@ -69,8 +69,6 @@ static const bool use_optick_instrumentation = false;
 
 namespace vulkan_layer_chassis {
 
-using std::unordered_map;
-
 static const VkLayerProperties global_layer = {
     OBJECT_LAYER_NAME, VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
 };
@@ -94,7 +92,7 @@ typedef struct {
     void* funcptr;
 } function_data;
 
-extern const std::unordered_map<std::string, function_data> name_to_funcptr_map;
+extern const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map;
 
 // Manually written functions
 
@@ -11177,7 +11175,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(
 #ifdef _MSC_VER
 #pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope
 #endif
-const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
+const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCreateInstance", {kFuncTypeInst, (void*)CreateInstance}},
     {"vkDestroyInstance", {kFuncTypeInst, (void*)DestroyInstance}},
     {"vkEnumeratePhysicalDevices", {kFuncTypeInst, (void*)EnumeratePhysicalDevices}},

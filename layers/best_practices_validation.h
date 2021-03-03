@@ -385,7 +385,7 @@ class BestPractices : public ValidationStateTracker {
     bool VendorCheckEnabled(BPVendorFlags vendors) const;
 
     // State for use in best practices:
-    std::unordered_map<VkDescriptorPool, uint32_t> descriptor_pool_freed_count = {};
+    layer_data::unordered_map<VkDescriptorPool, uint32_t> descriptor_pool_freed_count = {};
 
     struct CacheEntry {
         uint32_t value;
@@ -412,7 +412,7 @@ class BestPractices : public ValidationStateTracker {
     };
 
     // used to track CreateInfos for graphics pipelines
-    std::unordered_map<VkPipeline, GraphicsPipelineCIs> graphicsPipelineCIs = {};
+    layer_data::unordered_map<VkPipeline, GraphicsPipelineCIs> graphicsPipelineCIs = {};
 
     // used to track state regarding depth pre-pass heuristic checks
     struct DepthPrePassState {
@@ -425,13 +425,13 @@ class BestPractices : public ValidationStateTracker {
     };
 
     // used to track depth pre-pass heuristic data per command buffer
-    std::unordered_map<VkCommandBuffer, DepthPrePassState> cbDepthPrePassStates = {};
+    layer_data::unordered_map<VkCommandBuffer, DepthPrePassState> cbDepthPrePassStates = {};
 
     // Used for instance versions of this object
-    std::unordered_map<VkSwapchainKHR, SWAPCHAIN_STATE_BP> swapchain_bp_state_map;
+    layer_data::unordered_map<VkSwapchainKHR, SWAPCHAIN_STATE_BP> swapchain_bp_state_map;
 
     // Backing data for BP-specific state data
-    std::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE_BP> phys_device_bp_state_map;
+    layer_data::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE_BP> phys_device_bp_state_map;
     // Physical device state for this instance
     PHYSICAL_DEVICE_STATE_BP* instance_device_bp_state = nullptr;
 

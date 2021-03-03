@@ -19,8 +19,8 @@
  */
 #pragma once
 #include <string>
-#include <map>
 #include <vulkan/vulkan_core.h>
+#include "vk_layer_data.h"
 
 namespace core_error {
 struct Location;

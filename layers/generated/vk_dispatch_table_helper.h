@@ -28,8 +28,6 @@
 #include <vulkan/vk_layer.h>
 #include <cstring>
 #include <string>
-#include <unordered_set>
-#include <unordered_map>
 #include "vk_layer_dispatch_table.h"
 #include "vk_extension_helper.h"
 
@@ -426,7 +424,7 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetRayTracingPipelineStackSizeKHR(VkCom
 
 
 
-const std::unordered_map<std::string, std::string> api_extension_map {
+const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkAcquireFullScreenExclusiveModeEXT", "VK_EXT_full_screen_exclusive"},
     {"vkAcquireNextImage2KHR", "VK_KHR_swapchain"},
     {"vkAcquireNextImageKHR", "VK_KHR_swapchain"},

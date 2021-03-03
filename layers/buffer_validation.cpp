@@ -1012,9 +1012,9 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
     // Adding a struct wrapper is their recommend solution for the expanded type name growing too long
     // when creating maps full of maps.
     struct ImageBarrierScoreboardSubresMap {
-        std::unordered_map<VkImageSubresourceRange, ImageBarrierScoreboardEntry> map;
+        layer_data::unordered_map<VkImageSubresourceRange, ImageBarrierScoreboardEntry> map;
     };
-    using ImageBarrierScoreboardImageMap = std::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
+    using ImageBarrierScoreboardImageMap = layer_data::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
 
     // Scoreboard for duplicate layout transition barriers within the list
     // Pointers retained in the scoreboard only have the lifetime of *this* call (i.e. within the scope of the API call)
@@ -1446,7 +1446,7 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
                                                 Scoreboard *scoreboard) const {
     // Record to the scoreboard or report that we have a duplication
     bool skip = false;
-    auto inserted = scoreboard->insert(std::make_pair(barrier, cb_state));
+    auto inserted = scoreboard->emplace(barrier, cb_state);
     if (!inserted.second && inserted.first->second != cb_state) {
         // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
         LogObjectList objlist(cb_state->commandBuffer);

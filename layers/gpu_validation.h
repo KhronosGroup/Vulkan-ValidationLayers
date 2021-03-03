@@ -29,7 +29,7 @@ class GpuAssisted;
 struct GpuAssistedDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
-    std::unordered_map<uint32_t, const cvdescriptorset::Descriptor*> update_at_submit;
+    layer_data::unordered_map<uint32_t, const cvdescriptorset::Descriptor*> update_at_submit;
 };
 
 struct GpuAssistedBufferInfo {
@@ -87,14 +87,15 @@ struct GpuAssistedAccelerationStructureBuildValidationState {
     VmaAllocation replacement_as_allocation = VK_NULL_HANDLE;
     uint64_t replacement_as_handle = 0;
 
-    std::unordered_map<VkCommandBuffer, std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo>> validation_buffers;
+    layer_data::unordered_map<VkCommandBuffer, std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo>>
+        validation_buffers;
 };
 
 class GpuAssisted : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features;
     VkBool32 shaderInt64;
     uint32_t unique_shader_module_id = 0;
-    std::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
+    layer_data::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     bool buffer_oob_enabled;
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
@@ -116,7 +117,7 @@ class GpuAssisted : public ValidationStateTracker {
     VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
-    std::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
+    layer_data::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     VmaAllocator vmaAllocator = {};
     std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;

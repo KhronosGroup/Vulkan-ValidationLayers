@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <array>
 #include <vector>
-#include <unordered_map>
 
 namespace sync_vuid_maps {
 using core_error::Field;

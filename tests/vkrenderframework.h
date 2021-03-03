@@ -40,9 +40,9 @@ class VkImageObj;
 
 #include <algorithm>
 #include <array>
-#include <map>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
 
 using vk_testing::MakeVkHandles;

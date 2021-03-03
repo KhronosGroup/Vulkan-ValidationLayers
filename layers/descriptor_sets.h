@@ -30,8 +30,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 class CoreChecks;
@@ -156,7 +154,7 @@ class DescriptorSetLayoutDef {
 
     // Convenience data structures for rapid lookup of various descriptor set layout properties
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
-    std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
+    layer_data::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
     // The following map allows an non-iterative lookup of a binding from a global index...
     std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
 
@@ -612,7 +610,7 @@ class DescriptorSet : public BASE_NODE {
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present
-    typedef std::unordered_set<uint32_t> TrackedBindings;
+    typedef layer_data::unordered_set<uint32_t> TrackedBindings;
     static void FilterOneBindingReq(const BindingReqMap::value_type &binding_req_pair, BindingReqMap *out_req,
                                     const TrackedBindings &set, uint32_t limit);
     void FilterBindingReqs(const CMD_BUFFER_STATE &, const PIPELINE_STATE &, const BindingReqMap &in_req,
@@ -692,16 +690,16 @@ class DescriptorSet : public BASE_NODE {
     //
     // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of
     // expensive validation operation (typically per-draw)
-    typedef std::unordered_map<CMD_BUFFER_STATE *, TrackedBindings> TrackedBindingMap;
+    typedef layer_data::unordered_map<CMD_BUFFER_STATE *, TrackedBindings> TrackedBindingMap;
     // Track the validation caching of bindings vs. the command buffer and draw state
-    typedef std::unordered_map<uint32_t, CMD_BUFFER_STATE::ImageLayoutUpdateCount> VersionedBindings;
+    typedef layer_data::unordered_map<uint32_t, CMD_BUFFER_STATE::ImageLayoutUpdateCount> VersionedBindings;
     struct CachedValidation {
         TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
         TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording
         TrackedBindings dynamic_buffers;                                               // Dirtied (flushed) each BindDescriptorSet
-        std::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
+        layer_data::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
     };
-    typedef std::unordered_map<const CMD_BUFFER_STATE *, CachedValidation> CachedValidationMap;
+    typedef layer_data::unordered_map<const CMD_BUFFER_STATE *, CachedValidation> CachedValidationMap;
     // Image and ImageView bindings are validated per pipeline and not invalidate by repeated binding
     CachedValidationMap cached_validation_;
 };
