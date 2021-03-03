@@ -11555,18 +11555,29 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(const char *func_name, ui
         }
         auto mem_info = GetDevMemState(mem_ranges[i].memory);
         if (mem_info) {
-            const VkDeviceSize allocation_size = mem_info->alloc_info.allocationSize;
-            if ((size != VK_WHOLE_SIZE) && (size + offset != allocation_size) && (SafeModulo(size, atom_size) != 0)) {
-                skip |= LogError(mem_ranges->memory, "VUID-VkMappedMemoryRange-size-01390",
-                                 "%s: Size in pMemRanges[%d] is 0x%" PRIxLEAST64
-                                 ", which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 ").",
-                                 func_name, i, size, atom_size);
-            } else if ((size == VK_WHOLE_SIZE) && SafeModulo(allocation_size - offset, atom_size) != 0) {
-                skip |= LogError(mem_ranges->memory, "VUID-VkMappedMemoryRange-size-01389",
-                                 "%s: Size in pMemRanges[%d] is VK_WHOLE_SIZE and allocationSize minus offset (0x%" PRIxLEAST64
-                                 " - 0x%" PRIxLEAST64
-                                 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 ").",
-                                 func_name, i, allocation_size, offset, atom_size);
+            const auto allocation_size = mem_info->alloc_info.allocationSize;
+            if (size == VK_WHOLE_SIZE) {
+                const auto mapping_offset = mem_info->mapped_range.offset;
+                const auto mapping_size = mem_info->mapped_range.size;
+                const auto mapping_end = ((mapping_size == VK_WHOLE_SIZE) ? allocation_size : mapping_offset + mapping_size);
+                if (SafeModulo(mapping_end, atom_size) != 0 && mapping_end != allocation_size) {
+                    skip |= LogError(mem_ranges->memory, "VUID-VkMappedMemoryRange-size-01389",
+                                     "%s: Size in pMemRanges[%d] is VK_WHOLE_SIZE and the mapping end (0x%" PRIxLEAST64
+                                     " = 0x%" PRIxLEAST64 " + 0x%" PRIxLEAST64
+                                     ") not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64
+                                     ") and not equal to the end of the memory object (0x%" PRIxLEAST64 ").",
+                                     func_name, i, mapping_end, mapping_offset, mapping_size, atom_size, allocation_size);
+                }
+            } else {
+                const auto range_end = size + offset;
+                if (range_end != allocation_size && SafeModulo(size, atom_size) != 0) {
+                    skip |= LogError(mem_ranges->memory, "VUID-VkMappedMemoryRange-size-01390",
+                                     "%s: Size in pMemRanges[%d] is 0x%" PRIxLEAST64
+                                     ", which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64
+                                     ") and offset + size (0x%" PRIxLEAST64 " + 0x%" PRIxLEAST64 " = 0x%" PRIxLEAST64
+                                     ") not equal to the memory size (0x%" PRIxLEAST64 ").",
+                                     func_name, i, size, atom_size, offset, size, range_end, allocation_size);
+                }
             }
         }
     }
