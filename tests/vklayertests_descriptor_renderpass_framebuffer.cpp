@@ -4841,7 +4841,8 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
     // clang-format off
     OneOffDescriptorSet descriptor_set_0(m_device, {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_ALL, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr}  // pDynamicOffsets[0]
+        // Gap to ensure looping for binding index is correct
+        {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr}  // pDynamicOffsets[0]
     });
     OneOffDescriptorSet descriptor_set_1(m_device, {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_ALL, nullptr},
@@ -4863,14 +4864,17 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
     descriptor_set_2.WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE);  // non-dynamic
 
     // buffer[0, max]
-    descriptor_set_0.WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE);  // pDynamicOffsets[0]
+    descriptor_set_0.WriteDescriptorBufferInfo(2, buffer.handle(), 0, VK_WHOLE_SIZE,
+                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);  // pDynamicOffsets[0]
     // buffer[alignment, max]
-    descriptor_set_2.WriteDescriptorBufferInfo(0, buffer.handle(), partial_size, VK_WHOLE_SIZE);  // pDynamicOffsets[1]
+    descriptor_set_2.WriteDescriptorBufferInfo(0, buffer.handle(), partial_size, VK_WHOLE_SIZE,
+                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);  // pDynamicOffsets[1]
     // buffer[0, max - alignment]
-    descriptor_set_2.WriteDescriptorBufferInfo(2, buffer.handle(), 0, buffer_size - partial_size);  // pDynamicOffsets[2]
+    descriptor_set_2.WriteDescriptorBufferInfo(2, buffer.handle(), 0, buffer_size - partial_size,
+                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);  // pDynamicOffsets[2]
     // buffer[alignment, max - alignment]
-    descriptor_set_2.WriteDescriptorBufferInfo(3, buffer.handle(), partial_size,
-                                               buffer_size - (partial_size * 2));  // pDynamicOffsets[3]
+    descriptor_set_2.WriteDescriptorBufferInfo(3, buffer.handle(), partial_size, buffer_size - (partial_size * 2),
+                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);  // pDynamicOffsets[3]
 
     descriptor_set_0.UpdateDescriptorSets();
     descriptor_set_1.UpdateDescriptorSets();
@@ -4932,6 +4936,31 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, UpdateDescriptorSetMismatchType) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo buffer_ci = {};
+    buffer_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_ci.size = m_device->props.limits.minUniformBufferOffsetAlignment;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_ci.queueFamilyIndexCount = 1;
+    buffer_ci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_ci);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    // wrong type
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00319");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, DescriptorSetCompatibility) {
