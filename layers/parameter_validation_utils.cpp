@@ -1030,7 +1030,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                      "vkCreateImage(): Tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext must have "
                                      "either VkImageDrmFormatModifierListCreateInfoEXT or "
                                      "VkImageDrmFormatModifierExplicitCreateInfoEXT in the pNext chain");
-                } else if (drm_format_mod_list != nullptr) {
+                } else if (drm_format_mod_explict != nullptr) {
                     image_create_drm_format_modifiers.push_back(drm_format_mod_explict->drmFormatModifier);
                 } else if (drm_format_mod_list != nullptr) {
                     for (uint32_t i = 0; i < drm_format_mod_list->drmFormatModifierCount; i++) {
