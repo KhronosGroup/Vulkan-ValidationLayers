@@ -6941,8 +6941,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     const auto dsl = descriptor_set->GetLayout();
                     const auto binding_count = dsl->GetBindingCount();
                     const auto &limits = phys_dev_props.limits;
-                    for (uint32_t binding_idx = 0; binding_idx < binding_count; binding_idx++) {
-                        const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
+                    for (uint32_t i = 0; i < binding_count; i++) {
+                        const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(i);
+                        // If a descriptor set has only binding 0 and 2 the binding_index will be 0 and 2
+                        const uint32_t binding_index = binding->binding;
                         const uint32_t offset = pDynamicOffsets[cur_dyn_offset];
                         // skip checking binding if not needed
                         if (cvdescriptorset::IsDyanmicDescriptor(binding->descriptorType) == false) {
@@ -6969,7 +6971,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                              cur_dyn_offset, offset, limits.minStorageBufferOffsetAlignment);
                         }
 
-                        auto *descriptor = descriptor_set->GetDescriptorFromBinding(binding_idx);
+                        auto *descriptor = descriptor_set->GetDescriptorFromBinding(binding_index);
                         // Currently only GeneralBuffer are dynamic and need to be checked
                         if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
                             const auto *buffer_descriptor = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor);
@@ -6985,7 +6987,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                 skip |= LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
                                                  "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x, but must be zero since "
                                                  "the buffer descriptor's range is VK_WHOLE_SIZE in descriptorSet #%u binding #%u.",
-                                                 cur_dyn_offset, offset, set_idx, binding_idx);
+                                                 cur_dyn_offset, offset, set_idx, binding_index);
 
                             } else if ((bound_range != VK_WHOLE_SIZE) &&
                                        ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
@@ -6998,7 +7000,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                  ") is greater then the size of the buffer (0x%" PRIxLEAST64
                                                  ") in descriptorSet #%u binding #%u.",
                                                  cur_dyn_offset, offset, bound_range, buffer_state->createInfo.size, set_idx,
-                                                 binding_idx);
+                                                 binding_index);
                             }
                         }
                         cur_dyn_offset++;
