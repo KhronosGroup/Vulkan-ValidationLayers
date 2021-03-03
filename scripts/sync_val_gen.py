@@ -736,11 +736,11 @@ def StageAccessEnums(stage_accesses, config):
     map_name = var_prefix + 'StageAccessIndexByStageAccessBit'
     output.append('// Map of the StageAccessIndices from the StageAccess Bit')
     if config['is_source']:
-        output.append('const std::unordered_map<{}, {}> {}  = {{'.format(sync_mask_name, ordinal_name, map_name))
+        output.append('const layer_data::unordered_map<{}, {}> {}  = {{'.format(sync_mask_name, ordinal_name, map_name))
         output.extend([ '{}{{ {}, {} }},'.format(indent, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses if e['stage_access_bit'] is not None])
         output.append('};')
     else:
-        output.append('extern const std::unordered_map<{}, {}> {};'.format(sync_mask_name, ordinal_name, map_name))
+        output.append('extern const layer_data::unordered_map<{}, {}> {};'.format(sync_mask_name, ordinal_name, map_name))
     output.append('')
 
     # stage/access debug information based on ordinal enum
@@ -999,7 +999,8 @@ def GenSyncTypeHelper(gen, is_source) :
     if config['is_source']:
         lines = ['#include "synchronization_validation_types.h"', '']
     else:
-        lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <unordered_map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>', '']
+        lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
+                 '#include "vk_layer_data.h"']
         lines.extend(("using {} = {};".format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
     lines.extend(['// clang-format off', ''])
 

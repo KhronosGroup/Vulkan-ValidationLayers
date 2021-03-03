@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@
 #include <memory>
 #include <mutex>
 #include <type_traits>
-#include <unordered_set>
 #include <vector>
+#include "vk_layer_data.h"
 
 // Hash and equality utilities for supporting hashing containers (e.g. unordered_set, unordered_map)
 namespace hash_util {
@@ -41,13 +41,13 @@ bool similar_for_nullity(const T *const lhs, const T *const rhs) {
 // Wrap std hash to avoid manual casts for the holes in std::hash (in C++11)
 template <typename Value>
 size_t HashWithUnderlying(Value value, typename std::enable_if<!std::is_enum<Value>::value, void *>::type = nullptr) {
-    return std::hash<Value>()(value);
+    return layer_data::hash<Value>()(value);
 }
 
 template <typename Value>
 size_t HashWithUnderlying(Value value, typename std::enable_if<std::is_enum<Value>::value, void *>::type = nullptr) {
     using Underlying = typename std::underlying_type<Value>::type;
-    return std::hash<Underlying>()(static_cast<const Underlying &>(value));
+    return layer_data::hash<Underlying>()(static_cast<const Underlying &>(value));
 }
 
 class HashCombiner {
@@ -125,7 +125,7 @@ struct IsOrderedContainer {
 // which are invariant with resize/insert), with the hash and equality
 // template arguments wrapped in a shared pointer dereferencing
 // function object
-template <typename T, typename Hasher = std::hash<T>, typename KeyEqual = std::equal_to<T>>
+template <typename T, typename Hasher = layer_data::hash<T>, typename KeyEqual = std::equal_to<T>>
 class Dictionary {
   public:
     using Def = T;
@@ -152,7 +152,7 @@ class Dictionary {
     struct KeyValueEqual {
         bool operator()(const Id &lhs, const Id &rhs) const { return KeyEqual()(*lhs, *rhs); }
     };
-    using Dict = std::unordered_set<Id, HashKeyValue, KeyValueEqual>;
+    using Dict = layer_data::unordered_set<Id, HashKeyValue, KeyValueEqual>;
     using Lock = std::mutex;
     using Guard = std::lock_guard<Lock>;
     Lock lock;

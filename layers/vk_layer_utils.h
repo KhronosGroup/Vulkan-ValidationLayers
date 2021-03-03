@@ -27,7 +27,6 @@
 #include <stdbool.h>
 #include <string>
 #include <vector>
-#include <set>
 #include <iomanip>
 #include "cast_utils.h"
 #include "vk_format_utils.h"
@@ -302,7 +301,7 @@ typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
 //
 // snapshot: Return an array of elements (key, value pairs) that satisfy an optional
 // predicate. This can be used as a substitute for iterators in exceptional cases.
-template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = std::hash<Key>>
+template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = layer_data::hash<Key>>
 class vl_concurrent_unordered_map {
   public:
     void insert_or_assign(const Key &key, const T &value) {
@@ -314,7 +313,7 @@ class vl_concurrent_unordered_map {
     bool insert(const Key &key, const T &value) {
         uint32_t h = ConcurrentMapHashObject(key);
         write_lock_guard_t lock(locks[h].lock);
-        auto ret = maps[h].insert(typename std::unordered_map<Key, T>::value_type(key, value));
+        auto ret = maps[h].emplace(key, value);
         return ret.second;
     }
 
@@ -394,7 +393,7 @@ class vl_concurrent_unordered_map {
             read_lock_guard_t lock(locks[h].lock);
             for (const auto &j : maps[h]) {
                 if (!f || f(j.second)) {
-                    ret.push_back(j);
+                    ret.emplace_back(j.first, j.second);
                 }
             }
         }
@@ -404,7 +403,7 @@ class vl_concurrent_unordered_map {
   private:
     static const int BUCKETS = (1 << BUCKETSLOG2);
 
-    std::unordered_map<Key, T, Hash> maps[BUCKETS];
+    layer_data::unordered_map<Key, T, Hash> maps[BUCKETS];
     struct {
         mutable ReadWriteLock lock;
         // Put each lock on its own cache line to avoid false cache line sharing.

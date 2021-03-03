@@ -36,7 +36,7 @@
 // Unique bit for each  stage/access combination
 
 // Map of the StageAccessIndices from the StageAccess Bit
-const std::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex> syncStageAccessIndexByStageAccessBit  = {
+const layer_data::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex> syncStageAccessIndexByStageAccessBit  = {
     { SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ },
     { SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT, SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT },
     { SYNC_INDEX_INPUT_INDEX_READ_BIT, SYNC_INDEX_INPUT_INDEX_READ },

@@ -622,6 +622,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             enum_string_helper_header += '\n'
             enum_string_helper_header += '#include <string>\n'
             enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
+            enum_string_helper_header += '#include "vk_layer_data.h"\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += self.enum_output
             enum_string_helper_header += self.DeIndexPhysDevFeatures()
@@ -776,16 +777,15 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '',
             '#ifndef VK_EXTENSION_HELPER_H_',
             '#define VK_EXTENSION_HELPER_H_',
-            '#include <unordered_set>',
             '#include <string>',
-            '#include <unordered_map>',
             '#include <utility>',
             '#include <set>',
             '#include <vector>',
             '#include <cassert>',
             '',
             '#include <vulkan/vulkan.h>',
-            '',
+            '#include "vk_layer_data.h"',
+            ''
             '#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"',
             '',
             '// Suppress unused warning on Linux',
@@ -872,19 +872,19 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 '       %s requirements;' % req_vec_type,
                 '    };',
                 '',
-                '    typedef std::unordered_map<std::string,%s> %s;' % (info_type, info_map_type),
+                '    typedef layer_data::unordered_map<std::string,%s> %s;' % (info_type, info_map_type),
                 '    static const %s &get_info(const char *name) {' %info_type,
                 '        static const %s info_map = {' % info_map_type ])
             struct.extend([
-                '            std::make_pair("VK_VERSION_1_1", %sInfo(&%sExtensions::vk_feature_version_1_1, {})),' % (type, type)])
+                '            {"VK_VERSION_1_1", %sInfo(&%sExtensions::vk_feature_version_1_1, {})},' % (type, type)])
             struct.extend([
-                '            std::make_pair("VK_VERSION_1_2", %sInfo(&%sExtensions::vk_feature_version_1_2, {})),' % (type, type)])
+                '            {"VK_VERSION_1_2", %sInfo(&%sExtensions::vk_feature_version_1_2, {})},' % (type, type)])
 
             field_format = '&' + struct_type + '::%s'
             req_format = '{' + field_format+ ', %s}'
             req_indent = '\n                           '
             req_join = ',' + req_indent
-            info_format = ('            std::make_pair(%s, ' + info_type + '(' + field_format + ', {%s})),')
+            info_format = ('            {%s, ' + info_type + '(' + field_format + ', {%s})},')
             def format_info(ext_name, info):
                 reqs = req_join.join([req_format % (field_name[req], extension_dict[req]['define']) for req in info['reqs']])
                 return info_format % (info['define'], field_name[ext_name], '{%s}' % (req_indent + reqs) if reqs else '')

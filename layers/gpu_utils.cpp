@@ -51,7 +51,7 @@ class UtilDescriptorSetManager {
     };
     VkDevice device;
     uint32_t numBindingsInSet;
-    std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
+    layer_data::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
 };
 
 // Implementation for Descriptor Set Manager class

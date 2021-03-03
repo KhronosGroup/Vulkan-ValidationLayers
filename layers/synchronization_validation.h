@@ -22,9 +22,7 @@
 #pragma once
 
 #include <limits>
-#include <map>
 #include <memory>
-#include <unordered_map>
 #include <vulkan/vulkan.h>
 
 #include "synchronization_validation_types.h"
@@ -192,7 +190,7 @@ using SyncEventStateShared = std::shared_ptr<SyncEventState>;
 using SyncEventStateConstShared = std::shared_ptr<const SyncEventState>;
 class SyncEventsContext {
   public:
-    using Map = std::unordered_map<const EVENT_STATE *, SyncEventStateShared>;
+    using Map = layer_data::unordered_map<const EVENT_STATE *, SyncEventStateShared>;
     using iterator = Map::iterator;
     using const_iterator = Map::const_iterator;
 
@@ -203,7 +201,7 @@ class SyncEventsContext {
 
             const auto *event_plain_ptr = event_state.get();
             auto sync_state = SyncEventStateShared(new SyncEventState(event_state));
-            auto insert_pair = map_.insert(std::make_pair(event_plain_ptr, std::move(sync_state)));
+            auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
             return insert_pair.first->second.get();
         }
         return find_it->second.get();
@@ -964,7 +962,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
     using StateTracker = ValidationStateTracker;
 
-    std::unordered_map<VkCommandBuffer, CommandBufferAccessContextShared> cb_access_state;
+    layer_data::unordered_map<VkCommandBuffer, CommandBufferAccessContextShared> cb_access_state;
 
     CommandBufferAccessContextShared GetAccessContextImpl(VkCommandBuffer command_buffer, bool do_insert) {
         auto found_it = cb_access_state.find(command_buffer);
@@ -975,7 +973,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
             assert(cb_state.get());
             auto queue_flags = GetQueueFlags(*cb_state);
             std::shared_ptr<CommandBufferAccessContext> context(new CommandBufferAccessContext(*this, cb_state, queue_flags));
-            auto insert_pair = cb_access_state.insert(std::make_pair(command_buffer, std::move(context)));
+            auto insert_pair = cb_access_state.emplace(command_buffer, std::move(context));
             found_it = insert_pair.first;
         }
         return found_it->second;

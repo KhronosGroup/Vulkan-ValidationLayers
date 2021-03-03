@@ -1,6 +1,6 @@
-/* Copyright (c) 2020 The Khronos Group Inc.
- * Copyright (c) 2020 Valve Corporation
- * Copyright (c) 2020 LunarG, Inc.
+/* Copyright (c) 2021 The Khronos Group Inc.
+ * Copyright (c) 2021 Valve Corporation
+ * Copyright (c) 2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ typedef struct {
     int32_t *duplicate_message_limit;
 } ConfigAndEnvSettings;
 
-static const std::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {
+static const layer_data::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {
     {"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT},
     {"VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT", VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT},
     {"VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT", VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT},
@@ -43,7 +43,7 @@ static const std::unordered_map<std::string, VkValidationFeatureDisableEXT> VkVa
     {"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", VK_VALIDATION_FEATURE_DISABLE_ALL_EXT},
 };
 
-static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
+static const layer_data::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",
      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
@@ -52,11 +52,11 @@ static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkVal
     {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT},
 };
 
-static const std::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
+static const layer_data::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
     {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION},
 };
 
-static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
+static const layer_data::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
     {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
     {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
     {"VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET", VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET},
@@ -65,7 +65,7 @@ static const std::unordered_map<std::string, ValidationCheckDisables> Validation
     {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
 };
 
-static const std::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
+static const layer_data::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM},
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
 };

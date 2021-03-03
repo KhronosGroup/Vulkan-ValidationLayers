@@ -22,7 +22,6 @@
  *
  ****************************************************************************/
 
-#include <unordered_map>
 #include <string>
 #include <functional>
 #include <spirv/unified1/spirv.hpp>

@@ -36,12 +36,9 @@
 #include <atomic>
 #include <functional>
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <list>
 #include <deque>
-#include <map>
 
 uint32_t ResolveRemainingLevels(const VkImageSubresourceRange* range, uint32_t mip_levels);
 uint32_t ResolveRemainingLayers(const VkImageSubresourceRange* range, uint32_t layers);
@@ -136,7 +133,7 @@ struct PHYSICAL_DEVICE_STATE {
     uint32_t display_plane_property_count = 0;
 
     // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
-    std::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
+    layer_data::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
 
     // TODO These are currently used by CoreChecks, but should probably be refactored
     bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
@@ -218,7 +215,7 @@ struct hash<GpuQueue> {
 struct SURFACE_STATE : public BASE_NODE {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     SWAPCHAIN_NODE* swapchain = nullptr;
-    std::unordered_map<GpuQueue, bool> gpu_queue_support;
+    layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
 
     SURFACE_STATE() {}
     SURFACE_STATE(VkSurfaceKHR surface) : surface(surface) {}
@@ -366,12 +363,12 @@ class ValidationStateTracker : public ValidationObject {
   public:
     //  TODO -- move to private
     //  TODO -- make consistent with traits approach below.
-    std::unordered_map<VkQueue, QUEUE_STATE> queueMap;
+    layer_data::unordered_map<VkQueue, QUEUE_STATE> queueMap;
 
-    std::unordered_set<VkQueue> queues;  // All queues under given device
+    layer_data::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
-    std::unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
-    std::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
+    layer_data::unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
+    layer_data::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
@@ -389,7 +386,7 @@ class ValidationStateTracker : public ValidationObject {
         using SharedType = std::shared_ptr<StateType>;
         using ConstSharedType = std::shared_ptr<const StateType>;
         using MappedType = std::shared_ptr<StateType>;
-        using MapType = std::unordered_map<HandleType, MappedType>;
+        using MapType = layer_data::unordered_map<HandleType, MappedType>;
     };
 
     // Override base class, we have some extra work to do here
@@ -423,9 +420,9 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map)
 
-    void AddAliasingImage(IMAGE_STATE* image_state, std::unordered_set<IMAGE_STATE*>* bound_images);
+    void AddAliasingImage(IMAGE_STATE* image_state, layer_data::unordered_set<IMAGE_STATE*>* bound_images);
     void RemoveAliasingImage(IMAGE_STATE* image_state);
-    static void RemoveAliasingImages(const std::unordered_set<IMAGE_STATE*>& bound_images);
+    static void RemoveAliasingImages(const layer_data::unordered_set<IMAGE_STATE*>& bound_images);
 
   public:
     template <typename State>
@@ -634,7 +631,7 @@ class ValidationStateTracker : public ValidationObject {
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
 
     // Used for instance versions of this object
-    std::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
+    layer_data::unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 
@@ -1274,10 +1271,9 @@ class ValidationStateTracker : public ValidationObject {
                                                 VkResult result) override;
 
     // State Utilty functions
-    bool AddCommandBufferMem(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, VkDeviceMemory obj,
+    bool AddCommandBufferMem(layer_data::unordered_map<CMD_BUFFER_STATE*, int>& cb_bindings, VkDeviceMemory obj,
                              CMD_BUFFER_STATE* cb_node);
-    bool AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, const VulkanTypedHandle& obj,
-                                 CMD_BUFFER_STATE* cb_node);
+    bool AddCommandBufferBinding(BASE_NODE::BindingsType& cb_bindings, const VulkanTypedHandle& obj, CMD_BUFFER_STATE* cb_node);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE_KHR*);
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
@@ -1305,9 +1301,8 @@ class ValidationStateTracker : public ValidationObject {
     void IncrementBoundObjects(CMD_BUFFER_STATE const* cb_node);
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
     void InsertImageMemoryRange(IMAGE_STATE* image_state, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset);
-    void InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_nodes, const VulkanTypedHandle& obj,
-                                  bool unlink = true);
-    void InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
+    void InvalidateCommandBuffers(BASE_NODE::BindingsType& cb_nodes, const VulkanTypedHandle& obj, bool unlink = true);
+    void InvalidateLinkedCommandBuffers(layer_data::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
@@ -1471,8 +1466,8 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
 
     // Map for queue family index to queue count
-    std::unordered_map<uint32_t, uint32_t> queue_family_index_map;
-    std::unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
+    layer_data::unordered_map<uint32_t, uint32_t> queue_family_index_map;
+    layer_data::unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
     bool performance_lock_acquired = false;
 
     template <typename ExtProp>

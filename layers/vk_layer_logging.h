@@ -37,7 +37,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <unordered_map>
 #include <utility>
 #include <cstring>
 
@@ -192,16 +191,16 @@ typedef struct _debug_report_data {
     VkDebugUtilsMessageTypeFlagsEXT active_types{0};
     bool queueLabelHasInsert{false};
     bool cmdBufLabelHasInsert{false};
-    std::unordered_map<uint64_t, std::string> debugObjectNameMap;
-    std::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
-    std::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;
-    std::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
+    layer_data::unordered_map<uint64_t, std::string> debugObjectNameMap;
+    layer_data::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
+    layer_data::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;
+    layer_data::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
     std::vector<uint32_t> filter_message_ids{};
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
     mutable std::mutex debug_output_mutex;
     int32_t duplicate_message_limit = 0;
-    mutable std::unordered_map<uint32_t, int32_t> duplicate_message_count_map{};
+    mutable layer_data::unordered_map<uint32_t, int32_t> duplicate_message_count_map{};
     const void *instance_pnext_chain{};
 
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
@@ -848,7 +847,7 @@ static LoggingLabelState *GetLoggingLabelState(Map *map, typename Map::key_type 
     if (iter == map->end()) {
         if (insert) {
             // Add a label state if not present
-            auto inserted = map->insert(std::make_pair(key, std::unique_ptr<LoggingLabelState>(new LoggingLabelState())));
+            auto inserted = map->emplace(key, std::unique_ptr<LoggingLabelState>(new LoggingLabelState()));
             assert(inserted.second);
             iter = inserted.first;
             label_state = iter->second.get();
@@ -865,7 +864,7 @@ static inline void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQ
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto *label_state = GetLoggingLabelState(&report_data->debugUtilsQueueLabels, queue, /* insert */ true);
         assert(label_state);
-        label_state->labels.push_back(LoggingLabel(label_info));
+        label_state->labels.emplace_back(label_info);
 
         // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
         label_state->insert_label.Reset();

@@ -194,7 +194,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
                 self.otwrite('both', '\n')
 
             # Output data structure containing extension deprecation data
-            ext_deprecation_data = 'const std::unordered_map<std::string, DeprecationData>  deprecated_extensions = {\n'
+            ext_deprecation_data = 'const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extensions = {\n'
             for ext in sorted(self.extension_info):
                 ext_data = self.extension_info[ext]
                 reason = ext_data[0]
@@ -205,7 +205,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             self.otwrite('hdr', ext_deprecation_data)
 
             # Output data structure containing extension special use data
-            ext_specialuse_data = 'const std::unordered_map<std::string, std::string> special_use_extensions = {\n'
+            ext_specialuse_data = 'const layer_data::unordered_map<std::string, std::string> special_use_extensions = {\n'
             for ext in sorted(self.extension_info):
                 spec_use_data = self.extension_info[ext]
                 special_uses = spec_use_data[2]

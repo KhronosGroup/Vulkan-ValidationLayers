@@ -24,7 +24,6 @@
 #include "vulkan/vk_layer.h"
 #include <limits.h>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 #include <utility>
 #include <algorithm>

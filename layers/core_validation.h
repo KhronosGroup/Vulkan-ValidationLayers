@@ -505,7 +505,7 @@ class CoreChecks : public ValidationStateTracker {
                                             PIPELINE_STATE const* pipeline, uint32_t subpass_index) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, SHADER_MODULE_STATE const* src,
                                    VkPipelineShaderStageCreateInfo const* pStage) const;
-    bool ValidateBuiltinLimits(SHADER_MODULE_STATE const* src, const std::unordered_set<uint32_t>& accessible_ids,
+    bool ValidateBuiltinLimits(SHADER_MODULE_STATE const* src, const layer_data::unordered_set<uint32_t>& accessible_ids,
                                VkShaderStageFlagBits stage) const;
     PushConstantByteState ValidatePushConstantSetUpdate(const std::vector<uint8_t>& push_constant_data_update,
                                                         const shader_struct_member& push_constant_used_in_shader,

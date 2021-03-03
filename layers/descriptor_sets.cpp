@@ -339,7 +339,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
     const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props, const DeviceExtensions *device_extensions) {
     bool skip = false;
-    std::unordered_set<uint32_t> bindings;
+    layer_data::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
 
     const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(create_info->pNext);

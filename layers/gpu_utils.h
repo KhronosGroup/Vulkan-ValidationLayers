@@ -37,7 +37,7 @@ class UtilDescriptorSetManager {
     };
     VkDevice device;
     uint32_t numBindingsInSet;
-    std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
+    layer_data::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
 };
 struct UtilQueueBarrierCommandInfo {
     VkCommandPool barrier_command_pool = VK_NULL_HANDLE;

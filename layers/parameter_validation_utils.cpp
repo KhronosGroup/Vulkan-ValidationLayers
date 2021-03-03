@@ -36,7 +36,7 @@ inline bool in_inclusive_range(const T &value, const T &min, const T &max) {
 read_lock_guard_t StatelessValidation::read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
 write_lock_guard_t StatelessValidation::write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
 
-static std::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+static layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
 static ReadWriteLock secondary_cb_map_mutex;
 static read_lock_guard_t cb_read_lock() { return read_lock_guard_t(secondary_cb_map_mutex); }
 static write_lock_guard_t cb_write_lock() { return write_lock_guard_t(secondary_cb_map_mutex); }
@@ -192,7 +192,7 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
 
             // Enumerate the Device Ext Properties to save the PhysicalDevice supported extension state
             uint32_t ext_count = 0;
-            std::unordered_set<std::string> dev_exts_enumerated{};
+            layer_data::unordered_set<std::string> dev_exts_enumerated{};
             std::vector<VkExtensionProperties> ext_props{};
             instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, nullptr);
             ext_props.resize(ext_count);
@@ -517,7 +517,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     // Validate pCreateInfo->pQueueCreateInfos
     if (pCreateInfo->pQueueCreateInfos) {
-        std::unordered_set<uint32_t> set;
+        layer_data::unordered_set<uint32_t> set;
 
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
@@ -1965,7 +1965,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  i, vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
                 }
 
-                std::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
+                layer_data::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
                 for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
                     auto const &vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
                     auto const &binding_it = vertex_bindings.find(vertex_bind_desc.binding);
@@ -1996,7 +1996,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
 
-                std::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
+                layer_data::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
                 for (uint32_t d = 0; d < vertex_input_state->vertexAttributeDescriptionCount; ++d) {
                     auto const &vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
                     auto const &location_it = attribute_locations.find(vertex_attrib_desc.location);

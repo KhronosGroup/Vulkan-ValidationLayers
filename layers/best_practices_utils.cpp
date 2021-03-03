@@ -47,7 +47,7 @@ bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
 
 const char* VendorSpecificTag(BPVendorFlags vendors) {
     // Cache built vendor tags in a map
-    static std::unordered_map<BPVendorFlags, std::string> tag_map;
+    static layer_data::unordered_map<BPVendorFlags, std::string> tag_map;
 
     auto res = tag_map.find(vendors);
     if (res == tag_map.end()) {
@@ -531,7 +531,7 @@ void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescript
         // we want to track frees because we're interested in suggesting re-use
         auto iter = descriptor_pool_freed_count.find(descriptorPool);
         if (iter == descriptor_pool_freed_count.end()) {
-            descriptor_pool_freed_count.insert(std::make_pair(descriptorPool, descriptorSetCount));
+            descriptor_pool_freed_count.emplace(descriptorPool, descriptorSetCount);
         } else {
             iter->second += descriptorSetCount;
         }
@@ -901,7 +901,7 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
 
         // add the tracking state if it doesn't exist
         if (gp_cis == graphicsPipelineCIs.end()) {
-            auto result = graphicsPipelineCIs.emplace(std::make_pair(pipeline_handle, GraphicsPipelineCIs{}));
+            auto result = graphicsPipelineCIs.emplace(pipeline_handle, GraphicsPipelineCIs{});
 
             if (!result.second) continue;
 
@@ -1229,7 +1229,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
         if (gp_cis != graphicsPipelineCIs.end()) {
             auto prepass_state = cbDepthPrePassStates.find(commandBuffer);
             if (prepass_state == cbDepthPrePassStates.end()) {
-                auto result = cbDepthPrePassStates.emplace(std::make_pair(commandBuffer, DepthPrePassState{}));
+                auto result = cbDepthPrePassStates.emplace(commandBuffer, DepthPrePassState{});
 
                 if (!result.second) return;
 
@@ -1265,7 +1265,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
             }
         } else {
             // reset depth pre-pass tracking
-            cbDepthPrePassStates.emplace(std::make_pair(commandBuffer, DepthPrePassState{}));
+            cbDepthPrePassStates.emplace(commandBuffer, DepthPrePassState{});
         }
     }
 }
@@ -1377,7 +1377,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
 
     // add the tracking state if it doesn't exist
     if (prepass_state == cbDepthPrePassStates.end()) {
-        auto result = cbDepthPrePassStates.emplace(std::make_pair(commandBuffer, DepthPrePassState{}));
+        auto result = cbDepthPrePassStates.emplace(commandBuffer, DepthPrePassState{});
 
         if (!result.second) return;
 
@@ -1966,10 +1966,10 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {
         const VkBindSparseInfo& bind_info = pBindInfo[bind_idx];
         // Store sparse binding image_state and after binding is complete make sure that any requiring metadata have it bound
-        std::unordered_set<const IMAGE_STATE*> sparse_images;
+        layer_data::unordered_set<const IMAGE_STATE*> sparse_images;
         // Track images getting metadata bound by this call in a set, it'll be recorded into the image_state
         // in RecordQueueBindSparse.
-        std::unordered_set<const IMAGE_STATE*> sparse_images_with_metadata;
+        layer_data::unordered_set<const IMAGE_STATE*> sparse_images_with_metadata;
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
         for (uint32_t i = 0; i < bind_info.imageBindCount; ++i) {
             const auto& image_bind = bind_info.pImageBinds[i];
