@@ -617,7 +617,7 @@ class CoreChecks : public ValidationStateTracker {
                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                 const VkImageSubresourceRange* pRanges) override;
 
-    bool FindLayouts(VkImage image, std::vector<VkImageLayout>& layouts) const;
+    bool FindLayouts(const IMAGE_STATE& image_state, std::vector<VkImageLayout>& layouts) const;
 
     void SetImageViewLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout,
                             VkImageLayout layoutStencil);

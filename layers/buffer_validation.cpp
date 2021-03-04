@@ -473,11 +473,8 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
-bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) const {
-    auto image_state = GetImageState(image);
-    if (!image_state) return false;
-
-    const auto *layout_range_map = GetLayoutRangeMap(imageLayoutMap, image);
+bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImageLayout> &layouts) const {
+    const auto *layout_range_map = GetLayoutRangeMap(imageLayoutMap, image_state.image);
     if (!layout_range_map) return false;
     // TODO: FindLayouts function should mutate into a ValidatePresentableLayout with the loop wrapping the LogError
     //       from the caller. You can then use decode to add the subresource of the range::begin to the error message.
@@ -485,7 +482,7 @@ bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts)
     // TODO: what is this test and what is it supposed to do?! -- the logic doesn't match the comment below?!
 
     // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
-    if (layout_range_map->size() >= (image_state->createInfo.arrayLayers * image_state->createInfo.mipLevels + 1)) {
+    if (layout_range_map->size() >= (image_state.createInfo.arrayLayers * image_state.createInfo.mipLevels + 1)) {
         return false;
     }
 
