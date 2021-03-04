@@ -28,6 +28,15 @@
 
 static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
 
+static bool SimpleBinding(const IMAGE_STATE &image_state) {
+    bool simple = SimpleBinding(static_cast<const BINDABLE &>(image_state)) || image_state.is_swapchain_image ||
+                  (VK_NULL_HANDLE != image_state.bind_swapchain);
+
+    // If it's not simple we must have an encoder.
+    assert(!simple || image_state.fragment_encoder.get());
+    return simple;
+}
+
 const static std::array<AccessAddressType, static_cast<size_t>(AccessAddressType::kTypeCount)> kAddressTypes = {
     AccessAddressType::kLinear, AccessAddressType::kIdealized};
 
@@ -218,6 +227,15 @@ static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, Re
 
 static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) {
     return bindable.binding.offset + bindable.binding.mem_state->fake_base_address;
+}
+static VkDeviceSize ResourceBaseAddress(const IMAGE_STATE &image_state) {
+    VkDeviceSize base_address;
+    if (image_state.is_swapchain_image || (VK_NULL_HANDLE != image_state.bind_swapchain)) {
+        base_address = image_state.swapchain_fake_address;
+    } else {
+        base_address = ResourceBaseAddress(static_cast<const BINDABLE &>(image_state));
+    }
+    return base_address;
 }
 
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
