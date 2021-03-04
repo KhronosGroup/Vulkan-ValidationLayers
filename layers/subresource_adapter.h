@@ -348,6 +348,7 @@ class ImageRangeEncoder : public RangeEncoder {
     }
     inline const double& TexelSize(int aspect_index) const { return texel_sizes_[aspect_index]; }
     inline bool IsLinearImage() const { return linear_image; }
+    inline VkDeviceSize TotalSize() const { return total_size_; }
 
   private:
     bool linear_image;
@@ -355,6 +356,7 @@ class ImageRangeEncoder : public RangeEncoder {
     std::vector<double> texel_sizes_;
     std::vector<VkExtent3D> subres_extents_;
     std::vector<VkSubresourceLayout> subres_layouts_;
+    VkDeviceSize total_size_;
 };
 
 class ImageRangeGenerator {

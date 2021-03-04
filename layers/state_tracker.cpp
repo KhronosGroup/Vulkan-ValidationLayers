@@ -4977,13 +4977,20 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
         const auto swapchain_info = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
         if (swapchain_info) {
-            auto swapchain = GetSwapchainState(swapchain_info->swapchain);
+            auto *swapchain = GetSwapchainState(swapchain_info->swapchain);
             if (swapchain) {
                 SWAPCHAIN_IMAGE &swap_image = swapchain->images[swapchain_info->imageIndex];
+                if (swap_image.bound_images.empty()) {
+                    // If this is the first "binding" of an image to this swapchain index, get a fake allocation
+                    image_state->swapchain_fake_address = fake_memory.Alloc(image_state->fragment_encoder->TotalSize());
+                } else {
+                    image_state->swapchain_fake_address = (*swap_image.bound_images.cbegin())->swapchain_fake_address;
+                }
                 swap_image.bound_images.emplace(image_state);
                 image_state->bind_swapchain = swapchain_info->swapchain;
                 image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
 
+                // All images bound to this swapchain and index are aliases
                 AddAliasingImage(image_state, &swap_image.bound_images);
             }
         } else {
@@ -6210,7 +6217,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
 
     if (pSwapchainImages) {
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-            if (swapchain_state->images[i].image_state.get()) continue;  // Already retrieved this.
+            SWAPCHAIN_IMAGE &swapchain_image = swapchain_state->images[i];
+            if (swapchain_image.image_state.get()) continue;  // Already retrieved this.
 
             // Add imageMap entries for each swapchain image
             VkImageCreateInfo image_ci;
@@ -6251,8 +6259,23 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_state->bind_swapchain = swapchain;
             image_state->bind_swapchain_imageIndex = i;
             image_state->is_swapchain_image = true;
-            swapchain_state->images[i].image_state = image_state;  // Don't move, it's already a reference to the imageMap
-            swapchain_state->images[i].bound_images.emplace(image_state.get());
+
+            // Since swapchains can't be linear, we can create an encoder here, and SyncValNeeds a fake_base_address
+            image_state->fragment_encoder = std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(
+                new subresource_adapter::ImageRangeEncoder(*image_state));
+
+            if (swapchain_image.bound_images.empty()) {
+                // First time "bind" allocates
+                image_state->swapchain_fake_address = fake_memory.Alloc(image_state->fragment_encoder->TotalSize());
+            } else {
+                // All others reuse
+                image_state->swapchain_fake_address = (*swapchain_image.bound_images.cbegin())->swapchain_fake_address;
+                // Since there are others, need to update the aliasing information
+                AddAliasingImage(image_state.get(), &swapchain_image.bound_images);
+            }
+
+            swapchain_image.image_state = image_state;  // Don't move, it's already a reference to the imageMap
+            swapchain_image.bound_images.emplace(image_state.get());
 
             AddImageStateProps(*image_state, device, physical_device);
         }
