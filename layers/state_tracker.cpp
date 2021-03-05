@@ -5176,12 +5176,17 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
     if (!swapchain) return;
     auto swapchain_data = GetSwapchainState(swapchain);
     if (swapchain_data) {
-        for (const auto &swapchain_image : swapchain_data->images) {
-            if (swapchain_image.image_state.get()) {
+        for (auto &swapchain_image : swapchain_data->images) {
+            // TODO: missing validation that the bound images are empty (except for image_state above)
+            // Clean up the aliases and the bound_images *before* erasing the image_state.
+            RemoveAliasingImages(swapchain_image.bound_images);
+            swapchain_image.bound_images.clear();
+
+            if (swapchain_image.image_state) {
                 ClearMemoryObjectBindings(VulkanTypedHandle(swapchain_image.image_state->image, kVulkanObjectTypeImage));
                 imageMap.erase(swapchain_image.image_state->image);
+                swapchain_image.image_state = nullptr;
             }
-            RemoveAliasingImages(swapchain_image.bound_images);
         }
 
         auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
@@ -5222,7 +5227,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         // Mark the image as having been released to the WSI
         auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
         if (swapchain_data && (swapchain_data->images.size() > pPresentInfo->pImageIndices[i])) {
-            IMAGE_STATE *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state.get();
+            IMAGE_STATE *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state;
             if (image_state) {
                 image_state->acquired = false;
                 if (image_state->shared_presentable) {
@@ -5269,7 +5274,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     // Mark the image as acquired.
     auto swapchain_data = GetSwapchainState(swapchain);
     if (swapchain_data && (swapchain_data->images.size() > *pImageIndex)) {
-        IMAGE_STATE *image_state = swapchain_data->images[*pImageIndex].image_state.get();
+        IMAGE_STATE *image_state = swapchain_data->images[*pImageIndex].image_state;
         if (image_state) {
             image_state->acquired = true;
             image_state->shared_presentable = swapchain_data->shared_presentable;
@@ -6218,7 +6223,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
     if (pSwapchainImages) {
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
             SWAPCHAIN_IMAGE &swapchain_image = swapchain_state->images[i];
-            if (swapchain_image.image_state.get()) continue;  // Already retrieved this.
+            if (swapchain_image.image_state) continue;  // Already retrieved this.
 
             // Add imageMap entries for each swapchain image
             VkImageCreateInfo image_ci;
@@ -6253,7 +6258,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             }
 
             imageMap[pSwapchainImages[i]] = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], &image_ci);
-            auto &image_state = imageMap[pSwapchainImages[i]];
+            auto *image_state = imageMap[pSwapchainImages[i]].get();
+            assert(image_state);
             image_state->valid = false;
             image_state->create_from_swapchain = swapchain;
             image_state->bind_swapchain = swapchain;
@@ -6271,11 +6277,11 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                 // All others reuse
                 image_state->swapchain_fake_address = (*swapchain_image.bound_images.cbegin())->swapchain_fake_address;
                 // Since there are others, need to update the aliasing information
-                AddAliasingImage(image_state.get(), &swapchain_image.bound_images);
+                AddAliasingImage(image_state, &swapchain_image.bound_images);
             }
 
             swapchain_image.image_state = image_state;  // Don't move, it's already a reference to the imageMap
-            swapchain_image.bound_images.emplace(image_state.get());
+            swapchain_image.bound_images.emplace(image_state);
 
             AddImageStateProps(*image_state, device, physical_device);
         }
