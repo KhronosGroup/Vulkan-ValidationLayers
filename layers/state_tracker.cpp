@@ -477,12 +477,12 @@ void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage 
     InvalidateCommandBuffers(image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto *mem_binding : image_state->GetBoundMemory()) {
-        RemoveImageMemoryRange(image, mem_binding);
+        RemoveImageMemoryRange(image_state, mem_binding);
     }
     if (image_state->bind_swapchain) {
         auto swapchain = GetSwapchainState(image_state->bind_swapchain);
         if (swapchain) {
-            swapchain->images[image_state->bind_swapchain_imageIndex].bound_images.erase(image_state->image);
+            swapchain->images[image_state->bind_swapchain_imageIndex].bound_images.erase(image_state);
         }
     }
     RemoveAliasingImage(image_state);
@@ -717,9 +717,6 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
     const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
 
     InvalidateCommandBuffers(buffer_state->cb_bindings, obj_struct);
-    for (auto *mem_binding : buffer_state->GetBoundMemory()) {
-        RemoveBufferMemoryRange(buffer, mem_binding);
-    }
     ClearMemoryObjectBindings(obj_struct);
     buffer_state->destroyed = true;
     bufferMap.erase(buffer_state->buffer);
@@ -811,52 +808,32 @@ const IMAGE_VIEW_STATE *ValidationStateTracker::GetActiveAttachmentImageViewStat
     return cb->active_attachments->at(index);
 }
 
-void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state) {
-    std::unordered_set<VkImage> *bound_images = nullptr;
-
-    if (image_state->bind_swapchain) {
-        auto swapchain_state = GetSwapchainState(image_state->bind_swapchain);
-        if (swapchain_state) {
-            bound_images = &swapchain_state->images[image_state->bind_swapchain_imageIndex].bound_images;
-        }
-    } else {
-        if (image_state->binding.mem_state) {
-            bound_images = &image_state->binding.mem_state->bound_images;
-        }
-    }
-
-    if (bound_images) {
-        for (const auto &handle : *bound_images) {
-            if (handle != image_state->image) {
-                auto is = GetImageState(handle);
-                if (is && is->IsCompatibleAliasing(image_state)) {
-                    auto inserted = is->aliasing_images.emplace(image_state->image);
-                    if (inserted.second) {
-                        image_state->aliasing_images.emplace(handle);
-                    }
-                }
+void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state, std::unordered_set<IMAGE_STATE *> *bound_images) {
+    assert(bound_images);
+    for (auto *bound_image : *bound_images) {
+        if (bound_image && (bound_image != image_state) && bound_image->IsCompatibleAliasing(image_state)) {
+            auto inserted = bound_image->aliasing_images.emplace(image_state);
+            if (inserted.second) {
+                image_state->aliasing_images.emplace(bound_image);
             }
         }
     }
 }
 
 void ValidationStateTracker::RemoveAliasingImage(IMAGE_STATE *image_state) {
-    for (const auto &image : image_state->aliasing_images) {
-        auto is = GetImageState(image);
-        if (is) {
-            is->aliasing_images.erase(image_state->image);
-        }
+    for (auto *alias_state : image_state->aliasing_images) {
+        assert(alias_state);
+        alias_state->aliasing_images.erase(image_state);
     }
     image_state->aliasing_images.clear();
 }
 
-void ValidationStateTracker::RemoveAliasingImages(const std::unordered_set<VkImage> &bound_images) {
+void ValidationStateTracker::RemoveAliasingImages(const std::unordered_set<IMAGE_STATE *> &bound_images) {
     // This is one way clear. Because the bound_images include cross references, the one way clear loop could clear the whole
     // reference. It doesn't need two ways clear.
-    for (const auto &handle : bound_images) {
-        auto is = GetImageState(handle);
-        if (is) {
-            is->aliasing_images.clear();
+    for (auto *bound_image : bound_images) {
+        if (bound_image) {
+            bound_image->aliasing_images.clear();
         }
     }
 }
@@ -2800,67 +2777,18 @@ void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQu
     queryPoolMap.erase(queryPool);
 }
 
-// Object with given handle is being bound to memory w/ given mem_info struct.
-//  Track the newly bound memory range with given memoryOffset
-//  Also scan any previous ranges, track aliased ranges with new range, and flag an error if a linear
-//  and non-linear range incorrectly overlap.
-void ValidationStateTracker::InsertMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info,
-                                               VkDeviceSize memoryOffset) {
-    if (typed_handle.type == kVulkanObjectTypeImage) {
-        mem_info->bound_images.insert(typed_handle.Cast<VkImage>());
-    } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
-        mem_info->bound_buffers.insert(typed_handle.Cast<VkBuffer>());
-    } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
-        mem_info->bound_acceleration_structures.insert(typed_handle.Cast<VkAccelerationStructureNV>());
-    } else {
-        // Unsupported object type
-        assert(false);
-    }
+void ValidationStateTracker::InsertImageMemoryRange(IMAGE_STATE *image_state, DEVICE_MEMORY_STATE *mem_info,
+                                                    VkDeviceSize mem_offset) {
+    mem_info->bound_images.insert(image_state);
 }
 
-void ValidationStateTracker::InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset) {
-    InsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset);
-}
-
-void ValidationStateTracker::InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset) {
-    InsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset);
-}
-
-void ValidationStateTracker::InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE *mem_info,
-                                                                    VkDeviceSize mem_offset) {
-    InsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset);
-}
-
-// This function will remove the handle-to-index mapping from the appropriate map.
-static void RemoveMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info) {
-    if (typed_handle.type == kVulkanObjectTypeImage) {
-        mem_info->bound_images.erase(typed_handle.Cast<VkImage>());
-    } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
-        mem_info->bound_buffers.erase(typed_handle.Cast<VkBuffer>());
-    } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
-        mem_info->bound_acceleration_structures.erase(typed_handle.Cast<VkAccelerationStructureNV>());
-    } else {
-        // Unsupported object type
-        assert(false);
-    }
-}
-
-void ValidationStateTracker::RemoveBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info) {
-    RemoveMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info);
-}
-
-void ValidationStateTracker::RemoveImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info) {
-    RemoveMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info);
+void ValidationStateTracker::RemoveImageMemoryRange(IMAGE_STATE *image_state, DEVICE_MEMORY_STATE *mem_info) {
+    mem_info->bound_images.erase(image_state);
 }
 
 void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
-        // Track bound memory range information
-        auto mem_info = GetDevMemState(mem);
-        if (mem_info) {
-            InsertBufferMemoryRange(buffer, mem_info, memoryOffset);
-        }
         // Track objects tied to memory
         SetMemBinding(mem, buffer_state, memoryOffset, VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer));
     }
@@ -3970,11 +3898,6 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
 
         ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(info.accelerationStructure);
         if (as_state) {
-            // Track bound memory range information
-            auto mem_info = GetDevMemState(info.memory);
-            if (mem_info) {
-                InsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info, info.memoryOffset);
-            }
             // Track objects tied to memory
             SetMemBinding(info.memory, as_state, info.memoryOffset,
                           VulkanTypedHandle(info.accelerationStructure, kVulkanObjectTypeAccelerationStructureNV));
@@ -4034,9 +3957,6 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureKHR(VkDevi
     if (as_state) {
         const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureKHR);
         InvalidateCommandBuffers(as_state->cb_bindings, obj_struct);
-        for (auto *mem_binding : as_state->GetBoundMemory()) {
-            RemoveMemoryRange(obj_struct, mem_binding);
-        }
         ClearMemoryObjectBindings(obj_struct);
         as_state->destroyed = true;
         accelerationStructureMap_khr.erase(accelerationStructure);
@@ -4051,9 +3971,6 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevic
     if (as_state) {
         const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
         InvalidateCommandBuffers(as_state->cb_bindings, obj_struct);
-        for (auto *mem_binding : as_state->GetBoundMemory()) {
-            RemoveMemoryRange(obj_struct, mem_binding);
-        }
         ClearMemoryObjectBindings(obj_struct);
         as_state->destroyed = true;
         accelerationStructureMap.erase(accelerationStructure);
@@ -5062,23 +4979,26 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
         if (swapchain_info) {
             auto swapchain = GetSwapchainState(swapchain_info->swapchain);
             if (swapchain) {
-                swapchain->images[swapchain_info->imageIndex].bound_images.emplace(image_state->image);
+                SWAPCHAIN_IMAGE &swap_image = swapchain->images[swapchain_info->imageIndex];
+                swap_image.bound_images.emplace(image_state);
                 image_state->bind_swapchain = swapchain_info->swapchain;
                 image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
+
+                AddAliasingImage(image_state, &swap_image.bound_images);
             }
         } else {
             // Track bound memory range information
             auto mem_info = GetDevMemState(bindInfo.memory);
             if (mem_info) {
-                InsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset);
+                InsertImageMemoryRange(image_state, mem_info, bindInfo.memoryOffset);
+                if (image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) {
+                    AddAliasingImage(image_state, &mem_info->bound_images);
+                }
             }
 
             // Track objects tied to memory
             SetMemBinding(bindInfo.memory, image_state, bindInfo.memoryOffset,
                           VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage));
-        }
-        if ((image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) || swapchain_info) {
-            AddAliasingImage(image_state);
         }
     }
 }
@@ -6332,7 +6252,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_state->bind_swapchain_imageIndex = i;
             image_state->is_swapchain_image = true;
             swapchain_state->images[i].image_state = image_state;  // Don't move, it's already a reference to the imageMap
-            swapchain_state->images[i].bound_images.emplace(pSwapchainImages[i]);
+            swapchain_state->images[i].bound_images.emplace(image_state.get());
 
             AddImageStateProps(*image_state, device, physical_device);
         }
