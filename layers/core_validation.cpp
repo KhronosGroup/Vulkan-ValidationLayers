@@ -12842,7 +12842,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         auto swapchain_data = GetSwapchainState(swapchain);
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
-                if (!swapchain_image.image_state.get()) continue;
+                if (!swapchain_image.image_state) continue;
                 imageLayoutMap.erase(swapchain_image.image_state->image);
                 qfo_release_image_barrier_map.erase(swapchain_image.image_state->image);
             }
@@ -12883,7 +12883,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 
         for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
             if ((new_swapchain_image_index >= image_vector_size) ||
-                !swapchain_state->images[new_swapchain_image_index].image_state.get()) {
+                !swapchain_state->images[new_swapchain_image_index].image_state) {
                 break;
             };
         }
@@ -12934,7 +12934,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
                     i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
             } else {
-                const auto *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state.get();
+                const auto *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state;
                 assert(image_state);
 
                 if (!image_state->acquired) {
@@ -13078,9 +13078,9 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
         auto physical_device_state = GetPhysicalDeviceState();
         // TODO: this is technically wrong on many levels, but requires massive cleanup
         if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called) {
-            const uint32_t acquired_images = static_cast<uint32_t>(std::count_if(
-                swapchain_data->images.begin(), swapchain_data->images.end(),
-                [](const SWAPCHAIN_IMAGE &image) { return (image.image_state.get() && image.image_state->acquired); }));
+            const uint32_t acquired_images = static_cast<uint32_t>(
+                std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
+                              [](const SWAPCHAIN_IMAGE &image) { return (image.image_state && image.image_state->acquired); }));
 
             const uint32_t swapchain_image_count = static_cast<uint32_t>(swapchain_data->images.size());
             const auto min_image_count = physical_device_state->surfaceCapabilities.minImageCount;

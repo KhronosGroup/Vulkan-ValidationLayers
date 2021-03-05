@@ -592,7 +592,7 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
 };
 
 struct SWAPCHAIN_IMAGE {
-    std::shared_ptr<IMAGE_STATE> image_state;
+    IMAGE_STATE *image_state = nullptr;
     std::unordered_set<IMAGE_STATE *> bound_images;
 };
 
