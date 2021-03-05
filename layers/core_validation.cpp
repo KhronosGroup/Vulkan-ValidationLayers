@@ -6937,74 +6937,91 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     // testing against the "short tail" we're skipping below.
                     total_dynamic_descriptors = dynamicOffsetCount;
                 } else {  // Validate dynamic offsets and Dynamic Offset Minimums
+                    // offset for all sets (pDynamicOffsets)
                     uint32_t cur_dyn_offset = total_dynamic_descriptors;
+                    // offset into this descriptor set
+                    uint32_t set_dyn_offset = 0;
                     const auto dsl = descriptor_set->GetLayout();
                     const auto binding_count = dsl->GetBindingCount();
                     const auto &limits = phys_dev_props.limits;
                     for (uint32_t i = 0; i < binding_count; i++) {
                         const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(i);
-                        // If a descriptor set has only binding 0 and 2 the binding_index will be 0 and 2
-                        const uint32_t binding_index = binding->binding;
-                        const uint32_t offset = pDynamicOffsets[cur_dyn_offset];
                         // skip checking binding if not needed
                         if (cvdescriptorset::IsDyanmicDescriptor(binding->descriptorType) == false) {
                             continue;
-                        } else if (offset == 0) {
-                            // offset of zero is equivalent of not having the dynamic offset
-                            cur_dyn_offset++;
-                            continue;
                         }
 
-                        // Validate alignment with limit
-                        if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
-                            (SafeModulo(offset, limits.minUniformBufferOffsetAlignment) != 0)) {
-                            skip |= LogError(commandBuffer, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971",
-                                             "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is %u, but must be a multiple of "
-                                             "device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
-                                             cur_dyn_offset, offset, limits.minUniformBufferOffsetAlignment);
-                        }
-                        if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
-                            (SafeModulo(offset, limits.minStorageBufferOffsetAlignment) != 0)) {
-                            skip |= LogError(commandBuffer, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972",
-                                             "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is %u, but must be a multiple of "
-                                             "device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
-                                             cur_dyn_offset, offset, limits.minStorageBufferOffsetAlignment);
-                        }
+                        // If a descriptor set has only binding 0 and 2 the binding_index will be 0 and 2
+                        const uint32_t binding_index = binding->binding;
+                        const uint32_t descriptorCount = binding->descriptorCount;
 
-                        auto *descriptor = descriptor_set->GetDescriptorFromBinding(binding_index);
-                        // Currently only GeneralBuffer are dynamic and need to be checked
-                        if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
-                            const auto *buffer_descriptor = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor);
-                            const VkDeviceSize bound_range = buffer_descriptor->GetRange();
-                            const VkDeviceSize bound_offset = buffer_descriptor->GetOffset();
-                            const BUFFER_STATE *buffer_state = buffer_descriptor->GetBufferState();
-                            assert(buffer_state != nullptr);
-                            // Validate offset didn't go over buffer
-                            if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
-                                LogObjectList objlist(commandBuffer);
-                                objlist.add(pDescriptorSets[set_idx]);
-                                objlist.add(buffer_state->buffer);
-                                skip |= LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
+                        // Need to loop through each descriptor count inside the binding
+                        // if descriptorCount is zero the binding with a dynamic descriptor type does not count
+                        for (uint32_t j = 0; j < descriptorCount; j++) {
+                            const uint32_t offset = pDynamicOffsets[cur_dyn_offset];
+                            if (offset == 0) {
+                                // offset of zero is equivalent of not having the dynamic offset
+                                cur_dyn_offset++;
+                                set_dyn_offset++;
+                                continue;
+                            }
+
+                            // Validate alignment with limit
+                            if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
+                                (SafeModulo(offset, limits.minUniformBufferOffsetAlignment) != 0)) {
+                                skip |= LogError(commandBuffer, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971",
+                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is %u, but must be a multiple of "
+                                                 "device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                                 cur_dyn_offset, offset, limits.minUniformBufferOffsetAlignment);
+                            }
+                            if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
+                                (SafeModulo(offset, limits.minStorageBufferOffsetAlignment) != 0)) {
+                                skip |= LogError(commandBuffer, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972",
+                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is %u, but must be a multiple of "
+                                                 "device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                                 cur_dyn_offset, offset, limits.minStorageBufferOffsetAlignment);
+                            }
+
+                            auto *descriptor = descriptor_set->GetDescriptorFromDynamicOffsetIndex(set_dyn_offset);
+                            assert(descriptor != nullptr);
+                            // Currently only GeneralBuffer are dynamic and need to be checked
+                            if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
+                                const auto *buffer_descriptor = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor);
+                                const VkDeviceSize bound_range = buffer_descriptor->GetRange();
+                                const VkDeviceSize bound_offset = buffer_descriptor->GetOffset();
+                                const BUFFER_STATE *buffer_state = buffer_descriptor->GetBufferState();
+                                assert(buffer_state != nullptr);
+                                // Validate offset didn't go over buffer
+                                if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
+                                    LogObjectList objlist(commandBuffer);
+                                    objlist.add(pDescriptorSets[set_idx]);
+                                    objlist.add(buffer_state->buffer);
+                                    skip |=
+                                        LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
                                                  "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x, but must be zero since "
-                                                 "the buffer descriptor's range is VK_WHOLE_SIZE in descriptorSet #%u binding #%u.",
-                                                 cur_dyn_offset, offset, set_idx, binding_index);
+                                                 "the buffer descriptor's range is VK_WHOLE_SIZE in descriptorSet #%u binding #%u "
+                                                 "descriptor[%u].",
+                                                 cur_dyn_offset, offset, set_idx, binding_index, j);
 
-                            } else if ((bound_range != VK_WHOLE_SIZE) &&
-                                       ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
-                                LogObjectList objlist(commandBuffer);
-                                objlist.add(pDescriptorSets[set_idx]);
-                                objlist.add(buffer_state->buffer);
-                                skip |= LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
+                                } else if ((bound_range != VK_WHOLE_SIZE) &&
+                                           ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
+                                    LogObjectList objlist(commandBuffer);
+                                    objlist.add(pDescriptorSets[set_idx]);
+                                    objlist.add(buffer_state->buffer);
+                                    skip |=
+                                        LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
                                                  "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x which when added to the "
                                                  "buffer descriptor's range (0x%" PRIxLEAST64
                                                  ") is greater then the size of the buffer (0x%" PRIxLEAST64
-                                                 ") in descriptorSet #%u binding #%u.",
+                                                 ") in descriptorSet #%u binding #%u descriptor[%u].",
                                                  cur_dyn_offset, offset, bound_range, buffer_state->createInfo.size, set_idx,
-                                                 binding_index);
+                                                 binding_index, j);
+                                }
                             }
-                        }
-                        cur_dyn_offset++;
-                    }
+                            cur_dyn_offset++;
+                            set_dyn_offset++;
+                        }  // descriptorCount loop
+                    }      // bindingCount loop
                     // Keep running total of dynamic descriptor count to verify at the end
                     total_dynamic_descriptors += set_dynamic_descriptor_count;
                 }

@@ -121,14 +121,6 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
         global_index_range_.emplace_back(global_index, final_index);
         global_index = final_index;
     }
-
-    // Now create dyn offset array mapping for any dynamic descriptors
-    uint32_t dyn_array_idx = 0;
-    binding_to_dynamic_array_idx_map_.reserve(binding_to_dyn_count.size());
-    for (const auto &bc_pair : binding_to_dyn_count) {
-        binding_to_dynamic_array_idx_map_[bc_pair.first] = dyn_array_idx;
-        dyn_array_idx += bc_pair.second;
-    }
 }
 
 size_t cvdescriptorset::DescriptorSetLayoutDef::hash() const {
@@ -636,10 +628,16 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                     descriptors_.emplace_back(new ((free_descriptor++)->Texel()) TexelDescriptor(type));
                 }
                 break;
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                    // TODO - Not using IsDyanmicDescriptor() so need to be careful if new dynamic descriptor ever added in future
+                    dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
+                    descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
+                }
+                break;
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
                 }

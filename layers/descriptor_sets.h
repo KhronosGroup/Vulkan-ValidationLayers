@@ -132,15 +132,6 @@ class DescriptorSetLayoutDef {
     }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t) const;
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
-    // For a given binding and array index, return the corresponding index into the dynamic offset array
-    int32_t GetDynamicOffsetIndexFromBinding(uint32_t binding) const {
-        auto dyn_off = binding_to_dynamic_array_idx_map_.find(binding);
-        if (dyn_off == binding_to_dynamic_array_idx_map_.end()) {
-            assert(0);  // Requesting dyn offset for invalid binding/array idx pair
-            return -1;
-        }
-        return dyn_off->second;
-    }
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t) const;
@@ -169,8 +160,6 @@ class DescriptorSetLayoutDef {
     std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
     // The following map allows an non-iterative lookup of a binding from a global index...
     std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
-    // For a given binding map to associated index in the dynamic offset array
-    std::unordered_map<uint32_t, uint32_t> binding_to_dynamic_array_idx_map_;
 
     uint32_t binding_count_;     // # of bindings in this layout
     uint32_t descriptor_count_;  // total # descriptors in this layout
@@ -239,10 +228,6 @@ class DescriptorSetLayout : public BASE_NODE {
     }
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t index) const {
         return layout_id_->GetImmutableSamplerPtrFromIndex(index);
-    }
-    // For a given binding and array index, return the corresponding index into the dynamic offset array
-    int32_t GetDynamicOffsetIndexFromBinding(uint32_t binding) const {
-        return layout_id_->GetDynamicOffsetIndexFromBinding(binding);
     }
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
@@ -613,8 +598,6 @@ class DescriptorSet : public BASE_NODE {
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
         return layout_->GetDescriptorCountFromBinding(binding);
     };
-    // Return index into dynamic offset array for given binding
-    int32_t GetDynamicOffsetIndexFromBinding(uint32_t binding) const { return layout_->GetDynamicOffsetIndexFromBinding(binding); }
     // Return true if given binding is present in this set
     bool HasBinding(const uint32_t binding) const { return layout_->HasBinding(binding); };
 
@@ -678,6 +661,10 @@ class DescriptorSet : public BASE_NODE {
         }
         return descriptors_[range.start + index].get();
     }
+    // For a given dynamic offset array, return the corresponding index into the list of descriptors in set
+    const Descriptor *GetDescriptorFromDynamicOffsetIndex(const uint32_t index) const {
+        return descriptors_[dynamic_offset_idx_to_descriptor_list_.at(index)].get();
+    }
     uint64_t GetChangeCount() const { return change_count_; }
 
     const std::vector<safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }
@@ -701,6 +688,9 @@ class DescriptorSet : public BASE_NODE {
     const StateTracker *state_data_;
     uint32_t variable_count_;
     uint64_t change_count_;
+
+    // For a given dynamic offset index in the set, map to associated index of the descriptors in the set
+    std::vector<size_t> dynamic_offset_idx_to_descriptor_list_;
 
     // If this descriptor set is a push descriptor set, the descriptor
     // set writes that were last pushed.
