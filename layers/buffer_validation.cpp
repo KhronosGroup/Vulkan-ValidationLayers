@@ -291,7 +291,7 @@ bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const V
     return is_compatible;
 }
 
-bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) {
+bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
     if (!is_swapchain_image && !other_image_state->is_swapchain_image &&
         !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
@@ -501,8 +501,8 @@ void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &im
     if (subresource_map->SetSubresourceRangeLayout(*cb_node, image_subresource_range, layout, expected_layout)) {
         cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
     }
-    for (const auto &image : image_state.aliasing_images) {
-        auto alias_state = GetImageState(image);
+    for (const auto *alias_state : image_state.aliasing_images) {
+        assert(alias_state);
         // The map state of the aliases should all be in sync, so no need to check the return value
         subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
         assert(subresource_map);
@@ -518,9 +518,9 @@ void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAG
     IMAGE_STATE *image_state = view_state.image_state.get();
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
     subresource_map->SetSubresourceRangeInitialLayout(*cb_node, layout, view_state);
-    for (const auto &image : image_state->aliasing_images) {
-        image_state = GetImageState(image);
-        subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
+    for (const auto *alias_state : image_state->aliasing_images) {
+        assert(alias_state);
+        subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
         subresource_map->SetSubresourceRangeInitialLayout(*cb_node, layout, view_state);
     }
 }
@@ -531,8 +531,8 @@ void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_ST
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);
     subresource_map->SetSubresourceRangeInitialLayout(*cb_node, NormalizeSubresourceRange(image_state, range), layout);
-    for (const auto &image : image_state.aliasing_images) {
-        auto alias_state = GetImageState(image);
+    for (const auto *alias_state : image_state.aliasing_images) {
+        assert(alias_state);
         subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
         assert(subresource_map);
         subresource_map->SetSubresourceRangeInitialLayout(*cb_node, NormalizeSubresourceRange(*alias_state, range), layout);

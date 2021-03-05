@@ -245,10 +245,8 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
     VkExternalMemoryHandleTypeFlags import_handle_type_flags;
     std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
-    // Convenience vectors of handles to speed up iterating over objects independently
-    std::unordered_set<VkImage> bound_images;
-    std::unordered_set<VkBuffer> bound_buffers;
-    std::unordered_set<VkAccelerationStructureNV> bound_acceleration_structures;
+    // Images for alias search
+    std::unordered_set<IMAGE_STATE *> bound_images;
 
     MemRange mapped_range;
     void *shadow_copy_base;          // Base of layer's allocation for guard band, data, and alignment space
@@ -472,8 +470,8 @@ class IMAGE_STATE : public BINDABLE {
     IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
 
-    std::unordered_set<VkImage> aliasing_images;
-    bool IsCompatibleAliasing(IMAGE_STATE *other_image_state);
+    std::unordered_set<IMAGE_STATE *> aliasing_images;
+    bool IsCompatibleAliasing(IMAGE_STATE *other_image_state) const;
 
     bool IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const;
     bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const;
@@ -594,7 +592,7 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
 
 struct SWAPCHAIN_IMAGE {
     std::shared_ptr<IMAGE_STATE> image_state;
-    std::unordered_set<VkImage> bound_images;
+    std::unordered_set<IMAGE_STATE *> bound_images;
 };
 
 class SWAPCHAIN_NODE : public BASE_NODE {

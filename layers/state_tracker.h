@@ -423,9 +423,9 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map)
 
-    void AddAliasingImage(IMAGE_STATE* image_state);
+    void AddAliasingImage(IMAGE_STATE* image_state, std::unordered_set<IMAGE_STATE*>* bound_images);
     void RemoveAliasingImage(IMAGE_STATE* image_state);
-    void RemoveAliasingImages(const std::unordered_set<VkImage>& bound_images);
+    static void RemoveAliasingImages(const std::unordered_set<IMAGE_STATE*>& bound_images);
 
   public:
     template <typename State>
@@ -1304,11 +1304,7 @@ class ValidationStateTracker : public ValidationObject {
     VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
     void IncrementBoundObjects(CMD_BUFFER_STATE const* cb_node);
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
-    void InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info,
-                                                VkDeviceSize mem_offset);
-    void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset);
-    void InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset);
-    void InsertMemoryRange(const VulkanTypedHandle& typed_handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset);
+    void InsertImageMemoryRange(IMAGE_STATE* image_state, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset);
     void InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_nodes, const VulkanTypedHandle& obj,
                                   bool unlink = true);
     void InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
@@ -1366,8 +1362,7 @@ class ValidationStateTracker : public ValidationObject {
                              RENDER_PASS_STATE* render_pass);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void RemoveCommandBufferBinding(const VulkanTypedHandle& object, CMD_BUFFER_STATE* cb_node);
-    void RemoveBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info);
-    void RemoveImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info);
+    void RemoveImageMemoryRange(IMAGE_STATE* image, DEVICE_MEMORY_STATE* mem_info);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
     void RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload);
