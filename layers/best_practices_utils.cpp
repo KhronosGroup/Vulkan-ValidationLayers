@@ -301,7 +301,8 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
                                "vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
         }
 
-        if (bp_pd_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
+        if ((pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR) &&
+            (bp_pd_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS)) {
             skip |= LogWarning(device, kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
                                "vkCreateSwapchainKHR() called before getting surface present mode(s) from "
                                "vkGetPhysicalDeviceSurfacePresentModesKHR().");
