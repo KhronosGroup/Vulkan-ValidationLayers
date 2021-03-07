@@ -4697,9 +4697,8 @@ TEST_F(VkLayerTest, DescriptorImageUpdateNoMemoryBound) {
     descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     // Break memory binding and attempt update
     vk::FreeMemory(m_device->device(), image_memory, nullptr);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         " previously bound memory was freed. Memory must not be freed prior to this operation.");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkUpdateDescriptorSets() failed write update validation for ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
     // Cleanup
@@ -4786,9 +4785,9 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
 TEST_F(VkLayerTest, DescriptorBufferUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt to update a descriptor with a non-sparse buffer that doesn't have memory bound");
     VkResult err;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         " used with no memory bound. Memory should be bound by calling vkBindBufferMemory().");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkUpdateDescriptorSets() failed write update validation for ");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00329");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00329");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
