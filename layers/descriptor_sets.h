@@ -194,7 +194,6 @@ class DescriptorSetLayout : public BASE_NODE {
     uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return layout_id_->GetCreateFlags(); }
-    bool IsNextBindingConsistent(const uint32_t) const;
     uint32_t GetIndexFromBinding(uint32_t binding) const { return layout_id_->GetIndexFromBinding(binding); }
     // Various Get functions that can either be passed a binding#, which will
     //  be automatically translated into the appropriate index, or the index# can be passed in directly
@@ -342,10 +341,6 @@ class Descriptor {
     virtual DescriptorClass GetClass() const { return descriptor_class; };
     // Special fast-path check for SamplerDescriptors that are immutable
     virtual bool IsImmutableSampler() const { return false; };
-    // Check for dynamic descriptor type
-    virtual bool IsDynamic() const { return false; };
-    // Check for storage descriptor type
-    virtual bool IsStorage() const { return false; };
     bool updated;  // Has descriptor been updated?
     DescriptorClass descriptor_class;
 };
@@ -361,10 +356,6 @@ bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, cons
                                            const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
                                            const DeviceExtensions *device_extensions);
-
-inline bool IsDyanmicDescriptor(VkDescriptorType type) {
-    return ((type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC));
-}
 
 class SamplerDescriptor : public Descriptor {
   public:
@@ -413,7 +404,6 @@ class ImageDescriptor : public Descriptor {
     void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
-    virtual bool IsStorage() const override { return storage_; }
     VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->image_view : VK_NULL_HANDLE; }
     const IMAGE_VIEW_STATE *GetImageViewState() const { return image_view_state_.get(); }
     IMAGE_VIEW_STATE *GetImageViewState() { return image_view_state_.get(); }
@@ -421,7 +411,6 @@ class ImageDescriptor : public Descriptor {
     VkImageLayout GetImageLayout() const { return image_layout_; }
 
   private:
-    bool storage_;
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
     VkImageLayout image_layout_;
 };
@@ -432,14 +421,12 @@ class TexelDescriptor : public Descriptor {
     void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
-    virtual bool IsStorage() const override { return storage_; }
     VkBufferView GetBufferView() const { return buffer_view_state_ ? buffer_view_state_->buffer_view : VK_NULL_HANDLE; }
     const BUFFER_VIEW_STATE *GetBufferViewState() const { return buffer_view_state_.get(); }
     BUFFER_VIEW_STATE *GetBufferViewState() { return buffer_view_state_.get(); }
     std::shared_ptr<BUFFER_VIEW_STATE> GetSharedBufferViewState() const { return buffer_view_state_; }
 
   private:
-    bool storage_;
     std::shared_ptr<BUFFER_VIEW_STATE> buffer_view_state_;
 };
 
@@ -449,8 +436,6 @@ class BufferDescriptor : public Descriptor {
     void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
-    virtual bool IsDynamic() const override { return dynamic_; }
-    virtual bool IsStorage() const override { return storage_; }
     VkBuffer GetBuffer() const { return buffer_state_ ? buffer_state_->buffer : VK_NULL_HANDLE; }
     const BUFFER_STATE *GetBufferState() const { return buffer_state_.get(); }
     BUFFER_STATE *GetBufferState() { return buffer_state_.get(); }
@@ -459,8 +444,6 @@ class BufferDescriptor : public Descriptor {
     VkDeviceSize GetRange() const { return range_; }
 
   private:
-    bool storage_;
-    bool dynamic_;
     VkDeviceSize offset_;
     VkDeviceSize range_;
     std::shared_ptr<BUFFER_STATE> buffer_state_;

@@ -100,7 +100,8 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
             non_empty_bindings_.insert(binding_num);
         }
 
-        if (IsDyanmicDescriptor(binding_info.descriptorType)) {
+        if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
             binding_to_dyn_count[binding_num] = binding_info.descriptorCount;
             dynamic_descriptor_count_ += binding_info.descriptorCount;
             binding_type_stats_.dynamic_buffer_count++;
@@ -575,7 +576,8 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                             "descriptorBindingVariableDescriptorCount is not enabled.",
                             i, string_VkDescriptorType(binding_info.descriptorType));
                     }
-                    if (IsDyanmicDescriptor(binding_info.descriptorType)) {
+                    if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+                        (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
                         skip |= val_obj->LogError(val_obj->device,
                                                   "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03015",
                                                   "vkCreateDescriptorSetLayout(): pBindings[%u] can't have "
@@ -677,7 +679,6 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
-                    // TODO - Not using IsDyanmicDescriptor() so need to be careful if new dynamic descriptor ever added in future
                     dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
                     descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
                 }
@@ -1847,7 +1848,8 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
         }
         // Caching criteria differs per type.
         // If image_layout have changed , the image descriptors need to be validated against them.
-        if (IsDyanmicDescriptor(layout_binding->descriptorType)) {
+        if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+            (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
             FilterOneBindingReq(binding_req_pair, out_req, dynamic_buffers, stats.dynamic_buffer_count);
         } else if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
                    (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
@@ -1884,7 +1886,8 @@ void cvdescriptorset::DescriptorSet::UpdateValidationCache(const CMD_BUFFER_STAT
             continue;
         }
         // Caching criteria differs per type.
-        if (IsDyanmicDescriptor(layout_binding->descriptorType)) {
+        if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+            (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
             dynamic_buffers.emplace(binding);
         } else if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
                    (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
@@ -2228,11 +2231,9 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(ValidationStateTra
     }
 }
 
-cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
-    : storage_(false), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {
+cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type) : image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {
     updated = false;
     descriptor_class = Image;
-    if (VK_DESCRIPTOR_TYPE_STORAGE_IMAGE == type) storage_ = true;
 }
 
 void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
@@ -2258,12 +2259,9 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *d
     }
 }
 
-cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type)
-    : storage_(false), dynamic_(false), offset_(0), range_(0) {
+cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type) : offset_(0), range_(0) {
     updated = false;
     descriptor_class = GeneralBuffer;
-    dynamic_ = IsDyanmicDescriptor(type);
-    storage_ = ((VK_DESCRIPTOR_TYPE_STORAGE_BUFFER == type) || (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC == type));
 }
 void cvdescriptorset::BufferDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                     const uint32_t index) {
@@ -2287,10 +2285,9 @@ void cvdescriptorset::BufferDescriptor::UpdateDrawState(ValidationStateTracker *
     if (buffer_node) dev_data->AddCommandBufferBindingBuffer(cb_node, buffer_node);
 }
 
-cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) : storage_(false) {
+cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) {
     updated = false;
     descriptor_class = TexelBuffer;
-    if (VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER == type) storage_ = true;
 }
 
 void cvdescriptorset::TexelDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
