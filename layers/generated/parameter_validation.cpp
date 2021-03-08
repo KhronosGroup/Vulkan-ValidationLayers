@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 171;
+const uint32_t GeneratedVulkanHeaderVersion = 172;
 
 const DECORATE_UNUSED VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const DECORATE_UNUSED VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -9854,7 +9854,6 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(
     VkEvent                                     event,
     const VkDependencyInfoKHR*                  pDependencyInfo) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkCmdSetEvent2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetEvent2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkCmdSetEvent2KHR", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdSetEvent2KHR", "event", event);
@@ -9939,7 +9938,6 @@ bool StatelessValidation::PreCallValidateCmdResetEvent2KHR(
     VkEvent                                     event,
     VkPipelineStageFlags2KHR                    stageMask) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkCmdResetEvent2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdResetEvent2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkCmdResetEvent2KHR", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdResetEvent2KHR", "event", event);
@@ -9953,7 +9951,6 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2KHR(
     const VkEvent*                              pEvents,
     const VkDependencyInfoKHR*                  pDependencyInfos) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkCmdWaitEvents2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdWaitEvents2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkCmdWaitEvents2KHR", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_handle_array("vkCmdWaitEvents2KHR", "eventCount", "pEvents", eventCount, pEvents, true, true, "VUID-vkCmdWaitEvents2KHR-eventCount-arraylength");
@@ -10040,7 +10037,6 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkDependencyInfoKHR*                  pDependencyInfo) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkCmdPipelineBarrier2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdPipelineBarrier2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkCmdPipelineBarrier2KHR", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdPipelineBarrier2KHR", "pDependencyInfo", "VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR", pDependencyInfo, VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR, true, "VUID-vkCmdPipelineBarrier2KHR-pDependencyInfo-parameter", "VUID-VkDependencyInfoKHR-sType-sType");
@@ -10125,7 +10121,6 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp2KHR(
     VkQueryPool                                 queryPool,
     uint32_t                                    query) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkCmdWriteTimestamp2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdWriteTimestamp2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkCmdWriteTimestamp2KHR", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_flags("vkCmdWriteTimestamp2KHR", "stage", "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, stage, kRequiredFlags, "VUID-vkCmdWriteTimestamp2KHR-stage-parameter", "VUID-vkCmdWriteTimestamp2KHR-stage-requiredbitmask");
@@ -10139,7 +10134,6 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(
     const VkSubmitInfo2KHR*                     pSubmits,
     VkFence                                     fence) const {
     bool skip = false;
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkQueueSubmit2KHR", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkQueueSubmit2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkQueueSubmit2KHR", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_struct_type_array("vkQueueSubmit2KHR", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR, false, true, "VUID-VkSubmitInfo2KHR-sType-sType", "VUID-vkQueueSubmit2KHR-pSubmits-parameter", kVUIDUndefined);
@@ -10205,7 +10199,6 @@ bool StatelessValidation::PreCallValidateCmdWriteBufferMarker2AMD(
     uint32_t                                    marker) const {
     bool skip = false;
     if (!device_extensions.vk_amd_buffer_marker) skip |= OutputExtensionError("vkCmdWriteBufferMarker2AMD", VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkCmdWriteBufferMarker2AMD", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdWriteBufferMarker2AMD", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkCmdWriteBufferMarker2AMD", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_flags("vkCmdWriteBufferMarker2AMD", "stage", "VkPipelineStageFlagBits2KHR", AllVkPipelineStageFlagBits2KHR, stage, kRequiredFlags, "VUID-vkCmdWriteBufferMarker2AMD-stage-parameter", "VUID-vkCmdWriteBufferMarker2AMD-stage-requiredbitmask");
@@ -10219,7 +10212,6 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointData2NV(
     VkCheckpointData2NV*                        pCheckpointData) const {
     bool skip = false;
     if (!device_extensions.vk_nv_device_diagnostic_checkpoints) skip |= OutputExtensionError("vkGetQueueCheckpointData2NV", VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
-    if (!device_extensions.vk_khr_create_renderpass_2) skip |= OutputExtensionError("vkGetQueueCheckpointData2NV", VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetQueueCheckpointData2NV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_synchronization_2) skip |= OutputExtensionError("vkGetQueueCheckpointData2NV", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     skip |= validate_struct_type_array("vkGetQueueCheckpointData2NV", "pCheckpointDataCount", "pCheckpointData", "VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV", pCheckpointDataCount, pCheckpointData, VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV, true, false, false, "VUID-VkCheckpointData2NV-sType-sType", "VUID-vkGetQueueCheckpointData2NV-pCheckpointData-parameter", kVUIDUndefined);
