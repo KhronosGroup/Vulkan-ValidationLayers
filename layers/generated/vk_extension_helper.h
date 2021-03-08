@@ -831,8 +831,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_synchronization_2, {{
-                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_create_renderpass_2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME}}})),
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_timeline_semaphore, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_uniform_buffer_standard_layout, {{
