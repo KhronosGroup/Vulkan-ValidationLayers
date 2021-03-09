@@ -1,4 +1,4 @@
-# Copyright (c) 2019 LunarG, Inc.
+# Copyright (c) 2019,2021 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 vulkan_headers_dir = "//external/Vulkan-Headers"
 vvl_spirv_tools_dir = "//external/glslang/External/spirv-tools"
 vvl_glslang_dir = "//external/glslang/"
+robin_hood_headers_dir = "//external/robin-hood-hashing/src/include"
 
 # Subdirectories for generated files
 vulkan_data_subdir = ""

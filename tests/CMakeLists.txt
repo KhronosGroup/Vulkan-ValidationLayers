@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2020 Valve Corporation
-# Copyright (c) 2014-2020 LunarG, Inc.
+# Copyright (c) 2014-2021 Valve Corporation
+# Copyright (c) 2014-2021 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -115,6 +115,7 @@ target_include_directories(vk_layer_validation_tests
                                   ${GLSLANG_SPIRV_INCLUDE_DIR}
                                   ${SPIRV_TOOLS_INCLUDE_DIR}
                                   ${SPIRV_HEADERS_INCLUDE_DIR}
+                                  ${ROBIN_HOOD_HASHING_INCLUDE_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_BINARY_DIR}
                                   ${PROJECT_BINARY_DIR}

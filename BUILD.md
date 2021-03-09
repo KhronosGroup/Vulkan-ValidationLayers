@@ -105,6 +105,13 @@ file. You must also take note of the SPIRV-headers install directory
 and pass it on the CMake command line for building this repository, as
 described below.
 
+#### Robin Hood hashing
+This repository has a required dependency on the
+[robin-hood-hashing repository](https://github.com/martinus/robin-hood-hashing).
+This is a header-only reimplementation of `std::unordered_map` and `std::unordered_set`
+which provides substantial performance improvements on all platforms.
+Since there is nothing to build, the install directory for this repository is the
+directory where the the repository is cloned.
 
 #### Google Test
 
@@ -302,6 +309,7 @@ work with the solution interactively.
                  -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
                  -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
                  ..
     cmake --build .
 
@@ -324,6 +332,7 @@ create a build directory and generate the Visual Studio project files:
                  -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
                  -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir
+                 -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
                  ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
@@ -407,6 +416,7 @@ location of the loader's install directory:
                  -DVULKAN_LOADER_INSTALL_DIR=absolute_path_to_install_dir \
                  -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
                  -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
                  ..
 
 ### Windows Tests and Demos
@@ -484,6 +494,7 @@ CMake with the `--build` option or `make` to build from the command line.
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
           ..
     make
 
@@ -502,6 +513,7 @@ create a build directory and generate the make files.
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
           -DCMAKE_INSTALL_PREFIX=install ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
@@ -835,6 +847,7 @@ build is:
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
           -DCMAKE_BUILD_TYPE=Debug ..
     make
 
@@ -852,7 +865,7 @@ To create and open an Xcode project:
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
-          -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
           -GXcode ..
     open VULKAN.xcodeproj
 

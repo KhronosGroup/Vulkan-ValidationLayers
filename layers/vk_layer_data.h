@@ -26,28 +26,61 @@
 #include <cassert>
 #include <limits>
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
 #include <map>
 #include <unordered_map>
 #include <set>
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
+#include "robin_hood.h"
 
 // namespace aliases to allow map and set implementations to easily be swapped out
 namespace layer_data {
 template <typename T>
-using hash = std::hash<T>;
+using hash = robin_hood::hash<T>;
 
-template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key> >
-using unordered_set = std::unordered_set<Key, Hash, KeyEqual>;
+template <typename Key, typename Hash = robin_hood::hash<Key>, typename KeyEqual = std::equal_to<Key> >
+using unordered_set = robin_hood::unordered_set<Key, Hash, KeyEqual>;
 
-template <typename Key, typename T, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key> >
-using unordered_map = std::unordered_map<Key, T, Hash, KeyEqual>;
+template <typename Key, typename T, typename Hash = robin_hood::hash<Key>, typename KeyEqual = std::equal_to<Key> >
+using unordered_map = robin_hood::unordered_map<Key, T, Hash, KeyEqual>;
 
+
+// robin_hood-compatible insert_iterator (std:: uses the wrong insert method)
 template <typename T>
-using insert_iterator = std::insert_iterator<T>;
+class insert_iterator : public std::iterator<std::output_iterator_tag, void,void,void,void > {
+ public:
+  typedef typename T::value_type value_type;
+  typedef typename T::iterator iterator;
+  insert_iterator(T& t, iterator i)
+      : container(&t), iter(i) {}
+
+  insert_iterator& operator=(const value_type& value)
+  {
+      auto result = container->insert(value);
+      iter = result.first;
+      ++iter;
+      return *this;
+  }
+
+  insert_iterator& operator=(value_type&& value)
+  {
+      auto result = container->insert(std::move(value));
+      iter = result.first;
+      ++iter;
+      return *this;
+  }
+
+  insert_iterator& operator*() { return *this; }
+
+  insert_iterator& operator++() { return *this; }
+
+  insert_iterator& operator++(int) { return *this; }
+ private:
+  T* container;
+  typename T::iterator iter;
+};
+
 };
 
 // A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.
