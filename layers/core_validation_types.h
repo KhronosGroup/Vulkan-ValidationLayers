@@ -73,7 +73,7 @@ class ValidationStateTracker;
 
 class BASE_NODE {
   public:
-    using BindingsType = small_unordered_map<CMD_BUFFER_STATE *, int, 8>;
+    using BindingsType = layer_data::unordered_map<CMD_BUFFER_STATE *, int>;
     // Track when object is being used by an in-flight command buffer
     std::atomic_int in_use;
     // Track command buffers that this object is bound to
