@@ -144,7 +144,6 @@ class DescriptorSetLayoutDef {
     struct BindingTypeStats {
         uint32_t dynamic_buffer_count;
         uint32_t non_dynamic_buffer_count;
-        uint32_t image_sampler_count;
     };
     const BindingTypeStats &GetBindingTypeStats() const { return binding_type_stats_; }
 
@@ -356,6 +355,11 @@ bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, cons
                                            const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
                                            const DeviceExtensions *device_extensions);
+
+// All Dynamic descriptor types
+inline bool IsDynamicDescriptorType(VkDescriptorType type) {
+    return ((type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC));
+}
 
 class SamplerDescriptor : public Descriptor {
   public:

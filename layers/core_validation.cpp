@@ -6946,8 +6946,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     for (uint32_t i = 0; i < binding_count; i++) {
                         const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(i);
                         // skip checking binding if not needed
-                        if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
-                            (binding->descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+                        if (cvdescriptorset::IsDynamicDescriptorType(binding->descriptorType) == false) {
                             continue;
                         }
 
