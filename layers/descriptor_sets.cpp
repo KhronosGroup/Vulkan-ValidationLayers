@@ -68,7 +68,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
     : flags_(p_create_info->flags), binding_count_(0), descriptor_count_(0), dynamic_descriptor_count_(0) {
     const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
-    binding_type_stats_ = {0, 0, 0};
+    binding_type_stats_ = {0, 0};
     std::set<ExtendedBinding, BindingNumCmp> sorted_bindings;
     const uint32_t input_bindings_count = p_create_info->bindingCount;
     // Sort the input bindings in binding number order, eliminating duplicates
@@ -81,7 +81,6 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
     }
 
     // Store the create info in the sorted order from above
-    std::map<uint32_t, uint32_t> binding_to_dyn_count;
     uint32_t index = 0;
     binding_count_ = static_cast<uint32_t>(sorted_bindings.size());
     bindings_.reserve(binding_count_);
@@ -100,16 +99,17 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
             non_empty_bindings_.insert(binding_num);
         }
 
+        if (IsDynamicDescriptorType(binding_info.descriptorType)) {
+            dynamic_descriptor_count_ += binding_info.descriptorCount;
+        }
+
+        // Get stats depending on descriptor type for caching later
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
             (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
-            binding_to_dyn_count[binding_num] = binding_info.descriptorCount;
-            dynamic_descriptor_count_ += binding_info.descriptorCount;
             binding_type_stats_.dynamic_buffer_count++;
         } else if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
                    (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
             binding_type_stats_.non_dynamic_buffer_count++;
-        } else {
-            binding_type_stats_.image_sampler_count++;
         }
     }
     assert(bindings_.size() == binding_count_);
@@ -678,6 +678,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                assert(IsDynamicDescriptorType(type));
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
                     descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
