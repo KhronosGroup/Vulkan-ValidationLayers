@@ -94,7 +94,8 @@ target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/layers
         ${COMMON_DIR}/include
         ${EXTERNAL_DIR}/glslang
-        ${EXTERNAL_DIR}/spirv-tools/include)
+        ${EXTERNAL_DIR}/spirv-tools/include
+        ${EXTERNAL_DIR}/robin-hood-hashing/src/include)
 target_link_libraries(VkLayer_khronos_validation PRIVATE
         log layer_utils SPIRV-Tools-prebuilt)
 if (NOT BUILD_IN_NDK)

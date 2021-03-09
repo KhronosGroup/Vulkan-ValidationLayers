@@ -77,6 +77,7 @@ config("vulkan_layer_config") {
   include_dirs = [
     "layers",
     "layers/generated",
+    "${robin_hood_headers_dir}",
   ]
 }
 
@@ -166,6 +167,7 @@ command_counter_sources = [
 chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
+  "$robin_hood_headers_dir/robin_hood.h",
   "layers/generated/chassis.cpp",
   "layers/generated/chassis.h",
   "layers/generated/chassis_dispatch_helper.h",
@@ -232,11 +234,13 @@ source_set("vulkan_layer_utils") {
   include_dirs = [
     "layers",
     "layers/generated",
+    "${robin_hood_headers_dir}",
   ]
   sources = [
     "$vulkan_headers_dir/include/vulkan/vk_layer.h",
     "$vulkan_headers_dir/include/vulkan/vk_sdk_platform.h",
     "$vulkan_headers_dir/include/vulkan/vulkan.h",
+    "$robin_hood_headers_dir/robin_hood.h",
     "layers/android_ndk_types.h",
     "layers/cast_utils.h",
     "layers/generated/vk_enum_string_helper.h",
@@ -271,7 +275,10 @@ source_set("vulkan_layer_utils") {
 }
 
 config("vulkan_core_validation_config") {
-  include_dirs = [ "$vvl_glslang_dir" ]
+  include_dirs = [
+    "$vvl_glslang_dir",
+    "${robin_hood_headers_dir}",
+  ]
 }
 
 source_set("vulkan_core_validation_glslang") {
