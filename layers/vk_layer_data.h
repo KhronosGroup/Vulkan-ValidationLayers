@@ -705,11 +705,11 @@ static constexpr in_place_t in_place{};
 
 // A C++11 approximation of std::optional
 template <typename T>
-struct optional {
+class optional {
   protected:
     union Store {
         Store(){};   // Do nothing.  That's the point.
-        ~Store(){};  // Not safe to destroy this object outside of it's stateful contain to clean up T if any.
+        ~Store(){};  // Not safe to destroy this object outside of its stateful container to clean up T if any.
         typename std::aligned_storage<sizeof(T), alignof(T)>::type backing;
         T obj;
     };
@@ -719,8 +719,10 @@ struct optional {
 
     template <typename... Args>
     explicit optional(in_place_t, const Args &...args) { emplace(args...); }
+    optional(const optional &other) : init_(false) { *this = other; }
+    optional(optional &&other) : init_(false) { *this = std::move(other); }
 
-    ~optional() { if (init_) store_.obj.~T(); }
+    ~optional() { DeInit(); }
 
     template <typename... Args>
     T &emplace(const Args &...args) {
@@ -745,6 +747,33 @@ struct optional {
         return nullptr;
     }
     operator bool() const { return init_; }
+    bool has_value() const { return init_; }
+
+    optional &operator=(const optional &other) {
+        if (other.has_value()) {
+            if (has_value()) {
+                store_.obj = other.store_.obj;
+            } else {
+                emplace(other.store_.obj);
+            }
+        } else {
+            DeInit();
+        }
+        return *this;
+    }
+
+    optional &operator=(optional &&other) {
+        if (other.has_value()) {
+            if (has_value()) {
+                store_.obj = std::move(other.store_.obj);
+            } else {
+                emplace(std::move(other.store_.obj));
+            }
+        } else {
+            DeInit();
+        }
+        return *this;
+    }
 
     T& operator*() & {
         assert(init_);
@@ -763,6 +792,12 @@ struct optional {
         return std::move(store_.obj);
     }
   protected:
+    inline void DeInit() {
+        if (init_) {
+            store_.obj.~T();
+            init_ = false;
+        }
+    }
     Store store_;
     bool init_;
 };
