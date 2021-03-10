@@ -2392,13 +2392,21 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         const uint64_t next_seq = queue_state->seq + queue_state->submissions.size() + 1;
         auto *timeline_semaphore_submit = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
-            uint64_t value = timeline_semaphore_submit ? timeline_semaphore_submit->pWaitSemaphoreValues[i] : 0;
+            uint64_t value = 0;
+            if (timeline_semaphore_submit && timeline_semaphore_submit->pWaitSemaphoreValues != nullptr &&
+                (i < timeline_semaphore_submit->waitSemaphoreValueCount)) {
+                value = timeline_semaphore_submit->pWaitSemaphoreValues[i];
+            }
             RecordSubmitWaitSemaphore(submission, queue, submit->pWaitSemaphores[i], value, next_seq);
         }
 
         bool retire_early = false;
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
-            uint64_t value = timeline_semaphore_submit ? timeline_semaphore_submit->pSignalSemaphoreValues[i] : 0;
+            uint64_t value = 0;
+            if (timeline_semaphore_submit && timeline_semaphore_submit->pSignalSemaphoreValues != nullptr &&
+                (i < timeline_semaphore_submit->signalSemaphoreValueCount)) {
+                value = timeline_semaphore_submit->pSignalSemaphoreValues[i];
+            }
             retire_early |= RecordSubmitSignalSemaphore(submission, queue, submit->pSignalSemaphores[i], value, next_seq);
         }
         if (retire_early) {
