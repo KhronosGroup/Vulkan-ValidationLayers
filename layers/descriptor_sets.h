@@ -357,8 +357,13 @@ bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, cons
                                            const DeviceExtensions *device_extensions);
 
 // All Dynamic descriptor types
-inline bool IsDynamicDescriptorType(VkDescriptorType type) {
+inline bool IsDynamicDescriptor(VkDescriptorType type) {
     return ((type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC));
+}
+
+inline bool IsBufferDescriptor(VkDescriptorType type) {
+    return ((type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) ||
+            (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
 }
 
 class SamplerDescriptor : public Descriptor {

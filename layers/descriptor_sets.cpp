@@ -99,17 +99,17 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
             non_empty_bindings_.insert(binding_num);
         }
 
-        if (IsDynamicDescriptorType(binding_info.descriptorType)) {
+        if (IsDynamicDescriptor(binding_info.descriptorType)) {
             dynamic_descriptor_count_ += binding_info.descriptorCount;
         }
 
         // Get stats depending on descriptor type for caching later
-        if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
-            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
-            binding_type_stats_.dynamic_buffer_count++;
-        } else if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
-                   (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
-            binding_type_stats_.non_dynamic_buffer_count++;
+        if (IsBufferDescriptor(binding_info.descriptorType)) {
+            if (IsDynamicDescriptor(binding_info.descriptorType)) {
+                binding_type_stats_.dynamic_buffer_count++;
+            } else {
+                binding_type_stats_.non_dynamic_buffer_count++;
+            }
         }
     }
     assert(bindings_.size() == binding_count_);
@@ -676,14 +676,6 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                     descriptors_.emplace_back(new ((free_descriptor++)->Texel()) TexelDescriptor(type));
                 }
                 break;
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-                assert(IsDynamicDescriptorType(type));
-                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
-                    dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
-                    descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
-                }
-                break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
@@ -703,7 +695,14 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 }
                 break;
             default:
-                assert(0);  // Bad descriptor type specified
+                if (IsDynamicDescriptor(type) && IsBufferDescriptor(type)) {
+                    for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                        dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
+                        descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
+                    }
+                } else {
+                    assert(0);  // Bad descriptor type specified
+                }
                 break;
         }
     }
@@ -1849,12 +1848,12 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
         }
         // Caching criteria differs per type.
         // If image_layout have changed , the image descriptors need to be validated against them.
-        if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
-            (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
-            FilterOneBindingReq(binding_req_pair, out_req, dynamic_buffers, stats.dynamic_buffer_count);
-        } else if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
-                   (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
-            FilterOneBindingReq(binding_req_pair, out_req, non_dynamic_buffers, stats.non_dynamic_buffer_count);
+        if (IsBufferDescriptor(layout_binding->descriptorType)) {
+            if (IsDynamicDescriptor(layout_binding->descriptorType)) {
+                FilterOneBindingReq(binding_req_pair, out_req, dynamic_buffers, stats.dynamic_buffer_count);
+            } else {
+                FilterOneBindingReq(binding_req_pair, out_req, non_dynamic_buffers, stats.non_dynamic_buffer_count);
+            }
         } else {
             // This is rather crude, as the changed layouts may not impact the bound descriptors,
             // but the simple "versioning" is a simple "dirt" test.
@@ -1887,12 +1886,12 @@ void cvdescriptorset::DescriptorSet::UpdateValidationCache(const CMD_BUFFER_STAT
             continue;
         }
         // Caching criteria differs per type.
-        if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
-            (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
-            dynamic_buffers.emplace(binding);
-        } else if ((layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
-                   (layout_binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
-            non_dynamic_buffers.emplace(binding);
+        if (IsBufferDescriptor(layout_binding->descriptorType)) {
+            if (IsDynamicDescriptor(layout_binding->descriptorType)) {
+                dynamic_buffers.emplace(binding);
+            } else {
+                non_dynamic_buffers.emplace(binding);
+            }
         } else {
             // Save the layout change version...
             image_sample_version[binding] = cb_state.image_layout_change_count;
