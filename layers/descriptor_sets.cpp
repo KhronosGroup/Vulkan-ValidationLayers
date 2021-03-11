@@ -805,8 +805,9 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
         for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
             uint32_t index = i - index_range.start;
             const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+            const auto descriptor_class = descriptor->GetClass();
 
-            if (descriptor->GetClass() == DescriptorClass::InlineUniform) {
+            if (descriptor_class == DescriptorClass::InlineUniform) {
                 // Can't validate the descriptor because it may not have been updated.
                 continue;
             } else if (!descriptor->updated) {
@@ -818,7 +819,6 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     " is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.",
                     report_data->FormatHandle(set).c_str(), caller, binding, index);
             } else {
-                auto descriptor_class = descriptor->GetClass();
                 if (descriptor_class == DescriptorClass::GeneralBuffer) {
                     // Verify that buffers are valid
                     auto buffer = static_cast<const BufferDescriptor *>(descriptor)->GetBuffer();
