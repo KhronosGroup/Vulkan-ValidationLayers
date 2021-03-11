@@ -176,6 +176,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdUpdateBuffer',
             'vkCmdFillBuffer',
             'vkCreateSwapchainKHR',
+            'vkCreateSharedSwapchainsKHR',
             'vkQueuePresentKHR',
             'vkCreateDescriptorPool',
             'vkCmdDispatch',

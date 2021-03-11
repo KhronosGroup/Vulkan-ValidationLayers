@@ -1335,6 +1335,8 @@ class StatelessValidation : public ValidationObject {
     bool ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset, VkDeviceSize countBufferOffset,
                                              bool khr) const;
 
+    bool ValidateSwapchainCreateInfo(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo) const;
+
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name) const;
 
     void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) override;
@@ -1457,6 +1459,10 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) const;
+    bool manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+                                                         const VkSwapchainCreateInfoKHR *pCreateInfos,
+                                                         const VkAllocationCallbacks *pAllocator,
+                                                         VkSwapchainKHR *pSwapchains) const;
     bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const;
     bool manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                     const VkDisplayModeCreateInfoKHR *pCreateInfo,
