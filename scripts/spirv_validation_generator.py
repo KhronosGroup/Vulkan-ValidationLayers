@@ -130,6 +130,32 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR', 'layer' : 'workgroup_memory_explicit_layout_features'},
         ]
 
+        # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
+        # but the XML can still list them. This list all promoted structs to ignore since they are aliased.
+        # Tried to generate these, but no reliable way from vk.xml
+        self.promotedFeatures = [
+            # 1.1
+            "VkPhysicalDevice16BitStorageFeatures",
+            "VkPhysicalDeviceMultiviewFeatures",
+            "VkPhysicalDeviceVariablePointersFeatures",
+            "VkPhysicalDeviceProtectedMemoryFeatures",
+            "VkPhysicalDeviceSamplerYcbcrConversionFeatures",
+            "VkPhysicalDeviceShaderDrawParametersFeatures",
+            # 1.2
+            "VkPhysicalDevice8BitStorageFeatures",
+            "VkPhysicalDeviceShaderFloat16Int8Features",
+            "VkPhysicalDeviceDescriptorIndexingFeatures",
+            "VkPhysicalDeviceScalarBlockLayoutFeatures",
+            "VkPhysicalDeviceImagelessFramebufferFeatures",
+            "VkPhysicalDeviceUniformBufferStandardLayoutFeatures",
+            "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures",
+            "VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures",
+            "VkPhysicalDeviceTimelineSemaphoreFeatures",
+            "VkPhysicalDeviceBufferDeviceAddressFeatures",
+            "VkPhysicalDeviceShaderAtomicInt64Features",
+            "VkPhysicalDeviceVulkanMemoryModelFeatures",
+        ]
+
         # Properties are harder to handle genearted without generating a template for every property struct type
         # The simpler solution is create strings that will be printed out as static comparisons at compile time
         # The Map is used to map Vulkan property structs with the state tracker variable name
@@ -214,6 +240,8 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             if 'version' in elem.attrib:
                 enable['version'] = elem.attrib['version']
             elif 'feature' in elem.attrib:
+                if elem.attrib['struct'] in self.promotedFeatures:
+                    continue
                 enable['feature'] = {
                     'feature' : elem.attrib['feature'],
                     'struct' : elem.attrib['struct']
