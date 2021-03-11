@@ -337,7 +337,7 @@ class Descriptor {
     virtual void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) = 0;
     // Create binding between resources of this descriptor and given cb_node
     virtual void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) = 0;
-    virtual DescriptorClass GetClass() const { return descriptor_class; };
+    DescriptorClass GetClass() const { return descriptor_class; };
     // Special fast-path check for SamplerDescriptors that are immutable
     virtual bool IsImmutableSampler() const { return false; };
     bool updated;  // Has descriptor been updated?
