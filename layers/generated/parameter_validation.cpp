@@ -7771,6 +7771,7 @@ bool StatelessValidation::PreCallValidateCreateSharedSwapchainsKHR(
         }
     }
     skip |= validate_array("vkCreateSharedSwapchainsKHR", "swapchainCount", "pSwapchains", swapchainCount, &pSwapchains, true, true, "VUID-vkCreateSharedSwapchainsKHR-swapchainCount-arraylength", "VUID-vkCreateSharedSwapchainsKHR-pSwapchains-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
     return skip;
 }
 

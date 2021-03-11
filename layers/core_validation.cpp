@@ -12672,51 +12672,6 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
     }
 
-    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
-        if (!device_extensions.vk_khr_swapchain_mutable_format) {
-            if (LogError(device, kVUID_Core_DrawState_ExtensionNotEnabled,
-                         "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR which requires the "
-                         "VK_KHR_swapchain_mutable_format extension, which has not been enabled.",
-                         func_name)) {
-                return true;
-            }
-        } else {
-            const auto *image_format_list = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
-            if (image_format_list == nullptr) {
-                if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
-                             "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain of "
-                             "pCreateInfo does not contain an instance of VkImageFormatListCreateInfo.",
-                             func_name)) {
-                    return true;
-                }
-            } else if (image_format_list->viewFormatCount == 0) {
-                if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
-                             "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the viewFormatCount "
-                             "member of VkImageFormatListCreateInfo in the pNext chain is zero.",
-                             func_name)) {
-                    return true;
-                }
-            } else {
-                bool found_base_format = false;
-                for (uint32_t i = 0; i < image_format_list->viewFormatCount; ++i) {
-                    if (image_format_list->pViewFormats[i] == pCreateInfo->imageFormat) {
-                        found_base_format = true;
-                        break;
-                    }
-                }
-                if (!found_base_format) {
-                    if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
-                                 "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
-                                 "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
-                                 "pCreateInfo->imageFormat.",
-                                 func_name)) {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-
     if ((pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && pCreateInfo->pQueueFamilyIndices) {
         bool skip1 = ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
                                                          "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",

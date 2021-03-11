@@ -3923,9 +3923,7 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                   VkSwapchainKHR *pSwapchain) const {
+bool StatelessValidation::ValidateSwapchainCreateInfo(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
@@ -3934,24 +3932,112 @@ bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice devi
             // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
             if (pCreateInfo->queueFamilyIndexCount <= 1) {
                 skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01278",
-                                 "vkCreateSwapchainKHR(): if pCreateInfo->imageSharingMode is VK_SHARING_MODE_CONCURRENT, "
-                                 "pCreateInfo->queueFamilyIndexCount must be greater than 1.");
+                                 "%s: if pCreateInfo->imageSharingMode is VK_SHARING_MODE_CONCURRENT, "
+                                 "pCreateInfo->queueFamilyIndexCount must be greater than 1.",
+                                 func_name);
             }
 
             // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
             // queueFamilyIndexCount uint32_t values
             if (pCreateInfo->pQueueFamilyIndices == nullptr) {
                 skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01277",
-                                 "vkCreateSwapchainKHR(): if pCreateInfo->imageSharingMode is VK_SHARING_MODE_CONCURRENT, "
+                                 "%s: if pCreateInfo->imageSharingMode is VK_SHARING_MODE_CONCURRENT, "
                                  "pCreateInfo->pQueueFamilyIndices must be a pointer to an array of "
-                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
+                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.",
+                                 func_name);
             }
         }
 
         skip |= ValidateGreaterThanZero(pCreateInfo->imageArrayLayers, "pCreateInfo->imageArrayLayers",
-                                        "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", "vkCreateSwapchainKHR");
-    }
+                                        "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", func_name);
 
+        // Validate VK_KHR_image_format_list VkImageFormatListCreateInfo
+        const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+        if (format_list_info) {
+            const uint32_t viewFormatCount = format_list_info->viewFormatCount;
+            if (((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (viewFormatCount > 1)) {
+                skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-04100",
+                                 "%s: If the VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR is not set, then "
+                                 "VkImageFormatListCreateInfo::viewFormatCount (%u) must be 0 or 1 if it is in the pNext chain.",
+                                 func_name, viewFormatCount);
+            }
+
+            // Using the first format, compare the rest of the formats against it that they are compatible
+            for (uint32_t i = 1; i < viewFormatCount; i++) {
+                if (FormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
+                    FormatCompatibilityClass(format_list_info->pViewFormats[i])) {
+                    skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-pNext-04099",
+                                     "%s: VkImageFormatListCreateInfo::pViewFormats[0] (%s) and "
+                                     "VkImageFormatListCreateInfo::pViewFormats[%u] (%s) are not compatible in the pNext chain.",
+                                     func_name, string_VkFormat(format_list_info->pViewFormats[0]), i,
+                                     string_VkFormat(format_list_info->pViewFormats[i]));
+                }
+            }
+        }
+
+        // Validate VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR
+        if ((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) {
+            if (!IsExtEnabled(device_extensions.vk_khr_swapchain_mutable_format)) {
+                skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
+                                 "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR which requires the "
+                                 "VK_KHR_swapchain_mutable_format extension, which has not been enabled.",
+                                 func_name);
+            } else {
+                if (format_list_info == nullptr) {
+                    skip |= LogError(
+                        device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
+                        "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain of "
+                        "pCreateInfo does not contain an instance of VkImageFormatListCreateInfo.",
+                        func_name);
+                } else if (format_list_info->viewFormatCount == 0) {
+                    skip |= LogError(
+                        device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
+                        "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the viewFormatCount "
+                        "member of VkImageFormatListCreateInfo in the pNext chain is zero.",
+                        func_name);
+                } else {
+                    bool found_base_format = false;
+                    for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
+                        if (format_list_info->pViewFormats[i] == pCreateInfo->imageFormat) {
+                            found_base_format = true;
+                            break;
+                        }
+                    }
+                    if (!found_base_format) {
+                        skip |=
+                            LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
+                                     "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
+                                     "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
+                                     "pCreateInfo->imageFormat.",
+                                     func_name);
+                    }
+                }
+            }
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkSwapchainKHR *pSwapchain) const {
+    bool skip = false;
+    skip |= ValidateSwapchainCreateInfo("vkCreateSwapchainKHR()", pCreateInfo);
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+                                                                          const VkSwapchainCreateInfoKHR *pCreateInfos,
+                                                                          const VkAllocationCallbacks *pAllocator,
+                                                                          VkSwapchainKHR *pSwapchains) const {
+    bool skip = false;
+    if (pCreateInfos) {
+        for (uint32_t i = 0; i < swapchainCount; i++) {
+            std::stringstream func_name;
+            func_name << "vkCreateSharedSwapchainsKHR[" << swapchainCount << "]()";
+            skip |= ValidateSwapchainCreateInfo(func_name.str().c_str(), &pCreateInfos[i]);
+        }
+    }
     return skip;
 }
 
