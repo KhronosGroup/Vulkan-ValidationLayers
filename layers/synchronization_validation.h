@@ -417,9 +417,12 @@ class ResourceAccessState : public SyncStageAccess {
 
     static OrderingBarriers kOrderingRules;
 };
+using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
+using ResourceAccessStateConstFunction = std::function<void(const ResourceAccessState &)>;
 
 using ResourceAccessRangeMap = sparse_container::range_map<VkDeviceSize, ResourceAccessState>;
 using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
+using ResourceAccessRangeIndex = typename ResourceAccessRange::index_type;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
 
 using SyncMemoryBarrier = SyncBarrier;
@@ -685,7 +688,7 @@ class AccessContext {
         prev_.clear();
         prev_by_subpass_.clear();
         async_.clear();
-        src_external_ = TrackBack();
+        src_external_ = nullptr;
         dst_external_ = TrackBack();
         start_tag_ = ResourceUsageTag();
         for (auto &map : access_state_maps_) {
@@ -697,8 +700,12 @@ class AccessContext {
     // subpass layout transition, as the pending state handling is more complex
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
+    template <typename BarrierAction>
+    void ResolvePreviousAccessStack(AccessAddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
+                                    const ResourceAccessState *infill_state, const BarrierAction &previous_barrie) const;
     void ResolvePreviousAccess(AccessAddressType type, const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                               const ResourceAccessState *infill_state) const;
+                               const ResourceAccessState *infill_state,
+                               const ResourceAccessStateFunction *previous_barrier = nullptr) const;
     void ResolvePreviousAccesses();
     template <typename BarrierAction>
     void ResolveAccessRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
@@ -754,7 +761,7 @@ class AccessContext {
     const ResourceAccessRangeMap &GetIdealizedMap() const { return GetAccessStateMap(AccessAddressType::kIdealized); }
     const TrackBack *GetTrackBackFromSubpass(uint32_t subpass) const {
         if (subpass == VK_SUBPASS_EXTERNAL) {
-            return &src_external_;
+            return src_external_;
         } else {
             assert(subpass < prev_by_subpass_.size());
             return prev_by_subpass_[subpass];
@@ -793,7 +800,7 @@ class AccessContext {
     std::vector<TrackBack> prev_;
     std::vector<TrackBack *> prev_by_subpass_;
     std::vector<const AccessContext *> async_;
-    TrackBack src_external_;
+    TrackBack *src_external_;
     TrackBack dst_external_;
     ResourceUsageTag start_tag_;
 };

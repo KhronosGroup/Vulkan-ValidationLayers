@@ -678,7 +678,8 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
     Reset();
     const auto &subpass_dep = dependencies[subpass];
-    prev_.reserve(subpass_dep.prev.size());
+    bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
+    prev_.reserve(subpass_dep.prev.size() + (has_barrier_from_external ? 1U : 0U));
     prev_by_subpass_.resize(subpass, nullptr);  // Can't be more prevs than the subpass we're on
     for (const auto &prev_dep : subpass_dep.prev) {
         const auto prev_pass = prev_dep.first->pass;
@@ -692,8 +693,10 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
     for (const auto async_subpass : subpass_dep.async) {
         async_.emplace_back(&contexts[async_subpass]);
     }
-    if (subpass_dep.barrier_from_external.size()) {
-        src_external_ = TrackBack(external_context, queue_flags, subpass_dep.barrier_from_external);
+    if (has_barrier_from_external) {
+        // Store the barrier from external with the reat, but save pointer for "by subpass" lookups.
+        prev_.emplace_back(external_context, queue_flags, subpass_dep.barrier_from_external);
+        src_external_ = &prev_.back();
     }
     if (subpass_dep.barrier_to_external.size()) {
         dst_external_ = TrackBack(this, queue_flags, subpass_dep.barrier_to_external);
@@ -801,15 +804,22 @@ struct ApplySubpassTransitionBarriersAction {
     const std::vector<SyncBarrier> &barriers;
 };
 
-struct ApplyTrackbackBarriersAction {
-    explicit ApplyTrackbackBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
+struct ApplyTrackbackStackAction {
+    explicit ApplyTrackbackStackAction(const std::vector<SyncBarrier> &barriers_,
+                                       const ResourceAccessStateFunction *previous_barrier_ = nullptr)
+        : barriers(barriers_), previous_barrier(previous_barrier_) {}
     void operator()(ResourceAccessState *access) const {
         assert(access);
         assert(!access->HasPendingState());
         access->ApplyBarriers(barriers, false);
         access->ApplyPendingBarriers(kCurrentCommandTag);
+        if (previous_barrier) {
+            assert(bool(*previous_barrier));
+            (*previous_barrier)(access);
+        }
     }
     const std::vector<SyncBarrier> &barriers;
+    const ResourceAccessStateFunction *previous_barrier;
 };
 
 // Splits a single map entry into piece matching the entries in [first, last) the total range over [first, last) must be
@@ -868,26 +878,26 @@ void AccessContext::ResolveAccessRange(AccessAddressType type, const ResourceAcc
         } else {
             // we have to descend to fill this gap
             if (recur_to_infill) {
-                if (current->pos_A->valid) {
-                    // Dest is valid, so we need to accumulate along the DAG and then resolve... in an N-to-1 resolve operation
-                    ResourceAccessRangeMap gap_map;
-                    ResolvePreviousAccess(type, current_range, &gap_map, infill_state);
-                    ResolveMapToEntry(resolve_map, current->pos_A->lower_bound, gap_map.begin(), gap_map.end(), barrier_action);
+                ResourceAccessRange recurrence_range = current_range;
+                // The current context is empty for the current range, so recur to fill the gap.
+                // Since we will be recurring back up the DAG, expand the gap descent to cover the full range for which B
+                // is not valid, to minimize that recurrence
+                if (current->pos_B.at_end()) {
+                    // Do the remainder here....
+                    recurrence_range.end = range.end;
                 } else {
-                    // There isn't anything in dest in current)range, so we can accumulate directly into it.
-                    ResolvePreviousAccess(type, current_range, resolve_map, infill_state);
-                    // Need to apply the barrier to the accesses we accumulated, noting that we haven't updated current
-                    for (auto pos = resolve_map->lower_bound(current_range); pos != current->pos_A->lower_bound; ++pos) {
-                        barrier_action(&pos->second);
-                    }
+                    // Recur only over the range until B becomes valid (within the limits of range).
+                    recurrence_range.end = std::min(range.end, current->pos_B->lower_bound->first.begin);
                 }
+                ResolvePreviousAccessStack(type, recurrence_range, resolve_map, infill_state, barrier_action);
+
                 // Given that there could be gaps we need to seek carefully to not repeatedly search the same gaps in the next
                 // iterator of the outer while.
 
                 // Set the parallel iterator to the end of this range s.t. ++ will move us to the next range whether or
                 // not the end of the range is a gap.  For the seek to work, first we need to warn the parallel iterator
                 // we stepped on the dest map
-                const auto seek_to = current_range.end - 1;  // The subtraction is safe as range can't be empty (loop condition)
+                const auto seek_to = recurrence_range.end - 1;  // The subtraction is safe as range can't be empty (loop condition)
                 current.invalidate_A();                      // Changes current->range
                 current.seek(seek_to);
             } else if (!current->pos_A->valid && infill_state) {
@@ -902,32 +912,39 @@ void AccessContext::ResolveAccessRange(AccessAddressType type, const ResourceAcc
     // Infill if range goes passed both the current and resolve map prior contents
     if (recur_to_infill && (current->range.end < range.end)) {
         ResourceAccessRange trailing_fill_range = {current->range.end, range.end};
-        ResourceAccessRangeMap gap_map;
-        const auto the_end = resolve_map->end();
-        ResolvePreviousAccess(type, trailing_fill_range, &gap_map, infill_state);
-        for (auto &access : gap_map) {
-            barrier_action(&access.second);
-            resolve_map->insert(the_end, access);
-        }
+        ResolvePreviousAccessStack<BarrierAction>(type, trailing_fill_range, resolve_map, infill_state, barrier_action);
     }
 }
 
+template <typename BarrierAction>
+void AccessContext::ResolvePreviousAccessStack(AccessAddressType type, const ResourceAccessRange &range,
+                                               ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state,
+                                               const BarrierAction &previous_barrier) const {
+    ResourceAccessStateFunction stacked_barrier(std::ref(previous_barrier));
+    ResolvePreviousAccess(type, range, descent_map, infill_state, &stacked_barrier);
+}
+
 void AccessContext::ResolvePreviousAccess(AccessAddressType type, const ResourceAccessRange &range,
-                                          ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const {
-    if ((prev_.size() == 0) && (src_external_.context == nullptr)) {
+                                          ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state,
+                                          const ResourceAccessStateFunction *previous_barrier) const {
+    if (prev_.size() == 0) {
         if (range.non_empty() && infill_state) {
-            descent_map->insert(std::make_pair(range, *infill_state));
+            // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
+            ResourceAccessState state_copy;
+            if (previous_barrier) {
+                assert(bool(*previous_barrier));
+                state_copy = *infill_state;
+                (*previous_barrier)(&state_copy);
+                infill_state = &state_copy;
+            }
+            sparse_container::update_range_value(*descent_map, range, *infill_state,
+                                                 sparse_container::value_precedence::prefer_dest);
         }
     } else {
         // Look for something to fill the gap further along.
         for (const auto &prev_dep : prev_) {
-            const ApplyTrackbackBarriersAction barrier_action(prev_dep.barriers);
+            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, previous_barrier);
             prev_dep.context->ResolveAccessRange(type, range, barrier_action, descent_map, infill_state);
-        }
-
-        if (src_external_.context) {
-            const ApplyTrackbackBarriersAction barrier_action(src_external_.barriers);
-            src_external_.context->ResolveAccessRange(type, range, barrier_action, descent_map, infill_state);
         }
     }
 }
@@ -935,6 +952,8 @@ void AccessContext::ResolvePreviousAccess(AccessAddressType type, const Resource
 // Non-lazy import of all accesses, WaitEvents needs this.
 void AccessContext::ResolvePreviousAccesses() {
     ResourceAccessState default_state;
+    if (!prev_.size()) return;  // If no previous contexts, nothing to do
+
     for (const auto address_type : kAddressTypes) {
         ResolvePreviousAccess(address_type, kFullRange, &GetAccessStateMap(address_type), &default_state);
     }
@@ -1016,6 +1035,7 @@ bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &ex_
         const bool prev_needs_proxy = transition.prev_pass != VK_SUBPASS_EXTERNAL && (transition.prev_pass + 1 == subpass);
 
         const auto *track_back = GetTrackBackFromSubpass(transition.prev_pass);
+        assert(track_back);
         if (prev_needs_proxy) {
             if (!proxy_for_prev) {
                 proxy_for_prev.reset(CreateStoreResolveProxyContext(*track_back->context, rp_state, transition.prev_pass,
@@ -1730,7 +1750,7 @@ void AccessContext::ApplyToContext(const Action &barrier_action) {
 void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
     for (uint32_t subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
         auto &context = contexts[subpass_index];
-        ApplyTrackbackBarriersAction barrier_action(context.GetDstExternalTrackBack().barriers);
+        ApplyTrackbackStackAction barrier_action(context.GetDstExternalTrackBack().barriers);
         for (const auto address_type : kAddressTypes) {
             context.ResolveAccessRange(address_type, kFullRange, barrier_action, &GetAccessStateMap(address_type), nullptr, false);
         }

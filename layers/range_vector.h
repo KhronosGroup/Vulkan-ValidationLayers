@@ -1401,11 +1401,12 @@ class cached_lower_bound_impl {
 
     inline iterator lower_bound(const index_type &index) { return map_->lower_bound(key_type(index, index + 1)); }
     inline bool at_end(const iterator &it) const { return it == end_; }
-    inline bool at_end() const { return at_end(lower_bound_); }
 
     bool is_lower_than(const index_type &index, const iterator &it) { return at_end(it) || (index < it->first.end); }
 
   public:
+    // The cached lower bound knows the parent map, and thus can tell us this...
+    inline bool at_end() const { return at_end(lower_bound_); }
     // includes(index) is a convenience function to test if the index would be in the currently cached lower bound
     bool includes(const index_type &index) const { return !at_end() && lower_bound_->first.includes(index); }
 
