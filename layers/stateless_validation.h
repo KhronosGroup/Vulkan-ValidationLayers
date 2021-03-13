@@ -908,7 +908,10 @@ class StatelessValidation : public ValidationObject {
         const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
                                     VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR | VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
                                     VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR;
-        const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
+        // Note: for the purposes of subpass dependencies, we're considering ALL_GRAPHICS_BIT and ALL_COMMANDS_BIT to be equivalent.
+        // The implicit subpass dependencies listed in the vulkan spec use the ALL_COMMANDS_BIT.
+        const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR | VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR |
+                                         VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
                                          VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR;
         const auto kGraphicsStages =
             (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
