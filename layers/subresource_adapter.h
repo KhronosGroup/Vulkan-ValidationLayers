@@ -396,6 +396,7 @@ class ImageRangeGenerator {
     void DiagPlusPlus();
 #endif
 
+    ImageRangeGenerator(const ImageRangeGenerator&) = default;
     ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_(), base_address_(), pos_() {}
     bool operator!=(const ImageRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
@@ -407,9 +408,9 @@ class ImageRangeGenerator {
 
   private:
     const ImageRangeEncoder* encoder_;
-    const VkImageSubresourceRange subres_range_;
-    const VkOffset3D offset_;
-    const VkExtent3D extent_;
+    VkImageSubresourceRange subres_range_;
+    VkOffset3D offset_;
+    VkExtent3D extent_;
     VkDeviceSize base_address_;
     uint32_t range_arraylayer_base_;
     uint32_t range_layer_count_;
