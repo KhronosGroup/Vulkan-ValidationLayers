@@ -11369,3 +11369,156 @@ TEST_F(VkPositiveLayerTest, InitSwapchain) {
     }
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
+    // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/2610
+    TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1); // for extension dependencies
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kMockICD)) {
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Vulkan 1.1 not supported but required. Skipping\n",
+            kSkipPrefix);
+        return;
+    }
+
+    if (!DeviceExtensionSupported(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)) {
+        printf("%s VK_EXT_image_drm_format_modifier is not supported but required. Skipping\n",
+            kSkipPrefix);
+        return;
+    }
+
+    m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // we just hope that on of those formats is supported
+    // for more detailed checking, we could check multi-planar formats.
+    auto format_list = {
+        VK_FORMAT_B8G8R8A8_UNORM,
+        VK_FORMAT_B8G8R8A8_SRGB,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_R8G8B8A8_SRGB,
+    };
+
+    for(auto format : format_list) {
+        std::vector<uint64_t> mods;
+
+        // get general features and modifiers
+        VkFormatProperties2 fmtp = {};
+        fmtp.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
+
+        VkDrmFormatModifierPropertiesListEXT modp = {};
+        modp.sType = VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT;
+        fmtp.pNext = &modp;
+
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
+
+        if (modp.drmFormatModifierCount > 0) {
+            // the first call to vkGetPhysicalDeviceFormatProperties2 did only
+            // retrieve the number of modifiers, we now have to retrieve
+            // the modifiers
+            std::vector<VkDrmFormatModifierPropertiesEXT> mod_props(modp.drmFormatModifierCount);
+            modp.pDrmFormatModifierProperties = mod_props.data();
+
+            vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
+
+            for (auto i = 0u; i < modp.drmFormatModifierCount; ++i) {
+                auto& mod = modp.pDrmFormatModifierProperties[i];
+                auto features = VK_FORMAT_FEATURE_TRANSFER_DST_BIT |
+                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+
+                if ((mod.drmFormatModifierTilingFeatures & features) != features) {
+                    continue;
+                }
+
+                mods.push_back(mod.drmFormatModifier);
+            }
+        }
+
+        if (mods.empty()) {
+            continue;
+        }
+
+        // create image
+        VkImageCreateInfo ci = {};
+        ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        ci.pNext = NULL;
+        ci.flags = 0;
+        ci.imageType = VK_IMAGE_TYPE_2D;
+        ci.format = format;
+        ci.extent = {128, 128, 1};
+        ci.mipLevels = 1;
+        ci.arrayLayers = 1;
+        ci.samples = VK_SAMPLE_COUNT_1_BIT;
+        ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+        ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        VkImageDrmFormatModifierListCreateInfoEXT mod_list = {};
+        mod_list.sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT;
+        mod_list.pDrmFormatModifiers = mods.data();
+        mod_list.drmFormatModifierCount = mods.size();
+        ci.pNext = &mod_list;
+
+        VkImage image;
+        m_errorMonitor->ExpectSuccess();
+        VkResult err = vk::CreateImage(device(), &ci, NULL, &image);
+        ASSERT_VK_SUCCESS(err);
+        m_errorMonitor->VerifyNotFound();
+
+        // bind memory
+        VkPhysicalDeviceMemoryProperties phys_mem_props;
+        vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+        VkMemoryRequirements mem_reqs;
+        vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+        VkDeviceMemory mem_obj = VK_NULL_HANDLE;
+        VkMemoryPropertyFlagBits mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
+            if ((mem_reqs.memoryTypeBits & (1 << type)) &&
+                ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
+                VkMemoryAllocateInfo alloc_info = {};
+                alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                alloc_info.allocationSize = mem_reqs.size;
+                alloc_info.memoryTypeIndex = type;
+                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &mem_obj));
+                break;
+            }
+        }
+
+        ASSERT_NE((VkDeviceMemory) VK_NULL_HANDLE, mem_obj);
+        ASSERT_VK_SUCCESS(vk::BindImageMemory(device(), image, mem_obj, 0));
+
+        // create image view
+        VkImageViewCreateInfo ivci = {
+            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            nullptr,
+            0,
+            image,
+            VK_IMAGE_VIEW_TYPE_2D,
+            format,
+            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+             VK_COMPONENT_SWIZZLE_IDENTITY},
+            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        };
+        VkImageView view;
+        m_errorMonitor->ExpectSuccess();
+        err = vk::CreateImageView(device(), &ivci, nullptr, &view);
+        ASSERT_VK_SUCCESS(err);
+        m_errorMonitor->VerifyNotFound();
+
+        // for more detailed checking, we could export the image to dmabuf
+        // and then import it again (using VkImageDrmFormatModifierExplicitCreateInfoEXT)
+
+        vk::DestroyImageView(device(), view, nullptr);
+        vk::FreeMemory(device(), mem_obj, nullptr);
+        vk::DestroyImage(device(), image, nullptr);
+    }
+}
