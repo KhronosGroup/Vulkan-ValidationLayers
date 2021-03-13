@@ -42,6 +42,15 @@ const char *CommandTypeString(CMD_TYPE type) {
     return kGeneratedCommandNameList[type];
 }
 
+uint32_t GetSubpassDepthStencilAttachmentIndex(const safe_VkPipelineDepthStencilStateCreateInfo *pipe_ds_ci,
+                                               const safe_VkAttachmentReference2 *depth_stencil_ref) {
+    uint32_t depth_stencil_attachment = VK_ATTACHMENT_UNUSED;
+    if (pipe_ds_ci && depth_stencil_ref) {
+        depth_stencil_attachment = depth_stencil_ref->attachment;
+    }
+    return depth_stencil_attachment;
+}
+
 VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
     switch (flag) {
         case CBSTATUS_LINE_WIDTH_SET:
