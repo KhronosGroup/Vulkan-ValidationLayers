@@ -11397,8 +11397,8 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
     m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // we just hope that on of those formats is supported
-    // for more detailed checking, we could check multi-planar formats.
+    // we just hope that one of these formats supports modifiers
+    // for more detailed checking, we could also check multi-planar formats.
     auto format_list = {
         VK_FORMAT_B8G8R8A8_UNORM,
         VK_FORMAT_B8G8R8A8_SRGB,
@@ -11410,12 +11410,9 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
         std::vector<uint64_t> mods;
 
         // get general features and modifiers
-        VkFormatProperties2 fmtp = {};
-        fmtp.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
-
         VkDrmFormatModifierPropertiesListEXT modp = {};
         modp.sType = VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT;
-        fmtp.pNext = &modp;
+        auto fmtp = LvlInitStruct<VkFormatProperties2>(&modp);
 
         vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
 
@@ -11446,9 +11443,7 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
         }
 
         // create image
-        VkImageCreateInfo ci = {};
-        ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        ci.pNext = NULL;
+        auto ci = LvlInitStruct<VkImageCreateInfo>();
         ci.flags = 0;
         ci.imageType = VK_IMAGE_TYPE_2D;
         ci.format = format;
@@ -11469,7 +11464,7 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
 
         VkImage image;
         m_errorMonitor->ExpectSuccess();
-        VkResult err = vk::CreateImage(device(), &ci, NULL, &image);
+        VkResult err = vk::CreateImage(device(), &ci, nullptr, &image);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyNotFound();
 
@@ -11488,7 +11483,7 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
                 alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 alloc_info.allocationSize = mem_reqs.size;
                 alloc_info.memoryTypeIndex = type;
-                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &mem_obj));
+                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &mem_obj));
                 break;
             }
         }
@@ -11508,16 +11503,12 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
              VK_COMPONENT_SWIZZLE_IDENTITY},
             {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
         };
-        VkImageView view;
-        m_errorMonitor->ExpectSuccess();
-        err = vk::CreateImageView(device(), &ivci, nullptr, &view);
-        ASSERT_VK_SUCCESS(err);
-        m_errorMonitor->VerifyNotFound();
+
+        CreateImageViewTest(*this, &ivci);
 
         // for more detailed checking, we could export the image to dmabuf
         // and then import it again (using VkImageDrmFormatModifierExplicitCreateInfoEXT)
 
-        vk::DestroyImageView(device(), view, nullptr);
         vk::FreeMemory(device(), mem_obj, nullptr);
         vk::DestroyImage(device(), image, nullptr);
     }
