@@ -76,10 +76,6 @@ def BuildVVL(args):
     cmake_ver_cmd = 'cmake --version'
     RunShellCmd(cmake_ver_cmd)
 
-    print("Run update_deps.py for VVL Repository")
-    update_cmd = f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config {args.configuration} --arch {args.arch}'
-    RunShellCmd(update_cmd)
-
     GTEST_DIR = RepoRelative("external/googletest")
     if not os.path.exists(GTEST_DIR):
         print("Clone Testing Framework Source Code")
@@ -92,7 +88,7 @@ def BuildVVL(args):
 
     utils.make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
-    cmake_cmd = f'cmake -C ../{EXTERNAL_DIR_NAME}/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
+    cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
     RunShellCmd(cmake_cmd, VVL_BUILD_DIR)
 
