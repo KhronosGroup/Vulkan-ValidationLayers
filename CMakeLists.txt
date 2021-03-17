@@ -48,7 +48,54 @@ add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(PythonInterp 3 QUIET)
+if (UPDATE_DEPS)
+    find_package(PythonInterp 3 REQUIRED)
+
+    if (CMAKE_GENERATOR_PLATFORM)
+        set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
+    else()
+        message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
+        set(_target_arch x64)
+    endif()
+
+    if (NOT CMAKE_BUILD_TYPE)
+        message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
+        set(_build_type Debug)
+    else()
+        set(_build_type ${CMAKE_BUILD_TYPE})
+    endif()
+
+    message("********************************************************************************")
+    message("* NOTE: Adding target vvl_update_deps to run as needed for updating            *")
+    message("*       dependencies.                                                          *")
+    message("********************************************************************************")
+
+    # Add a target so that update_deps.py will run when necessary
+    # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
+                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}"
+                       DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
+
+    add_custom_target(vvl_update_deps DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
+
+    # Check if update_deps.py needs to be run on first cmake run
+    if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
+        execute_process(
+            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            RESULT_VARIABLE _update_deps_result
+        )
+        if (NOT (${_update_deps_result} EQUAL 0))
+            message(FATAL_ERROR "Could not run update_deps.py which is necessary to download dependencies.")
+        endif()
+    endif()
+    include(${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
+else()
+    message("********************************************************************************")
+    message("* NOTE: Not adding target to run update_deps.py automatically.                 *")
+    message("********************************************************************************")
+    find_package(PythonInterp 3 QUIET)
+endif()
 
 if (TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
@@ -297,6 +344,9 @@ add_library(VkLayer_utils
             layers/vk_format_utils.cpp)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
+if (UPDATE_DEPS)
+    add_dependencies(VkLayer_utils vvl_update_deps)
+endif()
 if(WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
     if(MINGW)

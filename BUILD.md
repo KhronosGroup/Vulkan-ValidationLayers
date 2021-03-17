@@ -1,10 +1,9 @@
 # Build Instructions
 
-Instructions for building this repository on Linux, Windows, Android, and
-MacOS.
-
 ## Index
 
+1. [Requirements](#requirements)
+1. [Building](#building)
 1. [Contributing](#contributing-to-the-repository)
 1. [Repository Content](#repository-content)
 1. [Repository Set-Up](#repository-set-up)
@@ -12,6 +11,43 @@ MacOS.
 1. [Linux Build](#building-on-linux)
 1. [Android Build](#building-on-android)
 1. [MacOS build](#building-on-macos)
+
+## Requirements
+
+1. Python >= 3.7 (3.6 may work, 3.5 and earlier is not supported)
+1. CMake >= 3.10.2
+1. C++ >= c++11 compiler. See platform-specific sections below for supported compiler versions.
+
+## Building
+
+**NOTE**: See [this](#google-test) first if you are also building the tests.
+
+```bash
+# One-time generation
+mkdir build # Arbitrary build directory
+cd build
+
+# Run './scripts/update_deps.py --help' for more information
+# NOTE: You can alternatively set -DUPDATE_DEPS=ON during cmake generation
+#       to have a cmake target automatically run this as needed.
+python3 ./scripts/update_deps.py --dir external --arch x64 --config debug
+
+# NOTE: If using -DUPDATE_DEPS=ON, CMAKE_BUILD_TYPE is used to determine the build type
+#       of external dependencies. For generators such as Visual Studio that usually ignore
+#       CMAKE_BUILD_TYPE, it's a good idea to still set CMAKE_BUILD_TYPE in this case to control
+#       the build type of dependencies. If you want a "mix" (e.g., Release dependencies, Debug VVL),
+#       you will want to use `update_deps.py` manually.
+cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+# Building
+cmake --build . --config Debug
+```
+
+Note the `-C ../external/helper.cmake` argument passed to cmake. This is necessary when
+calling the `update_deps.py` script manually. See below for more details.
+
+These are general instructions that should "just work" on Windows and Linux. For platform-specific
+build instructions, see the appropriate `<Platform> Build` section below.
 
 ## Contributing to the Repository
 
