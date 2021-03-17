@@ -150,7 +150,7 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
 }
 
 void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map) {
-    auto *range_map = GetLayoutRangeMap(&image_layout_map, image_state);
+    auto *range_map = GetLayoutRangeMap(image_layout_map, image_state);
     auto range_gen = subresource_adapter::RangeGenerator(image_state.subresource_encoder, image_state.full_range);
     for (; range_gen->non_empty(); ++range_gen) {
         range_map->insert(range_map->end(), std::make_pair(*range_gen, image_state.createInfo.initialLayout));
@@ -3115,7 +3115,7 @@ struct CommandBufferSubmitState {
         if (cb_node == nullptr) {
             return skip;
         }
-        skip |= core->ValidateCmdBufImageLayouts(cb_node, core->imageLayoutMap, &overlay_image_layout_map);
+        skip |= core->ValidateCmdBufImageLayouts(cb_node, core->imageLayoutMap, overlay_image_layout_map);
         current_cmds.push_back(cmd);
         skip |= core->ValidatePrimaryCommandBufferState(loc, cb_node,
                                                         static_cast<int>(std::count(current_cmds.begin(), current_cmds.end(), cmd)),

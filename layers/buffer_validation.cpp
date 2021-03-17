@@ -4403,10 +4403,9 @@ void CoreChecks::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, co
                        pBlitImageInfo->filter);
 }
 
-GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap *map, const IMAGE_STATE &image_state) {
-    assert(map);
+GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
     // This approach allows for a single hash lookup or/create new
-    auto &layout_map = (*map)[image_state.image];
+    auto &layout_map = map[image_state.image];
     if (!layout_map) {
         layout_map.emplace(image_state.subresource_encoder.SubresourceCount());
     }
@@ -4423,10 +4422,9 @@ const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &m
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const GlobalImageLayoutMap &globalImageLayoutMap,
-                                            GlobalImageLayoutMap *overlayLayoutMap_arg) const {
+                                            GlobalImageLayoutMap &overlayLayoutMap) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
-    GlobalImageLayoutMap &overlay_layout_map = *overlayLayoutMap_arg;
     // Iterate over the layout maps for each referenced image
     GlobalImageLayoutRangeMap empty_map(1);
     for (const auto &layout_map_entry : pCB->image_layout_map) {
@@ -4438,7 +4436,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
         // Validate the initial_uses for each subresource referenced
         if (initial_layout_map.empty()) continue;
 
-        auto *overlay_map = GetLayoutRangeMap(&overlay_layout_map, *image_state);
+        auto *overlay_map = GetLayoutRangeMap(overlayLayoutMap, *image_state);
         const auto *global_map = GetLayoutRangeMap(globalImageLayoutMap, image);
         if (global_map == nullptr) {
             global_map = &empty_map;
@@ -4504,7 +4502,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
         const auto &subres_map = layout_map_entry.second;
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't set layouts of a dead image
-        auto *global_map = GetLayoutRangeMap(&imageLayoutMap, *image_state);
+        auto *global_map = GetLayoutRangeMap(imageLayoutMap, *image_state);
         sparse_container::splice(global_map, subres_map->GetCurrentLayoutMap(), sparse_container::value_precedence::prefer_source);
     }
 }
