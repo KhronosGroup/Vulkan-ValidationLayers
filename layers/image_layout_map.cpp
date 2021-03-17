@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2020 The Khronos Group Inc.
- * Copyright (c) 2019-2020 Valve Corporation
- * Copyright (c) 2019-2020 LunarG, Inc.
- * Copyright (C) 2019-2020 Google Inc.
+/* Copyright (c) 2019-2021 The Khronos Group Inc.
+ * Copyright (c) 2019-2021 Valve Corporation
+ * Copyright (c) 2019-2021 LunarG, Inc.
+ * Copyright (C) 2019-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,19 +33,18 @@ const ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::end_it
 using InitialLayoutStates = ImageSubresourceLayoutMap::InitialLayoutStates;
 
 template <typename StatesMap>
-static inline InitialLayoutState* UpdateInitialLayoutStateImpl(StatesMap* initial_layout_state_map,
-                                                               InitialLayoutStates* states_storage, const IndexRange& range,
+static inline InitialLayoutState* UpdateInitialLayoutStateImpl(StatesMap& initial_layout_state_map,
+                                                               InitialLayoutStates& initial_layout_states, const IndexRange& range,
                                                                InitialLayoutState* initial_state, const CMD_BUFFER_STATE& cb_state,
                                                                const IMAGE_VIEW_STATE* view_state) {
-    auto& initial_layout_states = *states_storage;
     if (!initial_state) {
         // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
         // each subresource has a non-owning copy of the plain pointer.
-        initial_state = new InitialLayoutState(cb_state, view_state);
-        initial_layout_states.emplace_back(initial_state);
+        initial_layout_states.emplace_back(cb_state, view_state);
+        initial_state = &initial_layout_states.back();
     }
     assert(initial_state);
-    sparse_container::update_range_value(*initial_layout_state_map, range, initial_state, WritePolicy::prefer_dest);
+    sparse_container::update_range_value(initial_layout_state_map, range, initial_state, WritePolicy::prefer_dest);
     return initial_state;
 }
 
@@ -74,23 +73,22 @@ ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::Begin(bool a
 
 // Use the unwrapped maps from the BothMap in the actual implementation
 template <typename LayoutMap, typename InitialStateMap>
-static bool SetSubresourceRangeLayoutImpl(LayoutMap* current_layouts, LayoutMap* initial_layouts,
-                                          InitialStateMap* initial_state_map, InitialLayoutStates* initial_layout_states,
-                                          RangeGenerator* range_gen_arg, const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+static bool SetSubresourceRangeLayoutImpl(LayoutMap& current_layouts, LayoutMap& initial_layouts,
+                                          InitialStateMap& initial_state_map, InitialLayoutStates& initial_layout_states,
+                                          RangeGenerator& range_gen, const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
                                           VkImageLayout expected_layout) {
     bool updated = false;
-    auto& range_gen = *range_gen_arg;
     InitialLayoutState* initial_state = nullptr;
     // Empty range are the range tombstones
     for (; range_gen->non_empty(); ++range_gen) {
         // In order to track whether we've changed anything, we'll do this in a slightly convoluted way...
         // We'll traverse the range looking for values different from ours, then overwrite the range.
         bool updated_current =
-            sparse_container::update_range_value(*current_layouts, *range_gen, layout, WritePolicy::prefer_source);
+            sparse_container::update_range_value(current_layouts, *range_gen, layout, WritePolicy::prefer_source);
         if (updated_current) {
             updated = true;
             bool updated_init =
-                sparse_container::update_range_value(*initial_layouts, *range_gen, expected_layout, WritePolicy::prefer_dest);
+                sparse_container::update_range_value(initial_layouts, *range_gen, expected_layout, WritePolicy::prefer_dest);
             if (updated_init) {
                 initial_state = UpdateInitialLayoutStateImpl(initial_state_map, initial_layout_states, *range_gen, initial_state,
                                                              cb_state, nullptr);
@@ -110,29 +108,28 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const CMD_BUFFER_STATE
 
     RangeGenerator range_gen(encoder_, range);
     if (layouts_.initial.SmallMode()) {
-        return SetSubresourceRangeLayoutImpl(&layouts_.current.GetSmallMap(), &layouts_.initial.GetSmallMap(),
-                                             &initial_layout_state_map_.GetSmallMap(), &initial_layout_states_, &range_gen,
+        return SetSubresourceRangeLayoutImpl(layouts_.current.GetSmallMap(), layouts_.initial.GetSmallMap(),
+                                             initial_layout_state_map_.GetSmallMap(), initial_layout_states_, range_gen,
                                              cb_state, layout, expected_layout);
     } else {
         assert(!layouts_.initial.Tristate());
-        return SetSubresourceRangeLayoutImpl(&layouts_.current.GetBigMap(), &layouts_.initial.GetBigMap(),
-                                             &initial_layout_state_map_.GetBigMap(), &initial_layout_states_, &range_gen, cb_state,
+        return SetSubresourceRangeLayoutImpl(layouts_.current.GetBigMap(), layouts_.initial.GetBigMap(),
+                                             initial_layout_state_map_.GetBigMap(), initial_layout_states_, range_gen, cb_state,
                                              layout, expected_layout);
     }
 }
 
 // Use the unwrapped maps from the BothMap in the actual implementation
 template <typename LayoutMap, typename InitialStateMap>
-static bool SetSubresourceRangeInitialLayoutImpl(LayoutMap* initial_layouts, InitialStateMap* initial_state_map,
-                                                 InitialLayoutStates* initial_layout_states, RangeGenerator* range_gen_arg,
+static bool SetSubresourceRangeInitialLayoutImpl(LayoutMap& initial_layouts, InitialStateMap& initial_state_map,
+                                                 InitialLayoutStates& initial_layout_states, RangeGenerator& range_gen,
                                                  const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
                                                  const IMAGE_VIEW_STATE* view_state) {
     bool updated = false;
     InitialLayoutState* initial_state = nullptr;
-    auto& range_gen = *range_gen_arg;
 
     for (; range_gen->non_empty(); ++range_gen) {
-        bool updated_range = sparse_container::update_range_value(*initial_layouts, *range_gen, layout, WritePolicy::prefer_dest);
+        bool updated_range = sparse_container::update_range_value(initial_layouts, *range_gen, layout, WritePolicy::prefer_dest);
         if (updated_range) {
             initial_state = UpdateInitialLayoutStateImpl(initial_state_map, initial_layout_states, *range_gen, initial_state,
                                                          cb_state, view_state);
@@ -151,12 +148,12 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFE
     RangeGenerator range_gen(encoder_, range);
     assert(layouts_.initial.GetMode() == initial_layout_state_map_.GetMode());
     if (layouts_.initial.SmallMode()) {
-        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetSmallMap(), &initial_layout_state_map_.GetSmallMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, view_state);
+        return SetSubresourceRangeInitialLayoutImpl(layouts_.initial.GetSmallMap(), initial_layout_state_map_.GetSmallMap(),
+                                                    initial_layout_states_, range_gen, cb_state, layout, view_state);
     } else {
         assert(!layouts_.initial.Tristate());
-        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, view_state);
+        return SetSubresourceRangeInitialLayoutImpl(layouts_.initial.GetBigMap(), initial_layout_state_map_.GetBigMap(),
+                                                    initial_layout_states_, range_gen, cb_state, layout, view_state);
     }
 }
 
@@ -166,12 +163,12 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFE
     RangeGenerator range_gen(view_state.range_generator);
     assert(layouts_.initial.GetMode() == initial_layout_state_map_.GetMode());
     if (layouts_.initial.SmallMode()) {
-        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetSmallMap(), &initial_layout_state_map_.GetSmallMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, &view_state);
+        return SetSubresourceRangeInitialLayoutImpl(layouts_.initial.GetSmallMap(), initial_layout_state_map_.GetSmallMap(),
+                                                    initial_layout_states_, range_gen, cb_state, layout, &view_state);
     } else {
         assert(!layouts_.initial.Tristate());
-        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, &view_state);
+        return SetSubresourceRangeInitialLayoutImpl(layouts_.initial.GetBigMap(), initial_layout_state_map_.GetBigMap(),
+                                                    initial_layout_states_, range_gen, cb_state, layout, &view_state);
     }
 }
 

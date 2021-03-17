@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2020 The Khronos Group Inc.
- * Copyright (c) 2019-2020 Valve Corporation
- * Copyright (c) 2019-2020 LunarG, Inc.
- * Copyright (C) 2019-2020 Google Inc.
+/* Copyright (c) 2019-2021 The Khronos Group Inc.
+ * Copyright (c) 2019-2021 Valve Corporation
+ * Copyright (c) 2019-2021 LunarG, Inc.
+ * Copyright (C) 2019-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ class ImageSubresourceLayoutMap {
     using ParallelIterator = sparse_container::parallel_iterator<MapA, MapB>;
     using LayoutMap = RangeMap;
     using InitialLayoutMap = RangeMap;
-    using InitialLayoutStates = std::vector<std::unique_ptr<InitialLayoutState>>;
+    using InitialLayoutStates = std::vector<InitialLayoutState>;
 
     class ConstIterator {
       public:
@@ -194,8 +194,8 @@ class ImageSubresourceLayoutMap {
         if (!initial_state) {
             // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
             // each subresource has a non-owning copy of the plain pointer.
-            initial_state = new InitialLayoutState(cb_state, view_state);
-            initial_layout_states_.emplace_back(initial_state);
+            initial_layout_states_.emplace_back(cb_state, view_state);
+            initial_state = &initial_layout_states_.back();
         }
         assert(initial_state);
         sparse_container::update_range_value(initial_layout_state_map_, range, initial_state, WritePolicy::prefer_dest);
