@@ -1922,6 +1922,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     const VkExtent2D grid_size = sample_location_info.sampleLocationGridSize;
 
                     VkMultisamplePropertiesEXT multisample_prop;
+                    multisample_prop.sType = VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT;
+                    multisample_prop.pNext = nullptr;
                     DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, multisample_state->rasterizationSamples,
                                                                       &multisample_prop);
                     const VkExtent2D max_grid_size = multisample_prop.maxSampleLocationGridSize;
@@ -3538,7 +3540,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
         VkExternalBufferProperties ext_buf_props = {};
         ext_buf_props.sType = VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES;
-
+        ext_buf_props.pNext = nullptr;
         DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &pdebi, &ext_buf_props);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
@@ -5134,6 +5136,7 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
 
     VkPipelineInfoKHR pi = {};
     pi.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
+    pi.pNext = nullptr;
     pi.pipeline = pExecutableInfo->pipeline;
 
     // We could probably cache this instead of fetching it every time
