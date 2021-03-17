@@ -1568,8 +1568,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
     // reset the renderpass state
     prepass_state->second = {};
 
-    const auto* cb_state = GetCBState(commandBuffer);
-    const auto* rp_state = cb_state->activeRenderPass.get();
+    const auto* rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
 
     // track depth / color attachment usage within the renderpass
     for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
