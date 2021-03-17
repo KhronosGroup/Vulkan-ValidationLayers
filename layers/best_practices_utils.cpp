@@ -2431,6 +2431,18 @@ void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     }
 }
 
+void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
+                                                     const VkResolveImageInfo2KHR* pResolveImageInfo) {
+    auto* src = GetImageState(pResolveImageInfo->srcImage);
+    auto* dst = GetImageState(pResolveImageInfo->dstImage);
+    uint32_t regionCount = pResolveImageInfo->regionCount;
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        ValidateImage(src, IMAGE_ATTACHMENT_USAGE::RESOURCE_READ, pResolveImageInfo->pRegions[i].srcSubresource);
+        ValidateImage(dst, IMAGE_ATTACHMENT_USAGE::RESOURCE_WRITE, pResolveImageInfo->pRegions[i].dstSubresource);
+    }
+}
+
 void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                     const VkClearColorValue* pColor, uint32_t rangeCount,
                                                     const VkImageSubresourceRange* pRanges) {
