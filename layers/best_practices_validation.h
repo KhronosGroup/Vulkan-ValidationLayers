@@ -321,6 +321,8 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                       const VkImageResolve* pRegions) override;
+    void PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
+                                          const VkResolveImageInfo2KHR *pResolveImageInfo) override;
     void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                          const VkClearColorValue* pColor, uint32_t rangeCount,
                                          const VkImageSubresourceRange* pRanges) override;
