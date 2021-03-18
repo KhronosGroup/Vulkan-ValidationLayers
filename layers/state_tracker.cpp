@@ -353,7 +353,7 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
     if (VK_SUCCESS != result) return;
     auto ahb_format_props = LvlFindInChain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
     if (ahb_format_props) {
-        ahb_ext_formats_map.insert({ahb_format_props->externalFormat, ahb_format_props->formatFeatures});
+        ahb_ext_formats_map.emplace(ahb_format_props->externalFormat, ahb_format_props->formatFeatures);
     }
 }
 
@@ -1397,7 +1397,7 @@ bool ValidationStateTracker::AddCommandBufferBinding(BASE_NODE::BindingsType &cb
     }
     // Insert the cb_binding with a default 'index' of -1. Then push the obj into the object_bindings
     // vector, and update cb_bindings[cb_node] with the index of that element of the vector.
-    auto inserted = cb_bindings.insert({cb_node, -1});
+    auto inserted = cb_bindings.emplace(cb_node, -1);
     if (inserted.second) {
         cb_node->object_bindings.push_back(obj);
         inserted.first->second = static_cast<int>(cb_node->object_bindings.size()) - 1;
