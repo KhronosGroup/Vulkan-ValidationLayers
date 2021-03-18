@@ -59,6 +59,28 @@ enum CALL_STATE {
     QUERY_DETAILS,  // Function called w/ a count to query details
 };
 
+enum IMAGE_SUBRESOURCE_USAGE_BP {
+    UNDEFINED,  // If it has never been used
+    RENDER_PASS_CLEARED,
+    RENDER_PASS_READ_TO_TILE,
+    CLEARED,
+    RESOURCE_READ,
+    RESOURCE_WRITE,
+    RENDER_PASS_STORED,
+    RENDER_PASS_DISCARDED,
+    BLIT_READ,
+    BLIT_WRITE
+};
+
+struct IMAGE_STATE_BP {
+    // A 2d vector for all the array layers and mip levels.
+    // This does not split usages per aspect.
+    // Aspects are generally read and written together,
+    // and tracking them independently could be misleading.
+    std::vector<std::vector<IMAGE_SUBRESOURCE_USAGE_BP>> usages;
+    IMAGE_STATE* image{nullptr};
+};
+
 struct PHYSICAL_DEVICE_STATE_BP {
     // Track the call state and array sizes for various query functions
     CALL_STATE vkGetPhysicalDeviceQueueFamilyPropertiesState = UNCALLED;
@@ -134,6 +156,7 @@ class BestPractices : public ValidationStateTracker {
                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) const override;
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkImage* pImage) const override;
+    void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) override;
     bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) const override;
     bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
@@ -313,10 +336,13 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                             const VkResolveImageInfo2KHR* pResolveImageInfo) const override;
 
-    void ValidateImageView(IMAGE_VIEW_STATE* view, const IMAGE_ATTACHMENT_USAGE& usage);
-    void ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USAGE& usage, const VkImageSubresourceRange& subresource_range);
-    void ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USAGE& usage, const VkImageSubresourceLayers& range);
-    void ValidateImage(IMAGE_STATE* image, const IMAGE_ATTACHMENT_USAGE& usage, uint32_t array_layer, uint32_t mip_level);
+    void ValidateImageView(IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
+    void ValidateImage(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                       const VkImageSubresourceRange& subresource_range);
+    void ValidateImage(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                       const VkImageSubresourceLayers& range);
+    void ValidateImage(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                       uint32_t array_layer, uint32_t mip_level);
 
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -480,4 +506,8 @@ class BestPractices : public ValidationStateTracker {
     // Get BestPractices-specific for the current instance
     PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceStateBP();
     const PHYSICAL_DEVICE_STATE_BP* GetPhysicalDeviceStateBP() const;
+
+    IMAGE_STATE_BP* GetImageUsageState(VkImage image);
+    void ReleaseImageUsageState(VkImage image);
+    std::unordered_map<VkImage, IMAGE_STATE_BP> imageUsageMap;
 };

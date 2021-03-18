@@ -470,19 +470,6 @@ struct SAMPLER_STATE : public BASE_NODE {
     VkSampler sampler() const { return handle_.Cast<VkSampler>(); }
 };
 
-enum IMAGE_ATTACHMENT_USAGE {
-    UNDEFINED,  // If it has never been used
-    RENDER_PASS_CLEARED,
-    RENDER_PASS_READ_TO_TILE,
-    CLEARED,
-    RESOURCE_READ,
-    RESOURCE_WRITE,
-    RENDER_PASS_STORED,
-    RENDER_PASS_DISCARDED,
-    BLIT_READ,
-    BLIT_WRITE
-};
-
 class IMAGE_STATE : public BINDABLE {
   public:
     safe_VkImageCreateInfo safe_create_info;
@@ -516,9 +503,6 @@ class IMAGE_STATE : public BINDABLE {
     std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
     const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
     VkDeviceSize swapchain_fake_address;  // Needed for swapchain syncval, since there is no VkDeviceMemory::fake_base_address
-
-    // A 2d vector for all the array layers and mip levels
-    std::vector<std::vector<IMAGE_ATTACHMENT_USAGE>> usages;
 
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo);
