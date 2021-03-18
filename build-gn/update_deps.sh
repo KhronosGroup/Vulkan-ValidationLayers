@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2019 LunarG, Inc.
+# Copyright (c) 2019-2021 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ scripts/update_deps.py --dir="external" --no-build
 (cd external/glslang; ./update_glslang_sources.py)
 
 # Use gclient to update toolchain dependencies from /build-gn/DEPS (from chromium)
-cat << EOF >> .gclient
+cat << EOF > .gclient
 solutions = [
   { "name"        : ".",
     "url"         : "https://github.com/KhronosGroup/Vulkan-ValidationLayers",

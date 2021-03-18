@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Valve Corporation
-# Copyright (c) 2020 LunarG, Inc.
+# Copyright (c) 2020-2021 Valve Corporation
+# Copyright (c) 2020-2021 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,12 +28,13 @@ from argparse import RawDescriptionHelpFormatter
 #
 # Build VVL repo using gn and Ninja
 def BuildGn():
-    print("Cloning Ninja depot_tools\n")
-    clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'
-    common_ci.RunShellCmd(clone_cmd)
+    if not os.path.exists(common_ci.repo_relative("depot_tools")):
+        print("Cloning Chromium depot_tools\n")
+        clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'
+        common_ci.RunShellCmd(clone_cmd)
     os.environ['PATH'] = os.environ.get('PATH') + ":" + common_ci.repo_relative("depot_tools")
 
-    print("Updating Ninja build dependencies\n")
+    print("Updating Repo Dependencies and GN Toolchain\n")
     update_cmd = './build-gn/update_deps.sh'
     common_ci.RunShellCmd(update_cmd)
 
