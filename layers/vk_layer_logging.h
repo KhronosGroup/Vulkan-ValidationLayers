@@ -338,7 +338,7 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, std:
 static inline bool UpdateLogMsgCounts(const debug_report_data *debug_data, int32_t vuid_hash) {
     auto vuid_count_it = debug_data->duplicate_message_count_map.find(vuid_hash);
     if (vuid_count_it == debug_data->duplicate_message_count_map.end()) {
-        debug_data->duplicate_message_count_map.insert({vuid_hash, 1});
+        debug_data->duplicate_message_count_map.emplace(vuid_hash, 1);
         return false;
     } else {
         if (vuid_count_it->second >= debug_data->duplicate_message_limit) {

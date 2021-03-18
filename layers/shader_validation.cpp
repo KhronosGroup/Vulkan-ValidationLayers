@@ -113,9 +113,9 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
     for (auto insn : *this) {
         // offset is not 0, it means it's updated and the offset is in a Function.
         if (func_set.offset) {
-            func_set.op_lists.insert({insn.opcode(), insn.offset()});
+            func_set.op_lists.emplace(insn.opcode(), insn.offset());
         } else if (entry_point) {
-            entry_point->decorate_list.insert({insn.opcode(), insn.offset()});
+            entry_point->decorate_list.emplace(insn.opcode(), insn.offset());
         }
 
         switch (insn.opcode()) {

@@ -77,7 +77,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
         if (flags_create_info && flags_create_info->bindingCount == p_create_info->bindingCount) {
             flags = flags_create_info->pBindingFlags[i];
         }
-        sorted_bindings.insert(ExtendedBinding(p_create_info->pBindings + i, flags));
+        sorted_bindings.emplace(p_create_info->pBindings + i, flags);
     }
 
     // Store the create info in the sorted order from above

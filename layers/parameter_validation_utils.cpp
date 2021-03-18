@@ -4499,7 +4499,7 @@ void StatelessValidation::PostCallRecordAllocateCommandBuffers(VkDevice device, 
     if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         auto lock = cb_write_lock();
         for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
-            secondary_cb_map.insert({pCommandBuffers[cb_index], pAllocateInfo->commandPool});
+            secondary_cb_map.emplace(pCommandBuffers[cb_index], pAllocateInfo->commandPool);
         }
     }
 }
