@@ -326,7 +326,7 @@ class DescriptorSetLayout : public BASE_NODE {
  */
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"
-enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBuffer, InlineUniform, AccelerationStructure };
+enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBuffer, InlineUniform, AccelerationStructure, Mutable, NoDescriptorClass };
 
 class Descriptor {
   public:
@@ -491,6 +491,17 @@ class AccelerationStructureDescriptor : public Descriptor {
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
 };
 
+class MutableDescriptor : public Descriptor {
+  public:
+      MutableDescriptor();
+      void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+      void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
+      void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
+
+  private:
+      DescriptorClass active_descriptor_class_;
+};
+
 union AnyDescriptor {
     SamplerDescriptor sampler;
     ImageSamplerDescriptor image_sampler;
@@ -499,6 +510,7 @@ union AnyDescriptor {
     BufferDescriptor buffer;
     InlineUniformDescriptor inline_uniform;
     AccelerationStructureDescriptor accelerator_structure;
+    MutableDescriptor mutable_descriptor;
     ~AnyDescriptor() = delete;
 };
 

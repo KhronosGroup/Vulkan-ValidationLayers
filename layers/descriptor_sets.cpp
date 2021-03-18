@@ -694,6 +694,11 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                                                   AccelerationStructureDescriptor(type));
                 }
                 break;
+            case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+                for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
+                    descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) MutableDescriptor());
+                }
+                break;
             default:
                 if (IsDynamicDescriptor(type) && IsBufferDescriptor(type)) {
                     for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
@@ -2372,6 +2377,25 @@ void cvdescriptorset::AccelerationStructureDescriptor::UpdateDrawState(Validatio
     }
 }
 
+cvdescriptorset::MutableDescriptor::MutableDescriptor() {
+    updated = false;
+    descriptor_class = Mutable;
+    active_descriptor_class_ = NoDescriptorClass;
+}
+
+void cvdescriptorset::MutableDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
+    const VkWriteDescriptorSet *update, const uint32_t index) {
+    updated = true;
+}
+
+void cvdescriptorset::MutableDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+    updated = true;
+}
+
+void cvdescriptorset::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data,
+    CMD_BUFFER_STATE *cb_node) {
+}
+
 // This is a helper function that iterates over a set of Write and Copy updates, pulls the DescriptorSet* for updated
 //  sets, and then calls their respective Validate[Write|Copy]Update functions.
 // If the update hits an issue for which the callback returns "true", meaning that the call down the chain should
@@ -3134,7 +3158,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     // We know that binding is valid, verify update and do update on each descriptor
     auto start_idx = dest.GetGlobalIndexRange().start + update->dstArrayElement;
     auto type = dest.GetType();
-    if (type != update->descriptorType) {
+    if ((type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) && (type != update->descriptorType)) {
         *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00319";
         std::stringstream error_str;
         error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding #" << update->dstBinding
