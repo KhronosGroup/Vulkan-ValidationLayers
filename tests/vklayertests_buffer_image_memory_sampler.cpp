@@ -7966,6 +7966,9 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
 
+    // The 02277 VU is 'probably' redundant, but keeping incase a future spec change
+    // This extra VU checked is because depth formats are only compatible with themselves
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01018");
     // Test for error message
     CreateImageViewTest(*this, &ivci, optimal_error_codes[i]);
 }
