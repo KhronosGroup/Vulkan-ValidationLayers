@@ -1484,7 +1484,16 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
             }
 
             auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
-            auto image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+            IMAGE_VIEW_STATE* image_view = nullptr;
+
+            if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
+                const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+                if (rpabi) {
+                    image_view = GetImageViewState(rpabi->pAttachments[att]);
+                }
+            } else {
+                image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+            }
 
             ValidateImageView(image_view, usage);
         }
@@ -1505,7 +1514,16 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
             }
 
             auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
-            auto image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+
+            IMAGE_VIEW_STATE* image_view = nullptr;
+            if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
+                const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+                if (rpabi) {
+                    image_view = GetImageViewState(rpabi->pAttachments[att]);
+                }
+            } else {
+                image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
+            }
 
             ValidateImageView(image_view, usage);
         }
