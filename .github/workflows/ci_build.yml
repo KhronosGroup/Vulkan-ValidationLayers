@@ -88,8 +88,7 @@ jobs:
         config:
         - {
             name: "Linux GN Debug Build ",
-            os: ubuntu-18.04,
-            cc: "gcc", cxx: "g++"
+            os: ubuntu-latest,
           }
     steps:
     - name: Clone repository
@@ -99,7 +98,7 @@ jobs:
         sudo apt-get -qq update
         sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                               libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                              libxcb-randr0-dev python-pathlib cmake
+                              libxcb-randr0-dev cmake
     - name: Build Vulkan-ValidationLayers Using Ninja
       run: |
         python3 scripts/github_ci_gn.py
