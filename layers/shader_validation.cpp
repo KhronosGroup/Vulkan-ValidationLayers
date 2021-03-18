@@ -3534,7 +3534,8 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
             skip |= LogError(device, vuid_layout_mismatch,
                              "Shader uses descriptor slot %u.%u but descriptor not accessible from stage %s", use.first.first,
                              use.first.second, string_VkShaderStageFlagBits(pStage->stage));
-        } else if (descriptor_types.find(binding->descriptorType) == descriptor_types.end()) {
+        } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) &&
+                   (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
             skip |= LogError(device, vuid_layout_mismatch,
                              "Type mismatch on descriptor slot %u.%u (expected `%s`) but descriptor of type %s", use.first.first,
                              use.first.second, string_descriptorTypes(descriptor_types).c_str(),
