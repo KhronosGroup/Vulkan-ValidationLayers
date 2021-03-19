@@ -748,6 +748,10 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
                                    const std::vector<IMAGE_VIEW_STATE *> *attachments, const std::vector<SUBPASS_INFO> &subpasses,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
+    Optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+    if (descriptor_set->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
+        checked_layouts.emplace();
+    }
     bool result = false;
     VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer : VK_NULL_HANDLE;
     for (const auto &binding_pair : bindings) {
@@ -771,7 +775,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
         // // This is a record time only path
         const bool record_time_validate = true;
         result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer, attachments,
-                                                   subpasses, record_time_validate, caller, vuids);
+                                                   subpasses, record_time_validate, caller, vuids, checked_layouts);
     }
     return result;
 }
@@ -781,7 +785,8 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                   const std::pair<const uint32_t, DescriptorRequirement> &binding_info,
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
                                                   const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
-                                                  const char *caller, const DrawDispatchVuid &vuids) const {
+                                                  const char *caller, const DrawDispatchVuid &vuids,
+                                                  Optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -941,20 +946,34 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             assert(image_node);
                             // Verify Image Layout
                             // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
-                            bool hit_error = false;
-                            VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
-                                              image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
-                                              caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
-                            if (hit_error) {
-                                auto set = descriptor_set->GetSet();
-                                return LogError(
-                                    set, vuids.descriptor_valid,
-                                    "Descriptor set %s encountered the following validation error at %s time: Image layout "
-                                    "specified "
-                                    "at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
-                                    "doesn't match actual image layout at time descriptor is used. See previous error callback for "
-                                    "specific details.",
-                                    report_data->FormatHandle(set).c_str(), caller);
+                            // The caller provides a checked_layouts map when there are a large number of layouts to check,
+                            // making it worthwhile to keep track of verified layouts and not recheck them.
+                            bool already_validated = false;
+                            if (checked_layouts) {
+                                auto search = checked_layouts->find(image_view);
+                                if (search != checked_layouts->end() && search->second == image_layout) {
+                                    already_validated = true;
+                                }
+                            }
+                            if (!already_validated) {
+                                bool hit_error = false;
+                                VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
+                                                image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                                if (hit_error) {
+                                    auto set = descriptor_set->GetSet();
+                                    return LogError(
+                                        set, vuids.descriptor_valid,
+                                        "Descriptor set %s encountered the following validation error at %s time: Image layout "
+                                        "specified "
+                                        "at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
+                                        "doesn't match actual image layout at time descriptor is used. See previous error callback for "
+                                        "specific details.",
+                                        report_data->FormatHandle(set).c_str(), caller);
+                                }
+                                if (checked_layouts) {
+                                    checked_layouts->emplace(image_view, image_layout);
+                                }
                             }
                         }
 
