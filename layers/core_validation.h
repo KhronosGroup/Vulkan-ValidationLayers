@@ -438,7 +438,8 @@ class CoreChecks : public ValidationStateTracker {
                                           const std::pair<const uint32_t, DescriptorRequirement>& binding_info,
                                           VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*>* attachments,
                                           const std::vector<SUBPASS_INFO>& subpasses, bool record_time_validate, const char* caller,
-                                          const DrawDispatchVuid& vuids) const;
+                                          const DrawDispatchVuid& vuids,
+                                          Optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
 
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;
