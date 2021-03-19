@@ -4190,7 +4190,7 @@ void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *c
     }
 
     // We need a descriptor set to update the bindings with, compatible with the passed layout
-    const auto dsl = pipeline_layout->set_layouts[set];
+    const auto& dsl = pipeline_layout->set_layouts[set];
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     auto &last_bound = cb_state->lastBound[lv_bind_point];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
