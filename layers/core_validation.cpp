@@ -1308,7 +1308,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
             for (const auto &attrib : pipeline->vertex_attribute_descriptions_) {
                 const auto vertex_binding_map_it = pipeline->vertex_binding_to_index_map_.find(attrib.binding);
                 if (vertex_binding_map_it != pipeline->vertex_binding_to_index_map_.cend()) {
-                    const auto desc = pipeline->vertex_binding_descriptions_[vertex_binding_map_it->second];
+                    const auto& desc = pipeline->vertex_binding_descriptions_[vertex_binding_map_it->second];
                     if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
                         skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
                                          "Invalid Pipeline CreateInfo[%d] (portability error): (attribute.offset + "
@@ -1863,10 +1863,10 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 std::string error_detail;
 
                 if (coverage_to_color_state->coverageToColorLocation < subpass_desc->colorAttachmentCount) {
-                    const auto color_attachment_ref =
+                    const auto& color_attachment_ref =
                         subpass_desc->pColorAttachments[coverage_to_color_state->coverageToColorLocation];
                     if (color_attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                        const auto color_attachment = pPipeline->rp_state->createInfo.pAttachments[color_attachment_ref.attachment];
+                        const auto& color_attachment = pPipeline->rp_state->createInfo.pAttachments[color_attachment_ref.attachment];
 
                         switch (color_attachment.format) {
                             case VK_FORMAT_R8_UINT:
@@ -6941,7 +6941,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     uint32_t cur_dyn_offset = total_dynamic_descriptors;
                     // offset into this descriptor set
                     uint32_t set_dyn_offset = 0;
-                    const auto dsl = descriptor_set->GetLayout();
+                    const auto &dsl = descriptor_set->GetLayout();
                     const auto binding_count = dsl->GetBindingCount();
                     const auto &limits = phys_dev_props.limits;
                     for (uint32_t i = 0; i < binding_count; i++) {
@@ -7102,7 +7102,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     if (layout_data) {
         const auto &set_layouts = layout_data->set_layouts;
         if (set < set_layouts.size()) {
-            const auto dsl = set_layouts[set];
+            const auto &dsl = set_layouts[set];
             if (dsl) {
                 if (!dsl->IsPushDescriptor()) {
                     skip = LogError(layout, "VUID-vkCmdPushDescriptorSetKHR-set-00365",
@@ -7430,7 +7430,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                     uint32_t image_mem_barrier_count,
                                                     const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
-    const auto rp_state = cb_state->activeRenderPass;
+    const auto& rp_state = cb_state->activeRenderPass;
     RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                              cb_state->activeSubpass, rp_state->renderPass, enabled_features,
                              rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
@@ -7480,7 +7480,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
 bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
                                                     const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
-    const auto rp_state = cb_state->activeRenderPass;
+    const auto& rp_state = cb_state->activeRenderPass;
     RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2KHR-pDependencies-02285",
                              cb_state->activeSubpass, rp_state->renderPass, enabled_features,
                              rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
@@ -7548,7 +7548,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
 
     for (const auto &entry : metaFlags) {
         if (((entry.first & stage_mask) != 0) && ((entry.second & queue_flags) == 0)) {
-            auto vuid = sync_vuid_maps::GetStageQueueCapVUID(loc, entry.first);
+            const auto& vuid = sync_vuid_maps::GetStageQueueCapVUID(loc, entry.first);
             skip |= LogError(objects, vuid,
                              "%s flag %s is not compatible with the queue family properties (%s) of this command buffer.",
                              loc.Message().c_str(), sync_utils::StringPipelineStageFlags(entry.first).c_str(),
@@ -7568,7 +7568,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
     for (size_t i = 0; i < sizeof(bad_flags) * 8; i++) {
         VkPipelineStageFlags2KHR bit = (1ULL << i) & bad_flags;
         if (bit) {
-            auto vuid = sync_vuid_maps::GetStageQueueCapVUID(loc, bit);
+            const auto& vuid = sync_vuid_maps::GetStageQueueCapVUID(loc, bit);
             skip |= LogError(
                 objects, vuid, "%s flag %s is not compatible with the queue family properties (%s) of this command buffer.",
                 loc.Message().c_str(), sync_utils::StringPipelineStageFlags(bit).c_str(), string_VkQueueFlags(queue_flags).c_str());
@@ -7581,7 +7581,7 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &object
                                                      VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     if (!enabled_features.synchronization2_features.synchronization2 && stage_mask == 0) {
-        auto vuid = sync_vuid_maps::GetBadFeatureVUID(loc, 0);
+        const auto& vuid = sync_vuid_maps::GetBadFeatureVUID(loc, 0);
         std::stringstream msg;
         msg << loc.Message() << " must not be 0 unless synchronization2 is enabled.";
         skip |= LogError(objects, vuid, "%s", msg.str().c_str());
@@ -7595,7 +7595,7 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &object
     for (size_t i = 0; i < sizeof(bad_bits) * 8; i++) {
         VkPipelineStageFlags2KHR bit = 1ULL << i;
         if (bit & bad_bits) {
-            auto vuid = sync_vuid_maps::GetBadFeatureVUID(loc, bit);
+            const auto& vuid = sync_vuid_maps::GetBadFeatureVUID(loc, bit);
             std::stringstream msg;
             msg << loc.Message() << " includes " << sync_utils::StringPipelineStageFlags(bit) << " when the device does not have "
                 << sync_vuid_maps::kFeatureNameMap.at(bit) << " feature enabled.";
@@ -7633,7 +7633,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objects, const Location
     for (size_t i = 0; i < sizeof(bad_accesses) * 8; i++) {
         VkAccessFlags2KHR bit = (1ULL << i);
         if (bad_accesses & bit) {
-            auto vuid = sync_vuid_maps::GetBadAccessFlagsVUID(loc, bit);
+            const auto& vuid = sync_vuid_maps::GetBadAccessFlagsVUID(loc, bit);
             std::stringstream msg;
             msg << loc.Message() << " bit " << sync_utils::StringAccessFlags(bit) << " is not supported by stage mask ("
                 << sync_utils::StringPipelineStageFlags(stage_mask) << ").";
