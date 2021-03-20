@@ -33,6 +33,7 @@
 #endif
 #include <vector>
 #include "range_vector.h"
+#include "vk_layer_data.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
 #else
@@ -84,7 +85,7 @@ struct Subresource : public VkImageSubresource {
 // into continuous index ranges
 class RangeEncoder {
   public:
-    static constexpr uint32_t kMaxSupportedAspect = 3;
+    static constexpr uint32_t kMaxSupportedAspect = 4;
 
     // The default constructor for default iterators
     RangeEncoder()
@@ -338,6 +339,18 @@ class RangeGenerator {
 
 class ImageRangeEncoder : public RangeEncoder {
   public:
+    struct SubresInfo {
+        VkSubresourceLayout layout;
+        VkExtent3D extent;
+        SubresInfo(const VkSubresourceLayout& layout_, const VkExtent3D& extent_, const VkExtent3D& texel_extent,
+                   double texel_size);
+        SubresInfo(const SubresInfo&) = default;
+        SubresInfo() = default;
+        VkDeviceSize y_step_pitch;
+        VkDeviceSize z_step_pitch;
+        VkDeviceSize layer_span;
+    };
+
     // The default constructor for default iterators
     ImageRangeEncoder() : image_(nullptr) {}
 
@@ -345,24 +358,38 @@ class ImageRangeEncoder : public RangeEncoder {
     ImageRangeEncoder(const IMAGE_STATE& image);
     ImageRangeEncoder(const ImageRangeEncoder& from) = default;
 
-    inline IndexType Encode(const VkImageSubresource& subres, uint32_t layer, VkOffset3D offset) const;
+    inline IndexType Encode2D(const VkSubresourceLayout& layout, uint32_t layer, uint32_t aspect_index,
+                              const VkOffset3D& offset) const;
+    inline IndexType Encode3D(const VkSubresourceLayout& layout, uint32_t aspect_index, const VkOffset3D& offset) const;
     void Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const;
 
-    const VkSubresourceLayout& SubresourceLayout(const VkImageSubresource& subres) const;
-    inline const VkExtent3D& SubresourceExtent(int mip_level, int aspect_index_) const {
-        return subres_extents_[mip_level * limits_.aspect_index + aspect_index_];
+    inline uint32_t GetSubresourceIndex(uint32_t aspect_index, uint32_t mip_level) const {
+        return mip_level + (aspect_index ? (aspect_index * limits_.mipLevel) : 0U);
     }
+    inline const SubresInfo& GetSubresourceInfo(uint32_t index) const { return subres_info_[index]; }
+
+    inline IndexType GetAspectSize(uint32_t aspect_index) const { return aspect_sizes_[aspect_index]; }
     inline const double& TexelSize(int aspect_index) const { return texel_sizes_[aspect_index]; }
-    inline bool IsLinearImage() const { return linear_image; }
-    inline VkDeviceSize TotalSize() const { return total_size_; }
+    inline bool IsLinearImage() const { return linear_image_; }
+    inline IndexType TotalSize() const { return total_size_; }
+    inline bool Is3D() const { return is_3_d_; }
+    inline bool IsInterleaveY() const { return y_interleave_; }
+    inline bool IsCompressed() const { return is_compressed_; }
+    const VkExtent3D& TexelExtent() const { return texel_extent_; }
+
+    using SubresInfoVector = std::vector<SubresInfo>;
 
   private:
-    bool linear_image;
     const IMAGE_STATE* image_;
     std::vector<double> texel_sizes_;
-    std::vector<VkExtent3D> subres_extents_;
-    std::vector<VkSubresourceLayout> subres_layouts_;
-    VkDeviceSize total_size_;
+    SubresInfoVector subres_info_;
+    small_vector<IndexType, 4> aspect_sizes_;
+    IndexType total_size_;
+    VkExtent3D texel_extent_;
+    bool is_3_d_;
+    bool linear_image_;
+    bool y_interleave_;
+    bool is_compressed_;
 };
 
 class ImageRangeGenerator {
@@ -401,34 +428,62 @@ class ImageRangeGenerator {
     bool operator!=(const ImageRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
                         const VkExtent3D& extent, VkDeviceSize base_address);
+    void SetInitialPosFullOffset(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosFullWidth(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosFullHeight(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosSomeDepth(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosFullDepth(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosOneLayer(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosAllLayers(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosOneAspect(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosAllSubres(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosSomeLayers(uint32_t layer, uint32_t aspect_index);
+    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, VkDeviceSize base_address);
     inline const IndexRange& operator*() const { return pos_; }
     inline const IndexRange* operator->() const { return &pos_; }
-    ImageRangeGenerator* operator++();
-    void SetPos();
+    ImageRangeGenerator& operator++();
 
   private:
+    bool Convert2DCompatibleTo3D();
+    void SetUpSubresInfo();
+    void SetUpIncrementerDefaults();
+    void SetUpSubresIncrementer();
+    void SetUpIncrementer(bool all_width, bool all_height, bool all_depth);
+    typedef void (ImageRangeGenerator::*SetInitialPosFn)(uint32_t, uint32_t);
+    inline void SetInitialPos(uint32_t layer, uint32_t aspect_index) { (this->*(set_initial_pos_fn_))(layer, aspect_index); }
     const ImageRangeEncoder* encoder_;
     VkImageSubresourceRange subres_range_;
     VkOffset3D offset_;
     VkExtent3D extent_;
     VkDeviceSize base_address_;
-    uint32_t range_arraylayer_base_;
-    uint32_t range_layer_count_;
 
+    uint32_t mip_index_;
+    uint32_t incr_mip_;
+    bool single_full_size_range_;
+    uint32_t aspect_index_;
+    uint32_t subres_index_;
+    const ImageRangeEncoder::SubresInfo* subres_info_;
+
+    SetInitialPosFn set_initial_pos_fn_;
     IndexRange pos_;
-    IndexRange offset_offset_y_base_;
-    IndexRange offset_layer_base_;
-    uint32_t offset_y_index_;
-    uint32_t offset_y_count_;
-    uint32_t aspect_count_ = 0;
-    uint32_t aspect_index_ = 0;
 
-    // It doesn't have offset_z. If the z > 1, it will be used in arrayLayer.
-    uint32_t arrayLayer_index_;
-    uint32_t layer_count_;
-    uint32_t mip_level_index_;
-    uint32_t mip_count_;
-    const VkSubresourceLayout* subres_layout_;
+    struct IncrementerState {
+        // These should be invariant across subresources (mip/aspect)
+        uint32_t y_step;
+        uint32_t layer_z_step;
+
+        // These vary per mip at least...
+        uint32_t y_count;
+        uint32_t layer_z_count;
+        uint32_t y_index;
+        uint32_t layer_z_index;
+        IndexRange y_base;
+        IndexRange layer_z_base;
+        IndexType incr_y;
+        IndexType incr_layer_z;
+        void Set(uint32_t y_count_, uint32_t layer_z_count_, IndexType base, IndexType span, IndexType y_step, IndexType z_step);
+    };
+    IncrementerState incr_state_;
 };
 
 // Designed for use with RangeMap of MappedType
