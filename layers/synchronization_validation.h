@@ -465,20 +465,16 @@ struct SyncBufferMemoryBarrier {
 
 struct SyncImageMemoryBarrier {
     using Image = std::shared_ptr<const IMAGE_STATE>;
-    struct SubImageRange {
-        VkImageSubresourceRange subresource_range;
-        VkOffset3D offset;
-        VkExtent3D extent;
-    };
+
     Image image;
     uint32_t index;
     SyncBarrier barrier;
     VkImageLayout old_layout;
     VkImageLayout new_layout;
-    SubImageRange range;
+    VkImageSubresourceRange range;
 
     bool IsLayoutTransition() const { return old_layout != new_layout; }
-    const SubImageRange &Range() const { return range; };
+    const VkImageSubresourceRange &Range() const { return range; };
     const IMAGE_STATE *GetState() const { return image.get(); }
     SyncImageMemoryBarrier(const Image &image_, uint32_t index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
                            VkImageLayout new_layout_, const VkImageSubresourceRange &subresource_range_)
@@ -487,7 +483,7 @@ struct SyncImageMemoryBarrier {
           barrier(barrier_),
           old_layout(old_layout_),
           new_layout(new_layout_),
-          range({subresource_range_, VkOffset3D{0, 0, 0}, image->createInfo.extent}) {}
+          range(subresource_range_) {}
     SyncImageMemoryBarrier() = default;
 };
 
@@ -658,7 +654,6 @@ class AccessContext {
     };
     using MapArray = std::array<ResourceAccessRangeMap, static_cast<size_t>(AccessAddressType::kTypeCount)>;
 
-    // WIP TODO WIP Multi-dep -- change track back to support barrier vector, not just last.
     struct TrackBack {
         std::vector<SyncBarrier> barriers;
         const AccessContext *context;
@@ -686,17 +681,17 @@ class AccessContext {
     template <typename Detector>
     HazardResult DetectHazard(Detector &detector, const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range,
                               const VkOffset3D &offset, const VkExtent3D &extent, DetectOptions options) const;
+    template <typename Detector>
+    HazardResult DetectHazard(Detector &detector, const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range,
+                              DetectOptions options) const;
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
-                              const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                              const VkExtent3D &extent) const;
+                              const VkImageSubresourceRange &subresource_range) const;
     HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                               SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
 
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, SyncOrdering ordering_rule,
                               const VkOffset3D &offset, const VkExtent3D &extent) const;
-    HazardResult DetectHazard(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                              const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0U) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
                                           const SyncStageAccessFlags &src_access_scope,
                                           const VkImageSubresourceRange &subresource_range, const SyncEventState &sync_event,
@@ -749,6 +744,8 @@ class AccessContext {
 
     void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const ResourceAccessRange &range, const ResourceUsageTag &tag);
+    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+                           const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
     void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
