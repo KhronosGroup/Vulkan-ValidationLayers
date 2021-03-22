@@ -964,7 +964,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     graphics_pipeline.fs_ =
         std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this));
     graphics_pipeline.InitInfo();
-
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     graphics_pipeline.InitState();
 
@@ -972,42 +971,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     graphics_pipeline.gp_ci_.flags = 0;
 
     graphics_pipeline.CreateGraphicsPipeline();
-
-    VkDescriptorPool pool;
-
-    VkDescriptorPoolCreateInfo descriptor_pool_create_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
-
-    VkDescriptorPoolSize pool_size = {};
-    pool_size.descriptorCount = 1;
-    pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-    descriptor_pool_create_info.maxSets = 1;
-    descriptor_pool_create_info.poolSizeCount = 1;
-    descriptor_pool_create_info.pPoolSizes = &pool_size;
-    vk::CreateDescriptorPool(m_device->handle(), &descriptor_pool_create_info, nullptr, &pool);
-
-    VkSampler sampler = CreateDefaultSampler();
-
-    VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
-
-    VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-    descriptor_set_allocate_info.descriptorPool = pool;
-    descriptor_set_allocate_info.descriptorSetCount = 1;
-    descriptor_set_allocate_info.pSetLayouts = &graphics_pipeline.descriptor_set_->layout_.handle();
-    vk::AllocateDescriptorSets(m_device->handle(), &descriptor_set_allocate_info, &descriptor_set);
-
-    VkDescriptorImageInfo image_info = {};
-    image_info.imageView = images[0].image_view;
-    image_info.sampler = sampler;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-    write.descriptorCount = 1;
-    write.dstBinding = 0;
-    write.dstSet = descriptor_set;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->handle(), 1, &write, 0, nullptr);
 
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
@@ -1052,8 +1015,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
         command_buffer.BeginRenderPass(rpbi);
 
         vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.pipeline_);
-        vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                  graphics_pipeline.pipeline_layout_.handle(), 0, 1, &descriptor_set, 0, nullptr);
 
         VkViewport viewport;
         viewport.x = 0.0f;
