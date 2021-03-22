@@ -1973,8 +1973,20 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
 
     if (cb_state) {
         for (auto descriptor_set : cb_state->validated_descriptor_sets) {
-            for (uint32_t binding = 0; binding < descriptor_set->GetBindingCount(); ++binding) {
-                auto index_range = descriptor_set->GetGlobalIndexRangeFromBinding(binding);
+            auto& layout = *descriptor_set->GetLayout();
+
+            for (uint32_t index = 0; index < descriptor_set->GetBindingCount(); ++index) {
+                // For bindless scenarios, we should not attempt to track descriptor set state.
+                // It is highly uncertain which resources are actually bound.
+                // Resources which are written to such a descriptor should be marked as indeterminate w.r.t. state.
+                VkDescriptorBindingFlags flags = layout.GetDescriptorBindingFlagsFromIndex(index);
+                if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+                             VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                             VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT)) {
+                    continue;
+                }
+
+                auto index_range = layout.GetGlobalIndexRangeFromIndex(index);
                 for (uint32_t i = index_range.start; i < index_range.end; ++i) {
                     VkImageView image_view{VK_NULL_HANDLE};
 
