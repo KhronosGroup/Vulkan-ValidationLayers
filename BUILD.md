@@ -865,6 +865,7 @@ To create and open an Xcode project:
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
           -DROBIN_HOOD_HASHING_INSTALL_DIR=absolute_path_to_install_dir \
           -GXcode ..
     open VULKAN.xcodeproj
