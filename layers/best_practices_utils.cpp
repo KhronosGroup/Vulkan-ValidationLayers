@@ -1472,25 +1472,58 @@ void BestPractices::ValidateImageInQueue(IMAGE_STATE_BP* state,
                 "tile-based architectures."
                 "architectures.",
                 VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
-    } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
-        VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(
-                device, kVUID_BestPractices_RenderPass_InefficientClear,
-                "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
-                "time image was used, it was written to with vkCmdClear*Image(). "
-                "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
-                "tile-based architectures. "
-                "Use LOAD_OP_CLEAR instead to clear the image for free.",
-                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
-    } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE) {
-        VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(device, kVUID_BestPractices_RenderPass_BlitImage_LoadOpLoad,
-                 "%s Subresource (arraylayer: %u, mipLevel: %u) of was loaded to tile as part of LOAD_OP_LOAD, "
-                "but last time image was used, it was written to with vkCmdBlitImage. "
-                "The blit is probably redundant in this case, and wastes bandwidth on tile-based architectures. "
-                "Rather than blitting, just render the source image in a fragment shader in this render pass, "
-                "which avoids the memory roundtrip.",
-                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+    } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
+               (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE ||
+                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
+                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE ||
+                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE) &&
+               VendorCheckEnabled(kBPVendorArm)) {
+        const char *last_cmd = nullptr;
+        const char *vuid = nullptr;
+        const char *suggestion = nullptr;
+
+        switch (last_usage) {
+            case IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE:
+                vuid = kVUID_BestPractices_RenderPass_BlitImage_LoadOpLoad;
+                last_cmd = "vkCmdBlitImage";
+                suggestion =
+                    "The blit is probably redundant in this case, and wastes bandwidth on tile-based architectures. "
+                    "Rather than blitting, just render the source image in a fragment shader in this render pass, "
+                    "which avoids the memory roundtrip.";
+                break;
+            case IMAGE_SUBRESOURCE_USAGE_BP::CLEARED:
+                vuid = kVUID_BestPractices_RenderPass_InefficientClear;
+                last_cmd = "vkCmdClear*Image";
+                suggestion =
+                    "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
+                    "tile-based architectures. "
+                    "Use LOAD_OP_CLEAR instead to clear the image for free.";
+                break;
+            case IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE:
+                vuid = kVUID_BestPractices_RenderPass_CopyImage_LoadOpLoad;
+                last_cmd = "vkCmdCopy*Image";
+                suggestion =
+                    "The copy is probably redundant in this case, and wastes bandwidth on tile-based architectures. "
+                    "Rather than copying, just render the source image in a fragment shader in this render pass, "
+                    "which avoids the memory roundtrip.";
+                break;
+            case IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE:
+                vuid = kVUID_BestPractices_RenderPass_ResolveImage_LoadOpLoad;
+                last_cmd = "vkCmdResolveImage";
+                suggestion =
+                    "The resolve is probably redundant in this case, and wastes a lot of bandwidth on tile-based architectures. "
+                    "Rather than resolving, and then loading, try to keep rendering in the same render pass, "
+                    "which avoids the memory roundtrip.";
+                break;
+            default:
+                break;
+        }
+
+        LogPerformanceWarning(
+            device, vuid,
+            "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
+            "time image was used, it was written to with %s. %s",
+            VendorSpecificTag(kBPVendorArm), array_layer, mip_level, last_cmd, suggestion);
     }
 
     state->usages[array_layer][mip_level] = usage;
