@@ -64,12 +64,15 @@ enum IMAGE_SUBRESOURCE_USAGE_BP {
     RENDER_PASS_CLEARED,
     RENDER_PASS_READ_TO_TILE,
     CLEARED,
-    RESOURCE_READ,
-    RESOURCE_WRITE,
+    DESCRIPTOR_ACCESS,
     RENDER_PASS_STORED,
     RENDER_PASS_DISCARDED,
     BLIT_READ,
-    BLIT_WRITE
+    BLIT_WRITE,
+    RESOLVE_READ,
+    RESOLVE_WRITE,
+    COPY_READ,
+    COPY_WRITE
 };
 
 struct IMAGE_STATE_BP {
@@ -250,6 +253,9 @@ class BestPractices : public ValidationStateTracker {
 
     void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          VkSubpassContents contents) override;
+    void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) override;
+    void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) override;
+    void PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) override;
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                            VkSubpassContents contents) const override;
     bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -337,12 +343,14 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                             const VkResolveImageInfo2KHR* pResolveImageInfo) const override;
 
-    void QueueValidateImageView(CMD_BUFFER_STATE* cb, IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
-    void QueueValidateImage(CMD_BUFFER_STATE* cb, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    using QueueCallbacks = std::vector<std::function<bool (const ValidationStateTracker*, const QUEUE_STATE*)>>;
+
+    void QueueValidateImageView(QueueCallbacks &func, IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
+    void QueueValidateImage(QueueCallbacks &func, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                             const VkImageSubresourceRange& subresource_range);
-    void QueueValidateImage(CMD_BUFFER_STATE* cb, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    void QueueValidateImage(QueueCallbacks &func, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                             const VkImageSubresourceLayers& range);
-    void QueueValidateImage(CMD_BUFFER_STATE* cb, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    void QueueValidateImage(QueueCallbacks &func, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                             uint32_t array_layer, uint32_t mip_level);
     void ValidateImageInQueue(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                               uint32_t array_layer, uint32_t mip_level);
@@ -515,4 +523,7 @@ class BestPractices : public ValidationStateTracker {
     IMAGE_STATE_BP* GetImageUsageState(VkImage image);
     void ReleaseImageUsageState(VkImage image);
     std::unordered_map<VkImage, IMAGE_STATE_BP> imageUsageMap;
+
+    QueueCallbacks queue_submit_functions_after_render_pass;
+    void add_deferred_queue_operations(CMD_BUFFER_STATE *cb);
 };
