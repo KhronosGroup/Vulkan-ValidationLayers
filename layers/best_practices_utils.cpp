@@ -1996,25 +1996,27 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
                             if (const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor*>(descriptor)) {
                                 image_view = image_descriptor->GetImageView();
                             }
+                            break;
                         }
                         case cvdescriptorset::DescriptorClass::ImageSampler: {
                             if (const auto image_sampler_descriptor =
                                     static_cast<const cvdescriptorset::ImageSamplerDescriptor*>(descriptor)) {
                                 image_view = image_sampler_descriptor->GetImageView();
                             }
+                            break;
                         }
                         default:
-                            continue;
+                            break;
                     }
 
                     if (image_view) {
                         IMAGE_VIEW_STATE* image_view_state = GetImageViewState(image_view);
 
-                        if (descriptor_set->GetTypeFromIndex(i) == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+                        if (descriptor_set->GetTypeFromIndex(index) == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                             QueueValidateImageView(cb_state, image_view_state, IMAGE_SUBRESOURCE_USAGE_BP::RESOURCE_READ);
                         }
 
-                        if (descriptor_set->GetTypeFromIndex(i) == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                        if (descriptor_set->GetTypeFromIndex(index) == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                             QueueValidateImageView(cb_state, image_view_state, IMAGE_SUBRESOURCE_USAGE_BP::RESOURCE_WRITE);
                         }
                     }
