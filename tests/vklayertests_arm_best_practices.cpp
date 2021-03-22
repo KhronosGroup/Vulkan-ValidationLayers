@@ -1234,6 +1234,151 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
+    TEST_DESCRIPTION("Tests that we track descriptors, which means we should not trigger warnings.");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-RenderPass-inefficient-clear");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
+
+    const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
+    const uint32_t WIDTH = 512, HEIGHT = 512;
+
+    std::vector<VkArmBestPracticesLayerTest::Image> images;
+    std::vector<VkRenderPass> renderpasses;
+    std::vector<VkFramebuffer> framebuffers;
+
+    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
+    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
+    renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0].image_view, renderpasses[0]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1].image_view, renderpasses[0]));
+
+    CreatePipelineHelper graphics_pipeline(*this);
+
+    graphics_pipeline.vs_ =
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this));
+    graphics_pipeline.fs_ =
+        std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this));
+    graphics_pipeline.InitInfo();
+
+    graphics_pipeline.dsl_bindings_.resize(2);
+    graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    // Tests that we correctly handle weird binding layouts.
+    graphics_pipeline.dsl_bindings_[0].binding = 20;
+    graphics_pipeline.dsl_bindings_[0].descriptorCount = 1;
+    graphics_pipeline.dsl_bindings_[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    graphics_pipeline.dsl_bindings_[1].binding = 10;
+    graphics_pipeline.dsl_bindings_[1].descriptorCount = 4;
+    graphics_pipeline.InitState();
+
+    graphics_pipeline.gp_ci_.renderPass = renderpasses[0];
+    graphics_pipeline.gp_ci_.flags = 0;
+
+    graphics_pipeline.CreateGraphicsPipeline();
+
+    VkDescriptorPoolSize pool_sizes[2] = {};
+    pool_sizes[0].descriptorCount = 1;
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pool_sizes[1].descriptorCount = 4;
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+    VkDescriptorPool pool;
+    VkDescriptorPoolCreateInfo descriptor_pool_create_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    descriptor_pool_create_info.maxSets = 1;
+    descriptor_pool_create_info.poolSizeCount = 2;
+    descriptor_pool_create_info.pPoolSizes = pool_sizes;
+    vk::CreateDescriptorPool(m_device->handle(), &descriptor_pool_create_info, nullptr, &pool);
+
+    VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
+    VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    descriptor_set_allocate_info.descriptorPool = pool;
+    descriptor_set_allocate_info.descriptorSetCount = 1;
+    descriptor_set_allocate_info.pSetLayouts = &graphics_pipeline.descriptor_set_->layout_.handle();
+    vk::AllocateDescriptorSets(m_device->handle(), &descriptor_set_allocate_info, &descriptor_set);
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageView = images[1].image_view;
+    image_info.sampler = VK_NULL_HANDLE;
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    write.descriptorCount = 1;
+    write.dstBinding = 10;
+    write.dstArrayElement = 1;
+    write.dstSet = descriptor_set;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(m_device->handle(), 1, &write, 0, nullptr);
+
+    VkClearValue clear_values[3];
+    memset(clear_values, 0, sizeof(clear_values));
+
+    VkRenderPassBeginInfo render_pass_begin_info = {};
+    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_begin_info.renderPass = renderpasses[0];
+    render_pass_begin_info.framebuffer = framebuffers[0];
+    render_pass_begin_info.clearValueCount = 3;
+    render_pass_begin_info.pClearValues = clear_values;
+
+    m_commandBuffer->begin();
+
+    VkClearColorValue clear_color_value = {};
+    VkImageSubresourceRange subresource_range = {};
+    subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
+    m_commandBuffer->ClearColorImage(images[1].image, VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+
+    // Trigger a read on the image.
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    {
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  graphics_pipeline.pipeline_layout_.handle(), 0, 1, &descriptor_set, 0, nullptr);
+
+        VkViewport viewport;
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(WIDTH);
+        viewport.height = static_cast<float>(HEIGHT);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        m_commandBuffer->SetViewport(0, 1, &viewport);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.pipeline_);
+        m_commandBuffer->Draw(3, 1, 0, 0);
+    }
+    m_commandBuffer->EndRenderPass();
+
+    // Now, LOAD_OP_LOAD, which should not trigger since we already read the image.
+    render_pass_begin_info.framebuffer = framebuffers[1];
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    {
+        VkViewport viewport;
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(WIDTH);
+        viewport.height = static_cast<float>(HEIGHT);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        m_commandBuffer->SetViewport(0, 1, &viewport);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.pipeline_);
+        m_commandBuffer->Draw(3, 1, 0, 0);
+    }
+    m_commandBuffer->EndRenderPass();
+
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     TEST_DESCRIPTION("Test for vkBlitImage followed by a LoadOpLoad renderpass");
 
