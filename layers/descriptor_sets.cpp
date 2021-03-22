@@ -1442,7 +1442,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             auto set = descriptor_set->GetSet();
                             return LogError(set, vuids.descriptor_valid,
                                             "Descriptor set %s encountered the following validation error at %s time: sampler (%s) "
-                                            "in the descriptor set (%s) caontains a YCBCR conversion (%s), then the sampler MUST "
+                                            "in the descriptor set (%s) contains a YCBCR conversion (%s), then the sampler MUST "
                                             "also exist as an immutable sampler.",
                                             report_data->FormatHandle(set).c_str(), caller,
                                             report_data->FormatHandle(sampler).c_str(),
