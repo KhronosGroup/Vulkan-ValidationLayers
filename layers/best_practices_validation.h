@@ -337,13 +337,15 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                             const VkResolveImageInfo2KHR* pResolveImageInfo) const override;
 
-    void ValidateImageView(IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
-    void ValidateImage(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                       const VkImageSubresourceRange& subresource_range);
-    void ValidateImage(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                       const VkImageSubresourceLayers& range);
-    void ValidateImage(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                       uint32_t array_layer, uint32_t mip_level);
+    void QueueValidateImageView(CMD_BUFFER_STATE* cb, IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
+    void QueueValidateImage(CMD_BUFFER_STATE* cb, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                            const VkImageSubresourceRange& subresource_range);
+    void QueueValidateImage(CMD_BUFFER_STATE* cb, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                            const VkImageSubresourceLayers& range);
+    void QueueValidateImage(CMD_BUFFER_STATE* cb, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                            uint32_t array_layer, uint32_t mip_level);
+    void ValidateImageInQueue(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                              uint32_t array_layer, uint32_t mip_level);
 
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -438,6 +440,8 @@ class BestPractices : public ValidationStateTracker {
 
     void ManualPostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
+
+    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) override;
 
 // Include code-generated functions
 #include "best_practices.h"
