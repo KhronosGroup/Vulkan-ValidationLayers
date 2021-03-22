@@ -260,8 +260,10 @@ if(BUILD_LAYERS)
     # Note that CMake reduces inlining optimization levels for RelWithDebInfo builds.
     if(MSVC)
         target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:/Zi>")
-        # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
-        target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
+        if (USE_ROBIN_HOOD_HASHING)
+            # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
+            target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
+        endif()
         # Need to use this instead of target_link_options() for older versions of CMake.
         target_link_libraries(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:-DEBUG:FULL>")
     endif()
@@ -273,7 +275,9 @@ if(BUILD_LAYERS)
     if(INSTRUMENT_OPTICK)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
     endif()
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
+    if (USE_ROBIN_HOOD_HASHING)
+        target_include_directories(VkLayer_khronos_validation PRIVATE ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
+    endif()
     target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
 
     # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
