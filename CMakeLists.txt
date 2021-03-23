@@ -164,6 +164,12 @@ option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
+if (USE_ROBIN_HOOD_HASHING)
+    if(NOT ROBIN_HOOD_HASHING_INSTALL_DIR)
+        set(ROBIN_HOOD_HASHING_INSTALL_DIR $ENV{ROBIN_HOOD_HASHING_INSTALL_DIR})
+    endif()
+    set(ROBIN_HOOD_HASHING_INCLUDE_DIR "${ROBIN_HOOD_HASHING_INSTALL_DIR}/src/include" PATH "Path to robin-hood-hashing/include")
+endif()
 
 if(BUILD_TESTS OR BUILD_LAYERS)
 
@@ -184,12 +190,6 @@ if(BUILD_TESTS OR BUILD_LAYERS)
 
     if(NOT SPIRV_TOOLS_INSTALL_DIR)
         set(SPIRV_TOOLS_INSTALL_DIR $ENV{SPIRV_TOOLS_INSTALL_DIR})
-    endif()
-    if (USE_ROBIN_HOOD_HASHING)
-        if(NOT ROBIN_HOOD_HASHING_INSTALL_DIR)
-            set(ROBIN_HOOD_HASHING_INSTALL_DIR $ENV{ROBIN_HOOD_HASHING_INSTALL_DIR})
-        endif()
-        set(ROBIN_HOOD_HASHING_INCLUDE_DIR "${ROBIN_HOOD_HASHING_INSTALL_DIR}/src/include" PATH "Path to robin-hood-hashing/include")
     endif()
 
     if (NOT TARGET glslang)
