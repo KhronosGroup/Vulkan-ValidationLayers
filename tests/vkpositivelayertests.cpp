@@ -26,6 +26,7 @@
 
 #include "layer_validation_tests.h"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <memory>
@@ -8544,22 +8545,22 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (!InitSwapchain()) {
+    if (!InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         printf("%s Cannot create surface or swapchain, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
         return;
     }
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
+    image_create_info.format = m_surface_formats[0].format;
+    image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
+    image_create_info.extent.height = m_surface_capabilities.minImageExtent.height;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -8597,7 +8598,8 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     copy_region.dstSubresource.layerCount = 1;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
-    copy_region.extent = {10, 10, 1};
+    copy_region.extent = {std::min(10u, m_surface_capabilities.minImageExtent.width),
+                          std::min(10u, m_surface_capabilities.minImageExtent.height), 1};
 
     m_commandBuffer->begin();
 
@@ -8663,15 +8665,15 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
+    image_create_info.format = m_surface_formats[0].format;
+    image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
+    image_create_info.extent.height = m_surface_capabilities.minImageExtent.height;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -8679,7 +8681,6 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     src_Image.init(&image_create_info);
 
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image_create_info.flags = VK_IMAGE_CREATE_ALIAS_BIT;
 
     auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
     image_swapchain_create_info.swapchain = m_swapchain;
@@ -10094,13 +10095,13 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     create_device_pnext.pNext = &physicalDeviceFeatures2;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (!InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+    if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
         return;
     }
-    uint32_t attachmentWidth = 64;
-    uint32_t attachmentHeight = 64;
-    VkFormat attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    uint32_t attachmentWidth = m_surface_capabilities.minImageExtent.width;
+    uint32_t attachmentHeight = m_surface_capabilities.minImageExtent.height;
+    VkFormat attachmentFormat = m_surface_formats[0].format;
     VkAttachmentDescription attachmentDescription[] = {{0, attachmentFormat, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                                         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                                         VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
@@ -10119,7 +10120,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     image_swapchain_create_info.swapchain = m_swapchain;
     VkImageCreateInfo imageCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                          &image_swapchain_create_info,
-                                         VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                         0,
                                          VK_IMAGE_TYPE_2D,
                                          attachmentFormat,
                                          {attachmentWidth, attachmentHeight, 1},
@@ -10169,7 +10170,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     VkImageView imageView = image.targetView(attachmentFormat);
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,
                                                                           nullptr,
-                                                                          VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                                                          0,
                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                                                           attachmentWidth,
                                                                           attachmentHeight,
