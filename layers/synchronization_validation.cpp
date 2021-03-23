@@ -193,7 +193,7 @@ std::string CommandBufferAccessContext::FormatUsage(const HazardResult &hazard) 
     }
 
     // PHASE2 TODO -- add comand buffer and reset from secondary if applicable
-    out << ", " << string_UsageTag(tag) << ", reset_no: " << reset_count_;
+    out << ", " << string_UsageTag(tag) << ", reset_no: " << reset_count_ << ")";
     return out.str();
 }
 
