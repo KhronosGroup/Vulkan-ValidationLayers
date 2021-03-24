@@ -62,7 +62,9 @@
 
 #if defined __ANDROID__
 #include <android/log.h>
+#include <sys/system_properties.h>
 #define LOGCONSOLE(...) ((void)__android_log_print(ANDROID_LOG_INFO, "VALIDATION", __VA_ARGS__))
+static const char DECORATE_UNUSED *kForceDefaultCallbackKey = "debug.vulkan.debuglogforce";
 #else
 #define LOGCONSOLE(...)      \
     {                        \
@@ -202,6 +204,7 @@ typedef struct _debug_report_data {
     int32_t duplicate_message_limit = 0;
     mutable layer_data::unordered_map<uint32_t, int32_t> duplicate_message_count_map{};
     const void *instance_pnext_chain{};
+    bool forceDefaultLogCallback{false};
 
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_output_mutex);
@@ -260,6 +263,23 @@ typedef struct _debug_report_data {
     }
 
 } debug_report_data;
+
+#if defined __ANDROID__
+template <typename T>
+static bool GetSystemProperty(const char *keyName, T *val) {
+    char value[PROP_VALUE_MAX];
+    if (__system_property_get(keyName, value) > 0) {
+        // Convert string to value with type T
+        std::stringstream ss;
+        ss << value;
+        T v = T();
+        ss >> v;
+        *val = v;
+        return true;
+    }
+    return false;
+}
+#endif
 
 template debug_report_data *GetLayerDataPtr<debug_report_data>(void *data_key,
                                                                std::unordered_map<void *, debug_report_data *> &data_map);
@@ -463,6 +483,12 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         use_default_callbacks &= current_callback.IsDefault();
     }
 
+#if defined __ANDROID__
+    if (debug_data->forceDefaultLogCallback) {
+        use_default_callbacks = true;
+    }
+#endif
+
     for (const auto &current_callback : *callback_list) {
         // Skip callback if it's a default callback and there are non-default callbacks present
         if (current_callback.IsDefault() && !use_default_callbacks) continue;
@@ -569,6 +595,14 @@ static inline void layer_create_callback(DebugCallbackStatusFlags callback_statu
         callback_state.debug_report_callback_function_ptr = report_create_info->pfnCallback;
         callback_state.debug_report_msg_flags = report_create_info->flags;
     }
+
+#if defined __ANDROID__
+    // On Android, if the default callback system property is set, force the default callback to be printed
+    int forceDefaultCallback = 0;
+    if (GetSystemProperty(kForceDefaultCallbackKey, &forceDefaultCallback) && forceDefaultCallback == 1) {
+        debug_data->forceDefaultLogCallback = true;
+    }
+#endif
 
     SetDebugUtilsSeverityFlags(debug_data->debug_callback_list, debug_data);
 }
