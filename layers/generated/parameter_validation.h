@@ -2022,6 +2022,30 @@ bool PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(
     uint32_t                                    queueFamilyIndex,
     IDirectFB*                                  dfb) const override;
 #endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool PreCallValidateGetMemoryZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkMemoryGetZirconHandleInfoFUCHSIA*   pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle) const override;
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    zx_handle_t                                 zirconHandle,
+    VkMemoryZirconHandlePropertiesFUCHSIA*      pMemoryZirconHandleProperties) const override;
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) const override;
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle) const override;
+#endif
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 bool PreCallValidateCreateScreenSurfaceQNX(
     VkInstance                                  instance,

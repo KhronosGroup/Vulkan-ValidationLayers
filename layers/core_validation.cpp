@@ -13448,7 +13448,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
             vuid_profile_lock = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03223";
             vuid_scope_not_first = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224";
             vuid_scope_in_rp = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225";
-            vuid_dup_query_type = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-01922";
+            vuid_dup_query_type = "VUID-vkCmdBeginQueryIndexedEXT-queryPool-04753";
             vuid_protected_cb = "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-01885";
         }
     };
