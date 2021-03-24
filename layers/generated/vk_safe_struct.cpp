@@ -36151,6 +36151,321 @@ void safe_VkMutableDescriptorTypeCreateInfoVALVE::initialize(const safe_VkMutabl
         }
     }
 }
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::safe_VkImportMemoryZirconHandleInfoFUCHSIA(const VkImportMemoryZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    handleType(in_struct->handleType),
+    handle(in_struct->handle)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::safe_VkImportMemoryZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr)
+{}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::safe_VkImportMemoryZirconHandleInfoFUCHSIA(const safe_VkImportMemoryZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    handleType = copy_src.handleType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA& safe_VkImportMemoryZirconHandleInfoFUCHSIA::operator=(const safe_VkImportMemoryZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    handleType = copy_src.handleType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::~safe_VkImportMemoryZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportMemoryZirconHandleInfoFUCHSIA::initialize(const VkImportMemoryZirconHandleInfoFUCHSIA* in_struct)
+{
+    sType = in_struct->sType;
+    handleType = in_struct->handleType;
+    handle = in_struct->handle;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImportMemoryZirconHandleInfoFUCHSIA::initialize(const safe_VkImportMemoryZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    handleType = copy_src->handleType;
+    handle = copy_src->handle;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA(const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    memoryTypeBits(in_struct->memoryTypeBits)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_ZIRCON_HANDLE_PROPERTIES_FUCHSIA),
+    pNext(nullptr)
+{}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA(const safe_VkMemoryZirconHandlePropertiesFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA& safe_VkMemoryZirconHandlePropertiesFUCHSIA::operator=(const safe_VkMemoryZirconHandlePropertiesFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::~safe_VkMemoryZirconHandlePropertiesFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryZirconHandlePropertiesFUCHSIA::initialize(const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct)
+{
+    sType = in_struct->sType;
+    memoryTypeBits = in_struct->memoryTypeBits;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryZirconHandlePropertiesFUCHSIA::initialize(const safe_VkMemoryZirconHandlePropertiesFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    memoryTypeBits = copy_src->memoryTypeBits;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    memory(in_struct->memory),
+    handleType(in_struct->handleType)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr)
+{}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA(const safe_VkMemoryGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA& safe_VkMemoryGetZirconHandleInfoFUCHSIA::operator=(const safe_VkMemoryGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::~safe_VkMemoryGetZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryGetZirconHandleInfoFUCHSIA::initialize(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct)
+{
+    sType = in_struct->sType;
+    memory = in_struct->memory;
+    handleType = in_struct->handleType;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryGetZirconHandleInfoFUCHSIA::initialize(const safe_VkMemoryGetZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    memory = copy_src->memory;
+    handleType = copy_src->handleType;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    semaphore(in_struct->semaphore),
+    flags(in_struct->flags),
+    handleType(in_struct->handleType),
+    zirconHandle(in_struct->zirconHandle)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr)
+{}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    flags = copy_src.flags;
+    handleType = copy_src.handleType;
+    zirconHandle = copy_src.zirconHandle;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::operator=(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    flags = copy_src.flags;
+    handleType = copy_src.handleType;
+    zirconHandle = copy_src.zirconHandle;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::~safe_VkImportSemaphoreZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::initialize(const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct)
+{
+    sType = in_struct->sType;
+    semaphore = in_struct->semaphore;
+    flags = in_struct->flags;
+    handleType = in_struct->handleType;
+    zirconHandle = in_struct->zirconHandle;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::initialize(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    semaphore = copy_src->semaphore;
+    flags = copy_src->flags;
+    handleType = copy_src->handleType;
+    zirconHandle = copy_src->zirconHandle;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    semaphore(in_struct->semaphore),
+    handleType(in_struct->handleType)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr)
+{}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::operator=(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::~safe_VkSemaphoreGetZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::initialize(const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct)
+{
+    sType = in_struct->sType;
+    semaphore = in_struct->semaphore;
+    handleType = in_struct->handleType;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::initialize(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    semaphore = copy_src->semaphore;
+    handleType = copy_src->handleType;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 
@@ -38870,6 +39185,11 @@ void *SafePnextCopy(const void *pNext) {
             safe_pNext = new safe_VkExternalFormatANDROID(reinterpret_cast<const VkExternalFormatANDROID *>(pNext));
             break;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_FUCHSIA
+        case VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA:
+            safe_pNext = new safe_VkImportMemoryZirconHandleInfoFUCHSIA(reinterpret_cast<const VkImportMemoryZirconHandleInfoFUCHSIA *>(pNext));
+            break;
+#endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_GGP
         case VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP:
             safe_pNext = new safe_VkPresentFrameTokenGGP(reinterpret_cast<const VkPresentFrameTokenGGP *>(pNext));
@@ -39723,6 +40043,11 @@ void FreePnextChain(const void *pNext) {
             delete reinterpret_cast<const safe_VkExternalFormatANDROID *>(header);
             break;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_FUCHSIA
+        case VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA:
+            delete reinterpret_cast<const safe_VkImportMemoryZirconHandleInfoFUCHSIA *>(header);
+            break;
+#endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_GGP
         case VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP:
             delete reinterpret_cast<const safe_VkPresentFrameTokenGGP *>(header);

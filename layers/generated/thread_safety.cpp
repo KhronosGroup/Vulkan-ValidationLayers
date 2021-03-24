@@ -7375,6 +7375,72 @@ void ThreadSafety::PostCallRecordCreateDirectFBSurfaceEXT(
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+void ThreadSafety::PreCallRecordGetMemoryZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkMemoryGetZirconHandleInfoFUCHSIA*   pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle) {
+    StartReadObjectParentInstance(device, "vkGetMemoryZirconHandleFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordGetMemoryZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkMemoryGetZirconHandleInfoFUCHSIA*   pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetMemoryZirconHandleFUCHSIA");
+}
+
+void ThreadSafety::PreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    zx_handle_t                                 zirconHandle,
+    VkMemoryZirconHandlePropertiesFUCHSIA*      pMemoryZirconHandleProperties) {
+    StartReadObjectParentInstance(device, "vkGetMemoryZirconHandlePropertiesFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
+    VkDevice                                    device,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    zx_handle_t                                 zirconHandle,
+    VkMemoryZirconHandlePropertiesFUCHSIA*      pMemoryZirconHandleProperties,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetMemoryZirconHandlePropertiesFUCHSIA");
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+void ThreadSafety::PreCallRecordImportSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
+    StartReadObjectParentInstance(device, "vkImportSemaphoreZirconHandleFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkImportSemaphoreZirconHandleFUCHSIA");
+}
+
+void ThreadSafety::PreCallRecordGetSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle) {
+    StartReadObjectParentInstance(device, "vkGetSemaphoreZirconHandleFUCHSIA");
+}
+
+void ThreadSafety::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
+    VkDevice                                    device,
+    const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+    zx_handle_t*                                pZirconHandle,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetSemaphoreZirconHandleFUCHSIA");
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 void ThreadSafety::PreCallRecordCreateScreenSurfaceQNX(

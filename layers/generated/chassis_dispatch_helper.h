@@ -994,6 +994,18 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetFragmentShadingRateEnumNV,
     InterceptIdPreCallRecordCmdSetFragmentShadingRateEnumNV,
     InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV,
+    InterceptIdPreCallValidateGetMemoryZirconHandleFUCHSIA,
+    InterceptIdPreCallRecordGetMemoryZirconHandleFUCHSIA,
+    InterceptIdPostCallRecordGetMemoryZirconHandleFUCHSIA,
+    InterceptIdPreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA,
+    InterceptIdPreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA,
+    InterceptIdPostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA,
+    InterceptIdPreCallValidateImportSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPreCallRecordImportSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPostCallRecordImportSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPreCallValidateGetSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPreCallRecordGetSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPostCallRecordGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -2135,6 +2147,26 @@ void ValidationObject::InitObjectDispatchVectors() {
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 #endif
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryZirconHandleFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryZirconHandleFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryZirconHandleFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateImportSemaphoreZirconHandleFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordImportSemaphoreZirconHandleFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordImportSemaphoreZirconHandleFUCHSIA);
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetSemaphoreZirconHandleFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetSemaphoreZirconHandleFUCHSIA);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetSemaphoreZirconHandleFUCHSIA);
 #endif
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 #endif

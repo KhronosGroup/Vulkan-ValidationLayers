@@ -412,6 +412,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_validation_cache{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_divisor{kNotEnabled};
     ExtEnabled vk_ext_ycbcr_image_arrays{kNotEnabled};
+    ExtEnabled vk_fuchsia_external_memory{kNotEnabled};
+    ExtEnabled vk_fuchsia_external_semaphore{kNotEnabled};
     ExtEnabled vk_ggp_frame_token{kNotEnabled};
     ExtEnabled vk_google_decorate_string{kNotEnabled};
     ExtEnabled vk_google_display_timing{kNotEnabled};
@@ -684,6 +686,16 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_ycbcr_image_arrays, {{
                            {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
+#ifdef VK_USE_PLATFORM_FUCHSIA
+            {VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_fuchsia_external_memory, {{
+                           {&DeviceExtensions::vk_khr_external_memory_capabilities, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+            {VK_FUCHSIA_EXTERNAL_SEMAPHORE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_fuchsia_external_semaphore, {{
+                           {&DeviceExtensions::vk_khr_external_semaphore_capabilities, VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_external_semaphore, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}})},
+#endif
 #ifdef VK_USE_PLATFORM_GGP
             {VK_GGP_FRAME_TOKEN_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ggp_frame_token, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
@@ -1104,6 +1116,12 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_VALIDATION_CACHE_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME,
+#endif
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    VK_FUCHSIA_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+#endif
 #ifdef VK_USE_PLATFORM_GGP
     VK_GGP_FRAME_TOKEN_EXTENSION_NAME,
 #endif
