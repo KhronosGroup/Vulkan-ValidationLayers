@@ -200,6 +200,10 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
 
                 // Entry points ... add to the entrypoint table
             case spv::OpEntryPoint: {
+                if (entry_point != nullptr) {
+                    multiple_entry_points = true;
+                }
+
                 // Entry points do not have an id (the id is the function id) and thus need their own table
                 auto entrypoint_name = reinterpret_cast<char const *>(&insn.word(3));
                 auto execution_model = insn.word(1);
@@ -1918,6 +1922,12 @@ PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vecto
 bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADER_MODULE_STATE const *src,
                                            VkPipelineShaderStageCreateInfo const *pStage) const {
     bool skip = false;
+    // Temp workaround to prevent false positive errors
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450
+    if (src->multiple_entry_points) {
+        return skip;
+    }
+
     // Validate directly off the offsets. this isn't quite correct for arrays and matrices, but is a good first step.
     const auto *entrypoint = FindEntrypointStruct(src, pStage->pName, pStage->stage);
     if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {

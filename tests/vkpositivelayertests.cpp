@@ -9493,6 +9493,224 @@ TEST_F(VkPositiveLayerTest, CreatePipelineOverlappingPushConstantRange) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, MultipleEntryPointPushConstantVertNormalFrag) {
+    TEST_DESCRIPTION("Test push-constant only being used by single entrypoint.");
+
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // #version 450
+    // layout(push_constant, std430) uniform foo { float x; } consts;
+    // void main(){
+    //    gl_Position = vec4(consts.x);
+    // }
+    //
+    // #version 450
+    // layout(location=0) out vec4 o;
+    // void main(){
+    //    o = vec4(1.0);
+    // }
+    const std::string source_body = R"(
+                            OpExecutionMode %main_f OriginUpperLeft
+                            OpSource GLSL 450
+                            OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+                            OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+                            OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+                            OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+                            OpDecorate %gl_PerVertex Block
+                            OpMemberDecorate %foo 0 Offset 0
+                            OpDecorate %foo Block
+                            OpDecorate %out_frag Location 0
+                    %void = OpTypeVoid
+                       %3 = OpTypeFunction %void
+                   %float = OpTypeFloat 32
+                 %v4float = OpTypeVector %float 4
+                    %uint = OpTypeInt 32 0
+                  %uint_1 = OpConstant %uint 1
+       %_arr_float_uint_1 = OpTypeArray %float %uint_1
+            %gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+                %out_vert = OpVariable %_ptr_Output_gl_PerVertex Output
+                     %int = OpTypeInt 32 1
+                   %int_0 = OpConstant %int 0
+                     %foo = OpTypeStruct %float
+   %_ptr_PushConstant_foo = OpTypePointer PushConstant %foo
+                  %consts = OpVariable %_ptr_PushConstant_foo PushConstant
+ %_ptr_PushConstant_float = OpTypePointer PushConstant %float
+     %_ptr_Output_v4float = OpTypePointer Output %v4float
+                %out_frag = OpVariable %_ptr_Output_v4float Output
+                 %float_1 = OpConstant %float 1
+                 %vec_1_0 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+                  %main_v = OpFunction %void None %3
+                 %label_v = OpLabel
+                      %20 = OpAccessChain %_ptr_PushConstant_float %consts %int_0
+                      %21 = OpLoad %float %20
+                      %22 = OpCompositeConstruct %v4float %21 %21 %21 %21
+                      %24 = OpAccessChain %_ptr_Output_v4float %out_vert %int_0
+                            OpStore %24 %22
+                            OpReturn
+                            OpFunctionEnd
+                  %main_f = OpFunction %void None %3
+                 %label_f = OpLabel
+                            OpStore %out_frag %vec_1_0
+                            OpReturn
+                            OpFunctionEnd
+    )";
+
+    std::string vert_first = R"(
+        OpCapability Shader
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint Vertex %main_v "main_v" %out_vert
+        OpEntryPoint Fragment %main_f "main_f" %out_frag
+    )" + source_body;
+
+    std::string frag_first = R"(
+        OpCapability Shader
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint Fragment %main_f "main_f" %out_frag
+        OpEntryPoint Vertex %main_v "main_v" %out_vert
+    )" + source_body;
+
+    VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)}};
+    VkPipelineLayoutCreateInfo const pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
+
+    // Vertex entry point first
+    {
+        VkShaderObj const vs(m_device, vert_first, VK_SHADER_STAGE_VERTEX_BIT, this, "main_v");
+        VkShaderObj const fs(m_device, vert_first, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main_f");
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            helper.pipeline_layout_ci_ = pipeline_layout_info;
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    }
+
+    // Fragment entry point first
+    {
+        VkShaderObj const vs(m_device, frag_first, VK_SHADER_STAGE_VERTEX_BIT, this, "main_v");
+        VkShaderObj const fs(m_device, frag_first, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main_f");
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            helper.pipeline_layout_ci_ = pipeline_layout_info;
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, MultipleEntryPointNormalVertPushConstantFrag) {
+    TEST_DESCRIPTION("Test push-constant only being used by single entrypoint.");
+
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // #version 450
+    // void main(){
+    //    gl_Position = vec4(1.0);
+    // }
+    //
+    // #version 450
+    // layout(push_constant, std430) uniform foo { float x; } consts;
+    // layout(location=0) out vec4 o;
+    // void main(){
+    //    o = vec4(consts.x);
+    // }
+    const std::string source_body = R"(
+                            OpExecutionMode %main_f OriginUpperLeft
+                            OpSource GLSL 450
+                            OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+                            OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+                            OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+                            OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+                            OpDecorate %gl_PerVertex Block
+                            OpDecorate %out_frag Location 0
+                            OpMemberDecorate %foo 0 Offset 0
+                            OpDecorate %foo Block
+                    %void = OpTypeVoid
+                       %3 = OpTypeFunction %void
+                   %float = OpTypeFloat 32
+                 %v4float = OpTypeVector %float 4
+                    %uint = OpTypeInt 32 0
+                  %uint_1 = OpConstant %uint 1
+       %_arr_float_uint_1 = OpTypeArray %float %uint_1
+            %gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+                %out_vert = OpVariable %_ptr_Output_gl_PerVertex Output
+                     %int = OpTypeInt 32 1
+                   %int_0 = OpConstant %int 0
+                 %float_1 = OpConstant %float 1
+                      %17 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+     %_ptr_Output_v4float = OpTypePointer Output %v4float
+                %out_frag = OpVariable %_ptr_Output_v4float Output
+                     %foo = OpTypeStruct %float
+   %_ptr_PushConstant_foo = OpTypePointer PushConstant %foo
+                  %consts = OpVariable %_ptr_PushConstant_foo PushConstant
+ %_ptr_PushConstant_float = OpTypePointer PushConstant %float
+                  %main_v = OpFunction %void None %3
+                 %label_v = OpLabel
+                      %19 = OpAccessChain %_ptr_Output_v4float %out_vert %int_0
+                            OpStore %19 %17
+                            OpReturn
+                            OpFunctionEnd
+                  %main_f = OpFunction %void None %3
+                 %label_f = OpLabel
+                      %26 = OpAccessChain %_ptr_PushConstant_float %consts %int_0
+                      %27 = OpLoad %float %26
+                      %28 = OpCompositeConstruct %v4float %27 %27 %27 %27
+                            OpStore %out_frag %28
+                            OpReturn
+                            OpFunctionEnd
+    )";
+
+    std::string vert_first = R"(
+        OpCapability Shader
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint Vertex %main_v "main_v" %out_vert
+        OpEntryPoint Fragment %main_f "main_f" %out_frag
+    )" + source_body;
+
+    std::string frag_first = R"(
+        OpCapability Shader
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint Fragment %main_f "main_f" %out_frag
+        OpEntryPoint Vertex %main_v "main_v" %out_vert
+    )" + source_body;
+
+    VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float)}};
+    VkPipelineLayoutCreateInfo const pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
+
+    // Vertex entry point first
+    {
+        VkShaderObj const vs(m_device, vert_first, VK_SHADER_STAGE_VERTEX_BIT, this, "main_v");
+        VkShaderObj const fs(m_device, vert_first, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main_f");
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            helper.pipeline_layout_ci_ = pipeline_layout_info;
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    }
+
+    // Fragment entry point first
+    {
+        VkShaderObj const vs(m_device, frag_first, VK_SHADER_STAGE_VERTEX_BIT, this, "main_v");
+        VkShaderObj const fs(m_device, frag_first, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main_f");
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            helper.pipeline_layout_ci_ = pipeline_layout_info;
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt8) {
     TEST_DESCRIPTION("Test int8 specialization.");
 

@@ -214,6 +214,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     };
     // entry point is not unqiue to single value so need multimap
     std::unordered_multimap<std::string, EntryPoint> entry_points;
+    bool multiple_entry_points{false};
     bool has_valid_spirv;
     bool has_specialization_constants{false};
     VkShaderModule vk_shader_module;
