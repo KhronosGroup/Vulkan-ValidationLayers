@@ -28,6 +28,9 @@
 #include "synchronization_validation_types.h"
 #include "state_tracker.h"
 
+// Do not commit enabled
+// #define SYNCVAL_DIAGNOSTICS
+
 class AccessContext;
 class CommandBufferAccessContext;
 using CommandBufferAccessContextShared = std::shared_ptr<CommandBufferAccessContext>;
@@ -1317,4 +1320,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                                  VkDeviceSize dstOffset, uint32_t marker) const override;
     void PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
                                                VkDeviceSize dstOffset, uint32_t marker) override;
+#ifdef SYNCVAL_DIAGNOSTICS
+    bool PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) const override;
+#endif
 };

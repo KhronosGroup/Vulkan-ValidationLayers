@@ -23,8 +23,14 @@
 #ifndef SUBRESOURCE_ADAPTER_H_
 #define SUBRESOURCE_ADAPTER_H_
 
+// Do not commit enabled
+// #define IMAGE_RANGE_GEN_DIAG
+
 #include <algorithm>
 #include <array>
+#ifdef IMAGE_RANGE_GEN_DIAG
+#include <mutex>
+#endif
 #include <vector>
 #include "range_vector.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
@@ -361,6 +367,35 @@ class ImageRangeEncoder : public RangeEncoder {
 
 class ImageRangeGenerator {
   public:
+#ifdef IMAGE_RANGE_GEN_DIAG
+    // WIP ZZZ
+    ~ImageRangeGenerator();
+    struct Diag {
+        uint64_t dupcount = 0;
+        const uint64_t coverage_limit = ~uint64_t(0);
+        uint64_t increment_calls = 0;
+        uint64_t coverage_counter = 0;
+        uint64_t coverage_total = 0;
+        uint64_t coverage_covered = 0;
+        uint64_t oob_high = 0;
+        uint64_t oob_low = 0;
+        std::mutex diag_mutex;
+        void RecordDuplicate(const IndexRange& pos, const IndexRange& extant);
+        void RecordOOB(IndexRange& pos, int type);
+        void RecordCoverage(uint64_t count, IndexType covered, IndexType total);
+#if defined(_WIN32)
+        void ErrorAction() { __debugbreak(); }
+#else
+        void ErrorAction(){};
+#endif
+        void Report();
+    };
+    static Diag diag_;
+    uint64_t diag_increment_count_ = 0;
+    sparse_container::range_map<VkDeviceSize, bool> diag_coverage_map_;
+    void DiagPlusPlus();
+#endif
+
     ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_(), base_address_(), pos_() {}
     bool operator!=(const ImageRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,

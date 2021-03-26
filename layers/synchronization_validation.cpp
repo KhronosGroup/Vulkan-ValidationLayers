@@ -26,6 +26,39 @@
 #include "synchronization_validation.h"
 #include "sync_utils.h"
 
+#ifdef SYNCVAL_DIAGNOSTICS
+struct SyncDiagnostics {
+    void DebugAction() const {
+#if defined(_WIN32)
+        __debugbreak();
+#endif
+    }
+    void Detect(const ResourceAccessRange &range) {
+        std::lock_guard<std::mutex> lock(diag_mutex);
+        if (range.distance() == kConditionValue) {
+            ++condition;
+            DebugAction();
+        }
+        detect_histogram[range.distance()] += 1;
+    }
+    void InstanceDump(VkInstance instance) {
+        std::cout << "# instance handle\n" << instance << "\n";
+        std::cout << "# condition count\n" << condition << "\n";
+        std::cout << "# Detection Size Histogram\n";
+        for (const auto &entry : detect_histogram) {
+            std::cout << "{ " << entry.first << ", " << entry.second << "}\n";
+        }
+        std::cout << std::endl;
+        detect_histogram.clear();
+    }
+    std::map<ResourceAccessRange::index_type, size_t> detect_histogram;
+    uint64_t condition;
+    std::mutex diag_mutex;
+    static const ResourceAccessRangeIndex kConditionValue = ~ResourceAccessRangeIndex(0);
+};
+static SyncDiagnostics sync_diagnostics;
+#endif
+
 static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
 
 static bool SimpleBinding(const IMAGE_STATE &image_state) {
@@ -1203,6 +1236,9 @@ HazardResult AccessContext::DetectHazard(Detector &detector, const IMAGE_STATE &
                                                        base_address);
     const auto address_type = ImageAddressType(image);
     for (; range_gen->non_empty(); ++range_gen) {
+#ifdef SYNCVAL_DIAGNOSTICS
+        sync_diagnostics.Detect(*range_gen);
+#endif
         HazardResult hazard = DetectHazard(address_type, detector, *range_gen, options);
         if (hazard.hazard) return hazard;
     }
@@ -5860,3 +5896,11 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
         context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
 }
+
+#ifdef SYNCVAL_DIAGNOSTICS
+bool SyncValidator::PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) const {
+    sync_diagnostics.InstanceDump(instance);
+    ImageRangeGen::diag_.Report();
+    return StateTracker::PreCallValidateDestroyInstance(instance, pAllocator);
+}
+#endif
