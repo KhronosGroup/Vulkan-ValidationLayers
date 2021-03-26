@@ -4086,16 +4086,16 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     bool skip = false;
     auto *sem_type_create_info = LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
 
-    if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE &&
-        !enabled_features.core12.timelineSemaphore && !device_extensions.vk_khr_timeline_semaphore) {
-        skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252",
-                         "VkCreateSemaphore: timelineSemaphore feature is not enabled, can not create timeline semaphores");
-    }
+    if (sem_type_create_info) {
+        if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE && !enabled_features.core12.timelineSemaphore) {
+            skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252",
+                             "VkCreateSemaphore: timelineSemaphore feature is not enabled, can not create timeline semaphores");
+        }
 
-    if (sem_type_create_info && sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_BINARY &&
-        sem_type_create_info->initialValue != 0) {
-        skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279",
-                         "vkCreateSemaphore: if semaphoreType is VK_SEMAPHORE_TYPE_BINARY, initialValue must be zero");
+        if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_BINARY && sem_type_create_info->initialValue != 0) {
+            skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279",
+                             "vkCreateSemaphore: if semaphoreType is VK_SEMAPHORE_TYPE_BINARY, initialValue must be zero");
+        }
     }
 
     return skip;
