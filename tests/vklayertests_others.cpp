@@ -11691,6 +11691,92 @@ TEST_F(VkLayerTest, CmdCopyAccelerationStructureToMemoryKHR) {
     vkDestroyAccelerationStructureKHR(m_device->handle(), as, nullptr);
 }
 
+TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoCore) {
+    TEST_DESCRIPTION("Invalid usage of VkSemaphoreTypeCreateInfo with a 1.2 core version");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // Core 1.2 supports timelineSemaphore feature bit but not enabled
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkSemaphore semaphore;
+
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info;
+    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    semaphore_type_create_info.pNext = nullptr;
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    semaphore_type_create_info.initialValue = 1;
+
+    VkSemaphoreCreateInfo semaphore_create_info;
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphore_create_info.pNext = &semaphore_type_create_info;
+    semaphore_create_info.flags = 0;
+
+    // timelineSemaphore feature bit not set
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252");
+    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+
+    // Binary semaphore can't be initialValue 0
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279");
+    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoExtension) {
+    TEST_DESCRIPTION("Invalid usage of VkSemaphoreTypeCreateInfo with extension");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);  // before timelineSemaphore was added to core
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+        return;
+    }
+
+    // Enabled extension but not the timelineSemaphore feature bit
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkSemaphore semaphore;
+
+    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info;
+    semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+    semaphore_type_create_info.pNext = nullptr;
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    semaphore_type_create_info.initialValue = 1;
+
+    VkSemaphoreCreateInfo semaphore_create_info;
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphore_create_info.pNext = &semaphore_type_create_info;
+    semaphore_create_info.flags = 0;
+
+    // timelineSemaphore feature bit not set
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-timelineSemaphore-03252");
+    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+
+    // Binary semaphore can't be initialValue 0
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279");
+    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     TEST_DESCRIPTION("Submit mixtures of timeline and binary semaphores");
 
