@@ -33,6 +33,8 @@
 #define SECONDARY_VK_REGISTRY_HIVE_STR "HKEY_CURRENT_USER"
 #endif
 
+std::string GetEnvironment(const char* variable);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
