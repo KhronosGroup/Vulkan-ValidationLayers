@@ -709,11 +709,11 @@ HazardResult AccessContext::DetectHazard(AccessAddressType type, const Detector 
     const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
 
     const auto &accesses = GetAccessStateMap(type);
-    const auto from = accesses.lower_bound(range);
-    const auto to = accesses.upper_bound(range);
+    const auto the_end = accesses.cend();  // End is not invalidated
+    auto pos = accesses.lower_bound(range);
     ResourceAccessRange gap = {range.begin, range.begin};
 
-    for (auto pos = from; pos != to; ++pos) {
+    while (pos != the_end && pos->first.begin < range.end) {
         // Cover any leading gap, or gap between entries
         if (detect_prev) {
             // TODO: After profiling we may want to change the descent logic such that we don't recur per gap...
@@ -730,6 +730,7 @@ HazardResult AccessContext::DetectHazard(AccessAddressType type, const Detector 
 
         hazard = detector.Detect(pos);
         if (hazard.hazard) return hazard;
+        ++pos;
     }
 
     if (detect_prev) {
@@ -748,12 +749,14 @@ template <typename Detector>
 HazardResult AccessContext::DetectAsyncHazard(AccessAddressType type, const Detector &detector,
                                               const ResourceAccessRange &range) const {
     auto &accesses = GetAccessStateMap(type);
-    const auto from = accesses.lower_bound(range);
-    const auto to = accesses.upper_bound(range);
+    auto pos = accesses.lower_bound(range);
+    const auto the_end = accesses.end();
 
     HazardResult hazard;
-    for (auto pos = from; pos != to && !hazard.hazard; ++pos) {
+    while (pos != the_end && pos->first.begin < range.end) {
         hazard = detector.DetectAsync(pos, start_tag_);
+        if (hazard.hazard) break;
+        ++pos;
     }
 
     return hazard;
