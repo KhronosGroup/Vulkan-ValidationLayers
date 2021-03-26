@@ -96,7 +96,7 @@ the following system property:
 adb shell setprop debug.vvl.forcelayerlog 1
 ```
 
-The debug.vvl namespace signifies validation layers, and setting this property will force the validation layer callback to always execute, even if the app registers
+The debug.vvl namespace signifies validation layers, and setting this property forces the validation layer callback to always execute, even if the app registers
 a messenger callback itself. This is especially useful for automation tasks, ensuring that errors can be read in a parseable format.
 
 Refer to [VK_EXT_debug_utils](https://www.khronos.org/registry/vulkan/specs/1.2-extensions/html/vkspec.html#VK_EXT_debug_utils)
