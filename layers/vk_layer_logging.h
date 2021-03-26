@@ -62,9 +62,8 @@
 
 #if defined __ANDROID__
 #include <android/log.h>
-#include <sys/system_properties.h>
 #define LOGCONSOLE(...) ((void)__android_log_print(ANDROID_LOG_INFO, "VALIDATION", __VA_ARGS__))
-static const char DECORATE_UNUSED *kForceDefaultCallbackKey = "debug.vulkan.debuglogforce";
+static const char DECORATE_UNUSED *kForceDefaultCallbackKey = "debug.vvl.forcelayerlog";
 #else
 #define LOGCONSOLE(...)      \
     {                        \
@@ -263,23 +262,6 @@ typedef struct _debug_report_data {
     }
 
 } debug_report_data;
-
-#if defined __ANDROID__
-template <typename T>
-static bool GetSystemProperty(const char *keyName, T *val) {
-    char value[PROP_VALUE_MAX];
-    if (__system_property_get(keyName, value) > 0) {
-        // Convert string to value with type T
-        std::stringstream ss;
-        ss << value;
-        T v = T();
-        ss >> v;
-        *val = v;
-        return true;
-    }
-    return false;
-}
-#endif
 
 template debug_report_data *GetLayerDataPtr<debug_report_data>(void *data_key,
                                                                std::unordered_map<void *, debug_report_data *> &data_map);
@@ -598,8 +580,9 @@ static inline void layer_create_callback(DebugCallbackStatusFlags callback_statu
 
 #if defined __ANDROID__
     // On Android, if the default callback system property is set, force the default callback to be printed
-    int forceDefaultCallback = 0;
-    if (GetSystemProperty(kForceDefaultCallbackKey, &forceDefaultCallback) && forceDefaultCallback == 1) {
+    std::string forceLayerLog = GetEnvironment(kForceDefaultCallbackKey);
+    int forceDefaultCallback = atoi(forceLayerLog.c_str());
+    if (forceDefaultCallback == 1) {
         debug_data->forceDefaultLogCallback = true;
     }
 #endif
