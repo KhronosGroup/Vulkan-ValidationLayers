@@ -338,71 +338,6 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         aspect_sizes_.emplace_back(aspect_size);
     }
 }
-#ifdef IMAGE_RANGE_GEN_DIAG
-ImageRangeGenerator::Diag ImageRangeGenerator::diag_;
-ImageRangeGenerator::~ImageRangeGenerator() {
-    if (!encoder_) return;
-    // Post-process the coverage map
-    IndexType sum = 0;
-    for (const auto& span : diag_coverage_map_) {
-        sum += span.first.distance();
-    }
-    diag_.RecordCoverage(diag_increment_count_, sum, encoder_->TotalSize());
-}
-
-void ImageRangeGenerator::DiagPlusPlus() {
-    ++diag_increment_count_;
-    auto insert_it = diag_coverage_map_.insert(std::make_pair(pos_, true));
-    if (!insert_it.second) {
-        diag_.RecordDuplicate(pos_, insert_it.first->first);
-    }
-    if (pos_.end > base_address_ + encoder_->TotalSize()) {
-        diag_.RecordOOB(pos_, 1);
-    }
-    if (pos_.begin < base_address_) {
-        diag_.RecordOOB(pos_, 2);
-    }
-    if (!pos_.distance()) {
-        diag_.ErrorAction();
-    }
-}
-
-void ImageRangeGenerator::Diag::RecordDuplicate(const IndexRange& pos, const IndexRange& extant) {
-    std::lock_guard<std::mutex> lock(diag_mutex);
-    std::cout << "Insert failure: " << pos.begin << ", " << pos.end << std::endl;
-    std::cout << "Extant: " << extant.begin << ", " << extant.end << std::endl;
-    dupcount++;
-    ErrorAction();
-}
-void ImageRangeGenerator::Diag::RecordOOB(IndexRange& pos, int type) {
-    assert(type);  // Don't call this if there isn't an error
-    std::lock_guard<std::mutex> lock(diag_mutex);
-    std::cout << "OOB failure: [" << pos.begin << ", " << pos.end << "), type " << type << std::endl;
-    if (type == 1) oob_high++;
-    if (type == 2) oob_low++;
-    ErrorAction();
-}
-
-void ImageRangeGenerator::Diag::RecordCoverage(uint64_t count, IndexType covered, IndexType total) {
-    std::lock_guard<std::mutex> lock(diag_mutex);
-    increment_calls += count;
-    coverage_covered += covered;
-    coverage_total += total;
-    coverage_counter++;
-    if (0 == (coverage_counter % coverage_limit)) {
-        Report();
-    }
-}
-
-void ImageRangeGenerator::Diag::Report() {
-    static volatile double coverage = double(coverage_covered) / double(coverage_total);
-    static volatile double average_range = double(coverage_covered) / double(increment_calls);
-    std::cout << "Count: " << increment_calls << " Covered: " << coverage_covered << " Total: " << coverage_total
-              << " ++sum: " << coverage_covered;
-    std::cout << " Coverage:" << coverage << " Avg Range: " << average_range << std::endl;
-}
-
-#endif
 
 IndexType ImageRangeEncoder::Encode2D(const VkSubresourceLayout& layout, uint32_t layer, uint32_t aspect_index,
                                       const VkOffset3D& offset) const {
@@ -709,9 +644,6 @@ void ImageRangeGenerator::SetUpIncrementer(bool all_width, bool all_height, bool
 }
 
 ImageRangeGenerator& ImageRangeGenerator::operator++() {
-#ifdef IMAGE_RANGE_GEN_DIAG
-    DiagPlusPlus();
-#endif
     // Short circuit
     if (single_full_size_range_) {
         // Advance directly to end
