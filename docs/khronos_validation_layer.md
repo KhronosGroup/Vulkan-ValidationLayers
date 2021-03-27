@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2020 LunarG, Inc. -->
+<!-- Copyright 2015-2021 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
