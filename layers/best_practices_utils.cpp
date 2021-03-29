@@ -294,6 +294,14 @@ void BestPractices::PreCallRecordDestroyImage(VkDevice device, VkImage image, co
     ReleaseImageUsageState(image);
 }
 
+void BestPractices::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
+    SWAPCHAIN_NODE* chain = GetSwapchainState(swapchain);
+    for (auto& image : chain->images) {
+        ReleaseImageUsageState(image.image_state->image());
+    }
+    ValidationStateTracker::PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator);
+}
+
 IMAGE_STATE_BP* BestPractices::GetImageUsageState(VkImage vk_image) {
     auto itr = imageUsageMap.find(vk_image);
     if (itr != imageUsageMap.end()) {
