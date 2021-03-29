@@ -1577,14 +1577,10 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
             if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) ||
                 (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD)) {
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE;
-            }
-
-            if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) ||
-                (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)) {
+            } else if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) ||
+                       (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)) {
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED;
-            }
-
-            if (RenderPassUsesAttachmentAsImageOnly(rp_state->createInfo, att)) {
+            } else if (RenderPassUsesAttachmentAsImageOnly(rp_state->createInfo, att)) {
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS;
             }
 
