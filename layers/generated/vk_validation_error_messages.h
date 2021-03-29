@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.173 */
+/* Vulkan specification version: 1.2.174 */
 /*
  * Vulkan
  *
@@ -259,6 +259,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-ShadingRateKHR-ShadingRateKHR-04491", "The variable decorated with ShadingRateKHR must be declared using the Input {StorageClass}", "1.2-extensions"},
     {"VUID-ShadingRateKHR-ShadingRateKHR-04492", "The variable decorated with ShadingRateKHR must be declared as a scalar 32-bit integer value", "1.2-extensions"},
     {"VUID-StandaloneSpirv-Base-04707", "The Base operand of OpPtrAccessChain must point to one of the following: Workgroup, if VariablePointers is enabled; StorageBuffer, if VariablePointers or VariablePointersStorageBuffer is enabled; PhysicalStorageBuffer, if the PhysicalStorageBuffer64 addressing model is enabled", "1.2-extensions"},
+    {"VUID-StandaloneSpirv-Base-04781", "The Base operand of any OpBitCount, OpBitReverse, OpBitFieldInsert, OpBitFieldSExtract, or OpBitFieldUExtract instruction must be a 32-bit integer scalar or a vector of 32-bit integers", "1.2-extensions"},
     {"VUID-StandaloneSpirv-BuiltIn-04668", "Any BuiltIn decoration not listed in Built-In Variables must not be used", "1.2-extensions"},
     {"VUID-StandaloneSpirv-CallableDataKHR-04704", "CallableDataKHR storage class must only be used in ray generation, closest hit, miss, and callable shaders", "1.2-extensions"},
     {"VUID-StandaloneSpirv-DerivativeGroupLinearNV-04778", "For compute shaders using the DerivativeGroupLinearNV execution mode, the product of the dimensions of the local workgroup size must be a multiple of four", "1.2-extensions"},
@@ -330,7 +331,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-StandaloneSpirv-PhysicalStorageBuffer64-04710", "If the PhysicalStorageBuffer64 addressing model is enabled, OpConvertUToPtr and OpConvertPtrToU must use an integer type whose Width is 64", "1.2-extensions"},
     {"VUID-StandaloneSpirv-PixelCenterInteger-04654", "The PixelCenterInteger execution mode must not be used (pixels are always centered at half-integer coordinates)", "1.2-extensions"},
     {"VUID-StandaloneSpirv-RayPayloadKHR-04698", "RayPayloadKHR storage class must only be used in ray generation, any-hit, closest hit or miss shaders", "1.2-extensions"},
-    {"VUID-StandaloneSpirv-Result-04779", "The Result Type operand of any OpImageRead or OpImageSparseRead instruction must be a vector of four components", "1.2-extensions"},
+    {"VUID-StandaloneSpirv-Result-04780", "The Result Type operand of any OpImageRead or OpImageSparseRead instruction must be a vector of four components", "1.2-extensions"},
     {"VUID-StandaloneSpirv-Stream-04694", "If any variables or block members in the output interface of the entry point being compiled are decorated with Stream, then all variables belonging to the same XfbBuffer must specify the same Stream value", "1.2-extensions"},
     {"VUID-StandaloneSpirv-SubpassData-04660", "The (u,v) coordinates used for a SubpassData must be the <id> of a constant vector (0,0), or if a layer coordinate is used, must be a vector that was formed with constant 0 for the u and v components", "1.2-extensions"},
     {"VUID-StandaloneSpirv-UniformConstant-04655", "Any variable in the UniformConstant storage class must be typed as either OpTypeImage, OpTypeSampler, OpTypeSampledImage, OpTypeAccelerationStructureKHR, or an array of one of these types", "1.2-extensions"},
