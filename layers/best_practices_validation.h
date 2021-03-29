@@ -451,6 +451,8 @@ class BestPractices : public ValidationStateTracker {
 
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) override;
 
+    void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) override;
+
 // Include code-generated functions
 #include "best_practices.h"
 

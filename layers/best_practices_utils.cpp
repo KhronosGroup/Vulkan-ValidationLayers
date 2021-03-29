@@ -3010,3 +3010,9 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
         }
     }
 }
+
+void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
+    ValidationStateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
+    // This should not be required, but guards against buggy applications which do not call EndRenderPass correctly.
+    queue_submit_functions_after_render_pass.clear();
+}
