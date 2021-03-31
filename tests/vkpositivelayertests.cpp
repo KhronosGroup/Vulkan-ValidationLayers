@@ -12039,3 +12039,26 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
         vk::DestroyImage(device(), image, nullptr);
     }
 }
+
+TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
+    TEST_DESCRIPTION("Pass duplicate structs to whose vk.xml definition contains allowduplicate=true");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    VkInstance instance;
+
+    VkInstanceCreateInfo ici = {};
+    ici.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    ici.enabledLayerCount = instance_layers_.size();
+    ici.ppEnabledLayerNames = instance_layers_.data();
+
+    auto dbgUtils0 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
+    auto dbgUtils1 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>(&dbgUtils0);
+    ici.pNext = &dbgUtils1;
+
+    m_errorMonitor->ExpectSuccess();
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance));
+    m_errorMonitor->VerifyNotFound();
+
+    ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance, nullptr));
+}
