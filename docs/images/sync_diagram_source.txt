@@ -1,8 +1,4 @@
-Copyright 2015-2020 LunarG, Inc.
-
-Creative Commons License:
-Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
-https://creativecommons.org/licenses/by-nd/4.0/
+Copyright 2015-2021 LunarG, Inc.
 
 Diagrams sync_wrr.png and sync_wrw.png were created using 
 

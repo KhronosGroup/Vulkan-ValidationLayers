@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2019 LunarG, Inc. -->
+<!-- Copyright 2015-2021 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
@@ -8,10 +8,6 @@
 
 # Core Validation Checks
 
-[![Creative Commons][3]][4]
-
-[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
-[4]: https://creativecommons.org/licenses/by-nd/4.0/
 Implemented as part of the `VK_LAYER_KHRONOS_validation` layer,  this validation object is reponsiblie for validating
 the status of descriptor sets, command buffers, shader modules, pipeline states, renderpass usage, synchronization,
 dynamic states, and many other types of valid usage. It is the main module responsible for validation requiring

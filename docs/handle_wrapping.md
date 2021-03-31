@@ -5,10 +5,6 @@
 [2]: https://www.khronos.org/vulkan/
 
 # Handle Wrapping Functionality
-[![Creative Commons][3]][4]
-
-[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
-[4]: https://creativecommons.org/licenses/by-nd/4.0/
 
 The handle wrapping facility is a feature of the Khronos Layer which aliases all non-dispatchable Vulkan objects with a unique identifier at object-creation time. The aliased handles are used during validation to ensure that duplicate object handles are correctly managed and tracked by the validation layers. This enables consistent and coherent validation in addition to proper operation on systems which return non-unique object handles.
 

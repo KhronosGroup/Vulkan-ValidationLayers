@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2020 LunarG, Inc. -->
+<!-- Copyright 2020-2021 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -7,10 +7,6 @@
 
 # Debug Printf
 
-[![Creative Commons][3]][4]
-
-[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
-[4]: https://creativecommons.org/licenses/by-nd/4.0/
 
 Debug Printf is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 It allows developers to debug their shader code by "printing" any values of interest to the debug callback or stdout.
