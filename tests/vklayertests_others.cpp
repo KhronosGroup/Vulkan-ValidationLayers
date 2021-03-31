@@ -128,6 +128,11 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Test does not run on Vulkan 1.0, skipping test\n", kSkipPrefix);
+        return;
+    }
     if (IsPlatform(kNexusPlayer)) {
         printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
         return;
