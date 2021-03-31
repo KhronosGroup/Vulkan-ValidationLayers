@@ -7,11 +7,6 @@
 
 # Best Practices Validation
 
-[![Creative Commons][3]][4]
-
-[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
-[4]: https://creativecommons.org/licenses/by-nd/4.0/
-
 Best Practices Validation
 
 Best Practices Validation is implemented in the `VK_LAYER_KHRONOS_validation layer`. When enabled, the Best Practices Object is
