@@ -1,16 +1,11 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2020 LunarG, Inc. -->
+<!-- Copyright 2015-2021 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
 [2]: https://www.khronos.org/vulkan/
 
 # GPU-Assisted Validation
-
-[![Creative Commons][3]][4]
-
-[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
-[4]: https://creativecommons.org/licenses/by-nd/4.0/
 
 GPU-Assisted Validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 This document covers the design of the layer portion of the implementation.

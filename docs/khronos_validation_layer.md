@@ -8,10 +8,6 @@
 
 # VK\_LAYER\_KHRONOS\_validation
 
-[![Creative Commons][3]][4]
-
-[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
-[4]: https://creativecommons.org/licenses/by-nd/4.0/
 The `VK_LAYER_KHRONOS_validation` layer supports the following validation coverage areas:
 
 - [Core validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/core_checks.md)

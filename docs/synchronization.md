@@ -7,11 +7,6 @@
 
 # Synchronization Validation Design Documentation (phase1 release)
 
-[![Creative Commons][3]][4]
-
-[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
-[4]: https://creativecommons.org/licenses/by-nd/4.0/
-
 Authors: Tobin Ehlis, John Zulauf
 
 
