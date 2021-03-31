@@ -7525,6 +7525,16 @@ TEST_F(VkLayerTest, CopyInvalidImageMemory) {
         m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
         copy_commands2 = true;
     }
+
+    bool sampler_ycbcr_conversion = false;
+    if ((DeviceValidationVersion() < VK_API_VERSION_1_1) &&
+        DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        sampler_ycbcr_conversion = true;
+    } else if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        sampler_ycbcr_conversion = true;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdCopyImage2KHR vkCmdCopyImage2Function = nullptr;
@@ -7568,12 +7578,22 @@ TEST_F(VkLayerTest, CopyInvalidImageMemory) {
     copy_region.extent.depth = 1;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01546");
+
+    if (sampler_ycbcr_conversion) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01546");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-00127");
+    }
+
     m_errorMonitor->SetUnexpectedError("is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT");
     m_commandBuffer->CopyImage(image_no_mem.handle(), VK_IMAGE_LAYOUT_UNDEFINED, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01547");
+    if (sampler_ycbcr_conversion) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01547");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-00132");
+    }
     m_errorMonitor->SetUnexpectedError("is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT");
     m_commandBuffer->CopyImage(image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, image_no_mem.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -7595,13 +7615,21 @@ TEST_F(VkLayerTest, CopyInvalidImageMemory) {
                                                 VK_IMAGE_LAYOUT_GENERAL,
                                                 1,
                                                 &copy_region2};
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-srcImage-01546");
+        if (sampler_ycbcr_conversion) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-srcImage-01546");
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-srcImage-00127");
+        }
         m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
         vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
         copy_image_info2.srcImage = image.handle();
         copy_image_info2.dstImage = image_no_mem.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-dstImage-01547");
+        if (sampler_ycbcr_conversion) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-dstImage-01547");
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2KHR-dstImage-00132");
+        }
         m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
         vkCmdCopyImage2Function(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
