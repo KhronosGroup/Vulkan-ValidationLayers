@@ -6279,6 +6279,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_state->bind_swapchain = swapchain;
             image_state->bind_swapchain_imageIndex = i;
             image_state->is_swapchain_image = true;
+            image_state->unprotected = ((image_ci.flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0);
 
             // Since swapchains can't be linear, we can create an encoder here, and SyncValNeeds a fake_base_address
             image_state->fragment_encoder = std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(
