@@ -96,7 +96,7 @@ class ImageSubresourceLayoutMap {
     using ParallelIterator = sparse_container::parallel_iterator<MapA, MapB>;
     using LayoutMap = RangeMap;
     using InitialLayoutMap = RangeMap;
-    using InitialLayoutStates = std::vector<InitialLayoutState>;
+    using InitialLayoutStates = small_vector<InitialLayoutState, 2, uint32_t>;
 
     class ConstIterator {
       public:
