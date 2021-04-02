@@ -301,6 +301,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
 
+    if (device_extensions.vk_khr_depth_stencil_resolve) {
+        // Note was promoted to 1.2
+        auto ds_resolve_props = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&ds_resolve_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.ds_resolve_props = ds_resolve_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object

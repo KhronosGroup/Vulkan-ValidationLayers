@@ -55,6 +55,7 @@ extern const VkImageUsageFlags AllVkImageUsageFlagBits;
 extern const VkSampleCountFlags AllVkSampleCountFlagBits;
 extern const VkBuildAccelerationStructureFlagsNV AllVkBuildAccelerationStructureFlagBitsNV;
 extern const VkGeometryFlagsKHR AllVkGeometryFlagBitsKHR;
+extern const VkResolveModeFlags AllVkResolveModeFlagBits;
 
 extern const std::vector<VkGeometryTypeKHR> AllVkGeometryTypeKHREnums;
 extern const std::vector<VkCompareOp> AllVkCompareOpEnums;
@@ -107,6 +108,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_propsKHR;
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
+        VkPhysicalDeviceDepthStencilResolveProperties ds_resolve_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -1214,6 +1216,188 @@ class StatelessValidation : public ValidationObject {
                     LogError(device, vuid,
                              "%s: Cannot create a render pass with %d color attachments in pCreateInfo->pSubpasses[%u]. Max is %d.",
                              func_name, pCreateInfo->pSubpasses[i].colorAttachmentCount, i, max_color_attachments);
+            }
+
+            // Check only possible with vkCreateRenderPass2
+            const VkSubpassDescriptionDepthStencilResolve *resolve =
+                (use_rp2) ? LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(
+                                reinterpret_cast<VkSubpassDescription2 const *>(&pCreateInfo->pSubpasses[i])->pNext)
+                          : nullptr;
+            if (resolve != nullptr) {
+                const VkSubpassDescription2 &subpass =
+                    *reinterpret_cast<VkSubpassDescription2 const *>(&pCreateInfo->pSubpasses[i]);
+
+                const uint32_t depthStencilAttachment = subpass.pDepthStencilAttachment->attachment;
+                const uint32_t resolveAttachment = resolve->pDepthStencilResolveAttachment->attachment;
+
+                const bool resolve_attachment_not_unused =
+                    (resolve->pDepthStencilResolveAttachment != nullptr && resolveAttachment != VK_ATTACHMENT_UNUSED);
+                const bool valid_resolve_attachment_index =
+                    (resolve_attachment_not_unused && (resolveAttachment < pCreateInfo->attachmentCount));
+
+                const bool ds_attachment_not_unused =
+                    (subpass.pDepthStencilAttachment != nullptr && depthStencilAttachment != VK_ATTACHMENT_UNUSED);
+                const bool valid_ds_attachment_index =
+                    (ds_attachment_not_unused && (depthStencilAttachment < pCreateInfo->attachmentCount));
+
+                const VkFormat depth_stencil_attachment_format =
+                    (valid_ds_attachment_index ? pCreateInfo->pAttachments[depthStencilAttachment].format : VK_FORMAT_UNDEFINED);
+                const VkFormat depth_stencil_resolve_attachment_format =
+                    (valid_resolve_attachment_index ? pCreateInfo->pAttachments[resolveAttachment].format : VK_FORMAT_UNDEFINED);
+
+                // "depthResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a depth
+                // component"
+                bool resolveHasDepth = FormatHasDepth(depth_stencil_resolve_attachment_format);
+                // "stencilResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a stencil
+                // component"
+                bool resolveHasStencil = FormatHasStencil(depth_stencil_resolve_attachment_format);
+
+                if (resolveHasDepth) {
+                    // valid flag checked since not an implict VU
+                    if ((resolve->depthResolveMode & (~AllVkResolveModeFlagBits)) != 0) {
+                        skip |=
+                            LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-04588",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve structure with "
+                                     "VkSubpassDescriptionDepthStencilResolve but depthResolveMode must be a valid combination of "
+                                     "VkResolveModeFlagBits.",
+                                     func_name, i);
+                    }
+
+                    if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
+                          resolve->depthResolveMode & phys_dev_ext_props.ds_resolve_props.supportedDepthResolveModes)) {
+                        skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183",
+                                         "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                                         "structure with invalid depthResolveMode=%u.",
+                                         func_name, i, resolve->depthResolveMode);
+                    }
+                }
+
+                if (resolveHasStencil) {
+                    // valid flag checked since not an implict VU
+                    if ((resolve->stencilResolveMode & (~AllVkResolveModeFlagBits)) != 0) {
+                        skip |=
+                            LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-04589",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve structure with "
+                                     "VkSubpassDescriptionDepthStencilResolve but stencilResolveMode must be a valid combination "
+                                     "of VkResolveModeFlagBits.",
+                                     func_name, i);
+                    }
+
+                    if (!(resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE ||
+                          resolve->stencilResolveMode & phys_dev_ext_props.ds_resolve_props.supportedStencilResolveModes)) {
+                        skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184",
+                                         "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                                         "structure with invalid stencilResolveMode=%u.",
+                                         func_name, i, resolve->stencilResolveMode);
+                    }
+                }
+
+                if (resolveHasDepth && resolveHasStencil) {
+                    if (valid_resolve_attachment_index && phys_dev_ext_props.ds_resolve_props.independentResolve == VK_FALSE &&
+                        phys_dev_ext_props.ds_resolve_props.independentResolveNone == VK_FALSE &&
+                        !(resolve->depthResolveMode == resolve->stencilResolveMode)) {
+                        skip |= LogError(
+                            device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185",
+                            "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                            "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical.",
+                            func_name, i, resolve->depthResolveMode, resolve->stencilResolveMode);
+                    }
+
+                    if (valid_resolve_attachment_index && phys_dev_ext_props.ds_resolve_props.independentResolve == VK_FALSE &&
+                        phys_dev_ext_props.ds_resolve_props.independentResolveNone == VK_TRUE &&
+                        !(resolve->depthResolveMode == resolve->stencilResolveMode ||
+                          resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
+                          resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE)) {
+                        skip |= LogError(
+                            device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186",
+                            "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                            "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical, or "
+                            "one of them must be %u.",
+                            func_name, i, resolve->depthResolveMode, resolve->stencilResolveMode, VK_RESOLVE_MODE_NONE);
+                    }
+                }
+
+                if (resolve_attachment_not_unused) {
+                    if (subpass.pDepthStencilAttachment != nullptr && depthStencilAttachment == VK_ATTACHMENT_UNUSED) {
+                        skip |=
+                            LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                                     "structure with resolve attachment %u, but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
+                                     func_name, i, resolveAttachment);
+                    }
+
+                    if (valid_ds_attachment_index &&
+                        pCreateInfo->pAttachments[depthStencilAttachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                        skip |=
+                            LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                                     "structure with resolve attachment %u. However pDepthStencilAttachment has sample "
+                                     "count=VK_SAMPLE_COUNT_1_BIT.",
+                                     func_name, i, resolveAttachment);
+                    }
+
+                    // Same VU, but better error message if one of the resolves are ignored
+                    if (resolveHasDepth && !resolveHasStencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE) {
+                        skip |=
+                            LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve structure with resolve "
+                                     "attachment %u, but the depth resolve mode is VK_RESOLVE_MODE_NONE (stencil resolve mode is "
+                                     "ignore due to format not having depth component).",
+                                     func_name, i, resolveAttachment);
+                    } else if (!resolveHasDepth && resolveHasStencil && resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
+                        skip |=
+                            LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve structure with resolve "
+                                     "attachment %u, but the stencil resolve mode is VK_RESOLVE_MODE_NONE (depth resolve mode is "
+                                     "ignore due to format not having depth component).",
+                                     func_name, i, resolveAttachment);
+                    } else if (resolveHasDepth && resolveHasStencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
+                               resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
+                        skip |=
+                            LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve structure with resolve "
+                                     "attachment %u, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE .",
+                                     func_name, i, resolveAttachment);
+                    }
+                }
+
+                if (valid_resolve_attachment_index &&
+                    pCreateInfo->pAttachments[resolveAttachment].samples != VK_SAMPLE_COUNT_1_BIT) {
+                    skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180",
+                                     "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                                     "structure with resolve attachment %u which has sample count=VK_SAMPLE_COUNT_1_BIT.",
+                                     func_name, i, resolveAttachment);
+                }
+
+                if (valid_ds_attachment_index && valid_resolve_attachment_index) {
+                    const auto resolve_depth_size = FormatDepthSize(depth_stencil_resolve_attachment_format);
+                    const auto resolve_stencil_size = FormatStencilSize(depth_stencil_resolve_attachment_format);
+
+                    if (resolve_depth_size > 0 && ((FormatDepthSize(depth_stencil_attachment_format) != resolve_depth_size) ||
+                                                   (FormatDepthNumericalType(depth_stencil_attachment_format) !=
+                                                    FormatDepthNumericalType(depth_stencil_resolve_attachment_format)))) {
+                        skip |= LogError(
+                            device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181",
+                            "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                            "structure with resolve attachment %u which has a depth component (size %u). The depth component "
+                            "of pDepthStencilAttachment must have the same number of bits (currently %u) and the same numerical "
+                            "type.",
+                            func_name, i, resolveAttachment, resolve_depth_size, FormatDepthSize(depth_stencil_attachment_format));
+                    }
+
+                    if (resolve_stencil_size > 0 && ((FormatStencilSize(depth_stencil_attachment_format) != resolve_stencil_size) ||
+                                                     (FormatStencilNumericalType(depth_stencil_attachment_format) !=
+                                                      FormatStencilNumericalType(depth_stencil_resolve_attachment_format)))) {
+                        skip |= LogError(
+                            device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182",
+                            "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                            "structure with resolve attachment %u which has a stencil component (size %u). The stencil component "
+                            "of pDepthStencilAttachment must have the same number of bits (currently %u) and the same numerical "
+                            "type.",
+                            func_name, i, resolveAttachment, resolve_stencil_size,
+                            FormatStencilSize(depth_stencil_attachment_format));
+                    }
+                }
             }
         }
 
