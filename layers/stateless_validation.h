@@ -574,7 +574,8 @@ class StatelessValidation : public ValidationObject {
                         ((strncmp(api_name, "vkCreateDevice", strlen(api_name)) != 0) ||
                          (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
                         std::string type_name = string_VkStructureType(current->sType);
-                        if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
+                        if (unique_stype_check.find(current->sType) != unique_stype_check.end() &&
+                            !IsDuplicatePnext(current->sType)) {
                             // stype_vuid will only be null if there are no listed pNext and will hit disclaimer check
                             std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
                             skip_call |= LogError(device, stype_vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
