@@ -1,24 +1,20 @@
 ## Vulkan Validation Layers Repository Management
 
-# **Open Source Project – Objectives**
+# **Open Source Project â€“ Objectives**
 
 * Alignment with the Vulkan Specification
   - The goal is for validation layer behavior to enforce the vulkan specification on applications. Questions on specification
 interpretations may require consulting with the Khronos Vulkan Workgroup for resolution
     - [Core Specification](https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html)
     - [Header Files](https://www.khronos.org/registry/vulkan/#headers)
-    - [SDK Resources](https://vulkan.lunarg.com)
 * ISV Enablement
   - Updates of validation layer functionality should be available in a timely fashion
   - Every effort will be made to be responsive to ISV issues with validation layers
 * Cross Platform Compatibility
-  - Google and LunarG collaboration:
-    - Google: Monitor for Android
-    - LunarG: Monitor for desktop (Windows and Linux)
-    - Continuous Integration: HW test farms operated by Google and LunarG monitor various hardware/software platforms
+  - Continuous Integration: HW test farms operated by LunarG monitor various hardware/software platforms for Android and desktop
 * Repo Quality
   - Repo remains in healthy state with all tests passing and good-quality, consistent codebase
-  - Continuous Integration: Along with Github, HW test farms operated by Google and LunarG perform pre-commit cloud testing
+  - Continuous Integration: Along with Github, HW test farms operated by LunarG perform pre-commit cloud testing
 on pull-requests
 
 # **Roles and Definitions**
@@ -35,9 +31,7 @@ on pull-requests
   - Act as a facilitator in resolving technical conflicts
   - Is a point-of-contact for project-related questions
 
-The technical project leads for this repository are:
-* **Mark Lobodzinski** [mark@lunarg.com](mailto:mark@lunarg.com)
-* **Tobin Ehlis** [tobine@google.com](mailto:tobine@google.com)
+The technical project leads for this repository are multiple engineers at LunarG.
 
 # **Acceptance Criteria and Process**
   - All source code to include Khronos copyright and license (Apache 2.0).
@@ -50,4 +44,4 @@ The technical project leads for this repository are:
     - The goal is to be responsive to contributors while ensuring acceptance criteria is met and to facilitate their submissions
     - Approval is dependent upon adherence to the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md), and alignment with
 repository goals of maintainability, completeness, and quality
-    - Conflicts or questions will ultimately be resolved by the project leads
+    - Conflicts or questions will ultimately be resolved by the project leads. You can submit questions or conflicts as a github issue or send email to info@lunarg.com
