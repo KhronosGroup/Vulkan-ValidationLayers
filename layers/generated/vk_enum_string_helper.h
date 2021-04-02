@@ -7361,3 +7361,16 @@ static inline const char * GetPhysDevFeatureString(uint32_t index) {
 
     return IndexToPhysDevFeatureString[index];
 }
+
+static inline bool IsDuplicatePnext(VkStructureType input_value)
+{
+    switch (input_value)
+    {
+        case VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT:
+        case VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT:
+        case VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT:
+            return true;
+        default:
+            return false;
+    }
+}
