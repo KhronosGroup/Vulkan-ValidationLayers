@@ -922,11 +922,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 ((subpass_num_samples & static_cast<unsigned>(pso_num_samples)) != subpass_num_samples)) {
                 LogObjectList objlist(pPipeline->pipeline);
                 objlist.add(pCB->activeRenderPass->renderPass);
-                skip |= LogError(objlist, kVUID_Core_DrawState_NumSamplesMismatch,
-                                 "%s: Num samples mismatch! At draw-time in %s with %u samples while current %s w/ "
-                                 "%u samples!",
-                                 caller, report_data->FormatHandle(pPipeline->pipeline).c_str(), pso_num_samples,
-                                 report_data->FormatHandle(pCB->activeRenderPass->renderPass).c_str(), subpass_num_samples);
+                skip |=
+                    LogError(objlist, vuid.rasterization_samples,
+                             "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.", caller,
+                             report_data->FormatHandle(pPipeline->pipeline).c_str(), string_VkSampleCountFlagBits(pso_num_samples),
+                             report_data->FormatHandle(pCB->activeRenderPass->renderPass).c_str(),
+                             string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
             }
         } else {
             skip |= LogError(pPipeline->pipeline, kVUID_Core_DrawState_NoActiveRenderpass,

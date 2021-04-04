@@ -66,6 +66,7 @@ struct DrawDispatchVuid {
     const char* sampler_bias_offset = kVUIDUndefined;
     const char* vertex_binding_attribute = kVUIDUndefined;
     const char* dynamic_state_setting_commands = kVUIDUndefined;
+    const char* rasterization_samples = kVUIDUndefined;
     const char* unprotected_command_buffer = kVUIDUndefined;
     const char* protected_command_buffer = kVUIDUndefined;
     // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.

@@ -72,6 +72,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDraw-None-02704";
         vertex_binding_attribute           = "VUID-vkCmdDraw-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDraw-None-02859";
+        rasterization_samples              = "VUID-vkCmdDraw-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDraw-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDraw-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688";
@@ -111,6 +112,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawIndexed-None-02704";
         vertex_binding_attribute           = "VUID-vkCmdDrawIndexed-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexed-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawIndexed-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexed-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDrawIndexed-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexed-maxMultiviewInstanceIndex-02688";
@@ -153,6 +155,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawIndirect-None-02704";
         vertex_binding_attribute           = "VUID-vkCmdDrawIndirect-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirect-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawIndirect-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirect-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirect-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndirect-None-02693";
@@ -194,6 +197,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawIndexedIndirect-None-02704";
         vertex_binding_attribute           = "VUID-vkCmdDrawIndexedIndirect-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexedIndirect-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawIndexedIndirect-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirect-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndexedIndirect-None-02693";
@@ -287,6 +291,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawIndirectCount-None-02704";
         vertex_binding_attribute           = "VUID-vkCmdDrawIndirectCount-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirectCount-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawIndirectCount-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirectCount-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectCount-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndirectCount-None-02693";
@@ -328,6 +333,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawIndexedIndirectCount-None-02704";
         vertex_binding_attribute           = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexedIndirectCount-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawIndexedIndirectCount-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirectCount-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndexedIndirectCount-None-02693";
@@ -440,6 +446,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         sampler_implicitLod_dref_proj      = "VUID-vkCmdDrawMeshTasksNV-None-02703";
         sampler_bias_offset                = "VUID-vkCmdDrawMeshTasksNV-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksNV-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawMeshTasksNV-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksNV-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksNV-None-02693";
@@ -478,6 +485,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         sampler_implicitLod_dref_proj      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02703";
         sampler_bias_offset                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectNV-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02693";
@@ -516,6 +524,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         sampler_implicitLod_dref_proj      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02703";
         sampler_bias_offset                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02693";
@@ -557,6 +566,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawIndirectByteCountEXT-None-02704";
         vertex_binding_attribute           = "VUID-vkCmdDrawIndirectByteCountEXT-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirectByteCountEXT-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizationSamples-04740";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectByteCountEXT-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-02693";
