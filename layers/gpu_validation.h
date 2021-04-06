@@ -32,20 +32,29 @@ struct GpuAssistedDeviceMemoryBlock {
     layer_data::unordered_map<uint32_t, const cvdescriptorset::Descriptor*> update_at_submit;
 };
 
+struct GpuAssistedPreDrawResources {
+    GpuAssistedDeviceMemoryBlock new_count_buffer;
+    VkDescriptorPool desc_pool;
+    VkDescriptorSet desc_set;
+};
+
 struct GpuAssistedBufferInfo {
     GpuAssistedDeviceMemoryBlock output_mem_block;
     GpuAssistedDeviceMemoryBlock di_input_mem_block;   // Descriptor Indexing input
     GpuAssistedDeviceMemoryBlock bda_input_mem_block;  // Buffer Device Address input
+    GpuAssistedPreDrawResources pre_draw_resources;
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
     CMD_TYPE cmd_type;
     GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block, GpuAssistedDeviceMemoryBlock di_input_mem_block,
-                          GpuAssistedDeviceMemoryBlock bda_input_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
-                          VkPipelineBindPoint pipeline_bind_point, CMD_TYPE cmd_type)
+                          GpuAssistedDeviceMemoryBlock bda_input_mem_block, GpuAssistedPreDrawResources pre_draw_resources,
+                          VkDescriptorSet desc_set, VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point,
+                          CMD_TYPE cmd_type)
         : output_mem_block(output_mem_block),
           di_input_mem_block(di_input_mem_block),
           bda_input_mem_block(bda_input_mem_block),
+          pre_draw_resources(pre_draw_resources),
           desc_set(desc_set),
           desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point),
@@ -91,6 +100,88 @@ struct GpuAssistedAccelerationStructureBuildValidationState {
         validation_buffers;
 };
 
+struct GpuAssistedPreDrawValidationState {
+    bool globals_created = false;
+    VkShaderModule validation_shader_module = VK_NULL_HANDLE;
+    VkDescriptorSetLayout validation_ds_layout = VK_NULL_HANDLE;
+    VkPipelineLayout validation_pipeline_layout = VK_NULL_HANDLE;
+    layer_data::unordered_map <VkRenderPass, VkPipeline> renderpass_to_pipeline;
+};
+
+//#version 450
+//layout(set = 0, binding = 0) buffer OutputBuffer { uint data[]; } Output;  // data[4]
+//layout(set = 0, binding = 1) buffer CountBuffer { uint data[]; } Count;
+//layout(set = 0, binding = 2) buffer NewCountBuffer { uint data[]; } NewCount;
+//layout(push_constant) uniform ufoo {
+//    uint maxWrites;
+//    uint countOffset;
+//} u_info;
+//void main() {
+//    if (gl_VertexIndex == 0) {
+//        uint countIn = Count.data[u_info.countOffset];
+//        if (countIn > u_info.maxWrites) {
+//            if (countIn == 1) {
+//                Output.data[0] = 3153;
+//            }
+//            else {
+//                Output.data[0] = 3154;
+//            }
+//            NewCount.data[0] = 0;
+//        }
+//        else {
+//            NewCount.data[0] = countIn;
+//        }
+//    }
+//}
+
+static const uint32_t kPreDrawValidaitonShaderSpirv[] = {
+    0x07230203, 0x00010000, 0x0008000a, 0x0000003d, 0x00000000, 0x00020011, 0x00000001, 0x0006000b, 0x00000001, 0x4c534c47,
+    0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001, 0x0006000f, 0x00000000, 0x00000004, 0x6e69616d,
+    0x00000000, 0x00000008, 0x00030003, 0x00000002, 0x000001c2, 0x00040005, 0x00000004, 0x6e69616d, 0x00000000, 0x00060005,
+    0x00000008, 0x565f6c67, 0x65747265, 0x646e4978, 0x00007865, 0x00040005, 0x00000011, 0x6e756f63, 0x006e4974, 0x00050005,
+    0x00000013, 0x6e756f43, 0x66754274, 0x00726566, 0x00050006, 0x00000013, 0x00000000, 0x61746164, 0x00000000, 0x00040005,
+    0x00000015, 0x6e756f43, 0x00000074, 0x00040005, 0x00000016, 0x6f6f6675, 0x00000000, 0x00060006, 0x00000016, 0x00000000,
+    0x5778616d, 0x65746972, 0x00000073, 0x00060006, 0x00000016, 0x00000001, 0x6e756f63, 0x66664f74, 0x00746573, 0x00040005,
+    0x00000018, 0x6e695f75, 0x00006f66, 0x00060005, 0x0000002c, 0x7074754f, 0x75427475, 0x72656666, 0x00000000, 0x00050006,
+    0x0000002c, 0x00000000, 0x61746164, 0x00000000, 0x00040005, 0x0000002e, 0x7074754f, 0x00007475, 0x00060005, 0x00000035,
+    0x4377654e, 0x746e756f, 0x66667542, 0x00007265, 0x00050006, 0x00000035, 0x00000000, 0x61746164, 0x00000000, 0x00050005,
+    0x00000037, 0x4377654e, 0x746e756f, 0x00000000, 0x00040047, 0x00000008, 0x0000000b, 0x0000002a, 0x00040047, 0x00000012,
+    0x00000006, 0x00000004, 0x00050048, 0x00000013, 0x00000000, 0x00000023, 0x00000000, 0x00030047, 0x00000013, 0x00000003,
+    0x00040047, 0x00000015, 0x00000022, 0x00000000, 0x00040047, 0x00000015, 0x00000021, 0x00000001, 0x00050048, 0x00000016,
+    0x00000000, 0x00000023, 0x00000000, 0x00050048, 0x00000016, 0x00000001, 0x00000023, 0x00000004, 0x00030047, 0x00000016,
+    0x00000002, 0x00040047, 0x0000002b, 0x00000006, 0x00000004, 0x00050048, 0x0000002c, 0x00000000, 0x00000023, 0x00000000,
+    0x00030047, 0x0000002c, 0x00000003, 0x00040047, 0x0000002e, 0x00000022, 0x00000000, 0x00040047, 0x0000002e, 0x00000021,
+    0x00000000, 0x00040047, 0x00000034, 0x00000006, 0x00000004, 0x00050048, 0x00000035, 0x00000000, 0x00000023, 0x00000000,
+    0x00030047, 0x00000035, 0x00000003, 0x00040047, 0x00000037, 0x00000022, 0x00000000, 0x00040047, 0x00000037, 0x00000021,
+    0x00000002, 0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00040015, 0x00000006, 0x00000020, 0x00000001,
+    0x00040020, 0x00000007, 0x00000001, 0x00000006, 0x0004003b, 0x00000007, 0x00000008, 0x00000001, 0x0004002b, 0x00000006,
+    0x0000000a, 0x00000000, 0x00020014, 0x0000000b, 0x00040015, 0x0000000f, 0x00000020, 0x00000000, 0x00040020, 0x00000010,
+    0x00000007, 0x0000000f, 0x0003001d, 0x00000012, 0x0000000f, 0x0003001e, 0x00000013, 0x00000012, 0x00040020, 0x00000014,
+    0x00000002, 0x00000013, 0x0004003b, 0x00000014, 0x00000015, 0x00000002, 0x0004001e, 0x00000016, 0x0000000f, 0x0000000f,
+    0x00040020, 0x00000017, 0x00000009, 0x00000016, 0x0004003b, 0x00000017, 0x00000018, 0x00000009, 0x0004002b, 0x00000006,
+    0x00000019, 0x00000001, 0x00040020, 0x0000001a, 0x00000009, 0x0000000f, 0x00040020, 0x0000001d, 0x00000002, 0x0000000f,
+    0x0004002b, 0x0000000f, 0x00000027, 0x00000001, 0x0003001d, 0x0000002b, 0x0000000f, 0x0003001e, 0x0000002c, 0x0000002b,
+    0x00040020, 0x0000002d, 0x00000002, 0x0000002c, 0x0004003b, 0x0000002d, 0x0000002e, 0x00000002, 0x0004002b, 0x0000000f,
+    0x0000002f, 0x00000c51, 0x0004002b, 0x0000000f, 0x00000032, 0x00000c52, 0x0003001d, 0x00000034, 0x0000000f, 0x0003001e,
+    0x00000035, 0x00000034, 0x00040020, 0x00000036, 0x00000002, 0x00000035, 0x0004003b, 0x00000036, 0x00000037, 0x00000002,
+    0x0004002b, 0x0000000f, 0x00000038, 0x00000000, 0x00050036, 0x00000002, 0x00000004, 0x00000000, 0x00000003, 0x000200f8,
+    0x00000005, 0x0004003b, 0x00000010, 0x00000011, 0x00000007, 0x0004003d, 0x00000006, 0x00000009, 0x00000008, 0x000500aa,
+    0x0000000b, 0x0000000c, 0x00000009, 0x0000000a, 0x000300f7, 0x0000000e, 0x00000000, 0x000400fa, 0x0000000c, 0x0000000d,
+    0x0000000e, 0x000200f8, 0x0000000d, 0x00050041, 0x0000001a, 0x0000001b, 0x00000018, 0x00000019, 0x0004003d, 0x0000000f,
+    0x0000001c, 0x0000001b, 0x00060041, 0x0000001d, 0x0000001e, 0x00000015, 0x0000000a, 0x0000001c, 0x0004003d, 0x0000000f,
+    0x0000001f, 0x0000001e, 0x0003003e, 0x00000011, 0x0000001f, 0x0004003d, 0x0000000f, 0x00000020, 0x00000011, 0x00050041,
+    0x0000001a, 0x00000021, 0x00000018, 0x0000000a, 0x0004003d, 0x0000000f, 0x00000022, 0x00000021, 0x000500ac, 0x0000000b,
+    0x00000023, 0x00000020, 0x00000022, 0x000300f7, 0x00000025, 0x00000000, 0x000400fa, 0x00000023, 0x00000024, 0x0000003a,
+    0x000200f8, 0x00000024, 0x0004003d, 0x0000000f, 0x00000026, 0x00000011, 0x000500aa, 0x0000000b, 0x00000028, 0x00000026,
+    0x00000027, 0x000300f7, 0x0000002a, 0x00000000, 0x000400fa, 0x00000028, 0x00000029, 0x00000031, 0x000200f8, 0x00000029,
+    0x00060041, 0x0000001d, 0x00000030, 0x0000002e, 0x0000000a, 0x0000000a, 0x0003003e, 0x00000030, 0x0000002f, 0x000200f9,
+    0x0000002a, 0x000200f8, 0x00000031, 0x00060041, 0x0000001d, 0x00000033, 0x0000002e, 0x0000000a, 0x0000000a, 0x0003003e,
+    0x00000033, 0x00000032, 0x000200f9, 0x0000002a, 0x000200f8, 0x0000002a, 0x00060041, 0x0000001d, 0x00000039, 0x00000037,
+    0x0000000a, 0x0000000a, 0x0003003e, 0x00000039, 0x00000038, 0x000200f9, 0x00000025, 0x000200f8, 0x0000003a, 0x0004003d,
+    0x0000000f, 0x0000003b, 0x00000011, 0x00060041, 0x0000001d, 0x0000003c, 0x00000037, 0x0000000a, 0x0000000a, 0x0003003e,
+    0x0000003c, 0x0000003b, 0x000200f9, 0x00000025, 0x000200f8, 0x00000025, 0x000200f9, 0x0000000e, 0x000200f8, 0x0000000e,
+    0x000100fd, 0x00010038 };
+
 class GpuAssisted : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features;
     VkBool32 shaderInt64;
@@ -98,8 +189,10 @@ class GpuAssisted : public ValidationStateTracker {
     layer_data::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     bool buffer_oob_enabled;
+    bool validate_draw_indirect_count;
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
+    GpuAssistedPreDrawValidationState pre_draw_validation_state;
 
     void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer);
@@ -208,6 +301,7 @@ class GpuAssisted : public ValidationStateTracker {
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     VkResult result, void* crtpl_state_data) override;
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) override;
+    void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) override;
     bool InstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
                           uint32_t* unique_shader_id);
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -300,7 +394,9 @@ class GpuAssisted : public ValidationStateTracker {
                                                const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                VkDeviceAddress indirectDeviceAddress) override;
-    void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, CMD_TYPE cmd);
+    void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, CMD_TYPE cmd, void *cdic_state = nullptr);
+    void AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block, GpuAssistedPreDrawResources& resources,
+                                            const LAST_BOUND_STATE& state, VkPipeline *pPipeline, cmd_draw_indirect_count_api_state *cdic_state);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                    VkPhysicalDeviceProperties* pPhysicalDeviceProperties) override;
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
