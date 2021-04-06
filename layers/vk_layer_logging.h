@@ -406,10 +406,6 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     if (text_vuid != nullptr) {
         // Hash for vuid text
         location = XXH32(text_vuid, strlen(text_vuid), 8);
-        if ((debug_data->duplicate_message_limit > 0) && UpdateLogMsgCounts(debug_data, location)) {
-            // Count for this particular message is over the limit, ignore it
-            return false;
-        }
     }
 
     VkDebugUtilsMessengerCallbackDataEXT callback_data;
@@ -662,15 +658,29 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 }
 #endif
 
+// helper for VUID based filtering. This needs to be separate so it can be called before incurring
+// the cost of sprintf()-ing the err_msg needed by LogMsgLocked().
+static inline bool LogMsgEnabled(const debug_report_data *debug_data, const std::string &vuid_text,
+                                 VkDebugUtilsMessageSeverityFlagsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type) {
+    if (!(debug_data->active_severities & severity) || !(debug_data->active_types & type)) {
+        return false;
+    }
+    // If message is in filter list, bail out very early
+    uint32_t message_id = XXH32(vuid_text.c_str(), strlen(vuid_text.c_str()), 8);
+    if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(), message_id)
+        != debug_data->filter_message_ids.end()) {
+        return false;
+    }
+    if ((debug_data->duplicate_message_limit > 0) && UpdateLogMsgCounts(debug_data, static_cast<int32_t>(message_id))) {
+        // Count for this particular message is over the limit, ignore it
+        return false;
+    }
+    return true;
+}
+
 static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
                                 const std::string &vuid_text, char *err_msg) {
     std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
-
-    // If message is in filter list, bail out very early
-    size_t message_id = XXH32(vuid_text.c_str(), strlen(vuid_text.c_str()), 8);
-    if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(),
-                  static_cast<uint32_t>(message_id)) != debug_data->filter_message_ids.end())
-        return false;
 
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
     if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos) &&
