@@ -685,6 +685,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
     if (pCreateInfo != nullptr) {
         const VkFormat image_format = pCreateInfo->format;
+        const VkImageCreateFlags image_flags = pCreateInfo->flags;
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
         if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
             // If sharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
@@ -734,7 +735,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
 
         if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D) {
-            if (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+            if (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
                 if (pCreateInfo->extent.width != pCreateInfo->extent.height) {
                     skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-00954",
                                      "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, but "
@@ -783,7 +784,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         // mipLevels must be less than or equal to the number of levels in the complete mipmap chain
         uint32_t max_dim = std::max(std::max(pCreateInfo->extent.width, pCreateInfo->extent.height), pCreateInfo->extent.depth);
         // Max mip levels is different for corner-sampled images vs normal images.
-        uint32_t max_mip_levels = (pCreateInfo->flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV)
+        uint32_t max_mip_levels = (image_flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV)
                                       ? static_cast<uint32_t>(ceil(log2(max_dim)))
                                       : static_cast<uint32_t>(floor(log2(max_dim)) + 1);
         if (max_dim > 0 && pCreateInfo->mipLevels > max_mip_levels) {
@@ -793,19 +794,19 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          "floor(log2(max(pCreateInfo->extent.width, pCreateInfo->extent.height, pCreateInfo->extent.depth)))+1.");
         }
 
-        if ((pCreateInfo->flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) && (pCreateInfo->imageType != VK_IMAGE_TYPE_3D)) {
+        if ((image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) && (pCreateInfo->imageType != VK_IMAGE_TYPE_3D)) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-flags-00950",
                              "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT but "
                              "pCreateInfo->imageType is not VK_IMAGE_TYPE_3D.");
         }
 
-        if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) && (!physical_device_features.sparseBinding)) {
+        if ((image_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) && (!physical_device_features.sparseBinding)) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-flags-00969",
                              "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_SPARSE_BINDING_BIT, but the "
                              "VkPhysicalDeviceFeatures::sparseBinding feature is disabled.");
         }
 
-        if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
+        if ((image_flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
             skip |= LogError(
                 device, "VUID-VkImageCreateInfo-flags-01924",
                 "vkCreateImage(): the sparseResidencyAliased device feature is disabled: Images cannot be created with the "
@@ -814,15 +815,15 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
         // If flags contains VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT, it must also contain
         // VK_IMAGE_CREATE_SPARSE_BINDING_BIT
-        if (((pCreateInfo->flags & (VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
-            ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
+        if (((image_flags & (VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
+            ((image_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-flags-00987",
                              "vkCreateImage: if pCreateInfo->flags contains VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT or "
                              "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT, it must also contain VK_IMAGE_CREATE_SPARSE_BINDING_BIT.");
         }
 
         // Check for combinations of attributes that are incompatible with having VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set
-        if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0) {
+        if ((image_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0) {
             // Linear tiling is unsupported
             if (VK_IMAGE_TILING_LINEAR == pCreateInfo->tiling) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-tiling-04121",
@@ -894,14 +895,14 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
-        if (pCreateInfo->flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
+        if (image_flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
             if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D && pCreateInfo->imageType != VK_IMAGE_TYPE_3D) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02050",
                                  "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
                                  "imageType must be VK_IMAGE_TYPE_2D or VK_IMAGE_TYPE_3D.");
             }
 
-            if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) || FormatIsDepthOrStencil(image_format)) {
+            if ((image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) || FormatIsDepthOrStencil(image_format)) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02051",
                                  "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
                                  "it must not also contain VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT and format (%s) must not be a "
@@ -923,7 +924,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
-        if (((pCreateInfo->flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
+        if (((image_flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
             (FormatHasDepth(image_format) == false)) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01533",
                              "vkCreateImage(): if flags contain VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT the "
@@ -1059,13 +1060,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
         // If multi-sample, validate type, usage, tiling and mip levels.
         if ((pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) &&
-            ((pCreateInfo->imageType != VK_IMAGE_TYPE_2D) || (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
+            ((pCreateInfo->imageType != VK_IMAGE_TYPE_2D) || (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
              (pCreateInfo->mipLevels != 1) || image_create_maybe_linear)) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02257",
                              "vkCreateImage(): Multi-sample image with incompatible type, usage, tiling, or mips.");
         }
 
-        if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) &&
+        if ((image_flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) &&
             ((pCreateInfo->mipLevels != 1) || (pCreateInfo->arrayLayers != 1) || (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) ||
              image_create_maybe_linear)) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02259",
@@ -1084,7 +1085,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "samples must be VK_SAMPLE_COUNT_1_BIT.");
             }
         }
-        if (pCreateInfo->flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        if (image_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
             if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02565",
                                  "vkCreateImage: if usage includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, "
@@ -1095,7 +1096,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "vkCreateImage: if flags includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, "
                                  "imageType must be VK_IMAGE_TYPE_2D.");
             }
-            if (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+            if (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02567",
                                  "vkCreateImage: if flags includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, "
                                  "flags must not include VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT.");
@@ -1140,9 +1141,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 const VkImageCreateFlags valid_flags =
                     (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
                      VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
-                if ((pCreateInfo->flags & ~valid_flags) != 0) {
+                if ((image_flags & ~valid_flags) != 0) {
                     skip |= LogError(device, vuid, "%s flags are %" PRIu32 "and must only have valid flags set.", base_message,
-                                     pCreateInfo->flags);
+                                     image_flags);
                 }
             }
         }
@@ -1160,6 +1161,26 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "vkCreateImage(): The format (%s) is Y Chroma Subsampled (has _420 suffix) so the height (=%" PRIu32
                              ") must be a multiple of 2.",
                              string_VkFormat(image_format), pCreateInfo->extent.height);
+        }
+
+        const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+        if (format_list_info) {
+            const uint32_t viewFormatCount = format_list_info->viewFormatCount;
+            if (((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) == 0) && (viewFormatCount > 1)) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-04738",
+                                 "vkCreateImage(): If the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT is not set, then "
+                                 "VkImageFormatListCreateInfo::viewFormatCount (%u) must be 0 or 1.",
+                                 viewFormatCount);
+            }
+            // Check if viewFormatCount is not zero that it is all compatible
+            for (uint32_t i = 0; i < viewFormatCount; i++) {
+                if (FormatCompatibilityClass(format_list_info->pViewFormats[i]) != FormatCompatibilityClass(image_format)) {
+                    skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-04737",
+                                     "vkCreateImage(): VkImageFormatListCreateInfo::pViewFormats[%u] (%s) and "
+                                     "VkImageCreateInfo::format (%s) are not compatible.",
+                                     i, string_VkFormat(format_list_info->pViewFormats[0]), string_VkFormat(image_format));
+                }
+            }
         }
     }
 

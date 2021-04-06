@@ -5677,6 +5677,24 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             image_usage = chained_ivuci_struct->usage;
         }
 
+        // If image used VkImageFormatListCreateInfo need to make sure a format from list is used
+        const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(image_state->createInfo.pNext);
+        if (format_list_info && (format_list_info->viewFormatCount > 0)) {
+            bool foundFormat = false;
+            for (uint32_t i = 0; i < format_list_info->viewFormatCount; i++) {
+                if (format_list_info->pViewFormats[i] == view_format) {
+                    foundFormat = true;
+                    break;
+                }
+            }
+            if (foundFormat == false) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-01585",
+                                 "vkCreateImageView(): image was created with a VkImageFormatListCreateInfo in pNext of "
+                                 "vkImageCreateInfo, but none of the formats match the VkImageViewCreateInfo::format (%s).",
+                                 string_VkFormat(view_format));
+            }
+        }
+
         // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
         if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
             if (FormatIsMultiplane(image_format)) {
