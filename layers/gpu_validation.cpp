@@ -19,6 +19,7 @@
  */
 
 #include <climits>
+#include <cmath>
 #include "gpu_validation.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
@@ -219,6 +220,11 @@ void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
     if (cb_state && cb_state->modified_create_info.usage & VK_BUFFER_USAGE_RAY_TRACING_BIT_NV) {
         cb_state->modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
+
+    // Validating DrawIndirectCount countBuffer will require validation shader to bind the count buffer as a storage buffer
+    if (validate_draw_indirect_count && cb_state && cb_state->modified_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) {
+        cb_state->modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
 }
 
 // Turn on necessary device features.
@@ -243,12 +249,21 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
     GpuAssisted *device_gpu_assisted = static_cast<GpuAssisted *>(validation_data);
 
-    const char *bufferoob_string = getLayerOption("khronos_validation.gpuav_buffer_oob");
     if (device_gpu_assisted->enabled_features.core.robustBufferAccess ||
         device_gpu_assisted->enabled_features.robustness2_features.robustBufferAccess2) {
         device_gpu_assisted->buffer_oob_enabled = false;
     } else {
+        const char *bufferoob_string = getLayerOption("khronos_validation.gpuav_buffer_oob");
         device_gpu_assisted->buffer_oob_enabled = *bufferoob_string ? !strcmp(bufferoob_string, "true") : true;
+    }
+
+    if (((api_version >= VK_API_VERSION_1_2) && (enabled_features.core12.drawIndirectCount == VK_FALSE)) ||
+        (device_extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo)) {
+        device_gpu_assisted->validate_draw_indirect_count = false;
+    } else {
+        const char *draw_indirect_count_string = getLayerOption("khronos_validation.draw_direct_count_val");
+        device_gpu_assisted->validate_draw_indirect_count =
+            *draw_indirect_count_string ? !strcmp(draw_indirect_count_string, "true") : true;
     }
 
     if (device_gpu_assisted->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
@@ -321,6 +336,17 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     DestroyAccelerationStructureBuildValidationState();
     UtilPreCallRecordDestroyDevice(this);
     ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
+    if (pre_draw_validation_state.globals_created) {
+        DispatchDestroyShaderModule(device, pre_draw_validation_state.validation_shader_module, nullptr);
+        DispatchDestroyDescriptorSetLayout(device, pre_draw_validation_state.validation_ds_layout, nullptr);
+        DispatchDestroyPipelineLayout(device, pre_draw_validation_state.validation_pipeline_layout, nullptr);
+        for (auto it = pre_draw_validation_state.renderpass_to_pipeline.begin();
+             it != pre_draw_validation_state.renderpass_to_pipeline.end(); ++it) {
+            DispatchDestroyPipeline(device, it->second, nullptr);
+        }
+        pre_draw_validation_state.renderpass_to_pipeline.clear();
+        pre_draw_validation_state.globals_created = false;
+    }
     // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
     if (vmaAllocator) {
         vmaDestroyAllocator(vmaAllocator);
@@ -733,10 +759,12 @@ struct GPUAV_RESTORABLE_PIPELINE_STATE {
                                                 static_cast<uint32_t>(push_descriptor_set_writes.size()),
                                                 reinterpret_cast<const VkWriteDescriptorSet *>(push_descriptor_set_writes.data()));
             }
-            for (const auto &push_constant_range : *push_constants_ranges) {
-                if (push_constant_range.size == 0) continue;
-                DispatchCmdPushConstants(command_buffer, pipeline_layout, push_constant_range.stageFlags,
-                                         push_constant_range.offset, push_constant_range.size, push_constants_data.data());
+            if (!push_constants_data.empty()) {
+                for (const auto &push_constant_range : *push_constants_ranges) {
+                    if (push_constant_range.size == 0) continue;
+                    DispatchCmdPushConstants(command_buffer, pipeline_layout, push_constant_range.stageFlags,
+                                             push_constant_range.offset, push_constant_range.size, push_constants_data.data());
+                }
             }
         }
     }
@@ -984,7 +1012,7 @@ void GpuAssisted::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPi
     }
 }
 
-// Free the device memory and descriptor set associated with a command buffer.
+// Free the device memory and descriptor set(s) associated with a command buffer.
 void GpuAssisted::ResetCommandBuffer(VkCommandBuffer commandBuffer) {
     if (aborted) {
         return;
@@ -1000,6 +1028,10 @@ void GpuAssisted::ResetCommandBuffer(VkCommandBuffer commandBuffer) {
         }
         if (buffer_info.desc_set != VK_NULL_HANDLE) {
             desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
+        }
+        if (buffer_info.pre_draw_resources.desc_set != VK_NULL_HANDLE) {
+            desc_set_manager->PutBackDescriptorSet(buffer_info.pre_draw_resources.desc_pool,
+                                                   buffer_info.pre_draw_resources.desc_set);
         }
     }
     command_buffer_map.erase(commandBuffer);
@@ -1183,6 +1215,15 @@ void GpuAssisted::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipel
     ValidationStateTracker::PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
 }
 
+void GpuAssisted::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
+                                                 const VkAllocationCallbacks *pAllocator) {
+    auto pipeline = pre_draw_validation_state.renderpass_to_pipeline.find(renderPass);
+    if (pipeline != pre_draw_validation_state.renderpass_to_pipeline.end()) {
+        DispatchDestroyPipeline(device, pipeline->second, nullptr);
+        pre_draw_validation_state.renderpass_to_pipeline.erase(pipeline);
+    }
+}
+
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, std::vector<unsigned int> &new_pgm,
                                    uint32_t *unique_shader_id) {
@@ -1289,17 +1330,17 @@ static void GenerateValidationMessage(const uint32_t *debug_record, std::string 
             if (size == 0) {
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
                 vuid_msg = "UNASSIGNED-Descriptor uninitialized";
-            }
-            else {
+            } else {
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
-                    << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
-                    << " texels and highest texel accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
+                     << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
+                     << " texels and highest texel accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
                 const GpuVuid vuid = GetGpuVuid(cmd_type);
                 if (debug_record[kInstValidationOutError] == kInstErrorBuffOOBUniformTexel)
                     vuid_msg = vuid.uniform_access_oob;
                 else
                     vuid_msg = vuid.storage_access_oob;
-            } break;
+            }
+            break;
         }
         default: {
             strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";
@@ -1356,8 +1397,8 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     }
     GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info.cmd_type);
     UtilGenerateStageMessage(debug_record, stage_message);
-    UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle, buffer_info.pipeline_bind_point,
-                              operation_index, common_message);
+    UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
+                              buffer_info.pipeline_bind_point, operation_index, common_message);
     UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
     LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
              filename_message.c_str(), source_message.c_str());
@@ -1543,15 +1584,18 @@ void GpuAssisted::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBu
                                                        uint32_t stride) {
     ValidationStateTracker::PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                  maxDrawCount, stride);
-    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT);
+    GpuAssistedCmdDrawIndirectState cdic_state = { buffer, offset, stride, countBuffer, countBufferOffset };
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT, &cdic_state);
 }
 
 void GpuAssisted::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+
                                                     uint32_t stride) {
     ValidationStateTracker::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                               maxDrawCount, stride);
-    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT);
+    GpuAssistedCmdDrawIndirectState cdic_state = { buffer, offset, stride, countBuffer, countBufferOffset };
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT, &cdic_state);
 }
 
 void GpuAssisted::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
@@ -1677,8 +1721,113 @@ void GpuAssisted::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     cb_state->hasTraceRaysCmd = true;
 }
 
+void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block,
+                                                     GpuAssistedPreDrawResources &resources, const LAST_BOUND_STATE &state,
+                                                     VkPipeline *pPipeline, const GpuAssistedCmdDrawIndirectState *cdic_state) {
+    VkResult result;
+    if (!pre_draw_validation_state.globals_created) {
+        auto shader_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        shader_module_ci.codeSize = sizeof(kPreDrawValidaitonShaderSpirv);
+        shader_module_ci.pCode = (uint32_t *)kPreDrawValidaitonShaderSpirv;
+        result =
+            DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_draw_validation_state.validation_shader_module);
+        assert(result == VK_SUCCESS);
+
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
+        VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, NULL};
+        // 0 - output buffer, 1 - count buffer
+        bindings.push_back(binding);
+        binding.binding = 1;
+        bindings.push_back(binding);
+
+        VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
+        ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        ds_layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
+        ds_layout_ci.pBindings = bindings.data();
+        result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &pre_draw_validation_state.validation_ds_layout);
+        assert(result == VK_SUCCESS);
+
+        const uint32_t push_constant_range_count = 1;
+        VkPushConstantRange push_constant_ranges[push_constant_range_count] = {};
+        push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        push_constant_ranges[0].offset = 0;
+        push_constant_ranges[0].size = 2 * sizeof(uint32_t);
+        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo[1] = {};
+        pipelineLayoutCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutCreateInfo[0].pNext = NULL;
+        pipelineLayoutCreateInfo[0].pushConstantRangeCount = push_constant_range_count;
+        pipelineLayoutCreateInfo[0].pPushConstantRanges = push_constant_ranges;
+        pipelineLayoutCreateInfo[0].setLayoutCount = 1;
+        pipelineLayoutCreateInfo[0].pSetLayouts = &pre_draw_validation_state.validation_ds_layout;
+        result = DispatchCreatePipelineLayout(device, pipelineLayoutCreateInfo, NULL,
+                                              &pre_draw_validation_state.validation_pipeline_layout);
+        assert(result == VK_SUCCESS);
+
+        pre_draw_validation_state.globals_created = true;
+    }
+    VkRenderPass render_pass = state.pipeline_state->rp_state->renderPass;
+    assert(render_pass != VK_NULL_HANDLE);
+    auto pipeline = pre_draw_validation_state.renderpass_to_pipeline.find(render_pass);
+    if (pipeline == pre_draw_validation_state.renderpass_to_pipeline.end()) {
+        auto pipeline_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+        pipeline_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        pipeline_stage_ci.module = pre_draw_validation_state.validation_shader_module;
+        pipeline_stage_ci.pName = "main";
+
+        auto graphicsPipelineCreateInfo = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+        auto vertexInputState = LvlInitStruct<VkPipelineVertexInputStateCreateInfo>();
+        auto inputAssemblyState = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+        inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        auto rasterizationState = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
+        rasterizationState.rasterizerDiscardEnable = VK_TRUE;
+        auto colorBlendState = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+
+        graphicsPipelineCreateInfo.pVertexInputState = &vertexInputState;
+        graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
+        graphicsPipelineCreateInfo.pRasterizationState = &rasterizationState;
+        graphicsPipelineCreateInfo.pColorBlendState = &colorBlendState;
+        graphicsPipelineCreateInfo.renderPass = render_pass;
+        graphicsPipelineCreateInfo.layout = pre_draw_validation_state.validation_pipeline_layout;
+        graphicsPipelineCreateInfo.stageCount = 1;
+        graphicsPipelineCreateInfo.pStages = &pipeline_stage_ci;
+
+        VkPipeline new_pipeline = VK_NULL_HANDLE;
+        result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &new_pipeline);
+        assert(result == VK_SUCCESS);
+        *pPipeline = new_pipeline;
+        pre_draw_validation_state.renderpass_to_pipeline[render_pass] = new_pipeline;
+    } else {
+        *pPipeline = pipeline->second;
+    }
+
+    result = desc_set_manager->GetDescriptorSet(&resources.desc_pool, pre_draw_validation_state.validation_ds_layout,
+                                                &resources.desc_set);
+    assert(result == VK_SUCCESS);
+
+    VkDescriptorBufferInfo buffer_infos[3] = {};
+    // Error output buffer
+    buffer_infos[0].buffer = output_block.buffer;
+    buffer_infos[0].offset = 0;
+    buffer_infos[0].range = VK_WHOLE_SIZE;
+    // Original count buffer
+    buffer_infos[1].buffer = cdic_state->count_buffer;
+    buffer_infos[1].offset = 0;
+    buffer_infos[1].range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet desc_writes[2] = {};
+    for (auto i = 0; i < 2; i++) {
+        desc_writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        desc_writes[i].dstBinding = i;
+        desc_writes[i].descriptorCount = 1;
+        desc_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        desc_writes[i].pBufferInfo = &buffer_infos[i];
+        desc_writes[i].dstSet = resources.desc_set;
+    }
+    DispatchUpdateDescriptorSets(device, 2, desc_writes, 0, NULL);
+}
+
 void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point,
-                                              CMD_TYPE cmd_type) {
+                                              CMD_TYPE cmd_type, const GpuAssistedCmdDrawIndirectState *cdic_state) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
         return;
@@ -1733,10 +1882,56 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     VkDescriptorBufferInfo di_input_desc_buffer_info = {};
     VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
     VkWriteDescriptorSet desc_writes[3] = {};
+    GpuAssistedPreDrawResources pre_draw_resources = {};
     uint32_t desc_count = 1;
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto const &state = cb_node->lastBound[lv_bind_point];
     uint32_t number_of_sets = static_cast<uint32_t>(state.per_set.size());
+
+    if (cmd_type == CMD_DRAWINDIRECTCOUNT && validate_draw_indirect_count) {
+        // Insert a draw that can examine some device memory right before the draw we're validating (Pre Draw Validation)
+        // Currently the only Pre Draw Validation is checking the count value in the countBuffer of a Draw*IndirectCount call
+        assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
+        assert(cdic_state != NULL);
+        VkPipeline validation_pipeline;
+        AllocatePreDrawValidationResources(output_block, pre_draw_resources, state, &validation_pipeline, cdic_state);
+
+        // Save current graphics pipeline state
+        GPUAV_RESTORABLE_PIPELINE_STATE restorable_state;
+        restorable_state.Create(cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS);
+
+        if (cdic_state->count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
+            ReportSetupProblem(device, "Count buffer offset is larger than can be contained in an unsigned int.  Aborting GPU-AV");
+            aborted = true;
+            return;
+        }
+
+        // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndirectCommand))
+        BUFFER_STATE *buffer_state = GetBufferState(cdic_state->buffer);
+        uint32_t max_count;
+        uint64_t bufsize = buffer_state->createInfo.size;
+        uint64_t first_command_bytes = sizeof(VkDrawIndirectCommand) + cdic_state->offset;
+        if (first_command_bytes > bufsize) {
+            max_count = 0;
+        } else {
+            max_count = 1 + static_cast<uint32_t>(std::floor(((bufsize - first_command_bytes) / cdic_state->stride)));
+        }
+
+        // Insert diagnostic draw
+        DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);
+        uint32_t pushConstants[2] = {};
+        pushConstants[0] = max_count;
+        pushConstants[1] = static_cast<uint32_t>((cdic_state->count_buffer_offset / sizeof(uint32_t)));
+        DispatchCmdPushConstants(cmd_buffer, pre_draw_validation_state.validation_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                 sizeof(pushConstants), pushConstants);
+        DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                      pre_draw_validation_state.validation_pipeline_layout, 0, 1, &pre_draw_resources.desc_set, 0,
+                                      nullptr);
+        DispatchCmdDraw(cmd_buffer, 3, 1, 0, 0);
+
+        // Restore the previous graphics pipeline state.
+        restorable_state.Restore(cmd_buffer);
+    }
 
     bool has_buffers = false;
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
@@ -2020,7 +2215,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         } else {
             // Record buffer and memory info in CB state tracking
             GetBufferInfo(cmd_buffer)
-                .emplace_back(output_block, di_input_block, bda_input_block, desc_sets[0], desc_pool, bind_point, cmd_type);
+                .emplace_back(output_block, di_input_block, bda_input_block, pre_draw_resources, desc_sets[0], desc_pool,
+                              bind_point, cmd_type);
         }
     } else {
         ReportSetupProblem(device, "Unable to find pipeline state");
