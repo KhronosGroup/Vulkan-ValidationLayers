@@ -3744,6 +3744,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         cb_state->status |= cb_state->static_status;
         cb_state->dynamic_status = CBSTATUS_ALL_STATE_SET & (~cb_state->static_status);
     }
+    ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout->layout);
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     cb_state->lastBound[lv_bind_point].pipeline_state = pipe_state;
     SetPipelineState(pipe_state);
@@ -4174,6 +4175,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
     UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, firstSet, setCount, pDescriptorSets, nullptr,
                                   dynamicOffsetCount, pDynamicOffsets);
     cb_state->lastBound[lv_bind_point].pipeline_layout = layout;
+    ResetCommandBufferPushConstantDataIfIncompatible(cb_state, layout);
     UpdateSamplerDescriptorsUsedByImage(cb_state->lastBound[lv_bind_point]);
 }
 
@@ -6176,13 +6178,6 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
     }
 }
 
-// Discussed in details in https://github.com/KhronosGroup/Vulkan-Docs/issues/1081
-// Internal discussion and CTS were written to prove that this is not called after an incompatible vkCmdBindPipeline
-// "Binding a pipeline with a layout that is not compatible with the push constant layout does not disturb the push constant values"
-//
-// vkCmdBindDescriptorSet has nothing to do with push constants and don't need to call this after neither
-//
-// Part of this assumes apps at draw/dispath/traceRays/etc time will have it properly compatabile or else other VU will be triggered
 void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE *cb_state, VkPipelineLayout layout) {
     if (cb_state == nullptr) {
         return;

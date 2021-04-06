@@ -1134,8 +1134,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         // If valid set is not bound throw an error
         if ((state.per_set.size() <= set_index) || (!state.per_set[set_index].bound_descriptor_set)) {
             result |= LogError(cb_node->commandBuffer, kVUID_Core_DrawState_DescriptorSetNotBound,
-                               "%s(): %s uses set #%u but that set is not bound.", CommandTypeString(cmd_type),
-                               report_data->FormatHandle(pipe->pipeline).c_str(), set_index);
+                               "%s uses set #%u but that set is not bound.", report_data->FormatHandle(pipe->pipeline).c_str(),
+                               set_index);
         } else if (!VerifySetLayoutCompatibility(report_data, state.per_set[set_index].bound_descriptor_set, pipeline_layout,
                                                  set_index, error_string)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
@@ -1143,8 +1143,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             LogObjectList objlist(set_handle);
             objlist.add(pipeline_layout->layout);
             result |= LogError(objlist, kVUID_Core_DrawState_PipelineLayoutsIncompatible,
-                               "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s",
-                               CommandTypeString(cmd_type), report_data->FormatHandle(set_handle).c_str(), set_index,
+                               "%s bound as set #%u is not compatible with overlapping %s due to: %s",
+                               report_data->FormatHandle(set_handle).c_str(), set_index,
                                report_data->FormatHandle(pipeline_layout->layout).c_str(), error_string.c_str());
         } else {  // Valid set is bound and layout compatible, validate that it's updated
             // Pull the set node
@@ -1204,55 +1204,42 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     }
 
     // Verify if push constants have been set
-    if (cb_node->push_constant_data_ranges && (pipeline_layout->push_constant_ranges != cb_node->push_constant_data_ranges)) {
-        LogObjectList objlist(cb_node->commandBuffer);
-        objlist.add(cb_node->push_constant_pipeline_layout_set);
-        objlist.add(pipeline_layout->layout);
-        objlist.add(pipe->pipeline);
-        result |= LogError(
-            objlist, vuid.push_constants_set, "%s(): The active push constants of %s isn't compatible with %s of active %s.",
-            CommandTypeString(cmd_type), report_data->FormatHandle(cb_node->push_constant_pipeline_layout_set).c_str(),
-            report_data->FormatHandle(pipeline_layout->layout).c_str(), report_data->FormatHandle(pipe->pipeline).c_str());
-    } else {
-        for (const auto &stage : pipe->stage_state) {
-            const auto *entrypoint =
-                FindEntrypointStruct(stage.shader_state.get(), stage.entry_point_name.c_str(), stage.stage_flag);
-            if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
-                continue;
-            }
+    if (cb_node->push_constant_data_ranges) {
+        if (pipeline_layout->push_constant_ranges != cb_node->push_constant_data_ranges) {
+            LogObjectList objlist(cb_node->commandBuffer);
+            objlist.add(cb_node->push_constant_pipeline_layout_set);
+            objlist.add(pipeline_layout->layout);
+            objlist.add(pipe->pipeline);
+            result |= LogError(
+                objlist, vuid.push_constants_set, "The active push constants of %s isn't compatible with %s of active %s.",
+                report_data->FormatHandle(cb_node->push_constant_pipeline_layout_set).c_str(),
+                report_data->FormatHandle(pipeline_layout->layout).c_str(), report_data->FormatHandle(pipe->pipeline).c_str());
+        } else {
+            for (const auto &stage : pipe->stage_state) {
+                const auto *entrypoint =
+                    FindEntrypointStruct(stage.shader_state.get(), stage.entry_point_name.c_str(), stage.stage_flag);
+                if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
+                    continue;
+                }
+                const auto it = cb_node->push_constant_data_update.find(stage.stage_flag);
+                if (it == cb_node->push_constant_data_update.end()) {
+                    // This error has been printed in ValidatePushConstantUsage.
+                    break;
+                }
 
-            // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-            if (!cb_node->push_constant_data_ranges) {
-                LogObjectList objlist(cb_node->commandBuffer);
-                objlist.add(pipeline_layout->layout);
-                objlist.add(pipe->pipeline);
-                result |= LogError(objlist, vuid.push_constants_set,
-                                   "%s(): Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
-                                   "pipeline layout %s.",
-                                   CommandTypeString(cmd_type), string_VkShaderStageFlags(stage.stage_flag).c_str(),
-                                   report_data->FormatHandle(pipeline_layout->layout).c_str());
-            }
+                uint32_t issue_index = 0;
+                const auto ret = ValidatePushConstantSetUpdate(it->second, entrypoint->push_constant_used_in_shader, issue_index);
 
-            const auto it = cb_node->push_constant_data_update.find(stage.stage_flag);
-            if (it == cb_node->push_constant_data_update.end()) {
-                // This error has been printed in ValidatePushConstantUsage.
-                break;
-            }
-
-            uint32_t issue_index = 0;
-            const auto ret = ValidatePushConstantSetUpdate(it->second, entrypoint->push_constant_used_in_shader, issue_index);
-
-            // "not set" error has been printed in ValidatePushConstantUsage.
-            if (ret == PC_Byte_Not_Updated) {
-                const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
-                LogObjectList objlist(cb_node->commandBuffer);
-                objlist.add(pipeline_layout->layout);
-                objlist.add(pipe->pipeline);
-                result |=
-                    LogError(objlist, vuid.push_constants_set, "%s(): Push-constant buffer:%s in %s of %s is not updated.",
-                             CommandTypeString(cmd_type), loc_descr.c_str(), string_VkShaderStageFlags(stage.stage_flag).c_str(),
-                             report_data->FormatHandle(pipeline_layout->layout).c_str());
-                break;
+                // "not set" error has been printed in ValidatePushConstantUsage.
+                if (ret == PC_Byte_Not_Updated) {
+                    const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(pipeline_layout->layout);
+                    result |= LogError(objlist, vuid.push_constants_set, "Push-constant buffer:%s in %s of %s is not updated.",
+                                       loc_descr.c_str(), string_VkShaderStageFlags(stage.stage_flag).c_str(),
+                                       report_data->FormatHandle(pipeline_layout->layout).c_str());
+                    break;
+                }
             }
         }
     }
