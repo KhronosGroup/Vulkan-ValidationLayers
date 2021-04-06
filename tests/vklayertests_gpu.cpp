@@ -1668,6 +1668,202 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
     vk::DestroyPipeline(m_device->device(), compute_pipeline, nullptr);
 }
 
+TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    InitGpuAssistedFramework(false);
+    if (IsPlatform(kPixel3) || IsPlatform(kPixel3aXL)) {
+        printf("%s This test should not run on Pixel 3\n", kSkipPrefix);
+        return;
+    }
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
+        return;
+    }
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    } else {
+        printf("%s VK_KHR_draw_indirect_count extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, NULL, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->ExpectSuccess();
+    auto vkCmdDrawIndirectCountKHR =
+        (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
+    if (vkCmdDrawIndirectCountKHR == nullptr) {
+        printf("%s did not find vkCmdDrawIndirectCountKHR function pointer;  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = sizeof(VkDrawIndirectCommand);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBufferObj draw_buffer;
+    draw_buffer.init(*m_device, buffer_create_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDrawIndirectCommand *draw_ptr = (VkDrawIndirectCommand *)draw_buffer.memory().map();
+    draw_ptr->firstInstance = 0;
+    draw_ptr->firstVertex = 0;
+    draw_ptr->instanceCount = 1;
+    draw_ptr->vertexCount = 3;
+    draw_buffer.memory().unmap();
+
+    VkBufferCreateInfo count_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    count_buffer_create_info.size = sizeof(uint32_t);
+    count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBufferObj count_buffer;
+    count_buffer.init(*m_device, count_buffer_create_info,
+                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint32_t *count_ptr = (uint32_t *)count_buffer.memory().map();
+    *count_ptr = 1;
+    count_buffer.memory().unmap();
+
+    VkBufferCreateInfo storage_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    storage_buffer_create_info.size = sizeof(uint32_t);
+    storage_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VkBufferObj storage_buffer;
+    storage_buffer.init(*m_device, storage_buffer_create_info,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                                 });
+
+    VkPushConstantRange push_constant_range[1] = {};
+    push_constant_range[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_constant_range[0].offset = 0;
+    push_constant_range[0].size = sizeof(uint32_t);
+
+    VkPipelineLayout pipeline_layout;
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo[1] = {};
+    pipelineLayoutCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutCreateInfo[0].pNext = NULL;
+    pipelineLayoutCreateInfo[0].pushConstantRangeCount = 1;
+    pipelineLayoutCreateInfo[0].pPushConstantRanges = push_constant_range;
+    pipelineLayoutCreateInfo[0].setLayoutCount = 1;
+    pipelineLayoutCreateInfo[0].pSetLayouts = &descriptor_set.layout_.handle();
+    VkResult err = vk::CreatePipelineLayout(m_device->handle(), pipelineLayoutCreateInfo, NULL, &pipeline_layout);
+    ASSERT_VK_SUCCESS(err);
+
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.buffer = storage_buffer.handle();
+    buffer_info.offset = 0;
+    buffer_info.range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+    // App shader writes value from push constant into storage buffer
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer outBuffer {
+            uint out_value;
+        } out_buffer;
+        layout(push_constant) uniform ufoo {
+            uint push_value;
+        } u_info;
+        void main() {
+            if (gl_VertexIndex == 0) {
+                out_buffer.out_value = u_info.push_value;
+           }
+        })glsl";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    err = pipe.CreateVKPipeline(pipeline_layout, renderPass());
+    ASSERT_VK_SUCCESS(err);
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+
+    uint32_t pushConstants[1] = {};
+    pushConstants[0] = 0xba5eba11;
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConstants),
+                         pushConstants);
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+
+    // Positive Test
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                              sizeof(VkDrawIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    // Storage buffer should be written
+    uint32_t *storage_ptr = (uint32_t *)storage_buffer.memory().map();
+    if (*storage_ptr != 0xba5eba11) {
+        ADD_FAILURE() << "ERROR: Storage buffer value is incorrect";
+    }
+    *storage_ptr = 0;
+    storage_buffer.memory().unmap();
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-03122");
+    count_ptr = (uint32_t *)count_buffer.memory().map();
+    *count_ptr = 2;
+    count_buffer.memory().unmap();
+    m_commandBuffer->QueueCommandBuffer();
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyFound();
+    // Shader should not have executed
+    storage_ptr = (uint32_t *)storage_buffer.memory().map();
+    if (*storage_ptr != 0) {
+        ADD_FAILURE() << "ERROR: Storage buffer value is incorrect";
+    }
+    *storage_ptr = 0;
+    storage_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-03121");
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, NULL);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pushConstants),
+                         pushConstants);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    // Offset of 4 should error
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
+                              sizeof(VkDrawIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    count_ptr = (uint32_t *)count_buffer.memory().map();
+    *count_ptr = 1;
+    count_buffer.memory().unmap();
+    m_commandBuffer->QueueCommandBuffer();
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyFound();
+    // Shader should not have executed
+    storage_ptr = (uint32_t *)storage_buffer.memory().map();
+    if (*storage_ptr != 0) {
+        ADD_FAILURE() << "ERROR: Storage buffer value is incorrect";
+    }
+    storage_buffer.memory().unmap();
+    m_errorMonitor->VerifyFound();
+    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
+}
+
 TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     TEST_DESCRIPTION(
         "GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify reserved descriptor slot "
