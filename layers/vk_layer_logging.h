@@ -366,8 +366,7 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_info;
     object_name_info.resize(objects.object_list.size());
     for (uint32_t i = 0; i < objects.object_list.size(); i++) {
-        object_name_info[i].sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        object_name_info[i].pNext = NULL;
+        object_name_info[i] = LvlInitStruct<VkDebugUtilsObjectNameInfoEXT>();
         object_name_info[i].objectType = ConvertVulkanObjectToCoreObject(objects.object_list[i].type);
         object_name_info[i].objectHandle = objects.object_list[i].handle;
         object_name_info[i].pObjectName = NULL;
@@ -408,9 +407,7 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         location = XXH32(text_vuid, strlen(text_vuid), 8);
     }
 
-    VkDebugUtilsMessengerCallbackDataEXT callback_data;
-    callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
-    callback_data.pNext = NULL;
+    auto callback_data = LvlInitStruct<VkDebugUtilsMessengerCallbackDataEXT>();
     callback_data.flags = 0;
     callback_data.pMessageIdName = text_vuid;
     callback_data.messageIdNumber = static_cast<int32_t>(location);

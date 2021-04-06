@@ -4557,6 +4557,7 @@ template <typename T> T LvlInitStruct(void *p_next) {
 template <typename T> T LvlInitStruct() {
     T out = {};
     out.sType = LvlTypeMap<T>::kSType;
+    out.pNext = nullptr;
     return out;
 }
 
@@ -4588,6 +4589,7 @@ template <typename T> T lvl_init_struct(void *p_next) {
 template <typename T> T lvl_init_struct() {
     T out = {};
     out.sType = LvlTypeMap<T>::kSType;
+    out.pNext = nullptr;
     return out;
 }
 

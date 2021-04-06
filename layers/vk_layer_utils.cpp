@@ -106,9 +106,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     LogMessageTypeFlags report_flags = GetLayerOptionFlags(report_flags_key, log_msg_type_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);
     // Flag as default if these settings are not from a vk_layer_settings.txt file
-    VkDebugUtilsMessengerCreateInfoEXT dbg_create_info;
-    memset(&dbg_create_info, 0, sizeof(dbg_create_info));
-    dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    auto dbg_create_info = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
     dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     if (report_flags & kErrorBit) {
         dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -174,9 +172,7 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, 
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
         const char *log_filename = getLayerOption(log_filename_key.c_str());
         FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
-        VkDebugReportCallbackCreateInfoEXT dbg_create_info;
-        memset(&dbg_create_info, 0, sizeof(dbg_create_info));
-        dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        auto dbg_create_info = LvlInitStruct<VkDebugReportCallbackCreateInfoEXT>();
         dbg_create_info.flags = report_flags;
         dbg_create_info.pfnCallback = report_log_callback;
         dbg_create_info.pUserData = (void *)log_output;
@@ -186,9 +182,7 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, 
     callback = VK_NULL_HANDLE;
 
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
-        VkDebugReportCallbackCreateInfoEXT dbg_create_info;
-        memset(&dbg_create_info, 0, sizeof(dbg_create_info));
-        dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        auto dbg_create_info = LvlInitStruct<VkDebugReportCallbackCreateInfoEXT>();
         dbg_create_info.flags = report_flags;
         dbg_create_info.pfnCallback = report_win32_debug_output_msg;
         dbg_create_info.pUserData = NULL;
@@ -198,9 +192,7 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, 
     callback = VK_NULL_HANDLE;
 
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
-        VkDebugReportCallbackCreateInfoEXT dbg_create_info;
-        memset(&dbg_create_info, 0, sizeof(dbg_create_info));
-        dbg_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        auto dbg_create_info = LvlInitStruct<VkDebugReportCallbackCreateInfoEXT>();
         dbg_create_info.flags = report_flags;
         dbg_create_info.pfnCallback = DebugBreakCallback;
         dbg_create_info.pUserData = NULL;

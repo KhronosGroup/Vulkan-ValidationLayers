@@ -3808,21 +3808,18 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE>(*pAccelerationStructure, pCreateInfo);
 
     // Query the requirements in case the application doesn't (to avoid bind/validation time query)
-    VkAccelerationStructureMemoryRequirementsInfoNV as_memory_requirements_info = {};
-    as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    auto as_memory_requirements_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
     as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure;
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, &as_memory_requirements_info, &as_state->memory_requirements);
 
-    VkAccelerationStructureMemoryRequirementsInfoNV scratch_memory_req_info = {};
-    scratch_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    auto scratch_memory_req_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     scratch_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
     scratch_memory_req_info.accelerationStructure = as_state->acceleration_structure;
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, &scratch_memory_req_info,
                                                          &as_state->build_scratch_memory_requirements);
 
-    VkAccelerationStructureMemoryRequirementsInfoNV update_memory_req_info = {};
-    update_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    auto update_memory_req_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     update_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV;
     update_memory_req_info.accelerationStructure = as_state->acceleration_structure;
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, &update_memory_req_info,
@@ -5025,8 +5022,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
 void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
                                                            VkDeviceSize memoryOffset, VkResult result) {
     if (VK_SUCCESS != result) return;
-    VkBindImageMemoryInfo bind_info = {};
-    bind_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>();
     bind_info.image = image;
     bind_info.memory = mem;
     bind_info.memoryOffset = memoryOffset;
@@ -5343,8 +5339,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
     qfp.resize(*pQueueFamilyPropertyCount);
     if (pQueueFamilyProperties) {
         for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; ++i) {
-            qfp[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
-            qfp[i].pNext = nullptr;
+            qfp[i] = LvlInitStruct<VkQueueFamilyProperties2>();
             qfp[i].queueFamilyProperties = pQueueFamilyProperties[i];
         }
         pqfp = qfp.data();
@@ -6245,9 +6240,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             if (swapchain_image.image_state) continue;  // Already retrieved this.
 
             // Add imageMap entries for each swapchain image
-            VkImageCreateInfo image_ci;
-            image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            image_ci.pNext = nullptr;  // to be set later
+            auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+            image_ci.pNext = LvlFindInChain<VkImageFormatListCreateInfo>(swapchain_state->createInfo.pNext);
             image_ci.flags = 0;        // to be updated below
             image_ci.imageType = VK_IMAGE_TYPE_2D;
             image_ci.format = swapchain_state->createInfo.imageFormat;
@@ -6263,8 +6257,6 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_ci.queueFamilyIndexCount = swapchain_state->createInfo.queueFamilyIndexCount;
             image_ci.pQueueFamilyIndices = swapchain_state->createInfo.pQueueFamilyIndices;
             image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-            image_ci.pNext = LvlFindInChain<VkImageFormatListCreateInfo>(swapchain_state->createInfo.pNext);
 
             if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
                 image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
