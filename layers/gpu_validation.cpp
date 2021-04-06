@@ -363,8 +363,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     VkBuffer vbo = VK_NULL_HANDLE;
     VmaAllocation vbo_allocation = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        VkBufferCreateInfo vbo_ci = {};
-        vbo_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        auto vbo_ci = LvlInitStruct<VkBufferCreateInfo>();
         vbo_ci.size = sizeof(float) * 9;
         vbo_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
 
@@ -393,8 +392,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     VkBuffer ibo = VK_NULL_HANDLE;
     VmaAllocation ibo_allocation = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        VkBufferCreateInfo ibo_ci = {};
-        ibo_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        auto ibo_ci = LvlInitStruct<VkBufferCreateInfo>();
         ibo_ci.size = sizeof(uint32_t) * 3;
         ibo_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
 
@@ -420,10 +418,9 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
         }
     }
 
-    VkGeometryNV geometry = {};
-    geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+    auto geometry = LvlInitStruct<VkGeometryNV>();
     geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-    geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+    geometry.geometry.triangles = LvlInitStruct<VkGeometryTrianglesNV>();
     geometry.geometry.triangles.vertexData = vbo;
     geometry.geometry.triangles.vertexOffset = 0;
     geometry.geometry.triangles.vertexCount = 3;
@@ -435,13 +432,10 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
     geometry.geometry.triangles.transformOffset = 0;
-    geometry.geometry.aabbs = {};
-    geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+    geometry.geometry.aabbs = LvlInitStruct<VkGeometryAABBNV>();
 
-    VkAccelerationStructureCreateInfoNV as_ci = {};
-    as_ci.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-    as_ci.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-    as_ci.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+    auto as_ci = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
+    as_ci.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
     as_ci.info.instanceCount = 0;
     as_ci.info.geometryCount = 1;
     as_ci.info.pGeometries = &geometry;
@@ -455,8 +449,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
 
     VkMemoryRequirements2 as_mem_requirements = {};
     if (result == VK_SUCCESS) {
-        VkAccelerationStructureMemoryRequirementsInfoNV as_mem_requirements_info = {};
-        as_mem_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+        auto as_mem_requirements_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
         as_mem_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
         as_mem_requirements_info.accelerationStructure = as_validation_state.replacement_as;
 
@@ -477,8 +470,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     }
 
     if (result == VK_SUCCESS) {
-        VkBindAccelerationStructureMemoryInfoNV as_bind_info = {};
-        as_bind_info.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
+        auto as_bind_info = LvlInitStruct<VkBindAccelerationStructureMemoryInfoNV>();
         as_bind_info.accelerationStructure = as_validation_state.replacement_as;
         as_bind_info.memory = as_memory_ai.deviceMemory;
         as_bind_info.memoryOffset = as_memory_ai.offset;
@@ -501,8 +493,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
 
     VkMemoryRequirements2 scratch_mem_requirements = {};
     if (result == VK_SUCCESS) {
-        VkAccelerationStructureMemoryRequirementsInfoNV scratch_mem_requirements_info = {};
-        scratch_mem_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+        auto scratch_mem_requirements_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
         scratch_mem_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
         scratch_mem_requirements_info.accelerationStructure = as_validation_state.replacement_as;
 
@@ -513,8 +504,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     VkBuffer scratch = VK_NULL_HANDLE;
     VmaAllocation scratch_allocation = {};
     if (result == VK_SUCCESS) {
-        VkBufferCreateInfo scratch_ci = {};
-        scratch_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        auto scratch_ci = LvlInitStruct<VkBufferCreateInfo>();
         scratch_ci.size = scratch_mem_requirements.memoryRequirements.size;
         scratch_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
         VmaAllocationCreateInfo scratch_aci = {};
@@ -529,8 +519,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
 
     VkCommandPool command_pool = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        VkCommandPoolCreateInfo command_pool_ci = {};
-        command_pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        auto command_pool_ci = LvlInitStruct<VkCommandPoolCreateInfo>();
         command_pool_ci.queueFamilyIndex = 0;
 
         result = DispatchCreateCommandPool(device_gpuav->device, &command_pool_ci, nullptr, &command_pool);
@@ -542,8 +531,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
 
     if (result == VK_SUCCESS) {
-        VkCommandBufferAllocateInfo command_buffer_ai = {};
-        command_buffer_ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        auto command_buffer_ai = LvlInitStruct<VkCommandBufferAllocateInfo>();
         command_buffer_ai.commandPool = command_pool;
         command_buffer_ai.commandBufferCount = 1;
         command_buffer_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -559,8 +547,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     }
 
     if (result == VK_SUCCESS) {
-        VkCommandBufferBeginInfo command_buffer_bi = {};
-        command_buffer_bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        auto command_buffer_bi = LvlInitStruct<VkCommandBufferBeginInfo>();
 
         result = DispatchBeginCommandBuffer(command_buffer, &command_buffer_bi);
         if (result != VK_SUCCESS) {
@@ -581,8 +568,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
         // Hook up queue dispatch
         device_gpuav->vkSetDeviceLoaderData(device_gpuav->device, queue);
 
-        VkSubmitInfo submit_info = {};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer;
         result = DispatchQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -619,8 +605,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     }
 
     if (result == VK_SUCCESS) {
-        VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-        pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
         pipeline_layout_ci.setLayoutCount = 1;
         pipeline_layout_ci.pSetLayouts = &device_gpuav->debug_desc_layout;
         result = DispatchCreatePipelineLayout(device_gpuav->device, &pipeline_layout_ci, 0, &as_validation_state.pipeline_layout);
@@ -632,8 +617,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
 
     VkShaderModule shader_module = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        VkShaderModuleCreateInfo shader_module_ci = {};
-        shader_module_ci.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        auto shader_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
         shader_module_ci.codeSize = sizeof(kComputeShaderSpirv);
         shader_module_ci.pCode = (uint32_t *)kComputeShaderSpirv;
 
@@ -645,14 +629,12 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     }
 
     if (result == VK_SUCCESS) {
-        VkPipelineShaderStageCreateInfo pipeline_stage_ci = {};
-        pipeline_stage_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        auto pipeline_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
         pipeline_stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         pipeline_stage_ci.module = shader_module;
         pipeline_stage_ci.pName = "main";
 
-        VkComputePipelineCreateInfo pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        auto pipeline_ci = LvlInitStruct<VkComputePipelineCreateInfo>();
         pipeline_ci.stage = pipeline_stage_ci;
         pipeline_ci.layout = as_validation_state.pipeline_layout;
 
@@ -807,8 +789,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
         // Two uint for each current valid handle
         (8 * current_valid_handles.size());
 
-    VkBufferCreateInfo validation_buffer_create_info = {};
-    validation_buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    auto validation_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     validation_buffer_create_info.size = validation_buffer_size;
     validation_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
@@ -874,14 +855,15 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
     descriptor_buffer_infos[1].offset = 0;
     descriptor_buffer_infos[1].range = validation_buffer_size;
 
-    VkWriteDescriptorSet descriptor_set_writes[2] = {};
-    descriptor_set_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet descriptor_set_writes[2] = {
+        LvlInitStruct<VkWriteDescriptorSet>(),
+        LvlInitStruct<VkWriteDescriptorSet>(),
+    };
     descriptor_set_writes[0].dstSet = as_validation_buffer_info.descriptor_set;
     descriptor_set_writes[0].dstBinding = 0;
     descriptor_set_writes[0].descriptorCount = 1;
     descriptor_set_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_set_writes[0].pBufferInfo = &descriptor_buffer_infos[0];
-    descriptor_set_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptor_set_writes[1].dstSet = as_validation_buffer_info.descriptor_set;
     descriptor_set_writes[1].dstBinding = 1;
     descriptor_set_writes[1].descriptorCount = 1;
@@ -891,8 +873,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
     DispatchUpdateDescriptorSets(device, 2, descriptor_set_writes, 0, nullptr);
 
     // Issue a memory barrier to make sure anything writing to the instance buffer has finished.
-    VkMemoryBarrier memory_barrier = {};
-    memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
     memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
     memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     DispatchCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
@@ -910,8 +891,7 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
 
     // Issue a buffer memory barrier to make sure that any invalid bottom level acceleration structure handles
     // have been replaced by the validation compute shader before any builds take place.
-    VkBufferMemoryBarrier instance_buffer_barrier = {};
-    instance_buffer_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    auto instance_buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
     instance_buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     instance_buffer_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
     instance_buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1951,7 +1931,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             di_input_desc_buffer_info.buffer = di_input_block.buffer;
             di_input_desc_buffer_info.offset = 0;
 
-            desc_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            desc_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
             desc_writes[1].dstBinding = 1;
             desc_writes[1].descriptorCount = 1;
             desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -2007,7 +1987,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         bda_input_desc_buffer_info.buffer = bda_input_block.buffer;
         bda_input_desc_buffer_info.offset = 0;
 
-        desc_writes[desc_count].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        desc_writes[desc_count] = LvlInitStruct<VkWriteDescriptorSet>();
         desc_writes[desc_count].dstBinding = 2;
         desc_writes[desc_count].descriptorCount = 1;
         desc_writes[desc_count].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -2020,7 +2000,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     output_desc_buffer_info.buffer = output_block.buffer;
     output_desc_buffer_info.offset = 0;
 
-    desc_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desc_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
     desc_writes[0].descriptorCount = 1;
     desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     desc_writes[0].pBufferInfo = &output_desc_buffer_info;

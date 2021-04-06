@@ -907,20 +907,19 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
 
-    VkWriteDescriptorSet desc_writes[1] = {};
+    auto desc_writes = LvlInitStruct<VkWriteDescriptorSet>();
     const uint32_t desc_count = 1;
 
     // Write the descriptor
     output_desc_buffer_info.buffer = output_block.buffer;
     output_desc_buffer_info.offset = 0;
 
-    desc_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desc_writes[0].descriptorCount = 1;
-    desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    desc_writes[0].pBufferInfo = &output_desc_buffer_info;
-    desc_writes[0].dstSet = desc_sets[0];
-    desc_writes[0].dstBinding = 3;
-    DispatchUpdateDescriptorSets(device, desc_count, desc_writes, 0, NULL);
+    desc_writes.descriptorCount = 1;
+    desc_writes.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    desc_writes.pBufferInfo = &output_desc_buffer_info;
+    desc_writes.dstSet = desc_sets[0];
+    desc_writes.dstBinding = 3;
+    DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, NULL);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto *pipeline_state = cb_node->lastBound[lv_bind_point].pipeline_state;

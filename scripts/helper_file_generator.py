@@ -1848,6 +1848,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             'template <typename T> T {init_func}() {{',
             '    T out = {{}};',
             '    out.sType = {type_map}<T>::kSType;',
+            '    out.pNext = nullptr;',
             '    return out;',
             '}}',
 

@@ -1943,9 +1943,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     skip |= ValidateSampleLocationsInfo(&sample_location_info, "vkCreateGraphicsPipelines");
                     const VkExtent2D grid_size = sample_location_info.sampleLocationGridSize;
 
-                    VkMultisamplePropertiesEXT multisample_prop;
-                    multisample_prop.sType = VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT;
-                    multisample_prop.pNext = nullptr;
+                    auto multisample_prop = LvlInitStruct<VkMultisamplePropertiesEXT>();
                     DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, multisample_state->rasterizationSamples,
                                                                       &multisample_prop);
                     const VkExtent2D max_grid_size = multisample_prop.maxSampleLocationGridSize;
@@ -3555,8 +3553,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
 
         // Collect external buffer info
-        VkPhysicalDeviceExternalBufferInfo pdebi = {};
-        pdebi.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO;
+        auto pdebi = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
         pdebi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
         if (AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE & ahb_desc.usage) {
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE];
@@ -3564,21 +3561,16 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         if (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER & ahb_desc.usage) {
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER];
         }
-        VkExternalBufferProperties ext_buf_props = {};
-        ext_buf_props.sType = VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES;
-        ext_buf_props.pNext = nullptr;
+        auto ext_buf_props = LvlInitStruct<VkExternalBufferProperties>();
         DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &pdebi, &ext_buf_props);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
         if (0 == (ext_buf_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
             // Collect external format info
-            VkPhysicalDeviceExternalImageFormatInfo pdeifi = {};
-            pdeifi.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO;
+            auto pdeifi = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
             pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-            VkPhysicalDeviceImageFormatInfo2 pdifi2 = {};
-            pdifi2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
-            pdifi2.pNext = &pdeifi;
+            auto pdifi2 = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&pdeifi);
             if (0 < ahb_format_map_a2v.count(ahb_desc.format)) pdifi2.format = ahb_format_map_a2v[ahb_desc.format];
             pdifi2.type = VK_IMAGE_TYPE_2D;           // Seems likely
             pdifi2.tiling = VK_IMAGE_TILING_OPTIMAL;  // Ditto
@@ -3595,11 +3587,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                 pdifi2.flags |= ahb_create_map_a2v[AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT];
             }
 
-            VkExternalImageFormatProperties ext_img_fmt_props = {};
-            ext_img_fmt_props.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
-            VkImageFormatProperties2 ifp2 = {};
-            ifp2.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
-            ifp2.pNext = &ext_img_fmt_props;
+            auto ext_img_fmt_props = LvlInitStruct<VkExternalImageFormatProperties>();
+            auto ifp2 = LvlInitStruct<VkImageFormatProperties2>(&ext_img_fmt_props);
 
             VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &pdifi2, &ifp2);
 
@@ -3612,11 +3601,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
 
         // Retrieve buffer and format properties of the provided AHardwareBuffer
-        VkAndroidHardwareBufferFormatPropertiesANDROID ahb_format_props = {};
-        ahb_format_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
-        VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
-        ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
-        ahb_props.pNext = &ahb_format_props;
+        auto ahb_format_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
+        auto ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_format_props);
         DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &ahb_props);
 
         // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware buffer
@@ -5160,9 +5146,7 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
                          "vkGetPipelineExecutableStatisticsKHR called when pipelineExecutableInfo feature is not enabled.");
     }
 
-    VkPipelineInfoKHR pi = {};
-    pi.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
-    pi.pNext = nullptr;
+    auto pi = LvlInitStruct<VkPipelineInfoKHR>();
     pi.pipeline = pExecutableInfo->pipeline;
 
     // We could probably cache this instead of fetching it every time
@@ -12038,9 +12022,7 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
         }
     }
 
-    VkBindImageMemoryInfo bind_info = {};
-    bind_info.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
-    bind_info.pNext = nullptr;
+    auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>();
     bind_info.image = image;
     bind_info.memory = mem;
     bind_info.memoryOffset = memoryOffset;
@@ -12354,9 +12336,7 @@ bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImport
 }
 
 static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {
-    VkImageCreateInfo result = {};
-    result.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    result.pNext = nullptr;
+    auto result = LvlInitStruct<VkImageCreateInfo>();
 
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
         result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
