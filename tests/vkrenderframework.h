@@ -290,7 +290,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> instance_extensions_;
     std::vector<const char *> &m_instance_extension_names = instance_extensions_;  // compatibility alias name
     VkInstance instance_;
-    VkPhysicalDevice gpu_;
+    VkPhysicalDevice gpu_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties physDevProps_;
 
     VkDeviceObj *m_device;
