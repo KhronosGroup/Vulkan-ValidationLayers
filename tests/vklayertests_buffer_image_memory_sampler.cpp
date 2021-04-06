@@ -13523,3 +13523,103 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
         }
     }
 }
+
+TEST_F(VkLayerTest, InvalidImageFormatList) {
+    TEST_DESCRIPTION("Tests for VK_KHR_image_format_list");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Use sampled formats that will always be supported
+    // Last format is not compatible with the rest
+    const VkFormat formats[4] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SNORM, VK_FORMAT_R8G8B8A8_UINT, VK_FORMAT_R8_UNORM};
+    VkImageFormatListCreateInfo formatList = LvlInitStruct<VkImageFormatListCreateInfo>(nullptr);
+    formatList.viewFormatCount = 4;
+    formatList.pViewFormats = formats;
+
+    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                   &formatList,
+                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                   VK_IMAGE_TYPE_2D,
+                                   VK_FORMAT_R8G8B8A8_UNORM,
+                                   {128, 128, 1},
+                                   1,
+                                   1,
+                                   VK_SAMPLE_COUNT_1_BIT,
+                                   VK_IMAGE_TILING_OPTIMAL,
+                                   VK_IMAGE_USAGE_SAMPLED_BIT,
+                                   VK_SHARING_MODE_EXCLUSIVE,
+                                   0,
+                                   nullptr,
+                                   VK_IMAGE_LAYOUT_UNDEFINED};
+
+    VkImage badImage = VK_NULL_HANDLE;
+    VkImageObj mutableImage(m_device);
+    VkImageObj mutableImageZero(m_device);
+    VkImageObj normalImage(m_device);
+
+    // Not all 4 formats are compatible
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-04737");
+    vk::CreateImage(device(), &imageInfo, nullptr, &badImage);
+    m_errorMonitor->VerifyFound();
+
+    // Should work with only first 3 in array
+    m_errorMonitor->ExpectSuccess();
+    formatList.viewFormatCount = 3;
+    mutableImage.init(&imageInfo);
+    ASSERT_TRUE(mutableImage.initialized());
+    m_errorMonitor->VerifyNotFound();
+
+    // Make sure no error if 0 format
+    m_errorMonitor->ExpectSuccess();
+    formatList.viewFormatCount = 0;
+    formatList.pViewFormats = &formats[3];  // non-compatible format
+    mutableImageZero.init(&imageInfo);
+    ASSERT_TRUE(mutableImageZero.initialized());
+    m_errorMonitor->VerifyNotFound();
+    // reset
+    formatList.viewFormatCount = 3;
+    formatList.pViewFormats = formats;
+
+    // Can't use 2 or higher formats if no mutable flag
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-04738");
+    imageInfo.flags = 0;
+    vk::CreateImage(device(), &imageInfo, nullptr, &badImage);
+    m_errorMonitor->VerifyFound();
+
+    // Make sure no error if 1 format
+    m_errorMonitor->ExpectSuccess();
+    formatList.viewFormatCount = 1;
+    normalImage.init(&imageInfo);
+    ASSERT_TRUE(normalImage.initialized());
+    m_errorMonitor->VerifyNotFound();
+
+    VkImageViewCreateInfo imageViewInfo = LvlInitStruct<VkImageViewCreateInfo>(nullptr);
+    imageViewInfo.flags = 0;
+    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewInfo.subresourceRange.layerCount = 1;
+    imageViewInfo.subresourceRange.baseMipLevel = 0;
+    imageViewInfo.subresourceRange.levelCount = 1;
+    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageViewInfo.image = mutableImage.handle();
+
+    // Not in format list
+    imageViewInfo.format = VK_FORMAT_R8_SNORM;
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01018");
+    CreateImageViewTest(*this, &imageViewInfo, "VUID-VkImageViewCreateInfo-pNext-01585");
+
+    imageViewInfo.format = VK_FORMAT_R8G8B8A8_SNORM;
+    CreateImageViewTest(*this, &imageViewInfo, {});
+
+    // If viewFormatCount is zero should not hit VUID 01585
+    imageViewInfo.image = mutableImageZero.handle();
+    CreateImageViewTest(*this, &imageViewInfo, {});
+}
