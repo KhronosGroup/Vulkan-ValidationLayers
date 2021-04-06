@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ class VkTestFramework : public ::testing::Test {
     static bool m_strip_spv;
     static bool m_do_everything_spv;
     static bool m_devsim_layer;
+    static int m_phys_device_index;
 
     char **ReadFileData(const char *fileName);
     void FreeFileData(char **data);

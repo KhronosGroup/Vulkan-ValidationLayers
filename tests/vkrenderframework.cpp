@@ -463,12 +463,43 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance_));
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
-    uint32_t gpu_count = 1;
-    const VkResult err = vk::EnumeratePhysicalDevices(instance_, &gpu_count, &gpu_);
+    // Choose a physical device
+    uint32_t gpu_count = 0;
+    const VkResult err = vk::EnumeratePhysicalDevices(instance_, &gpu_count, nullptr);
     ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
     ASSERT_GT(gpu_count, (uint32_t)0) << "No GPU (i.e. VkPhysicalDevice) available";
 
-    vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
+    std::vector<VkPhysicalDevice> phys_devices(gpu_count);
+    vk::EnumeratePhysicalDevices(instance_, &gpu_count, phys_devices.data());
+
+    const int phys_device_index = VkTestFramework::m_phys_device_index;
+    if ((phys_device_index >= 0) && (phys_device_index < static_cast<int>(gpu_count))) {
+        gpu_ = phys_devices[phys_device_index];
+        vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
+    } else {
+        // Specify a "physical device priority" with larger values meaning higher priority.
+        std::array<int, VK_PHYSICAL_DEVICE_TYPE_CPU + 1> device_type_rank;
+        device_type_rank[VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU] = 4;
+        device_type_rank[VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU] = 3;
+        device_type_rank[VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU] = 2;
+        device_type_rank[VK_PHYSICAL_DEVICE_TYPE_CPU] = 1;
+        device_type_rank[VK_PHYSICAL_DEVICE_TYPE_OTHER] = 0;
+
+        // Initialize physical device and properties with first device found
+        gpu_ = phys_devices[0];
+        vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
+
+        // See if there are any higher priority devices found
+        for (size_t i = 1; i < phys_devices.size(); ++i) {
+            VkPhysicalDeviceProperties tmp_props;
+            vk::GetPhysicalDeviceProperties(phys_devices[i], &tmp_props);
+            if (device_type_rank[tmp_props.deviceType] > device_type_rank[physDevProps_.deviceType]) {
+                physDevProps_ = tmp_props;
+                gpu_ = phys_devices[i];
+            }
+        }
+    }
+
     debug_reporter_.Create(instance_);
 }
 
