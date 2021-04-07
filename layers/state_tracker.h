@@ -190,6 +190,15 @@ struct create_shader_module_api_state {
     std::vector<unsigned int> instrumented_pgm;
 };
 
+// This structure is used modify parameters for the CmdDrawIndirectCount down-chain API call
+struct cmd_draw_indirect_count_api_state {
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    uint32_t stride;
+    VkBuffer count_buffer;
+    VkDeviceSize count_buffer_offset;
+};
+
 struct GpuQueue {
     VkPhysicalDevice gpu;
     uint32_t queue_family_index;
@@ -1132,10 +1141,10 @@ class ValidationStateTracker : public ValidationObject {
                                                   uint32_t stride) override;
     void RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
                                     VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride, const char* function);
-    void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    void PostCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                               uint32_t stride) override;
-    void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+    void PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                            uint32_t stride) override;
     void PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

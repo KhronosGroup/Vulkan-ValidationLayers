@@ -6059,7 +6059,7 @@ void ValidationStateTracker::RecordCmdDrawIndirectCount(VkCommandBuffer commandB
     AddCommandBufferBindingBuffer(cb_state, count_buffer_state);
 }
 
-void ValidationStateTracker::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+void ValidationStateTracker::PostCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                   VkDeviceSize offset, VkBuffer countBuffer,
                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                   uint32_t stride) {
@@ -6067,7 +6067,7 @@ void ValidationStateTracker::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffe
                                "vkCmdDrawIndirectCountKHR()");
 }
 
-void ValidationStateTracker::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+void ValidationStateTracker::PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                uint32_t maxDrawCount, uint32_t stride) {
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,

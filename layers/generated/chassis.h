@@ -5030,6 +5030,17 @@ class ValidationObject {
         virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void *modified_create_info) {
             PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
         };
+
+        // Modify parameters to CmdDrawIndirectCount
+        virtual void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride, void *cdic_state) {
+            PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+        };
+
+        // Modify parameters to CmdDrawIndirectCountKHR
+        virtual void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride, void *cdic_state) {
+            PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+        };
+
 };
 
 extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;

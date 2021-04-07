@@ -161,6 +161,8 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkCreateShaderModule',
         'vkAllocateDescriptorSets',
         'vkCreateBuffer',
+        'vkCmdDrawIndirectCount',
+        'vkCmdDrawIndirectCountKHR',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
@@ -1448,6 +1450,75 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
     return result;
 }
 
+// This API needs the ability to modify a down-chain parameter
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+
+    cmd_draw_indirect_count_api_state cdic_state{};
+    cdic_state.buffer = buffer;
+    cdic_state.offset = offset;
+    cdic_state.stride = stride;
+    cdic_state.count_buffer = countBuffer;
+    cdic_state.count_buffer_offset = countBufferOffset;
+
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, &cdic_state);
+    }
+    DispatchCmdDrawIndirectCount(commandBuffer, buffer, offset, cdic_state.count_buffer, cdic_state.count_buffer_offset, maxDrawCount, stride);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    }
+}
+
+// This API needs the ability to modify a down-chain parameter
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+
+    cmd_draw_indirect_count_api_state cdic_state{};
+    cdic_state.buffer = buffer;
+    cdic_state.offset = offset;
+    cdic_state.stride = stride;
+    cdic_state.count_buffer = countBuffer;
+    cdic_state.count_buffer_offset = countBufferOffset;
+
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, &cdic_state);
+    }
+    DispatchCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, cdic_state.count_buffer, cdic_state.count_buffer_offset, maxDrawCount, stride);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    }
+}
 
 // Handle tooling queries manually as this is a request for layer information
 
@@ -1650,6 +1721,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void *modified_create_info) {
             PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
         };
+
+        // Modify parameters to CmdDrawIndirectCount
+        virtual void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride, void *cdic_state) {
+            PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+        };
+
+        // Modify parameters to CmdDrawIndirectCountKHR
+        virtual void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride, void *cdic_state) {
+            PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+        };
+
 """
 
     inline_custom_source_postamble = """

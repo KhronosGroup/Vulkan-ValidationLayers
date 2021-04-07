@@ -418,9 +418,6 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetDescriptorSetLayoutSupport,
     InterceptIdPreCallRecordGetDescriptorSetLayoutSupport,
     InterceptIdPostCallRecordGetDescriptorSetLayoutSupport,
-    InterceptIdPreCallValidateCmdDrawIndirectCount,
-    InterceptIdPreCallRecordCmdDrawIndirectCount,
-    InterceptIdPostCallRecordCmdDrawIndirectCount,
     InterceptIdPreCallValidateCmdDrawIndexedIndirectCount,
     InterceptIdPreCallRecordCmdDrawIndexedIndirectCount,
     InterceptIdPostCallRecordCmdDrawIndexedIndirectCount,
@@ -625,9 +622,6 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetDescriptorSetLayoutSupportKHR,
     InterceptIdPreCallRecordGetDescriptorSetLayoutSupportKHR,
     InterceptIdPostCallRecordGetDescriptorSetLayoutSupportKHR,
-    InterceptIdPreCallValidateCmdDrawIndirectCountKHR,
-    InterceptIdPreCallRecordCmdDrawIndirectCountKHR,
-    InterceptIdPostCallRecordCmdDrawIndirectCountKHR,
     InterceptIdPreCallValidateCmdDrawIndexedIndirectCountKHR,
     InterceptIdPreCallRecordCmdDrawIndexedIndirectCountKHR,
     InterceptIdPostCallRecordCmdDrawIndexedIndirectCountKHR,
@@ -1558,9 +1552,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDescriptorSetLayoutSupport);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorSetLayoutSupport);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorSetLayoutSupport);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawIndirectCount);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawIndirectCount);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawIndirectCount);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawIndexedIndirectCount);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawIndexedIndirectCount);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawIndexedIndirectCount);
@@ -1821,9 +1812,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDescriptorSetLayoutSupportKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorSetLayoutSupportKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorSetLayoutSupportKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawIndirectCountKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawIndirectCountKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawIndirectCountKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawIndexedIndirectCountKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawIndexedIndirectCountKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawIndexedIndirectCountKHR);
