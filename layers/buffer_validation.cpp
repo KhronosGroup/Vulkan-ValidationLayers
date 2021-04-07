@@ -1283,6 +1283,51 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
     }
 }
 
+// Check if all barriers are of a given operation type.
+template <typename Barrier, typename OpCheck>
+bool AllTransferOp(const COMMAND_POOL_STATE *pool, OpCheck &op_check, uint32_t count, const Barrier *barriers) {
+    if (!pool) return false;
+
+    for (uint32_t b = 0; b < count; b++) {
+        if (!op_check(pool, barriers[b])) return false;
+    }
+    return true;
+}
+
+// Look at the barriers to see if we they are all release or all acquire, the result impacts queue properties validation
+template <typename BufBarrier, typename ImgBarrier>
+BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count,
+                                                               const BufBarrier *buffer_barriers, uint32_t image_barrier_count,
+                                                               const ImgBarrier *image_barriers) const {
+    auto pool = cb_state->command_pool.get();
+    BarrierOperationsType op_type = kGeneral;
+
+    // Look at the barrier details only if they exist
+    // Note: AllTransferOp returns true for count == 0
+    if ((buffer_barrier_count + image_barrier_count) != 0) {
+        if (AllTransferOp(pool, TempIsReleaseOp<BufBarrier>, buffer_barrier_count, buffer_barriers) &&
+            AllTransferOp(pool, TempIsReleaseOp<ImgBarrier>, image_barrier_count, image_barriers)) {
+            op_type = kAllRelease;
+        } else if (AllTransferOp(pool, IsAcquireOp<BufBarrier>, buffer_barrier_count, buffer_barriers) &&
+                   AllTransferOp(pool, IsAcquireOp<ImgBarrier>, image_barrier_count, image_barriers)) {
+            op_type = kAllAcquire;
+        }
+    }
+
+    return op_type;
+}
+// explictly instantiate so these can be used in core_validation.cpp
+template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state,
+                                                                        uint32_t buffer_barrier_count,
+                                                                        const VkBufferMemoryBarrier *buffer_barriers,
+                                                                        uint32_t image_barrier_count,
+                                                                        const VkImageMemoryBarrier *image_barriers) const;
+template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state,
+                                                                        uint32_t buffer_barrier_count,
+                                                                        const VkBufferMemoryBarrier2KHR *buffer_barriers,
+                                                                        uint32_t image_barrier_count,
+                                                                        const VkImageMemoryBarrier2KHR *image_barriers) const;
+
 // Verify image barrier image state and that the image is consistent with FB image
 template <typename ImgBarrier>
 bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_STATE const *cb_state,

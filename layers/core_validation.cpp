@@ -86,6 +86,16 @@ extern template bool CoreChecks::ValidateImageBarrierAttachment(const Location &
                                                                 const VkImageMemoryBarrier2KHR &img_barrier,
                                                                 const CMD_BUFFER_STATE *primary_cb_state) const;
 
+extern template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state,
+                                                                               uint32_t buffer_barrier_count,
+                                                                               const VkBufferMemoryBarrier *buffer_barriers,
+                                                                               uint32_t image_barrier_count,
+                                                                               const VkImageMemoryBarrier *image_barriers) const;
+
+extern template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(
+    const CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count, const VkBufferMemoryBarrier2KHR *buffer_barriers,
+    uint32_t image_barrier_count, const VkImageMemoryBarrier2KHR *image_barriers) const;
+
 // These functions are defined *outside* the core_validation namespace as their type
 // is also defined outside that namespace
 size_t PipelineLayoutCompatDef::hash() const {
@@ -7695,40 +7705,6 @@ bool CoreChecks::ValidateEventStageMask(const ValidationStateTracker *state_data
             sourceStageMask, stage_mask);
     }
     return skip;
-}
-
-// Check if all barriers are of a given operation type.
-template <typename Barrier, typename OpCheck>
-bool AllTransferOp(const COMMAND_POOL_STATE *pool, OpCheck &op_check, uint32_t count, const Barrier *barriers) {
-    if (!pool) return false;
-
-    for (uint32_t b = 0; b < count; b++) {
-        if (!op_check(pool, barriers[b])) return false;
-    }
-    return true;
-}
-
-// Look at the barriers to see if we they are all release or all acquire, the result impacts queue properties validation
-template <typename BufBarrier, typename ImgBarrier>
-BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count,
-                                                               const BufBarrier *buffer_barriers, uint32_t image_barrier_count,
-                                                               const ImgBarrier *image_barriers) const {
-    auto pool = cb_state->command_pool.get();
-    BarrierOperationsType op_type = kGeneral;
-
-    // Look at the barrier details only if they exist
-    // Note: AllTransferOp returns true for count == 0
-    if ((buffer_barrier_count + image_barrier_count) != 0) {
-        if (AllTransferOp(pool, TempIsReleaseOp<BufBarrier>, buffer_barrier_count, buffer_barriers) &&
-            AllTransferOp(pool, TempIsReleaseOp<ImgBarrier>, image_barrier_count, image_barriers)) {
-            op_type = kAllRelease;
-        } else if (AllTransferOp(pool, IsAcquireOp<BufBarrier>, buffer_barrier_count, buffer_barriers) &&
-                   AllTransferOp(pool, IsAcquireOp<ImgBarrier>, image_barrier_count, image_barriers)) {
-            op_type = kAllAcquire;
-        }
-    }
-
-    return op_type;
 }
 
 bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
