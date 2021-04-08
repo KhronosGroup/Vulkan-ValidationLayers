@@ -8820,18 +8820,16 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
                         if (used_as_input_color_resolve_depth_stencil_attachment) {
                             if (mip_width < pCreateInfo->width) {
-                                skip |=
-                                    LogError(device, "VUID-VkFramebufferCreateInfo-flags-04533",
-                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has width "
-                                             "smaller than the corresponding framebuffer width (%u).",
-                                             i, mip_width, pCreateInfo->width);
+                                skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-04533",
+                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has "
+                                                 "width (%u) smaller than the corresponding framebuffer width (%u).",
+                                                 i, mip_level, mip_width, pCreateInfo->width);
                             }
                             if (mip_height < pCreateInfo->height) {
-                                skip |= LogError(
-                                    device, "VUID-VkFramebufferCreateInfo-flags-04534",
-                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has height "
-                                    "smaller than the corresponding framebuffer height (%u).",
-                                    i, mip_height, pCreateInfo->height);
+                                skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-04534",
+                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has "
+                                                 "height (%u) smaller than the corresponding framebuffer height (%u).",
+                                                 i, mip_level, mip_height, pCreateInfo->height);
                             }
                             if (ivci.subresourceRange.layerCount < pCreateInfo->layers) {
                                 skip |=
