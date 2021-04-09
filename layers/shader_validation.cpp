@@ -3268,6 +3268,7 @@ void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter
                 case spv::ExecutionModeTriangles:
                 case spv::ExecutionModeQuads:
                 case spv::ExecutionModeOutputTriangleStrip:
+                case spv::ExecutionModeOutputTrianglesNV:
                     pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
                     break;
             }
