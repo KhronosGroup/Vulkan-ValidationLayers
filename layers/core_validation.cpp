@@ -4888,7 +4888,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
 
     for (uint32_t i = 0; i < count; i++) {
-        auto pvids_ci = LvlFindInChain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext);
+        auto pvids_ci = (pipe_cis[i].pVertexInputState) ? LvlFindInChain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext) : nullptr;
         if (nullptr == pvids_ci) continue;
 
         const PIPELINE_STATE *pipe_state = pipe_state_vec[i].get();
