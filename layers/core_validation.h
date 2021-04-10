@@ -445,6 +445,36 @@ class CoreChecks : public ValidationStateTracker {
                                           const DrawDispatchVuid& vuids,
                                           Optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
 
+    bool ValidateGeneralBufferDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
+                                         const cvdescriptorset::DescriptorSet* descriptor_set,
+                                         const cvdescriptorset::BufferDescriptor& descriptor,
+                                         const std::pair<const uint32_t, DescriptorRequirement>& binding_info,
+                                         uint32_t index) const;
+
+    bool ValidateImageDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
+                                 const cvdescriptorset::DescriptorSet* descriptor_set,
+                                 const cvdescriptorset::ImageDescriptor& image_descriptor,
+                                 const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index,
+                                 bool record_time_validate, const std::vector<IMAGE_VIEW_STATE*>* attachments,
+                                 const std::vector<SUBPASS_INFO>& subpasses, VkFramebuffer framebuffer,
+                                 VkDescriptorType descriptor_type,
+                                 Optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
+
+    bool ValidateTexelDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
+                                 const cvdescriptorset::DescriptorSet* descriptor_set,
+                                 const cvdescriptorset::TexelDescriptor& texel_descriptor,
+                                 const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index) const;
+
+    bool ValidateAccelerationDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
+                                        const cvdescriptorset::DescriptorSet* descriptor_set,
+                                        const cvdescriptorset::AccelerationStructureDescriptor& descriptor,
+                                        const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index) const;
+
+    bool ValidateSamplerDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
+                                   const cvdescriptorset::DescriptorSet* descriptor_set,
+                                   const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index,
+                                   VkSampler sampler, bool is_immutable, const SAMPLER_STATE* sampler_state) const;
+
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;
     bool ValidateCopyUpdate(const VkCopyDescriptorSet* update, const DescriptorSet* dst_set, const DescriptorSet* src_set,
