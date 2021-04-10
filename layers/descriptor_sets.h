@@ -473,7 +473,7 @@ class AccelerationStructureDescriptor : public Descriptor {
     ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
     void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
-    bool is_khr() { return is_khr_; }
+    bool is_khr() const { return is_khr_; }
 
   private:
     bool is_khr_;
