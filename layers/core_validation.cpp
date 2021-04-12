@@ -5005,7 +5005,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
             if ((VK_FALSE == enabled_features.portability_subset_features.separateStencilMaskRef) && raster_state_ci &&
                 (VK_CULL_MODE_NONE == raster_state_ci->cullMode)) {
                 auto depth_stencil_ci = pCreateInfos[i].pDepthStencilState;
-                if ((VK_TRUE == depth_stencil_ci->stencilTestEnable) &&
+                if (depth_stencil_ci && (VK_TRUE == depth_stencil_ci->stencilTestEnable) &&
                     (depth_stencil_ci->front.reference != depth_stencil_ci->back.reference)) {
                     skip |= LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453",
                                      "Invalid Pipeline CreateInfo[%d] (portability error): VkStencilOpState::reference must be the "
