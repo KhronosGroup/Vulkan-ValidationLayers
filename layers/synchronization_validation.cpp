@@ -165,7 +165,7 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags
     return out_str;
 }
 
-static std::string string_UsageTag(const ResourceUsageTag &tag) {
+static std::string string_UsageTag(const ResourceUsageRecord &tag) {
     std::stringstream out;
 
     out << "command: " << CommandTypeString(tag.command);
@@ -193,7 +193,8 @@ std::string CommandBufferAccessContext::FormatUsage(const HazardResult &hazard) 
     }
 
     // PHASE2 TODO -- add comand buffer and reset from secondary if applicable
-    out << ", " << string_UsageTag(tag) << ", reset_no: " << reset_count_ << ")";
+    assert(tag < access_log_.size());
+    out << ", " << string_UsageTag(access_log_[tag]) << ", reset_no: " << reset_count_ << ")";
     return out.str();
 }
 
@@ -222,8 +223,7 @@ ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
      {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
 
 // Sometimes we have an internal access conflict, and we using the kCurrentCommandTag to set and detect in temporary/proxy contexts
-static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, ResourceUsageTag::kMaxCount,
-                                                 ResourceUsageTag::kMaxCount, CMD_NONE);
+static const ResourceUsageTag kCurrentCommandTag(ResourceUsageRecord::kMaxIndex);
 
 static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) { return bindable.GetFakeBaseAddress(); }
 
@@ -605,7 +605,7 @@ class ValidateResolveAction {
 // Update action for resolve operations
 class UpdateStateResolveAction {
   public:
-    UpdateStateResolveAction(AccessContext &context, const ResourceUsageTag &tag) : context_(context), tag_(tag) {}
+    UpdateStateResolveAction(AccessContext &context, ResourceUsageTag tag) : context_(context), tag_(tag) {}
     void operator()(const char *, const char *, uint32_t, uint32_t, const AttachmentViewGen &view_gen,
                     AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) {
         // Ignores validation only arguments...
@@ -614,11 +614,11 @@ class UpdateStateResolveAction {
 
   private:
     AccessContext &context_;
-    const ResourceUsageTag &tag_;
+    const ResourceUsageTag tag_;
 };
 
 void HazardResult::Set(const ResourceAccessState *access_state_, SyncStageAccessIndex usage_index_, SyncHazard hazard_,
-                       const SyncStageAccessFlags &prior_, const ResourceUsageTag &tag_) {
+                       const SyncStageAccessFlags &prior_, const ResourceUsageTag tag_) {
     access_state = std::unique_ptr<const ResourceAccessState>(new ResourceAccessState(*access_state_));
     usage_index = usage_index_;
     hazard = hazard_;
@@ -1143,7 +1143,7 @@ class HazardDetector {
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectHazard(usage_index_); }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
         return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
     explicit HazardDetector(SyncStageAccessIndex usage) : usage_index_(usage) {}
@@ -1157,7 +1157,7 @@ class HazardDetectorWithOrdering {
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectHazard(usage_index_, ordering_rule_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
         return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
     HazardDetectorWithOrdering(SyncStageAccessIndex usage, SyncOrdering ordering) : usage_index_(usage), ordering_rule_(ordering) {}
@@ -1253,7 +1253,7 @@ class BarrierHazardDetector {
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectBarrierHazard(usage_index_, src_exec_scope_, src_access_scope_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
         return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
@@ -1268,7 +1268,7 @@ class EventBarrierHazardDetector {
   public:
     EventBarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                                SyncStageAccessFlags src_access_scope, const SyncEventState::ScopeMap &event_scope,
-                               const ResourceUsageTag &scope_tag)
+                               ResourceUsageTag scope_tag)
         : usage_index_(usage_index),
           src_exec_scope_(src_exec_scope),
           src_access_scope_(src_access_scope),
@@ -1290,7 +1290,7 @@ class EventBarrierHazardDetector {
         // Some portion of this pos is in the event_scope, so check for a barrier hazard
         return pos->second.DetectBarrierHazard(usage_index_, src_exec_scope_, src_access_scope_, scope_tag_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, const ResourceUsageTag &start_tag) const {
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
         return pos->second.DetectAsyncHazard(usage_index_, start_tag);
     }
@@ -1302,7 +1302,7 @@ class EventBarrierHazardDetector {
     const SyncEventState::ScopeMap &event_scope_;
     SyncEventState::ScopeMap::const_iterator scope_pos_;
     SyncEventState::ScopeMap::const_iterator scope_end_;
-    const ResourceUsageTag &scope_tag_;
+    const ResourceUsageTag scope_tag_;
 };
 
 HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
@@ -1453,13 +1453,13 @@ struct UpdateMemoryAccessStateFunctor {
     }
 
     UpdateMemoryAccessStateFunctor(AccessAddressType type_, const AccessContext &context_, SyncStageAccessIndex usage_,
-                                   SyncOrdering ordering_rule_, const ResourceUsageTag &tag_)
+                                   SyncOrdering ordering_rule_, ResourceUsageTag tag_)
         : type(type_), context(context_), usage(usage_), ordering_rule(ordering_rule_), tag(tag_) {}
     const AccessAddressType type;
     const AccessContext &context;
     const SyncStageAccessIndex usage;
     const SyncOrdering ordering_rule;
-    const ResourceUsageTag &tag;
+    const ResourceUsageTag tag;
 };
 
 // The barrier operation for pipeline and subpass dependencies`
@@ -1474,16 +1474,13 @@ struct PipelineBarrierOp {
 };
 // The barrier operation for wait events
 struct WaitEventBarrierOp {
-    const ResourceUsageTag *scope_tag;
+    ResourceUsageTag scope_tag;
     SyncBarrier barrier;
     bool layout_transition;
-    WaitEventBarrierOp(const ResourceUsageTag &scope_tag_, const SyncBarrier &barrier_, bool layout_transition_)
-        : scope_tag(&scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {}
+    WaitEventBarrierOp(const ResourceUsageTag scope_tag_, const SyncBarrier &barrier_, bool layout_transition_)
+        : scope_tag(scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {}
     WaitEventBarrierOp() = default;
-    void operator()(ResourceAccessState *access_state) const {
-        assert(scope_tag);  // Not valid to have a non-scope op executed, default construct included for std::vector support
-        access_state->ApplyBarrier(*scope_tag, barrier, layout_transition);
-    }
+    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope_tag, barrier, layout_transition); }
 };
 
 // This functor applies a collection of barriers, updating the "pending state" in each touched memory range, and optionally
@@ -1510,8 +1507,7 @@ class ApplyBarrierOpsFunctor {
     }
 
     // A valid tag is required IFF layout_transition is true, as transitions are write ops
-    ApplyBarrierOpsFunctor(bool resolve, size_t size_hint, const ResourceUsageTag &tag)
-        : resolve_(resolve), barrier_ops_(), tag_(tag) {
+    ApplyBarrierOpsFunctor(bool resolve, size_t size_hint, ResourceUsageTag tag) : resolve_(resolve), barrier_ops_(), tag_(tag) {
         barrier_ops_.reserve(size_hint);
     }
     void EmplaceBack(const BarrierOp &op) { barrier_ops_.emplace_back(op); }
@@ -1519,7 +1515,7 @@ class ApplyBarrierOpsFunctor {
   private:
     bool resolve_;
     std::vector<BarrierOp> barrier_ops_;
-    const ResourceUsageTag &tag_;
+    const ResourceUsageTag tag_;
 };
 
 // This functor applies a single barrier, updating the "pending state" in each touched memory range, but does not
@@ -1554,20 +1550,20 @@ class ResolvePendingBarrierFunctor {
         return pos;
     }
 
-    ResolvePendingBarrierFunctor(const ResourceUsageTag &tag) : tag_(tag) {}
+    ResolvePendingBarrierFunctor(ResourceUsageTag tag) : tag_(tag) {}
 
   private:
-    const ResourceUsageTag &tag_;
+    const ResourceUsageTag tag_;
 };
 
 void AccessContext::UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const ResourceAccessRange &range, const ResourceUsageTag &tag) {
+                                      const ResourceAccessRange &range, const ResourceUsageTag tag) {
     UpdateMemoryAccessStateFunctor action(type, *this, current_usage, ordering_rule, tag);
     UpdateMemoryAccessState(&GetAccessStateMap(type), range, action);
 }
 
 void AccessContext::UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const ResourceAccessRange &range, const ResourceUsageTag &tag) {
+                                      const ResourceAccessRange &range, const ResourceUsageTag tag) {
     if (!SimpleBinding(buffer)) return;
     const auto base_address = ResourceBaseAddress(buffer);
     UpdateAccessState(AccessAddressType::kLinear, current_usage, ordering_rule, range + base_address, tag);
@@ -1584,7 +1580,7 @@ void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
 }
 void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                      const VkExtent3D &extent, const ResourceUsageTag &tag) {
+                                      const VkExtent3D &extent, const ResourceUsageTag tag) {
     if (!SimpleBinding(image)) return;
     const auto base_address = ResourceBaseAddress(image);
     subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent,
@@ -1595,7 +1591,7 @@ void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
 }
 
 void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                      SyncStageAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag &tag) {
+                                      SyncStageAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag tag) {
     const ImageRangeGen *gen = view_gen.GetRangeGen(gen_type);
     if (!gen) return;
     subresource_adapter::ImageRangeGenerator range_gen(*gen);
@@ -1606,7 +1602,7 @@ void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, Attachm
 
 void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
-                                      const VkExtent3D &extent, const ResourceUsageTag &tag) {
+                                      const VkExtent3D &extent, const ResourceUsageTag tag) {
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
     UpdateAccessState(image, current_usage, ordering_rule, subresource_range, offset, extent, tag);
@@ -1627,13 +1623,13 @@ void AccessContext::ApplyUpdateAction(const AttachmentViewGen &view_gen, Attachm
 
 void AccessContext::UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state,
                                                   const AttachmentViewGenVector &attachment_views, uint32_t subpass,
-                                                  const ResourceUsageTag &tag) {
+                                                  const ResourceUsageTag tag) {
     UpdateStateResolveAction update(*this, tag);
     ResolveOperation(update, rp_state, attachment_views, subpass);
 }
 
 void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state, const AttachmentViewGenVector &attachment_views,
-                                                uint32_t subpass, const ResourceUsageTag &tag) {
+                                                uint32_t subpass, const ResourceUsageTag tag) {
     const auto *attachment_ci = rp_state.createInfo.pAttachments;
 
     for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
@@ -1703,7 +1699,7 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track
 }
 
 void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
-                                            const AttachmentViewGenVector &attachment_views, const ResourceUsageTag &tag) {
+                                            const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag) {
     const auto &transitions = rp_state.subpass_transitions[subpass];
     const ResourceAccessState empty_infill;
     for (const auto &transition : transitions) {
@@ -1886,7 +1882,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 }
 
 void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
-                                                                 const ResourceUsageTag &tag) {
+                                                                 const ResourceUsageTag tag) {
     const PIPELINE_STATE *pipe = nullptr;
     const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
     cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &per_sets);
@@ -2005,7 +2001,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag &tag) {
+void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag tag) {
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe) {
         return;
@@ -2053,7 +2049,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag &tag) {
+void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag tag) {
     if (cb_state_->index_buffer_binding.buffer_state == nullptr || cb_state_->index_buffer_binding.buffer_state->Destroyed()) return;
 
     auto *index_buf_state = cb_state_->index_buffer_binding.buffer_state.get();
@@ -2074,7 +2070,7 @@ bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(const char *func_
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsageTag &tag) {
+void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsageTag tag) {
     if (current_renderpass_context_) {
         current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_.get(), tag);
     }
@@ -2082,7 +2078,7 @@ void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsage
 
 void CommandBufferAccessContext::RecordBeginRenderPass(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                                        const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
-                                                       const ResourceUsageTag &tag) {
+                                                       const ResourceUsageTag tag) {
     // Create an access context the current renderpass.
     render_pass_contexts_.emplace_back(rp_state, render_area, GetQueueFlags(), attachment_views, &cb_access_context_);
     current_renderpass_context_ = &render_pass_contexts_.back();
@@ -2214,7 +2210,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
     return skip;
 }
 
-void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const ResourceUsageTag tag) {
     const auto *pipe = cmd.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe) {
         return;
@@ -2359,12 +2355,12 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
     return skip;
 }
 
-void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag tag) {
     // Add layout transitions...
     subpass_contexts_[current_subpass_].RecordLayoutTransitions(*rp_state_, current_subpass_, attachment_views_, tag);
 }
 
-void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
     const auto *attachment_ci = rp_state_->createInfo.pAttachments;
     auto &subpass_context = subpass_contexts_[current_subpass_];
 
@@ -2426,15 +2422,14 @@ RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_sta
     }
     attachment_views_ = CreateAttachmentViewGen(render_area, attachment_views);
 }
-void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag tag) {
     assert(0 == current_subpass_);
     subpass_contexts_[current_subpass_].SetStartTag(tag);
     RecordLayoutTransitions(tag);
     RecordLoadOperations(tag);
 }
 
-void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag &prev_subpass_tag,
-                                                const ResourceUsageTag &next_subpass_tag) {
+void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag prev_subpass_tag, const ResourceUsageTag next_subpass_tag) {
     // Resolves are against *prior* subpass context and thus *before* the subpass increment
     CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, prev_subpass_tag);
     CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, prev_subpass_tag);
@@ -2448,7 +2443,7 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag &prev_sub
     RecordLoadOperations(next_subpass_tag);
 }
 
-void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag tag) {
     // Add the resolve and store accesses
     CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, tag);
     CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, tag);
@@ -2550,7 +2545,7 @@ void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers
 // ApplyBarriers is design for *fully* inclusive barrier lists without layout tranistions.  Designed use was for
 // inter-subpass barriers for lazy-evaluation of parent context memory ranges.  Subpass layout transistions are *not* done
 // lazily, s.t. no previous access reports should need layout transitions.
-void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers, const ResourceUsageTag &tag) {
+void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers, const ResourceUsageTag tag) {
     assert(!pending_layout_transition);  // This should never be call in the middle of another barrier application
     assert(pending_write_barriers.none());
     assert(!pending_write_dep_chain);
@@ -2649,23 +2644,23 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
 }
 
 // Asynchronous Hazards occur between subpasses with no connection through the DAG
-HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_index, const ResourceUsageTag &start_tag) const {
+HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_index, const ResourceUsageTag start_tag) const {
     HazardResult hazard;
     auto usage = FlagBit(usage_index);
     // Async checks need to not go back further than the start of the subpass, as we only want to find hazards between the async
     // subpasses.  Anything older than that should have been checked at the start of each subpass, taking into account all of
     // the raster ordering rules.
     if (IsRead(usage)) {
-        if (last_write.any() && (write_tag.index >= start_tag.index)) {
+        if (last_write.any() && (write_tag >= start_tag)) {
             hazard.Set(this, usage_index, READ_RACING_WRITE, last_write, write_tag);
         }
     } else {
-        if (last_write.any() && (write_tag.index >= start_tag.index)) {
+        if (last_write.any() && (write_tag >= start_tag)) {
             hazard.Set(this, usage_index, WRITE_RACING_WRITE, last_write, write_tag);
         } else if (last_reads.size() > 0) {
             // Any reads during the other subpass will conflict with this write, so we need to check them all.
             for (const auto &read_access : last_reads) {
-                if (read_access.tag.index >= start_tag.index) {
+                if (read_access.tag >= start_tag) {
                     hazard.Set(this, usage_index, WRITE_RACING_READ, read_access.access, read_access.tag);
                     break;
                 }
@@ -2699,7 +2694,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
 
 HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                                                       const SyncStageAccessFlags &src_access_scope,
-                                                      const ResourceUsageTag &event_tag) const {
+                                                      const ResourceUsageTag event_tag) const {
     // Only supporting image layout transitions for now
     assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
     HazardResult hazard;
@@ -2710,7 +2705,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
         // Look at the reads if any... if reads exist, they are either the resaon the access is in the event
         // first scope, or they are a hazard.
         for (const auto &read_access : last_reads) {
-            if (read_access.tag.IsBefore(event_tag)) {
+            if (read_access.tag < event_tag) {
                 // The read is in the events first synchronization scope, so we use a barrier hazard check
                 // If the read stage is not in the src sync scope
                 // *AND* not execution chained with an existing sync barrier (that's the or)
@@ -2726,7 +2721,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
         }
     } else if (last_write.any()) {
         // if there are no reads, the write is either the reason the access is in the event scope... they are a hazard
-        if (write_tag.IsBefore(event_tag)) {
+        if (write_tag < event_tag) {
             // The write is in the first sync scope of the event (sync their aren't any reads to be the reason)
             // So do a normal barrier hazard check
             if (IsWriteBarrierHazard(src_exec_scope, src_access_scope)) {
@@ -2745,12 +2740,12 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
 // tranistive hazard can exists with a hazard between the earlier operations.  Yes, an early hazard can mask that another
 // exists, but if you fix *that* hazard it either fixes or unmasks the subsequent ones.
 void ResourceAccessState::Resolve(const ResourceAccessState &other) {
-    if (write_tag.IsBefore(other.write_tag)) {
+    if (write_tag < other.write_tag) {
         // If this is a later write, we've reported any exsiting hazard, and we can just overwrite as the more recent
         // operation
         *this = other;
-    } else if (!other.write_tag.IsBefore(write_tag)) {
-        // This is the *equals* case for write operations, we merged the write barriers and the read state (but without the
+    } else if (other.write_tag == write_tag) {
+        // In the *equals* case for write operations, we merged the write barriers and the read state (but without the
         // dependency chaining logic or any stage expansion)
         write_barriers |= other.write_barriers;
         pending_write_barriers |= other.pending_write_barriers;
@@ -2769,7 +2764,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                 for (uint32_t my_read_index = 0; my_read_index < pre_merge_count; my_read_index++) {
                     auto &my_read = last_reads[my_read_index];
                     if (other_read.stage == my_read.stage) {
-                        if (my_read.tag.IsBefore(other_read.tag)) {
+                        if (my_read.tag < other_read.tag) {
                             // Other is more recent, copy in the state
                             my_read.access = other_read.access;
                             my_read.tag = other_read.tag;
@@ -2782,7 +2777,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                                 // as this is the only stage that affects it.
                                 input_attachment_read = other.input_attachment_read;
                             }
-                        } else if (other_read.tag.IsBefore(my_read.tag)) {
+                        } else if (other_read.tag == my_read.tag) {
                             // The read tags match so merge the barriers
                             my_read.barriers |= other_read.barriers;
                             my_read.pending_dep_chain |= other_read.pending_dep_chain;
@@ -2815,8 +2810,8 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         auto a = firsts.begin();
         auto a_end = firsts.end();
         for (auto &b : other.first_accesses_) {
-            // TODO: Determine whether "IsBefore" or "IsGloballyBefore" is needed...
-            while (a != a_end && a->tag.IsBefore(b.tag)) {
+            // TODO: Determine whether some tag offset will be needed for PHASE II
+            while ((a != a_end) && (a->tag < b.tag)) {
                 UpdateFirst(a->tag, a->usage_index, a->ordering_rule);
                 ++a;
             }
@@ -2828,7 +2823,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
     }
 }
 
-void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, const ResourceUsageTag &tag) {
+void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, const ResourceUsageTag tag) {
     // Move this logic in the ResourceStateTracker as methods, thereof (or we'll repeat it for every flavor of resource...
     const auto usage_bit = FlagBit(usage_index);
     if (IsRead(usage_index)) {
@@ -2865,7 +2860,7 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering 
 // We can overwrite them as *this* write is now after them.
 //
 // Note: intentionally ignore pending barriers and chains (i.e. don't apply or clear them), let ApplyPendingBarriers handle them.
-void ResourceAccessState::SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag &tag) {
+void ResourceAccessState::SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag tag) {
     last_reads.clear();
     last_read_stages = 0;
     read_execution_barriers = 0;
@@ -2909,14 +2904,14 @@ void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_t
 
 // Apply the tag scoped memory barrier without updating the existing barriers.  The execution barrier
 // changes the "chaining" state, but to keep barriers independent. See discussion above.
-void ResourceAccessState::ApplyBarrier(const ResourceUsageTag &scope_tag, const SyncBarrier &barrier, bool layout_transition) {
+void ResourceAccessState::ApplyBarrier(const ResourceUsageTag scope_tag, const SyncBarrier &barrier, bool layout_transition) {
     // The scope logic for events is, if we're here, the resource usage was flagged as "in the first execution scope" at
     // the time of the SetEvent, thus all we need check is whether the access is the same one (i.e. before the scope tag
     // in order to know if it's in the excecution scope
     // Notice that the layout transition sets the pending barriers *regardless*, as any lack of src_access_scope to
     // guard against the layout transition should be reported in the detect barrier hazard phase, and we only report
     // errors w.r.t. "most recent" accesses.
-    if (layout_transition || ((write_tag.IsBefore(scope_tag)) && (barrier.src_access_scope & last_write).any())) {
+    if (layout_transition || ((write_tag < scope_tag) && (barrier.src_access_scope & last_write).any())) {
         pending_write_barriers |= barrier.dst_access_scope;
         pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
     }
@@ -2934,14 +2929,13 @@ void ResourceAccessState::ApplyBarrier(const ResourceUsageTag &scope_tag, const 
             // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
             // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
             // TODO: eliminate the false positive by including write/read-stages "in scope" information in SetEvents first_scope
-            if (read_access.tag.IsBefore(scope_tag) &&
-                (barrier.src_exec_scope.exec_scope & (read_access.stage | read_access.barriers))) {
+            if ((read_access.tag < scope_tag) && (barrier.src_exec_scope.exec_scope & (read_access.stage | read_access.barriers))) {
                 read_access.pending_dep_chain |= barrier.dst_exec_scope.exec_scope;
             }
         }
     }
 }
-void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag &tag) {
+void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     if (pending_layout_transition) {
         // SetWrite clobbers the read count, and thus we don't have to clear the read_state out.
         SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION_BIT, tag);  // Side effect notes below
@@ -3001,7 +2995,7 @@ VkPipelineStageFlags2KHR ResourceAccessState::GetOrderedStages(const OrderingBar
     return ordered_stages;
 }
 
-void ResourceAccessState::UpdateFirst(const ResourceUsageTag &tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule) {
+void ResourceAccessState::UpdateFirst(const ResourceUsageTag tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule) {
     // Only record until we record a write.
     if (first_accesses_.empty() || IsRead(first_accesses_.back().usage_index)) {
         const VkPipelineStageFlags2KHR usage_stage = IsRead(usage_index) ? PipelineStageBit(usage_index) : 0U;
@@ -3966,7 +3960,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
     return skip;
 }
 
-void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
+void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag tag, const VkDeviceSize struct_size,
                                          const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
                                          uint32_t stride) {
     const auto *buf_state = Get<BUFFER_STATE>(buffer);
@@ -4001,7 +3995,7 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
     return skip;
 }
 
-void SyncValidator::RecordCountBuffer(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset) {
+void SyncValidator::RecordCountBuffer(AccessContext &context, const ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset) {
     const auto *count_buf_state = Get<BUFFER_STATE>(buffer);
     const ResourceAccessRange range = MakeRange(offset, 4);
     context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range, tag);
@@ -5068,7 +5062,7 @@ struct SyncOpPipelineBarrierFunctorFactory {
     ApplyFunctor MakeApplyFunctor(const SyncBarrier &barrier, bool layout_transition) const {
         return ApplyFunctor(BarrierOpFunctor(barrier, layout_transition));
     }
-    GlobalApplyFunctor MakeGlobalApplyFunctor(size_t size_hint, const ResourceUsageTag &tag) const {
+    GlobalApplyFunctor MakeGlobalApplyFunctor(size_t size_hint, ResourceUsageTag tag) const {
         return GlobalApplyFunctor(true /* resolve */, size_hint, tag);
     }
     GlobalBarrierOpFunctor MakeGlobalBarrierOpFunctor(const SyncBarrier &barrier) const {
@@ -5091,7 +5085,7 @@ struct SyncOpPipelineBarrierFunctorFactory {
 };
 
 template <typename Barriers, typename FunctorFactory>
-void SyncOpBarriers::ApplyBarriers(const Barriers &barriers, const FunctorFactory &factory, const ResourceUsageTag &tag,
+void SyncOpBarriers::ApplyBarriers(const Barriers &barriers, const FunctorFactory &factory, const ResourceUsageTag tag,
                                    AccessContext *context) {
     for (const auto &barrier : barriers) {
         const auto *state = barrier.GetState();
@@ -5105,7 +5099,7 @@ void SyncOpBarriers::ApplyBarriers(const Barriers &barriers, const FunctorFactor
 }
 
 template <typename Barriers, typename FunctorFactory>
-void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const FunctorFactory &factory, const ResourceUsageTag &tag,
+void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const FunctorFactory &factory, const ResourceUsageTag tag,
                                          AccessContext *access_context) {
     auto barriers_functor = factory.MakeGlobalApplyFunctor(barriers.size(), tag);
     for (const auto &barrier : barriers) {
@@ -5441,7 +5435,7 @@ struct SyncOpWaitEventsFunctorFactory {
         auto barrier = RestrictToEvent(barrier_arg);
         return ApplyFunctor(BarrierOpFunctor(sync_event->first_scope_tag, barrier, layout_transition));
     }
-    GlobalApplyFunctor MakeGlobalApplyFunctor(size_t size_hint, const ResourceUsageTag &tag) const {
+    GlobalApplyFunctor MakeGlobalApplyFunctor(size_t size_hint, ResourceUsageTag tag) const {
         return GlobalApplyFunctor(false /* don't resolve */, size_hint, tag);
     }
     GlobalBarrierOpFunctor MakeGlobalBarrierOpFunctor(const SyncBarrier &barrier_arg) const {
@@ -5544,7 +5538,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer comm
             skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdWriteBufferMarkerAMD2: Hazard %s for dstBuffer %s. Access info %s.",
                              string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstBuffer).c_str(),
-                             string_UsageTag(hazard.tag).c_str());
+                             cb_access_context->FormatUsage(hazard).c_str());
         }
     }
     return skip;
