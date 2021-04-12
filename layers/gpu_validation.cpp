@@ -1287,11 +1287,15 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(unsigned int);
     }
 }
+static const int kInstErrorPreDrawValidate = spvtools::kInstErrorBuffOOBStorageTexel + 1; // TODO - get this into instrument.hpp
+static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 1;
+static const int pre_draw_count_too_big_error = 1; // TODO - share this with the shader code
 
 // Generate the part of the message describing the violation.
-static void GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, CMD_TYPE cmd_type) {
+static bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, CMD_TYPE cmd_type) {
     using namespace spvtools;
     std::ostringstream strm;
+    bool return_code = true;
     switch (debug_record[kInstValidationOutError]) {
         case kInstErrorBindlessBounds: {
             strm << "Index of " << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length "
@@ -1340,8 +1344,23 @@ static void GenerateValidationMessage(const uint32_t *debug_record, std::string 
                 else
                     vuid_msg = vuid.storage_access_oob;
             }
-            break;
-        }
+        } break;
+        case kInstErrorPreDrawValidate: {
+            if (debug_record[kPreDrawValidateSubError] == pre_draw_count_too_big_error) {
+                // TODO - Include buffer, stride, offset, buffer and size of buffer in error message
+                // TODO - Add VUIDs to GpuVuids
+                uint32_t count = debug_record[kPreDrawValidateSubError + 1];
+                if (cmd_type == CMD_DRAWINDIRECTCOUNT) {
+                    strm << "Indirect draw count of " << count << " would exceed buffer size";
+                    if (count == 1) {
+                        vuid_msg = "VUID-vkCmdDrawIndirectCount-countBuffer-03121";
+                    } else {
+                        vuid_msg = "VUID-vkCmdDrawIndirectCount-countBuffer-03122";
+                    }
+                }
+            }
+            return_code = false;
+        } break;
         default: {
             strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";
             vuid_msg = "UNASSIGNED-Internal Error";
@@ -1349,6 +1368,7 @@ static void GenerateValidationMessage(const uint32_t *debug_record, std::string 
         } break;
     }
     msg = strm.str();
+    return return_code;
 }
 
 // Pull together all the information from the debug record to build the error message strings,
@@ -1395,13 +1415,18 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         pipeline_handle = it->second.pipeline;
         pgm = it->second.pgm;
     }
-    GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info.cmd_type);
-    UtilGenerateStageMessage(debug_record, stage_message);
-    UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
-                              buffer_info.pipeline_bind_point, operation_index, common_message);
-    UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
-    LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
-             filename_message.c_str(), source_message.c_str());
+    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info.cmd_type);
+    if (gen_full_message) {
+        UtilGenerateStageMessage(debug_record, stage_message);
+        UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
+            buffer_info.pipeline_bind_point, operation_index, common_message);
+        UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
+        LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
+            filename_message.c_str(), source_message.c_str());
+    }
+    else {
+        LogError(queue, vuid_msg.c_str(), "%s", validation_message.c_str());
+    }
     // The debug record at word kInstCommonOutSize is the number of words in the record
     // written by the shader.  Clear the entire record plus the total_words word at the start.
     const uint32_t words_to_clear = 1 + std::min(debug_record[kInstCommonOutSize], static_cast<uint32_t>(kInstMaxOutCnt));
