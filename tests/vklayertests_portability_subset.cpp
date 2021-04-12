@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020 The Khronos Group Inc.
- * Copyright (c) 2020 Valve Corporation
- * Copyright (c) 2020 LunarG, Inc.
+ * Copyright (c) 2020-2021 The Khronos Group Inc.
+ * Copyright (c) 2020-2021 Valve Corporation
+ * Copyright (c) 2020-2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,12 +463,20 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
     pipe.InitInfo();
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.rs_state_ci_.cullMode = VK_CULL_MODE_NONE;
-    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
+
+    // Ensure using without depth-stencil works
+    m_errorMonitor->ExpectSuccess();
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    // pDepthStencilState should be ignored if rasterization is disabled or if the referenced subpass does not use a depth/stencil
+    // attachment
+    pipe.gp_ci_.pDepthStencilState = nullptr;
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState) {
