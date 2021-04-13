@@ -1728,21 +1728,10 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
 }
 
 void CommandBufferAccessContext::ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst) {
-    const bool all_commands_bit = 0 != (src.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
     auto *events_context = GetCurrentEventsContext();
     assert(events_context);
-    for (auto &event_pair : *events_context) {
-        assert(event_pair.second);  // Shouldn't be storing empty
-        auto &sync_event = *event_pair.second;
-        // Events don't happen at a stage, so we need to check and store the unexpanded ALL_COMMANDS if set for inter-event-calls
-        if ((sync_event.barriers & src.exec_scope) || all_commands_bit) {
-            sync_event.barriers |= dst.exec_scope;
-            sync_event.barriers |= dst.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        }
-    }
+    events_context->ApplyBarrier(src, dst);
 }
-
 
 bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                    const char *func_name) const {
@@ -2086,19 +2075,17 @@ void CommandBufferAccessContext::RecordBeginRenderPass(const RENDER_PASS_STATE &
     current_context_ = &current_renderpass_context_->CurrentContext();
 }
 
-void CommandBufferAccessContext::RecordNextSubpass(CMD_TYPE command) {
+void CommandBufferAccessContext::RecordNextSubpass(ResourceUsageTag prev_tag, ResourceUsageTag next_tag) {
     assert(current_renderpass_context_);
-    auto prev_tag = NextCommandTag(command);
-    auto next_tag = NextSubcommandTag(command);
     current_renderpass_context_->RecordNextSubpass(prev_tag, next_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
 }
 
-void CommandBufferAccessContext::RecordEndRenderPass(CMD_TYPE command) {
+void CommandBufferAccessContext::RecordEndRenderPass(const ResourceUsageTag tag) {
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return;
 
-    current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, NextCommandTag(command));
+    current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, tag);
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
 }
@@ -3325,11 +3312,12 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffe
     assert(cb_access_context);
     if (!cb_access_context) return;
 
-    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(), srcStageMask,
-                                           dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
-                                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                                           pImageMemoryBarriers);
-    pipeline_barrier.Record(cb_access_context);
+    CommandBufferAccessContext::SyncOpPointer sync_op(
+        new SyncOpPipelineBarrier(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(), srcStageMask, dstStageMask,
+                                  dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                                  pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers));
+    const auto tag = sync_op->Record(cb_access_context);
+    cb_access_context->AddSyncOp(tag, std::move(sync_op));
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
@@ -3349,8 +3337,10 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandB
     assert(cb_access_context);
     if (!cb_access_context) return;
 
-    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER2KHR, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo);
-    pipeline_barrier.Record(cb_access_context);
+    CommandBufferAccessContext::SyncOpPointer sync_op(
+        new SyncOpPipelineBarrier(CMD_PIPELINEBARRIER2KHR, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo));
+    const auto tag = sync_op->Record(cb_access_context);
+    cb_access_context->AddSyncOp(tag, std::move(sync_op));
 }
 
 void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
@@ -4911,7 +4901,8 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
     SyncOpWaitEvents wait_events_op(CMD_WAITEVENTS, *this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask,
                                     dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                                     pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    return wait_events_op.Record(cb_context);
+    wait_events_op.Record(cb_context);
+    return;
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -5111,26 +5102,36 @@ void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const Functor
     }
 }
 
-void SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) const {
-    SyncOpPipelineBarrierFunctorFactory factory;
+ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) const {
     auto *access_context = cb_context->GetCurrentAccessContext();
+    auto *events_context = cb_context->GetCurrentEventsContext();
     const auto tag = cb_context->NextCommandTag(cmd_);
 
+    SyncOpPipelineBarrierFunctorFactory factory;
     // Pipeline barriers only have a single barrier set, unlike WaitEvents2
     assert(barriers_.size() == 1);
     const auto &barrier_set = barriers_[0];
     ApplyBarriers(barrier_set.buffer_memory_barriers, factory, tag, access_context);
     ApplyBarriers(barrier_set.image_memory_barriers, factory, tag, access_context);
     ApplyGlobalBarriers(barrier_set.memory_barriers, factory, tag, access_context);
-
     if (barrier_set.single_exec_scope) {
-        cb_context->ApplyGlobalBarriersToEvents(barrier_set.src_exec_scope, barrier_set.dst_exec_scope);
+        events_context->ApplyBarrier(barrier_set.src_exec_scope, barrier_set.dst_exec_scope);
     } else {
         for (const auto &barrier : barrier_set.memory_barriers) {
-            cb_context->ApplyGlobalBarriersToEvents(barrier.src_exec_scope, barrier.dst_exec_scope);
+            events_context->ApplyBarrier(barrier.src_exec_scope, barrier.dst_exec_scope);
         }
     }
+
+    return tag;
 }
+
+bool SyncOpPipelineBarrier::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                           CommandBufferAccessContext *active_context) const {
+    return false;
+}
+
+void SyncOpPipelineBarrier::ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                         CommandBufferAccessContext *active_context) const {}
 
 void SyncOpBarriers::BarrierSet::MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst,
                                                     VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
@@ -5466,14 +5467,14 @@ struct SyncOpWaitEventsFunctorFactory {
     SyncEventState *sync_event;
 };
 
-void SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) const {
     const auto tag = cb_context->NextCommandTag(cmd_);
     auto *access_context = cb_context->GetCurrentAccessContext();
     assert(access_context);
-    if (!access_context) return;
+    if (!access_context) return tag;
     auto *events_context = cb_context->GetCurrentEventsContext();
     assert(events_context);
-    if (!events_context) return;
+    if (!events_context) return tag;
 
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
@@ -5516,7 +5517,17 @@ void SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) const {
     // Apply the pending barriers
     ResolvePendingBarrierFunctor apply_pending_action(tag);
     access_context->ApplyToContext(apply_pending_action);
+
+    return tag;
 }
+
+bool SyncOpWaitEvents::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                      CommandBufferAccessContext *active_context) const {
+    return false;
+}
+
+void SyncOpWaitEvents::ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                    CommandBufferAccessContext *active_context) const {}
 
 bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
                                                             VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) const {
@@ -5600,20 +5611,31 @@ bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) co
     return skip;
 }
 
-void SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) const {
+    const auto tag = cb_context->NextCommandTag(cmd_);
     auto *events_context = cb_context->GetCurrentEventsContext();
     assert(events_context);
-    if (!events_context) return;
+    if (!events_context) return tag;
 
     auto *sync_event = events_context->GetFromShared(event_);
-    if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+    if (!sync_event) return tag;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // Update the event state
     sync_event->last_command = cmd_;
     sync_event->unsynchronized_set = CMD_NONE;
     sync_event->ResetFirstScope();
     sync_event->barriers = 0U;
+
+    return tag;
 }
+
+bool SyncOpResetEvent::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                      CommandBufferAccessContext *active_context) const {
+    return false;
+}
+
+void SyncOpResetEvent::ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                    CommandBufferAccessContext *active_context) const {}
 
 SyncOpSetEvent::SyncOpSetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                VkPipelineStageFlags2KHR stageMask)
@@ -5687,15 +5709,15 @@ bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) cons
     return skip;
 }
 
-void SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) const {
     const auto tag = cb_context->NextCommandTag(cmd_);
     auto *events_context = cb_context->GetCurrentEventsContext();
     auto *access_context = cb_context->GetCurrentAccessContext();
     assert(events_context);
-    if (!events_context) return;
+    if (!events_context) return tag;
 
     auto *sync_event = events_context->GetFromShared(event_);
-    if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
+    if (!sync_event) return tag;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // NOTE: We're going to simply record the sync scope here, as anything else would be implementation defined/undefined
     //       and we're issuing errors re: missing barriers between event commands, which if the user fixes would fix
@@ -5726,7 +5748,17 @@ void SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) const {
     // TODO: Store dep_info_ shared ptr in sync_state for WaitEvents2 validation
     sync_event->last_command = cmd_;
     sync_event->barriers = 0U;
+
+    return tag;
 }
+
+bool SyncOpSetEvent::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                    CommandBufferAccessContext *active_context) const {
+    return false;
+}
+
+void SyncOpSetEvent::ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                  CommandBufferAccessContext *active_context) const {}
 
 SyncOpBeginRenderPass::SyncOpBeginRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state,
                                              const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -5787,13 +5819,23 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     return skip;
 }
 
-void SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) const {
+    const auto tag = cb_context->NextCommandTag(cmd_);
     // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
     assert(rp_state_.get());
-    if (nullptr == rp_state_.get()) return;
-    const auto tag = cb_context->NextCommandTag(cmd_);
+    if (nullptr == rp_state_.get()) return tag;
     cb_context->RecordBeginRenderPass(*rp_state_.get(), renderpass_begin_info_.renderArea, attachments_, tag);
+
+    return tag;
 }
+
+bool SyncOpBeginRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                           CommandBufferAccessContext *active_context) const {
+    return false;
+}
+
+void SyncOpBeginRenderPass::ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                         CommandBufferAccessContext *active_context) const {}
 
 SyncOpNextSubpass::SyncOpNextSubpass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                      const VkSubpassEndInfo *pSubpassEndInfo)
@@ -5815,9 +5857,20 @@ bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext &cb_context) c
     return skip;
 }
 
-void SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) const {
     // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
-    cb_context->RecordNextSubpass(cmd_);
+    // TODO PHASE2 Need to fix renderpass tagging/segregation of barrier and access operations for QueueSubmit time validation
+    auto prev_tag = cb_context->NextCommandTag(cmd_);
+    auto next_tag = cb_context->NextSubcommandTag(cmd_);
+
+    cb_context->RecordNextSubpass(prev_tag, next_tag);
+    // TODO PHASE2 This needs to be the tag of the barrier operations
+    return prev_tag;
+}
+
+bool SyncOpNextSubpass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                       CommandBufferAccessContext *active_context) const {
+    return false;
 }
 
 SyncOpEndRenderPass::SyncOpEndRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo)
@@ -5826,6 +5879,9 @@ SyncOpEndRenderPass::SyncOpEndRenderPass(CMD_TYPE cmd, const SyncValidator &sync
         subpass_end_info_.initialize(pSubpassEndInfo);
     }
 }
+
+void SyncOpNextSubpass::ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                     CommandBufferAccessContext *active_context) const {}
 
 bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context) const {
     bool skip = false;
@@ -5836,10 +5892,20 @@ bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context)
     return skip;
 }
 
-void SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) const {
     // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
-    cb_context->RecordEndRenderPass(cmd_);
+    const auto tag = cb_context->NextCommandTag(cmd_);
+    cb_context->RecordEndRenderPass(tag);
+    return tag;
 }
+
+bool SyncOpEndRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                         CommandBufferAccessContext *active_context) const {
+    return false;
+}
+
+void SyncOpEndRenderPass::ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                       CommandBufferAccessContext *active_context) const {}
 
 void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {
@@ -5930,3 +5996,16 @@ AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool 
 }
 
 AccessAddressType AttachmentViewGen::GetAddressType() const { return AccessContext::ImageAddressType(*view_->image_state); }
+
+void SyncEventsContext::ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst) {
+    const bool all_commands_bit = 0 != (src.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    for (auto &event_pair : map_) {
+        assert(event_pair.second);  // Shouldn't be storing empty
+        auto &sync_event = *event_pair.second;
+        // Events don't happen at a stage, so we need to check and store the unexpanded ALL_COMMANDS if set for inter-event-calls
+        if ((sync_event.barriers & src.exec_scope) || all_commands_bit) {
+            sync_event.barriers |= dst.exec_scope;
+            sync_event.barriers |= dst.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        }
+    }
+}
