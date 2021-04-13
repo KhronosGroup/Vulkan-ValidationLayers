@@ -112,6 +112,8 @@ core_validation_sources = [
   "layers/image_layout_map.cpp",
   "layers/image_layout_map.h",
   "layers/range_vector.h",
+  "layers/shader_module.cpp",
+  "layers/shader_module.h",
   "layers/shader_validation.cpp",
   "layers/shader_validation.h",
   "layers/state_tracker.cpp",

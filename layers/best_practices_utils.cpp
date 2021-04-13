@@ -947,11 +947,11 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     bool skip = false;
     auto* module = GetShaderModuleState(createInfo.stage.module);
     // Generate warnings about work group sizes based on active resources.
-    auto entrypoint = FindEntrypoint(module, createInfo.stage.pName, createInfo.stage.stage);
+    auto entrypoint = module->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
     if (entrypoint == module->end()) return false;
 
     uint32_t x = 1, y = 1, z = 1;
-    FindLocalSize(module, entrypoint, x, y, z);
+    module->FindLocalSize(entrypoint, x, y, z);
 
     uint32_t thread_count = x * y * z;
 
@@ -980,9 +980,9 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
 
     bool has_writeable_descriptors = false;
     bool has_atomic_descriptors = false;
-    auto accessible_ids = MarkAccessibleIds(module, entrypoint);
+    auto accessible_ids = module->MarkAccessibleIds(entrypoint);
     auto descriptor_uses =
-        CollectInterfaceByDescriptorSlot(module, accessible_ids, &has_writeable_descriptors, &has_atomic_descriptors);
+        module->CollectInterfaceByDescriptorSlot(accessible_ids, &has_writeable_descriptors, &has_atomic_descriptors);
 
     unsigned dimensions = 0;
     if (x > 1) dimensions++;
@@ -996,7 +996,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
     bool accesses_2d = false;
     for (const auto& usage : descriptor_uses) {
-        auto dim = GetShaderResourceDimensionality(module, usage.second);
+        auto dim = module->GetShaderResourceDimensionality(usage.second);
         if (dim < 0) continue;
         auto spvdim = spv::Dim(dim);
         if (spvdim != spv::Dim1D && spvdim != spv::DimBuffer) accesses_2d = true;
