@@ -4521,7 +4521,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
         }
 
         // Update all layout set operations (which will be a subset of the initial_layouts)
-        sparse_container::splice(overlay_map, subres_map->GetCurrentLayoutMap(), sparse_container::value_precedence::prefer_source);
+        sparse_container::splice(*overlay_map, subres_map->GetCurrentLayoutMap(),
+                                 sparse_container::value_precedence::prefer_source);
     }
 
     return skip;
@@ -4534,7 +4535,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't set layouts of a dead image
         auto *global_map = GetLayoutRangeMap(imageLayoutMap, *image_state);
-        sparse_container::splice(global_map, subres_map->GetCurrentLayoutMap(), sparse_container::value_precedence::prefer_source);
+        sparse_container::splice(*global_map, subres_map->GetCurrentLayoutMap(), sparse_container::value_precedence::prefer_source);
     }
 }
 

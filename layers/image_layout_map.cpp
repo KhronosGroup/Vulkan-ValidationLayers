@@ -229,13 +229,13 @@ bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& othe
     if (CompatibilityKey() != other.CompatibilityKey()) return false;
 
     bool updated = false;
-    updated |= sparse_container::splice(&layouts_.initial, other.layouts_.initial, Arbiter::prefer_dest);
-    updated |= sparse_container::splice(&layouts_.current, other.layouts_.current, Arbiter::prefer_source);
+    updated |= sparse_container::splice(layouts_.initial, other.layouts_.initial, Arbiter::prefer_dest);
+    updated |= sparse_container::splice(layouts_.current, other.layouts_.current, Arbiter::prefer_source);
     // NOTE -- we are copying plain pointers from 'other' which owns them as unique_ptr.  This works because
     //         currently this function is only used to import from secondary command buffers, destruction of which
     //         invalidate the referencing primary command buffer, meaning that the dangling pointer will either be
     //         cleaned up in invalidation, on not referenced by validation code.
-    sparse_container::splice(&initial_layout_state_map_, other.initial_layout_state_map_, Arbiter::prefer_dest);
+    sparse_container::splice(initial_layout_state_map_, other.initial_layout_state_map_, Arbiter::prefer_dest);
 
     return updated;
 }
