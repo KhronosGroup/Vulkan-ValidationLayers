@@ -1636,7 +1636,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     *error_code = "VUID-VkCopyDescriptorSet-srcSet-00349";
     auto src_type = src_set->GetTypeFromBinding(update->srcBinding);
     auto dst_type = dst_layout->GetTypeFromBinding(update->dstBinding);
-    if (src_type != dst_type) {
+    if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && dst_type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && src_type != dst_type) {
         *error_code = "VUID-VkCopyDescriptorSet-dstBinding-02632";
         std::stringstream error_str;
         error_str << "Attempting copy update to descriptorSet " << report_data->FormatHandle(dst_set->GetSet()) << " binding #"
@@ -2955,6 +2955,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         }
         case DescriptorClass::InlineUniform:
         case DescriptorClass::AccelerationStructure:
+        case DescriptorClass::Mutable:
             break;
         default:
             assert(0);  // We've already verified update type so should never get here
