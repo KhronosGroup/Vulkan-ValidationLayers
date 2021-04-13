@@ -163,6 +163,8 @@ set(CORE_VALIDATION_LIBRARY_FILES
     descriptor_sets.h
     buffer_validation.cpp
     buffer_validation.h
+    shader_module.cpp
+    shader_module.h
     shader_validation.cpp
     shader_validation.h
     sync_vuid_maps.cpp

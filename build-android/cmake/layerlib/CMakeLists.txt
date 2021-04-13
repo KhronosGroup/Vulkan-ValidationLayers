@@ -68,6 +68,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/convert_to_renderpass2.cpp
         ${SRC_DIR}/layers/descriptor_sets.cpp
         ${SRC_DIR}/layers/buffer_validation.cpp
+        ${SRC_DIR}/layers/shader_module.cpp
         ${SRC_DIR}/layers/shader_validation.cpp
         ${SRC_DIR}/layers/generated/spirv_validation_helper.cpp
         ${SRC_DIR}/layers/gpu_validation.cpp

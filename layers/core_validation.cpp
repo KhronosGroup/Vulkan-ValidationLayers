@@ -1226,7 +1226,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     } else {
         for (const auto &stage : pipe->stage_state) {
             const auto *entrypoint =
-                FindEntrypointStruct(stage.shader_state.get(), stage.entry_point_name.c_str(), stage.stage_flag);
+                stage.shader_state.get()->FindEntrypointStruct(stage.entry_point_name.c_str(), stage.stage_flag);
             if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
                 continue;
             }

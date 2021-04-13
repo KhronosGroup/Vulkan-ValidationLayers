@@ -24,7 +24,6 @@
 #include "shader_validation.h"
 
 #include <cassert>
-#include <chrono>
 #include <cinttypes>
 #include <cmath>
 #include <sstream>
@@ -32,68 +31,13 @@
 #include <vector>
 
 #include <spirv/unified1/spirv.hpp>
-#include "vk_loader_platform.h"
 #include "vk_enum_string_helper.h"
 #include "vk_layer_data.h"
-#include "vk_layer_extension_utils.h"
 #include "vk_layer_utils.h"
 #include "chassis.h"
 #include "core_validation.h"
 
-#include "spirv-tools/libspirv.h"
 #include "xxhash.h"
-
-void decoration_set::add(uint32_t decoration, uint32_t value) {
-    switch (decoration) {
-        case spv::DecorationLocation:
-            flags |= location_bit;
-            location = value;
-            break;
-        case spv::DecorationPatch:
-            flags |= patch_bit;
-            break;
-        case spv::DecorationRelaxedPrecision:
-            flags |= relaxed_precision_bit;
-            break;
-        case spv::DecorationBlock:
-            flags |= block_bit;
-            break;
-        case spv::DecorationBufferBlock:
-            flags |= buffer_block_bit;
-            break;
-        case spv::DecorationComponent:
-            flags |= component_bit;
-            component = value;
-            break;
-        case spv::DecorationInputAttachmentIndex:
-            flags |= input_attachment_index_bit;
-            input_attachment_index = value;
-            break;
-        case spv::DecorationDescriptorSet:
-            flags |= descriptor_set_bit;
-            descriptor_set = value;
-            break;
-        case spv::DecorationBinding:
-            flags |= binding_bit;
-            binding = value;
-            break;
-        case spv::DecorationNonWritable:
-            flags |= nonwritable_bit;
-            break;
-        case spv::DecorationBuiltIn:
-            flags |= builtin_bit;
-            builtin = value;
-            break;
-    }
-}
-
-enum FORMAT_TYPE {
-    FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
-    FORMAT_TYPE_SINT = 2,
-    FORMAT_TYPE_UINT = 4,
-};
-
-typedef std::pair<unsigned, unsigned> location_t;
 
 static shader_stage_attributes shader_stage_attribs[] = {
     {"vertex shader", false, false, VK_SHADER_STAGE_VERTEX_BIT},
@@ -102,342 +46,6 @@ static shader_stage_attributes shader_stage_attribs[] = {
     {"geometry shader", true, false, VK_SHADER_STAGE_GEOMETRY_BIT},
     {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT},
 };
-
-unsigned ExecutionModelToShaderStageFlagBits(unsigned mode);
-
-// SPIRV utility functions
-void SHADER_MODULE_STATE::BuildDefIndex() {
-    function_set func_set = {};
-    EntryPoint *entry_point = nullptr;
-
-    for (auto insn : *this) {
-        // offset is not 0, it means it's updated and the offset is in a Function.
-        if (func_set.offset) {
-            func_set.op_lists.emplace(insn.opcode(), insn.offset());
-        } else if (entry_point) {
-            entry_point->decorate_list.emplace(insn.opcode(), insn.offset());
-        }
-
-        switch (insn.opcode()) {
-            // Types
-            case spv::OpTypeVoid:
-            case spv::OpTypeBool:
-            case spv::OpTypeInt:
-            case spv::OpTypeFloat:
-            case spv::OpTypeVector:
-            case spv::OpTypeMatrix:
-            case spv::OpTypeImage:
-            case spv::OpTypeSampler:
-            case spv::OpTypeSampledImage:
-            case spv::OpTypeArray:
-            case spv::OpTypeRuntimeArray:
-            case spv::OpTypeStruct:
-            case spv::OpTypeOpaque:
-            case spv::OpTypePointer:
-            case spv::OpTypeFunction:
-            case spv::OpTypeEvent:
-            case spv::OpTypeDeviceEvent:
-            case spv::OpTypeReserveId:
-            case spv::OpTypeQueue:
-            case spv::OpTypePipe:
-            case spv::OpTypeAccelerationStructureNV:
-            case spv::OpTypeCooperativeMatrixNV:
-                def_index[insn.word(1)] = insn.offset();
-                break;
-
-                // Fixed constants
-            case spv::OpConstantTrue:
-            case spv::OpConstantFalse:
-            case spv::OpConstant:
-            case spv::OpConstantComposite:
-            case spv::OpConstantSampler:
-            case spv::OpConstantNull:
-                def_index[insn.word(2)] = insn.offset();
-                break;
-
-                // Specialization constants
-            case spv::OpSpecConstantTrue:
-            case spv::OpSpecConstantFalse:
-            case spv::OpSpecConstant:
-            case spv::OpSpecConstantComposite:
-            case spv::OpSpecConstantOp:
-                def_index[insn.word(2)] = insn.offset();
-                break;
-
-                // Variables
-            case spv::OpVariable:
-                def_index[insn.word(2)] = insn.offset();
-                break;
-
-                // Functions
-            case spv::OpFunction:
-                def_index[insn.word(2)] = insn.offset();
-                func_set.id = insn.word(2);
-                func_set.offset = insn.offset();
-                func_set.op_lists.clear();
-                break;
-
-                // Decorations
-            case spv::OpDecorate: {
-                auto target_id = insn.word(1);
-                decorations[target_id].add(insn.word(2), insn.len() > 3u ? insn.word(3) : 0u);
-                decoration_inst.push_back(insn);
-                if (insn.word(2) == spv::DecorationBuiltIn) {
-                    builtin_decoration_list.emplace_back(insn.offset(), static_cast<spv::BuiltIn>(insn.word(3)));
-                }
-
-            } break;
-            case spv::OpGroupDecorate: {
-                auto const &src = decorations[insn.word(1)];
-                for (auto i = 2u; i < insn.len(); i++) decorations[insn.word(i)].merge(src);
-            } break;
-            case spv::OpMemberDecorate: {
-                member_decoration_inst.push_back(insn);
-                if (insn.word(3) == spv::DecorationBuiltIn) {
-                    builtin_decoration_list.emplace_back(insn.offset(), static_cast<spv::BuiltIn>(insn.word(4)));
-                }
-            } break;
-
-                // Entry points ... add to the entrypoint table
-            case spv::OpEntryPoint: {
-                if (entry_point != nullptr) {
-                    multiple_entry_points = true;
-                }
-
-                // Entry points do not have an id (the id is the function id) and thus need their own table
-                auto entrypoint_name = reinterpret_cast<char const *>(&insn.word(3));
-                auto execution_model = insn.word(1);
-                auto entrypoint_stage = ExecutionModelToShaderStageFlagBits(execution_model);
-                entry_points.emplace(entrypoint_name,
-                                     EntryPoint{insn.offset(), static_cast<VkShaderStageFlagBits>(entrypoint_stage)});
-
-                auto range = entry_points.equal_range(entrypoint_name);
-                for (auto it = range.first; it != range.second; ++it) {
-                    if (it->second.offset == insn.offset()) {
-                        entry_point = &(it->second);
-                        break;
-                    }
-                }
-                assert(entry_point != nullptr);
-                break;
-            }
-            case spv::OpFunctionEnd: {
-                assert(entry_point != nullptr);
-                func_set.length = insn.offset() - func_set.offset;
-                entry_point->function_set_list.emplace_back(func_set);
-                break;
-            }
-
-            // Copy operations
-            case spv::OpCopyLogical:
-            case spv::OpCopyObject: {
-                def_index[insn.word(2)] = insn.offset();
-                break;
-            }
-
-            // Execution Mode
-            case spv::OpExecutionMode: {
-                execution_mode_inst[insn.word(1)].push_back(insn);
-            } break;
-
-            default:
-                // We don't care about any other defs for now.
-                break;
-        }
-    }
-}
-
-unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
-    switch (mode) {
-        case spv::ExecutionModelVertex:
-            return VK_SHADER_STAGE_VERTEX_BIT;
-        case spv::ExecutionModelTessellationControl:
-            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        case spv::ExecutionModelTessellationEvaluation:
-            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        case spv::ExecutionModelGeometry:
-            return VK_SHADER_STAGE_GEOMETRY_BIT;
-        case spv::ExecutionModelFragment:
-            return VK_SHADER_STAGE_FRAGMENT_BIT;
-        case spv::ExecutionModelGLCompute:
-            return VK_SHADER_STAGE_COMPUTE_BIT;
-        case spv::ExecutionModelRayGenerationNV:
-            return VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        case spv::ExecutionModelAnyHitNV:
-            return VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-        case spv::ExecutionModelClosestHitNV:
-            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        case spv::ExecutionModelMissNV:
-            return VK_SHADER_STAGE_MISS_BIT_NV;
-        case spv::ExecutionModelIntersectionNV:
-            return VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-        case spv::ExecutionModelCallableNV:
-            return VK_SHADER_STAGE_CALLABLE_BIT_NV;
-        case spv::ExecutionModelTaskNV:
-            return VK_SHADER_STAGE_TASK_BIT_NV;
-        case spv::ExecutionModelMeshNV:
-            return VK_SHADER_STAGE_MESH_BIT_NV;
-        default:
-            return 0;
-    }
-}
-
-const SHADER_MODULE_STATE::EntryPoint *FindEntrypointStruct(SHADER_MODULE_STATE const *src, char const *name,
-                                                            VkShaderStageFlagBits stageBits) {
-    auto range = src->entry_points.equal_range(name);
-    for (auto it = range.first; it != range.second; ++it) {
-        if (it->second.stage == stageBits) {
-            return &(it->second);
-        }
-    }
-    return nullptr;
-}
-
-spirv_inst_iter FindEntrypoint(SHADER_MODULE_STATE const *src, char const *name, VkShaderStageFlagBits stageBits) {
-    auto range = src->entry_points.equal_range(name);
-    for (auto it = range.first; it != range.second; ++it) {
-        if (it->second.stage == stageBits) {
-            return src->at(it->second.offset);
-        }
-    }
-    return src->end();
-}
-
-static char const *StorageClassName(unsigned sc) {
-    switch (sc) {
-        case spv::StorageClassInput:
-            return "input";
-        case spv::StorageClassOutput:
-            return "output";
-        case spv::StorageClassUniformConstant:
-            return "const uniform";
-        case spv::StorageClassUniform:
-            return "uniform";
-        case spv::StorageClassWorkgroup:
-            return "workgroup local";
-        case spv::StorageClassCrossWorkgroup:
-            return "workgroup global";
-        case spv::StorageClassPrivate:
-            return "private global";
-        case spv::StorageClassFunction:
-            return "function";
-        case spv::StorageClassGeneric:
-            return "generic";
-        case spv::StorageClassAtomicCounter:
-            return "atomic counter";
-        case spv::StorageClassImage:
-            return "image";
-        case spv::StorageClassPushConstant:
-            return "push constant";
-        case spv::StorageClassStorageBuffer:
-            return "storage buffer";
-        default:
-            return "unknown";
-    }
-}
-
-// If the instruction at id is a constant or copy of a constant, returns a valid iterator pointing to that instruction.
-// Otherwise, returns src->end().
-spirv_inst_iter GetConstantDef(SHADER_MODULE_STATE const *src, unsigned id) {
-    auto value = src->get_def(id);
-
-    // If id is a copy, see where it was copied from
-    if ((src->end() != value) && ((value.opcode() == spv::OpCopyObject) || (value.opcode() == spv::OpCopyLogical))) {
-        id = value.word(3);
-        value = src->get_def(id);
-    }
-
-    if ((src->end() != value) && (value.opcode() == spv::OpConstant)) {
-        return value;
-    }
-    return src->end();
-}
-
-// Assumes itr points to an OpConstant instruction
-uint32_t GetConstantValue(const spirv_inst_iter &itr) { return itr.word(3); }
-
-// Either returns the constant value described by the instruction at id, or 1
-uint32_t GetConstantValue(SHADER_MODULE_STATE const *src, unsigned id) {
-    auto value = GetConstantDef(src, id);
-
-    if (src->end() == value) {
-        // TODO: Either ensure that the specialization transform is already performed on a module we're
-        //       considering here, OR -- specialize on the fly now.
-        return 1;
-    }
-    return GetConstantValue(value);
-}
-
-static void DescribeTypeInner(std::ostringstream &ss, SHADER_MODULE_STATE const *src, unsigned type) {
-    auto insn = src->get_def(type);
-    assert(insn != src->end());
-
-    switch (insn.opcode()) {
-        case spv::OpTypeBool:
-            ss << "bool";
-            break;
-        case spv::OpTypeInt:
-            ss << (insn.word(3) ? 's' : 'u') << "int" << insn.word(2);
-            break;
-        case spv::OpTypeFloat:
-            ss << "float" << insn.word(2);
-            break;
-        case spv::OpTypeVector:
-            ss << "vec" << insn.word(3) << " of ";
-            DescribeTypeInner(ss, src, insn.word(2));
-            break;
-        case spv::OpTypeMatrix:
-            ss << "mat" << insn.word(3) << " of ";
-            DescribeTypeInner(ss, src, insn.word(2));
-            break;
-        case spv::OpTypeArray:
-            ss << "arr[" << GetConstantValue(src, insn.word(3)) << "] of ";
-            DescribeTypeInner(ss, src, insn.word(2));
-            break;
-        case spv::OpTypeRuntimeArray:
-            ss << "runtime arr[] of ";
-            DescribeTypeInner(ss, src, insn.word(2));
-            break;
-        case spv::OpTypePointer:
-            ss << "ptr to " << StorageClassName(insn.word(2)) << " ";
-            DescribeTypeInner(ss, src, insn.word(3));
-            break;
-        case spv::OpTypeStruct: {
-            ss << "struct of (";
-            for (unsigned i = 2; i < insn.len(); i++) {
-                DescribeTypeInner(ss, src, insn.word(i));
-                if (i == insn.len() - 1) {
-                    ss << ")";
-                } else {
-                    ss << ", ";
-                }
-            }
-            break;
-        }
-        case spv::OpTypeSampler:
-            ss << "sampler";
-            break;
-        case spv::OpTypeSampledImage:
-            ss << "sampler+";
-            DescribeTypeInner(ss, src, insn.word(2));
-            break;
-        case spv::OpTypeImage:
-            ss << "image(dim=" << insn.word(3) << ", sampled=" << insn.word(7) << ")";
-            break;
-        case spv::OpTypeAccelerationStructureNV:
-            ss << "accelerationStruture";
-            break;
-        default:
-            ss << "oddtype";
-            break;
-    }
-}
-
-static std::string DescribeType(SHADER_MODULE_STATE const *src, unsigned type) {
-    std::ostringstream ss;
-    DescribeTypeInner(ss, src, type);
-    return ss.str();
-}
 
 static bool IsNarrowNumericType(spirv_inst_iter type) {
     if (type.opcode() != spv::OpTypeInt && type.opcode() != spv::OpTypeFloat) return false;
@@ -506,7 +114,7 @@ static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *
             // Match on element type, count. these all have the same layout. we don't get here if b_arrayed. This differs from
             // vector & matrix types in that the array size is the id of a constant instruction, * not a literal within OpTypeArray
             return TypesMatch(a, b, a_insn.word(2), b_insn.word(2), a_arrayed, b_arrayed, false) &&
-                   GetConstantValue(a, a_insn.word(3)) == GetConstantValue(b, b_insn.word(3));
+                   a->GetConstantValueById(a_insn.word(3)) == b->GetConstantValueById(b_insn.word(3));
         case spv::OpTypeStruct:
             // Match on all element types
             {
@@ -525,87 +133,6 @@ static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *
         default:
             // Remaining types are CLisms, or may not appear in the interfaces we are interested in. Just claim no match.
             return false;
-    }
-}
-
-static unsigned GetLocationsConsumedByType(SHADER_MODULE_STATE const *src, unsigned type, bool strip_array_level) {
-    auto insn = src->get_def(type);
-    assert(insn != src->end());
-
-    switch (insn.opcode()) {
-        case spv::OpTypePointer:
-            // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
-            // pointers around.
-            return GetLocationsConsumedByType(src, insn.word(3), strip_array_level);
-        case spv::OpTypeArray:
-            if (strip_array_level) {
-                return GetLocationsConsumedByType(src, insn.word(2), false);
-            } else {
-                return GetConstantValue(src, insn.word(3)) * GetLocationsConsumedByType(src, insn.word(2), false);
-            }
-        case spv::OpTypeMatrix:
-            // Num locations is the dimension * element size
-            return insn.word(3) * GetLocationsConsumedByType(src, insn.word(2), false);
-        case spv::OpTypeVector: {
-            auto scalar_type = src->get_def(insn.word(2));
-            auto bit_width =
-                (scalar_type.opcode() == spv::OpTypeInt || scalar_type.opcode() == spv::OpTypeFloat) ? scalar_type.word(2) : 32;
-
-            // Locations are 128-bit wide; 3- and 4-component vectors of 64 bit types require two.
-            return (bit_width * insn.word(3) + 127) / 128;
-        }
-        default:
-            // Everything else is just 1.
-            return 1;
-
-            // TODO: extend to handle 64bit scalar types, whose vectors may need multiple locations.
-    }
-}
-
-static unsigned GetComponentsConsumedByType(SHADER_MODULE_STATE const *src, unsigned type, bool strip_array_level) {
-    auto insn = src->get_def(type);
-    assert(insn != src->end());
-
-    switch (insn.opcode()) {
-        case spv::OpTypePointer:
-            // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
-            // pointers around.
-            return GetComponentsConsumedByType(src, insn.word(3), strip_array_level);
-        case spv::OpTypeStruct: {
-            uint32_t sum = 0;
-            for (uint32_t i = 2; i < insn.len(); i++) {  // i=2 to skip word(0) and word(1)=ID of struct
-                sum += GetComponentsConsumedByType(src, insn.word(i), false);
-            }
-            return sum;
-        }
-        case spv::OpTypeArray:
-            if (strip_array_level) {
-                return GetComponentsConsumedByType(src, insn.word(2), false);
-            } else {
-                return GetConstantValue(src, insn.word(3)) * GetComponentsConsumedByType(src, insn.word(2), false);
-            }
-        case spv::OpTypeMatrix:
-            // Num locations is the dimension * element size
-            return insn.word(3) * GetComponentsConsumedByType(src, insn.word(2), false);
-        case spv::OpTypeVector: {
-            auto scalar_type = src->get_def(insn.word(2));
-            auto bit_width =
-                (scalar_type.opcode() == spv::OpTypeInt || scalar_type.opcode() == spv::OpTypeFloat) ? scalar_type.word(2) : 32;
-            // One component is 32-bit
-            return (bit_width * insn.word(3) + 31) / 32;
-        }
-        case spv::OpTypeFloat: {
-            auto bit_width = insn.word(2);
-            return (bit_width + 31) / 32;
-        }
-        case spv::OpTypeInt: {
-            auto bit_width = insn.word(2);
-            return (bit_width + 31) / 32;
-        }
-        case spv::OpConstant:
-            return GetComponentsConsumedByType(src, insn.word(1), false);
-        default:
-            return 0;
     }
 }
 
@@ -632,907 +159,9 @@ static unsigned GetFormatType(VkFormat fmt) {
     return FORMAT_TYPE_FLOAT;
 }
 
-// characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
-// also used for input attachments, as we statically know their format.
-static unsigned GetFundamentalType(SHADER_MODULE_STATE const *src, unsigned type) {
-    auto insn = src->get_def(type);
-    assert(insn != src->end());
-
-    switch (insn.opcode()) {
-        case spv::OpTypeInt:
-            return insn.word(3) ? FORMAT_TYPE_SINT : FORMAT_TYPE_UINT;
-        case spv::OpTypeFloat:
-            return FORMAT_TYPE_FLOAT;
-        case spv::OpTypeVector:
-        case spv::OpTypeMatrix:
-        case spv::OpTypeArray:
-        case spv::OpTypeRuntimeArray:
-        case spv::OpTypeImage:
-            return GetFundamentalType(src, insn.word(2));
-        case spv::OpTypePointer:
-            return GetFundamentalType(src, insn.word(3));
-
-        default:
-            return 0;
-    }
-}
-
 static uint32_t GetShaderStageId(VkShaderStageFlagBits stage) {
     uint32_t bit_pos = uint32_t(u_ffs(stage));
     return bit_pos - 1;
-}
-
-static spirv_inst_iter GetStructType(SHADER_MODULE_STATE const *src, spirv_inst_iter def, bool is_array_of_verts) {
-    while (true) {
-        if (def.opcode() == spv::OpTypePointer) {
-            def = src->get_def(def.word(3));
-        } else if (def.opcode() == spv::OpTypeArray && is_array_of_verts) {
-            def = src->get_def(def.word(2));
-            is_array_of_verts = false;
-        } else if (def.opcode() == spv::OpTypeStruct) {
-            return def;
-        } else {
-            return src->end();
-        }
-    }
-}
-
-static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, std::map<location_t, interface_var> *out,
-                                         bool is_array_of_verts, uint32_t id, uint32_t type_id, bool is_patch,
-                                         int /*first_location*/) {
-    // Walk down the type_id presented, trying to determine whether it's actually an interface block.
-    auto type = GetStructType(src, src->get_def(type_id), is_array_of_verts && !is_patch);
-    if (type == src->end() || !(src->get_decorations(type.word(1)).flags & decoration_set::block_bit)) {
-        // This isn't an interface block.
-        return false;
-    }
-
-    layer_data::unordered_map<unsigned, unsigned> member_components;
-    layer_data::unordered_map<unsigned, unsigned> member_relaxed_precision;
-    layer_data::unordered_map<unsigned, unsigned> member_patch;
-
-    // Walk all the OpMemberDecorate for type's result id -- first pass, collect components.
-    for (auto insn : src->member_decoration_inst) {
-        if (insn.word(1) == type.word(1)) {
-            unsigned member_index = insn.word(2);
-
-            if (insn.word(3) == spv::DecorationComponent) {
-                unsigned component = insn.word(4);
-                member_components[member_index] = component;
-            }
-
-            if (insn.word(3) == spv::DecorationRelaxedPrecision) {
-                member_relaxed_precision[member_index] = 1;
-            }
-
-            if (insn.word(3) == spv::DecorationPatch) {
-                member_patch[member_index] = 1;
-            }
-        }
-    }
-
-    // TODO: correctly handle location assignment from outside
-
-    // Second pass -- produce the output, from Location decorations
-    for (auto insn : src->member_decoration_inst) {
-        if (insn.word(1) == type.word(1)) {
-            unsigned member_index = insn.word(2);
-            unsigned member_type_id = type.word(2 + member_index);
-
-            if (insn.word(3) == spv::DecorationLocation) {
-                unsigned location = insn.word(4);
-                unsigned num_locations = GetLocationsConsumedByType(src, member_type_id, false);
-                auto component_it = member_components.find(member_index);
-                unsigned component = component_it == member_components.end() ? 0 : component_it->second;
-                bool is_relaxed_precision = member_relaxed_precision.find(member_index) != member_relaxed_precision.end();
-                bool member_is_patch = is_patch || member_patch.count(member_index) > 0;
-
-                for (unsigned int offset = 0; offset < num_locations; offset++) {
-                    interface_var v = {};
-                    v.id = id;
-                    // TODO: member index in interface_var too?
-                    v.type_id = member_type_id;
-                    v.offset = offset;
-                    v.is_patch = member_is_patch;
-                    v.is_block_member = true;
-                    v.is_relaxed_precision = is_relaxed_precision;
-                    (*out)[std::make_pair(location + offset, component)] = v;
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
-static std::vector<uint32_t> FindEntrypointInterfaces(spirv_inst_iter entrypoint) {
-    assert(entrypoint.opcode() == spv::OpEntryPoint);
-
-    std::vector<uint32_t> interfaces;
-    // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out the
-    // rest of the word - so we only need to look at the last byte in the word to determine which word contains the terminator.
-    uint32_t word = 3;
-    while (entrypoint.word(word) & 0xff000000u) {
-        ++word;
-    }
-    ++word;
-
-    for (; word < entrypoint.len(); word++) interfaces.push_back(entrypoint.word(word));
-
-    return interfaces;
-}
-
-static std::map<location_t, interface_var> CollectInterfaceByLocation(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint,
-                                                                      spv::StorageClass sinterface, bool is_array_of_verts) {
-    // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
-
-    std::map<location_t, interface_var> out;
-
-    for (uint32_t iid : FindEntrypointInterfaces(entrypoint)) {
-        auto insn = src->get_def(iid);
-        assert(insn != src->end());
-        assert(insn.opcode() == spv::OpVariable);
-
-        if (insn.word(3) == static_cast<uint32_t>(sinterface)) {
-            auto d = src->get_decorations(iid);
-            unsigned id = insn.word(2);
-            unsigned type = insn.word(1);
-
-            int location = d.location;
-            int builtin = d.builtin;
-            unsigned component = d.component;
-            bool is_patch = (d.flags & decoration_set::patch_bit) != 0;
-            bool is_relaxed_precision = (d.flags & decoration_set::relaxed_precision_bit) != 0;
-
-            if (builtin != -1) {
-                continue;
-            } else if (!CollectInterfaceBlockMembers(src, &out, is_array_of_verts, id, type, is_patch, location)) {
-                // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
-                // one result for each.
-                unsigned num_locations = GetLocationsConsumedByType(src, type, is_array_of_verts && !is_patch);
-                for (unsigned int offset = 0; offset < num_locations; offset++) {
-                    interface_var v = {};
-                    v.id = id;
-                    v.type_id = type;
-                    v.offset = offset;
-                    v.is_patch = is_patch;
-                    v.is_relaxed_precision = is_relaxed_precision;
-                    out[std::make_pair(location + offset, component)] = v;
-                }
-            }
-        }
-    }
-
-    return out;
-}
-
-static std::vector<uint32_t> CollectBuiltinBlockMembers(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint,
-                                                        uint32_t storageClass) {
-    std::vector<uint32_t> variables;
-    std::vector<uint32_t> builtin_struct_members;
-    std::vector<uint32_t> builtin_decorations;
-
-    for (auto insn : src->member_decoration_inst) {
-        if (insn.word(3) == spv::DecorationBuiltIn) {
-            builtin_struct_members.push_back(insn.word(1));
-        }
-    }
-    for (auto insn : src->decoration_inst) {
-        switch (insn.word(2)) {
-            case spv::DecorationBlock: {
-                uint32_t block_id = insn.word(1);
-                for (auto builtin_block_id : builtin_struct_members) {
-                    // Check if one of the members of the block are built-in -> the block is built-in
-                    if (block_id == builtin_block_id) {
-                        builtin_decorations.push_back(block_id);
-                        break;
-                    }
-                }
-                break;
-            }
-            case spv::DecorationBuiltIn:
-                builtin_decorations.push_back(insn.word(1));
-                break;
-            default:
-                break;
-        }
-    }
-
-    // Find all interface variables belonging to the entrypoint and matching the storage class
-    for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
-        auto def = src->get_def(id);
-        assert(def != src->end());
-        assert(def.opcode() == spv::OpVariable);
-
-        if (def.word(3) == storageClass) variables.push_back(def.word(1));
-    }
-
-    // Find all members belonging to the builtin block selected
-    std::vector<uint32_t> builtin_block_members;
-    for (auto &var : variables) {
-        auto def = src->get_def(src->get_def(var).word(3));
-
-        // It could be an array of IO blocks. The element type should be the struct defining the block contents
-        if (def.opcode() == spv::OpTypeArray) def = src->get_def(def.word(2));
-
-        // Now find all members belonging to the struct defining the IO block
-        if (def.opcode() == spv::OpTypeStruct) {
-            for (auto builtin_id : builtin_decorations) {
-                if (builtin_id == def.word(1)) {
-                    for (int i = 2; i < static_cast<int>(def.len()); i++) {
-                        builtin_block_members.push_back(spv::BuiltInMax);  // Start with undefined builtin for each struct member.
-                    }
-                    // These shouldn't be left after replacing.
-                    for (auto insn : src->member_decoration_inst) {
-                        if (insn.word(1) == builtin_id && insn.word(3) == spv::DecorationBuiltIn) {
-                            auto struct_index = insn.word(2);
-                            assert(struct_index < builtin_block_members.size());
-                            builtin_block_members[struct_index] = insn.word(4);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return builtin_block_members;
-}
-
-static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
-    SHADER_MODULE_STATE const *src, layer_data::unordered_set<uint32_t> const &accessible_ids) {
-    std::vector<std::pair<uint32_t, interface_var>> out;
-
-    for (auto insn : src->decoration_inst) {
-        if (insn.word(2) == spv::DecorationInputAttachmentIndex) {
-            auto attachment_index = insn.word(3);
-            auto id = insn.word(1);
-
-            if (accessible_ids.count(id)) {
-                auto def = src->get_def(id);
-                assert(def != src->end());
-                if (def.opcode() == spv::OpVariable && def.word(3) == spv::StorageClassUniformConstant) {
-                    auto num_locations = GetLocationsConsumedByType(src, def.word(1), false);
-                    for (unsigned int offset = 0; offset < num_locations; offset++) {
-                        interface_var v = {};
-                        v.id = id;
-                        v.type_id = def.word(1);
-                        v.offset = offset;
-                        out.emplace_back(attachment_index + offset, v);
-                    }
-                }
-            }
-        }
-    }
-
-    return out;
-}
-
-static bool AtomicOperation(uint32_t opcode) {
-    switch (opcode) {
-        case spv::OpAtomicLoad:
-        case spv::OpAtomicStore:
-        case spv::OpAtomicExchange:
-        case spv::OpAtomicCompareExchange:
-        case spv::OpAtomicCompareExchangeWeak:
-        case spv::OpAtomicIIncrement:
-        case spv::OpAtomicIDecrement:
-        case spv::OpAtomicIAdd:
-        case spv::OpAtomicISub:
-        case spv::OpAtomicSMin:
-        case spv::OpAtomicUMin:
-        case spv::OpAtomicSMax:
-        case spv::OpAtomicUMax:
-        case spv::OpAtomicAnd:
-        case spv::OpAtomicOr:
-        case spv::OpAtomicXor:
-        case spv::OpAtomicFAddEXT:
-            return true;
-        default:
-            return false;
-    }
-    return false;
-}
-
-// Only includes valid group operations used in Vulkan (for now thats only subgroup ops) and any non supported operation will be
-// covered with VUID 01090
-static bool GroupOperation(uint32_t opcode) {
-    switch (opcode) {
-        case spv::OpGroupNonUniformElect:
-        case spv::OpGroupNonUniformAll:
-        case spv::OpGroupNonUniformAny:
-        case spv::OpGroupNonUniformAllEqual:
-        case spv::OpGroupNonUniformBroadcast:
-        case spv::OpGroupNonUniformBroadcastFirst:
-        case spv::OpGroupNonUniformBallot:
-        case spv::OpGroupNonUniformInverseBallot:
-        case spv::OpGroupNonUniformBallotBitExtract:
-        case spv::OpGroupNonUniformBallotBitCount:
-        case spv::OpGroupNonUniformBallotFindLSB:
-        case spv::OpGroupNonUniformBallotFindMSB:
-        case spv::OpGroupNonUniformShuffle:
-        case spv::OpGroupNonUniformShuffleXor:
-        case spv::OpGroupNonUniformShuffleUp:
-        case spv::OpGroupNonUniformShuffleDown:
-        case spv::OpGroupNonUniformIAdd:
-        case spv::OpGroupNonUniformFAdd:
-        case spv::OpGroupNonUniformIMul:
-        case spv::OpGroupNonUniformFMul:
-        case spv::OpGroupNonUniformSMin:
-        case spv::OpGroupNonUniformUMin:
-        case spv::OpGroupNonUniformFMin:
-        case spv::OpGroupNonUniformSMax:
-        case spv::OpGroupNonUniformUMax:
-        case spv::OpGroupNonUniformFMax:
-        case spv::OpGroupNonUniformBitwiseAnd:
-        case spv::OpGroupNonUniformBitwiseOr:
-        case spv::OpGroupNonUniformBitwiseXor:
-        case spv::OpGroupNonUniformLogicalAnd:
-        case spv::OpGroupNonUniformLogicalOr:
-        case spv::OpGroupNonUniformLogicalXor:
-        case spv::OpGroupNonUniformQuadBroadcast:
-        case spv::OpGroupNonUniformQuadSwap:
-        case spv::OpGroupNonUniformPartitionNV:
-            return true;
-        default:
-            return false;
-    }
-    return false;
-}
-
-bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<unsigned> &operator_members,
-                             const layer_data::unordered_map<unsigned, unsigned> &load_members,
-                             const layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> &accesschain_members) {
-    for (auto load_id : operator_members) {
-        if (object_id == load_id) return true;
-        auto load_it = load_members.find(load_id);
-        if (load_it == load_members.end()) {
-            continue;
-        }
-        if (load_it->second == object_id) {
-            return true;
-        }
-
-        auto accesschain_it = accesschain_members.find(load_it->second);
-        if (accesschain_it == accesschain_members.end()) {
-            continue;
-        }
-        if (accesschain_it->second.first == object_id) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool CheckImageOperandsBiasOffset(uint32_t type) {
-    return type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
-                   spv::ImageOperandsConstOffsetsMask)
-               ? true
-               : false;
-}
-
-struct shader_module_used_operators {
-    bool updated;
-    std::vector<unsigned> imagwrite_members;
-    std::vector<unsigned> atomic_members;
-    std::vector<unsigned> store_members;
-    std::vector<unsigned> atomic_store_members;
-    std::vector<unsigned> sampler_implicitLod_dref_proj_members;  // sampler Load id
-    std::vector<unsigned> sampler_bias_offset_members;            // sampler Load id
-    std::vector<std::pair<unsigned, unsigned>> sampledImage_members;  // <image,sampler> Load id
-    layer_data::unordered_map<unsigned, unsigned> load_members;
-    layer_data::unordered_map<unsigned, std::pair<unsigned, unsigned>> accesschain_members;
-    layer_data::unordered_map<unsigned, unsigned> image_texel_pointer_members;
-
-    shader_module_used_operators() : updated(false) {}
-
-    void update(SHADER_MODULE_STATE const *module) {
-        if (updated) return;
-        updated = true;
-
-        for (auto insn : *module) {
-            switch (insn.opcode()) {
-                case spv::OpImageSampleImplicitLod:
-                case spv::OpImageSampleProjImplicitLod:
-                case spv::OpImageSampleProjExplicitLod:
-                case spv::OpImageSparseSampleImplicitLod:
-                case spv::OpImageSparseSampleProjImplicitLod:
-                case spv::OpImageSparseSampleProjExplicitLod: {
-                    sampler_implicitLod_dref_proj_members.emplace_back(insn.word(3));  // Load id
-                    // ImageOperands in index: 5
-                    if (insn.len() > 5 && CheckImageOperandsBiasOffset(insn.word(5))) {
-                        sampler_bias_offset_members.emplace_back(insn.word(3));
-                    }
-                    break;
-                }
-                case spv::OpImageSampleDrefImplicitLod:
-                case spv::OpImageSampleDrefExplicitLod:
-                case spv::OpImageSampleProjDrefImplicitLod:
-                case spv::OpImageSampleProjDrefExplicitLod:
-                case spv::OpImageSparseSampleDrefImplicitLod:
-                case spv::OpImageSparseSampleDrefExplicitLod:
-                case spv::OpImageSparseSampleProjDrefImplicitLod:
-                case spv::OpImageSparseSampleProjDrefExplicitLod: {
-                    sampler_implicitLod_dref_proj_members.emplace_back(insn.word(3));  // Load id
-                    // ImageOperands in index: 6
-                    if (insn.len() > 6 && CheckImageOperandsBiasOffset(insn.word(6))) {
-                        sampler_bias_offset_members.emplace_back(insn.word(3));
-                    }
-                    break;
-                }
-                case spv::OpImageSampleExplicitLod:
-                case spv::OpImageSparseSampleExplicitLod: {
-                    // ImageOperands in index: 5
-                    if (insn.len() > 5 && CheckImageOperandsBiasOffset(insn.word(5))) {
-                        sampler_bias_offset_members.emplace_back(insn.word(3));
-                    }
-                    break;
-                }
-                case spv::OpStore: {
-                    store_members.emplace_back(insn.word(1));  // object id or AccessChain id
-                    break;
-                }
-                case spv::OpImageWrite: {
-                    imagwrite_members.emplace_back(insn.word(1));  // Load id
-                    break;
-                }
-                case spv::OpSampledImage: {
-                    // 3: image load id, 4: sampler load id
-                    sampledImage_members.emplace_back(std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
-                    break;
-                }
-                case spv::OpLoad: {
-                    // 2: Load id, 3: object id or AccessChain id
-                    load_members.emplace(insn.word(2), insn.word(3));
-                    break;
-                }
-                case spv::OpAccessChain: {
-                    if (insn.len() == 4) {
-                        // If it is for struct, the length is only 4.
-                        // 2: AccessChain id, 3: object id
-                        accesschain_members.emplace(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), 0));
-                    } else {
-                        // 2: AccessChain id, 3: object id, 4: object id of array index
-                        accesschain_members.emplace(insn.word(2), std::pair<unsigned, unsigned>(insn.word(3), insn.word(4)));
-                    }
-                    break;
-                }
-                case spv::OpImageTexelPointer: {
-                    // 2: ImageTexelPointer id, 3: object id
-                    image_texel_pointer_members.emplace(insn.word(2), insn.word(3));
-                    break;
-                }
-                default: {
-                    if (AtomicOperation(insn.opcode())) {
-                        if (insn.opcode() == spv::OpAtomicStore) {
-                            atomic_store_members.emplace_back(insn.word(1));  // ImageTexelPointer id
-                        } else {
-                            atomic_members.emplace_back(insn.word(3));  // ImageTexelPointer id
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-    }
-};
-
-// Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable, image
-// atomic operation, matching images to samplers, etc
-static void IsSpecificDescriptorType(SHADER_MODULE_STATE const *module, const spirv_inst_iter &id_it, bool is_storage_buffer,
-                                     bool is_check_writable, interface_var &out_interface_var,
-                                     shader_module_used_operators &used_operators) {
-    uint32_t type_id = id_it.word(1);
-    unsigned int id = id_it.word(2);
-
-    auto type = module->get_def(type_id);
-
-    // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray ||
-           type.opcode() == spv::OpTypeSampledImage) {
-        if (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypeRuntimeArray ||
-            type.opcode() == spv::OpTypeSampledImage) {
-            type = module->get_def(type.word(2));  // Element type
-        } else {
-            type = module->get_def(type.word(3));  // Pointer type
-        }
-    }
-    switch (type.opcode()) {
-        case spv::OpTypeImage: {
-            auto dim = type.word(3);
-            if (dim != spv::DimSubpassData) {
-                used_operators.update(module);
-
-                if (CheckObjectIDFromOpLoad(id, used_operators.imagwrite_members, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_writable = true;
-                }
-                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_members, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_sampler_implicitLod_dref_proj = true;
-                }
-                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_bias_offset_members, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_sampler_bias_offset = true;
-                }
-                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_members, used_operators.image_texel_pointer_members,
-                                            used_operators.accesschain_members) ||
-                    CheckObjectIDFromOpLoad(id, used_operators.atomic_store_members, used_operators.image_texel_pointer_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_atomic_operation = true;
-                }
-
-                for (auto &itp_id : used_operators.sampledImage_members) {
-                    // Find if image id match.
-                    uint32_t image_index = 0;
-                    auto load_it = used_operators.load_members.find(itp_id.first);
-                    if (load_it == used_operators.load_members.end()) {
-                        continue;
-                    } else {
-                        if (load_it->second != id) {
-                            auto accesschain_it = used_operators.accesschain_members.find(load_it->second);
-                            if (accesschain_it == used_operators.accesschain_members.end()) {
-                                continue;
-                            } else {
-                                if (accesschain_it->second.first != id) {
-                                    continue;
-                                }
-
-                                const auto const_itr = GetConstantDef(module, accesschain_it->second.second);
-                                if (const_itr == module->end()) {
-                                    // access chain index not a constant, skip.
-                                    break;
-                                }
-                                image_index = GetConstantValue(const_itr);
-                            }
-                        }
-                    }
-                    // Find sampler's set binding.
-                    load_it = used_operators.load_members.find(itp_id.second);
-                    if (load_it == used_operators.load_members.end()) {
-                        continue;
-                    } else {
-                        uint32_t sampler_id = load_it->second;
-                        uint32_t sampler_index = 0;
-                        auto accesschain_it = used_operators.accesschain_members.find(load_it->second);
-
-                        if (accesschain_it != used_operators.accesschain_members.end()) {
-                            const auto const_itr = GetConstantDef(module, accesschain_it->second.second);
-                            if (const_itr == module->end()) {
-                                // access chain index representing sampler index is not a constant, skip.
-                                break;
-                            }
-                            sampler_id = const_itr.offset();
-                            sampler_index = GetConstantValue(const_itr);
-                        }
-                        auto sampler_dec = module->get_decorations(sampler_id);
-                        if (image_index >= out_interface_var.samplers_used_by_image.size()) {
-                            out_interface_var.samplers_used_by_image.resize(image_index + 1);
-                        }
-                        out_interface_var.samplers_used_by_image[image_index].emplace(
-                            SamplerUsedByImage{descriptor_slot_t{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
-                    }
-                }
-            }
-            return;
-        }
-
-        case spv::OpTypeStruct: {
-            layer_data::unordered_set<unsigned> nonwritable_members;
-            if (module->get_decorations(type.word(1)).flags & decoration_set::buffer_block_bit) is_storage_buffer = true;
-            for (auto insn : module->member_decoration_inst) {
-                if (insn.word(1) == type.word(1) && insn.word(3) == spv::DecorationNonWritable) {
-                    nonwritable_members.insert(insn.word(2));
-                }
-            }
-
-            // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
-            // as nonwritable.
-            if (is_storage_buffer && nonwritable_members.size() != type.len() - 2) {
-                used_operators.update(module);
-
-                for (auto oid : used_operators.store_members) {
-                    if (id == oid) {
-                        out_interface_var.is_writable = true;
-                        return;
-                    }
-                    auto accesschain_it = used_operators.accesschain_members.find(oid);
-                    if (accesschain_it == used_operators.accesschain_members.end()) {
-                        continue;
-                    }
-                    if (accesschain_it->second.first == id) {
-                        out_interface_var.is_writable = true;
-                        return;
-                    }
-                }
-                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_store_members, used_operators.image_texel_pointer_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_writable = true;
-                    return;
-                }
-            }
-        }
-    }
-}
-
-std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
-    SHADER_MODULE_STATE const *src, layer_data::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor,
-    bool *has_atomic_descriptor) {
-    std::vector<std::pair<descriptor_slot_t, interface_var>> out;
-    shader_module_used_operators operators;
-
-    for (auto id : accessible_ids) {
-        auto insn = src->get_def(id);
-        assert(insn != src->end());
-
-        if (insn.opcode() == spv::OpVariable &&
-            (insn.word(3) == spv::StorageClassUniform || insn.word(3) == spv::StorageClassUniformConstant ||
-             insn.word(3) == spv::StorageClassStorageBuffer)) {
-            auto d = src->get_decorations(insn.word(2));
-            unsigned set = d.descriptor_set;
-            unsigned binding = d.binding;
-
-            interface_var v = {};
-            v.id = insn.word(2);
-            v.type_id = insn.word(1);
-
-            IsSpecificDescriptorType(src, insn, insn.word(3) == spv::StorageClassStorageBuffer,
-                                     !(d.flags & decoration_set::nonwritable_bit), v, operators);
-            if (v.is_writable) *has_writable_descriptor = true;
-            if (v.is_atomic_operation) *has_atomic_descriptor = true;
-            out.emplace_back(std::make_pair(set, binding), v);
-        }
-    }
-
-    return out;
-}
-
-void DefineStructMember(const SHADER_MODULE_STATE &src, const spirv_inst_iter &it,
-                        const std::vector<uint32_t> &memberDecorate_offsets, shader_struct_member &data) {
-    const auto struct_it = GetStructType(&src, it, false);
-    assert(struct_it != src.end());
-    data.size = 0;
-
-    shader_struct_member data1;
-    uint32_t i = 2;
-    uint32_t local_offset = 0;
-    std::vector<uint32_t> offsets;
-    offsets.resize(struct_it.len() - i);
-
-    // The members of struct in SPRIV_R aren't always sort, so we need to know their order.
-    for (const auto offset : memberDecorate_offsets) {
-        const auto member_decorate = src.at(offset);
-        if (member_decorate.word(1) != struct_it.word(1)) {
-            continue;
-        }
-
-        offsets[member_decorate.word(2)] = member_decorate.word(4);
-    }
-
-    for (const auto offset : offsets) {
-        local_offset = offset;
-        data1 = {};
-        data1.root = data.root;
-        data1.offset = local_offset;
-        auto def_member = src.get_def(struct_it.word(i));
-
-        // Array could be multi-dimensional
-        while (def_member.opcode() == spv::OpTypeArray) {
-            const auto len_id = def_member.word(3);
-            const auto def_len = src.get_def(len_id);
-            data1.array_length_hierarchy.emplace_back(def_len.word(3));  // array length
-            def_member = src.get_def(def_member.word(2));
-        }
-
-        if (def_member.opcode() == spv::OpTypeStruct) {
-            DefineStructMember(src, def_member, memberDecorate_offsets, data1);
-        } else if (def_member.opcode() == spv::OpTypePointer) {
-            if (def_member.word(2) == spv::StorageClassPhysicalStorageBuffer) {
-                // If it's a pointer with PhysicalStorageBuffer class, this member is essentially a uint64_t containing an address
-                // that "points to something."
-                data1.size = 8;
-            } else {
-                // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
-                DefineStructMember(src, def_member, memberDecorate_offsets, data1);
-            }
-        } else {
-            if (def_member.opcode() == spv::OpTypeMatrix) {
-                data1.array_length_hierarchy.emplace_back(def_member.word(3));  // matrix's columns. matrix's row is vector.
-                def_member = src.get_def(def_member.word(2));
-            }
-
-            if (def_member.opcode() == spv::OpTypeVector) {
-                data1.array_length_hierarchy.emplace_back(def_member.word(3));  // vector length
-                def_member = src.get_def(def_member.word(2));
-            }
-
-            // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
-            data1.size = (def_member.word(2) / 8);
-        }
-        const auto array_length_hierarchy_szie = data1.array_length_hierarchy.size();
-        if (array_length_hierarchy_szie > 0) {
-            data1.array_block_size.resize(array_length_hierarchy_szie, 1);
-
-            for (int i2 = static_cast<int>(array_length_hierarchy_szie - 1); i2 > 0; --i2) {
-                data1.array_block_size[i2 - 1] = data1.array_length_hierarchy[i2] * data1.array_block_size[i2];
-            }
-        }
-        data.struct_members.emplace_back(data1);
-        ++i;
-    }
-    uint32_t total_array_length = 1;
-    for (const auto length : data1.array_length_hierarchy) {
-        total_array_length *= length;
-    }
-    data.size = local_offset + data1.size * total_array_length;
-}
-
-uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) {
-    int array_indices_size = static_cast<int>(array_indices.size());
-    if (array_indices_size) {
-        uint32_t array_index = 0;
-        uint32_t i = 0;
-        for (const auto index : array_indices) {
-            array_index += (data.array_block_size[i] * index);
-            ++i;
-        }
-        offset += (array_index * data.size);
-    }
-    return offset;
-}
-
-void SetUsedBytes(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) {
-    int array_indices_size = static_cast<int>(array_indices.size());
-    uint32_t block_memory_size = data.size;
-    for (uint32_t i = static_cast<int>(array_indices_size); i < data.array_length_hierarchy.size(); ++i) {
-        block_memory_size *= data.array_length_hierarchy[i];
-    }
-
-    offset = UpdateOffset(offset, array_indices, data);
-
-    uint32_t end = offset + block_memory_size;
-    auto used_bytes = data.GetUsedbytes();
-    if (used_bytes->size() < end) {
-        used_bytes->resize(end, 0);
-    }
-    std::memset(used_bytes->data() + offset, true, static_cast<std::size_t>(block_memory_size));
-}
-
-void RunUsedArray(const SHADER_MODULE_STATE &src, uint32_t offset, std::vector<uint32_t> array_indices,
-                  uint32_t access_chain_word_index, spirv_inst_iter &access_chain_it, const shader_struct_member &data) {
-    if (access_chain_word_index < access_chain_it.len()) {
-        if (data.array_length_hierarchy.size() > array_indices.size()) {
-            auto def_it = src.get_def(access_chain_it.word(access_chain_word_index));
-            ++access_chain_word_index;
-
-            if (def_it != src.end() && def_it.opcode() == spv::OpConstant) {
-                array_indices.emplace_back(def_it.word(3));
-                RunUsedArray(src, offset, array_indices, access_chain_word_index, access_chain_it, data);
-            } else {
-                // If it is a variable, set the all array is used.
-                if (access_chain_word_index < access_chain_it.len()) {
-                    uint32_t array_length = data.array_length_hierarchy[array_indices.size()];
-                    for (uint32_t i = 0; i < array_length; ++i) {
-                        auto array_indices2 = array_indices;
-                        array_indices2.emplace_back(i);
-                        RunUsedArray(src, offset, array_indices2, access_chain_word_index, access_chain_it, data);
-                    }
-                } else {
-                    SetUsedBytes(offset, array_indices, data);
-                }
-            }
-        } else {
-            offset = UpdateOffset(offset, array_indices, data);
-            RunUsedStruct(src, offset, access_chain_word_index, access_chain_it, data);
-        }
-    } else {
-        SetUsedBytes(offset, array_indices, data);
-    }
-}
-
-void RunUsedStruct(const SHADER_MODULE_STATE &src, uint32_t offset, uint32_t access_chain_word_index,
-                   spirv_inst_iter &access_chain_it, const shader_struct_member &data) {
-    std::vector<uint32_t> array_indices_emptry;
-
-    if (access_chain_word_index < access_chain_it.len()) {
-        auto strcut_member_index = GetConstantValue(&src, access_chain_it.word(access_chain_word_index));
-        ++access_chain_word_index;
-
-        auto data1 = data.struct_members[strcut_member_index];
-        RunUsedArray(src, offset + data1.offset, array_indices_emptry, access_chain_word_index, access_chain_it, data1);
-    }
-}
-
-void SetUsedStructMember(const SHADER_MODULE_STATE &src, const uint32_t variable_id,
-                         const std::vector<function_set> &function_set_list, const shader_struct_member &data) {
-    for (const auto &func_set : function_set_list) {
-        auto range = func_set.op_lists.equal_range(spv::OpAccessChain);
-        for (auto it = range.first; it != range.second; ++it) {
-            auto access_chain = src.at(it->second);
-            if (access_chain.word(3) == variable_id) {
-                RunUsedStruct(src, 0, 4, access_chain, data);
-            }
-        }
-    }
-}
-
-void SetPushConstantUsedInShader(SHADER_MODULE_STATE &src) {
-    for (auto &entrypoint : src.entry_points) {
-        auto range = entrypoint.second.decorate_list.equal_range(spv::OpVariable);
-        for (auto it = range.first; it != range.second; ++it) {
-            const auto def_insn = src.at(it->second);
-
-            if (def_insn.word(3) == spv::StorageClassPushConstant) {
-                spirv_inst_iter type = src.get_def(def_insn.word(1));
-                const auto range2 = entrypoint.second.decorate_list.equal_range(spv::OpMemberDecorate);
-                std::vector<uint32_t> offsets;
-
-                for (auto it2 = range2.first; it2 != range2.second; ++it2) {
-                    auto member_decorate = src.at(it2->second);
-                    if (member_decorate.len() == 5 && member_decorate.word(3) == spv::DecorationOffset) {
-                        offsets.emplace_back(member_decorate.offset());
-                    }
-                }
-                entrypoint.second.push_constant_used_in_shader.root = &entrypoint.second.push_constant_used_in_shader;
-                DefineStructMember(src, type, offsets, entrypoint.second.push_constant_used_in_shader);
-                SetUsedStructMember(src, def_insn.word(2), entrypoint.second.function_set_list,
-                                    entrypoint.second.push_constant_used_in_shader);
-            }
-        }
-    }
-}
-
-layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
-                                                               const VkPipelineShaderStageCreateInfo &stage_info) {
-    layer_data::unordered_set<uint32_t> location_list;
-    if (stage_info.stage != VK_SHADER_STAGE_FRAGMENT_BIT) return location_list;
-    const auto entrypoint = FindEntrypoint(&module, stage_info.pName, stage_info.stage);
-    const auto outputs = CollectInterfaceByLocation(&module, entrypoint, spv::StorageClassOutput, false);
-    layer_data::unordered_set<unsigned> store_members;
-    layer_data::unordered_map<unsigned, unsigned> accesschain_members;
-
-    for (auto insn : module) {
-        switch (insn.opcode()) {
-            case spv::OpStore:
-            case spv::OpAtomicStore: {
-                store_members.insert(insn.word(1));  // object id or AccessChain id
-                break;
-            }
-            case spv::OpAccessChain: {
-                // 2: AccessChain id, 3: object id
-                if (insn.word(3)) accesschain_members.emplace(insn.word(2), insn.word(3));
-                break;
-            }
-            default:
-                break;
-        }
-    }
-    if (store_members.empty()) {
-        return location_list;
-    }
-    for (auto output : outputs) {
-        auto store_it = store_members.find(output.second.id);
-        if (store_it != store_members.end()) {
-            location_list.insert(output.first.first);
-            store_members.erase(store_it);
-            continue;
-        }
-        store_it = store_members.begin();
-        while (store_it != store_members.end()) {
-            auto accesschain_it = accesschain_members.find(*store_it);
-            if (accesschain_it == accesschain_members.end()) {
-                ++store_it;
-                continue;
-            }
-            if (accesschain_it->second == output.second.id) {
-                location_list.insert(output.first.first);
-                store_members.erase(store_it);
-                accesschain_members.erase(accesschain_it);
-                break;
-            }
-            ++store_it;
-        }
-    }
-    return location_list;
 }
 
 bool CoreChecks::ValidateViConsistency(VkPipelineVertexInputStateCreateInfo const *vi) const {
@@ -1560,7 +189,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
                                            spirv_inst_iter entrypoint) const {
     bool skip = false;
 
-    const auto inputs = CollectInterfaceByLocation(vs, entrypoint, spv::StorageClassInput, false);
+    const auto inputs = vs->CollectInterfaceByLocation(entrypoint, spv::StorageClassInput, false);
 
     // Build index by location
     std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
@@ -1594,13 +223,13 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
                              "Vertex shader consumes input at location %" PRIu32 " but not provided", location);
         } else if (attrib && input) {
             const auto attrib_type = GetFormatType(attrib->format);
-            const auto input_type = GetFundamentalType(vs, input->type_id);
+            const auto input_type = vs->GetFundamentalType(input->type_id);
 
             // Type checking
             if (!(attrib_type & input_type)) {
                 skip |= LogError(vs->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
-                                 string_VkFormat(attrib->format), location, DescribeType(vs, input->type_id).c_str());
+                                 string_VkFormat(attrib->format), location, vs->DescribeType(input->type_id).c_str());
             }
         } else {            // !attrib && !input
             assert(false);  // at least one exists in the map
@@ -1635,7 +264,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
 
-    const auto outputs = CollectInterfaceByLocation(fs, entrypoint, spv::StorageClassOutput, false);
+    const auto outputs = fs->CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
     for (const auto &output_it : outputs) {
         auto const location = output_it.first.first;
         location_map[location].output = &output_it.second;
@@ -1667,7 +296,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
             }
         } else if (attachment && output) {
             const auto attachment_type = GetFormatType(attachment->format);
-            const auto output_type = GetFundamentalType(fs, output->type_id);
+            const auto output_type = fs->GetFundamentalType(output->type_id);
 
             // Type checking
             if (!(output_type & attachment_type)) {
@@ -1675,7 +304,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
                     LogWarning(fs->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
                                "Attachment %" PRIu32
                                " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
-                               location, string_VkFormat(attachment->format), DescribeType(fs, output->type_id).c_str());
+                               location, string_VkFormat(attachment->format), fs->DescribeType(output->type_id).c_str());
             }
         } else {            // !attachment && !output
             assert(false);  // at least one exists in the map
@@ -1684,202 +313,13 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
 
     const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
     bool location_zero_has_alpha = output_zero && fs->get_def(output_zero->type_id) != fs->end() &&
-                                   GetComponentsConsumedByType(fs, output_zero->type_id, false) == 4;
+                                   fs->GetComponentsConsumedByType(output_zero->type_id, false) == 4;
     if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
         skip |= LogError(fs->vk_shader_module, kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
                          "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
     }
 
     return skip;
-}
-
-// For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
-// This function examines instructions in the static call tree for a write to this variable.
-static bool IsBuiltInWritten(SHADER_MODULE_STATE const *src, spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint) {
-    auto type = builtin_instr.opcode();
-    uint32_t target_id = builtin_instr.word(1);
-    bool init_complete = false;
-
-    if (type == spv::OpMemberDecorate) {
-        // Built-in is part of a structure -- examine instructions up to first function body to get initial IDs
-        auto insn = entrypoint;
-        while (!init_complete && (insn.opcode() != spv::OpFunction)) {
-            switch (insn.opcode()) {
-                case spv::OpTypePointer:
-                    if ((insn.word(3) == target_id) && (insn.word(2) == spv::StorageClassOutput)) {
-                        target_id = insn.word(1);
-                    }
-                    break;
-                case spv::OpVariable:
-                    if (insn.word(1) == target_id) {
-                        target_id = insn.word(2);
-                        init_complete = true;
-                    }
-                    break;
-            }
-            insn++;
-        }
-    }
-
-    if (!init_complete && (type == spv::OpMemberDecorate)) return false;
-
-    bool found_write = false;
-    layer_data::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint.word(2));
-
-    // Follow instructions in call graph looking for writes to target
-    while (!worklist.empty() && !found_write) {
-        auto id_iter = worklist.begin();
-        auto id = *id_iter;
-        worklist.erase(id_iter);
-
-        auto insn = src->get_def(id);
-        if (insn == src->end()) {
-            continue;
-        }
-
-        if (insn.opcode() == spv::OpFunction) {
-            // Scan body of function looking for other function calls or items in our ID chain
-            while (++insn, insn.opcode() != spv::OpFunctionEnd) {
-                switch (insn.opcode()) {
-                    case spv::OpAccessChain:
-                        if (insn.word(3) == target_id) {
-                            if (type == spv::OpMemberDecorate) {
-                                auto value = GetConstantValue(src, insn.word(4));
-                                if (value == builtin_instr.word(2)) {
-                                    target_id = insn.word(2);
-                                }
-                            } else {
-                                target_id = insn.word(2);
-                            }
-                        }
-                        break;
-                    case spv::OpStore:
-                        if (insn.word(1) == target_id) {
-                            found_write = true;
-                        }
-                        break;
-                    case spv::OpFunctionCall:
-                        worklist.insert(insn.word(3));
-                        break;
-                }
-            }
-        }
-    }
-    return found_write;
-}
-
-// For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
-// important for identifying the set of shader resources actually used by an entrypoint, for example.
-// Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
-//  - NOT the shader input/output interfaces.
-//
-// TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
-// converting parts of this to be generated from the machine-readable spec instead.
-layer_data::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) {
-    layer_data::unordered_set<uint32_t> ids;
-    layer_data::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint.word(2));
-
-    while (!worklist.empty()) {
-        auto id_iter = worklist.begin();
-        auto id = *id_iter;
-        worklist.erase(id_iter);
-
-        auto insn = src->get_def(id);
-        if (insn == src->end()) {
-            // ID is something we didn't collect in BuildDefIndex. that's OK -- we'll stumble across all kinds of things here
-            // that we may not care about.
-            continue;
-        }
-
-        // Try to add to the output set
-        if (!ids.insert(id).second) {
-            continue;  // If we already saw this id, we don't want to walk it again.
-        }
-
-        switch (insn.opcode()) {
-            case spv::OpFunction:
-                // Scan whole body of the function, enlisting anything interesting
-                while (++insn, insn.opcode() != spv::OpFunctionEnd) {
-                    switch (insn.opcode()) {
-                        case spv::OpLoad:
-                            worklist.insert(insn.word(3));  // ptr
-                            break;
-                        case spv::OpStore:
-                            worklist.insert(insn.word(1));  // ptr
-                            break;
-                        case spv::OpAccessChain:
-                        case spv::OpInBoundsAccessChain:
-                            worklist.insert(insn.word(3));  // base ptr
-                            break;
-                        case spv::OpSampledImage:
-                        case spv::OpImageSampleImplicitLod:
-                        case spv::OpImageSampleExplicitLod:
-                        case spv::OpImageSampleDrefImplicitLod:
-                        case spv::OpImageSampleDrefExplicitLod:
-                        case spv::OpImageSampleProjImplicitLod:
-                        case spv::OpImageSampleProjExplicitLod:
-                        case spv::OpImageSampleProjDrefImplicitLod:
-                        case spv::OpImageSampleProjDrefExplicitLod:
-                        case spv::OpImageFetch:
-                        case spv::OpImageGather:
-                        case spv::OpImageDrefGather:
-                        case spv::OpImageRead:
-                        case spv::OpImage:
-                        case spv::OpImageQueryFormat:
-                        case spv::OpImageQueryOrder:
-                        case spv::OpImageQuerySizeLod:
-                        case spv::OpImageQuerySize:
-                        case spv::OpImageQueryLod:
-                        case spv::OpImageQueryLevels:
-                        case spv::OpImageQuerySamples:
-                        case spv::OpImageSparseSampleImplicitLod:
-                        case spv::OpImageSparseSampleExplicitLod:
-                        case spv::OpImageSparseSampleDrefImplicitLod:
-                        case spv::OpImageSparseSampleDrefExplicitLod:
-                        case spv::OpImageSparseSampleProjImplicitLod:
-                        case spv::OpImageSparseSampleProjExplicitLod:
-                        case spv::OpImageSparseSampleProjDrefImplicitLod:
-                        case spv::OpImageSparseSampleProjDrefExplicitLod:
-                        case spv::OpImageSparseFetch:
-                        case spv::OpImageSparseGather:
-                        case spv::OpImageSparseDrefGather:
-                        case spv::OpImageTexelPointer:
-                            worklist.insert(insn.word(3));  // Image or sampled image
-                            break;
-                        case spv::OpImageWrite:
-                            worklist.insert(insn.word(1));  // Image -- different operand order to above
-                            break;
-                        case spv::OpFunctionCall:
-                            for (uint32_t i = 3; i < insn.len(); i++) {
-                                worklist.insert(insn.word(i));  // fn itself, and all args
-                            }
-                            break;
-
-                        case spv::OpExtInst:
-                            for (uint32_t i = 5; i < insn.len(); i++) {
-                                worklist.insert(insn.word(i));  // Operands to ext inst
-                            }
-                            break;
-
-                        default: {
-                            if (AtomicOperation(insn.opcode())) {
-                                if (insn.opcode() == spv::OpAtomicStore) {
-                                    worklist.insert(insn.word(1));  // ptr
-                                } else {
-                                    worklist.insert(insn.word(3));  // ptr
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-                break;
-        }
-    }
-
-    return ids;
 }
 
 PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vector<uint8_t> &push_constant_data_update,
@@ -1929,7 +369,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
     }
 
     // Validate directly off the offsets. this isn't quite correct for arrays and matrices, but is a good first step.
-    const auto *entrypoint = FindEntrypointStruct(src, pStage->pName, pStage->stage);
+    const auto *entrypoint = src->FindEntrypointStruct(pStage->pName, pStage->stage);
     if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
         return skip;
     }
@@ -1992,7 +432,7 @@ bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, const lay
 
             auto type = src->get_def(type_pointer.word(3));
             if (type.opcode() == spv::OpTypeArray) {
-                uint32_t length = static_cast<uint32_t>(GetConstantValue(src, type.word(3)));
+                uint32_t length = static_cast<uint32_t>(src->GetConstantValueById(type.word(3)));
 
                 switch (decorations.builtin) {
                     case spv::BuiltInSampleMask:
@@ -2057,7 +497,7 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(SHADER_MODULE_STATE const *mod
             descriptor_count = 0;
             type = module->get_def(type.word(2));
         } else if (type.opcode() == spv::OpTypeArray) {
-            descriptor_count *= GetConstantValue(module, type.word(3));
+            descriptor_count *= module->GetConstantValueById(type.word(3));
             type = module->get_def(type.word(2));
         } else {
             if (type.word(2) == spv::StorageClassStorageBuffer) {
@@ -2349,8 +789,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     uint32_t num_comp_in = 0, num_comp_out = 0;
     int max_comp_in = 0, max_comp_out = 0;
 
-    auto inputs = CollectInterfaceByLocation(src, entrypoint, spv::StorageClassInput, strip_input_array_level);
-    auto outputs = CollectInterfaceByLocation(src, entrypoint, spv::StorageClassOutput, strip_output_array_level);
+    auto inputs = src->CollectInterfaceByLocation(entrypoint, spv::StorageClassInput, strip_input_array_level);
+    auto outputs = src->CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, strip_output_array_level);
 
     // Find max component location used for input variables.
     for (auto &var : inputs) {
@@ -2367,7 +807,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             continue;
         }
 
-        int num_components = GetComponentsConsumedByType(src, iv.type_id, strip_input_array_level);
+        int num_components = src->GetComponentsConsumedByType(iv.type_id, strip_input_array_level);
         max_comp_in = std::max(max_comp_in, location * 4 + component + num_components);
     }
 
@@ -2386,7 +826,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             continue;
         }
 
-        int num_components = GetComponentsConsumedByType(src, iv.type_id, strip_output_array_level);
+        int num_components = src->GetComponentsConsumedByType(iv.type_id, strip_output_array_level);
         max_comp_out = std::max(max_comp_out, location * 4 + component + num_components);
     }
 
@@ -2399,9 +839,9 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
         bool is_patch = patch_i_ds.find(var.ID) != patch_i_ds.end();
 
         if (var.storageClass == spv::StorageClassInput) {
-            num_comp_in += GetComponentsConsumedByType(src, var.baseTypePtrID, strip_input_array_level && !is_patch);
+            num_comp_in += src->GetComponentsConsumedByType(var.baseTypePtrID, strip_input_array_level && !is_patch);
         } else {  // var.storageClass == spv::StorageClassOutput
-            num_comp_out += GetComponentsConsumedByType(src, var.baseTypePtrID, strip_output_array_level && !is_patch);
+            num_comp_out += src->GetComponentsConsumedByType(var.baseTypePtrID, strip_output_array_level && !is_patch);
         }
     }
 
@@ -3128,66 +1568,6 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
     return skip;
 }
 
-uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id) {
-    auto type = module->get_def(type_id);
-
-    while (true) {
-        switch (type.opcode()) {
-            case spv::OpTypeArray:
-            case spv::OpTypeRuntimeArray:
-            case spv::OpTypeSampledImage:
-                type = module->get_def(type.word(2));
-                break;
-            case spv::OpTypePointer:
-                type = module->get_def(type.word(3));
-                break;
-            case spv::OpTypeImage: {
-                auto dim = type.word(3);
-                auto arrayed = type.word(5);
-                auto msaa = type.word(6);
-
-                uint32_t bits = 0;
-                switch (GetFundamentalType(module, type.word(2))) {
-                    case FORMAT_TYPE_FLOAT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
-                        break;
-                    case FORMAT_TYPE_UINT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
-                        break;
-                    case FORMAT_TYPE_SINT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
-                        break;
-                    default:
-                        break;
-                }
-
-                switch (dim) {
-                    case spv::Dim1D:
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_1D;
-                        return bits;
-                    case spv::Dim2D:
-                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D;
-                        return bits;
-                    case spv::Dim3D:
-                        bits |= DESCRIPTOR_REQ_VIEW_TYPE_3D;
-                        return bits;
-                    case spv::DimCube:
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_CUBE;
-                        return bits;
-                    case spv::DimSubpassData:
-                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-                        return bits;
-                    default:  // buffer, etc.
-                        return bits;
-                }
-            }
-            default:
-                return 0;
-        }
-    }
-}
-
 // For given pipelineLayout verify that the set_layout_node at slot.first
 //  has the requested binding at slot.second and return ptr to that binding
 static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_STATE const *pipelineLayout,
@@ -3197,84 +1577,6 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
     if (slot.first >= pipelineLayout->set_layouts.size()) return nullptr;
 
     return pipelineLayout->set_layouts[slot.first]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.second);
-}
-
-int32_t GetShaderResourceDimensionality(const SHADER_MODULE_STATE *module, const interface_var &resource) {
-    if (module == nullptr) return -1;
-
-    auto type = module->get_def(resource.type_id);
-    while (true) {
-        switch (type.opcode()) {
-            case spv::OpTypeSampledImage:
-                type = module->get_def(type.word(2));
-                break;
-            case spv::OpTypePointer:
-                type = module->get_def(type.word(3));
-                break;
-            case spv::OpTypeImage:
-                return type.word(3);
-            default:
-                return -1;
-        }
-    }
-}
-
-// Because the following is legal, need the entry point
-//    OpEntryPoint GLCompute %main "name_a"
-//    OpEntryPoint GLCompute %main "name_b"
-bool FindLocalSize(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, uint32_t &local_size_x,
-                   uint32_t &local_size_y, uint32_t &local_size_z) {
-    auto entrypoint_id = entrypoint.word(2);
-    auto it = src->execution_mode_inst.find(entrypoint_id);
-    if (it != src->execution_mode_inst.end()) {
-        for (auto insn : it->second) {
-            // Future Note: For now, Vulkan doesn't have a valid mode that can makes use of OpExecutionModeId
-            // In the future if something like LocalSizeId is supported, the <id> will need to be checked also
-            assert(insn.opcode() == spv::OpExecutionMode);
-            if (insn.word(2) == spv::ExecutionModeLocalSize) {
-                local_size_x = insn.word(3);
-                local_size_y = insn.word(4);
-                local_size_z = insn.word(5);
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline) {
-    auto entrypoint_id = entrypoint.word(2);
-    bool is_point_mode = false;
-
-    auto it = src->execution_mode_inst.find(entrypoint_id);
-    if (it != src->execution_mode_inst.end()) {
-        for (auto insn : it->second) {
-            switch (insn.word(2)) {
-                case spv::ExecutionModePointMode:
-                    // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
-                    is_point_mode = true;
-                    break;
-
-                case spv::ExecutionModeOutputPoints:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-                    break;
-
-                case spv::ExecutionModeIsolines:
-                case spv::ExecutionModeOutputLineStrip:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-                    break;
-
-                case spv::ExecutionModeTriangles:
-                case spv::ExecutionModeQuads:
-                case spv::ExecutionModeOutputTriangleStrip:
-                case spv::ExecutionModeOutputTrianglesNV:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-                    break;
-            }
-        }
-    }
-
-    if (is_point_mode) pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 }
 
 // If PointList topology is specified in the pipeline, verify that a shader geometry stage writes PointSize
@@ -3297,7 +1599,7 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
     for (auto set : src->builtin_decoration_list) {
         auto insn = src->at(set.offset);
         if (set.builtin == spv::BuiltInPointSize) {
-            pointsize_written = IsBuiltInWritten(src, insn, entrypoint);
+            pointsize_written = src->IsBuiltInWritten(insn, entrypoint);
             if (pointsize_written) {
                 break;
             }
@@ -3331,11 +1633,11 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
     for (auto set : src->builtin_decoration_list) {
         auto insn = src->at(set.offset);
         if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
-            primitiverate_written = IsBuiltInWritten(src, insn, entrypoint);
+            primitiverate_written = src->IsBuiltInWritten(insn, entrypoint);
         } else if (set.builtin == spv::BuiltInViewportIndex) {
-            viewportindex_written = IsBuiltInWritten(src, insn, entrypoint);
+            viewportindex_written = src->IsBuiltInWritten(insn, entrypoint);
         } else if (set.builtin == spv::BuiltInViewportMaskNV) {
-            viewportmask_written = IsBuiltInWritten(src, insn, entrypoint);
+            viewportmask_written = src->IsBuiltInWritten(insn, entrypoint);
         }
         if (primitiverate_written && viewportindex_written && viewportmask_written) {
             break;
@@ -3553,7 +1855,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
 
     // Validate use of input attachments against subpass structure
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        auto input_attachment_uses = CollectInterfaceByInputAttachmentIndex(module, accessible_ids);
+        auto input_attachment_uses = module->CollectInterfaceByInputAttachmentIndex(accessible_ids);
 
         auto rpci = pipeline->rp_state->createInfo.ptr();
         auto subpass = pipeline->graphicsPipelineCI.subpass;
@@ -3567,11 +1869,11 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
             if (index == VK_ATTACHMENT_UNUSED) {
                 skip |= LogError(device, kVUID_Core_Shader_MissingInputAttachment,
                                  "Shader consumes input attachment index %d but not provided in subpass", use.first);
-            } else if (!(GetFormatType(rpci->pAttachments[index].format) & GetFundamentalType(module, use.second.type_id))) {
+            } else if (!(GetFormatType(rpci->pAttachments[index].format) & module->GetFundamentalType(use.second.type_id))) {
                 skip |=
                     LogError(device, kVUID_Core_Shader_InputAttachmentTypeMismatch,
                              "Subpass input attachment %u format of %s does not match type used in shader `%s`", use.first,
-                             string_VkFormat(rpci->pAttachments[index].format), DescribeType(module, use.second.type_id).c_str());
+                             string_VkFormat(rpci->pAttachments[index].format), module->DescribeType(use.second.type_id).c_str());
             }
         }
     }
@@ -3588,8 +1890,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
     bool skip = false;
 
     auto outputs =
-        CollectInterfaceByLocation(producer, producer_entrypoint, spv::StorageClassOutput, producer_stage->arrayed_output);
-    auto inputs = CollectInterfaceByLocation(consumer, consumer_entrypoint, spv::StorageClassInput, consumer_stage->arrayed_input);
+        producer->CollectInterfaceByLocation(producer_entrypoint, spv::StorageClassOutput, producer_stage->arrayed_output);
+    auto inputs = consumer->CollectInterfaceByLocation(consumer_entrypoint, spv::StorageClassInput, consumer_stage->arrayed_input);
 
     auto a_it = outputs.begin();
     auto b_it = inputs.begin();
@@ -3621,8 +1923,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
                             consumer_stage->arrayed_input && !b_it->second.is_patch && !b_it->second.is_block_member, true)) {
                 skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Type mismatch on location %u.%u: '%s' vs '%s'", a_first.first, a_first.second,
-                                 DescribeType(producer, a_it->second.type_id).c_str(),
-                                 DescribeType(consumer, b_it->second.type_id).c_str());
+                                 producer->DescribeType(a_it->second.type_id).c_str(),
+                                 consumer->DescribeType(b_it->second.type_id).c_str());
             }
             if (a_it->second.is_patch != b_it->second.is_patch) {
                 skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
@@ -3641,8 +1943,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
     }
 
     if (consumer_stage->stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
-        auto builtins_producer = CollectBuiltinBlockMembers(producer, producer_entrypoint, spv::StorageClassOutput);
-        auto builtins_consumer = CollectBuiltinBlockMembers(consumer, consumer_entrypoint, spv::StorageClassInput);
+        auto builtins_producer = producer->CollectBuiltinBlockMembers(producer_entrypoint, spv::StorageClassOutput);
+        auto builtins_consumer = consumer->CollectBuiltinBlockMembers(consumer_entrypoint, spv::StorageClassInput);
 
         if (!builtins_producer.empty() && !builtins_consumer.empty()) {
             if (builtins_producer.size() != builtins_consumer.size()) {
@@ -3708,7 +2010,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         auto stage = &create_info->pStages[i];
         auto stage_id = GetShaderStageId(stage->stage);
         shaders[stage_id] = GetShaderModuleState(stage->module);
-        entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], stage->pName, stage->stage);
+        entrypoints[stage_id] = shaders[stage_id]->FindEntrypoint(stage->pName, stage->stage);
         skip |= ValidatePipelineShaderStage(stage, pipeline, pipeline->stage_state[i], shaders[stage_id], entrypoints[stage_id],
                                             (pointlist_stage_mask == stage->stage));
     }
@@ -3770,7 +2072,7 @@ void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeli
         auto stage = &create_info->pStages[i];
         auto stage_id = GetShaderStageId(stage->stage);
         shaders[stage_id] = GetShaderModuleState(stage->module);
-        entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], stage->pName, stage->stage);
+        entrypoints[stage_id] = shaders[stage_id]->FindEntrypoint(stage->pName, stage->stage);
 
         if (stage->stage == VK_SHADER_STAGE_VERTEX_BIT || stage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
             stage->stage == VK_SHADER_STAGE_MESH_BIT_NV) {
@@ -3779,7 +2081,7 @@ void CoreChecks::RecordGraphicsPipelineShaderDynamicState(PIPELINE_STATE *pipeli
             for (auto set : shaders[stage_id]->builtin_decoration_list) {
                 auto insn = shaders[stage_id]->at(set.offset);
                 if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
-                    primitiverate_written = IsBuiltInWritten(shaders[stage_id], insn, entrypoints[stage_id]);
+                    primitiverate_written = shaders[stage_id]->IsBuiltInWritten(insn, entrypoints[stage_id]);
                 }
                 if (primitiverate_written) {
                     break;
@@ -3823,7 +2125,7 @@ bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) co
     const auto &stage = *pipeline->computePipelineCI.stage.ptr();
 
     const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
-    const spirv_inst_iter entrypoint = FindEntrypoint(module, stage.pName, stage.stage);
+    const spirv_inst_iter entrypoint = module->FindEntrypoint(stage.pName, stage.stage);
 
     return ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[0], module, entrypoint, false);
 }
@@ -3910,7 +2212,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
         const auto &stage = stages[stage_index];
 
         const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
-        const spirv_inst_iter entrypoint = FindEntrypoint(module, stage.pName, stage.stage);
+        const spirv_inst_iter entrypoint = module->FindEntrypoint(stage.pName, stage.stage);
 
         skip |= ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[stage_index], module, entrypoint, false);
     }
@@ -4054,7 +2356,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
     uint32_t local_size_x = 0;
     uint32_t local_size_y = 0;
     uint32_t local_size_z = 0;
-    if (FindLocalSize(shader, entrypoint, local_size_x, local_size_y, local_size_z)) {
+    if (shader->FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z)) {
         if (local_size_x > phys_dev_props.limits.maxComputeWorkGroupSize[0]) {
             skip |= LogError(shader->vk_shader_module, "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
                              "%s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",

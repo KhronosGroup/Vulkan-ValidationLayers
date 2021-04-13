@@ -6120,7 +6120,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     auto new_shader_module = is_spirv ? std::make_shared<SHADER_MODULE_STATE>(pCreateInfo, *pShaderModule, spirv_environment,
                                                                               csm_state->unique_shader_id)
                                       : std::make_shared<SHADER_MODULE_STATE>();
-    SetPushConstantUsedInShader(*new_shader_module);
+    new_shader_module->SetPushConstantUsedInShader();
     shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
@@ -6133,24 +6133,24 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
     if (!module->has_valid_spirv) return;
 
     // Validation shouldn't rely on anything in stage state being valid if the entrypoint isn't present
-    auto entrypoint = FindEntrypoint(module, pStage->pName, pStage->stage);
+    auto entrypoint = module->FindEntrypoint(pStage->pName, pStage->stage);
     if (entrypoint == module->end()) return;
 
     stage_state->stage_flag = pStage->stage;
 
     // Mark accessible ids
-    stage_state->accessible_ids = MarkAccessibleIds(module, entrypoint);
-    ProcessExecutionModes(module, entrypoint, pipeline);
+    stage_state->accessible_ids = module->MarkAccessibleIds(entrypoint);
+    module->ProcessExecutionModes(entrypoint, pipeline);
 
-    stage_state->descriptor_uses = CollectInterfaceByDescriptorSlot(
-        module, stage_state->accessible_ids, &stage_state->has_writable_descriptor, &stage_state->has_atomic_descriptor);
+    stage_state->descriptor_uses = module->CollectInterfaceByDescriptorSlot(
+        stage_state->accessible_ids, &stage_state->has_writable_descriptor, &stage_state->has_atomic_descriptor);
     // Capture descriptor uses for the pipeline
     for (const auto &use : stage_state->descriptor_uses) {
         // While validating shaders capture which slots are used by the pipeline
         const uint32_t slot = use.first.first;
         pipeline->active_slots[slot][use.first.second].is_writable |= use.second.is_writable;
         auto &reqs = pipeline->active_slots[slot][use.first.second].reqs;
-        reqs = descriptor_req(reqs | DescriptorTypeToReqs(module, use.second.type_id));
+        reqs = descriptor_req(reqs | module->DescriptorTypeToReqs(use.second.type_id));
         if (use.second.is_atomic_operation) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION);
         if (use.second.is_sampler_implicitLod_dref_proj) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ);
         if (use.second.is_sampler_bias_offset) reqs = descriptor_req(reqs | DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET);
@@ -6172,7 +6172,7 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
     }
 
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        pipeline->fragmentShader_writable_output_location_list = CollectWritableOutputLocationinFS(*module, *pStage);
+        pipeline->fragmentShader_writable_output_location_list = module->CollectWritableOutputLocationinFS(*pStage);
     }
 }
 
