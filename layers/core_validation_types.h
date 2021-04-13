@@ -1253,7 +1253,7 @@ struct QFOTransferCBScoreboards {
 
 typedef std::map<QueryObject, QueryState> QueryMap;
 typedef layer_data::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
-typedef ImageSubresourceLayoutMap::LayoutMap GlobalImageLayoutRangeMap;
+typedef subresource_adapter::BothRangeMap<VkImageLayout, 16> GlobalImageLayoutRangeMap;
 typedef layer_data::unordered_map<VkImage, layer_data::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 typedef layer_data::unordered_map<VkImage, layer_data::optional<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
