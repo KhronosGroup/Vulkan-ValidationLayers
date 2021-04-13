@@ -4451,6 +4451,25 @@ const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &m
     return nullptr;
 }
 
+// Helper to update the Global or Overlay layout map
+struct GlobalLayoutUpdater {
+    bool update(VkImageLayout &dst, const image_layout_map::ImageSubresourceLayoutMap::LayoutEntry &src) const {
+        if (src.current_layout != image_layout_map::kInvalidLayout && dst != src.current_layout) {
+            dst = src.current_layout;
+            return true;
+        }
+        return false;
+    }
+
+    layer_data::optional<VkImageLayout> insert(const image_layout_map::ImageSubresourceLayoutMap::LayoutEntry &src) const {
+        layer_data::optional<VkImageLayout> result;
+        if (src.current_layout != image_layout_map::kInvalidLayout) {
+            result.emplace(src.current_layout);
+        }
+        return result;
+    }
+};
+
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const GlobalImageLayoutMap &globalImageLayoutMap,
                                             GlobalImageLayoutMap &overlayLayoutMap) const {
@@ -4463,9 +4482,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't check layouts of a dead image
         const auto &subres_map = layout_map_entry.second;
-        const auto &initial_layout_map = subres_map->GetInitialLayoutMap();
+        const auto &layout_map = subres_map->GetLayoutMap();
         // Validate the initial_uses for each subresource referenced
-        if (initial_layout_map.empty()) continue;
+        if (layout_map.empty()) continue;
 
         auto *overlay_map = GetLayoutRangeMap(overlayLayoutMap, *image_state);
         const auto *global_map = GetLayoutRangeMap(globalImageLayoutMap, image);
@@ -4476,13 +4495,19 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
         // Note: don't know if it would matter
         // if (global_map->empty() && overlay_map->empty()) // skip this next loop...;
 
-        auto pos = initial_layout_map.begin();
-        const auto end = initial_layout_map.end();
-        sparse_container::parallel_iterator<const ImageSubresourceLayoutMap::LayoutMap> current_layout(*overlay_map, *global_map,
-                                                                                                       pos->first.begin);
+        auto pos = layout_map.begin();
+        const auto end = layout_map.end();
+        sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(*overlay_map, *global_map,
+                                                                                            pos->first.begin);
         while (pos != end) {
-            VkImageLayout initial_layout = pos->second;
+            VkImageLayout initial_layout = pos->second.initial_layout;
+            assert(initial_layout != image_layout_map::kInvalidLayout);
+            if (initial_layout == image_layout_map::kInvalidLayout) {
+                continue;
+            }
+
             VkImageLayout image_layout = kInvalidLayout;
+
             if (current_layout->range.empty()) break;  // When we are past the end of data in overlay and global... stop looking
             if (current_layout->pos_A->valid) {        // pos_A denotes the overlay map in the parallel iterator
                 image_layout = current_layout->pos_A->lower_bound->second;
@@ -4519,10 +4544,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
                 }
             }
         }
-
         // Update all layout set operations (which will be a subset of the initial_layouts)
-        sparse_container::splice(*overlay_map, subres_map->GetCurrentLayoutMap(),
-                                 sparse_container::value_precedence::prefer_source);
+        sparse_container::splice(*overlay_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
     }
 
     return skip;
@@ -4535,7 +4558,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't set layouts of a dead image
         auto *global_map = GetLayoutRangeMap(imageLayoutMap, *image_state);
-        sparse_container::splice(*global_map, subres_map->GetCurrentLayoutMap(), sparse_container::value_precedence::prefer_source);
+        sparse_container::splice(*global_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
     }
 }
 

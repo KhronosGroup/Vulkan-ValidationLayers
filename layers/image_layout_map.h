@@ -62,11 +62,6 @@ class ImageSubresourceLayoutMap {
   public:
     typedef std::function<bool(const VkImageSubresource&, VkImageLayout, VkImageLayout)> Callback;
 
-    struct Layouts {
-        VkImageLayout current_layout;
-        VkImageLayout initial_layout;
-    };
-
     struct SubresourceLayout {
         VkImageSubresource subresource;
         VkImageLayout current_layout;
@@ -79,23 +74,42 @@ class ImageSubresourceLayoutMap {
         SubresourceLayout() = default;
     };
 
-    struct SubresourceRangeLayout {
-        VkImageSubresourceRange subresource_range;
-        VkImageLayout current_layout;
+    struct LayoutEntry {
         VkImageLayout initial_layout;
-        bool operator==(const SubresourceRangeLayout& rhs) const {
-            bool is_equal = (current_layout == rhs.current_layout) && (initial_layout == rhs.initial_layout) &&
-                            (subresource_range == rhs.subresource_range);
-            return is_equal;
-        }
-        bool operator!=(const SubresourceRangeLayout& rhs) const { return !(*this == rhs); }
-    };
+        VkImageLayout current_layout;
+        InitialLayoutState* state;
 
-    using RangeMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
-    template <typename MapA, typename MapB>
-    using ParallelIterator = sparse_container::parallel_iterator<MapA, MapB>;
+        LayoutEntry(VkImageLayout initial_ = kInvalidLayout, VkImageLayout current_ = kInvalidLayout,
+                    InitialLayoutState* s = nullptr)
+            : initial_layout(initial_), current_layout(current_), state(s) {}
+
+        bool operator!=(const LayoutEntry& rhs) const {
+            return initial_layout != rhs.initial_layout || current_layout != rhs.current_layout || state != rhs.state;
+        }
+        bool Update(const LayoutEntry& src) {
+            bool updated_current = false;
+            // current_layout can be updated repeatedly.
+            if (current_layout != src.current_layout && src.current_layout != kInvalidLayout) {
+                current_layout = src.current_layout;
+                updated_current = true;
+            }
+            // initial_layout and state cannot be updated once they have a valid value.
+            if (initial_layout == kInvalidLayout) {
+                initial_layout = src.initial_layout;
+            }
+            if (state == nullptr) {
+                state = src.state;
+            }
+            return updated_current;
+        }
+        // updater for splice()
+        struct Updater {
+            bool update(LayoutEntry& dst, const LayoutEntry& src) const { return dst.Update(src); }
+            layer_data::optional<LayoutEntry> insert(const LayoutEntry& src) const { return layer_data::optional<LayoutEntry>(layer_data::in_place, src); }
+        };
+    };
+    using RangeMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using LayoutMap = RangeMap;
-    using InitialLayoutMap = RangeMap;
     using InitialLayoutStates = small_vector<InitialLayoutState, 2, uint32_t>;
 
     class ConstIterator {
@@ -108,7 +122,7 @@ class ImageSubresourceLayoutMap {
         const SubresourceLayout* operator->() const { return &pos_; }
         const SubresourceLayout& operator*() const { return pos_; }
 
-        ConstIterator() : range_gen_(), parallel_it_(), skip_invalid_(false), always_get_initial_(false), pos_() {}
+        ConstIterator() : range_gen_(), layouts_(nullptr), iter_(), skip_invalid_(false), always_get_initial_(false), pos_() {}
         bool AtEnd() const { return pos_.subresource.aspectMask == 0; }
 
         // Only for comparisons to end()
@@ -119,13 +133,14 @@ class ImageSubresourceLayoutMap {
       protected:
         void Increment();
         friend ImageSubresourceLayoutMap;
-        ConstIterator(const RangeMap& current, const RangeMap& initial, const Encoder& encoder,
-                      const VkImageSubresourceRange& subres, bool skip_invalid, bool always_get_initial);
+        ConstIterator(const RangeMap& layouts, const Encoder& encoder, const VkImageSubresourceRange& subres, bool skip_invalid,
+                      bool always_get_initial);
         void UpdateRangeAndValue();
         void ForceEndCondition() { pos_.subresource.aspectMask = 0; }
 
         RangeGenerator range_gen_;
-        ParallelIterator<const RangeMap, const RangeMap> parallel_it_;
+        const RangeMap* layouts_;
+        RangeMap::const_iterator iter_;
         bool skip_invalid_;
         bool always_get_initial_;
         SubresourceLayout pos_;
@@ -136,7 +151,7 @@ class ImageSubresourceLayoutMap {
     ConstIterator Find(const VkImageSubresourceRange& subres_range, bool skip_invalid = true,
                        bool always_get_initial = false) const {
         if (InRange(subres_range)) {
-            return ConstIterator(layouts_.current, layouts_.initial, encoder_, subres_range, skip_invalid, always_get_initial);
+            return ConstIterator(layouts_, encoder_, subres_range, skip_invalid, always_get_initial);
         }
         return End();
     }
@@ -146,35 +161,22 @@ class ImageSubresourceLayoutMap {
     inline ConstIterator begin() const { return Begin(); }  // STL style, for range based loops and familiarity
     const ConstIterator& End() const { return end_iterator; }
     const ConstIterator& end() const { return End(); }  // STL style, for range based loops and familiarity.
-    inline size_t InitialLayoutSize() const { return layouts_.initial.size(); }
-    inline size_t CurrentLayoutSize() const { return layouts_.current.size(); }
 
     bool SetSubresourceRangeLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range, VkImageLayout layout,
                                    VkImageLayout expected_layout = kInvalidLayout);
-    bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range,
-                                          VkImageLayout layout, const IMAGE_VIEW_STATE* view_state = nullptr);
-    bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+    void SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range,
+                                          VkImageLayout layout);
+    void SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
                                           const IMAGE_VIEW_STATE& view_state);
-    bool ForRange(const VkImageSubresourceRange& range, const Callback& callback, bool skip_invalid = true,
-                  bool always_get_initial = false) const;
-    VkImageLayout GetSubresourceLayout(const VkImageSubresource& subresource) const;
-    VkImageLayout GetSubresourceInitialLayout(const VkImageSubresource& subresource) const;
-    Layouts GetSubresourceLayouts(const VkImageSubresource& subresource, bool always_get_initial = true) const;
+    const LayoutEntry* GetSubresourceLayouts(const VkImageSubresource& subresource) const;
     const InitialLayoutState* GetSubresourceInitialLayoutState(const IndexType index) const;
     const InitialLayoutState* GetSubresourceInitialLayoutState(const VkImageSubresource& subresource) const;
     bool UpdateFrom(const ImageSubresourceLayoutMap& from);
     uintptr_t CompatibilityKey() const;
-    const InitialLayoutMap& GetInitialLayoutMap() const { return layouts_.initial; }
-    const LayoutMap& GetCurrentLayoutMap() const { return layouts_.current; }
+    const LayoutMap& GetLayoutMap() const { return layouts_; }
     ImageSubresourceLayoutMap(const IMAGE_STATE& image_state);
     ~ImageSubresourceLayoutMap() {}
     const IMAGE_STATE* GetImageView() const { return &image_state_; };
-
-    struct LayoutMaps {
-        LayoutMap current;
-        InitialLayoutMap initial;
-        LayoutMaps(typename LayoutMap::index_type size) : current(size), initial(size) {}
-    };
 
   protected:
     // This looks a bit ponderous but kAspectCount is a compile time constant
@@ -189,28 +191,14 @@ class ImageSubresourceLayoutMap {
     bool InRange(const VkImageSubresource& subres) const { return encoder_.InRange(subres); }
     bool InRange(const VkImageSubresourceRange& range) const { return encoder_.InRange(range); }
 
-    inline InitialLayoutState* UpdateInitialLayoutState(const IndexRange& range, InitialLayoutState* initial_state,
-                                                        const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE* view_state) {
-        if (!initial_state) {
-            // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
-            // each subresource has a non-owning copy of the plain pointer.
-            initial_layout_states_.emplace_back(cb_state, view_state);
-            initial_state = &initial_layout_states_.back();
-        }
-        assert(initial_state);
-        sparse_container::update_range_value(initial_layout_state_map_, range, initial_state, WritePolicy::prefer_dest);
-        return initial_state;
-    }
-
     // This map *also* needs "write once" semantics
     using InitialLayoutStateMap = subresource_adapter::BothRangeMap<InitialLayoutState*, 16>;
 
   private:
     const IMAGE_STATE& image_state_;
     const Encoder& encoder_;
-    LayoutMaps layouts_;
+    LayoutMap layouts_;
     InitialLayoutStates initial_layout_states_;
-    InitialLayoutStateMap initial_layout_state_map_;
 
     static const ConstIterator end_iterator;  // Just to hold the end condition tombstone (aspectMask == 0)
 };

@@ -11261,11 +11261,11 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or initial
 
                 // Look up the layout to compared to the intial layout of the sub command buffer (current else initial)
-                auto cb_layouts = cb_subres_map->GetSubresourceLayouts(subresource);
-                auto cb_layout = cb_layouts.current_layout;
+                const auto *cb_layouts = cb_subres_map->GetSubresourceLayouts(subresource);
+                auto cb_layout = cb_layouts ? cb_layouts->current_layout : kInvalidLayout;
                 const char *layout_type = "current";
-                if (cb_layouts.current_layout == kInvalidLayout) {
-                    cb_layout = cb_layouts.initial_layout;
+                if (cb_layout == kInvalidLayout) {
+                    cb_layout = cb_layouts ? cb_layouts->initial_layout : kInvalidLayout;
                     layout_type = "initial";
                 }
                 if ((cb_layout != kInvalidLayout) && (cb_layout != sub_layout)) {
