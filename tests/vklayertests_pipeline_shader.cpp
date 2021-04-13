@@ -3663,7 +3663,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotDeclared) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-PushConstantOutOfRange");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -5120,7 +5120,7 @@ TEST_F(VkLayerTest, CreatePipelinePushConstantsNotInLayout) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     /* should have generated an error -- no push constant ranges provided! */
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-PushConstantOutOfRange");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

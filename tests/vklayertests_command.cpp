@@ -8057,8 +8057,8 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     g_pipe_small_range.pipeline_layout_ci_ = pipeline_layout_info;
     g_pipe_small_range.InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-PushConstantOutOfRange");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-PushConstantOutOfRange");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
     g_pipe_small_range.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 

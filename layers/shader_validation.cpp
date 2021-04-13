@@ -1920,7 +1920,7 @@ PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vecto
 }
 
 bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADER_MODULE_STATE const *src,
-                                           VkPipelineShaderStageCreateInfo const *pStage) const {
+                                           VkPipelineShaderStageCreateInfo const *pStage, const std::string &vuid) const {
     bool skip = false;
     // Temp workaround to prevent false positive errors
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450
@@ -1953,8 +1953,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
                 const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
                 LogObjectList objlist(src->vk_shader_module);
                 objlist.add(pipeline.pipeline_layout->layout);
-                skip |= LogError(objlist, kVUID_Core_Shader_PushConstantOutOfRange,
-                                 "Push-constant buffer:%s in %s is out of range in %s.", loc_descr.c_str(),
+                skip |= LogError(objlist, vuid, "Push constant buffer:%s in %s is out of range in %s.", loc_descr.c_str(),
                                  string_VkShaderStageFlags(pStage->stage).c_str(),
                                  report_data->FormatHandle(pipeline.pipeline_layout->layout).c_str());
                 break;
@@ -1965,10 +1964,10 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
     if (!found_stage) {
         LogObjectList objlist(src->vk_shader_module);
         objlist.add(pipeline.pipeline_layout->layout);
-        skip |= LogError(
-            objlist, kVUID_Core_Shader_PushConstantOutOfRange, "Push constant is used in %s of %s. But %s doesn't set %s.",
-            string_VkShaderStageFlags(pStage->stage).c_str(), report_data->FormatHandle(src->vk_shader_module).c_str(),
-            report_data->FormatHandle(pipeline.pipeline_layout->layout).c_str(), string_VkShaderStageFlags(pStage->stage).c_str());
+        skip |= LogError(objlist, vuid, "Push constant is used in %s of %s. But %s doesn't set %s.",
+                         string_VkShaderStageFlags(pStage->stage).c_str(), report_data->FormatHandle(src->vk_shader_module).c_str(),
+                         report_data->FormatHandle(pipeline.pipeline_layout->layout).c_str(),
+                         string_VkShaderStageFlags(pStage->stage).c_str());
     }
     return skip;
 }
@@ -3495,7 +3494,6 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(pStage);
-    skip |= ValidatePushConstantUsage(*pipeline, module, pStage);
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
@@ -3507,6 +3505,8 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         skip |= ValidatePrimitiveRateShaderState(pipeline, module, entrypoint, pStage->stage);
     }
 
+    // "layout must be consistent with the layout of the * shader"
+    // 'consistent' -> #descriptorsets-pipelinelayout-consistency
     std::string vuid_layout_mismatch;
     if (pipeline->graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO) {
         vuid_layout_mismatch = "VUID-VkGraphicsPipelineCreateInfo-layout-00756";
@@ -3517,6 +3517,9 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     } else if (pipeline->raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) {
         vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoNV-layout-03427";
     }
+
+    // Validate Push Constants use
+    skip |= ValidatePushConstantUsage(*pipeline, module, pStage, vuid_layout_mismatch);
 
     // Validate descriptor use
     for (auto use : descriptor_uses) {
