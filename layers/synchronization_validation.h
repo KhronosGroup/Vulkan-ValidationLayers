@@ -218,6 +218,8 @@ class SyncEventsContext {
     }
     const SyncEventState *Get(const SyncEventState::EventPointer &event_state) const { return Get(event_state.get()); }
 
+    void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst);
+
     // stl style naming for range-for support
     inline iterator begin() { return map_.begin(); }
     inline const_iterator begin() const { return map_.begin(); }
@@ -489,9 +491,15 @@ class SyncOpBase {
   public:
     SyncOpBase() : cmd_(CMD_NONE) {}
     SyncOpBase(CMD_TYPE cmd) : cmd_(cmd) {}
+    virtual ~SyncOpBase() = default;
+
     const char *CmdName() const { return CommandTypeString(cmd_); }
     virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
-    virtual void Record(CommandBufferAccessContext *cb_context) const = 0;
+    virtual ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const = 0;
+    virtual bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                                CommandBufferAccessContext *active_context) const = 0;
+    virtual void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                              CommandBufferAccessContext *active_context) const = 0;
 
   protected:
     CMD_TYPE cmd_;
@@ -513,6 +521,8 @@ class SyncOpBarriers : public SyncOpBase {
                    const VkImageMemoryBarrier *pImageMemoryBarriers);
     SyncOpBarriers(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t event_count,
                    const VkDependencyInfoKHR *pDependencyInfo);
+
+    ~SyncOpBarriers() override = default;
 
   protected:
     struct BarrierSet {
@@ -550,8 +560,14 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
                           const VkImageMemoryBarrier *pImageMemoryBarriers);
     SyncOpPipelineBarrier(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                           const VkDependencyInfoKHR &pDependencyInfo);
+    ~SyncOpPipelineBarrier() override = default;
+
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context) const override;
+    ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
+    bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                        CommandBufferAccessContext *active_context) const override;
+    void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                      CommandBufferAccessContext *active_context) const override;
 };
 
 class SyncOpWaitEvents : public SyncOpBarriers {
@@ -564,9 +580,14 @@ class SyncOpWaitEvents : public SyncOpBarriers {
 
     SyncOpWaitEvents(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
                      const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfo);
+    ~SyncOpWaitEvents() override = default;
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context) const override;
+    ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
+    bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                        CommandBufferAccessContext *active_context) const override;
+    void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                      CommandBufferAccessContext *active_context) const override;
 
   protected:
     // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
@@ -579,8 +600,14 @@ class SyncOpResetEvent : public SyncOpBase {
   public:
     SyncOpResetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                      VkPipelineStageFlags2KHR stageMask);
+    ~SyncOpResetEvent() override = default;
+
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context) const override;
+    ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
+    bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                        CommandBufferAccessContext *active_context) const override;
+    void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                      CommandBufferAccessContext *active_context) const override;
 
   private:
     std::shared_ptr<const EVENT_STATE> event_;
@@ -593,8 +620,14 @@ class SyncOpSetEvent : public SyncOpBase {
                    VkPipelineStageFlags2KHR stageMask);
     SyncOpSetEvent(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                    const VkDependencyInfoKHR &dep_info);
+    ~SyncOpSetEvent() override = default;
+
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context) const override;
+    ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
+    bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                        CommandBufferAccessContext *active_context) const override;
+    void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                      CommandBufferAccessContext *active_context) const override;
 
   private:
     std::shared_ptr<const EVENT_STATE> event_;
@@ -607,8 +640,14 @@ class SyncOpBeginRenderPass : public SyncOpBase {
   public:
     SyncOpBeginRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkRenderPassBeginInfo *pRenderPassBegin,
                           const VkSubpassBeginInfo *pSubpassBeginInfo);
+    ~SyncOpBeginRenderPass() override = default;
+
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context) const override;
+    ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
+    bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                        CommandBufferAccessContext *active_context) const override;
+    void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                      CommandBufferAccessContext *active_context) const override;
 
   protected:
     safe_VkRenderPassBeginInfo renderpass_begin_info_;
@@ -622,8 +661,14 @@ class SyncOpNextSubpass : public SyncOpBase {
   public:
     SyncOpNextSubpass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassBeginInfo *pSubpassBeginInfo,
                       const VkSubpassEndInfo *pSubpassEndInfo);
+    ~SyncOpNextSubpass() override = default;
+
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context) const override;
+    ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
+    bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                        CommandBufferAccessContext *active_context) const override;
+    void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                      CommandBufferAccessContext *active_context) const override;
 
   protected:
     safe_VkSubpassBeginInfo subpass_begin_info_;
@@ -633,8 +678,14 @@ class SyncOpNextSubpass : public SyncOpBase {
 class SyncOpEndRenderPass : public SyncOpBase {
   public:
     SyncOpEndRenderPass(CMD_TYPE cmd, const SyncValidator &sync_state, const VkSubpassEndInfo *pSubpassEndInfo);
+    ~SyncOpEndRenderPass() override = default;
+
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
-    void Record(CommandBufferAccessContext *cb_context) const override;
+    ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
+    bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                        CommandBufferAccessContext *active_context) const override;
+    void ReplayRecord(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
+                      CommandBufferAccessContext *active_context) const override;
 
   protected:
     safe_VkSubpassEndInfo subpass_end_info_;
@@ -888,9 +939,19 @@ class CommandExecutionContext {
 
 class CommandBufferAccessContext : public CommandExecutionContext {
   public:
+    using SyncOpPointer = std::shared_ptr<SyncOpBase>;
+    struct SyncOpEntry {
+        ResourceUsageTag tag;
+        SyncOpPointer sync_op;
+        SyncOpEntry(ResourceUsageTag tag_, SyncOpPointer &&sync_op_) : tag(tag_), sync_op(std::move(sync_op_)) {}
+        SyncOpEntry() = default;
+        SyncOpEntry(const SyncOpEntry &other) = default;
+    };
+
     CommandBufferAccessContext(SyncValidator *sync_validator = nullptr)
         : CommandExecutionContext(sync_validator),
           access_log_(),
+          sync_ops_(),
           command_number_(0),
           subcommand_number_(0),
           reset_count_(0),
@@ -913,6 +974,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 
     void Reset() {
         access_log_.clear();
+        sync_ops_.clear();
         command_number_ = 0;
         subcommand_number_ = 0;
         reset_count_++;
@@ -944,8 +1006,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, ResourceUsageTag tag);
     bool ValidateDrawSubpassAttachment(const char *func_name) const;
     void RecordDrawSubpassAttachment(ResourceUsageTag tag);
-    void RecordNextSubpass(CMD_TYPE command);
-    void RecordEndRenderPass(CMD_TYPE command);
+    void RecordNextSubpass(ResourceUsageTag prev_tag, ResourceUsageTag next_tag);
+    void RecordEndRenderPass(ResourceUsageTag tag);
     void RecordDestroyEvent(VkEvent event);
 
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
@@ -976,8 +1038,11 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         return *(cb_state_.get());
     }
 
+    void AddSyncOp(ResourceUsageTag tag, SyncOpPointer &&sync_op) { sync_ops_.emplace_back(tag, std::move(sync_op)); }
+
   private:
     std::vector<ResourceUsageRecord> access_log_;
+    std::vector<SyncOpEntry> sync_ops_;
     uint32_t command_number_;
     uint32_t subcommand_number_;
     uint32_t reset_count_;
