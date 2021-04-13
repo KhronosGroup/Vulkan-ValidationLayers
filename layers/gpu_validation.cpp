@@ -1731,7 +1731,11 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
         shader_module_ci.pCode = (uint32_t *)kPreDrawValidaitonShaderSpirv;
         result =
             DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_draw_validation_state.validation_shader_module);
-        assert(result == VK_SUCCESS);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, "Unable to create shader module.  Aborting GPU-AV");
+            aborted = true;
+            return;
+        }
 
         std::vector<VkDescriptorSetLayoutBinding> bindings;
         VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, NULL};
@@ -1745,7 +1749,11 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
         ds_layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
         ds_layout_ci.pBindings = bindings.data();
         result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &pre_draw_validation_state.validation_ds_layout);
-        assert(result == VK_SUCCESS);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, "Unable to create descriptor set layout.  Aborting GPU-AV");
+            aborted = true;
+            return;
+        }
 
         const uint32_t push_constant_range_count = 1;
         VkPushConstantRange push_constant_ranges[push_constant_range_count] = {};
@@ -1761,7 +1769,11 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
         pipelineLayoutCreateInfo[0].pSetLayouts = &pre_draw_validation_state.validation_ds_layout;
         result = DispatchCreatePipelineLayout(device, pipelineLayoutCreateInfo, NULL,
                                               &pre_draw_validation_state.validation_pipeline_layout);
-        assert(result == VK_SUCCESS);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, "Unable to create pipeline layout.  Aborting GPU-AV");
+            aborted = true;
+            return;
+        }
 
         pre_draw_validation_state.globals_created = true;
     }
@@ -1793,7 +1805,12 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
 
         VkPipeline new_pipeline = VK_NULL_HANDLE;
         result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &new_pipeline);
-        assert(result == VK_SUCCESS);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(device, "Unable to create graphics pipeline.  Aborting GPU-AV");
+            aborted = true;
+            return;
+        }
+
         *pPipeline = new_pipeline;
         pre_draw_validation_state.renderpass_to_pipeline[render_pass] = new_pipeline;
     } else {
@@ -1802,7 +1819,11 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
 
     result = desc_set_manager->GetDescriptorSet(&resources.desc_pool, pre_draw_validation_state.validation_ds_layout,
                                                 &resources.desc_set);
-    assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(device, "Unable to allocate descriptor set.  Aborting GPU-AV");
+        aborted = true;
+        return;
+    }
 
     VkDescriptorBufferInfo buffer_infos[3] = {};
     // Error output buffer
@@ -1895,6 +1916,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         assert(cdic_state != NULL);
         VkPipeline validation_pipeline;
         AllocatePreDrawValidationResources(output_block, pre_draw_resources, state, &validation_pipeline, cdic_state);
+        if (aborted) return;
 
         // Save current graphics pipeline state
         GPUAV_RESTORABLE_PIPELINE_STATE restorable_state;
