@@ -69,6 +69,8 @@ struct GpuAssistedShaderTracker {
 struct GpuVuid {
     const char* uniform_access_oob = kVUIDUndefined;
     const char* storage_access_oob = kVUIDUndefined;
+    const char* count_exceeds_bufsize_1 = kVUIDUndefined;
+    const char* count_exceeds_bufsize = kVUIDUndefined;
 };
 
 struct GpuAssistedAccelerationStructureBuildValidationBufferInfo {
@@ -123,7 +125,7 @@ struct GpuAssistedCmdDrawIndirectState {
 //
 //   4. Copy-paste the contents of predraw_validation.vert.spv here (clang-format will fix up the alignment).
 
-// TODO - Find a wasy to share constants with layer code
+// TODO - Find a way to share constants with layer code
 //#version 450
 //#define VAL_OUT_RECORD_SZ 10
 //#define kInstValidationOutError 7
