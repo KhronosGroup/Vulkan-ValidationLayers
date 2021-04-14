@@ -67,6 +67,8 @@ struct GpuVuidsCmdDrawIndirectCount : GpuVuid {
     GpuVuidsCmdDrawIndirectCount() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndirectCount-None-02705";
         storage_access_oob = "VUID-vkCmdDrawIndirectCount-None-02706";
+        count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndirectCount-countBuffer-03121";
+        count_exceeds_bufsize = "VUID-vkCmdDrawIndirectCount-countBuffer-03122";
     }
 };
 

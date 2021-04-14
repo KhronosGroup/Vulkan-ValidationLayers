@@ -1352,15 +1352,13 @@ static bool GenerateValidationMessage(const uint32_t *debug_record, std::string 
         case kInstErrorPreDrawValidate: {
             if (debug_record[kPreDrawValidateSubError] == pre_draw_count_too_big_error) {
                 // TODO - Include buffer, stride, offset, buffer and size of buffer in error message
-                // TODO - Add VUIDs to GpuVuids
                 uint32_t count = debug_record[kPreDrawValidateSubError + 1];
-                if (cmd_type == CMD_DRAWINDIRECTCOUNT) {
-                    strm << "Indirect draw count of " << count << " would exceed buffer size";
-                    if (count == 1) {
-                        vuid_msg = "VUID-vkCmdDrawIndirectCount-countBuffer-03121";
-                    } else {
-                        vuid_msg = "VUID-vkCmdDrawIndirectCount-countBuffer-03122";
-                    }
+                const GpuVuid vuid = GetGpuVuid(cmd_type);
+                strm << "Indirect draw count of " << count << " would exceed buffer size";
+                if (count == 1) {
+                    vuid_msg = vuid.count_exceeds_bufsize_1;
+                } else {
+                    vuid_msg = vuid.count_exceeds_bufsize;
                 }
             }
             return_code = false;
