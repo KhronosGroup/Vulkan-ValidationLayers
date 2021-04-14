@@ -1296,7 +1296,7 @@ static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 
 static const int pre_draw_count_too_big_error = 1; // TODO - share this with the shader code
 
 // Generate the part of the message describing the violation.
-static bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, CMD_TYPE cmd_type) {
+static bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, GpuAssistedBufferInfo buf_info) {
     using namespace spvtools;
     std::ostringstream strm;
     bool return_code = true;
@@ -1325,7 +1325,7 @@ static bool GenerateValidationMessage(const uint32_t *debug_record, std::string 
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
                      << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
                      << " and highest byte accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
-                const GpuVuid vuid = GetGpuVuid(cmd_type);
+                const GpuVuid vuid = GetGpuVuid(buf_info.cmd_type);
                 if (debug_record[kInstValidationOutError] == kInstErrorBuffOOBUniform)
                     vuid_msg = vuid.uniform_access_oob;
                 else
@@ -1342,7 +1342,7 @@ static bool GenerateValidationMessage(const uint32_t *debug_record, std::string 
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
                      << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
                      << " texels and highest texel accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
-                const GpuVuid vuid = GetGpuVuid(cmd_type);
+                const GpuVuid vuid = GetGpuVuid(buf_info.cmd_type);
                 if (debug_record[kInstValidationOutError] == kInstErrorBuffOOBUniformTexel)
                     vuid_msg = vuid.uniform_access_oob;
                 else
@@ -1350,11 +1350,16 @@ static bool GenerateValidationMessage(const uint32_t *debug_record, std::string 
             }
         } break;
         case kInstErrorPreDrawValidate: {
+            // Buffer size must be >= (stride × (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
             if (debug_record[kPreDrawValidateSubError] == pre_draw_count_too_big_error) {
-                // TODO - Include buffer, stride, offset, buffer and size of buffer in error message
                 uint32_t count = debug_record[kPreDrawValidateSubError + 1];
-                const GpuVuid vuid = GetGpuVuid(cmd_type);
-                strm << "Indirect draw count of " << count << " would exceed buffer size";
+                uint32_t stride = buf_info.pre_draw_resources.stride;
+                uint32_t offset = static_cast<uint32_t>(buf_info.pre_draw_resources.offset);
+                uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
+                const GpuVuid vuid = GetGpuVuid(buf_info.cmd_type);
+                strm << "Indirect draw count of " << count << " would exceed buffer size " << buf_info.pre_draw_resources.buf_size
+                     << " of buffer " << buf_info.pre_draw_resources.buffer << " stride = " << stride << " offset = " << offset
+                     << " (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand)) = " << draw_size;
                 if (count == 1) {
                     vuid_msg = vuid.count_exceeds_bufsize_1;
                 } else {
@@ -1417,7 +1422,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         pipeline_handle = it->second.pipeline;
         pgm = it->second.pgm;
     }
-    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info.cmd_type);
+    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info);
     if (gen_full_message) {
         UtilGenerateStageMessage(debug_record, stage_message);
         UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
@@ -1983,6 +1988,12 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         } else {
             max_count = 1 + static_cast<uint32_t>(std::floor(((bufsize - first_command_bytes) / indirect_count_state->stride)));
         }
+
+        // Save parameters for error message
+        pre_draw_resources.buffer = indirect_count_state->buffer;
+        pre_draw_resources.offset = indirect_count_state->offset;
+        pre_draw_resources.stride = indirect_count_state->stride;
+        pre_draw_resources.buf_size = buffer_state->createInfo.size;
 
         // Insert diagnostic draw
         DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);

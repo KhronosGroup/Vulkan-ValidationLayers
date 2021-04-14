@@ -36,6 +36,10 @@ struct GpuAssistedPreDrawResources {
     GpuAssistedDeviceMemoryBlock new_count_buffer;
     VkDescriptorPool desc_pool;
     VkDescriptorSet desc_set;
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    uint32_t stride;
+    VkDeviceSize buf_size;
 };
 
 struct GpuAssistedBufferInfo {
