@@ -462,7 +462,7 @@
                                 "label": "Check Out of Bounds ",
                                 "description": "Enable buffer out of bounds checking",
                                 "type": "BOOL",
-                                "default": false,
+                                "default": true,
                                 "dependence": {
                                     "mode": "ANY",
                                     "settings": [
