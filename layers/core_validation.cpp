@@ -7055,7 +7055,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 }
             }
         } else {
-            skip |= LogError(pDescriptorSets[set_idx], kVUID_Core_DrawState_InvalidSet,
+            skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter",
                              "vkCmdBindDescriptorSets(): Attempt to bind %s that doesn't exist!",
                              report_data->FormatHandle(pDescriptorSets[set_idx]).c_str());
         }
