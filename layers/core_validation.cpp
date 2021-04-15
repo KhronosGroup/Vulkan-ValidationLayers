@@ -1214,16 +1214,10 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     }
 
     // Verify if push constants have been set
-    if (cb_node->push_constant_data_ranges && (pipeline_layout->push_constant_ranges != cb_node->push_constant_data_ranges)) {
-        LogObjectList objlist(cb_node->commandBuffer);
-        objlist.add(cb_node->push_constant_pipeline_layout_set);
-        objlist.add(pipeline_layout->layout);
-        objlist.add(pipe->pipeline);
-        result |= LogError(
-            objlist, vuid.push_constants_set, "%s(): The active push constants of %s isn't compatible with %s of active %s.",
-            CommandTypeString(cmd_type), report_data->FormatHandle(cb_node->push_constant_pipeline_layout_set).c_str(),
-            report_data->FormatHandle(pipeline_layout->layout).c_str(), report_data->FormatHandle(pipe->pipeline).c_str());
-    } else {
+    // NOTE: Currently not checking whether active push constants are compatible with the active pipeline, nor whether the
+    //       "life times" of push constants are correct.
+    //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
+    if (!cb_node->push_constant_data_ranges || (pipeline_layout->push_constant_ranges == cb_node->push_constant_data_ranges)) {
         for (const auto &stage : pipe->stage_state) {
             const auto *entrypoint =
                 stage.shader_state.get()->FindEntrypointStruct(stage.entry_point_name.c_str(), stage.stage_flag);
@@ -1246,22 +1240,6 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             const auto it = cb_node->push_constant_data_update.find(stage.stage_flag);
             if (it == cb_node->push_constant_data_update.end()) {
                 // This error has been printed in ValidatePushConstantUsage.
-                break;
-            }
-
-            uint32_t issue_index = 0;
-            const auto ret = ValidatePushConstantSetUpdate(it->second, entrypoint->push_constant_used_in_shader, issue_index);
-
-            // "not set" error has been printed in ValidatePushConstantUsage.
-            if (ret == PC_Byte_Not_Updated) {
-                const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
-                LogObjectList objlist(cb_node->commandBuffer);
-                objlist.add(pipeline_layout->layout);
-                objlist.add(pipe->pipeline);
-                result |=
-                    LogError(objlist, vuid.push_constants_set, "%s(): Push-constant buffer:%s in %s of %s is not updated.",
-                             CommandTypeString(cmd_type), loc_descr.c_str(), string_VkShaderStageFlags(stage.stage_flag).c_str(),
-                             report_data->FormatHandle(pipeline_layout->layout).c_str());
                 break;
             }
         }
