@@ -282,55 +282,85 @@ class SingleRangeGenerator {
     KeyType current_;
 };
 
-// Generate the ranges that are the intersection of range and the entries in the FilterMap
-template <typename FilterMap, typename KeyType = typename FilterMap::key_type>
-class FilteredRangeGenerator {
+// Generate the ranges that are the intersection of range and the entries in the RangeMap
+template <typename RangeMap, typename KeyType = typename RangeMap::key_type>
+class MapRangesRangeGenerator {
   public:
     // Default constructed is safe to dereference for "empty" test, but for no other operation.
-    FilteredRangeGenerator() : range_(), filter_(nullptr), filter_pos_(), current_() {
+    MapRangesRangeGenerator() : range_(), map_(nullptr), map_pos_(), current_() {
         // Default construction for KeyType *must* be empty range
         assert(current_.empty());
     }
-    FilteredRangeGenerator(const FilterMap &filter, const KeyType &range)
-        : range_(range), filter_(&filter), filter_pos_(), current_() {
+    MapRangesRangeGenerator(const RangeMap &filter, const KeyType &range) : range_(range), map_(&filter), map_pos_(), current_() {
         SeekBegin();
     }
-    FilteredRangeGenerator(const FilteredRangeGenerator &from) = default;
+    MapRangesRangeGenerator(const MapRangesRangeGenerator &from) = default;
 
     const KeyType &operator*() const { return current_; }
     const KeyType *operator->() const { return &current_; }
-    FilteredRangeGenerator &operator++() {
-        ++filter_pos_;
+    MapRangesRangeGenerator &operator++() {
+        ++map_pos_;
         UpdateCurrent();
         return *this;
     }
 
-    bool operator==(const FilteredRangeGenerator &other) const { return current_ == other.current_; }
+    bool operator==(const MapRangesRangeGenerator &other) const { return current_ == other.current_; }
 
-  private:
+  protected:
     void UpdateCurrent() {
-        if (filter_pos_ != filter_->cend()) {
-            current_ = range_ & filter_pos_->first;
+        if (map_pos_ != map_->cend()) {
+            current_ = range_ & map_pos_->first;
         } else {
             current_ = KeyType();
         }
     }
     void SeekBegin() {
-        filter_pos_ = filter_->lower_bound(range_);
+        map_pos_ = map_->lower_bound(range_);
         UpdateCurrent();
     }
+
+    // Adding this functionality here, to avoid gratuitous Base:: qualifiers in the derived class
+    // Note: Not exposed in this classes public interface to encourage using a consistent ++/empty generator semantic
+    template <typename Pred>
+    MapRangesRangeGenerator &PredicatedIncrement(Pred &pred) {
+        do {
+            ++map_pos_;
+        } while (map_pos_ != map_->cend() && map_pos_->first.intersects(range_) && !pred(map_pos_));
+        UpdateCurrent();
+        return *this;
+    }
+
     const KeyType range_;
-    const FilterMap *filter_;
-    typename FilterMap::const_iterator filter_pos_;
+    const RangeMap *map_;
+    typename RangeMap::const_iterator map_pos_;
     KeyType current_;
 };
 using SingleAccessRangeGenerator = SingleRangeGenerator<ResourceAccessRange>;
-using EventSimpleRangeGenerator = FilteredRangeGenerator<SyncEventState::ScopeMap>;
+using EventSimpleRangeGenerator = MapRangesRangeGenerator<SyncEventState::ScopeMap>;
 
-// Templated to allow for different Range generators or map sources...
+// Generate the ranges for entries meeting the predicate that are the intersection of range and the entries in the RangeMap
+template <typename RangeMap, typename Predicate, typename KeyType = typename RangeMap::key_type>
+class PredicatedMapRangesRangeGenerator : public MapRangesRangeGenerator<RangeMap, KeyType> {
+  public:
+    using Base = MapRangesRangeGenerator<RangeMap, KeyType>;
+    // Default constructed is safe to dereference for "empty" test, but for no other operation.
+    PredicatedMapRangesRangeGenerator() : Base(), pred_() {}
+    PredicatedMapRangesRangeGenerator(const RangeMap &filter, const KeyType &range, Predicate pred)
+        : Base(filter, range), pred_(pred) {}
+    PredicatedMapRangesRangeGenerator(const PredicatedMapRangesRangeGenerator &from) = default;
+
+    PredicatedMapRangesRangeGenerator &operator++() {
+        Base::PredicatedIncrement(pred_);
+        return *this;
+    }
+
+  protected:
+    Predicate pred_;
+};
 
 // Generate the ranges that are the intersection of the RangeGen ranges and the entries in the FilterMap
-template <typename FilterMap, typename RangeGen, typename KeyType = typename FilterMap::key_type>
+// Templated to allow for different Range generators or map sources...
+template <typename RangeMap, typename RangeGen, typename KeyType = typename RangeMap::key_type>
 class FilteredGeneratorGenerator {
   public:
     // Default constructed is safe to dereference for "empty" test, but for no other operation.
@@ -338,7 +368,7 @@ class FilteredGeneratorGenerator {
         // Default construction for KeyType *must* be empty range
         assert(current_.empty());
     }
-    FilteredGeneratorGenerator(const FilterMap &filter, RangeGen &gen) : filter_(&filter), gen_(gen), filter_pos_(), current_() {
+    FilteredGeneratorGenerator(const RangeMap &filter, RangeGen &gen) : filter_(&filter), gen_(gen), filter_pos_(), current_() {
         SeekBegin();
     }
     FilteredGeneratorGenerator(const FilteredGeneratorGenerator &from) = default;
@@ -423,9 +453,9 @@ class FilteredGeneratorGenerator {
         }
     }
 
-    const FilterMap *filter_;
+    const RangeMap *filter_;
     RangeGen gen_;
-    typename FilterMap::const_iterator filter_pos_;
+    typename RangeMap::const_iterator filter_pos_;
     KeyType current_;
 };
 
@@ -2098,6 +2128,77 @@ void CommandBufferAccessContext::RecordDestroyEvent(VkEvent event) {
     }
 }
 
+// The is the recorded cb context
+bool CommandBufferAccessContext::ValidateFirstUse(const CommandBufferAccessContext &active_context, AccessContext *access_context,
+                                                  SyncEventsContext *events_context, const char *func_name, uint32_t index) const {
+    bool skip = false;
+    ResourceUsageRange tag_range = {0, 0};
+    const AccessContext *recorded_context = GetCurrentAccessContext();
+    assert(recorded_context);
+    HazardResult hazard;
+    auto log_msg = [this](const HazardResult &hazard, const CommandBufferAccessContext active_context, const char *func_name,
+                          uint32_t index) {
+        const auto cb_handle = active_context.cb_state_->commandBuffer();
+        const auto recorded_handle = cb_state_->commandBuffer();
+        return sync_state_->LogError(cb_handle, string_SyncHazardVUID(hazard.hazard),
+                                     "%s: Hazard %s for entry %" PRIu32 ", %s. Access info %s.", func_name,
+                                     string_SyncHazard(hazard.hazard), index,
+                                     sync_state_->report_data->FormatHandle(recorded_handle).c_str(), FormatUsage(hazard));
+    };
+    for (const auto &sync_op : sync_ops_) {
+        tag_range.end = sync_op.tag;
+        hazard = recorded_context->DetectFirstUseHazard(tag_range, *access_context);
+        if (hazard.hazard) {
+            skip |= log_msg(hazard, active_context, func_name, index);
+        }
+        // NOTE: Add call to replay validate here when we add support for syncop with non-trivial replay
+    }
+
+    // and anything after the last syncop
+    tag_range.begin = tag_range.end;
+    tag_range.end = ResourceUsageRecord::kMaxIndex;
+    hazard = recorded_context->DetectFirstUseHazard(tag_range, *access_context);
+    if (hazard.hazard) {
+        skip |= log_msg(hazard, active_context, func_name, index);
+    }
+
+    return skip;
+}
+
+class HazardDetectFirstUse {
+  public:
+    HazardDetectFirstUse(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range)
+        : recorded_use_(recorded_use), tag_range_(tag_range) {}
+    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
+        return pos->second.DetectHazard(recorded_use_, tag_range_);
+    }
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
+        return pos->second.DetectAsyncHazard(recorded_use_, tag_range_, start_tag);
+    }
+
+  private:
+    const ResourceAccessState &recorded_use_;
+    const ResourceUsageRange &tag_range_;
+};
+
+// This is called with the *recorded* command buffers access context, with the *active* access context pass in, againsts which
+// hazards will be detected
+HazardResult AccessContext::DetectFirstUseHazard(const ResourceUsageRange &tag_range, const AccessContext &access_context) const {
+    HazardResult hazard;
+    for (const auto address_type : kAddressTypes) {
+        const auto &recorded_access_map = GetAccessStateMap(address_type);
+        for (const auto &recorded_access : recorded_access_map) {
+            // Cull any entries not in the current tag range
+            if (!recorded_access.second.FirstAccessInTagRange(tag_range)) continue;
+            HazardDetectFirstUse detector(recorded_access.second, tag_range);
+            hazard = access_context.DetectHazard(address_type, detector, recorded_access.first, DetectOptions::kDetectAll);
+            if (hazard.hazard) break;
+        }
+    }
+
+    return hazard;
+}
+
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd,
                                                             const char *func_name) const {
     bool skip = false;
@@ -2630,6 +2731,20 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
     return hazard;
 }
 
+HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range) const {
+    HazardResult hazard;
+    for (const auto &first : first_accesses_) {
+        // Skip and quit logic
+        if (first.tag < tag_range.begin) continue;
+        if (first.tag >= tag_range.end) break;
+        ;
+
+        hazard = DetectHazard(first.usage_index, first.ordering_rule);
+        if (hazard.hazard) break;
+    }
+    return hazard;
+}
+
 // Asynchronous Hazards occur between subpasses with no connection through the DAG
 HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_index, const ResourceUsageTag start_tag) const {
     HazardResult hazard;
@@ -2653,6 +2768,21 @@ HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_i
                 }
             }
         }
+    }
+    return hazard;
+}
+
+HazardResult ResourceAccessState::DetectAsyncHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range,
+                                                    ResourceUsageTag start_tag) const {
+    HazardResult hazard;
+    for (const auto &first : first_accesses_) {
+        // Skip and quit logic
+        if (first.tag < tag_range.begin) continue;
+        if (first.tag >= tag_range.end) break;
+        ;
+
+        hazard = DetectAsyncHazard(first.usage_index, start_tag);
+        if (hazard.hazard) break;
     }
     return hazard;
 }
@@ -2943,6 +3073,12 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     write_barriers |= pending_write_barriers;
     pending_write_dep_chain = 0;
     pending_write_barriers = 0;
+}
+
+bool ResourceAccessState::FirstAccessInTagRange(const ResourceUsageRange &tag_range) const {
+    if (!first_accesses_.size()) return false;
+    const ResourceUsageRange first_access_range = {first_accesses_.front().tag, first_accesses_.back().tag + 1};
+    return tag_range.intersects(first_access_range);
 }
 
 // This should be just Bits or Index, but we don't have an invalid state for Index
@@ -5922,6 +6058,36 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
     }
+}
+
+bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                                      const VkCommandBuffer *pCommandBuffers) const {
+    bool skip = StateTracker::PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+    const char *func_name = "vkCmdExecuteCommands";
+    const auto *cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    const auto *context = cb_context->GetCurrentAccessContext();
+    assert(context);
+
+    // Make working copies of the access and events contexts
+    //  NOTE: Performance optimization for queue submit... only copy what the recorded contexts reference
+    AccessContext proxy_context(*context);
+    SyncEventsContext proxy_event_context(*cb_context->GetCurrentEventsContext());
+
+    for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
+        const auto *recorded_cb_context = GetAccessContext(pCommandBuffers[cb_index]);
+        if (!recorded_cb_context) continue;
+        skip |= recorded_cb_context->ValidateFirstUse(*cb_context, &proxy_context, &proxy_event_context, func_name, cb_index);
+    }
+
+    // NOTE: this is where we call the cb_contexts validate replay functionality
+    return skip;
+}
+
+void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                                    const VkCommandBuffer *pCommandBuffers) {
+    StateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+    // NOTE: this is where we call the cb_contexts replay record functionality
 }
 
 AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffset3D &offset, const VkExtent3D &extent)

@@ -267,7 +267,15 @@ class small_vector {
         return GetWorkingStore()[pos];
     }
 
-    // Like std::vector::back, calling back on an empty container causes undefined behavior
+    // Like std::vector:: calling front or back on an empty container causes undefined behavior
+    reference front() {
+        assert(size_ > 0);
+        return GetWorkingStore()[0];
+    }
+    const_reference front() const {
+        assert(size_ > 0);
+        return GetWorkingStore()[0];
+    }
     reference back() {
         assert(size_ > 0);
         return GetWorkingStore()[size_ - 1];

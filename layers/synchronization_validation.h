@@ -106,6 +106,7 @@ struct ResourceUsageRecord {
 };
 
 using ResourceUsageTag = ResourceUsageRecord::TagIndex;
+using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
 
 struct HazardResult {
     std::unique_ptr<const ResourceAccessState> access_state;
@@ -310,10 +311,14 @@ class ResourceAccessState : public SyncStageAccess {
   public:
     HazardResult DetectHazard(SyncStageAccessIndex usage_index) const;
     HazardResult DetectHazard(SyncStageAccessIndex usage_index, const SyncOrdering &ordering_rule) const;
+    HazardResult DetectHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range) const;
+
+    HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index, ResourceUsageTag start_tag) const;
+    HazardResult DetectAsyncHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range,
+                                   ResourceUsageTag start_tag) const;
 
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope) const;
-    HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index, ResourceUsageTag start_tag) const;
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope, ResourceUsageTag event_tag) const;
 
@@ -325,6 +330,7 @@ class ResourceAccessState : public SyncStageAccess {
     void ApplyBarrier(const SyncBarrier &barrier, bool layout_transition);
     void ApplyBarrier(ResourceUsageTag scope_tag, const SyncBarrier &barrier, bool layout_transition);
     void ApplyPendingBarriers(ResourceUsageTag tag);
+    bool FirstAccessInTagRange(const ResourceUsageRange &tag_range) const;
 
     ResourceAccessState()
         : write_barriers(~SyncStageAccessFlags(0)),
@@ -712,7 +718,6 @@ class AccessContext {
                 barriers.emplace_back(queue_flags_, *dependency);
             }
         }
-
         TrackBack &operator=(const TrackBack &) = default;
         TrackBack() = default;
     };
@@ -755,6 +760,8 @@ class AccessContext {
 
     void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
                                  const AttachmentViewGenVector &attachment_views, ResourceUsageTag tag);
+
+    HazardResult DetectFirstUseHazard(const ResourceUsageRange &tag_range, const AccessContext &access_context) const;
 
     const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
@@ -1009,6 +1016,9 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void RecordNextSubpass(ResourceUsageTag prev_tag, ResourceUsageTag next_tag);
     void RecordEndRenderPass(ResourceUsageTag tag);
     void RecordDestroyEvent(VkEvent event);
+
+    bool ValidateFirstUse(const CommandBufferAccessContext &active_context, AccessContext *access_context,
+                          SyncEventsContext *events_context, const char *func_name, uint32_t index) const;
 
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
@@ -1420,4 +1430,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                                  VkDeviceSize dstOffset, uint32_t marker) const override;
     void PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
                                                VkDeviceSize dstOffset, uint32_t marker) override;
+    bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                           const VkCommandBuffer *pCommandBuffers) const override;
+    void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                         const VkCommandBuffer *pCommandBuffers) override;
 };
