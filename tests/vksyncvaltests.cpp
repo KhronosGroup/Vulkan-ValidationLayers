@@ -138,6 +138,23 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
+    m_errorMonitor->ExpectSuccess();
+    VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBuffer cb2 = secondary_cb.handle();
+    secondary_cb.begin();
+    vk::CmdCopyBuffer(cb2, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
+    secondary_cb.end();
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdExecuteCommands(cb, 1, &cb2);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    m_commandBuffer->reset();
+
     // CmdWriteBufferMarkerAMD
     if (has_amd_buffer_maker) {
         auto fpCmdWriteBufferMarkerAMD =
