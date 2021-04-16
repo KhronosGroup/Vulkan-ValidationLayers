@@ -644,6 +644,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             enum_string_helper_header += '\n'
             enum_string_helper_header += '#include <string>\n'
             enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
+            enum_string_helper_header += '#include "vulkan_wip_ext.h"\n'
             enum_string_helper_header += '#include "vk_layer_data.h"\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += self.enum_output
@@ -663,6 +664,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         safe_struct_helper_header = '\n'
         safe_struct_helper_header += '#pragma once\n'
         safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
+        safe_struct_helper_header += '#include "vulkan_wip_ext.h"\n'
         safe_struct_helper_header += '#include <stdlib.h>\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
@@ -807,6 +809,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '#include <cassert>',
             '',
             '#include <vulkan/vulkan.h>',
+            '#include "vulkan_wip_ext.h"',
             '#include "vk_layer_data.h"',
             ''
             '#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"',
@@ -1858,7 +1861,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         # Generate header
         code.append('\n'.join((
             '#pragma once',
-            '#include <vulkan/vulkan.h>\n',
+            '#include <vulkan/vulkan.h>',
+            '#include "vulkan_wip_ext.h"\n',
             explanatory_comment, '',
             empty_idmap,
             empty_typemap, '')))

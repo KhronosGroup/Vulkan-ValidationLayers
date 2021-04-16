@@ -74,6 +74,12 @@ The pattern breaks down to
 - Init State which creates the `VkDevice`
 - **Optional**: skip if test is not worth moving out without extension support
 
+For work-in-progress extensions, the Vulkan-Headers include files will not contain the necessary declarations as the extension changes to `vk.xml` have not landed yet.  To support adding validation for these extensions, these declarations can be added to `layers/vulkan_wip_ext.h` which is included next to `<vulkan/vulkan.h>` in this repo. Do not commit those changes to this file. Additionally, `registry/vk.xml` in the Vulkan-Headers repo should be updated with work-in-progress changes and the following command would update the generated files in this repo to take those changes into account:
+
+```
+$ ./scripts/generate_source.py /path/to/Vulkan-Headers/registry/
+```
+
 ### Vulkan Version
 
 As [raised in a previous issue](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1553), when a Vulkan version is enabled, all extensions that are required are exposed. (For example, if the test is created as a Vulkan 1.1 application, then the `VK_KHR_16bit_storage` extension would be supported regardless as it was promoted to Vulkan 1.1 core)

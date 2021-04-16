@@ -37,6 +37,7 @@
 
 #include <string>
 #include <vulkan/vulkan.h>
+#include "vulkan_wip_ext.h"
 #include "vk_layer_data.h"
 
 

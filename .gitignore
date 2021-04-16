@@ -34,3 +34,6 @@ build-android/third_party
 *.includes
 .vscode/
 .DS_Store
+
+# vim swap files
+.*.sw*

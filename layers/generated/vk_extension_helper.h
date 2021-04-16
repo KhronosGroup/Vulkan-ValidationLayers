@@ -39,6 +39,7 @@
 #include <cassert>
 
 #include <vulkan/vulkan.h>
+#include "vulkan_wip_ext.h"
 #include "vk_layer_data.h"
 #define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
 
