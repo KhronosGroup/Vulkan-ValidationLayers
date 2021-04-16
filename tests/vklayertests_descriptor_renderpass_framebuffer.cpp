@@ -7569,6 +7569,98 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
     vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, NULL);
 }
 
+TEST_F(VkLayerTest, DescriptorIndexingSetNonIdenticalWrite) {
+    TEST_DESCRIPTION("VkWriteDescriptorSet must have identical VkDescriptorBindingFlagBits");
+
+    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
+                                                         m_errorMonitor))) {
+        printf("%s Descriptor indexing or one of its dependencies not supported, skipping tests\n.", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (VK_FALSE == indexing_features.descriptorBindingStorageBufferUpdateAfterBind) {
+        printf("%s Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind, skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->ExpectSuccess();
+
+    // not all identical VkDescriptorBindingFlags flags
+    VkDescriptorBindingFlags flags[3] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0,
+                                         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfo>();
+    flags_create_info.bindingCount = 3;
+    flags_create_info.pBindingFlags = &flags[0];
+
+    VkDescriptorSetLayoutBinding binding[3] = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+    };
+    auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&flags_create_info);
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    ds_layout_ci.bindingCount = 3;
+    ds_layout_ci.pBindings = &binding[0];
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    ASSERT_VK_SUCCESS(vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout));
+
+    VkDescriptorPoolSize pool_sizes = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3};
+    auto dspci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    dspci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+    dspci.poolSizeCount = 1;
+    dspci.pPoolSizes = &pool_sizes;
+    dspci.maxSets = 3;
+    VkDescriptorPool pool;
+    ASSERT_VK_SUCCESS(vk::CreateDescriptorPool(m_device->handle(), &dspci, nullptr, &pool));
+
+    auto ds_alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    ds_alloc_info.descriptorPool = pool;
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &ds_layout;
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    ASSERT_VK_SUCCESS(vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds));
+
+    auto buff_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buff_create_info.size = 1024;
+    buff_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buff_create_info);
+    m_errorMonitor->VerifyNotFound();
+
+    VkDescriptorBufferInfo bufferInfo[3] = {};
+    bufferInfo[0].buffer = buffer.handle();
+    bufferInfo[0].offset = 0;
+    bufferInfo[0].range = 1024;
+    bufferInfo[1] = bufferInfo[0];
+    bufferInfo[2] = bufferInfo[0];
+
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = ds;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = bufferInfo;
+    // If the dstBinding has fewer than descriptorCount, remainder will be used to update the subsequent binding
+    descriptor_write.descriptorCount = 3;
+
+    // binding 1 has a different VkDescriptorBindingFlags
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyDescriptorSetLayout(m_device->handle(), ds_layout, nullptr);
+    vk::DestroyDescriptorPool(m_device->handle(), pool, nullptr);
+}
+
 TEST_F(VkLayerTest, AllocatePushDescriptorSet) {
     TEST_DESCRIPTION("Attempt to allocate a push descriptor set.");
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
