@@ -213,17 +213,16 @@ class ObjectLifetimes : public ValidationObject {
     }
 
     void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type) {
-        auto object_handle = HandleToUint64(object);
-        assert(object_handle != VK_NULL_HANDLE);
+        assert(object != HandleToUint64(VK_NULL_HANDLE));
 
-        auto item = object_map[object_type].pop(object_handle);
+        auto item = object_map[object_type].pop(object);
         if (item == object_map[object_type].end()) {
             // We've already checked that the object exists. If we couldn't find and atomically remove it
             // from the map, there must have been a race condition in the app. Report an error and move on.
             (void)LogError(device, kVUID_ObjectTracker_Info,
                            "Couldn't destroy %s Object 0x%" PRIxLEAST64
                            ", not found. This should not happen and may indicate a race condition in the application.",
-                           object_string[object_type], object_handle);
+                           object_string[object_type], object);
 
             return;
         }
@@ -236,40 +235,40 @@ class ObjectLifetimes : public ValidationObject {
     }
 
     template <typename T1>
-    void RecordDestroyObject(T1 object, VulkanObjectType object_type) {
-        auto object_handle = HandleToUint64(object);
-        if (object_handle != VK_NULL_HANDLE) {
-            if (object_map[object_type].contains(object_handle)) {
-                DestroyObjectSilently(object_handle, object_type);
+    void RecordDestroyObject(T1 object_handle, VulkanObjectType object_type) {
+        auto object = HandleToUint64(object_handle);
+        if (object != HandleToUint64(VK_NULL_HANDLE)) {
+            if (object_map[object_type].contains(object)) {
+                DestroyObjectSilently(object, object_type);
             }
         }
     }
 
     template <typename T1>
-    bool ValidateDestroyObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
+    bool ValidateDestroyObject(T1 object_handle, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
                                const char *expected_custom_allocator_code, const char *expected_default_allocator_code) const {
-        auto object_handle = HandleToUint64(object);
+        auto object = HandleToUint64(object_handle);
         bool custom_allocator = pAllocator != nullptr;
         bool skip = false;
 
         if ((expected_custom_allocator_code != kVUIDUndefined || expected_default_allocator_code != kVUIDUndefined) &&
-            object_handle != VK_NULL_HANDLE) {
-            auto item = object_map[object_type].find(object_handle);
+            object != HandleToUint64(VK_NULL_HANDLE)) {
+            auto item = object_map[object_type].find(object);
             if (item != object_map[object_type].end()) {
                 auto allocated_with_custom = (item->second->status & OBJSTATUS_CUSTOM_ALLOCATOR) ? true : false;
                 if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                     // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                     // it cannot verify that these allocation callbacks are compatible with each other.
-                    skip |= LogError(object, expected_custom_allocator_code,
+                    skip |= LogError(object_handle, expected_custom_allocator_code,
                                      "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64
                                      " but specified at creation.",
-                                     object_string[object_type], object_handle);
+                                     object_string[object_type], object);
 
                 } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
-                    skip |= LogError(object, expected_default_allocator_code,
+                    skip |= LogError(object_handle, expected_default_allocator_code,
                                      "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64
                                      " but not specified at creation.",
-                                     object_string[object_type], object_handle);
+                                     object_string[object_type], object);
                 }
             }
         }
