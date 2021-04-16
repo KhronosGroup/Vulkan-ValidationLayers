@@ -3104,7 +3104,27 @@ bool cvdescriptorset::VerifyUpdateConsistency(debug_report_data *report_data,
         }
         error_str << " binding #" << orig_binding.Binding() << " with #" << update_count
                   << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
-                     "not consistent with current binding so this update is invalid.";
+                     "not consistent with current binding";
+
+        // Get what was not consistent in IsConsistent() as a more detailed error message
+        const auto *binding_ci = orig_binding.GetDescriptorSetLayoutBindingPtr();
+        const auto *other_binding_ci = current_binding.GetDescriptorSetLayoutBindingPtr();
+        if (binding_ci == nullptr || other_binding_ci == nullptr) {
+            error_str << " (No two valid DescriptorSetLayoutBinding to compare)";
+        } else if (binding_ci->descriptorType != other_binding_ci->descriptorType) {
+            error_str << " (" << string_VkDescriptorType(binding_ci->descriptorType)
+                      << " != " << string_VkDescriptorType(other_binding_ci->descriptorType) << ")";
+        } else if (binding_ci->stageFlags != other_binding_ci->stageFlags) {
+            error_str << " (" << string_VkShaderStageFlags(binding_ci->stageFlags)
+                      << " != " << string_VkShaderStageFlags(other_binding_ci->stageFlags) << ")";
+        } else if (!hash_util::similar_for_nullity(binding_ci->pImmutableSamplers, other_binding_ci->pImmutableSamplers)) {
+            error_str << " (pImmutableSamplers don't match)";
+        } else if (orig_binding.GetDescriptorBindingFlags() != current_binding.GetDescriptorBindingFlags()) {
+            error_str << " (" << string_VkDescriptorBindingFlags(orig_binding.GetDescriptorBindingFlags())
+                      << " != " << string_VkDescriptorBindingFlags(current_binding.GetDescriptorBindingFlags()) << ")";
+        }
+
+        error_str << " so this update is invalid";
         *error_msg = error_str.str();
     }
     return pass;
@@ -3265,7 +3285,6 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     if (!VerifyUpdateConsistency(report_data, DescriptorSetLayout::ConstBindingIterator(dest_layout, update->dstBinding),
                                  update->dstArrayElement, update->descriptorCount, "write update to", dest_set->GetSet(),
                                  error_msg)) {
-        // TODO : Should break out "consecutive binding updates" language into valid usage statements
         *error_code = "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
         return false;
     }
