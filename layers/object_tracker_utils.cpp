@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2020 Valve Corporation
- * Copyright (c) 2015-2020 LunarG, Inc.
- * Copyright (C) 2015-2020 Google Inc.
+/* Copyright (c) 2015-2021 The Khronos Group Inc.
+ * Copyright (c) 2015-2021 Valve Corporation
+ * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (C) 2015-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,17 +69,17 @@ bool ObjectLifetimes::ValidateDeviceObject(const VulkanTypedHandle &device_typed
     return LogError(instance, invalid_handle_code, "Invalid %s.", report_data->FormatHandle(device_typed).c_str());
 }
 
-bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object_handle, VkObjectType core_object_type, bool null_allowed,
+bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed,
                                               const char *invalid_handle_code, const char *wrong_device_code) const {
-    if (null_allowed && (object_handle == VK_NULL_HANDLE)) return false;
+    if (null_allowed && (object == HandleToUint64(VK_NULL_HANDLE))) return false;
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
 
     if (object_type == kVulkanObjectTypeDevice) {
-        return ValidateDeviceObject(VulkanTypedHandle(reinterpret_cast<VkDevice>(object_handle), object_type), invalid_handle_code,
+        return ValidateDeviceObject(VulkanTypedHandle(reinterpret_cast<VkDevice>(object), object_type), invalid_handle_code,
                                     wrong_device_code);
     }
 
-    return CheckObjectValidity(object_handle, object_type, null_allowed, invalid_handle_code, wrong_device_code);
+    return CheckObjectValidity(object, object_type, null_allowed, invalid_handle_code, wrong_device_code);
 }
 
 void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
