@@ -2198,10 +2198,15 @@ void cvdescriptorset::SamplerDescriptor::WriteUpdate(const ValidationStateTracke
 }
 
 void cvdescriptorset::SamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+    updated = true;
+    // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
+    if (src->descriptor_class == Mutable) {
+        this->descriptor_class = Mutable;
+        return;
+    }
     if (!immutable_) {
         sampler_state_ = static_cast<const SamplerDescriptor *>(src)->sampler_state_;
     }
-    updated = true;
 }
 
 void cvdescriptorset::SamplerDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
@@ -2233,10 +2238,15 @@ void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(const ValidationStateT
 }
 
 void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+    updated = true;
+    // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
+    if (src->descriptor_class == Mutable) {
+        this->descriptor_class = Mutable;
+        return;
+    }
     if (!immutable_) {
         sampler_state_ = static_cast<const ImageSamplerDescriptor *>(src)->sampler_state_;
     }
-    updated = true;
     image_layout_ = static_cast<const ImageSamplerDescriptor *>(src)->image_layout_;
     image_view_state_ = static_cast<const ImageSamplerDescriptor *>(src)->image_view_state_;
 }
@@ -2270,6 +2280,12 @@ void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker 
 
 void cvdescriptorset::ImageDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     updated = true;
+    // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
+    if (src->descriptor_class == Mutable) {
+        this->descriptor_class = Mutable;
+        return;
+    }
+
     image_layout_ = static_cast<const ImageDescriptor *>(src)->image_layout_;
     image_view_state_ = static_cast<const ImageDescriptor *>(src)->image_view_state_;
 }
@@ -2298,6 +2314,11 @@ void cvdescriptorset::BufferDescriptor::WriteUpdate(const ValidationStateTracker
 
 void cvdescriptorset::BufferDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     updated = true;
+    // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
+    if (src->descriptor_class == Mutable) {
+        this->descriptor_class = Mutable;
+        return;
+    }
     const auto buff_desc = static_cast<const BufferDescriptor *>(src);
     offset_ = buff_desc->offset_;
     range_ = buff_desc->range_;
@@ -2322,6 +2343,11 @@ void cvdescriptorset::TexelDescriptor::WriteUpdate(const ValidationStateTracker 
 
 void cvdescriptorset::TexelDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     updated = true;
+    // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
+    if (src->descriptor_class == Mutable) {
+        this->descriptor_class = Mutable;
+        return;
+    }
     buffer_view_state_ = static_cast<const TexelDescriptor *>(src)->buffer_view_state_;
 }
 
@@ -2357,6 +2383,11 @@ void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(const Validat
 void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
     auto acc_desc = static_cast<const AccelerationStructureDescriptor *>(src);
     updated = true;
+    // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
+    if (src->descriptor_class == Mutable) {
+        this->descriptor_class = Mutable;
+        return;
+    }
     if (is_khr_) {
         acc_ = acc_desc->acc_;
         acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_);
