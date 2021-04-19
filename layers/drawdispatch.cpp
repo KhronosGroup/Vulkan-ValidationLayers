@@ -564,7 +564,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         linear_sampler                     = "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553";
         cubic_sampler                      = "VUID-vkCmdDrawIndirectByteCountEXT-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646";
-        indirect_contiguous_memory         = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-buffer", // TODO - Update when header are updated
+        indirect_contiguous_memory         = "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-04567",
         indirect_buffer_bit                = "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-02290";
         viewport_count                     = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawIndirectByteCountEXT-scissorCount-03418";
