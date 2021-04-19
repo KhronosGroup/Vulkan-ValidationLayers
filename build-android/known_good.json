@@ -16,7 +16,7 @@
       "name" : "Vulkan-Headers",
       "url" : "https://github.com/KhronosGroup/Vulkan-Headers.git",
       "sub_dir" : "Vulkan-Headers",
-      "commit" : "v1.2.174"
+      "commit" : "v1.2.176"
     },
     {
       "name" : "Vulkan-Tools",

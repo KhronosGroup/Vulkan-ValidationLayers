@@ -119,6 +119,14 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR GetPhysicalDeviceWin32PresentationSupportKHR;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
+    // ---- VK_KHR_video_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR GetPhysicalDeviceVideoCapabilitiesKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR GetPhysicalDeviceVideoFormatPropertiesKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
     // ---- VK_KHR_get_physical_device_properties2 extension commands
     PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysicalDeviceFeatures2KHR;
     PFN_vkGetPhysicalDeviceProperties2KHR GetPhysicalDeviceProperties2KHR;
@@ -434,6 +442,43 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_KHR_display_swapchain extension commands
     PFN_vkCreateSharedSwapchainsKHR CreateSharedSwapchainsKHR;
 
+    // ---- VK_KHR_video_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkCreateVideoSessionKHR CreateVideoSessionKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkDestroyVideoSessionKHR DestroyVideoSessionKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkGetVideoSessionMemoryRequirementsKHR GetVideoSessionMemoryRequirementsKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkBindVideoSessionMemoryKHR BindVideoSessionMemoryKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkCreateVideoSessionParametersKHR CreateVideoSessionParametersKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkUpdateVideoSessionParametersKHR UpdateVideoSessionParametersKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkDestroyVideoSessionParametersKHR DestroyVideoSessionParametersKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkCmdBeginVideoCodingKHR CmdBeginVideoCodingKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkCmdEndVideoCodingKHR CmdEndVideoCodingKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkCmdControlVideoCodingKHR CmdControlVideoCodingKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+    // ---- VK_KHR_video_decode_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkCmdDecodeVideoKHR CmdDecodeVideoKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
     // ---- VK_KHR_device_group extension commands
     PFN_vkGetDeviceGroupPeerMemoryFeaturesKHR GetDeviceGroupPeerMemoryFeaturesKHR;
     PFN_vkCmdSetDeviceMaskKHR CmdSetDeviceMaskKHR;
@@ -544,6 +589,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPipelineExecutablePropertiesKHR GetPipelineExecutablePropertiesKHR;
     PFN_vkGetPipelineExecutableStatisticsKHR GetPipelineExecutableStatisticsKHR;
     PFN_vkGetPipelineExecutableInternalRepresentationsKHR GetPipelineExecutableInternalRepresentationsKHR;
+
+    // ---- VK_KHR_video_encode_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_synchronization2 extension commands
     PFN_vkCmdSetEvent2KHR CmdSetEvent2KHR;
@@ -753,6 +803,9 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     PFN_vkCmdSetFragmentShadingRateEnumNV CmdSetFragmentShadingRateEnumNV;
 
+    // ---- VK_EXT_vertex_input_dynamic_state extension commands
+    PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
+
     // ---- VK_FUCHSIA_external_memory extension commands
 #ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkGetMemoryZirconHandleFUCHSIA GetMemoryZirconHandleFUCHSIA;
@@ -768,6 +821,16 @@ typedef struct VkLayerDispatchTable_ {
 #ifdef VK_USE_PLATFORM_FUCHSIA
     PFN_vkGetSemaphoreZirconHandleFUCHSIA GetSemaphoreZirconHandleFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_EXT_extended_dynamic_state2 extension commands
+    PFN_vkCmdSetPatchControlPointsEXT CmdSetPatchControlPointsEXT;
+    PFN_vkCmdSetRasterizerDiscardEnableEXT CmdSetRasterizerDiscardEnableEXT;
+    PFN_vkCmdSetDepthBiasEnableEXT CmdSetDepthBiasEnableEXT;
+    PFN_vkCmdSetLogicOpEXT CmdSetLogicOpEXT;
+    PFN_vkCmdSetPrimitiveRestartEnableEXT CmdSetPrimitiveRestartEnableEXT;
+
+    // ---- VK_EXT_color_write_enable extension commands
+    PFN_vkCmdSetColorWriteEnableEXT CmdSetColorWriteEnableEXT;
 
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;

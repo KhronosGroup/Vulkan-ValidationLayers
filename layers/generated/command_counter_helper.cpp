@@ -180,6 +180,26 @@ void CommandCounter::PreCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer,
 void CommandCounter::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo*        pSubpassEndInfo) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void CommandCounter::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void CommandCounter::PreCallRecordCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void CommandCounter::PreCallRecordCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoCodingControlInfoKHR* pCodingControlInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void CommandCounter::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pFrameInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
 void CommandCounter::PreCallRecordCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
@@ -210,6 +230,11 @@ void CommandCounter::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer
 void CommandCounter::PreCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer           commandBuffer, const VkExtent2D*                           pFragmentSize, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void CommandCounter::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
 void CommandCounter::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfoKHR*                          pDependencyInfo) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
@@ -400,6 +425,27 @@ void CommandCounter::PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer c
     coreChecks->IncrementCommandCount(commandBuffer);
 }
 void CommandCounter::PreCallRecordCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount, const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount, const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
+    coreChecks->IncrementCommandCount(commandBuffer);
+}
+void CommandCounter::PreCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer       commandBuffer, uint32_t                                attachmentCount, const VkBool32*   pColorWriteEnables) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
 void CommandCounter::PreCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer                                    commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
