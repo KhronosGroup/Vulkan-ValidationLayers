@@ -2306,6 +2306,13 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
     const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     bool skip = false;
     if (image_state) {
+        if (image_state->is_swapchain_image) {
+            // TODO - Add VUID when headers are upstreamed
+            skip |= LogError(device, "UNASSIGNED-vkDestroyImage-image",
+                             "vkDestroyImage(): %s is a presentable image and it is controlled by the implementation and is "
+                             "destroyed with vkDestroySwapchainKHR.",
+                             report_data->FormatHandle(image_state->image).c_str());
+        }
         skip |= ValidateObjectNotInUse(image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
     }
     return skip;
