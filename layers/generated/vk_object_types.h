@@ -68,16 +68,18 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeSwapchainKHR = 29,
     kVulkanObjectTypeDisplayKHR = 30,
     kVulkanObjectTypeDisplayModeKHR = 31,
-    kVulkanObjectTypeDeferredOperationKHR = 32,
-    kVulkanObjectTypeDebugReportCallbackEXT = 33,
-    kVulkanObjectTypeDebugUtilsMessengerEXT = 34,
-    kVulkanObjectTypeValidationCacheEXT = 35,
-    kVulkanObjectTypeAccelerationStructureNV = 36,
-    kVulkanObjectTypePerformanceConfigurationINTEL = 37,
-    kVulkanObjectTypeIndirectCommandsLayoutNV = 38,
-    kVulkanObjectTypePrivateDataSlotEXT = 39,
-    kVulkanObjectTypeAccelerationStructureKHR = 40,
-    kVulkanObjectTypeMax = 41,
+    kVulkanObjectTypeVideoSessionKHR = 32,
+    kVulkanObjectTypeVideoSessionParametersKHR = 33,
+    kVulkanObjectTypeDeferredOperationKHR = 34,
+    kVulkanObjectTypeDebugReportCallbackEXT = 35,
+    kVulkanObjectTypeDebugUtilsMessengerEXT = 36,
+    kVulkanObjectTypeValidationCacheEXT = 37,
+    kVulkanObjectTypeAccelerationStructureNV = 38,
+    kVulkanObjectTypePerformanceConfigurationINTEL = 39,
+    kVulkanObjectTypeIndirectCommandsLayoutNV = 40,
+    kVulkanObjectTypePrivateDataSlotEXT = 41,
+    kVulkanObjectTypeAccelerationStructureKHR = 42,
+    kVulkanObjectTypeMax = 43,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
@@ -117,6 +119,8 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "VkSwapchainKHR",
     "VkDisplayKHR",
     "VkDisplayModeKHR",
+    "VkVideoSessionKHR",
+    "VkVideoSessionParametersKHR",
     "VkDeferredOperationKHR",
     "VkDebugReportCallbackEXT",
     "VkDebugUtilsMessengerEXT",
@@ -162,6 +166,16 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,   // kVulkanObjectTypeSwapchainKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT,   // kVulkanObjectTypeDisplayKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT,   // kVulkanObjectTypeDisplayModeKHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionKHR
+#else
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionKHR
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionParametersKHR
+#else
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionParametersKHR
+#endif
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDeferredOperationKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT,   // kVulkanObjectTypeDebugReportCallbackEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDebugUtilsMessengerEXT
@@ -207,6 +221,8 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeSwapchainKHR: return VK_OBJECT_TYPE_SWAPCHAIN_KHR;
         case kVulkanObjectTypeDisplayKHR: return VK_OBJECT_TYPE_DISPLAY_KHR;
         case kVulkanObjectTypeDisplayModeKHR: return VK_OBJECT_TYPE_DISPLAY_MODE_KHR;
+        case kVulkanObjectTypeVideoSessionKHR: return VK_OBJECT_TYPE_VIDEO_SESSION_KHR;
+        case kVulkanObjectTypeVideoSessionParametersKHR: return VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR;
         case kVulkanObjectTypeDeferredOperationKHR: return VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR;
         case kVulkanObjectTypeDebugReportCallbackEXT: return VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT;
         case kVulkanObjectTypeDebugUtilsMessengerEXT: return VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
@@ -254,6 +270,8 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_SWAPCHAIN_KHR: return kVulkanObjectTypeSwapchainKHR;
         case VK_OBJECT_TYPE_DISPLAY_KHR: return kVulkanObjectTypeDisplayKHR;
         case VK_OBJECT_TYPE_DISPLAY_MODE_KHR: return kVulkanObjectTypeDisplayModeKHR;
+        case VK_OBJECT_TYPE_VIDEO_SESSION_KHR: return kVulkanObjectTypeVideoSessionKHR;
+        case VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR: return kVulkanObjectTypeVideoSessionParametersKHR;
         case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR: return kVulkanObjectTypeDeferredOperationKHR;
         case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT: return kVulkanObjectTypeDebugReportCallbackEXT;
         case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT: return kVulkanObjectTypeDebugUtilsMessengerEXT;
@@ -815,6 +833,32 @@ template <> struct VkHandleInfo<VkValidationCacheEXT> {
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeValidationCacheEXT> {
     typedef VkValidationCacheEXT Type;
 };
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+template <> struct VkHandleInfo<VkVideoSessionKHR> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeVideoSessionKHR;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_VIDEO_SESSION_KHR;
+    static const char* Typename() {
+        return "VkVideoSessionKHR";
+    }
+};
+template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeVideoSessionKHR> {
+    typedef VkVideoSessionKHR Type;
+};
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+template <> struct VkHandleInfo<VkVideoSessionParametersKHR> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeVideoSessionParametersKHR;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR;
+    static const char* Typename() {
+        return "VkVideoSessionParametersKHR";
+    }
+};
+template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeVideoSessionParametersKHR> {
+    typedef VkVideoSessionParametersKHR Type;
+};
+#endif
 #endif // TYPESAFE_NONDISPATCHABLE_HANDLES
 struct VulkanTypedHandle {
     uint64_t handle;

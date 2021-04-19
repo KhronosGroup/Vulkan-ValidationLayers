@@ -484,6 +484,39 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCreateSharedSwapchainsKHR,
     InterceptIdPreCallRecordCreateSharedSwapchainsKHR,
     InterceptIdPostCallRecordCreateSharedSwapchainsKHR,
+    InterceptIdPreCallValidateCreateVideoSessionKHR,
+    InterceptIdPreCallRecordCreateVideoSessionKHR,
+    InterceptIdPostCallRecordCreateVideoSessionKHR,
+    InterceptIdPreCallValidateDestroyVideoSessionKHR,
+    InterceptIdPreCallRecordDestroyVideoSessionKHR,
+    InterceptIdPostCallRecordDestroyVideoSessionKHR,
+    InterceptIdPreCallValidateGetVideoSessionMemoryRequirementsKHR,
+    InterceptIdPreCallRecordGetVideoSessionMemoryRequirementsKHR,
+    InterceptIdPostCallRecordGetVideoSessionMemoryRequirementsKHR,
+    InterceptIdPreCallValidateBindVideoSessionMemoryKHR,
+    InterceptIdPreCallRecordBindVideoSessionMemoryKHR,
+    InterceptIdPostCallRecordBindVideoSessionMemoryKHR,
+    InterceptIdPreCallValidateCreateVideoSessionParametersKHR,
+    InterceptIdPreCallRecordCreateVideoSessionParametersKHR,
+    InterceptIdPostCallRecordCreateVideoSessionParametersKHR,
+    InterceptIdPreCallValidateUpdateVideoSessionParametersKHR,
+    InterceptIdPreCallRecordUpdateVideoSessionParametersKHR,
+    InterceptIdPostCallRecordUpdateVideoSessionParametersKHR,
+    InterceptIdPreCallValidateDestroyVideoSessionParametersKHR,
+    InterceptIdPreCallRecordDestroyVideoSessionParametersKHR,
+    InterceptIdPostCallRecordDestroyVideoSessionParametersKHR,
+    InterceptIdPreCallValidateCmdBeginVideoCodingKHR,
+    InterceptIdPreCallRecordCmdBeginVideoCodingKHR,
+    InterceptIdPostCallRecordCmdBeginVideoCodingKHR,
+    InterceptIdPreCallValidateCmdEndVideoCodingKHR,
+    InterceptIdPreCallRecordCmdEndVideoCodingKHR,
+    InterceptIdPostCallRecordCmdEndVideoCodingKHR,
+    InterceptIdPreCallValidateCmdControlVideoCodingKHR,
+    InterceptIdPreCallRecordCmdControlVideoCodingKHR,
+    InterceptIdPostCallRecordCmdControlVideoCodingKHR,
+    InterceptIdPreCallValidateCmdDecodeVideoKHR,
+    InterceptIdPreCallRecordCmdDecodeVideoKHR,
+    InterceptIdPostCallRecordCmdDecodeVideoKHR,
     InterceptIdPreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR,
     InterceptIdPreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR,
     InterceptIdPostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR,
@@ -643,6 +676,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetPipelineExecutableInternalRepresentationsKHR,
     InterceptIdPreCallRecordGetPipelineExecutableInternalRepresentationsKHR,
     InterceptIdPostCallRecordGetPipelineExecutableInternalRepresentationsKHR,
+    InterceptIdPreCallValidateCmdEncodeVideoKHR,
+    InterceptIdPreCallRecordCmdEncodeVideoKHR,
+    InterceptIdPostCallRecordCmdEncodeVideoKHR,
     InterceptIdPreCallValidateCmdSetEvent2KHR,
     InterceptIdPreCallRecordCmdSetEvent2KHR,
     InterceptIdPostCallRecordCmdSetEvent2KHR,
@@ -994,6 +1030,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetFragmentShadingRateEnumNV,
     InterceptIdPreCallRecordCmdSetFragmentShadingRateEnumNV,
     InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV,
+    InterceptIdPreCallValidateCmdSetVertexInputEXT,
+    InterceptIdPreCallRecordCmdSetVertexInputEXT,
+    InterceptIdPostCallRecordCmdSetVertexInputEXT,
     InterceptIdPreCallValidateGetMemoryZirconHandleFUCHSIA,
     InterceptIdPreCallRecordGetMemoryZirconHandleFUCHSIA,
     InterceptIdPostCallRecordGetMemoryZirconHandleFUCHSIA,
@@ -1006,6 +1045,24 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPreCallRecordGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPostCallRecordGetSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPreCallValidateCmdSetPatchControlPointsEXT,
+    InterceptIdPreCallRecordCmdSetPatchControlPointsEXT,
+    InterceptIdPostCallRecordCmdSetPatchControlPointsEXT,
+    InterceptIdPreCallValidateCmdSetRasterizerDiscardEnableEXT,
+    InterceptIdPreCallRecordCmdSetRasterizerDiscardEnableEXT,
+    InterceptIdPostCallRecordCmdSetRasterizerDiscardEnableEXT,
+    InterceptIdPreCallValidateCmdSetDepthBiasEnableEXT,
+    InterceptIdPreCallRecordCmdSetDepthBiasEnableEXT,
+    InterceptIdPostCallRecordCmdSetDepthBiasEnableEXT,
+    InterceptIdPreCallValidateCmdSetLogicOpEXT,
+    InterceptIdPreCallRecordCmdSetLogicOpEXT,
+    InterceptIdPostCallRecordCmdSetLogicOpEXT,
+    InterceptIdPreCallValidateCmdSetPrimitiveRestartEnableEXT,
+    InterceptIdPreCallRecordCmdSetPrimitiveRestartEnableEXT,
+    InterceptIdPostCallRecordCmdSetPrimitiveRestartEnableEXT,
+    InterceptIdPreCallValidateCmdSetColorWriteEnableEXT,
+    InterceptIdPreCallRecordCmdSetColorWriteEnableEXT,
+    InterceptIdPostCallRecordCmdSetColorWriteEnableEXT,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -1588,6 +1645,65 @@ void ValidationObject::InitObjectDispatchVectors() {
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateVideoSessionKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateVideoSessionKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateVideoSessionKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyVideoSessionKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyVideoSessionKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyVideoSessionKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetVideoSessionMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetVideoSessionMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetVideoSessionMemoryRequirementsKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateBindVideoSessionMemoryKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordBindVideoSessionMemoryKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordBindVideoSessionMemoryKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateVideoSessionParametersKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateUpdateVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordUpdateVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordUpdateVideoSessionParametersKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyVideoSessionParametersKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginVideoCodingKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginVideoCodingKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBeginVideoCodingKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndVideoCodingKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndVideoCodingKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndVideoCodingKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdControlVideoCodingKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdControlVideoCodingKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdControlVideoCodingKHR);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDecodeVideoKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDecodeVideoKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDecodeVideoKHR);
+#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR);
@@ -1759,6 +1875,11 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineExecutableInternalRepresentationsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineExecutableInternalRepresentationsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineExecutableInternalRepresentationsKHR);
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdEncodeVideoKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdEncodeVideoKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdEncodeVideoKHR);
+#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetEvent2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetEvent2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetEvent2KHR);
@@ -2148,6 +2269,9 @@ void ValidationObject::InitObjectDispatchVectors() {
 #endif
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 #endif
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetVertexInputEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetVertexInputEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetVertexInputEXT);
 #ifdef VK_USE_PLATFORM_FUCHSIA
     BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryZirconHandleFUCHSIA);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryZirconHandleFUCHSIA);
@@ -2168,10 +2292,28 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetSemaphoreZirconHandleFUCHSIA);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetSemaphoreZirconHandleFUCHSIA);
 #endif
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPatchControlPointsEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPatchControlPointsEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPatchControlPointsEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetRasterizerDiscardEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetRasterizerDiscardEnableEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetRasterizerDiscardEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDepthBiasEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDepthBiasEnableEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDepthBiasEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetLogicOpEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetLogicOpEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetLogicOpEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPrimitiveRestartEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPrimitiveRestartEnableEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPrimitiveRestartEnableEXT);
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 #endif
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 #endif
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetColorWriteEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetColorWriteEnableEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetColorWriteEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

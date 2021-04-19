@@ -174,7 +174,7 @@ class StatelessValidation : public ValidationObject {
                                    const std::string &vuid) const {
         bool skip_call = false;
 
-        if (value == NULL) {
+        if (value == nullptr) {
             skip_call |=
                 LogError(device, vuid, "%s: required parameter %s specified as NULL.", apiName, parameterName.get_name().c_str());
         }
@@ -211,7 +211,7 @@ class StatelessValidation : public ValidationObject {
         }
 
         // Array parameters not tagged as optional cannot be NULL, unless the count is 0
-        if (arrayRequired && (count != 0) && (*array == NULL)) {
+        if (arrayRequired && (count != 0) && (*array == nullptr)) {
             skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s specified as NULL.", apiName,
                                   arrayName.get_name().c_str());
         }
@@ -246,7 +246,7 @@ class StatelessValidation : public ValidationObject {
                         const char *count_required_vuid, const char *array_required_vuid) const {
         bool skip_call = false;
 
-        if (count == NULL) {
+        if (count == nullptr) {
             if (countPtrRequired) {
                 skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL",
                                       apiName, countName.get_name().c_str());
@@ -279,7 +279,7 @@ class StatelessValidation : public ValidationObject {
                               VkStructureType sType, bool required, const char *struct_vuid, const char *stype_vuid) const {
         bool skip_call = false;
 
-        if (value == NULL) {
+        if (value == nullptr) {
             if (required) {
                 skip_call |= LogError(device, struct_vuid, "%s: required parameter %s specified as NULL", apiName,
                                       parameterName.get_name().c_str());
@@ -317,7 +317,7 @@ class StatelessValidation : public ValidationObject {
                                     const char *count_required_vuid) const {
         bool skip_call = false;
 
-        if ((count == 0) || (array == NULL)) {
+        if ((count == 0) || (array == nullptr)) {
             skip_call |= validate_array(apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
                                         count_required_vuid, param_vuid);
         } else {
@@ -358,7 +358,7 @@ class StatelessValidation : public ValidationObject {
                                             const char *count_required_vuid) const {
         bool skip_call = false;
 
-        if ((count == 0) || (array == NULL)) {
+        if ((count == 0) || (array == nullptr)) {
             skip_call |= validate_array(apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
                                         count_required_vuid, param_vuid);
         } else {
@@ -401,7 +401,7 @@ class StatelessValidation : public ValidationObject {
                                     const char *param_vuid, const char *count_required_vuid) const {
         bool skip_call = false;
 
-        if (count == NULL) {
+        if (count == nullptr) {
             if (countPtrRequired) {
                 skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL",
                                       apiName, countName.get_name().c_str());
@@ -465,7 +465,7 @@ class StatelessValidation : public ValidationObject {
                                const char *count_required_vuid) const {
         bool skip_call = false;
 
-        if ((count == 0) || (array == NULL)) {
+        if ((count == 0) || (array == nullptr)) {
             skip_call |= validate_array(api_name, count_name, array_name, count, &array, count_required, array_required,
                                         count_required_vuid, kVUIDUndefined);
         } else {
@@ -504,13 +504,13 @@ class StatelessValidation : public ValidationObject {
                                const char *array_required_vuid) const {
         bool skip_call = false;
 
-        if ((count == 0) || (array == NULL)) {
+        if ((count == 0) || (array == nullptr)) {
             skip_call |= validate_array(apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
                                         count_required_vuid, array_required_vuid);
         } else {
             // Verify that strings in the array are not NULL
             for (uint32_t i = 0; i < count; ++i) {
-                if (array[i] == NULL) {
+                if (array[i] == nullptr) {
                     skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s[%d] specified as NULL", apiName,
                                           arrayName.get_name().c_str(), i);
                 }
@@ -549,7 +549,7 @@ class StatelessValidation : public ValidationObject {
                                uint32_t header_version, const char *pnext_vuid, const char *stype_vuid) const {
         bool skip_call = false;
 
-        if (next != NULL) {
+        if (next != nullptr) {
             layer_data::unordered_set<const void *> cycle_check;
             layer_data::unordered_set<VkStructureType, layer_data::hash<int>> unique_stype_check;
 
@@ -568,7 +568,7 @@ class StatelessValidation : public ValidationObject {
                 const VkStructureType *end = allowed_types + allowed_type_count;
                 const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
 
-                while (current != NULL) {
+                while (current != nullptr) {
                     if (((strncmp(api_name, "vkCreateInstance", strlen(api_name)) != 0) ||
                          (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
                         ((strncmp(api_name, "vkCreateDevice", strlen(api_name)) != 0) ||
@@ -645,6 +645,42 @@ class StatelessValidation : public ValidationObject {
     }
 
     /**
+     * Validate an array of VkBool32 values.
+     *
+     * Generate an error if any VkBool32 value in an array is neither VK_TRUE nor VK_FALSE.
+     *
+     * @param apiName Name of API call being validated.
+     * @param countName Name of count parameter.
+     * @param arrayName Name of array parameter.
+     * @param count Number of values in the array.
+     * @param array Array of VkBool32 values to validate.
+     * @param countRequired The 'count' parameter may not be 0 when true.
+     * @param arrayRequired The 'array' parameter may not be NULL when true.
+     * @return Boolean value indicating that the call should be skipped.
+     */
+    bool validate_bool32_array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
+                               const VkBool32 *array, bool countRequired, bool arrayRequired) const {
+        bool skip_call = false;
+
+        if ((count == 0) || (array == nullptr)) {
+            skip_call |= validate_array(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, kVUIDUndefined,
+                                        kVUIDUndefined);
+        } else {
+            for (uint32_t i = 0; i < count; ++i) {
+                if ((array[i] != VK_TRUE) && (array[i] != VK_FALSE)) {
+                    skip_call |=
+                        LogError(device, kVUID_PVError_UnrecognizedValue,
+                                 "%s: value of %s[%d] (%d) is neither VK_TRUE nor VK_FALSE. Applications MUST not pass any other "
+                                 "values than VK_TRUE or VK_FALSE into a Vulkan implementation where a VkBool32 is expected.",
+                                 apiName, arrayName.get_name().c_str(), i, array[i]);
+                }
+            }
+        }
+
+        return skip_call;
+    }
+
+    /**
      * Validate a Vulkan enumeration value.
      *
      * Generate a warning if an enumeration token value does not fall within the core enumeration
@@ -704,7 +740,7 @@ class StatelessValidation : public ValidationObject {
                                     bool countRequired, bool arrayRequired) const {
         bool skip_call = false;
 
-        if ((count == 0) || (array == NULL)) {
+        if ((count == 0) || (array == nullptr)) {
             skip_call |= validate_array(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, kVUIDUndefined,
                                         kVUIDUndefined);
         } else {
@@ -844,7 +880,7 @@ class StatelessValidation : public ValidationObject {
                               bool count_required, bool array_required) const {
         bool skip_call = false;
 
-        if ((count == 0) || (array == NULL)) {
+        if ((count == 0) || (array == nullptr)) {
             skip_call |= validate_array(api_name, count_name, array_name, count, &array, count_required, array_required,
                                         kVUIDUndefined, kVUIDUndefined);
         } else {

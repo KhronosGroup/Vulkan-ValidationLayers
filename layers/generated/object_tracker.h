@@ -1366,6 +1366,118 @@ bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex) const override;
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkVideoProfileKHR*                    pVideoProfile,
+    VkVideoCapabilitiesKHR*                     pCapabilities) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoFormatInfoKHR*   pVideoFormatInfo,
+    uint32_t*                                   pVideoFormatPropertyCount,
+    VkVideoFormatPropertiesKHR*                 pVideoFormatProperties) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCreateVideoSessionKHR(
+    VkDevice                                    device,
+    const VkVideoSessionCreateInfoKHR*          pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkVideoSessionKHR*                          pVideoSession) const override;
+void PostCallRecordCreateVideoSessionKHR(
+    VkDevice                                    device,
+    const VkVideoSessionCreateInfoKHR*          pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkVideoSessionKHR*                          pVideoSession,
+    VkResult                                    result) override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateDestroyVideoSessionKHR(
+    VkDevice                                    device,
+    VkVideoSessionKHR                           videoSession,
+    const VkAllocationCallbacks*                pAllocator) const override;
+void PreCallRecordDestroyVideoSessionKHR(
+    VkDevice                                    device,
+    VkVideoSessionKHR                           videoSession,
+    const VkAllocationCallbacks*                pAllocator) override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateGetVideoSessionMemoryRequirementsKHR(
+    VkDevice                                    device,
+    VkVideoSessionKHR                           videoSession,
+    uint32_t*                                   pVideoSessionMemoryRequirementsCount,
+    VkVideoGetMemoryPropertiesKHR*              pVideoSessionMemoryRequirements) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateBindVideoSessionMemoryKHR(
+    VkDevice                                    device,
+    VkVideoSessionKHR                           videoSession,
+    uint32_t                                    videoSessionBindMemoryCount,
+    const VkVideoBindMemoryKHR*                 pVideoSessionBindMemories) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCreateVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkVideoSessionParametersKHR*                pVideoSessionParameters) const override;
+void PostCallRecordCreateVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkVideoSessionParametersKHR*                pVideoSessionParameters,
+    VkResult                                    result) override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateUpdateVideoSessionParametersKHR(
+    VkDevice                                    device,
+    VkVideoSessionParametersKHR                 videoSessionParameters,
+    const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateDestroyVideoSessionParametersKHR(
+    VkDevice                                    device,
+    VkVideoSessionParametersKHR                 videoSessionParameters,
+    const VkAllocationCallbacks*                pAllocator) const override;
+void PreCallRecordDestroyVideoSessionParametersKHR(
+    VkDevice                                    device,
+    VkVideoSessionParametersKHR                 videoSessionParameters,
+    const VkAllocationCallbacks*                pAllocator) override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdBeginVideoCodingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkVideoBeginCodingInfoKHR*            pBeginInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdEndVideoCodingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkVideoEndCodingInfoKHR*              pEndCodingInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdControlVideoCodingKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkVideoCodingControlInfoKHR*          pCodingControlInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdDecodeVideoKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkVideoDecodeInfoKHR*                 pFrameInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceFeatures2*                  pFeatures) const override;
@@ -1725,6 +1837,12 @@ bool PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) const override;
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdEncodeVideoKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkVideoEncodeInfoKHR*                 pEncodeInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdSetEvent2KHR(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
@@ -2606,6 +2724,12 @@ bool PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(
     uint32_t                                    queueFamilyIndex,
     IDirectFB*                                  dfb) const override;
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+bool PreCallValidateCmdSetVertexInputEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    vertexBindingDescriptionCount,
+    const VkVertexInputBindingDescription2EXT*  pVertexBindingDescriptions,
+    uint32_t                                    vertexAttributeDescriptionCount,
+    const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) const override;
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
 bool PreCallValidateGetMemoryZirconHandleFUCHSIA(
@@ -2634,6 +2758,21 @@ bool PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
     const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
     zx_handle_t*                                pZirconHandle) const override;
 #endif // VK_USE_PLATFORM_FUCHSIA
+bool PreCallValidateCmdSetPatchControlPointsEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    patchControlPoints) const override;
+bool PreCallValidateCmdSetRasterizerDiscardEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    rasterizerDiscardEnable) const override;
+bool PreCallValidateCmdSetDepthBiasEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    depthBiasEnable) const override;
+bool PreCallValidateCmdSetLogicOpEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkLogicOp                                   logicOp) const override;
+bool PreCallValidateCmdSetPrimitiveRestartEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    primitiveRestartEnable) const override;
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 bool PreCallValidateCreateScreenSurfaceQNX(
@@ -2655,6 +2794,10 @@ bool PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(
     uint32_t                                    queueFamilyIndex,
     struct _screen_window*                      window) const override;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+bool PreCallValidateCmdSetColorWriteEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    attachmentCount,
+    const VkBool32*                             pColorWriteEnables) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
