@@ -2399,6 +2399,28 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     DestroySwapchain();
 }
 
+TEST_F(VkLayerTest, GetSwapchainImageAndTryDestroy) {
+    TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
+
+    if (!AddSurfaceInstanceExtension()) return;
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AddSwapchainDeviceExtension()) return;
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+    uint32_t image_count;
+    std::vector<VkImage> images;
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    images.resize(image_count, VK_NULL_HANDLE);
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data()));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkDestroyImage-image");
+    vk::DestroyImage(device(), images.at(0), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    DestroySwapchain();
+}
+
 TEST_F(VkLayerTest, NotCheckingForSurfaceSupport) {
     TEST_DESCRIPTION("Test not calling GetPhysicalDeviceSurfaceSupportKHR");
 
