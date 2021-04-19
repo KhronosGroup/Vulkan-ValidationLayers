@@ -1614,7 +1614,6 @@ VkResult DispatchQueueBindSparse(
             local_pBindInfo = new safe_VkBindSparseInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfo[index0].initialize(&pBindInfo[index0]);
-                WrapPnextChainHandles(layer_data, local_pBindInfo[index0].pNext);
                 if (local_pBindInfo[index0].pWaitSemaphores) {
                     for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].waitSemaphoreCount; ++index1) {
                         local_pBindInfo[index0].pWaitSemaphores[index1] = layer_data->Unwrap(local_pBindInfo[index0].pWaitSemaphores[index1]);
@@ -2248,7 +2247,6 @@ VkResult DispatchCreateComputePipelines(
             local_pCreateInfos = new safe_VkComputePipelineCreateInfo[createInfoCount];
             for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
-                WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pNext);
                 if (pCreateInfos[index0].stage.module) {
                     local_pCreateInfos[index0].stage.module = layer_data->Unwrap(pCreateInfos[index0].stage.module);
                 }
@@ -3579,17 +3577,7 @@ VkResult DispatchGetPhysicalDeviceImageFormatProperties2(
     VkImageFormatProperties2*                   pImageFormatProperties)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
-    safe_VkPhysicalDeviceImageFormatInfo2 var_local_pImageFormatInfo;
-    safe_VkPhysicalDeviceImageFormatInfo2 *local_pImageFormatInfo = NULL;
-    {
-        if (pImageFormatInfo) {
-            local_pImageFormatInfo = &var_local_pImageFormatInfo;
-            local_pImageFormatInfo->initialize(pImageFormatInfo);
-            WrapPnextChainHandles(layer_data, local_pImageFormatInfo->pNext);
-        }
-    }
-    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(physicalDevice, (const VkPhysicalDeviceImageFormatInfo2*)local_pImageFormatInfo, pImageFormatProperties);
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
 
     return result;
 }
@@ -3656,16 +3644,7 @@ VkResult DispatchCreateSamplerYcbcrConversion(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
-    safe_VkSamplerYcbcrConversionCreateInfo var_local_pCreateInfo;
-    safe_VkSamplerYcbcrConversionCreateInfo *local_pCreateInfo = NULL;
-    {
-        if (pCreateInfo) {
-            local_pCreateInfo = &var_local_pCreateInfo;
-            local_pCreateInfo->initialize(pCreateInfo);
-            WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
-        }
-    }
-    VkResult result = layer_data->device_dispatch_table.CreateSamplerYcbcrConversion(device, (const VkSamplerYcbcrConversionCreateInfo*)local_pCreateInfo, pAllocator, pYcbcrConversion);
+    VkResult result = layer_data->device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
     if (VK_SUCCESS == result) {
         *pYcbcrConversion = layer_data->WrapNew(*pYcbcrConversion);
     }
@@ -4413,17 +4392,7 @@ VkResult DispatchGetPhysicalDeviceImageFormatProperties2KHR(
     VkImageFormatProperties2*                   pImageFormatProperties)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
-    safe_VkPhysicalDeviceImageFormatInfo2 var_local_pImageFormatInfo;
-    safe_VkPhysicalDeviceImageFormatInfo2 *local_pImageFormatInfo = NULL;
-    {
-        if (pImageFormatInfo) {
-            local_pImageFormatInfo = &var_local_pImageFormatInfo;
-            local_pImageFormatInfo->initialize(pImageFormatInfo);
-            WrapPnextChainHandles(layer_data, local_pImageFormatInfo->pNext);
-        }
-    }
-    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, (const VkPhysicalDeviceImageFormatInfo2*)local_pImageFormatInfo, pImageFormatProperties);
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
 
     return result;
 }
@@ -5129,16 +5098,7 @@ VkResult DispatchCreateSamplerYcbcrConversionKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
-    safe_VkSamplerYcbcrConversionCreateInfo var_local_pCreateInfo;
-    safe_VkSamplerYcbcrConversionCreateInfo *local_pCreateInfo = NULL;
-    {
-        if (pCreateInfo) {
-            local_pCreateInfo = &var_local_pCreateInfo;
-            local_pCreateInfo->initialize(pCreateInfo);
-            WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
-        }
-    }
-    VkResult result = layer_data->device_dispatch_table.CreateSamplerYcbcrConversionKHR(device, (const VkSamplerYcbcrConversionCreateInfo*)local_pCreateInfo, pAllocator, pYcbcrConversion);
+    VkResult result = layer_data->device_dispatch_table.CreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
     if (VK_SUCCESS == result) {
         *pYcbcrConversion = layer_data->WrapNew(*pYcbcrConversion);
     }
@@ -7072,7 +7032,6 @@ VkResult DispatchCreateRayTracingPipelinesNV(
             local_pCreateInfos = new safe_VkRayTracingPipelineCreateInfoNV[createInfoCount];
             for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
-                WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pNext);
                 if (local_pCreateInfos[index0].pStages) {
                     for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].stageCount; ++index1) {
                         if (pCreateInfos[index0].pStages[index1].module) {
@@ -8614,7 +8573,6 @@ VkResult DispatchCreateRayTracingPipelinesKHR(
             local_pCreateInfos = new safe_VkRayTracingPipelineCreateInfoKHR[createInfoCount];
             for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
-                WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pNext);
                 if (local_pCreateInfos[index0].pStages) {
                     for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].stageCount; ++index1) {
                         if (pCreateInfos[index0].pStages[index1].module) {

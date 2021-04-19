@@ -1241,9 +1241,7 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
         self.cmd_feature_protect = []  # Save ifdef's for each command
         self.cmd_info_data = []        # Save the cmdinfo data for wrapping the handles when processing is complete
         self.structMembers = []        # List of StructMemberData records for all Vulkan structs
-        self.extension_structs = []    # List of all structs or sister-structs containing handles
-                                       # A sister-struct may contain no handles but shares a structextends attribute with one that does
-        self.pnext_extension_structs = []    # List of all structs which can be extended by a pnext chain
+        self.ndo_extension_structs = [] # List of all extension structs containing handles
         self.structTypes = dict()      # Map of Vulkan struct typename to required VkStructureType
         self.struct_member_dict = dict()
         # Named tuples to store struct and command data
@@ -1487,34 +1485,13 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
                     struct_list.add(item)
         return struct_list
     #
-    # Return list of non-dispatchable objects from a given list of parameters or members
-    def getNdosInParameterList(self, item_list, create_func):
-        ndo_list = set()
-        if create_func == True:
-            member_list = item_list[0:-1]
-        else:
-            member_list = item_list
-        for item in member_list:
-            if self.handle_types.IsNonDispatchable(paramtype.text):
-                ndo_list.add(item)
-        return ndo_list
-    #
-    # Construct list of extension structs containing handles, or extension structs that share a structextends attribute
-    # WITH an extension struct containing handles. All extension structs in any pNext chain will have to be copied.
-    # TODO: make this recursive -- structs buried three or more levels deep are not searched for extensions
+    # Construct list of extension structs containing handles
     def GenerateCommandWrapExtensionList(self):
         for struct in self.structMembers:
             if (len(struct.members) > 1) and struct.members[1].extstructs is not None:
-                found = False;
                 for item in struct.members[1].extstructs:
-                    if item != '' and item not in self.pnext_extension_structs:
-                        self.pnext_extension_structs.append(item)
-                    if item != '' and self.struct_contains_ndo(item) == True:
-                        found = True
-                if found == True:
-                    for item in struct.members[1].extstructs:
-                        if item != '' and item not in self.extension_structs:
-                            self.extension_structs.append(item)
+                    if item != '' and self.struct_contains_ndo(item) and item not in self.ndo_extension_structs:
+                        self.ndo_extension_structs.append(item)
     #
     # Returns True if a struct may have a pNext chain containing an NDO
     def StructWithExtensions(self, struct_type):
@@ -1522,7 +1499,7 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
             param_info = self.struct_member_dict[struct_type]
             if (len(param_info) > 1) and param_info[1].extstructs is not None:
                 for item in param_info[1].extstructs:
-                    if item in self.extension_structs:
+                    if item in self.ndo_extension_structs:
                         return True
         return False
     #
@@ -1535,7 +1512,7 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
         pnext_proc += '    while (cur_pnext != NULL) {\n'
         pnext_proc += '        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
         pnext_proc += '        switch (header->sType) {\n'
-        for item in self.pnext_extension_structs:
+        for item in self.ndo_extension_structs:
             struct_info = self.struct_member_dict[item]
             indent = '                '
             (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, 'safe_struct->', 0, False, False, False, False)
