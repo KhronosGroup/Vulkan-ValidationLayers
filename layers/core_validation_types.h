@@ -678,8 +678,8 @@ enum CB_STATE {
 };
 
 // CB Status -- used to track status of various bindings on cmd buffer objects
-typedef VkFlags CBStatusFlags;
-enum CBStatusFlagBits {
+typedef uint64_t CBStatusFlags;
+enum CBStatusFlagBits : uint64_t {
     // clang-format off
     CBSTATUS_NONE                            = 0x00000000,   // No status is set
     CBSTATUS_LINE_WIDTH_SET                  = 0x00000001,   // Line width has been set
@@ -711,7 +711,12 @@ enum CBStatusFlagBits {
     CBSTATUS_DISCARD_RECTANGLE_SET           = 0x04000000,
     CBSTATUS_SAMPLE_LOCATIONS_SET            = 0x08000000,
     CBSTATUS_COARSE_SAMPLE_ORDER_SET         = 0x10000000,
-    CBSTATUS_ALL_STATE_SET                   = 0x1FFFFDFF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_PATCH_CONTROL_POINTS_SET        = 0x20000000,
+    CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET   = 0x40000000,
+    CBSTATUS_DEPTH_BIAS_ENABLE_SET           = 0x80000000,
+    CBSTATUS_LOGIC_OP_SET                    = 0x100000000,
+    CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET    = 0x200000000,
+    CBSTATUS_ALL_STATE_SET                   = 0x3FFFFFDFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 
@@ -1506,6 +1511,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering;
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features;
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };

@@ -99,6 +99,16 @@ VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
             return VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT;
         case CBSTATUS_COARSE_SAMPLE_ORDER_SET:
             return VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV;
+        case CBSTATUS_PATCH_CONTROL_POINTS_SET:
+            return VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT;
+        case CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET:
+            return VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT;
+        case CBSTATUS_DEPTH_BIAS_ENABLE_SET:
+            return VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT;
+        case CBSTATUS_LOGIC_OP_SET:
+            return VK_DYNAMIC_STATE_LOGIC_OP_EXT;
+        case CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET:
+            return VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT;
         default:
             // CBSTATUS_INDEX_BUFFER_BOUND is not in VkDynamicState
             return VK_DYNAMIC_STATE_MAX_ENUM;
@@ -164,6 +174,16 @@ CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state) {
             return CBSTATUS_STENCIL_TEST_ENABLE_SET;
         case VK_DYNAMIC_STATE_STENCIL_OP_EXT:
             return CBSTATUS_STENCIL_OP_SET;
+        case VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
+            return CBSTATUS_PATCH_CONTROL_POINTS_SET;
+        case VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT:
+            return CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET;
+        case VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT:
+            return CBSTATUS_DEPTH_BIAS_ENABLE_SET;
+        case VK_DYNAMIC_STATE_LOGIC_OP_EXT:
+            return CBSTATUS_LOGIC_OP_SET;
+        case VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT:
+            return CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
         default:
             return CBSTATUS_NONE;
     }
@@ -1893,6 +1913,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         LvlFindInChain<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>(pCreateInfo->pNext);
     if (extended_dynamic_state_features) {
         state_tracker->enabled_features.extended_dynamic_state_features = *extended_dynamic_state_features;
+    }
+
+    const auto *extended_dynamic_state2_features =
+        LvlFindInChain<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>(pCreateInfo->pNext);
+    if (extended_dynamic_state2_features) {
+        state_tracker->enabled_features.extended_dynamic_state2_features = *extended_dynamic_state2_features;
     }
 
     const auto *multiview_features = LvlFindInChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
@@ -6444,4 +6470,36 @@ void ValidationStateTracker::PreCallRecordCmdSetCoarseSampleOrderNV(VkCommandBuf
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_COARSE_SAMPLE_ORDER_SET;
     cb_state->static_status &= ~CBSTATUS_COARSE_SAMPLE_ORDER_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_PATCH_CONTROL_POINTS_SET;
+    cb_state->static_status &= ~CBSTATUS_PATCH_CONTROL_POINTS_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_LOGIC_OP_SET;
+    cb_state->static_status &= ~CBSTATUS_LOGIC_OP_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer,
+                                                                           VkBool32 rasterizerDiscardEnable) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET;
+    cb_state->static_status &= ~CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_DEPTH_BIAS_ENABLE_SET;
+    cb_state->static_status &= ~CBSTATUS_DEPTH_BIAS_ENABLE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer,
+                                                                          VkBool32 primitiveRestartEnable) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
+    cb_state->static_status &= ~CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
 }

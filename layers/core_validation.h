@@ -75,6 +75,11 @@ struct DrawDispatchVuid {
     const char* filter_cubic = kVUIDUndefined;
     const char* filter_cubic_min_max = kVUIDUndefined;
     const char* viewport_count_primitive_shading_rate = kVUIDUndefined;
+    const char* patch_control_points = kVUIDUndefined;
+    const char* rasterizer_discard_enable = kVUIDUndefined;
+    const char* depth_bias_enable = kVUIDUndefined;
+    const char* logic_op = kVUIDUndefined;
+    const char* primitive_restart_enable = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
@@ -1483,6 +1488,14 @@ class CoreChecks : public ValidationStateTracker {
         VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const override;
     bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
         VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const override;
+
+    bool PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) const override;
+    bool PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) const override;
+    bool PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer,
+                                                         VkBool32 rasterizerDiscardEnable) const override;
+    bool PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const override;
+    bool PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer,
+                                                        VkBool32 primitiveRestartEnable) const override;
 
     bool PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) const override;
     bool PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) const override;
