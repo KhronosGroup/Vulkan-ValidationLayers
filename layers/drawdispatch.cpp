@@ -80,6 +80,11 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDraw-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDraw-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDraw-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -120,6 +125,11 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawIndexed-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexed-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexed-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -162,6 +172,11 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawIndirect-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirect-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirect-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -204,6 +219,11 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawIndexedIndirect-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexedIndirect-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexedIndirect-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -298,6 +318,11 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawIndirectCount-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirectCount-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirectCount-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -340,6 +365,11 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawIndexedIndirectCount-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndexedIndirectCount-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndexedIndirectCount-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -453,6 +483,11 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -492,6 +527,11 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -531,6 +571,11 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 
@@ -573,6 +618,11 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         filter_cubic                       = "VUID-vkCmdDrawIndirectByteCountEXT-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDrawIndirectByteCountEXT-filterCubicMinmax-02695";
         viewport_count_primitive_shading_rate = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDraw-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDraw-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDraw-None-04877";
+        logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
     }
 };
 

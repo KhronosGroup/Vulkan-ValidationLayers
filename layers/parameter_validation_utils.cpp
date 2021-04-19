@@ -1532,6 +1532,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             bool has_dynamic_depth_bounds_test_enable = false;
             bool has_dynamic_stencil_test_enable = false;
             bool has_dynamic_stencil_op = false;
+            bool has_patch_control_points = false;
+            bool has_rasterizer_discard_enable = false;
+            bool has_depth_bias_enable = false;
+            bool has_logic_op = false;
+            bool has_primitive_restart_enable = false;
             if (pCreateInfos[i].pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
@@ -1804,6 +1809,55 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR was listed the "
                             "pCreateInfos[%d].pDynamicState->pDynamicStates[%d] but not allowed in graphic pipelines.",
                             i, state_index);
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) {
+                        if (has_patch_control_points) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_patch_control_points = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
+                        if (has_rasterizer_discard_enable) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_rasterizer_discard_enable = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT) {
+                        if (has_depth_bias_enable) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_depth_bias_enable = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_LOGIC_OP_EXT) {
+                        if (has_logic_op) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LOGIC_OP_EXT was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_logic_op = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT) {
+                        if (has_primitive_restart_enable) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_primitive_restart_enable = true;
                     }
                 }
             }

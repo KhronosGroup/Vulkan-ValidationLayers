@@ -984,6 +984,16 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
+    skip |= ValidateStatus(pCB, CBSTATUS_PATCH_CONTROL_POINTS_SET, "Dynamic patch control points not set for this command buffer",
+                           vuid.patch_control_points);
+    skip |= ValidateStatus(pCB, CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET,
+                           "Dynamic rasterizer discard enable not set for this command buffer", vuid.rasterizer_discard_enable);
+    skip |= ValidateStatus(pCB, CBSTATUS_DEPTH_BIAS_ENABLE_SET, "Dynamic depth bias enable not set for this command buffer",
+                           vuid.depth_bias_enable);
+    skip |= ValidateStatus(pCB, CBSTATUS_LOGIC_OP_SET, "Dynamic state logicOp not set for this command buffer", vuid.logic_op);
+    skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET,
+                           "Dynamic primitive restart enable not set for this command buffer", vuid.primitive_restart_enable);
+
     // VUID {refpage}-primitiveTopology-03420
     skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_TOPOLOGY_SET, "Dynamic primitive topology state not set for this command buffer",
                            vuid.primitive_topology);
@@ -1975,8 +1985,35 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
          IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT) ||
          IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT) ||
          IsDynamic(pPipeline, VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT) || IsDynamic(pPipeline, VK_DYNAMIC_STATE_STENCIL_OP_EXT))) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378",
-                         "Extended dynamic state used by the extendedDynamicState feature is not enabled");
+        skip |=
+            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378",
+                     "vkCreateGraphicsPipelines: Extended dynamic state used by the extendedDynamicState feature is not enabled");
+    }
+
+    // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2 &&
+        (IsDynamic(pPipeline, VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT) ||
+         IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT))) {
+        skip |=
+            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868",
+                     "vkCreateGraphicsPipelines: Extended dynamic state used by the extendedDynamicState2 feature is not enabled");
+    }
+
+    // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04869
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2LogicOp &&
+        IsDynamic(pPipeline, VK_DYNAMIC_STATE_LOGIC_OP_EXT)) {
+        skip |= LogError(
+            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04869",
+            "vkCreateGraphicsPipelines: Extended dynamic state used by the extendedDynamicState2LogicOp feature is not enabled");
+    }
+
+    // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04870
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints &&
+        IsDynamic(pPipeline, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04870",
+                         "vkCreateGraphicsPipelines: Extended dynamic state used by the extendedDynamicState2PatchControlPoints "
+                         "feature is not enabled");
     }
 
     const VkPipelineFragmentShadingRateStateCreateInfoKHR *fragment_shading_rate_state =
@@ -14509,6 +14546,81 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                 }
             }
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetLogicOpEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetLogicOpEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETLOGICOPEXT, "vkCmdSetLogicOpEXT()");
+
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetLogicOpEXT-None-04867",
+                         "vkCmdSetLogicOpEXT: extendedDynamicState feature is not enabled.");
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetPatchControlPointsEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetPatchControlPointsEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETPATCHCONTROLPOINTSEXT, "vkCmdSetPatchControlPointsEXT()");
+
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetPatchControlPointsEXT-None-04873",
+                         "vkCmdSetPatchControlPointsEXT: extendedDynamicState feature is not enabled.");
+    }
+    if (patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874",
+                         "vkCmdSetPatchControlPointsEXT: The value of patchControlPoints must be less than "
+                         "VkPhysicalDeviceLimits::maxTessellationPatchSize");
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer,
+                                                                 VkBool32 rasterizerDiscardEnable) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetRasterizerDiscardEnableEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetRasterizerDiscardEnableEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETRASTERIZERDISCARDENABLEEXT, "vkCmdSetRasterizerDiscardEnableEXT()");
+
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetRasterizerDiscardEnableEXT-None-04871",
+                         "vkCmdSetRasterizerDiscardEnableEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthBiasEnableEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetDepthBiasEnableEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETDEPTHBIASENABLEEXT, "vkCmdSetDepthBiasEnableEXT()");
+
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBiasEnableEXT-None-04872",
+                         "vkCmdSetDepthBiasEnableEXT: extendedDynamicState feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer,
+                                                                VkBool32 primitiveRestartEnable) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetPrimitiveRestartEnableEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetPrimitiveRestartEnableEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETPRIMITIVERESTARTENABLEEXT, "vkCmdSetPrimitiveRestartEnableEXT()");
+
+    if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetPrimitiveRestartEnableEXT-None-04866",
+                         "vkCmdSetPrimitiveRestartEnableEXT: extendedDynamicState feature is not enabled.");
     }
 
     return skip;
