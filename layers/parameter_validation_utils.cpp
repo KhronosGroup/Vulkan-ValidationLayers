@@ -301,6 +301,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
 
+    if (device_extensions.vk_ext_vertex_attribute_divisor) {
+        // Get the needed vertex attribute divisor limits
+        auto vertex_attribute_divisor_props = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&vertex_attribute_divisor_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object
@@ -1537,6 +1545,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             bool has_depth_bias_enable = false;
             bool has_logic_op = false;
             bool has_primitive_restart_enable = false;
+            bool has_dynamic_vertex_input = false;
             if (pCreateInfos[i].pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
@@ -1858,6 +1867,15 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 i);
                         }
                         has_primitive_restart_enable = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) {
+                        if (has_dynamic_vertex_input) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VERTEX_INPUT_EXT was listed twice in the "
+                                "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                i);
+                        }
+                        has_dynamic_vertex_input = true;
                     }
                 }
             }
@@ -6887,5 +6905,170 @@ bool StatelessValidation::manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevic
         skip |= LogError(device, "VUID-vkCreatePrivateDataSlotEXT-privateData-04564",
                          "vkCreatePrivateDataSlotEXT(): The privateData feature must be enabled.");
     }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
+    VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+    const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
+    const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) const {
+    bool skip = false;
+    const auto *vertex_input_dynamic_state_features =
+        LvlFindInChain<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(device_createinfo_pnext);
+    const auto *vertex_attribute_divisor_features =
+        LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(device_createinfo_pnext);
+
+    // VUID-vkCmdSetVertexInputEXT-None-04790
+    if (!vertex_input_dynamic_state_features || vertex_input_dynamic_state_features->vertexInputDynamicState == VK_FALSE) {
+        skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-None-04790",
+                         "vkCmdSetVertexInputEXT(): The vertexInputDynamicState feature must be enabled.");
+    }
+
+    // VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791
+    if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
+        skip |=
+            LogError(device, "VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791",
+                     "vkCmdSetVertexInputEXT(): vertexBindingDescriptionCount is greater than the maxVertexInputBindings limit");
+    }
+
+    // VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792
+    if (vertexAttributeDescriptionCount > device_limits.maxVertexInputAttributes) {
+        skip |= LogError(
+            device, "VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792",
+            "vkCmdSetVertexInputEXT(): vertexAttributeDescriptionCount is greater than the maxVertexInputAttributes limit");
+    }
+
+    // VUID-vkCmdSetVertexInputEXT-binding-04793
+    for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
+        bool binding_found = false;
+        for (uint32_t binding = 0; binding < vertexBindingDescriptionCount; ++binding) {
+            if (pVertexAttributeDescriptions[attribute].binding == pVertexBindingDescriptions[binding].binding) {
+                binding_found = true;
+                break;
+            }
+        }
+        if (!binding_found) {
+            skip |=
+                LogError(device, "VUID-vkCmdSetVertexInputEXT-binding-04793",
+                         "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u] references an unspecified binding", attribute);
+        }
+    }
+
+    // VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794
+    if (vertexBindingDescriptionCount > 1) {
+        for (uint32_t binding = 0; binding < vertexBindingDescriptionCount - 1; ++binding) {
+            uint32_t binding_value = pVertexBindingDescriptions[binding].binding;
+            for (uint32_t next_binding = binding + 1; next_binding < vertexBindingDescriptionCount; ++next_binding) {
+                if (binding_value == pVertexBindingDescriptions[next_binding].binding) {
+                    skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794",
+                        "vkCmdSetVertexInputEXT(): binding description for binding %u already specified", binding_value);
+                }
+            }
+        }
+    }
+
+    // VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795
+    if (vertexAttributeDescriptionCount > 1) {
+        for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount - 1; ++attribute) {
+            uint32_t location = pVertexAttributeDescriptions[attribute].location;
+            for (uint32_t next_attribute = attribute + 1; next_attribute < vertexAttributeDescriptionCount; ++next_attribute) {
+                if (location == pVertexAttributeDescriptions[next_attribute].location) {
+                    skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795",
+                        "vkCmdSetVertexInputEXT(): attribute description for location %u already specified", location);
+                }
+            }
+        }
+    }
+
+    for (uint32_t binding = 0; binding < vertexBindingDescriptionCount; ++binding) {
+        // VUID-VkVertexInputBindingDescription2EXT-binding-04796
+        if (pVertexBindingDescriptions[binding].binding > device_limits.maxVertexInputBindings) {
+            skip |= LogError(
+                device, "VUID-VkVertexInputBindingDescription2EXT-binding-04796",
+                "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].binding is greater than maxVertexInputBindings", binding);
+        }
+
+        // VUID-VkVertexInputBindingDescription2EXT-stride-04797
+        if (pVertexBindingDescriptions[binding].stride > device_limits.maxVertexInputBindingStride) {
+            skip |= LogError(
+                device, "VUID-VkVertexInputBindingDescription2EXT-stride-04797",
+                "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].stride is greater than maxVertexInputBindingStride",
+                binding);
+        }
+
+        // VUID-VkVertexInputBindingDescription2EXT-divisor-04798
+        if (pVertexBindingDescriptions[binding].divisor == 0 &&
+            (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateZeroDivisor)) {
+            skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04798",
+                             "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].divisor is zero but "
+                             "vertexAttributeInstanceRateZeroDivisor is not enabled",
+                             binding);
+        }
+
+        if (pVertexBindingDescriptions[binding].divisor > 1) {
+            // VUID-VkVertexInputBindingDescription2EXT-divisor-04799
+            if (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateDivisor) {
+                skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04799",
+                                 "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].divisor is greater than one but "
+                                 "vertexAttributeInstanceRateDivisor is not enabled",
+                                 binding);
+            } else {
+                // VUID-VkVertexInputBindingDescription2EXT-divisor-04800
+                if (pVertexBindingDescriptions[binding].divisor >
+                    phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor) {
+                    skip |= LogError(
+                        device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04800",
+                        "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].divisor is greater than maxVertexAttribDivisor",
+                        binding);
+                }
+
+                // VUID-VkVertexInputBindingDescription2EXT-divisor-04801
+                if (pVertexBindingDescriptions[binding].inputRate != VK_VERTEX_INPUT_RATE_INSTANCE) {
+                    skip |=
+                        LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04801",
+                                 "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%u].divisor is greater than 1 but inputRate "
+                                 "is not VK_VERTEX_INPUT_RATE_INSTANCE",
+                                 binding);
+                }
+            }
+        }
+    }
+
+    for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
+        // VUID-VkVertexInputAttributeDescription2EXT-location-04802
+        if (pVertexAttributeDescriptions[attribute].location > device_limits.maxVertexInputAttributes) {
+            skip |= LogError(
+                device, "VUID-VkVertexInputAttributeDescription2EXT-location-04802",
+                "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u].location is greater than maxVertexInputAttributes",
+                attribute);
+        }
+
+        // VUID-VkVertexInputAttributeDescription2EXT-binding-04803
+        if (pVertexAttributeDescriptions[attribute].binding > device_limits.maxVertexInputBindings) {
+            skip |= LogError(
+                device, "VUID-VkVertexInputAttributeDescription2EXT-binding-04803",
+                "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u].binding is greater than maxVertexInputBindings",
+                attribute);
+        }
+
+        // VUID-VkVertexInputAttributeDescription2EXT-offset-04804
+        if (pVertexAttributeDescriptions[attribute].offset > device_limits.maxVertexInputAttributeOffset) {
+            skip |= LogError(
+                device, "VUID-VkVertexInputAttributeDescription2EXT-offset-04804",
+                "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u].offset is greater than maxVertexInputAttributeOffset",
+                attribute);
+        }
+
+        // VUID-VkVertexInputAttributeDescription2EXT-format-04805
+        VkFormatProperties properties;
+        DispatchGetPhysicalDeviceFormatProperties(physical_device, pVertexAttributeDescriptions[attribute].format, &properties);
+        if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+            skip |= LogError(device, "VUID-VkVertexInputAttributeDescription2EXT-format-04805",
+                             "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%u].format is not a "
+                             "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT supported format",
+                             attribute);
+        }
+    }
+
     return skip;
 }

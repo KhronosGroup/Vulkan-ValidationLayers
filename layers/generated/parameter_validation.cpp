@@ -14518,6 +14518,7 @@ bool StatelessValidation::PreCallValidateCmdSetVertexInputEXT(
             skip |= validate_ranged_enum("vkCmdSetVertexInputEXT", ParameterName("pVertexAttributeDescriptions[%i].format", ParameterName::IndexVector{ vertexAttributeDescriptionIndex }), "VkFormat", AllVkFormatEnums, pVertexAttributeDescriptions[vertexAttributeDescriptionIndex].format, "VUID-VkVertexInputAttributeDescription2EXT-format-parameter");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
     return skip;
 }
 
