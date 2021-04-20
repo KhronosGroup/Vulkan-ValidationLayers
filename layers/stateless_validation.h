@@ -107,6 +107,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_propsKHR;
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
+        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -1724,5 +1725,10 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
                                                         const VkAllocationCallbacks *pAllocator,
                                                         VkPrivateDataSlotEXT *pPrivateDataSlot) const;
+
+    bool manual_PreCallValidateCmdSetVertexInputEXT(
+        VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+        const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
+        const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) const;
 #include "parameter_validation.h"
 };  // Class StatelessValidation

@@ -1512,6 +1512,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features;
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;
+    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };

@@ -1976,6 +1976,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.synchronization2_features = *synchronization2_features;
     }
 
+    const auto *vertex_input_dynamic_state_features =
+        LvlFindInChain<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(pCreateInfo->pNext);
+    if (vertex_input_dynamic_state_features) {
+        state_tracker->enabled_features.vertex_input_dynamic_state_features = *vertex_input_dynamic_state_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
