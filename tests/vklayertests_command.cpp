@@ -681,7 +681,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
 }
 
 TEST_F(VkLayerTest, NoBeginCommandBuffer) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "You must call vkBeginCommandBuffer() before this call to ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
