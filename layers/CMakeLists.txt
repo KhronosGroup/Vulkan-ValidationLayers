@@ -170,6 +170,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     sync_vuid_maps.cpp
     sync_vuid_maps.h
     generated/spirv_validation_helper.cpp
+    generated/command_validation.cpp
     generated/synchronization_validation_types.cpp
     gpu_validation.cpp
     generated/corechecks_optick_instrumentation.cpp

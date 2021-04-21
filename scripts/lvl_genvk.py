@@ -906,6 +906,59 @@ def makeGenOpts(args):
             expandEnumerants  = False)
         ]
 
+    # Options for command_validation code-generated header
+    genOpts['command_validation.cpp'] = [
+          CommandValidationOutputGenerator,
+          CommandValidationOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'command_validation.cpp',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            emitSpirv         = None,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False,
+            valid_usage_path  = args.scripts)
+        ]
+
+    # generator for command_validation.h
+    genOpts['command_validation.h'] = [
+          CommandValidationOutputGenerator,
+          CommandValidationOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'command_validation.h',
+            directory         = directory,
+            genpath           = None,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            emitSpirv         = None,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False,
+            valid_usage_path  = args.scripts)
+        ]
+
 # Generate a target based on the options in the matching genOpts{} object.
 # This is encapsulated in a function so it can be profiled and/or timed.
 # The args parameter is an parsed argument object containing the following
@@ -1035,6 +1088,7 @@ if __name__ == '__main__':
     from command_counter_generator import CommandCounterOutputGenerator, CommandCounterOutputGeneratorOptions
     from best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
     from spirv_validation_generator import SpirvValidationHelperOutputGenerator, SpirvValidationHelperOutputGeneratorOptions
+    from command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})

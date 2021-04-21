@@ -66,6 +66,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/generated/parameter_validation.cpp',
     'layers/generated/object_tracker.cpp',
     'layers/generated/spirv_validation_helper.cpp',
+    'layers/generated/command_validation.cpp',
 ]]
 
 test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
@@ -682,7 +683,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             hfile.write(self.header_preamble)
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
-            cmd_dict = {}
             minor_version = int(self.vj.apiversion.split('.')[1])
 
             for vuid in vuid_list:
@@ -701,38 +701,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
                     print('Warning: Found a duplicate VUID: %s' % vuid)
-                if 'commandBuffer must be in the recording state' in db_text:
-                    cmd_dict[vuid] = db_text
             hfile.write(self.header_postamble)
-
-            # Generate the information for validating recording state VUID's
-            cmd_prefix = 'CMD_'
-            cmd_regex = re.compile(r'VUID-vk(Cmd|End)(\w+)')
-            cmd_vuid_vector = ['    "VUID_Undefined"']
-            cmd_name_vector = [ '    "Command_Undefined"' ]
-            cmd_enum = ['    ' + 'CMD_NONE = 0']
-
-            cmd_ordinal = 1
-            for vuid, db_text in sorted(cmd_dict.items()):
-                cmd_match = cmd_regex.match(vuid)
-                if cmd_match.group(1) == "End":
-                    end = "END"
-                else:
-                    end = ""
-                cmd_name_vector.append('    "vk'+ cmd_match.group(1) + cmd_match.group(2) + '"')
-                cmd_name = cmd_prefix + end + cmd_match.group(2).upper()
-                cmd_enum.append('    {} = {}'.format(cmd_name, cmd_ordinal))
-                cmd_ordinal += 1
-                cmd_vuid_vector.append('    "{}"'.format(vuid))
-
-            hfile.write('\n// CmdDraw "must be recording" meta data\n')
-            cmd_enum.append('    {}RANGE_SIZE = {}'.format(cmd_prefix, cmd_ordinal))
-            cmd_enum_string = 'typedef enum CMD_TYPE {\n' + ',\n'.join(cmd_enum)+'\n} CMD_TYPE;\n\n'
-            hfile.write(cmd_enum_string)
-            cmd_name_list_string = 'static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList = {{\n' + ',\n'.join(cmd_name_vector) + '\n}};\n\n'
-            hfile.write(cmd_name_list_string)
-            vuid_vector_string = 'static const std::array<const char *, CMD_RANGE_SIZE> KGeneratedMustBeRecordingList = {{\n' + ',\n'.join(cmd_vuid_vector) + '\n}};\n\n'
-            hfile.write(vuid_vector_string)
 
 class SpirvValidation:
     def __init__(self, repo_path):
