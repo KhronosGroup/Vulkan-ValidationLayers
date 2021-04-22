@@ -35,8 +35,6 @@
 
 // Set of VUID that need to go between core_validation.cpp and drawdispatch.cpp
 struct DrawDispatchVuid {
-    const char* queue_flag = kVUIDUndefined;
-    const char* inside_renderpass = kVUIDUndefined;
     const char* pipeline_bound = kVUIDUndefined;
     const char* dynamic_state = kVUIDUndefined;
     const char* vertex_binding = kVUIDUndefined;

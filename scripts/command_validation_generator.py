@@ -178,6 +178,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
         elif self.source_file:
             write(self.commandRecordingList(), file=self.outFile)
             write(self.commandQueueTypeList(), file=self.outFile)
+            write(self.commandRenderPassList(), file=self.outFile)
             write(self.validateFunction(), file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
@@ -294,6 +295,44 @@ static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQue
         return output
 
     #
+    # For each CMD_TYPE give a the renderpass restriction and a *-renderpass VUID
+    def commandRenderPassList(self):
+        output = '''
+enum CMD_RENDER_PASS_TYPE {
+    CMD_RENDER_PASS_INSIDE,
+    CMD_RENDER_PASS_OUTSIDE,
+    CMD_RENDER_PASS_BOTH
+};
+struct CommandSupportedRenderPass {
+    CMD_RENDER_PASS_TYPE renderPass;
+    const char* vuid;
+};
+static const std::array<CommandSupportedRenderPass, CMD_RANGE_SIZE> kGeneratedRenderPassList = {{
+    {CMD_RENDER_PASS_BOTH, kVUIDUndefined}, // CMD_NONE\n'''
+        for name, cmdinfo in sorted(self.commands.items()):
+            render_pass_type = ''
+            render_pass = cmdinfo.elem.attrib.get('renderpass')
+            if render_pass == 'inside':
+                render_pass_type = 'CMD_RENDER_PASS_INSIDE'
+            elif render_pass == 'outside':
+                render_pass_type = 'CMD_RENDER_PASS_OUTSIDE'
+            elif render_pass != 'both':
+                print("renderpass attribute was %s and not known, need to update generation code", renderpass)
+                sys.exit(1)
+
+            # Only will be a VUID if not BOTH
+            if render_pass == 'both':
+                output += '    {CMD_RENDER_PASS_BOTH, kVUIDUndefined},\n'
+            else:
+                vuid = 'VUID-' + name + '-renderpass'
+                if vuid not in self.valid_vuids:
+                    print("Error: Could not find %s in validusage.json\n", vuid)
+                    sys.exit(1)
+                output += '    {' + render_pass_type + ', \"' + vuid + '\"},\n'
+        output += '}};'
+        return output
+
+    #
     # The main function to validate all the commands
     def validateFunction(self):
         output = '''
@@ -323,6 +362,14 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
     // Validate the command pool from which the command buffer is from that the command is allowed for queue type
     const auto supportedQueueType = kGeneratedQueueTypeList[cmd];
     skip |= ValidateCmdQueueFlags(cb_state, caller_name, supportedQueueType.flags, supportedQueueType.vuid);
+
+    // Validate if command is inside or outside a render pass if applicable
+    const auto supportedRenderPass = kGeneratedRenderPassList[cmd];
+    if (supportedRenderPass.renderPass == CMD_RENDER_PASS_INSIDE) {
+        skip |= OutsideRenderPass(cb_state, caller_name, supportedRenderPass.vuid);
+    } else if (supportedRenderPass.renderPass == CMD_RENDER_PASS_OUTSIDE) {
+        skip |= InsideRenderPass(cb_state, caller_name, supportedRenderPass.vuid);
+    }
 
     return skip;
 }'''
