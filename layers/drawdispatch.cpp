@@ -45,7 +45,6 @@
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
     DispatchVuidsCmdDraw() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDraw-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDraw-renderpass";
         pipeline_bound                     = "VUID-vkCmdDraw-None-02700";
         dynamic_state                      = "VUID-vkCmdDraw-commandBuffer-02701";
@@ -90,7 +89,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawIndexed-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndexed-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndexed-commandBuffer-02701";
@@ -135,7 +133,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirect() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawIndirect-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndirect-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndirect-commandBuffer-02701";
@@ -182,7 +179,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirect() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawIndexedIndirect-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndexedIndirect-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02701";
@@ -229,7 +225,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
     DispatchVuidsCmdDispatch() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDispatch-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDispatch-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatch-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatch-commandBuffer-02701";
@@ -254,7 +249,6 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDispatchIndirect() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDispatchIndirect-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatchIndirect-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatchIndirect-commandBuffer-02701";
@@ -281,7 +275,6 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectCount() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawIndirectCount-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawIndirectCount-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndirectCount-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndirectCount-commandBuffer-02701";
@@ -328,7 +321,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirectCount() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawIndexedIndirectCount-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndexedIndirectCount-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02701";
@@ -375,7 +367,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
 
 struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysNV() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdTraceRaysNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdTraceRaysNV-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysNV-commandBuffer-02701";
@@ -400,7 +391,6 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
 
 struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysKHR() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdTraceRaysKHR-renderpass";
         pipeline_bound                     = "VUID-vkCmdTraceRaysKHR-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysKHR-commandBuffer-02701";
@@ -425,7 +415,6 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
 
 struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysIndirectKHR() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdTraceRaysIndirectKHR-renderpass";
         pipeline_bound                     = "VUID-vkCmdTraceRaysIndirectKHR-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02701";
@@ -452,7 +441,6 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksNV() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawMeshTasksNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksNV-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawMeshTasksNV-commandBuffer-02701";
@@ -493,7 +481,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksIndirectNV() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawMeshTasksIndirectNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02701";
@@ -537,7 +524,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksIndirectCountNV() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02701";
@@ -581,7 +567,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectByteCountEXT() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDrawIndirectByteCountEXT-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02701";
@@ -628,7 +613,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
     DispatchVuidsCmdDispatchBase() : DrawDispatchVuid() {
-        queue_flag                         = "VUID-vkCmdDispatchBase-commandBuffer-cmdpool";
         inside_renderpass                  = "VUID-vkCmdDispatchBase-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatchBase-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatchBase-commandBuffer-02701";
@@ -684,12 +668,11 @@ const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const
 
 // Generic function to handle validation for all CmdDraw* type functions
 bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
-                                     const char *caller, VkQueueFlags queue_flags) const {
+                                     const char *caller) const {
     bool skip = false;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const CMD_BUFFER_STATE *cb_state = GetCBState(cmd_buffer);
     if (cb_state) {
-        skip |= ValidateCmdQueueFlags(cb_state, caller, queue_flags, vuid.queue_flag);
         skip |= ValidateCmd(cb_state, cmd_type, caller);
         skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point, caller);
         skip |= (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) ? OutsideRenderPass(cb_state, caller, vuid.inside_renderpass)
@@ -723,8 +706,7 @@ bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t 
                                         uint32_t firstVertex, uint32_t firstInstance) const {
     bool skip = false;
     skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAW, "vkCmdDraw()");
-    skip |=
-        ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW, "vkCmdDraw()", VK_QUEUE_GRAPHICS_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW, "vkCmdDraw()");
     return skip;
 }
 
@@ -732,8 +714,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
     bool skip = false;
     skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
-    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED, "vkCmdDrawIndexed()",
-                                VK_QUEUE_GRAPHICS_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!skip && (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND)) {
         unsigned int index_size = 0;
@@ -760,8 +741,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
 
 bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                 uint32_t drawCount, uint32_t stride) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()",
-                                    VK_QUEUE_GRAPHICS_BIT);
+    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()");
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()");
     if (drawCount > 1) {
@@ -784,7 +764,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        uint32_t drawCount, uint32_t stride) const {
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT,
-                                    "vkCmdDrawIndexedIndirect()", VK_QUEUE_GRAPHICS_BIT);
+                                    "vkCmdDrawIndexedIndirect()");
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()");
     if (drawCount > 1) {
@@ -808,8 +788,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
 
 bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const {
     bool skip = false;
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
-                                VK_QUEUE_COMPUTE_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()");
     return skip;
 }
 
@@ -834,8 +813,7 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
                                                 uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
                                                 uint32_t groupCountZ) const {
     bool skip = false;
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASE, "vkCmdDispatchBase()",
-                                VK_QUEUE_COMPUTE_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASE, "vkCmdDispatchBase()");
     skip |= ValidateBaseGroups(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, "vkCmdDispatchBase()");
     return skip;
 }
@@ -844,15 +822,14 @@ bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer
                                                    uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
                                                    uint32_t groupCountZ) const {
     bool skip = false;
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASE, "vkCmdDispatchBaseKHR()",
-                                VK_QUEUE_COMPUTE_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASE, "vkCmdDispatchBaseKHR()");
     skip |= ValidateBaseGroups(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, "vkCmdDispatchBaseKHR()");
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT,
-                                    "vkCmdDispatchIndirect()", VK_QUEUE_COMPUTE_BIT);
+    bool skip =
+        ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()");
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()");
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if ((offset + sizeof(VkDispatchIndirectCommand)) > buffer_state->createInfo.size) {
@@ -880,8 +857,7 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
                                                 sizeof(VkDrawIndirectCommand), maxDrawCount, offset, buffer_state);
     }
 
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT, apiName,
-                                VK_QUEUE_GRAPHICS_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT, apiName);
     const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDIRECTCOUNT, apiName);
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
@@ -923,8 +899,7 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
                                                 apiName, sizeof(VkDrawIndexedIndirectCommand), maxDrawCount, offset, buffer_state);
     }
 
-    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName,
-                                VK_QUEUE_GRAPHICS_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
     const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName);
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
@@ -965,7 +940,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
     skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWINDIRECTBYTECOUNTEXT,
                                     "vkCmdDrawIndirectByteCountEXT()");
     skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTBYTECOUNTEXT,
-                                "vkCmdDrawIndirectByteCountEXT()", VK_QUEUE_GRAPHICS_BIT);
+                                "vkCmdDrawIndirectByteCountEXT()");
     skip |= ValidateIndirectCmd(commandBuffer, counterBuffer, CMD_DRAWINDIRECTBYTECOUNTEXT, "vkCmdDrawIndirectByteCountEXT()");
     return skip;
 }
@@ -977,8 +952,8 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                                VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                                uint32_t width, uint32_t height, uint32_t depth) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, CMD_TRACERAYSNV,
-                                    "vkCmdTraceRaysNV()", VK_QUEUE_COMPUTE_BIT);
+    bool skip =
+        ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, CMD_TRACERAYSNV, "vkCmdTraceRaysNV()");
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     skip |= InsideRenderPass(cb_state, "vkCmdTraceRaysNV()", "VUID-vkCmdTraceRaysNV-renderpass");
     auto callable_shader_buffer_state = const_cast<BUFFER_STATE *>(GetBufferState(callableShaderBindingTableBuffer));
@@ -1037,8 +1012,8 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR,
-                                    "vkCmdTraceRaysKHR()", VK_QUEUE_COMPUTE_BIT);
+    bool skip =
+        ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR, "vkCmdTraceRaysKHR()");
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
     const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
@@ -1107,7 +1082,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                         VkDeviceAddress indirectDeviceAddress) const {
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR,
-                                    "vkCmdTraceRaysIndirectKHR()", VK_QUEUE_COMPUTE_BIT);
+                                    "vkCmdTraceRaysIndirectKHR()");
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
     const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
@@ -1172,15 +1147,15 @@ void CoreChecks::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBu
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const {
-    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV,
-                                    "vkCmdDrawMeshTasksNV()", VK_QUEUE_GRAPHICS_BIT);
+    bool skip =
+        ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV, "vkCmdDrawMeshTasksNV()");
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            uint32_t drawCount, uint32_t stride) const {
     bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV,
-                                    "vkCmdDrawMeshTasksIndirectNV()", VK_QUEUE_GRAPHICS_BIT);
+                                    "vkCmdDrawMeshTasksIndirectNV()");
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWMESHTASKSINDIRECTNV, "vkCmdDrawMeshTasksIndirectNV()");
     if (drawCount > 1) {
@@ -1195,7 +1170,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                 uint32_t maxDrawCount, uint32_t stride) const {
     bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
-                                    "vkCmdDrawMeshTasksIndirectCountNV()", VK_QUEUE_GRAPHICS_BIT);
+                                    "vkCmdDrawMeshTasksIndirectCountNV()");
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateIndirectCmd(commandBuffer, buffer, CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "vkCmdDrawMeshTasksIndirectCountNV()");

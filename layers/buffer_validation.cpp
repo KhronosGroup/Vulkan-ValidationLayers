@@ -2425,8 +2425,6 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     const auto *image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
-        skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdClearColorImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
         if (device_extensions.vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearColorImage",
@@ -2498,8 +2496,6 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         const VkFormat image_format = image_state->createInfo.format;
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
-        skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdClearDepthStencilImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
         if (device_extensions.vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearDepthStencilImage",
@@ -3480,8 +3476,6 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01996" : "VUID-vkCmdCopyImage-dstImage-01996";
         skip |= ValidateImageFormatFeatureFlags(dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, func_name, vuid);
     }
-    vuid = is_2khr ? "VUID-vkCmdCopyImage2KHR-commandBuffer-cmdpool" : "VUID-vkCmdCopyImage-commandBuffer-cmdpool";
-    skip |= ValidateCmdQueueFlags(cb_node, func_name, VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid);
     skip |= ValidateCmd(cb_node, cmd_type, func_name);
     vuid = is_2khr ? "VUID-vkCmdCopyImage2KHR-renderpass" : "VUID-vkCmdCopyImage-renderpass";
     skip |= InsideRenderPass(cb_node, func_name, vuid);
@@ -3604,8 +3598,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     const CMD_BUFFER_STATE *cb_node = GetCBState(commandBuffer);  // TODO: Should be const, and never modified during validation
     if (!cb_node) return skip;
 
-    skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearAttachments()", VK_QUEUE_GRAPHICS_BIT,
-                                  "VUID-vkCmdClearAttachments-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_node, CMD_CLEARATTACHMENTS, "vkCmdClearAttachments()");
     skip |= OutsideRenderPass(cb_node, "vkCmdClearAttachments()", "VUID-vkCmdClearAttachments-renderpass");
 
@@ -3778,8 +3770,6 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         skip |= ValidateMemoryIsBoundToImage(src_image_state, func_name, vuid);
         vuid = is_2khr ? "VUID-VkResolveImageInfo2KHR-dstImage-00258" : "VUID-vkCmdResolveImage-dstImage-00258";
         skip |= ValidateMemoryIsBoundToImage(dst_image_state, func_name, vuid);
-        vuid = is_2khr ? "VUID-vkCmdResolveImage2KHR-commandBuffer-cmdpool" : "VUID-vkCmdResolveImage-commandBuffer-cmdpool";
-        skip |= ValidateCmdQueueFlags(cb_node, func_name, VK_QUEUE_GRAPHICS_BIT, vuid);
         skip |= ValidateCmd(cb_node, cmd_type, func_name);
         vuid = is_2khr ? "VUID-vkCmdResolveImage2KHR-renderpass" : "VUID-vkCmdResolveImage-renderpass";
         skip |= InsideRenderPass(cb_node, func_name, vuid);
@@ -4097,8 +4087,6 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-dstImage-00224" : "VUID-vkCmdBlitImage-dstImage-00224";
         skip |= ValidateImageUsageFlags(dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, vuid, func_name,
                                         "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
-        vuid = is_2khr ? "VUID-vkCmdBlitImage2KHR-commandBuffer-cmdpool" : "VUID-vkCmdBlitImage-commandBuffer-cmdpool";
-        skip |= ValidateCmdQueueFlags(cb_node, func_name, VK_QUEUE_GRAPHICS_BIT, vuid);
         skip |= ValidateCmd(cb_node, cmd_type, func_name);
         vuid = is_2khr ? "VUID-vkCmdBlitImage2KHR-renderpass" : "VUID-vkCmdBlitImage-renderpass";
         skip |= InsideRenderPass(cb_node, func_name, vuid);
@@ -6095,9 +6083,6 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     skip |=
         ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdCopyBuffer-dstBuffer-00120",
                                  "vkCmdCopyBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |=
-        ValidateCmdQueueFlags(cb_node, "vkCmdCopyBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                              "VUID-vkCmdCopyBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_node, CMD_COPYBUFFER, "vkCmdCopyBuffer()");
     skip |= InsideRenderPass(cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
     skip |= ValidateCmdCopyBufferBounds(src_buffer_state, dst_buffer_state, regionCount, pRegions, COPY_COMMAND_VERSION_1);
@@ -6123,9 +6108,6 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
     skip |= ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-VkCopyBufferInfo2KHR-dstBuffer-00120", "vkCmdCopyBuffer2KHR()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= ValidateCmdQueueFlags(cb_node, "vkCmdCopyBuffer2KHR()",
-                                  VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                  "VUID-vkCmdCopyBuffer2KHR-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_node, CMD_COPYBUFFER2KHR, "vkCmdCopyBuffer2KHR()");
     skip |= InsideRenderPass(cb_node, "vkCmdCopyBuffer2KHR()", "VUID-vkCmdCopyBuffer2KHR-renderpass");
     skip |= ValidateCmdCopyBufferBounds(src_buffer_state, dst_buffer_state, pCopyBufferInfos->regionCount,
@@ -6192,9 +6174,6 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     auto buffer_state = GetBufferState(dstBuffer);
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
-    skip |=
-        ValidateCmdQueueFlags(cb_node, "vkCmdFillBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                              "VUID-vkCmdFillBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_node, CMD_FILLBUFFER, "vkCmdFillBuffer()");
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdFillBuffer-dstBuffer-00029",
@@ -6701,9 +6680,6 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
 
     // Validate command buffer state
     skip |= ValidateCmd(cb_node, cmd_type, func_name);
-
-    vuid = is_2khr ? "VUID-vkCmdCopyBufferToImage2KHR-commandBuffer-cmdpool" : "VUID-vkCmdCopyBufferToImage-commandBuffer-cmdpool";
-    skip |= ValidateCmdQueueFlags(cb_node, func_name, VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid);
 
     vuid = is_2khr ? "VUID-VkCopyBufferToImageInfo2KHR-pRegions-00172" : "VUID-vkCmdCopyBufferToImage-pRegions-00172";
     skip |= ValidateImageBounds(dst_image_state, regionCount, pRegions, func_name, vuid);

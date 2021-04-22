@@ -306,7 +306,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdDrawInstance(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance, CMD_TYPE cmd_type,
                                  const char* caller) const;
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
-                             const char* caller, VkQueueFlags queue_flags) const;
+                             const char* caller) const;
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
                                    VkDeviceSize memoryOffset, const char* api_name) const;
