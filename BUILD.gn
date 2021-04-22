@@ -99,6 +99,7 @@ core_validation_sources = [
   "layers/generated/corechecks_optick_instrumentation.h",
   "layers/generated/spirv_validation_helper.cpp",
   "layers/generated/command_validation.cpp",
+  "layers/generated/command_validation.h",
   "layers/generated/synchronization_validation_types.cpp",
   "layers/generated/synchronization_validation_types.h",
   "layers/sync_utils.cpp",
