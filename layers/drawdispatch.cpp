@@ -45,7 +45,6 @@
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
     DispatchVuidsCmdDraw() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDraw-renderpass";
         pipeline_bound                     = "VUID-vkCmdDraw-None-02700";
         dynamic_state                      = "VUID-vkCmdDraw-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDraw-None-04007";
@@ -89,7 +88,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawIndexed-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndexed-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndexed-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndexed-None-04007";
@@ -133,7 +131,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirect() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawIndirect-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndirect-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndirect-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndirect-None-04007";
@@ -179,7 +176,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirect() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawIndexedIndirect-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndexedIndirect-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndexedIndirect-None-04007";
@@ -225,7 +221,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
     DispatchVuidsCmdDispatch() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDispatch-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatch-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatch-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatch-None-02697";
@@ -249,7 +244,6 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDispatchIndirect() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDispatchIndirect-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatchIndirect-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatchIndirect-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchIndirect-None-02697";
@@ -275,7 +269,6 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectCount() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawIndirectCount-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndirectCount-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndirectCount-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndirectCount-None-04007";
@@ -321,7 +314,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirectCount() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawIndexedIndirectCount-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndexedIndirectCount-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndexedIndirectCount-None-04007";
@@ -367,7 +359,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
 
 struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysNV() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdTraceRaysNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdTraceRaysNV-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysNV-None-02697";
@@ -391,7 +382,6 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
 
 struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysKHR() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdTraceRaysKHR-renderpass";
         pipeline_bound                     = "VUID-vkCmdTraceRaysKHR-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysKHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysKHR-None-02697";
@@ -415,7 +405,6 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
 
 struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysIndirectKHR() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdTraceRaysIndirectKHR-renderpass";
         pipeline_bound                     = "VUID-vkCmdTraceRaysIndirectKHR-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysIndirectKHR-None-02697";
@@ -441,7 +430,6 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksNV() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawMeshTasksNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksNV-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawMeshTasksNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDrawMeshTasksNV-None-02697";
@@ -481,7 +469,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksIndirectNV() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawMeshTasksIndirectNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02697";
@@ -524,7 +511,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksIndirectCountNV() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02697";
@@ -567,7 +553,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
 
 struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectByteCountEXT() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDrawIndirectByteCountEXT-renderpass";
         pipeline_bound                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-02700";
         dynamic_state                      = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-04007";
@@ -613,7 +598,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
 
 struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
     DispatchVuidsCmdDispatchBase() : DrawDispatchVuid() {
-        inside_renderpass                  = "VUID-vkCmdDispatchBase-renderpass";
         pipeline_bound                     = "VUID-vkCmdDispatchBase-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatchBase-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchBase-None-02697";
@@ -670,13 +654,10 @@ const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const
 bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                                      const char *caller) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const CMD_BUFFER_STATE *cb_state = GetCBState(cmd_buffer);
     if (cb_state) {
         skip |= ValidateCmd(cb_state, cmd_type, caller);
         skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point, caller);
-        skip |= (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) ? OutsideRenderPass(cb_state, caller, vuid.inside_renderpass)
-                                                                : InsideRenderPass(cb_state, caller, vuid.inside_renderpass);
     }
     return skip;
 }
@@ -955,7 +936,6 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
     bool skip =
         ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, CMD_TRACERAYSNV, "vkCmdTraceRaysNV()");
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    skip |= InsideRenderPass(cb_state, "vkCmdTraceRaysNV()", "VUID-vkCmdTraceRaysNV-renderpass");
     auto callable_shader_buffer_state = const_cast<BUFFER_STATE *>(GetBufferState(callableShaderBindingTableBuffer));
     if (callable_shader_buffer_state && callableShaderBindingOffset >= callable_shader_buffer_state->createInfo.size) {
         skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02461",
