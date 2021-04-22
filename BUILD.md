@@ -703,7 +703,7 @@ On OSX:
 
     export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
     export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
-    export PATH=$ANDROID_NDK_PATH:$PATH
+    export PATH=$ANDROID_NDK_HOME:$PATH
     export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
 
 Note: If `jarsigner` is missing from your platform, you can find it in the
