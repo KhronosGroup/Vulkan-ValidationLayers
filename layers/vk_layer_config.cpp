@@ -90,10 +90,12 @@ string GetEnvironment(const char *variable) {
         fgets(value, 256, pPipe);
         pclose(pPipe);
 
-        // Make sure its not an empty line
-        if (strcspn(value, "\r\n") == 0) {
+        // Make sure its not an empty line and does not end in a newline
+        const auto str_len = strcspn(value, "\r\n");
+        if (str_len == 0) {
             return "";
         } else {
+            value[str_len] = '\0';
             return string(value);
         }
     } else {
