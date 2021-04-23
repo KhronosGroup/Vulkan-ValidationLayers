@@ -161,12 +161,6 @@ debug_printf_sources = [
   "layers/debug_printf.h",
 ]
 
-command_counter_sources = [
-  "layers/command_counter.h",
-  "layers/generated/command_counter_helper.cpp",
-  "layers/generated/command_counter_helper.h",
-]
-
 chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
@@ -188,7 +182,7 @@ layers = [ [
       core_validation_sources + object_lifetimes_sources +
           stateless_validation_sources + thread_safety_sources +
           unique_objects_sources + best_practices_sources +
-          debug_printf_sources + command_counter_sources + chassis_sources,
+          debug_printf_sources + chassis_sources,
       [ ":vulkan_core_validation_glslang" ],
       [],
     ] ]

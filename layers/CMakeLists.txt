@@ -135,7 +135,6 @@ endif()
 set(CHASSIS_LIBRARY_FILES
     generated/chassis.cpp
     generated/layer_chassis_dispatch.cpp
-    generated/command_counter_helper.cpp
     generated/vk_safe_struct.cpp
     generated/vk_safe_struct.h
     layer_options.cpp

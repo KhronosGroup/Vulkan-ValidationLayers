@@ -723,58 +723,6 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
-    # generator for command_counter.h
-    genOpts['command_counter_helper.h'] = [
-          CommandCounterOutputGenerator,
-          CommandCounterOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'command_counter_helper.h',
-            directory         = directory,
-            genpath           = None,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            emitSpirv         = None,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants = False,
-            lvt_file_type  = 'function_pointer_header')
-        ]
-
-    # generator for command_counter.cpp
-    genOpts['command_counter_helper.cpp'] = [
-          CommandCounterOutputGenerator,
-          CommandCounterOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'command_counter_helper.cpp',
-            directory         = directory,
-            genpath           = None,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            emitSpirv         = None,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants = False,
-            lvt_file_type  = 'function_pointer_source')
-        ]
-
     # Options for best practices code-generated source
     genOpts['best_practices.cpp'] = [
           BestPracticesOutputGenerator,
@@ -1085,7 +1033,6 @@ if __name__ == '__main__':
     from layer_chassis_generator import LayerChassisOutputGenerator, LayerChassisGeneratorOptions
     from layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
     from lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
-    from command_counter_generator import CommandCounterOutputGenerator, CommandCounterOutputGeneratorOptions
     from best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
     from spirv_validation_generator import SpirvValidationHelperOutputGenerator, SpirvValidationHelperOutputGeneratorOptions
     from command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions

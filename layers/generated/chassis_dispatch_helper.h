@@ -1147,9 +1147,6 @@ typedef enum InterceptId{
             case LayerObjectTypeCoreValidation: \
                 if (typeid(&CoreChecks::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);    \
                 break;  \
-            case LayerObjectTypeCommandCounter: \
-                if (typeid(&CommandCounter::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);    \
-                break;  \
             case LayerObjectTypeBestPractices:  \
                 if (typeid(&BestPractices::name) != typeid(&ValidationObject::name)) intercept_vector->push_back(item);     \
                 break;  \

@@ -64,7 +64,6 @@
 #include "buffer_validation.h"
 #include "shader_validation.h"
 #include "vk_layer_utils.h"
-#include "command_counter.h"
 #include "sync_utils.h"
 #include "sync_vuid_maps.h"
 
@@ -168,10 +167,6 @@ void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalIm
 // Override base class, we have some extra work to do here
 void CoreChecks::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
     if (add_obj) {
-        if (dev_obj->device_extensions.vk_khr_performance_query) {
-            auto command_counter = new CommandCounter(this);
-            dev_obj->object_dispatch.emplace_back(command_counter);
-        }
         ValidationStateTracker::InitDeviceValidationObject(add_obj, inst_obj, dev_obj);
     }
 }
