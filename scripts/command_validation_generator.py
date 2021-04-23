@@ -179,6 +179,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
             write(self.commandRecordingList(), file=self.outFile)
             write(self.commandQueueTypeList(), file=self.outFile)
             write(self.commandRenderPassList(), file=self.outFile)
+            write(self.commandBufferLevelList(), file=self.outFile)
             write(self.validateFunction(), file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
@@ -333,6 +334,30 @@ static const std::array<CommandSupportedRenderPass, CMD_RANGE_SIZE> kGeneratedRe
         return output
 
     #
+    # For each CMD_TYPE give a buffer level restriction and add a *-bufferlevel VUID
+    def commandBufferLevelList(self):
+        output = '''
+static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedBufferLevelList = {{
+    kVUIDUndefined, // CMD_NONE\n'''
+        for name, cmdinfo in sorted(self.commands.items()):
+            buffer_level = cmdinfo.elem.attrib.get('cmdbufferlevel')
+            # Currently there is only "primary" or "primary,secondary" in XML
+            # Hard to predict what might change, so will error out instead if assumption breaks
+            if buffer_level == "primary,secondary":
+                output += '    nullptr,\n'
+            elif buffer_level == "primary":
+                vuid = 'VUID-' + name + '-bufferlevel'
+                if vuid not in self.valid_vuids:
+                    print("Error: Could not find %s in validusage.json\n", vuid)
+                    sys.exit(1)
+                output += '    \"' + vuid + '\",\n'
+            else:
+                print("cmdbufferlevel attribute was %s and not known, need to update generation code", buffer_level)
+                sys.exit(1)
+        output += '}};'
+        return output
+
+    #
     # The main function to validate all the commands
     def validateFunction(self):
         output = '''
@@ -369,6 +394,12 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
         skip |= OutsideRenderPass(cb_state, caller_name, supportedRenderPass.vuid);
     } else if (supportedRenderPass.renderPass == CMD_RENDER_PASS_OUTSIDE) {
         skip |= InsideRenderPass(cb_state, caller_name, supportedRenderPass.vuid);
+    }
+
+    // Validate if command has to be recorded in a primary command buffer
+    const auto supportedBufferLevel = kGeneratedBufferLevelList[cmd];
+    if (supportedBufferLevel != nullptr) {
+        skip |= ValidatePrimaryCommandBuffer(cb_state, caller_name, supportedBufferLevel);
     }
 
     return skip;
