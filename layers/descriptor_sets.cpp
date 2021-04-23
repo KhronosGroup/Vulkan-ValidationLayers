@@ -753,7 +753,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
                                    const std::vector<IMAGE_VIEW_STATE *> *attachments, const std::vector<SUBPASS_INFO> &subpasses,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
-    Optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+    layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
     if (descriptor_set->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
         checked_layouts.emplace();
     }
@@ -791,7 +791,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
                                                   const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
                                                   const char *caller, const DrawDispatchVuid &vuids,
-                                                  Optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
+                                                  layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -924,7 +924,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                          bool record_time_validate, const std::vector<IMAGE_VIEW_STATE *> *attachments,
                                          const std::vector<SUBPASS_INFO> &subpasses, VkFramebuffer framebuffer,
                                          VkDescriptorType descriptor_type,
-                                         Optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
+                                         layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
     std::vector<const SAMPLER_STATE *> sampler_states;
     VkImageView image_view = image_descriptor.GetImageView();
     const IMAGE_VIEW_STATE *image_view_state = image_descriptor.GetImageViewState();

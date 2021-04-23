@@ -698,9 +698,14 @@ void FreeLayerDataPtr(void *data_key, std::unordered_map<void *, DATA_T *> &laye
     layer_data_map.erase(got);
 }
 
+namespace layer_data {
+
+struct in_place_t {};
+static constexpr in_place_t in_place{};
+
 // A C++11 approximation of std::optional
 template <typename T>
-struct Optional {
+struct optional {
   protected:
     union Store {
         Store(){};   // Do nothing.  That's the point.
@@ -710,10 +715,13 @@ struct Optional {
     };
 
   public:
-    Optional() : init_(false) {}
-    ~Optional() {
-        if (init_) store_.obj.~T();
-    }
+    optional() : init_(false) {}
+
+    template <typename... Args>
+    explicit optional(in_place_t, const Args &...args) { emplace(args...); }
+
+    ~optional() { if (init_) store_.obj.~T(); }
+
     template <typename... Args>
     T &emplace(const Args &...args) {
         init_ = true;
@@ -738,8 +746,25 @@ struct Optional {
     }
     operator bool() const { return init_; }
 
+    T& operator*() & {
+        assert(init_);
+        return store_.obj;
+    }
+    const T& operator*() const& {
+        assert(init_);
+        return store_.obj;
+    }
+    T&& operator*() && {
+        assert(init_);
+        return std::move(store_.obj);
+    }
+    const T&& operator*() const&& {
+        assert(init_);
+        return std::move(store_.obj);
+    }
   protected:
     Store store_;
     bool init_;
 };
+}  // namespace layer_data
 #endif  // LAYER_DATA_H

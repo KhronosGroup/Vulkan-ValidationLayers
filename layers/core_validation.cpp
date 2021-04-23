@@ -3034,7 +3034,7 @@ struct CommandBufferSubmitState {
                     // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
                     // This submit time not record time...
                     const bool record_time_validate = false;
-                    Optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+                    layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
                     if (set_node->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
                         checked_layouts.emplace();
                     }

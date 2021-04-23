@@ -443,7 +443,7 @@ class CoreChecks : public ValidationStateTracker {
                                           VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*>* attachments,
                                           const std::vector<SUBPASS_INFO>& subpasses, bool record_time_validate, const char* caller,
                                           const DrawDispatchVuid& vuids,
-                                          Optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
+                                          layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
 
     bool ValidateGeneralBufferDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
                                          const cvdescriptorset::DescriptorSet* descriptor_set,
@@ -458,7 +458,7 @@ class CoreChecks : public ValidationStateTracker {
                                  bool record_time_validate, const std::vector<IMAGE_VIEW_STATE*>* attachments,
                                  const std::vector<SUBPASS_INFO>& subpasses, VkFramebuffer framebuffer,
                                  VkDescriptorType descriptor_type,
-                                 Optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
+                                 layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
 
     bool ValidateTexelDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
                                  const cvdescriptorset::DescriptorSet* descriptor_set,
