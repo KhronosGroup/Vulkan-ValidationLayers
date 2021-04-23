@@ -1301,7 +1301,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     bool unprotected;  // can't be used for protected memory
 
     CB_STATE state;         // Track cmd buffer update state
-    uint64_t commandCount;  // Number of commands recorded
+    uint64_t commandCount;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
     uint64_t submitCount;   // Number of times CB has been submitted
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)

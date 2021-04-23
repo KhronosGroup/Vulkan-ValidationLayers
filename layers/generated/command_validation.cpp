@@ -606,6 +606,13 @@ static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedBufferLevelList 
 bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cmd, const char *caller_name) const {
     bool skip = false;
 
+    // Tracks the number of commands recorded in a command buffer
+    // This const_cast is not ideal, but easier to maintain incrementing here as this is a single location
+    // all vkCmd* calls are funneled into. The other option is to append another function pointer for each call
+    // in the ValidationObject object_dispatch. This is also making assumption this function is locked and this
+    // write is not going to race without another copy of the CMD_BUFFER_STATE instance.
+    const_cast<CMD_BUFFER_STATE *>(cb_state)->commandCount++;
+
     // Validate the given command being added to the specified cmd buffer,
     // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
     switch (cb_state->state) {

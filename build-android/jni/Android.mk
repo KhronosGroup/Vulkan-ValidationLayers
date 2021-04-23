@@ -65,7 +65,6 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/command_counter_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/subresource_adapter.cpp
