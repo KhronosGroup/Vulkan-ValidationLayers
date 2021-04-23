@@ -11586,20 +11586,22 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             const auto *sub_cb_subres_map = &sub_layout_map_entry.second;
             // Validate the initial_uses, that they match the current state of the primary cb, or absent a current state,
             // that the match any initial_layout.
-            for (const auto &subres_layout : *sub_cb_subres_map) {
-                const auto &sub_layout = subres_layout.initial_layout;
-                const auto &subresource = subres_layout.subresource;
+            for (const auto &subres_layout : sub_cb_subres_map->GetLayoutMap()) {
+                const auto &sub_layout = subres_layout.second.initial_layout;
                 if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or initial
 
                 // Look up the layout to compared to the intial layout of the sub command buffer (current else initial)
-                const auto *cb_layouts = cb_subres_map->GetSubresourceLayouts(subresource);
-                auto cb_layout = cb_layouts ? cb_layouts->current_layout : kInvalidLayout;
+                const auto &cb_layouts = cb_subres_map->GetLayoutMap().find(subres_layout.first);
+                auto cb_layout =
+                    cb_layouts != cb_subres_map->GetLayoutMap().end() ? cb_layouts->second.current_layout : kInvalidLayout;
                 const char *layout_type = "current";
                 if (cb_layout == kInvalidLayout) {
-                    cb_layout = cb_layouts ? cb_layouts->initial_layout : kInvalidLayout;
+                    cb_layout =
+                        cb_layouts != cb_subres_map->GetLayoutMap().end() ? cb_layouts->second.initial_layout : kInvalidLayout;
                     layout_type = "initial";
                 }
                 if ((cb_layout != kInvalidLayout) && (cb_layout != sub_layout)) {
+                    auto subresource = sub_cb_subres_map->Decode(subres_layout.first.begin);
                     skip |= LogError(pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
                                      "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%X array layer %u, "
                                      "mip level %u) which expects layout %s--instead, image %s layout is %s.",
