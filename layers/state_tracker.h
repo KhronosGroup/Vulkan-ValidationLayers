@@ -1467,6 +1467,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceMultiviewProperties multiview_props;
         VkPhysicalDevicePortabilitySubsetPropertiesKHR portability_props;
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
+        VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;

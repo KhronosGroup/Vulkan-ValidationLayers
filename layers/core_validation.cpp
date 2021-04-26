@@ -1681,6 +1681,16 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 }
             }
         }
+
+        auto provoking_vertex_state_ci = lvl_find_in_chain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
+            pPipeline->graphicsPipelineCI.pRasterizationState->pNext);
+        if (provoking_vertex_state_ci &&
+            provoking_vertex_state_ci->provokingVertexMode == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT &&
+            !enabled_features.provoking_vertex_features.provokingVertexLast) {
+            skip |= LogError(
+                device, "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883",
+                "provokingVertexLast feature is not enabled.");
+        }
     }
 
     if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pPipeline->graphicsPipelineCI.pVertexInputState) {
@@ -6061,6 +6071,47 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     } else {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             skip |= ValidateGraphicsPipelineBindPoint(cb_state, pipeline_state);
+
+            if (cb_state->activeRenderPass &&
+                phys_dev_ext_props.provoking_vertex_props.provokingVertexModePerPipeline == VK_FALSE) {
+                const auto lvl_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
+                const auto &last_bound_it = cb_state->lastBound[lvl_bind_point];
+                if (last_bound_it.pipeline_state) {
+                    auto last_bound_provoking_vertex_state_ci =
+                        LvlFindInChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
+                            last_bound_it.pipeline_state->graphicsPipelineCI.pRasterizationState->pNext);
+
+                    auto current_provoking_vertex_state_ci =
+                        LvlFindInChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
+                            pipeline_state->graphicsPipelineCI.pRasterizationState->pNext);
+
+                    if (last_bound_provoking_vertex_state_ci && !current_provoking_vertex_state_ci) {
+                        skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881",
+                                         "Previous %s's provokingVertexMode is %s, but %s doesn't chain "
+                                         "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
+                                         report_data->FormatHandle(last_bound_it.pipeline_state->pipeline).c_str(),
+                                         string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode),
+                                         report_data->FormatHandle(pipeline).c_str());
+                    } else if (!last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci) {
+                        skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881",
+                                         " %s's provokingVertexMode is %s, but previous %s doesn't chain "
+                                         "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
+                                         report_data->FormatHandle(pipeline).c_str(),
+                                         string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
+                                         report_data->FormatHandle(last_bound_it.pipeline_state->pipeline).c_str());
+                    } else if (last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci &&
+                               last_bound_provoking_vertex_state_ci->provokingVertexMode !=
+                                   current_provoking_vertex_state_ci->provokingVertexMode) {
+                        skip |=
+                            LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881",
+                                     "%s's provokingVertexMode is %s, but previous %s's provokingVertexMode is %s.",
+                                     report_data->FormatHandle(pipeline).c_str(),
+                                     string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
+                                     report_data->FormatHandle(last_bound_it.pipeline_state->pipeline).c_str(),
+                                     string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode));
+                    }
+                }
+            }
         }
     }
 

@@ -1545,6 +1545,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;
     VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features;
     VkPhysicalDeviceInheritedViewportScissorFeaturesNV inherited_viewport_scissor_features;
+    VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };
