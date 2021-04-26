@@ -1325,11 +1325,41 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     };
     layer_data::unordered_map<VkDescriptorSet, std::vector<CmdDrawDispatchInfo>> validate_descriptorsets_in_queuesubmit;
 
+    // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
+    // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
+    std::vector<VkViewport> inheritedViewportDepths;
+
+    // For each draw command D recorded to this command buffer, let
+    //  * g_D be the graphics pipeline used
+    //  * v_G be the viewportCount of g_D, if g_D disables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT, 0 otherwise.
+    //  * s_G be the scissorCount  of g_D, if g_D disables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,  0 otherwise.
+    // Then this value is max(0, max(v_G for all D in cb), max(s_G for all D in cb))
+    uint32_t usedViewportScissorCount;
+    uint32_t pipelineStaticViewportCount; // v_G for currently-bound graphics pipeline.
+    uint32_t pipelineStaticScissorCount;  // s_G for currently-bound graphics pipeline.
+
     uint32_t viewportMask;
     uint32_t viewportWithCountMask;
     uint32_t viewportWithCountCount;
     uint32_t scissorMask;
     uint32_t scissorWithCountMask;
+    uint32_t scissorWithCountCount;
+
+    // Dynamic viewports set in this command buffer; if bit j of viewportMask is set then dynamicViewports[j] is valid, but the
+    // converse need not be true.
+    std::vector<VkViewport> dynamicViewports;
+
+    // Bits set when binding graphics pipeline defining corresponding static state, or executing any secondary command buffer.
+    // Bits unset by calling a corresponding vkCmdSet[State] cmd.
+    uint32_t trashedViewportMask;
+    uint32_t trashedScissorMask;
+    bool     trashedViewportCount;
+    bool     trashedScissorCount;
+
+    // True iff any draw command recorded to this command buffer consumes dynamic viewport/scissor with count state.
+    bool usedDynamicViewportCount;
+    bool usedDynamicScissorCount;
+
     uint32_t initial_device_mask;
     VkPrimitiveTopology primitiveTopology;
 
@@ -1514,6 +1544,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features;
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;
     VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features;
+    VkPhysicalDeviceInheritedViewportScissorFeaturesNV inherited_viewport_scissor_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };
