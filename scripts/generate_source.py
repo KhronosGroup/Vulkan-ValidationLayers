@@ -30,7 +30,8 @@ import difflib
 import common_codegen
 
 # files to exclude from --verify check
-verify_exclude = ['.clang-format']
+verify_exclude = ['.clang-format',
+                  'gpu_pre_draw_shader.h'] # Requires glslangvalidator, so updated manually when needed
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')

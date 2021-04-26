@@ -1287,15 +1287,16 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(unsigned int);
     }
 }
+#include "gpu_pre_draw_constants.h"
 static const int kInstErrorPreDrawValidate = spvtools::kInstErrorBuffOOBStorageTexel + 1; // TODO - get this into instrument.hpp
 static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 1;
-static const int pre_draw_count_too_big_error = 1; // TODO - share this with the shader code
-
 // Generate the part of the message describing the violation.
 static bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, GpuAssistedBufferInfo buf_info) {
     using namespace spvtools;
     std::ostringstream strm;
     bool return_code = true;
+    assert(kInstErrorPreDrawValidate == _kInstErrorPreDrawValidate);
+    assert(kInstValidationOutError == _kInstValidationOutError);
     switch (debug_record[kInstValidationOutError]) {
         case kInstErrorBindlessBounds: {
             strm << "Index of " << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length "
@@ -1347,7 +1348,7 @@ static bool GenerateValidationMessage(const uint32_t *debug_record, std::string 
         } break;
         case kInstErrorPreDrawValidate: {
             // Buffer size must be >= (stride × (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
-            if (debug_record[kPreDrawValidateSubError] == pre_draw_count_too_big_error) {
+            if (debug_record[kPreDrawValidateSubError] == pre_draw_count_exceeds_bufsize_error) {
                 uint32_t count = debug_record[kPreDrawValidateSubError + 1];
                 uint32_t stride = buf_info.pre_draw_resources.stride;
                 uint32_t offset = static_cast<uint32_t>(buf_info.pre_draw_resources.offset);
@@ -1751,14 +1752,18 @@ void GpuAssisted::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     cb_state->hasTraceRaysCmd = true;
 }
 
+// To generate the pre draw validation shader, run the following from the repository base level
+// python .\scripts\generate_spirv.py .\layers\gpu_pre_draw_shader.vert .\layers\generated\gpu_pre_draw_shader.h
+// .\External\glslang\build\install\bin\glslangValidator.exe
+#include "gpu_pre_draw_shader.h"
 void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block,
                                                      GpuAssistedPreDrawResources &resources, const LAST_BOUND_STATE &state,
                                                      VkPipeline *pPipeline, const GpuAssistedCmdDrawIndirectState *cdic_state) {
     VkResult result;
     if (!pre_draw_validation_state.globals_created) {
         auto shader_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
-        shader_module_ci.codeSize = sizeof(kPreDrawValidaitonShaderSpirv);
-        shader_module_ci.pCode = (uint32_t *)kPreDrawValidaitonShaderSpirv;
+        shader_module_ci.codeSize = sizeof(gpu_pre_draw_shader_vert);
+        shader_module_ci.pCode = gpu_pre_draw_shader_vert;
         result =
             DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_draw_validation_state.validation_shader_module);
         if (result != VK_SUCCESS) {
