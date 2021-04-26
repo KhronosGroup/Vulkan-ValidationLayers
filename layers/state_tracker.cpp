@@ -22,6 +22,7 @@
  * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
+#include <algorithm>
 #include <cmath>
 
 #include "vk_enum_string_helper.h"
@@ -1452,11 +1453,22 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         cb_state->image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
         cb_state->status = 0;
         cb_state->static_status = 0;
+        cb_state->inheritedViewportDepths.clear();
+        cb_state->usedViewportScissorCount = 0;
+        cb_state->v_G = 0;
+        cb_state->s_G = 0;
         cb_state->viewportMask = 0;
         cb_state->viewportWithCountMask = 0;
         cb_state->viewportWithCountCount = 0;
         cb_state->scissorMask = 0;
         cb_state->scissorWithCountMask = 0;
+        cb_state->scissorWithCountCount = 0;
+        cb_state->trashedViewportMask = 0;
+        cb_state->trashedScissorMask = 0;
+        cb_state->trashedViewportCount = false;
+        cb_state->trashedScissorCount = false;
+        cb_state->usedDynamicViewportCount = false;
+        cb_state->usedDynamicScissorCount = false;
         cb_state->primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 
         for (auto &item : cb_state->lastBound) {
@@ -1980,6 +1992,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         LvlFindInChain<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(pCreateInfo->pNext);
     if (vertex_input_dynamic_state_features) {
         state_tracker->enabled_features.vertex_input_dynamic_state_features = *vertex_input_dynamic_state_features;
+    }
+
+    const auto *inherited_viewport_scissor_features =
+        LvlFindInChain<VkPhysicalDeviceInheritedViewportScissorFeaturesNV>(pCreateInfo->pNext);
+    if (inherited_viewport_scissor_features) {
+        state_tracker->enabled_features.inherited_viewport_scissor_features = *inherited_viewport_scissor_features;
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
@@ -3668,6 +3686,15 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
                     AddFramebufferBinding(cb_state, cb_state->activeFramebuffer.get());
                 }
             }
+
+            // Check for VkCommandBufferInheritanceViewportScissorInfoNV (VK_NV_inherited_viewport_scissor)
+            auto p_inherited_viewport_scissor_info =
+                LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(cb_state->beginInfo.pInheritanceInfo->pNext);
+            if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
+                auto pViewportDepths = p_inherited_viewport_scissor_info->pViewportDepths;
+                cb_state->inheritedViewportDepths.assign(
+                    pViewportDepths, pViewportDepths + p_inherited_viewport_scissor_info->viewportDepthCount);
+            }
         }
     }
 
@@ -3771,10 +3798,37 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
     auto pipe_state = GetPipelineState(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
+        const auto* viewport_state = pipe_state->graphicsPipelineCI.ptr()->pViewportState;
+        const auto* dynamic_state = pipe_state->graphicsPipelineCI.ptr()->pDynamicState;
         cb_state->status &= ~cb_state->static_status;
-        cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
+        cb_state->static_status = MakeStaticStateMask(dynamic_state);
         cb_state->status |= cb_state->static_status;
         cb_state->dynamic_status = CBSTATUS_ALL_STATE_SET & (~cb_state->static_status);
+
+        // Used to calculate CMD_BUFFER_STATE::usedViewportScissorCount upon draw command with this graphics pipeline.
+        bool dynamic_viewport_count = cb_state->dynamic_status & CBSTATUS_VIEWPORT_WITH_COUNT_SET;
+        bool dynamic_scissor_count  = cb_state->dynamic_status & CBSTATUS_SCISSOR_WITH_COUNT_SET;
+        cb_state->v_G = dynamic_viewport_count ? 0 : pipe_state->graphicsPipelineCI.pViewportState->viewportCount;
+        cb_state->s_G = dynamic_scissor_count  ? 0 : pipe_state->graphicsPipelineCI.pViewportState->scissorCount;
+
+        // Trash dynamic viewport/scissor state if pipeline defines static state.
+        // akeley98 NOTE: There's a bit of an ambiguity in the spec, whether binding such a pipeline overwrites
+        // the entire viewport (scissor) array, or only the subsection defined by the viewport (scissor) count.
+        // I am taking the latter interpretation based on the implementation details of NVIDIA's Vulkan driver.
+        if (!dynamic_viewport_count) {
+            cb_state->trashedViewportCount = true;
+            if (cb_state->static_status & CBSTATUS_VIEWPORT_SET) {
+                cb_state->trashedViewportMask |= (uint32_t(1) << viewport_state->viewportCount) - 1u;
+                // should become = ~uint32_t(0) if the other interpretation is correct.
+            }
+        }
+        if (!dynamic_scissor_count) {
+            cb_state->trashedScissorCount = true;
+            if (cb_state->static_status & CBSTATUS_SCISSOR_SET) {
+                cb_state->trashedScissorMask |= (uint32_t(1) << viewport_state->scissorCount) - 1u;
+                // should become = ~uint32_t(0) if the other interpretation is correct.
+            }
+        }
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     cb_state->lastBound[lv_bind_point].pipeline_state = pipe_state;
@@ -3796,9 +3850,16 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 void ValidationStateTracker::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                          uint32_t viewportCount, const VkViewport *pViewports) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
+    uint32_t bits = ((1u << viewportCount) - 1u) << firstViewport;
+    cb_state->viewportMask |= bits;
+    cb_state->trashedViewportMask &= ~bits;
     cb_state->status |= CBSTATUS_VIEWPORT_SET;
     cb_state->static_status &= ~CBSTATUS_VIEWPORT_SET;
+
+    cb_state->dynamicViewports.resize(std::max(size_t(firstViewport + viewportCount), cb_state->dynamicViewports.size()));
+    for (size_t i = 0; i < viewportCount; ++i) {
+        cb_state->dynamicViewports[firstViewport + i] = pViewports[i];
+    }
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
@@ -4050,7 +4111,9 @@ void ValidationStateTracker::PreCallRecordCmdSetDepthBias(VkCommandBuffer comman
 void ValidationStateTracker::PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                                         const VkRect2D *pScissors) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
+    uint32_t bits = ((1u << scissorCount) - 1u) << firstScissor;
+    cb_state->scissorMask |= bits;
+    cb_state->trashedScissorMask &= ~bits;
     cb_state->status |= CBSTATUS_SCISSOR_SET;
     cb_state->static_status &= ~CBSTATUS_SCISSOR_SET;
 }
@@ -4992,6 +5055,13 @@ void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer com
         for (auto &function : sub_cb_state->queue_submit_functions) {
             cb_state->queue_submit_functions.push_back(function);
         }
+
+        // State is trashed after executing secondary command buffers.
+        // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
+        cb_state->trashedViewportMask  = ~uint32_t(0);
+        cb_state->trashedScissorMask   = ~uint32_t(0);
+        cb_state->trashedViewportCount = true;
+        cb_state->trashedScissorCount  = true;
     }
 }
 
@@ -6004,6 +6074,15 @@ void ValidationStateTracker::UpdateStateCmdDrawType(CMD_BUFFER_STATE *cb_state, 
                                                     const char *function) {
     UpdateStateCmdDrawDispatchType(cb_state, cmd_type, bind_point, function);
     cb_state->hasDrawCmd = true;
+
+    // Update the consumed viewport/scissor count.
+    uint32_t& used = cb_state->usedViewportScissorCount;
+    used = std::max(used, cb_state->v_G);
+    used = std::max(used, cb_state->s_G);
+    bool dynamic_viewport_count = cb_state->dynamic_status & CBSTATUS_VIEWPORT_WITH_COUNT_SET;
+    bool dynamic_scissor_count  = cb_state->dynamic_status & CBSTATUS_SCISSOR_WITH_COUNT_SET;
+    cb_state->usedDynamicViewportCount |= dynamic_viewport_count;
+    cb_state->usedDynamicScissorCount  |= dynamic_scissor_count;
 }
 
 void ValidationStateTracker::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
@@ -6374,16 +6453,28 @@ void ValidationStateTracker::PreCallRecordCmdSetPrimitiveTopologyEXT(VkCommandBu
 void ValidationStateTracker::PreCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                      const VkViewport *pViewports) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->viewportWithCountMask |= (1u << viewportCount) - 1u;
+    uint32_t bits = (1u << viewportCount) - 1u;
+    cb_state->viewportWithCountMask |= bits;
+    cb_state->trashedViewportMask &= ~bits;
     cb_state->viewportWithCountCount = viewportCount;
+    cb_state->trashedViewportCount = false;
     cb_state->status |= CBSTATUS_VIEWPORT_WITH_COUNT_SET;
     cb_state->static_status &= ~CBSTATUS_VIEWPORT_WITH_COUNT_SET;
+
+    cb_state->dynamicViewports.resize(std::max(size_t(viewportCount), cb_state->dynamicViewports.size()));
+    for (size_t i = 0; i < viewportCount; ++i) {
+        cb_state->dynamicViewports[i] = pViewports[i];
+    }
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                                     const VkRect2D *pScissors) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->scissorWithCountMask |= (1u << scissorCount) - 1u;
+    uint32_t bits = (1u << scissorCount) - 1u;
+    cb_state->scissorWithCountMask |= bits;
+    cb_state->trashedScissorMask &= ~bits;
+    cb_state->scissorWithCountCount = scissorCount;
+    cb_state->trashedScissorCount = false;
     cb_state->status |= CBSTATUS_SCISSOR_WITH_COUNT_SET;
     cb_state->static_status &= ~CBSTATUS_SCISSOR_WITH_COUNT_SET;
 }

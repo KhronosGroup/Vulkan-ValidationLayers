@@ -826,13 +826,18 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
 
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
-    // Skip check if rasterization is disabled or there is no viewport.
+    // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
+    bool dyn_viewport = IsDynamic(pPipeline, VK_DYNAMIC_STATE_VIEWPORT);
     if ((!pPipeline->graphicsPipelineCI.pRasterizationState ||
          (pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) &&
-        pPipeline->graphicsPipelineCI.pViewportState) {
-        bool dyn_viewport = IsDynamic(pPipeline, VK_DYNAMIC_STATE_VIEWPORT);
+        pPipeline->graphicsPipelineCI.pViewportState &&
+        pCB->inheritedViewportDepths.size() == 0) {
         bool dyn_scissor = IsDynamic(pPipeline, VK_DYNAMIC_STATE_SCISSOR);
 
+        // NB (akeley98): Current validation layers do not detect the error where vkCmdSetViewport (or scissor) was called, but
+        // the dynamic state set is overwritten by binding a graphics pipeline with static viewport (scissor) state.
+        // This condition be detected by checking trashedViewportMask & viewportMask (trashedScissorMask & scissorMask) is
+        // nonzero in the range of bits needed by the pipeline.
         if (dyn_viewport) {
             const auto required_viewports_mask = (1 << pPipeline->graphicsPipelineCI.pViewportState->viewportCount) - 1;
             const auto missing_viewport_mask = ~pCB->viewportMask & required_viewports_mask;
@@ -896,6 +901,17 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                       "vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT().";
                 skip |= LogError(device, vuid.viewport_scissor_count, "%s", ss.str().c_str());
             }
+        }
+    }
+
+    // If inheriting viewports, verify that not using more than inherited.
+    if (pCB->inheritedViewportDepths.size() != 0 && dyn_viewport) {
+        uint32_t viewport_count = pPipeline->graphicsPipelineCI.pViewportState->viewportCount;
+        uint32_t max_inherited  = uint32_t(pCB->inheritedViewportDepths.size());
+        if (viewport_count > max_inherited) {
+            skip |= LogError(device, vuid.dynamic_state,
+                "Pipeline requires more viewports (%u) than inherited (viewportDepthCount=%u).",
+                unsigned(viewport_count), unsigned(max_inherited));
         }
     }
 
@@ -5840,6 +5856,27 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                  "occulusionQuery is disabled or the device does not support precise occlusion queries.",
                                  report_data->FormatHandle(commandBuffer).c_str());
             }
+            auto p_inherited_viewport_scissor_info =
+                    LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
+            if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
+                if (!enabled_features.inherited_viewport_scissor_features.inheritedViewportScissor2D)
+                {
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04782",
+                                     "vkBeginCommandBuffer(): inheritedViewportScissor2D feature not enabled.");
+                }
+                if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04786",
+                                     "vkBeginCommandBuffer(): Secondary %s must be recorded with the"
+                                     "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT if viewportScissor2D is VK_TRUE.",
+                                     report_data->FormatHandle(commandBuffer).c_str());
+                }
+                if (p_inherited_viewport_scissor_info->viewportDepthCount == 0) {
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04784",
+                                     "vkBeginCommandBuffer(): "
+                                     "If viewportScissor2D is VK_TRUE, then viewportDepthCount must be greater than 0.",
+                                     report_data->FormatHandle(commandBuffer).c_str());
+                }
+            }
         }
         if (info && info->renderPass != VK_NULL_HANDLE) {
             const auto *render_pass = GetRenderPassState(info->renderPass);
@@ -5974,6 +6011,17 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
         }
     }
 
+    if (cb_state->inheritedViewportDepths.size() != 0) {
+        bool dyn_viewport = IsDynamic(pipeline_state, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT)
+                         || IsDynamic(pipeline_state, VK_DYNAMIC_STATE_VIEWPORT);
+        bool dyn_scissor = IsDynamic(pipeline_state, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT)
+                         || IsDynamic(pipeline_state, VK_DYNAMIC_STATE_SCISSOR);
+        if (!dyn_viewport || !dyn_scissor) {
+            skip |= LogError(device, "VUID-vkCmdBindPipeline-commandBuffer-04808",
+                "Graphics pipeline incompatible with viewport/scissor inheritance.");
+        }
+    }
+
     return skip;
 }
 
@@ -6019,12 +6067,25 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
+bool CoreChecks::ForbidInheritedViewportScissor(VkCommandBuffer commandBuffer, const CMD_BUFFER_STATE *cb_state,
+                                                const char* vuid, const char *cmdName) const {
+    bool skip = false;
+    if (cb_state->inheritedViewportDepths.size() != 0) {
+        skip |= LogError(
+            commandBuffer, vuid,
+            "%s: commandBuffer must not have VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled.", cmdName);
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                const VkViewport *pViewports) const {
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(cb_state, CMD_SETVIEWPORT, "vkCmdSetViewport()");
+    skip |=
+        ForbidInheritedViewportScissor(commandBuffer, cb_state, "VUID-vkCmdSetViewport-commandBuffer-04821", "vkCmdSetViewport");
     return skip;
 }
 
@@ -6034,6 +6095,8 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(cb_state, CMD_SETSCISSOR, "vkCmdSetScissor()");
+    skip |=
+        ForbidInheritedViewportScissor(commandBuffer, cb_state, "VUID-vkCmdSetScissor-viewportScissor2D-04789", "vkCmdSetScissor");
     return skip;
 }
 
@@ -11131,6 +11194,236 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
     return skip;
 }
 
+// Object that simulates the inherited viewport/scissor state as the device executes the called secondary command buffers.
+// Visit the calling primary command buffer first, then the called secondaries in order.
+// Contact David Zhao Akeley <dakeley@nvidia.com> for clarifications and bug fixes.
+class CoreChecks::ViewportScissorInheritanceTracker {
+    const CMD_BUFFER_STATE *cb_state = nullptr;
+
+    static_assert(4 == sizeof(cb_state->viewportMask), "Adjust max_viewports to match viewportMask bit width");
+    static constexpr uint32_t kMaxViewports = 32, kNotTrashed = uint32_t(-2), kTrashedByPrimary = uint32_t(-1);
+    uint32_t viewportMask;
+    uint32_t scissorMask;
+    uint32_t viewportTrashedBy[kMaxViewports];  // filled in visitPrimary.
+    uint32_t scissorTrashedBy[kMaxViewports];
+    VkViewport viewportsToInherit[kMaxViewports];
+    uint32_t viewportCountToInherit; // 0 if viewport count (EXT state) has never been defined (but not trashed)
+    uint32_t scissorCountToInherit; // 0 if scissor count (EXT state) has never been defined (but not trashed)
+    uint32_t viewportCountTrashedBy;
+    uint32_t scissorCountTrashedBy;
+
+  public:
+    bool VisitPrimary(const ValidationObject *, const CMD_BUFFER_STATE *primary_cb_state) {
+        assert(!cb_state);
+        cb_state = primary_cb_state;
+
+        viewportMask = cb_state->viewportMask | cb_state->viewportWithCountMask;
+        scissorMask = cb_state->scissorMask | cb_state->scissorWithCountMask;
+
+        for (uint32_t n = 0; n < kMaxViewports; ++n) {
+            uint32_t bit = uint32_t(1) << n;
+            viewportTrashedBy[n] = cb_state->trashedViewportMask & bit ? kTrashedByPrimary : kNotTrashed;
+            scissorTrashedBy[n] = cb_state->trashedScissorMask & bit ? kTrashedByPrimary : kNotTrashed;
+            if (viewportMask & bit) {
+                viewportsToInherit[n] = cb_state->dynamicViewports[n];
+            }
+        }
+
+        viewportCountToInherit = cb_state->viewportWithCountCount;
+        scissorCountToInherit = cb_state->scissorWithCountCount;
+        viewportCountTrashedBy = cb_state->trashedViewportCount ? kTrashedByPrimary : kNotTrashed;
+        scissorCountTrashedBy = cb_state->trashedScissorCount ? kTrashedByPrimary : kNotTrashed;
+        return false;
+    }
+
+    bool VisitSecondary(const ValidationObject *validation, uint32_t cmd_buffer_idx, const CMD_BUFFER_STATE *sub_cb_state) {
+        assert(cb_state);
+        bool skip = false;
+        if (sub_cb_state->inheritedViewportDepths.empty()) {
+            skip |= VisitSecondaryNoInheritance(validation, cmd_buffer_idx, sub_cb_state);
+        } else {
+            skip |= VisitSecondaryInheritance(validation, cmd_buffer_idx, sub_cb_state);
+        }
+
+        // See note at end of VisitSecondaryNoInheritance.
+        if (sub_cb_state->trashedViewportCount) {
+            viewportCountTrashedBy = cmd_buffer_idx;
+        }
+        if (sub_cb_state->trashedScissorCount) {
+            scissorCountTrashedBy = cmd_buffer_idx;
+        }
+        return skip;
+    }
+
+  private:
+    // Track state inheritance as specified by VK_NV_inherited_scissor_viewport, including states
+    // overwritten to undefined value by bound pipelines with non-dynamic state.
+    bool VisitSecondaryNoInheritance(const ValidationObject *, uint32_t cmd_buffer_idx, const CMD_BUFFER_STATE *sub_cb_state) {
+        viewportMask |= sub_cb_state->viewportMask | sub_cb_state->viewportWithCountMask;
+        scissorMask |= sub_cb_state->scissorMask | sub_cb_state->scissorWithCountMask;
+
+        for (uint32_t n = 0; n < kMaxViewports; ++n) {
+            uint32_t bit = uint32_t(1) << n;
+            if ((sub_cb_state->viewportMask | sub_cb_state->viewportWithCountMask) & bit) {
+                viewportsToInherit[n] = sub_cb_state->dynamicViewports[n];
+                viewportTrashedBy[n] = kNotTrashed;
+            }
+            if ((sub_cb_state->scissorMask | sub_cb_state->scissorWithCountMask) & bit) {
+                scissorTrashedBy[n] = kNotTrashed;
+            }
+            if (sub_cb_state->viewportWithCountCount != 0) {
+                viewportCountToInherit = sub_cb_state->viewportWithCountCount;
+                viewportCountTrashedBy = kNotTrashed;
+            }
+            if (sub_cb_state->scissorWithCountCount != 0) {
+                scissorCountToInherit = sub_cb_state->scissorWithCountCount;
+                scissorCountTrashedBy = kNotTrashed;
+            }
+            // Order of above vs below matters here.
+            if (sub_cb_state->trashedViewportMask & bit) {
+                viewportTrashedBy[n] = cmd_buffer_idx;
+            }
+            if (sub_cb_state->trashedScissorMask & bit) {
+                scissorTrashedBy[n] = cmd_buffer_idx;
+            }
+            // Check trashing dynamic viewport/scissor count in VisitSecondary (at end) as even secondary command buffers enabling
+            // viewport/scissor state inheritance may define this state statically in bound graphics pipelines.
+        }
+        return false;
+    }
+
+    // Validate needed inherited state as specified by VK_NV_inherited_scissor_viewport.
+    bool VisitSecondaryInheritance(const ValidationObject *validation, uint32_t cmd_buffer_idx,
+                                   const CMD_BUFFER_STATE *sub_cb_state) {
+        bool skip = false;
+        uint32_t check_viewport_count = 0, check_scissor_count = 0;
+
+        // Common code for reporting missing inherited state (for a myriad of reasons).
+        auto check_missing_inherit = [&](uint32_t was_ever_defined, uint32_t trashed_by, VkDynamicState state, uint32_t index = 0,
+                                         uint32_t static_use_count = 0, const VkViewport *inherited_viewport = nullptr,
+                                         const VkViewport *expected_viewport_depth = nullptr) {
+            if (was_ever_defined && trashed_by == kNotTrashed) {
+                if (state != VK_DYNAMIC_STATE_VIEWPORT) return false;
+
+                assert(inherited_viewport != nullptr && expected_viewport_depth != nullptr);
+                if (inherited_viewport->minDepth != expected_viewport_depth->minDepth ||
+                    inherited_viewport->maxDepth != expected_viewport_depth->maxDepth) {
+                    return validation->LogError(
+                        cb_state->commandBuffer, "VUID-vkCmdDraw-commandBuffer-02701",
+                        "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[%u] (%s) consume inherited viewport %u %s"
+                        "but this state was not inherited as its depth range [%f, %f] does not match "
+                        "pViewportDepths[%u] = [%f, %f]",
+                        unsigned(cmd_buffer_idx), validation->report_data->FormatHandle(sub_cb_state->commandBuffer).c_str(),
+                        unsigned(index), index >= static_use_count ? "(with count) " : "", inherited_viewport->minDepth,
+                        inherited_viewport->maxDepth, unsigned(cmd_buffer_idx), expected_viewport_depth->minDepth,
+                        expected_viewport_depth->maxDepth);
+                    // akeley98 note: This VUID is not ideal; however, there isn't a more relevant VUID as
+                    // it isn't illegal in itself to have mismatched inherited viewport depths.
+                    // The error only occurs upon attempting to consume the viewport.
+                } else {
+                    return false;
+                }
+            }
+
+            const char *state_name;
+            bool format_index = false;
+
+            switch (state) {
+                case VK_DYNAMIC_STATE_SCISSOR:
+                    state_name = "scissor";
+                    format_index = true;
+                    break;
+                case VK_DYNAMIC_STATE_VIEWPORT:
+                    state_name = "viewport";
+                    format_index = true;
+                    break;
+                case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT:
+                    state_name = "dynamic viewport count";
+                    break;
+                case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT:
+                    state_name = "dynamic scissor count";
+                    break;
+                default:
+                    assert(0);
+                    state_name = "<unknown state, report bug>";
+                    break;
+            }
+
+            std::stringstream ss;
+            ss << "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[" << cmd_buffer_idx << "] ("
+               << validation->report_data->FormatHandle(sub_cb_state->commandBuffer).c_str() << ") consume inherited " << state_name
+               << " ";
+            if (format_index) {
+                if (index >= static_use_count) {
+                    ss << "(with count) ";
+                }
+                ss << index << " ";
+            }
+            ss << "but this state ";
+            if (!was_ever_defined) {
+                ss << "was never defined.";
+            } else if (trashed_by == kTrashedByPrimary) {
+                ss << "was left undefined after vkCmdExecuteCommands or vkCmdBindPipeline (with non-dynamic state) in "
+                      "the calling primary command buffer.";
+            } else {
+                ss << "was left undefined after vkCmdBindPipeline (with non-dynamic state) in pCommandBuffers[" << trashed_by
+                   << "].";
+            }
+            return validation->LogError(cb_state->commandBuffer, "VUID-vkCmdDraw-commandBuffer-02701", ss.str().c_str());
+        };
+
+        // Check if secondary command buffer uses viewport/scissor-with-count state, and validate this state if so.
+        if (sub_cb_state->usedDynamicViewportCount) {
+            if (viewportCountToInherit == 0 || viewportCountTrashedBy != kNotTrashed) {
+                skip |= check_missing_inherit(viewportCountToInherit, viewportCountTrashedBy,
+                                              VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+            } else {
+                check_viewport_count = viewportCountToInherit;
+            }
+        }
+        if (sub_cb_state->usedDynamicScissorCount) {
+            if (scissorCountToInherit == 0 || scissorCountTrashedBy != kNotTrashed) {
+                skip |=
+                    check_missing_inherit(scissorCountToInherit, scissorCountTrashedBy, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
+            } else {
+                check_scissor_count = scissorCountToInherit;
+            }
+        }
+
+        // Check the maximum of (viewports used by pipelines with static viewport count, "" dynamic viewport count)
+        // but limit to length of inheritedViewportDepths array and uint32_t bit width (validation layer limit).
+        check_viewport_count = std::min(std::min(+kMaxViewports, uint32_t(sub_cb_state->inheritedViewportDepths.size())),
+                                        std::max(check_viewport_count, sub_cb_state->usedViewportScissorCount));
+        check_scissor_count = std::min(kMaxViewports, std::max(check_scissor_count, sub_cb_state->usedViewportScissorCount));
+
+        if (sub_cb_state->usedDynamicViewportCount && viewportCountToInherit > sub_cb_state->inheritedViewportDepths.size()) {
+            skip |= validation->LogError(
+                cb_state->commandBuffer, "VUID-vkCmdDraw-commandBuffer-02701",
+                "vkCmdExecuteCommands(): "
+                "Draw commands in pCommandBuffers[%u] (%s) consume inherited dynamic viewport with count state "
+                "but the dynamic viewport count (%u) exceeds the inheritance limit (viewportDepthCount=%u).",
+                unsigned(cmd_buffer_idx), validation->report_data->FormatHandle(sub_cb_state->commandBuffer).c_str(),
+                unsigned(viewportCountToInherit), unsigned(sub_cb_state->inheritedViewportDepths.size()));
+        }
+
+        for (uint32_t n = 0; n < check_viewport_count; ++n) {
+            skip |= check_missing_inherit(viewportMask & uint32_t(1) << n, viewportTrashedBy[n], VK_DYNAMIC_STATE_VIEWPORT, n,
+                                          sub_cb_state->usedViewportScissorCount, &viewportsToInherit[n],
+                                          &sub_cb_state->inheritedViewportDepths[n]);
+        }
+
+        for (uint32_t n = 0; n < check_scissor_count; ++n) {
+            skip |= check_missing_inherit(scissorMask & uint32_t(1) << n, scissorTrashedBy[n], VK_DYNAMIC_STATE_SCISSOR, n,
+                                          sub_cb_state->usedViewportScissorCount);
+        }
+        return skip;
+    }
+};
+
+constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kMaxViewports;
+constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kNotTrashed;
+constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kTrashedByPrimary;
+
 bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers) const {
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
@@ -11138,10 +11431,22 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     bool skip = false;
     const CMD_BUFFER_STATE *sub_cb_state = NULL;
     layer_data::unordered_set<const CMD_BUFFER_STATE *> linked_command_buffers;
+    ViewportScissorInheritanceTracker viewport_scissor_inheritance;
+
+    if (enabled_features.inherited_viewport_scissor_features.inheritedViewportScissor2D)
+    {
+        skip |= viewport_scissor_inheritance.VisitPrimary(this, cb_state);
+    }
 
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = GetCBState(pCommandBuffers[i]);
         assert(sub_cb_state);
+
+        if (enabled_features.inherited_viewport_scissor_features.inheritedViewportScissor2D)
+        {
+            skip |= viewport_scissor_inheritance.VisitSecondary(this, i, sub_cb_state);
+        }
+
         if (VK_COMMAND_BUFFER_LEVEL_PRIMARY == sub_cb_state->createInfo.level) {
             skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pCommandBuffers-00088",
                              "vkCmdExecuteCommands() called w/ Primary %s in element %u of pCommandBuffers array. All "
@@ -13320,8 +13625,12 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
                                                           uint32_t discardRectangleCount,
                                                           const VkRect2D *pDiscardRectangles) const {
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    bool skip = false;
     // Minimal validation for command buffer state
-    return ValidateCmd(cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
+    skip |= ValidateCmd(cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
+    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state, "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788",
+                                           "vkCmdSetDiscardRectangleEXT");
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
@@ -14424,6 +14733,8 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer comma
         skip |= LogError(commandBuffer, "VUID-vkCmdSetViewportWithCountEXT-None-03393",
                          "vkCmdSetViewportWithCountEXT: extendedDynamicState feature is not enabled.");
     }
+    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state, "VUID-vkCmdSetViewportWithCountEXT-commandBuffer-04819",
+                                           "vkCmdSetViewportWithCountEXT");
 
     return skip;
 }
@@ -14438,6 +14749,8 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer comman
         skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCountEXT-None-03396",
                          "vkCmdSetScissorWithCountEXT: extendedDynamicState feature is not enabled.");
     }
+    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state, "VUID-vkCmdSetScissorWithCountEXT-commandBuffer-04820",
+                                           "vkCmdSetScissorWithCountEXT");
 
     return skip;
 }
