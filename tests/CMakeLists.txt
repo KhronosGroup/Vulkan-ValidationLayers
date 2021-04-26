@@ -80,6 +80,7 @@ set(COMMON_CPP
     vklayertests_command.cpp
     vklayertests_imageless_framebuffer.cpp
     vklayertests_portability_subset.cpp
+    vklayertests_viewport_inheritance.cpp
     vkpositivelayertests.cpp
     vksyncvaltests.cpp
     vkrenderframework.cpp
