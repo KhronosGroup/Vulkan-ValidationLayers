@@ -1543,17 +1543,22 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
                                                         VkResult result) {
     if (VK_SUCCESS != result) return;
 
+    ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
+    ValidationStateTracker *state_tracker = static_cast<ValidationStateTracker *>(validation_data);
+
     const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
     if (nullptr == enabled_features_found) {
         const auto *features2 = LvlFindInChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
         if (features2) {
             enabled_features_found = &(features2->features);
+
+            const auto *provoking_vertex_features = lvl_find_in_chain<VkPhysicalDeviceProvokingVertexFeaturesEXT>(features2->pNext);
+            if (provoking_vertex_features) {
+                state_tracker->enabled_features.provoking_vertex_features = *provoking_vertex_features;
+            }
         }
     }
-
-    ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
-    ValidationStateTracker *state_tracker = static_cast<ValidationStateTracker *>(validation_data);
 
     if (nullptr == enabled_features_found) {
         state_tracker->enabled_features.core = {};
@@ -1988,6 +1993,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.synchronization2_features = *synchronization2_features;
     }
 
+    const auto *provoking_vertex_features = lvl_find_in_chain<VkPhysicalDeviceProvokingVertexFeaturesEXT>(pCreateInfo->pNext);
+    if (provoking_vertex_features) {
+        state_tracker->enabled_features.provoking_vertex_features = *provoking_vertex_features;
+    }
+
     const auto *vertex_input_dynamic_state_features =
         LvlFindInChain<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(pCreateInfo->pNext);
     if (vertex_input_dynamic_state_features) {
@@ -2145,7 +2155,8 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     }
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && state_tracker->api_version >= VK_API_VERSION_1_1) {
         // Get the needed subgroup limits
-        auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
+        auto provoking_vertex_prop = LvlInitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
+        auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>(&provoking_vertex_prop);
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_prop);
         instance_dispatch_table.GetPhysicalDeviceProperties2(gpu, &prop2);
 
@@ -2153,6 +2164,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->phys_dev_props_core11.subgroupSupportedStages = subgroup_prop.supportedStages;
         state_tracker->phys_dev_props_core11.subgroupSupportedOperations = subgroup_prop.supportedOperations;
         state_tracker->phys_dev_props_core11.subgroupQuadOperationsInAllStages = subgroup_prop.quadOperationsInAllStages;
+        state_tracker->phys_dev_ext_props.provoking_vertex_props = provoking_vertex_prop;
     }
 
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_fragment_shading_rate, &phys_dev_props->fragment_shading_rate_props);
