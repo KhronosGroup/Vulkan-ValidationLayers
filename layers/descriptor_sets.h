@@ -330,6 +330,7 @@ enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBu
 
 class Descriptor {
   public:
+    Descriptor(DescriptorClass class_) : updated(false), descriptor_class(class_) {}
     virtual ~Descriptor(){};
     virtual void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) = 0;
     virtual void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) = 0;
@@ -381,30 +382,6 @@ class SamplerDescriptor : public Descriptor {
     std::shared_ptr<SAMPLER_STATE> sampler_state_;
 };
 
-class ImageSamplerDescriptor : public Descriptor {
-  public:
-    ImageSamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *);
-    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
-    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
-    virtual bool IsImmutableSampler() const override { return immutable_; };
-    VkSampler GetSampler() const { return sampler_state_ ? sampler_state_->sampler : VK_NULL_HANDLE; }
-    VkImageView GetImageView() const { return image_view_state_ ? image_view_state_->image_view : VK_NULL_HANDLE; }
-    const IMAGE_VIEW_STATE *GetImageViewState() const { return image_view_state_.get(); }
-    IMAGE_VIEW_STATE *GetImageViewState() { return image_view_state_.get(); }
-    std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
-    VkImageLayout GetImageLayout() const { return image_layout_; }
-    const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
-    SAMPLER_STATE *GetSamplerState() { return sampler_state_.get(); }
-    std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
-
-  private:
-    std::shared_ptr<SAMPLER_STATE> sampler_state_;
-    bool immutable_;
-    std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
-    VkImageLayout image_layout_;
-};
-
 class ImageDescriptor : public Descriptor {
   public:
     ImageDescriptor(const VkDescriptorType);
@@ -417,9 +394,27 @@ class ImageDescriptor : public Descriptor {
     std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
 
-  private:
+  protected:
+    ImageDescriptor(DescriptorClass class_);
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
     VkImageLayout image_layout_;
+};
+
+class ImageSamplerDescriptor : public ImageDescriptor {
+  public:
+    ImageSamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *);
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
+    virtual bool IsImmutableSampler() const override { return immutable_; };
+    VkSampler GetSampler() const { return sampler_state_ ? sampler_state_->sampler : VK_NULL_HANDLE; }
+    const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
+    SAMPLER_STATE *GetSamplerState() { return sampler_state_.get(); }
+    std::shared_ptr<SAMPLER_STATE> GetSharedSamplerState() const { return sampler_state_; }
+
+  private:
+    std::shared_ptr<SAMPLER_STATE> sampler_state_;
+    bool immutable_;
 };
 
 class TexelDescriptor : public Descriptor {
@@ -458,10 +453,7 @@ class BufferDescriptor : public Descriptor {
 
 class InlineUniformDescriptor : public Descriptor {
   public:
-    InlineUniformDescriptor(const VkDescriptorType) {
-        updated = false;
-        descriptor_class = InlineUniform;
-    }
+    InlineUniformDescriptor(const VkDescriptorType) : Descriptor(InlineUniform) {}
     void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override {
         updated = true;
     }
