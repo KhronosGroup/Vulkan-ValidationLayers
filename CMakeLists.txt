@@ -166,9 +166,9 @@ option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating fi
 option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
 if (USE_ROBIN_HOOD_HASHING)
     if(NOT ROBIN_HOOD_HASHING_INSTALL_DIR)
-        set(ROBIN_HOOD_HASHING_INSTALL_DIR $ENV{ROBIN_HOOD_HASHING_INSTALL_DIR})
+	set(ROBIN_HOOD_HASHING_INSTALL_DIR $ENV{ROBIN_HOOD_HASHING_INSTALL_DIR} PATH "Path to robin-hood-hashing repository")
     endif()
-    set(ROBIN_HOOD_HASHING_INCLUDE_DIR "${ROBIN_HOOD_HASHING_INSTALL_DIR}/src/include" PATH "Path to robin-hood-hashing/include")
+    set(ROBIN_HOOD_HASHING_INCLUDE_DIR "${ROBIN_HOOD_HASHING_INSTALL_DIR}/src/include" PATH "Path to robin-hood-hashing/src/include")
 endif()
 
 if(BUILD_TESTS OR BUILD_LAYERS)
