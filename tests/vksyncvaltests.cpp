@@ -138,23 +138,88 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
+    // Create secondary buffers to use
     m_errorMonitor->ExpectSuccess();
-    VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer cb2 = secondary_cb.handle();
-    secondary_cb.begin();
-    vk::CmdCopyBuffer(cb2, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
-    secondary_cb.end();
+    VkCommandBufferObj secondary_cb1(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBuffer scb1 = secondary_cb1.handle();
+    secondary_cb1.begin();
+    vk::CmdCopyBuffer(scb1, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
+    secondary_cb1.end();
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    VkCommandBufferObj secondary_cb2(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBuffer scb2 = secondary_cb2.handle();
+    secondary_cb2.begin();
+    vk::CmdCopyBuffer(scb2, buffer_a.handle(), buffer_c.handle(), 1, &front2front);
+    secondary_cb2.end();
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    VkCommandBufferObj secondary_cb3(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBuffer scb3 = secondary_cb3.handle();
+    secondary_cb3.begin();
+    secondary_cb3.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 0,
+                                  nullptr);
+    secondary_cb3.end();
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    VkCommandBufferObj secondary_cb4(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBuffer scb4 = secondary_cb4.handle();
+    secondary_cb4.begin();
+    vk::CmdCopyBuffer(scb4, buffer_b.handle(), buffer_c.handle(), 1, &front2front);
+    secondary_cb4.end();
+    m_errorMonitor->VerifyNotFound();
+
+    // One secondary CB hazard with active command buffer
+    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->reset();
     m_commandBuffer->begin();
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
     m_errorMonitor->VerifyNotFound();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
-    vk::CmdExecuteCommands(cb, 1, &cb2);
+    vk::CmdExecuteCommands(cb, 1, &scb1);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
+    // Two secondary CB hazard with each other
     m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    m_errorMonitor->VerifyNotFound();
+    // This is also a "SYNC-HAZARD-WRITE_AFTER_WRITE" present, but only the first hazard is reported.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    {
+        VkCommandBuffer two_cbs[2] = {scb1, scb2};
+        vk::CmdExecuteCommands(cb, 2, two_cbs);
+    }
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 
+    // Two secondary CB hazard with each other
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    m_errorMonitor->VerifyNotFound();
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+        VkCommandBuffer two_cbs[2] = {scb1, scb4};
+        vk::CmdExecuteCommands(cb, 2, two_cbs);
+        m_errorMonitor->VerifyFound();
+    }
+    m_commandBuffer->end();
+
+    // Add a secondary CB with a barrier
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    {
+        m_errorMonitor->ExpectSuccess();
+        VkCommandBuffer three_cbs[3] = {scb1, scb3, scb4};
+        vk::CmdExecuteCommands(cb, 3, three_cbs);
+        m_errorMonitor->VerifyNotFound();
+    }
+    m_commandBuffer->end();
+
+    m_commandBuffer->reset();
     // CmdWriteBufferMarkerAMD
     if (has_amd_buffer_maker) {
         auto fpCmdWriteBufferMarkerAMD =
