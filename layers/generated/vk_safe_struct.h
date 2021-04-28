@@ -8400,6 +8400,53 @@ struct safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT {
     VkPhysicalDeviceYcbcrImageArraysFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceYcbcrImageArraysFeaturesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceProvokingVertexFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 provokingVertexLast;
+    VkBool32 transformFeedbackPreservesProvokingVertex;
+    safe_VkPhysicalDeviceProvokingVertexFeaturesEXT(const VkPhysicalDeviceProvokingVertexFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceProvokingVertexFeaturesEXT(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& operator=(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceProvokingVertexFeaturesEXT();
+    ~safe_VkPhysicalDeviceProvokingVertexFeaturesEXT();
+    void initialize(const VkPhysicalDeviceProvokingVertexFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT* copy_src);
+    VkPhysicalDeviceProvokingVertexFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceProvokingVertexFeaturesEXT *>(this); }
+    VkPhysicalDeviceProvokingVertexFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceProvokingVertexFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceProvokingVertexPropertiesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 provokingVertexModePerPipeline;
+    VkBool32 transformFeedbackPreservesTriangleFanProvokingVertex;
+    safe_VkPhysicalDeviceProvokingVertexPropertiesEXT(const VkPhysicalDeviceProvokingVertexPropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceProvokingVertexPropertiesEXT(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& operator=(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceProvokingVertexPropertiesEXT();
+    ~safe_VkPhysicalDeviceProvokingVertexPropertiesEXT();
+    void initialize(const VkPhysicalDeviceProvokingVertexPropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT* copy_src);
+    VkPhysicalDeviceProvokingVertexPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceProvokingVertexPropertiesEXT *>(this); }
+    VkPhysicalDeviceProvokingVertexPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceProvokingVertexPropertiesEXT const *>(this); }
+};
+
+struct safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT {
+    VkStructureType sType;
+    const void* pNext;
+    VkProvokingVertexModeEXT provokingVertexMode;
+    safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT(const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* in_struct);
+    safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT(const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& copy_src);
+    safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& operator=(const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& copy_src);
+    safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT();
+    ~safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT();
+    void initialize(const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* in_struct);
+    void initialize(const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* copy_src);
+    VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *ptr() { return reinterpret_cast<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *>(this); }
+    VkPipelineRasterizationProvokingVertexStateCreateInfoEXT const *ptr() const { return reinterpret_cast<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT const *>(this); }
+};
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 struct safe_VkSurfaceFullScreenExclusiveInfoEXT {
     VkStructureType sType;
