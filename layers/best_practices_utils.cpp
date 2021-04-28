@@ -461,7 +461,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
 
     // Check for non-transient attachments that should be transient and vice versa
     for (uint32_t i = 0; i < attachmentCount; ++i) {
-        auto& attachment = rpci->pAttachments[i];
+        const auto& attachment = rpci->pAttachments[i];
         bool attachment_should_be_transient =
             (attachment.loadOp != VK_ATTACHMENT_LOAD_OP_LOAD && attachment.storeOp != VK_ATTACHMENT_STORE_OP_STORE);
 
@@ -472,8 +472,8 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
 
         auto view_state = GetImageViewState(image_views[i]);
         if (view_state) {
-            auto& ivci = view_state->create_info;
-            auto& ici = GetImageState(ivci.image)->createInfo;
+            const auto& ivci = view_state->create_info;
+            const auto& ici = GetImageState(ivci.image)->createInfo;
 
             bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
 
@@ -851,10 +851,10 @@ bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount,
         }
 
         auto rp_state = GetRenderPassState(create_info->renderPass);
-        auto& subpass = rp_state->createInfo.pSubpasses[create_info->subpass];
+        const auto& subpass = rp_state->createInfo.pSubpasses[create_info->subpass];
 
         for (uint32_t j = 0; j < create_info->pColorBlendState->attachmentCount; j++) {
-            auto& blend_att = create_info->pColorBlendState->pAttachments[j];
+            const auto& blend_att = create_info->pColorBlendState->pAttachments[j];
             uint32_t att = subpass.pColorAttachments[j].attachment;
 
             if (att != VK_ATTACHMENT_UNUSED && blend_att.blendEnable && blend_att.colorWriteMask) {
@@ -888,10 +888,10 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     }
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
-        auto& create_info = pCreateInfos[i];
+        const auto& create_info = pCreateInfos[i];
 
         if (!(cgpl_state->pipe_state[i]->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
-            auto& vertex_input = *create_info.pVertexInputState;
+            const auto& vertex_input = *create_info.pVertexInputState;
             uint32_t count = 0;
             for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
                 if (vertex_input.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
@@ -1310,7 +1310,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
 
 static inline bool RenderPassUsesAttachmentOnTile(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
     for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
-        auto& subpass_info = createInfo.pSubpasses[subpass];
+        const auto& subpass_info = createInfo.pSubpasses[subpass];
 
         // If an attachment is ever used as a color attachment,
         // resolve attachment or depth stencil attachment,
@@ -1338,7 +1338,7 @@ static inline bool RenderPassUsesAttachmentAsImageOnly(const safe_VkRenderPassCr
     }
 
     for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
-        auto& subpassInfo = createInfo.pSubpasses[subpass];
+        const auto& subpassInfo = createInfo.pSubpasses[subpass];
 
         for (uint32_t i = 0; i < subpassInfo.inputAttachmentCount; i++) {
             if (subpassInfo.pInputAttachments[i].attachment == attachment) {
@@ -1368,7 +1368,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
         }
         // Check if any attachments have LOAD operation on them
         for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
-            auto& attachment = rp_state->createInfo.pAttachments[att];
+            const auto& attachment = rp_state->createInfo.pAttachments[att];
 
             bool attachment_has_readback = false;
             if (!FormatHasStencil(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
@@ -1414,10 +1414,10 @@ void BestPractices::QueueValidateImageView(QueueCallbacks &funcs, IMAGE_VIEW_STA
 void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        const VkImageSubresourceRange& subresource_range) {
     IMAGE_STATE* image = state->image;
-    uint32_t max_layers = image->createInfo.arrayLayers - subresource_range.baseArrayLayer;
-    uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
-    uint32_t max_levels = image->createInfo.mipLevels - subresource_range.baseMipLevel;
-    uint32_t mip_levels = std::min(image->createInfo.mipLevels, max_levels);
+    const uint32_t max_layers = image->createInfo.arrayLayers - subresource_range.baseArrayLayer;
+    const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
+    const uint32_t max_levels = image->createInfo.mipLevels - subresource_range.baseMipLevel;
+    const uint32_t mip_levels = std::min(image->createInfo.mipLevels, max_levels);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
@@ -1429,8 +1429,8 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* st
 void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        const VkImageSubresourceLayers& subresource_layers) {
     IMAGE_STATE* image = state->image;
-    uint32_t max_layers = image->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
-    uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
+    const uint32_t max_layers = image->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
+    const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         QueueValidateImage(funcs, state, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
@@ -1565,7 +1565,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
     if (rp_state) {
         // Check load ops
         for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
-            auto& attachment = rp_state->createInfo.pAttachments[att];
+            const auto& attachment = rp_state->createInfo.pAttachments[att];
 
             if (!RenderPassUsesAttachmentAsImageOnly(rp_state->createInfo, att) &&
                 !RenderPassUsesAttachmentOnTile(rp_state->createInfo, att)) {
@@ -1601,7 +1601,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
 
         // Check store ops
         for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
-            auto& attachment = rp_state->createInfo.pAttachments[att];
+            const auto& attachment = rp_state->createInfo.pAttachments[att];
 
             if (!RenderPassUsesAttachmentOnTile(rp_state->createInfo, att)) {
                 continue;
@@ -2026,7 +2026,7 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
 
     if (cb_state) {
         for (auto descriptor_set : cb_state->validated_descriptor_sets) {
-            auto& layout = *descriptor_set->GetLayout();
+            const auto& layout = *descriptor_set->GetLayout();
 
             for (uint32_t index = 0; index < descriptor_set->GetBindingCount(); ++index) {
                 // For bindless scenarios, we should not attempt to track descriptor set state.
@@ -2445,7 +2445,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         const auto& subpass = rp->createInfo.pSubpasses[cb_node->activeSubpass];
 
         for (uint32_t i = 0; i < attachmentCount; i++) {
-            auto& attachment = pAttachments[i];
+            const auto& attachment = pAttachments[i];
             if (attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                 uint32_t color_attachment = attachment.colorAttachment;
                 uint32_t fb_attachment = subpass.pColorAttachments[color_attachment].attachment;
@@ -2997,7 +2997,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
 
     QUEUE_STATE* queue_state = GetQueueState(queue);
     for (uint32_t submit = 0; submit < submitCount; submit++) {
-        auto& submit_info = pSubmits[submit];
+        const auto& submit_info = pSubmits[submit];
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
             CMD_BUFFER_STATE* cb = GetCBState(submit_info.pCommandBuffers[cb_index]);
             for (auto &func : cb->queue_submit_functions) {
