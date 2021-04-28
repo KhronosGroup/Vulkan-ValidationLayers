@@ -1531,7 +1531,7 @@ void BestPractices::ValidateImageInQueue(IMAGE_STATE_BP* state,
     }
 }
 
-void BestPractices::add_deferred_queue_operations(CMD_BUFFER_STATE* cb) {
+void BestPractices::AddDeferredQueueOperations(CMD_BUFFER_STATE* cb) {
     cb->queue_submit_functions.insert(cb->queue_submit_functions.end(),
                                       queue_submit_functions_after_render_pass.begin(),
                                       queue_submit_functions_after_render_pass.end());
@@ -1540,17 +1540,17 @@ void BestPractices::add_deferred_queue_operations(CMD_BUFFER_STATE* cb) {
 
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass(commandBuffer);
-    add_deferred_queue_operations(GetCBState(commandBuffer));
+    AddDeferredQueueOperations(GetCBState(commandBuffer));
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassInfo) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo);
-    add_deferred_queue_operations(GetCBState(commandBuffer));
+    AddDeferredQueueOperations(GetCBState(commandBuffer));
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassInfo) {
     ValidationStateTracker::PreCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassInfo);
-    add_deferred_queue_operations(GetCBState(commandBuffer));
+    AddDeferredQueueOperations(GetCBState(commandBuffer));
 }
 
 void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
