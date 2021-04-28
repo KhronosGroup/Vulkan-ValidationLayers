@@ -945,17 +945,17 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<VkArmBestPracticesLayerTest::Image> images;
+    std::vector<std::unique_ptr<VkImageObj>> images;
     std::vector<VkRenderPass> renderpasses;
     std::vector<VkFramebuffer> framebuffers;
 
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0].image_view, renderpasses[0]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
 
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1].image_view, renderpasses[1]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), renderpasses[1]));
 
     CreatePipelineHelper graphics_pipeline(*this);
 
@@ -1044,13 +1044,13 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<VkArmBestPracticesLayerTest::Image> images;
+    std::vector<std::unique_ptr<VkImageObj>> images;
     std::vector<VkRenderPass> renderpasses;
     std::vector<VkFramebuffer> framebuffers;
 
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0].image_view, renderpasses[0]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
 
     CreatePipelineHelper graphics_pipeline(*this);
 
@@ -1085,7 +1085,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_commandBuffer->ClearColorImage(images[0].image, VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+    m_commandBuffer->ClearColorImage(images[0]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
 
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
@@ -1126,13 +1126,13 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<VkArmBestPracticesLayerTest::Image> images;
+    std::vector<std::unique_ptr<VkImageObj>> images;
     std::vector<VkRenderPass> renderpasses;
     std::vector<VkFramebuffer> framebuffers;
 
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0].image_view, renderpasses[0]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
 
     CreatePipelineHelper graphics_pipeline(*this);
 
@@ -1167,7 +1167,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_commandBuffer->ClearColorImage(images[0].image, VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+    m_commandBuffer->ClearColorImage(images[0]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
 
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
@@ -1207,15 +1207,15 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<VkArmBestPracticesLayerTest::Image> images;
+    std::vector<std::unique_ptr<VkImageObj>> images;
     std::vector<VkRenderPass> renderpasses;
     std::vector<VkFramebuffer> framebuffers;
 
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0].image_view, renderpasses[0]));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1].image_view, renderpasses[0]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), renderpasses[0]));
 
     CreatePipelineHelper graphics_pipeline(*this);
 
@@ -1261,7 +1261,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     vk::AllocateDescriptorSets(m_device->handle(), &descriptor_set_allocate_info, &descriptor_set);
 
     VkDescriptorImageInfo image_info = {};
-    image_info.imageView = images[1].image_view;
+    image_info.imageView = images[1]->targetView(FMT);
     image_info.sampler = VK_NULL_HANDLE;
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -1291,7 +1291,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_commandBuffer->ClearColorImage(images[1].image, VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+    m_commandBuffer->ClearColorImage(images[1]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
 
     // Trigger a read on the image.
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
@@ -1360,15 +1360,15 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<VkArmBestPracticesLayerTest::Image> images;
+    std::vector<std::unique_ptr<VkImageObj>> images;
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
 
     VkImageMemoryBarrier image_barriers[2] = {
         {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images[0].image, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }},
+            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images[0]->image(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }},
         {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images[1].image, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }},
+            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images[1]->image(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }},
     };
     m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                      0, 0, nullptr, 0, nullptr, 2, image_barriers);
@@ -1383,8 +1383,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     blit_region.dstOffsets[1] = blit_size;
 
     vk::CmdBlitImage(m_commandBuffer->handle(),
-                     images[0].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                     images[1].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     images[0]->image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     images[1]->image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                      1, &blit_region, VK_FILTER_LINEAR);
 
     VkImageMemoryBarrier pre_render_pass_barrier{
@@ -1392,7 +1392,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
         VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-        images[0].image, { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+        images[0]->image(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
     };
 
     m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -1417,7 +1417,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     ASSERT_VK_SUCCESS(err);
 
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &images[1].image_view, WIDTH, HEIGHT, 1};
+    auto imageView = images[1]->targetView(FMT);
+    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, WIDTH, HEIGHT, 1};
     VkFramebuffer fb;
     err = vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
     ASSERT_VK_SUCCESS(err);

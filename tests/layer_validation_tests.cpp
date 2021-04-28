@@ -1271,66 +1271,14 @@ VkBufferTest::~VkBufferTest() {
     }
 }
 
-VkArmBestPracticesLayerTest::Image VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width,
-                                                                            const uint32_t height) {
-    VkImage image{VK_NULL_HANDLE};
-    VkDeviceMemory memory{VK_NULL_HANDLE};
-    VkImageView view{VK_NULL_HANDLE};
-
-    // Create image and imageview
-    VkImageCreateInfo image_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.format = format;
-    image_info.extent.width = width;
-    image_info.extent.height = height;
-    image_info.extent.depth = 1;
-    image_info.mipLevels = 1;
-    image_info.arrayLayers = 1;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                       VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    vk::CreateImage(m_device->handle(), &image_info, nullptr, &image);
-
-    VkMemoryRequirements memory_requirements;
-    vk::GetImageMemoryRequirements(m_device->handle(), image, &memory_requirements);
-
-    uint32_t memory_type = ~0u;
-    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++) {
-        if (memory_requirements.memoryTypeBits & (1u << i)) {
-            memory_type = i;
-            break;
-        }
-    }
-
-    // Allocate memory
-    VkMemoryAllocateInfo alloc = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    alloc.allocationSize = memory_requirements.size;
-    alloc.memoryTypeIndex = memory_type;
-    vk::AllocateMemory(m_device->handle(), &alloc, nullptr, &memory);
-
-    // Bind
-    vk::BindImageMemory(m_device->handle(), image, memory, 0);
-
-    // Create image view
-    VkImageViewCreateInfo image_view_info = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-    image_view_info.image = image;
-    image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_info.format = format;
-    image_view_info.components.r = VK_COMPONENT_SWIZZLE_R;
-    image_view_info.components.g = VK_COMPONENT_SWIZZLE_G;
-    image_view_info.components.b = VK_COMPONENT_SWIZZLE_B;
-    image_view_info.components.a = VK_COMPONENT_SWIZZLE_A;
-    image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_view_info.subresourceRange.levelCount = 1;
-    image_view_info.subresourceRange.layerCount = 1;
-
-    vk::CreateImageView(m_device->handle(), &image_view_info, nullptr, &view);
-
-    return {image, memory, view};
+std::unique_ptr<VkImageObj> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width,
+                                                                     const uint32_t height) {
+    auto img = std::unique_ptr<VkImageObj>(new VkImageObj(m_device));
+    img->Init(width, height, 1, format,
+              VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+              VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+              VK_IMAGE_TILING_OPTIMAL);
+    return img;
 }
 
 VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op,
