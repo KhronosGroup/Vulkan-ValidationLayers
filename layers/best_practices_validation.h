@@ -354,6 +354,10 @@ class BestPractices : public ValidationStateTracker {
                             uint32_t array_layer, uint32_t mip_level);
     void ValidateImageInQueue(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                               uint32_t array_layer, uint32_t mip_level);
+    void ValidateImageInQueueArm(IMAGE_STATE* image,
+                                 IMAGE_SUBRESOURCE_USAGE_BP last_usage,
+                                 IMAGE_SUBRESOURCE_USAGE_BP usage,
+                                 uint32_t array_layer, uint32_t mip_level);
 
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
