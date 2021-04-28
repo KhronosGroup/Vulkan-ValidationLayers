@@ -393,6 +393,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_creation_feedback{kNotEnabled};
     ExtEnabled vk_ext_post_depth_coverage{kNotEnabled};
     ExtEnabled vk_ext_private_data{kNotEnabled};
+    ExtEnabled vk_ext_provoking_vertex{kNotEnabled};
     ExtEnabled vk_ext_queue_family_foreign{kNotEnabled};
     ExtEnabled vk_ext_robustness_2{kNotEnabled};
     ExtEnabled vk_ext_sample_locations{kNotEnabled};
@@ -667,6 +668,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
             {VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_post_depth_coverage, {})},
             {VK_EXT_PRIVATE_DATA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_private_data, {})},
+            {VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_provoking_vertex, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_queue_family_foreign, {{
                            {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
             {VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_robustness_2, {})},
@@ -969,7 +972,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_nv_external_memory_win32, VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}}})},
 #endif
             {VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_shader_resolve, {})},
-            {VK_QCOM_render_pass_store_ops_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
+            {VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
             {VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
@@ -1144,6 +1147,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
     VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME,
     VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
+    VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME,
     VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME,
     VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
     VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME,
@@ -1319,7 +1323,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME,
 #endif
     VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME,
-    VK_QCOM_render_pass_store_ops_EXTENSION_NAME,
+    VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
     VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME,
     VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,

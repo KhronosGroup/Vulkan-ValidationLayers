@@ -4308,6 +4308,33 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARR
     typedef VkPhysicalDeviceYcbcrImageArraysFeaturesEXT Type;
 };
 
+// Map type VkPhysicalDeviceProvokingVertexFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceProvokingVertexFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT> {
+    typedef VkPhysicalDeviceProvokingVertexFeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceProvokingVertexPropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceProvokingVertexPropertiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT> {
+    typedef VkPhysicalDeviceProvokingVertexPropertiesEXT Type;
+};
+
+// Map type VkPipelineRasterizationProvokingVertexStateCreateInfoEXT to id VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT> {
+    typedef VkPipelineRasterizationProvokingVertexStateCreateInfoEXT Type;
+};
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkSurfaceFullScreenExclusiveInfoEXT to id VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT
 template <> struct LvlTypeMap<VkSurfaceFullScreenExclusiveInfoEXT> {

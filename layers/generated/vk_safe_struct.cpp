@@ -36574,6 +36574,175 @@ void safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::initialize(const safe_VkP
     ycbcrImageArrays = copy_src->ycbcrImageArrays;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+
+safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::safe_VkPhysicalDeviceProvokingVertexFeaturesEXT(const VkPhysicalDeviceProvokingVertexFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    provokingVertexLast(in_struct->provokingVertexLast),
+    transformFeedbackPreservesProvokingVertex(in_struct->transformFeedbackPreservesProvokingVertex)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::safe_VkPhysicalDeviceProvokingVertexFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::safe_VkPhysicalDeviceProvokingVertexFeaturesEXT(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    provokingVertexLast = copy_src.provokingVertexLast;
+    transformFeedbackPreservesProvokingVertex = copy_src.transformFeedbackPreservesProvokingVertex;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::operator=(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    provokingVertexLast = copy_src.provokingVertexLast;
+    transformFeedbackPreservesProvokingVertex = copy_src.transformFeedbackPreservesProvokingVertex;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::~safe_VkPhysicalDeviceProvokingVertexFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::initialize(const VkPhysicalDeviceProvokingVertexFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    provokingVertexLast = in_struct->provokingVertexLast;
+    transformFeedbackPreservesProvokingVertex = in_struct->transformFeedbackPreservesProvokingVertex;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceProvokingVertexFeaturesEXT::initialize(const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    provokingVertexLast = copy_src->provokingVertexLast;
+    transformFeedbackPreservesProvokingVertex = copy_src->transformFeedbackPreservesProvokingVertex;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::safe_VkPhysicalDeviceProvokingVertexPropertiesEXT(const VkPhysicalDeviceProvokingVertexPropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    provokingVertexModePerPipeline(in_struct->provokingVertexModePerPipeline),
+    transformFeedbackPreservesTriangleFanProvokingVertex(in_struct->transformFeedbackPreservesTriangleFanProvokingVertex)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::safe_VkPhysicalDeviceProvokingVertexPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::safe_VkPhysicalDeviceProvokingVertexPropertiesEXT(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    provokingVertexModePerPipeline = copy_src.provokingVertexModePerPipeline;
+    transformFeedbackPreservesTriangleFanProvokingVertex = copy_src.transformFeedbackPreservesTriangleFanProvokingVertex;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::operator=(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    provokingVertexModePerPipeline = copy_src.provokingVertexModePerPipeline;
+    transformFeedbackPreservesTriangleFanProvokingVertex = copy_src.transformFeedbackPreservesTriangleFanProvokingVertex;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::~safe_VkPhysicalDeviceProvokingVertexPropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::initialize(const VkPhysicalDeviceProvokingVertexPropertiesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    provokingVertexModePerPipeline = in_struct->provokingVertexModePerPipeline;
+    transformFeedbackPreservesTriangleFanProvokingVertex = in_struct->transformFeedbackPreservesTriangleFanProvokingVertex;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceProvokingVertexPropertiesEXT::initialize(const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    provokingVertexModePerPipeline = copy_src->provokingVertexModePerPipeline;
+    transformFeedbackPreservesTriangleFanProvokingVertex = copy_src->transformFeedbackPreservesTriangleFanProvokingVertex;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT(const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    provokingVertexMode(in_struct->provokingVertexMode)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT(const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    provokingVertexMode = copy_src.provokingVertexMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::operator=(const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    provokingVertexMode = copy_src.provokingVertexMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::~safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::initialize(const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* in_struct)
+{
+    sType = in_struct->sType;
+    provokingVertexMode = in_struct->provokingVertexMode;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::initialize(const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    provokingVertexMode = copy_src->provokingVertexMode;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 
@@ -43495,6 +43664,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceProvokingVertexFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceProvokingVertexFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceProvokingVertexPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceProvokingVertexPropertiesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT(reinterpret_cast<const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceLineRasterizationFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceLineRasterizationFeaturesEXT *>(pNext));
             break;
@@ -44451,6 +44629,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceProvokingVertexFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceProvokingVertexPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceLineRasterizationFeaturesEXT *>(header);
