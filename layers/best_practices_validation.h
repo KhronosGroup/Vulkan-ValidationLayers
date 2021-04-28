@@ -262,7 +262,7 @@ class BestPractices : public ValidationStateTracker {
                                                const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
-    void ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer);
+    void ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer, const char* function_name);
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                   const VkRenderPassBeginInfo* pRenderPassBegin);
     void PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -345,16 +345,21 @@ class BestPractices : public ValidationStateTracker {
 
     using QueueCallbacks = std::vector<std::function<bool (const ValidationStateTracker*, const QUEUE_STATE*)>>;
 
-    void QueueValidateImageView(QueueCallbacks &func, IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
-    void QueueValidateImage(QueueCallbacks &func, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    void QueueValidateImageView(QueueCallbacks &func, const char* function_name,
+                                IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
+    void QueueValidateImage(QueueCallbacks &func, const char* function_name,
+                            IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                             const VkImageSubresourceRange& subresource_range);
-    void QueueValidateImage(QueueCallbacks &func, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    void QueueValidateImage(QueueCallbacks &func, const char* function_name,
+                            IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                             const VkImageSubresourceLayers& range);
-    void QueueValidateImage(QueueCallbacks &func, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    void QueueValidateImage(QueueCallbacks &func, const char* function_name,
+                            IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                             uint32_t array_layer, uint32_t mip_level);
-    void ValidateImageInQueue(IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    void ValidateImageInQueue(const char *function_name,
+                              IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                               uint32_t array_layer, uint32_t mip_level);
-    void ValidateImageInQueueArm(IMAGE_STATE* image,
+    void ValidateImageInQueueArm(const char *function_name, IMAGE_STATE* image,
                                  IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                  IMAGE_SUBRESOURCE_USAGE_BP usage,
                                  uint32_t array_layer, uint32_t mip_level);
