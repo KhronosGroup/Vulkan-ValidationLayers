@@ -531,5 +531,5 @@ class BestPractices : public ValidationStateTracker {
     std::unordered_map<VkImage, IMAGE_STATE_BP> imageUsageMap;
 
     QueueCallbacks queue_submit_functions_after_render_pass;
-    void add_deferred_queue_operations(CMD_BUFFER_STATE *cb);
+    void AddDeferredQueueOperations(CMD_BUFFER_STATE* cb);
 };
