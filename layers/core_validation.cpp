@@ -12756,19 +12756,33 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 VkPresentRegionKHR region = present_regions->pRegions[i];
                 for (uint32_t j = 0; j < region.rectangleCount; ++j) {
                     VkRectLayerKHR rect = region.pRectangles[j];
+                    // Swap offsets and extents for 90 or 270 degree preTransform rotation
+                    if (swapchain_data->createInfo.preTransform &
+                        (VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR | VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR |
+                         VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR |
+                         VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR)) {
+                        std::swap(rect.offset.x, rect.offset.y);
+                        std::swap(rect.extent.width, rect.extent.height);
+                    }
                     if ((rect.offset.x + rect.extent.width) > swapchain_data->createInfo.imageExtent.width) {
-                        skip |= LogError(pPresentInfo->pSwapchains[i], "VUID-VkRectLayerKHR-offset-01261",
-                                         "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
-                                         "pRegion[%i].pRectangles[%i], the sum of offset.x (%i) and extent.width (%i) is greater "
-                                         "than the corresponding swapchain's imageExtent.width (%i).",
-                                         i, j, rect.offset.x, rect.extent.width, swapchain_data->createInfo.imageExtent.width);
+                        skip |=
+                            LogError(pPresentInfo->pSwapchains[i], "VUID-VkRectLayerKHR-offset-04864",
+                                     "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, pRegion[%i].pRectangles[%i], "
+                                     "the sum of offset.x (%i) and extent.width (%i) after applying preTransform (%s) is greater "
+                                     "than the corresponding swapchain's imageExtent.width (%i).",
+                                     i, j, rect.offset.x, rect.extent.width,
+                                     string_VkSurfaceTransformFlagBitsKHR(swapchain_data->createInfo.preTransform),
+                                     swapchain_data->createInfo.imageExtent.width);
                     }
                     if ((rect.offset.y + rect.extent.height) > swapchain_data->createInfo.imageExtent.height) {
-                        skip |= LogError(pPresentInfo->pSwapchains[i], "VUID-VkRectLayerKHR-offset-01261",
-                                         "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
-                                         "pRegion[%i].pRectangles[%i], the sum of offset.y (%i) and extent.height (%i) is greater "
-                                         "than the corresponding swapchain's imageExtent.height (%i).",
-                                         i, j, rect.offset.y, rect.extent.height, swapchain_data->createInfo.imageExtent.height);
+                        skip |=
+                            LogError(pPresentInfo->pSwapchains[i], "VUID-VkRectLayerKHR-offset-04864",
+                                     "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, pRegion[%i].pRectangles[%i], "
+                                     "the sum of offset.y (%i) and extent.height (%i) after applying preTransform (%s) is greater "
+                                     "than the corresponding swapchain's imageExtent.height (%i).",
+                                     i, j, rect.offset.y, rect.extent.height,
+                                     string_VkSurfaceTransformFlagBitsKHR(swapchain_data->createInfo.preTransform),
+                                     swapchain_data->createInfo.imageExtent.height);
                     }
                     if (rect.layer > swapchain_data->createInfo.imageArrayLayers) {
                         skip |= LogError(
