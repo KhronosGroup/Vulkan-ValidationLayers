@@ -1403,13 +1403,15 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
     return skip;
 }
 
-void BestPractices::QueueValidateImageView(QueueCallbacks &funcs, IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage) {
+void BestPractices::QueueValidateImageView(QueueCallbacks &funcs, const char* function_name,
+                                           IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage) {
     if (view) {
-        QueueValidateImage(funcs, GetImageUsageState(view->create_info.image), usage, view->create_info.subresourceRange);
+        QueueValidateImage(funcs, function_name, GetImageUsageState(view->create_info.image), usage, view->create_info.subresourceRange);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
+                                       IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        const VkImageSubresourceRange& subresource_range) {
     IMAGE_STATE* image = state->image;
     const uint32_t max_layers = image->createInfo.arrayLayers - subresource_range.baseArrayLayer;
@@ -1419,31 +1421,33 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* st
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
-            QueueValidateImage(funcs, state, usage, layer + subresource_range.baseArrayLayer, level + subresource_range.baseMipLevel);
+            QueueValidateImage(funcs, function_name, state, usage, layer + subresource_range.baseArrayLayer, level + subresource_range.baseMipLevel);
         }
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
+                                       IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        const VkImageSubresourceLayers& subresource_layers) {
     IMAGE_STATE* image = state->image;
     const uint32_t max_layers = image->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
     const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
-        QueueValidateImage(funcs, state, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
+        QueueValidateImage(funcs, function_name, state, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
+                                       IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        uint32_t array_layer, uint32_t mip_level) {
-    funcs.push_back([this, state, usage, array_layer, mip_level](const ValidationStateTracker*, const QUEUE_STATE*) -> bool {
-        ValidateImageInQueue(state, usage, array_layer, mip_level);
+    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](const ValidationStateTracker*, const QUEUE_STATE*) -> bool {
+        ValidateImageInQueue(function_name, state, usage, array_layer, mip_level);
         return false;
     });
 }
 
-void BestPractices::ValidateImageInQueueArm(IMAGE_STATE* image,
+void BestPractices::ValidateImageInQueueArm(const char* function_name, IMAGE_STATE* image,
                                             IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                             IMAGE_SUBRESOURCE_USAGE_BP usage,
                                             uint32_t array_layer, uint32_t mip_level) {
@@ -1452,20 +1456,20 @@ void BestPractices::ValidateImageInQueueArm(IMAGE_STATE* image,
         !image->is_swapchain_image) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantStore,
-            "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with STORE_OP_STORE. "
             "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
             "architectures.",
-            VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+            function_name, VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantClear,
-            "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
             "tile-based architectures."
             "architectures.",
-            VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+            function_name, VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
                (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE ||
                 last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
@@ -1514,20 +1518,20 @@ void BestPractices::ValidateImageInQueueArm(IMAGE_STATE* image,
 
         LogPerformanceWarning(
             device, vuid,
-            "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
+            "%s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
             "time image was used, it was written to with %s. %s",
-            VendorSpecificTag(kBPVendorArm), array_layer, mip_level, last_cmd, suggestion);
+            function_name, VendorSpecificTag(kBPVendorArm), array_layer, mip_level, last_cmd, suggestion);
     }
 }
 
-void BestPractices::ValidateImageInQueue(IMAGE_STATE_BP* state,
+void BestPractices::ValidateImageInQueue(const char* function_name, IMAGE_STATE_BP* state,
                                          IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
                                          uint32_t mip_level) {
     IMAGE_STATE* image = state->image;
     IMAGE_SUBRESOURCE_USAGE_BP last_usage = state->usages[array_layer][mip_level];
     state->usages[array_layer][mip_level] = usage;
     if (VendorCheckEnabled(kBPVendorArm)) {
-        ValidateImageInQueueArm(image, last_usage, usage, array_layer, mip_level);
+        ValidateImageInQueueArm(function_name, image, last_usage, usage, array_layer, mip_level);
     }
 }
 
@@ -1598,7 +1602,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
                 image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
             }
 
-            QueueValidateImageView(cb->queue_submit_functions, image_view, usage);
+            QueueValidateImageView(cb->queue_submit_functions, "vkCmdBeginRenderPass()", image_view, usage);
         }
 
         // Check store ops
@@ -1628,7 +1632,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
                 image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
             }
 
-            QueueValidateImageView(queue_submit_functions_after_render_pass, image_view, usage);
+            QueueValidateImageView(queue_submit_functions_after_render_pass, "vkCmdEndRenderPass()", image_view, usage);
         }
     }
 }
@@ -1959,7 +1963,7 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
         cmd_state->small_indexed_draw_call_count++;
     }
 
-    ValidateBoundDescriptorSets(commandBuffer);
+    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDrawIndexed()");
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -2023,7 +2027,7 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
     RecordCmdDrawType(commandBuffer, count, "vkCmdDrawIndexedIndirect()");
 }
 
-void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
+void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer, const char* function_name) {
     CMD_BUFFER_STATE* cb_state = GetCBState(commandBuffer);
 
     if (cb_state) {
@@ -2066,7 +2070,8 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
 
                     if (image_view) {
                         IMAGE_VIEW_STATE* image_view_state = GetImageViewState(image_view);
-                        QueueValidateImageView(cb_state->queue_submit_functions, image_view_state, IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS);
+                        QueueValidateImageView(cb_state->queue_submit_functions, function_name,
+                                               image_view_state, IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS);
                     }
                 }
             }
@@ -2076,17 +2081,17 @@ void BestPractices::ValidateBoundDescriptorSets(VkCommandBuffer commandBuffer) {
 
 void BestPractices::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                          uint32_t firstVertex, uint32_t firstInstance) {
-    ValidateBoundDescriptorSets(commandBuffer);
+    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDraw()");
 }
 
 void BestPractices::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  uint32_t drawCount, uint32_t stride) {
-    ValidateBoundDescriptorSets(commandBuffer);
+    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDrawIndirect()");
 }
 
 void BestPractices::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         uint32_t drawCount, uint32_t stride) {
-    ValidateBoundDescriptorSets(commandBuffer);
+    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDrawIndexedIndirect()");
 }
 
 bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
@@ -2128,11 +2133,11 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
 }
 
 void BestPractices::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
-    ValidateBoundDescriptorSets(commandBuffer);
+    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDispatch()");
 }
 
 void BestPractices::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
-    ValidateBoundDescriptorSets(commandBuffer);
+    ValidateBoundDescriptorSets(commandBuffer, "vkCmdDispatchIndirect()");
 }
 
 bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
@@ -2537,8 +2542,8 @@ void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     auto* dst = GetImageUsageState(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ, pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE, pRegions[i].dstSubresource);
+        QueueValidateImage(funcs, "vkCmdResolveImage()", src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ, pRegions[i].srcSubresource);
+        QueueValidateImage(funcs, "vkCmdResolveImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE, pRegions[i].dstSubresource);
     }
 }
 
@@ -2551,8 +2556,8 @@ void BestPractices::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuff
     uint32_t regionCount = pResolveImageInfo->regionCount;
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ, pResolveImageInfo->pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE, pResolveImageInfo->pRegions[i].dstSubresource);
+        QueueValidateImage(funcs, "vkCmdResolveImage2KHR()", src, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ, pResolveImageInfo->pRegions[i].srcSubresource);
+        QueueValidateImage(funcs, "vkCmdResolveImage2KHR()", dst, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE, pResolveImageInfo->pRegions[i].dstSubresource);
     }
 }
 
@@ -2564,7 +2569,7 @@ void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
     auto* dst = GetImageUsageState(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
-        QueueValidateImage(funcs, dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
+        QueueValidateImage(funcs, "vkCmdClearColorImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
 }
 
@@ -2576,7 +2581,7 @@ void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     auto* dst = GetImageUsageState(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
-        QueueValidateImage(funcs, dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
+        QueueValidateImage(funcs, "vkCmdClearDepthStencilImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
 }
 
@@ -2589,8 +2594,8 @@ void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     auto* dst = GetImageUsageState(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ, pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE, pRegions[i].dstSubresource);
+        QueueValidateImage(funcs, "vkCmdCopyImage()", src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ, pRegions[i].srcSubresource);
+        QueueValidateImage(funcs, "vkCmdCopyImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE, pRegions[i].dstSubresource);
     }
 }
 
@@ -2602,7 +2607,7 @@ void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuf
     auto* dst = GetImageUsageState(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE, pRegions[i].imageSubresource);
+        QueueValidateImage(funcs, "vkCmdCopyBufferToImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE, pRegions[i].imageSubresource);
     }
 }
 
@@ -2613,7 +2618,7 @@ void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuf
     auto* src = GetImageUsageState(srcImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ, pRegions[i].imageSubresource);
+        QueueValidateImage(funcs, "vkCmdCopyImageToBuffer()", src, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ, pRegions[i].imageSubresource);
     }
 }
 
@@ -2626,8 +2631,8 @@ void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     auto* dst = GetImageUsageState(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        QueueValidateImage(funcs, src, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ, pRegions[i].srcSubresource);
-        QueueValidateImage(funcs, dst, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE, pRegions[i].dstSubresource);
+        QueueValidateImage(funcs, "vkCmdBlitImage()", src, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ, pRegions[i].srcSubresource);
+        QueueValidateImage(funcs, "vkCmdBlitImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE, pRegions[i].dstSubresource);
     }
 }
 
