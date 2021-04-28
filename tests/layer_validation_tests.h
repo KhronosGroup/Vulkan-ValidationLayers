@@ -289,13 +289,7 @@ class VkBestPracticesLayerTest : public VkLayerTest {
 
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
   public:
-    struct Image {
-        VkImage image;
-        VkDeviceMemory memory;
-        VkImageView image_view;
-    };
-
-    Image CreateImage(VkFormat format, const uint32_t width, const uint32_t height);
+    std::unique_ptr<VkImageObj> CreateImage(VkFormat format, const uint32_t width, const uint32_t height);
     VkRenderPass CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
                                   VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE);
     VkFramebuffer CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view, VkRenderPass renderpass);
