@@ -909,15 +909,15 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
         if ((pCreateInfos[i].pRasterizationState->depthBiasEnable) &&
             (pCreateInfos[i].pRasterizationState->depthBiasConstantFactor == 0.0f) &&
-            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f)) {
-            skip |= VendorCheckEnabled(kBPVendorArm) &&
-                    LogPerformanceWarning(
-                        device, kVUID_BestPractices_CreatePipelines_DepthBias_Zero,
-                        "%s Performance Warning: This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
-                        "and both depthBiasConstantFactor and depthBiasSlopeFactor are set to 0. This can cause reduced "
-                        "efficiency during rasterization. Consider disabling depthBias or increasing either "
-                        "depthBiasConstantFactor or depthBiasSlopeFactor.",
-                        VendorSpecificTag(kBPVendorArm));
+            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f) &&
+            VendorCheckEnabled(kBPVendorArm)) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreatePipelines_DepthBias_Zero,
+                "%s Performance Warning: This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
+                "and both depthBiasConstantFactor and depthBiasSlopeFactor are set to 0. This can cause reduced "
+                "efficiency during rasterization. Consider disabling depthBias or increasing either "
+                "depthBiasConstantFactor or depthBiasSlopeFactor.",
+                VendorSpecificTag(kBPVendorArm));
         }
 
         skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
@@ -1152,9 +1152,8 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
                                       "vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT is set.");
     }
 
-    if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
-        skip |= VendorCheckEnabled(kBPVendorArm) &&
-                LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
+    if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && VendorCheckEnabled(kBPVendorArm)) {
+        skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
                                       "%s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
                                       "For best performance on Mali GPUs, consider setting ONE_TIME_SUBMIT by default.",
                                       VendorSpecificTag(kBPVendorArm));
@@ -1387,17 +1386,16 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
             }
 
             // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
-            if (attachment_needs_readback) {
-                skip |= VendorCheckEnabled(kBPVendorArm) &&
-                        LogPerformanceWarning(
-                            device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
-                            "%s Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
-                            "Submitting this renderpass will cause the driver to inject a readback of the attachment "
-                            "which will copy in total %u pixels (renderArea = { %d, %d, %u, %u }) to the tile buffer.",
-                            VendorSpecificTag(kBPVendorArm), att,
-                            pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
-                            pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y,
-                            pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height);
+            if (attachment_needs_readback && VendorCheckEnabled(kBPVendorArm)) {
+                skip |= LogPerformanceWarning(
+                    device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
+                    "%s Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
+                    "Submitting this renderpass will cause the driver to inject a readback of the attachment "
+                    "which will copy in total %u pixels (renderArea = { %d, %d, %u, %u }) to the tile buffer.",
+                    VendorSpecificTag(kBPVendorArm), att,
+                    pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
+                    pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y,
+                    pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height);
             }
         }
     }
@@ -1445,39 +1443,34 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, IMAGE_STATE_BP* st
     });
 }
 
-void BestPractices::ValidateImageInQueue(IMAGE_STATE_BP* state,
-                                         IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
-                                         uint32_t mip_level) {
-    IMAGE_STATE* image = state->image;
-    IMAGE_SUBRESOURCE_USAGE_BP last_usage = state->usages[array_layer][mip_level];
-
+void BestPractices::ValidateImageInQueueArm(IMAGE_STATE* image,
+                                            IMAGE_SUBRESOURCE_USAGE_BP last_usage,
+                                            IMAGE_SUBRESOURCE_USAGE_BP usage,
+                                            uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
         !image->is_swapchain_image) {
-        VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(
-                device, kVUID_BestPractices_RenderPass_RedundantStore,
-                "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
-                "image was used, it was written to with STORE_OP_STORE. "
-                "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
-                "architectures.",
-                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+        LogPerformanceWarning(
+            device, kVUID_BestPractices_RenderPass_RedundantStore,
+            "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "image was used, it was written to with STORE_OP_STORE. "
+            "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
+            "architectures.",
+            VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
-        VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(
-                device, kVUID_BestPractices_RenderPass_RedundantClear,
-                "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
-                "image was used, it was written to with vkCmdClear*Image(). "
-                "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
-                "tile-based architectures."
-                "architectures.",
-                VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
+        LogPerformanceWarning(
+            device, kVUID_BestPractices_RenderPass_RedundantClear,
+            "%s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "image was used, it was written to with vkCmdClear*Image(). "
+            "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
+            "tile-based architectures."
+            "architectures.",
+            VendorSpecificTag(kBPVendorArm), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
                (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE ||
                 last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
                 last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE ||
-                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE) &&
-               VendorCheckEnabled(kBPVendorArm)) {
+                last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE)) {
         const char *last_cmd = nullptr;
         const char *vuid = nullptr;
         const char *suggestion = nullptr;
@@ -1525,8 +1518,17 @@ void BestPractices::ValidateImageInQueue(IMAGE_STATE_BP* state,
             "time image was used, it was written to with %s. %s",
             VendorSpecificTag(kBPVendorArm), array_layer, mip_level, last_cmd, suggestion);
     }
+}
 
+void BestPractices::ValidateImageInQueue(IMAGE_STATE_BP* state,
+                                         IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
+                                         uint32_t mip_level) {
+    IMAGE_STATE* image = state->image;
+    IMAGE_SUBRESOURCE_USAGE_BP last_usage = state->usages[array_layer][mip_level];
     state->usages[array_layer][mip_level] = usage;
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        ValidateImageInQueueArm(image, last_usage, usage, array_layer, mip_level);
+    }
 }
 
 void BestPractices::add_deferred_queue_operations(CMD_BUFFER_STATE* cb) {
@@ -1769,9 +1771,9 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     // Note that we cannot update the draw call count here, so we do it in PreCallRecordCmdDrawIndexed.
     const CMD_BUFFER_STATE* cmd_state = GetCBState(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
-        (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1)) {
-        skip |= VendorCheckEnabled(kBPVendorArm) &&
-                LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
+        (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
+        VendorCheckEnabled(kBPVendorArm)) {
+        skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
                                       "%s: The command buffer contains many small indexed drawcalls "
                                       "(at least %u drawcalls with less than %u indices each). This may cause pipeline bubbles. "
                                       "You can try batching drawcalls or instancing when applicable.",
