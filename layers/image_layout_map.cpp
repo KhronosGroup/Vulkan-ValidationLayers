@@ -62,12 +62,18 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& init
         }
         // Note that after the "fill" operation pos may have become valid so we check again
         if (pos->valid) {
-            LayoutEntry& orig_entry = pos->lower_bound->second;
-            assert(orig_entry.state != nullptr);
-            updated_current |= orig_entry.Update(new_entry);
-            // Point just past the end of this section,  if it's within the given range, it will get filled next iteration
-            // ++pos could move us past the end of range (which would exit the loop) so we don't use it.
-            pos.seek(pos->lower_bound->first.end);
+            if (pos->lower_bound->second.CurrentWillChange(new_entry.current_layout)) {
+                LayoutEntry orig_entry = pos->lower_bound->second; //intentional copy
+                assert(orig_entry.state != nullptr);
+                updated_current |= orig_entry.Update(new_entry);
+
+                layouts.overwrite_range(std::make_pair(range, orig_entry));
+                break;
+            } else {
+                // Point just past the end of this section,  if it's within the given range, it will get filled next iteration
+                // ++pos could move us past the end of range (which would exit the loop) so we don't use it.
+                pos.seek(pos->lower_bound->first.end);
+            }
         }
     }
 
