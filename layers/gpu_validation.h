@@ -75,6 +75,7 @@ struct GpuVuid {
     const char* storage_access_oob = kVUIDUndefined;
     const char* count_exceeds_bufsize_1 = kVUIDUndefined;
     const char* count_exceeds_bufsize = kVUIDUndefined;
+    const char* count_exceeds_device_limit = kVUIDUndefined;
 };
 
 struct GpuAssistedAccelerationStructureBuildValidationBufferInfo {

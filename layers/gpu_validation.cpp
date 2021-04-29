@@ -1291,7 +1291,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
 static const int kInstErrorPreDrawValidate = spvtools::kInstErrorBuffOOBStorageTexel + 1; // TODO - get this into instrument.hpp
 static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 1;
 // Generate the part of the message describing the violation.
-static bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, GpuAssistedBufferInfo buf_info) {
+bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, GpuAssistedBufferInfo buf_info, GpuAssisted *gpu_assisted) {
     using namespace spvtools;
     std::ostringstream strm;
     bool return_code = true;
@@ -1362,6 +1362,12 @@ static bool GenerateValidationMessage(const uint32_t *debug_record, std::string 
                 } else {
                     vuid_msg = vuid.count_exceeds_bufsize;
                 }
+            } else if (debug_record[kPreDrawValidateSubError] == pre_draw_count_exceeds_limit_error) {
+                uint32_t count = debug_record[kPreDrawValidateSubError + 1];
+                const GpuVuid vuid = GetGpuVuid(buf_info.cmd_type);
+                strm << "Indirect draw count of " << count << " would exceed maxDrawIndirectCount limit of "
+                     << gpu_assisted->phys_dev_props.limits.maxDrawIndirectCount;
+                vuid_msg = vuid.count_exceeds_device_limit;
             }
             return_code = false;
         } break;
@@ -1419,7 +1425,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         pipeline_handle = it->second.pipeline;
         pgm = it->second.pgm;
     }
-    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info);
+    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info, this);
     if (gen_full_message) {
         UtilGenerateStageMessage(debug_record, stage_message);
         UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
@@ -1794,7 +1800,7 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
         VkPushConstantRange push_constant_ranges[push_constant_range_count] = {};
         push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         push_constant_ranges[0].offset = 0;
-        push_constant_ranges[0].size = 2 * sizeof(uint32_t);
+        push_constant_ranges[0].size = 3 * sizeof(uint32_t);
         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo[1] = {};
         pipelineLayoutCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutCreateInfo[0].pNext = NULL;
@@ -1989,9 +1995,11 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
         // Insert diagnostic draw
         DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);
-        uint32_t pushConstants[2] = {};
-        pushConstants[0] = max_count;
-        pushConstants[1] = static_cast<uint32_t>((cdic_state->count_buffer_offset / sizeof(uint32_t)));
+        uint32_t pushConstants[3] = {};
+        assert(phys_dev_props.limits.maxDrawIndirectCount > 0);
+        pushConstants[0] = phys_dev_props.limits.maxDrawIndirectCount;
+        pushConstants[1] = max_count;
+        pushConstants[2] = static_cast<uint32_t>((cdic_state->count_buffer_offset / sizeof(uint32_t)));
         DispatchCmdPushConstants(cmd_buffer, pre_draw_validation_state.validation_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                                  sizeof(pushConstants), pushConstants);
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
