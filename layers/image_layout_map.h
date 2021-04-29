@@ -86,10 +86,13 @@ class ImageSubresourceLayoutMap {
         bool operator!=(const LayoutEntry& rhs) const {
             return initial_layout != rhs.initial_layout || current_layout != rhs.current_layout || state != rhs.state;
         }
+        bool CurrentWillChange(VkImageLayout new_layout) const {
+            return new_layout != kInvalidLayout && current_layout != new_layout;
+        }
         bool Update(const LayoutEntry& src) {
             bool updated_current = false;
             // current_layout can be updated repeatedly.
-            if (current_layout != src.current_layout && src.current_layout != kInvalidLayout) {
+            if (CurrentWillChange(src.current_layout)) {
                 current_layout = src.current_layout;
                 updated_current = true;
             }
