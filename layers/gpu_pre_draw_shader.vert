@@ -28,6 +28,7 @@ layout(set = 0, binding = 0) buffer OutputBuffer {
 } Output;
 layout(set = 0, binding = 1) buffer CountBuffer { uint data[]; } Count;
 layout(push_constant) uniform ufoo {
+    uint countLimit;
     uint maxWrites;
     uint countOffset;
 } u_info;
@@ -36,14 +37,19 @@ void valErrorOut(uint error, uint count) {
     if (vo_idx + VAL_OUT_RECORD_SZ > Output.data.length())
         return;
     Output.data[vo_idx + _kInstValidationOutError] = _kInstErrorPreDrawValidate;
-    Output.data[vo_idx + _kInstValidationOutError + 1] = pre_draw_count_exceeds_bufsize_error;
+    Output.data[vo_idx + _kInstValidationOutError + 1] = error;
     Output.data[vo_idx + _kInstValidationOutError + 2] = count;
 }
 void main() {
     if (gl_VertexIndex == 0) {
-        uint countIn = Count.data[u_info.countOffset];
-        if (countIn > u_info.maxWrites) {
-            valErrorOut(pre_draw_count_exceeds_bufsize_error, countIn);
+        if (u_info.countLimit > 0) {
+            uint countIn = Count.data[u_info.countOffset];
+            if (countIn > u_info.maxWrites) {
+                valErrorOut(pre_draw_count_exceeds_bufsize_error, countIn);
+            }
+            else if (countIn > u_info.countLimit) {
+                valErrorOut(pre_draw_count_exceeds_limit_error, countIn);
+            }
         }
     }
 }

@@ -69,6 +69,7 @@ struct GpuVuidsCmdDrawIndirectCount : GpuVuid {
         storage_access_oob = "VUID-vkCmdDrawIndirectCount-None-02706";
         count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndirectCount-countBuffer-03121";
         count_exceeds_bufsize = "VUID-vkCmdDrawIndirectCount-countBuffer-03122";
+        count_exceeds_device_limit = "VUID-vkCmdDrawIndirectCount-countBuffer-02717";
     }
 };
 
@@ -78,6 +79,7 @@ struct GpuVuidsCmdDrawIndexedIndirectCount : GpuVuid {
         storage_access_oob = "VUID-vkCmdDrawIndexedIndirectCount-None-02706";
         count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153";
         count_exceeds_bufsize = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154";
+        count_exceeds_device_limit = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717";
     }
 };
 
