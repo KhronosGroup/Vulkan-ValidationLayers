@@ -78,6 +78,10 @@ jobs:
     - name: Build and Test Vulkan-ValidationLayers 
       run: |
         python3 scripts/github_ci_win_linux.py --config ${{ matrix.config.type }}
+    - name: Test CMake minimum version requirements
+      run: |
+        python3 scripts/cmake_test_min.py
+      if: matrix.config.os == 'ubuntu-latest' && matrix.config.cc == 'gcc'
 
   gn:
     name: ${{ matrix.config.name }}
