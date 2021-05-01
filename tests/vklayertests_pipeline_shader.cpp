@@ -10222,3 +10222,99 @@ TEST_F(VkLayerTest, ComputePipelineInvalidFlags) {
     flags = VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-02874");
 }
+
+TEST_F(VkLayerTest, UsingProvokingVertexModeLastVertexExtWithoutEnabled) {
+    TEST_DESCRIPTION("Test using VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't enable provokingVertexLast.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto provoking_vertex_state_ci = LvlInitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
+    provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
+    pipe.rs_state_ci_.pNext = &provoking_vertex_state_ci;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
+    TEST_DESCRIPTION(
+        "Test using different VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't support provokingVertexModePerPipeline.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    bool inst_ext = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (inst_ext) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported, skipping tests\n", kSkipPrefix, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
+        return;
+    }
+
+    auto provoking_vertex_properties = LvlInitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&provoking_vertex_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &properties2);
+    if (provoking_vertex_properties.provokingVertexModePerPipeline == VK_TRUE) {
+        printf("%s provokingVertexModePerPipeline is VK_TRUE, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    auto provoking_vertex_features = LvlInitStruct<VkPhysicalDeviceProvokingVertexFeaturesEXT>();
+    provoking_vertex_features.provokingVertexLast = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&provoking_vertex_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitInfo();
+    auto provoking_vertex_state_ci = LvlInitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
+    provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
+    pipe1.rs_state_ci_.pNext = &provoking_vertex_state_ci;
+    pipe1.InitState();
+    pipe1.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitInfo();
+    provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
+    pipe2.rs_state_ci_.pNext = &provoking_vertex_state_ci;
+    pipe2.InitState();
+    pipe2.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe3(*this);
+    pipe3.InitInfo();
+    pipe3.InitState();
+    pipe3.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe3.pipeline_);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
