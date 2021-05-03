@@ -1698,7 +1698,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     VkBufferObj draw_buffer;
     draw_buffer.init(*m_device, buffer_create_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkDrawIndirectCommand *draw_ptr = (VkDrawIndirectCommand *)draw_buffer.memory().map();
+    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
     draw_ptr->firstInstance = 0;
     draw_ptr->firstVertex = 0;
     draw_ptr->instanceCount = 1;
@@ -1713,7 +1713,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkPipelineLayout pipeline_layout;
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct< VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, NULL, &pipeline_layout);
     ASSERT_VK_SUCCESS(err);
 
@@ -1725,7 +1725,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-03122");
-    uint32_t *count_ptr = (uint32_t *)count_buffer.memory().map();
+    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 2;
     count_buffer.memory().unmap();
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
@@ -1745,7 +1745,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyFound();
-    count_ptr = (uint32_t *)count_buffer.memory().map();
+    count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
     *count_ptr = 1;
     count_buffer.memory().unmap();
 
@@ -1758,6 +1758,69 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     // Offset of 4 should error
     vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
                               sizeof(VkDrawIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyFound();
+
+    auto vkCmdDrawIndexedIndirectCountKHR =
+        (PFN_vkCmdDrawIndexedIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
+    if (vkCmdDrawIndexedIndirectCountKHR == nullptr) {
+        printf("%s did not find vkCmdDrawIndexedIndirectCountKHR function pointer;  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
+    VkBufferObj indexed_draw_buffer;
+    buffer_create_info.size = sizeof(VkDrawIndexedIndirectCommand);
+    indexed_draw_buffer.init(*m_device, buffer_create_info,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+    indexed_draw_ptr->indexCount = 3;
+    indexed_draw_ptr->firstIndex = 0;
+    indexed_draw_ptr->instanceCount = 1;
+    indexed_draw_ptr->firstInstance = 0;
+    indexed_draw_ptr->vertexOffset = 0;
+    indexed_draw_buffer.memory().unmap();
+
+    count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+    *count_ptr = 2;
+    count_buffer.memory().unmap();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    VkBufferCreateInfo index_buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    index_buffer_create_info.size = 3 * sizeof(uint32_t);
+    index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkBufferObj index_buffer;
+    index_buffer.init(*m_device, index_buffer_create_info);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                     sizeof(VkDrawIndexedIndirectCommand));
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyFound();
+    count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+    *count_ptr = 1;
+    count_buffer.memory().unmap();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153");
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    // Offset of 4 should error
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
+                                     sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
