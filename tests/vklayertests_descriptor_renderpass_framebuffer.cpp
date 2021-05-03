@@ -9403,16 +9403,12 @@ TEST_F(VkLayerTest, FramebufferDepthStencilResolveAttachmentTests) {
 TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
     TEST_DESCRIPTION("Create renderpass where an input attachment is also uses as another type");
 
+    bool rp2_supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (rp2_supported) m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        return;
-    }
-
-    const bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    rp2_supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -9479,7 +9475,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, (uint32_t)attachs.size(), attachs.data(), (uint32_t)subpasses.size(), subpasses.data(), (uint32_t)deps.size(), deps.data()};
 
     // Current setup should be OK -- no attachment is both input and output in same subpass
-    PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported);
+    PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported);
 
     // Check for invalid layout error when input-attachment is also used as color-attachment.
     // This should fail as attachment 0 is both input and output in subpass 2, but is not the correct layout
