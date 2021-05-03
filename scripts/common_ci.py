@@ -34,9 +34,10 @@ def repo_relative(path):
 
 # Runs a command in a directory and returns its return code.
 # Directory is project root by default, or a relative path from project root
-def RunShellCmd(command, start_dir = PROJECT_ROOT):
+def RunShellCmd(command, start_dir = PROJECT_ROOT, verbose=True):
     if start_dir != PROJECT_ROOT:
         start_dir = repo_relative(start_dir)
     cmd_list = command.split(" ")
+    if verbose: print(f'CICMD({cmd_list})')
     subprocess.check_call(cmd_list, cwd=start_dir)
 
