@@ -9679,13 +9679,14 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
     // Track when we're observing the first use of an attachment
     std::vector<bool> attach_first_use(pCreateInfo->attachmentCount, true);
-    // Track if attachments are used as input as well as another type
-    layer_data::unordered_set<uint32_t> input_attachments;
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         std::vector<uint8_t> attachment_uses(pCreateInfo->attachmentCount);
         std::vector<VkImageLayout> attachment_layouts(pCreateInfo->attachmentCount);
+
+        // Track if attachments are used as input as well as another type
+        layer_data::unordered_set<uint32_t> input_attachments;
 
         if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-03062"

@@ -9399,3 +9399,99 @@ TEST_F(VkLayerTest, FramebufferDepthStencilResolveAttachmentTests) {
 
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
 }
+
+TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
+    TEST_DESCRIPTION("Create renderpass where an input attachment is also uses as another type");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        return;
+    }
+
+    const bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkAttachmentDescription attach0 = {0,
+                                      VK_FORMAT_R8G8B8A8_UNORM,
+                                      VK_SAMPLE_COUNT_1_BIT,
+                                      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                      VK_IMAGE_LAYOUT_UNDEFINED,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentDescription attach1 = {0,
+                                      VK_FORMAT_R8G8B8A8_UNORM,
+                                      VK_SAMPLE_COUNT_1_BIT,
+                                      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                      VK_IMAGE_LAYOUT_UNDEFINED,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+
+    const VkAttachmentReference ref0 = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference ref1 = {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference inRef0 = {0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentReference inRef1 = {1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+
+    // First subpass draws to attachment 0
+    const VkSubpassDescription subpass0 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref0, nullptr, nullptr, 0, nullptr};
+    // Second subpass reads attachment 0 as input-attachment, writes to attachment 1
+    const VkSubpassDescription subpass1 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef0, 1, &ref1, nullptr, nullptr, 0, nullptr};
+    // Seconnd subpass reads attachment 1 as input-attachment, writes to attachment 0
+    const VkSubpassDescription subpass2 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef1, 1, &ref0, nullptr, nullptr, 0, nullptr};
+
+    // Subpass 0 writes attachment 0 as output, subpass 1 reads as input (RAW)
+    VkSubpassDependency dep0 = {0,
+                               1,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                               VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                               VK_DEPENDENCY_BY_REGION_BIT};
+    // Subpass 1 writes attachment 1 as output, subpass 2 reads as input while (RAW)
+    VkSubpassDependency dep1 = {1,
+                               2,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                               VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                               VK_DEPENDENCY_BY_REGION_BIT};
+    // Subpass 1 reads attachment 0 as input, subpass 2 writes output (WAR)
+    VkSubpassDependency dep2 = {1,
+                               2,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                               VK_DEPENDENCY_BY_REGION_BIT};
+
+    std::vector<VkAttachmentDescription> attachs = {attach0, attach1};
+    std::vector<VkSubpassDescription> subpasses = {subpass0, subpass1, subpass2};
+    std::vector<VkSubpassDependency> deps = {dep0, dep1, dep2};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, (uint32_t)attachs.size(), attachs.data(), (uint32_t)subpasses.size(), subpasses.data(), (uint32_t)deps.size(), deps.data()};
+
+    // Current setup should be OK -- no attachment is both input and output in same subpass
+    PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported);
+
+    // Check for invalid layout error when input-attachment is also used as color-attachment.
+    // This should fail as attachment 0 is both input and output in subpass 2, but is not the correct layout
+    // (Note that TestRenderPassCreate() filters out the VUID we want to test -- VUID-VkSubpassDescription-None-04437 -- so we can't use that here.)
+    subpasses[2].pInputAttachments = &inRef0;
+    const char *rp1_vuid = "VUID-VkSubpassDescription-None-04437";
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, rp1_vuid);
+    {
+        VkResult err;
+        VkRenderPass render_pass = VK_NULL_HANDLE;
+        err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass);
+        if (err == VK_SUCCESS) vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
+    }
+    m_errorMonitor->VerifyFound();
+}
