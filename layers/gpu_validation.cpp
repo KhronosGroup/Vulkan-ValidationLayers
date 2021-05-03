@@ -1640,7 +1640,8 @@ void GpuAssisted::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer co
                                                               uint32_t maxDrawCount, uint32_t stride) {
     ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer,
                                                                         countBufferOffset, maxDrawCount, stride);
-    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT);
+    GpuAssistedCmdDrawIndirectState cdic_state = {buffer, offset, stride, countBuffer, countBufferOffset};
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, &cdic_state);
 }
 
 void GpuAssisted::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1648,7 +1649,8 @@ void GpuAssisted::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer comma
                                                            uint32_t maxDrawCount, uint32_t stride) {
     ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                      maxDrawCount, stride);
-    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT);
+    GpuAssistedCmdDrawIndirectState cdic_state = {buffer, offset, stride, countBuffer, countBufferOffset};
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, &cdic_state);
 }
 
 void GpuAssisted::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
@@ -1937,7 +1939,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     auto const &state = cb_node->lastBound[lv_bind_point];
     uint32_t number_of_sets = static_cast<uint32_t>(state.per_set.size());
 
-    if (cmd_type == CMD_DRAWINDIRECTCOUNT && validate_draw_indirect_count) {
+    if ((cmd_type == CMD_DRAWINDIRECTCOUNT || cmd_type == CMD_DRAWINDEXEDINDIRECTCOUNT) && validate_draw_indirect_count) {
         // Insert a draw that can examine some device memory right before the draw we're validating (Pre Draw Validation)
         // Currently the only Pre Draw Validation is checking the count value in the countBuffer of a Draw*IndirectCount call
         assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -1957,10 +1959,17 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         }
 
         // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndirectCommand))
+        uint32_t struct_size;
+        if (cmd_type == CMD_DRAWINDIRECTCOUNT) {
+            struct_size = sizeof(VkDrawIndirectCommand);
+        } else {
+            assert(cmd_type == CMD_DRAWINDEXEDINDIRECTCOUNT);
+            struct_size = sizeof(VkDrawIndexedIndirectCommand);
+        }
         BUFFER_STATE *buffer_state = GetBufferState(cdic_state->buffer);
         uint32_t max_count;
         uint64_t bufsize = buffer_state->createInfo.size;
-        uint64_t first_command_bytes = sizeof(VkDrawIndirectCommand) + cdic_state->offset;
+        uint64_t first_command_bytes = struct_size + cdic_state->offset;
         if (first_command_bytes > bufsize) {
             max_count = 0;
         } else {
