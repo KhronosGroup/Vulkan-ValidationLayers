@@ -644,7 +644,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             enum_string_helper_header += '\n'
             enum_string_helper_header += '#include <string>\n'
             enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
-            enum_string_helper_header += '#include "vk_layer_data.h"\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += self.enum_output
             enum_string_helper_header += self.DeIndexPhysDevFeatures()
