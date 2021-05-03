@@ -37,7 +37,6 @@
 
 #include <string>
 #include <vulkan/vulkan.h>
-#include "vk_layer_data.h"
 
 
 static inline const char* string_VkResult(VkResult input_value)
