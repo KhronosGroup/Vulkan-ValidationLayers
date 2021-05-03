@@ -473,6 +473,22 @@
                                             }
                                         ]
                                     }
+                                },
+                                {
+                                    "key": "validate_draw_indirect_count",
+                                    "label": "Check Draw Indirect Count Buffers ",
+                                    "description": "Enable draw indirect count buffer checking",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "dependence": {
+                                        "mode": "ANY",
+                                        "settings": [
+                                            {
+                                                "key": "enables",
+                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                            }
+                                        ]
+                                    }
                                 }
                             ]
                         },
