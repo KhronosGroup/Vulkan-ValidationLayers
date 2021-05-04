@@ -28,11 +28,11 @@ from argparse import RawDescriptionHelpFormatter
 #
 # Build VVL repo using gn and Ninja
 def BuildGn():
-    if not os.path.exists(common_ci.repo_relative("depot_tools")):
+    if not os.path.exists(common_ci.RepoRelative("depot_tools")):
         print("Cloning Chromium depot_tools\n")
         clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'
         common_ci.RunShellCmd(clone_cmd)
-    os.environ['PATH'] = os.environ.get('PATH') + ":" + common_ci.repo_relative("depot_tools")
+    os.environ['PATH'] = os.environ.get('PATH') + ":" + common_ci.RepoRelative("depot_tools")
 
     print("Updating Repo Dependencies and GN Toolchain\n")
     update_cmd = './build-gn/update_deps.sh'
