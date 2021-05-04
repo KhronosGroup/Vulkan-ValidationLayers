@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Valve Corporation
-# Copyright (c) 2020 LunarG, Inc.
+# Copyright (c) 2020-2021 Valve Corporation
+# Copyright (c) 2020-2021 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ def BuildAndroid(target_abi):
     unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
     common_ci.RunShellCmd(unzip_cmd)
     # Add NDK to path
-    os.environ['ANDROID_NDK_HOME'] = common_ci.repo_relative('android-ndk-r21d')
+    os.environ['ANDROID_NDK_HOME'] = common_ci.RepoRelative('android-ndk-r21d')
     os.environ['PATH'] = os.environ.get('ANDROID_NDK_HOME') + os.pathsep + os.environ.get('PATH')
 
     print("Preparing Android Dependencies\n")
