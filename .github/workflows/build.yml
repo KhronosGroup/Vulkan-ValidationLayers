@@ -32,13 +32,13 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
       - name: Execute Source Code Format Checking Script
-        run: |
-          git fetch --depth=1 https://github.com/KhronosGroup/Vulkan-ValidationLayers.git master
-          python3 scripts/check_code_format.py --target-refspec=FETCH_HEAD
+        run: python3 scripts/check_code_format.py --fetch-main --target-refspec=FETCH_HEAD
 
   linux:
     runs-on: ubuntu-20.04

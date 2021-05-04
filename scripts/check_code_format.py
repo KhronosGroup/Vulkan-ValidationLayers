@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (c) 2020 Valve Corporation
-# Copyright (c) 2020 LunarG, Inc.
+# Copyright (c) 2020-2021 Valve Corporation
+# Copyright (c) 2020-2021 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ def VerifyCommitMessageFormat(target_refspec, target_files):
     retval = 0
 
     # Construct correct commit list
-    pr_commit_range_parms = ['git', 'log', '--no-merges', '--left-only', 'HEAD...' + target_refspec, '--pretty=format:"XXXNEWLINEXXX"%n%B']
+    pr_commit_range_parms = ['git', 'log', '--no-merges', '--left-only', target_refspec, '--pretty=format:"XXXNEWLINEXXX"%n%B']
 
     commit_data = check_output(pr_commit_range_parms)
     commit_text = commit_data.decode('utf-8')
@@ -194,6 +194,10 @@ def main():
     ''', formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('--target-refspec', metavar='TARGET_REFSPEC', type=str, dest='target_refspec', help = 'Refspec to '
         + 'diff against (default is origin/master)', default=DEFAULT_REFSPEC)
+    parser.add_argument('--base-refspec', metavar='BASE_REFSPEC', type=str, dest='base_refspec', help = 'Base refspec to '
+        + ' compare (default is HEAD)', default='HEAD')
+    parser.add_argument('--fetch-main', dest='fetch_main', action='store_true', help='Fetch the master branch first.'
+        + ' Useful with --target-refspec=FETCH_HEAD to compare against what is currently on master')
     args = parser.parse_args()
 
     if sys.version_info[0] != 3:
@@ -201,24 +205,38 @@ def main():
         exit()
 
     target_refspec = args.target_refspec
-    if target_refspec == 'origin/':
-        # For non-pull requests (e.g., pushing to a branch on a fork), an empty string will be passed in as the
-        # "target branch." In this case, just diff against the previous commit.
+    base_refspec = args.base_refspec
+
+    if args.fetch_main:
+        print('Fetching master branch...')
+        subprocess.check_call(['git', 'fetch', 'https://github.com/KhronosGroup/Vulkan-ValidationLayers.git', 'master'])
+
+    # Check if this is a merge commit
+    commit_parents = check_output(['git', 'rev-list', '--parents', '-n', '1', 'HEAD'])
+    if len(commit_parents.split(b' ')) > 2:
+        # If this is a merge commit, this is a PR being built, and has been merged into master for testing.
+        # The first parent (HEAD^) is going to be master, the second parent (HEAD^2) is going to be the PR commit.
+        # TODO (ncesario) We should *ONLY* get here when on github CI, building a PR. Should probably print a
+        #      warning if this happens locally.
         target_refspec = 'HEAD^'
+        base_refspec = 'HEAD^2'
+
+    diff_range = f'{target_refspec}...{base_refspec}'
+    rdiff_range = f'{base_refspec}...{target_refspec}'
 
     #
     #
     # Get list of files involved in this branch
-    target_files_data = subprocess.check_output(['git', 'diff', '--name-only', target_refspec])
+    target_files_data = subprocess.check_output(['git', 'diff', '--name-only', diff_range])
     target_files = target_files_data.decode('utf-8')
     target_files = target_files.split("\n")
 
     if os.path.isfile('check_code_format.py'):
         os.chdir('..')
 
-    clang_format_failure = VerifyClangFormatSource(target_refspec, target_files)
-    copyright_failure = VerifyCopyrights(target_refspec, target_files)
-    commit_msg_failure = VerifyCommitMessageFormat(target_refspec, target_files)
+    clang_format_failure = VerifyClangFormatSource(diff_range, target_files)
+    copyright_failure = VerifyCopyrights(diff_range, target_files)
+    commit_msg_failure = VerifyCommitMessageFormat(rdiff_range, target_files)
 
     if clang_format_failure or copyright_failure or commit_msg_failure:
         CPrint('ERR_MSG', "\nOne or more format checks failed.\n\n")
