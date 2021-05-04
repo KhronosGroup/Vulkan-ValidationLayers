@@ -475,9 +475,9 @@
                                     }
                                 },
                                 {
-                                    "key": "validate_draw_indirect_count",
-                                    "label": "Check Draw Indirect Count Buffers ",
-                                    "description": "Enable draw indirect count buffer checking",
+                                    "key": "validate_draw_indirect",
+                                    "label": "Check Draw Indirect Count Buffers and firstInstance values",
+                                    "description": "Enable draw indirect checking",
                                     "type": "BOOL",
                                     "default": true,
                                     "dependence": {

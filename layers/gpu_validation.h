@@ -76,6 +76,7 @@ struct GpuVuid {
     const char* count_exceeds_bufsize_1 = kVUIDUndefined;
     const char* count_exceeds_bufsize = kVUIDUndefined;
     const char* count_exceeds_device_limit = kVUIDUndefined;
+    const char* first_instance_not_zero = kVUIDUndefined;
 };
 
 struct GpuAssistedAccelerationStructureBuildValidationBufferInfo {
@@ -117,6 +118,7 @@ struct GpuAssistedPreDrawValidationState {
 struct GpuAssistedCmdDrawIndirectState {
     VkBuffer buffer;
     VkDeviceSize offset;
+    uint32_t drawCount;
     uint32_t stride;
     VkBuffer count_buffer;
     VkDeviceSize count_buffer_offset;
@@ -129,7 +131,7 @@ class GpuAssisted : public ValidationStateTracker {
     layer_data::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     bool buffer_oob_enabled;
-    bool validate_draw_indirect_count;
+    bool validate_draw_indirect;
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
