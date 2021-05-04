@@ -799,6 +799,9 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        // depth non-resolve attachment
+        {0, ds_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
     };
 
     std::vector<VkAttachmentReference> input = {
@@ -814,6 +817,10 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
         {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };
     std::vector<uint32_t> preserve = {5};
+    std::vector<VkAttachmentReference> depth_1bit = {
+        {6, VK_IMAGE_LAYOUT_GENERAL},
+        {6, VK_IMAGE_LAYOUT_GENERAL},
+    };
 
     VkSubpassDescription subpass = {0,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -956,6 +963,39 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                              "VUID-VkSubpassDescription-loadOp-00846", "VUID-VkSubpassDescription2-loadOp-03064");
 
         attachments[input[0].attachment].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    }
+
+    // Test for depthStencil and color pointing to same attachment
+    {
+        // Both use same VkAttachmentReference
+        VkSubpassDescription subpass_same = {
+            0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, depth_1bit.data(), nullptr, depth_1bit.data(), 0, nullptr};
+
+        VkRenderPassCreateInfo rpci_same = rpci;
+        rpci_same.pSubpasses = &subpass_same;
+
+        // only test rp1 so can ignore the expected 2nd error
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription-pColorAttachments-02648");
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_same, rp2Supported,
+                             "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
+
+        safe_VkRenderPassCreateInfo2 create_info2;
+        ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
+                                 "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
+
+        // Same test but use 2 different VkAttachmentReference to point to same attachment
+        subpass_same.pDepthStencilAttachment = &depth_1bit.data()[1];
+
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription-pColorAttachments-02648");
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_same, rp2Supported,
+                             "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
+
+        ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
+        m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
+        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
+                                 "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
     }
 }
 
