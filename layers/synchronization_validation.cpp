@@ -187,6 +187,7 @@ static std::string string_UsageIndex(SyncStageAccessIndex usage_index) {
 struct NoopBarrierAction {
     explicit NoopBarrierAction() {}
     void operator()(ResourceAccessState *access) const {}
+    const bool layout_transition = false;
 };
 
 // NOTE: Make sure the proxy doesn't outlive from, as the proxy is pointing directly to access contexts owned by from.
@@ -1593,13 +1594,21 @@ struct WaitEventBarrierOp {
 // This functor applies a collection of barriers, updating the "pending state" in each touched memory range, and optionally
 // resolves the pending state. Suitable for processing Global memory barriers, or Subpass Barriers when the "final" barrier
 // of a collection is known/present.
-template <typename BarrierOp>
+template <typename BarrierOp, typename OpVector = std::vector<BarrierOp>>
 class ApplyBarrierOpsFunctor {
   public:
     using Iterator = ResourceAccessRangeMap::iterator;
-    inline Iterator Infill(ResourceAccessRangeMap *accesses, Iterator pos, ResourceAccessRange range) const { return pos; }
+    // Only called with a gap, and pos at the lower_bound(range)
+    inline Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+        if (!infill_default_) {
+            return pos;
+        }
+        ResourceAccessState default_state;
+        auto inserted = accesses->insert(pos, std::make_pair(range, default_state));
+        return inserted;
+    }
 
-    Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
+    Iterator operator()(ResourceAccessRangeMap *accesses, const Iterator &pos) const {
         auto &access_state = pos->second;
         for (const auto &op : barrier_ops_) {
             op(&access_state);
@@ -1614,53 +1623,38 @@ class ApplyBarrierOpsFunctor {
     }
 
     // A valid tag is required IFF layout_transition is true, as transitions are write ops
-    ApplyBarrierOpsFunctor(bool resolve, size_t size_hint, ResourceUsageTag tag) : resolve_(resolve), barrier_ops_(), tag_(tag) {
+    ApplyBarrierOpsFunctor(bool resolve, typename OpVector::size_type size_hint, ResourceUsageTag tag)
+        : resolve_(resolve), infill_default_(false), barrier_ops_(), tag_(tag) {
         barrier_ops_.reserve(size_hint);
     }
-    void EmplaceBack(const BarrierOp &op) { barrier_ops_.emplace_back(op); }
+    void EmplaceBack(const BarrierOp &op) {
+        barrier_ops_.emplace_back(op);
+        infill_default_ |= op.layout_transition;
+    }
 
   private:
     bool resolve_;
-    std::vector<BarrierOp> barrier_ops_;
+    bool infill_default_;
+    OpVector barrier_ops_;
     const ResourceUsageTag tag_;
 };
 
 // This functor applies a single barrier, updating the "pending state" in each touched memory range, but does not
 // resolve the pendinging state. Suitable for processing Image and Buffer barriers from PipelineBarriers or Events
 template <typename BarrierOp>
-class ApplyBarrierFunctor {
+class ApplyBarrierFunctor : public ApplyBarrierOpsFunctor<BarrierOp, small_vector<BarrierOp, 1>> {
+    using Base = ApplyBarrierOpsFunctor<BarrierOp, small_vector<BarrierOp, 1>>;
+
   public:
-    using Iterator = ResourceAccessRangeMap::iterator;
-    inline Iterator Infill(ResourceAccessRangeMap *accesses, Iterator pos, ResourceAccessRange range) const { return pos; }
-
-    Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
-        auto &access_state = pos->second;
-        barrier_op_(&access_state);
-        return pos;
-    }
-
-    ApplyBarrierFunctor(const BarrierOp &barrier_op) : barrier_op_(barrier_op) {}
-
-  private:
-    BarrierOp barrier_op_;
+    ApplyBarrierFunctor(const BarrierOp &barrier_op) : Base(false, 1, kCurrentCommandTag) { Base::EmplaceBack(barrier_op); }
 };
 
 // This functor resolves the pendinging state.
-class ResolvePendingBarrierFunctor {
+class ResolvePendingBarrierFunctor : public ApplyBarrierOpsFunctor<NoopBarrierAction, small_vector<NoopBarrierAction, 1>> {
+    using Base = ApplyBarrierOpsFunctor<NoopBarrierAction, small_vector<NoopBarrierAction, 1>>;
+
   public:
-    using Iterator = ResourceAccessRangeMap::iterator;
-    inline Iterator Infill(ResourceAccessRangeMap *accesses, Iterator pos, ResourceAccessRange range) const { return pos; }
-
-    Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
-        auto &access_state = pos->second;
-        access_state.ApplyPendingBarriers(tag_);
-        return pos;
-    }
-
-    ResolvePendingBarrierFunctor(ResourceUsageTag tag) : tag_(tag) {}
-
-  private:
-    const ResourceUsageTag tag_;
+    ResolvePendingBarrierFunctor(ResourceUsageTag tag) : Base(true, 0, tag) {}
 };
 
 void AccessContext::UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -2836,6 +2830,9 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
         if (is_raw_hazard) {
             hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
         }
+    } else if (usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
+        // For Image layout transitions, the barrier represents the first synchronization/access scope of the layout transition
+        return DetectBarrierHazard(usage_index, ordering.exec_scope, ordering.access_scope);
     } else {
         // Only check for WAW if there are no reads since last_write
         bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
