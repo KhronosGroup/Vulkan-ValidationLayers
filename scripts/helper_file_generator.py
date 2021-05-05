@@ -255,11 +255,14 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         # For enum_string_header
         if self.helper_file_type == 'enum_string_header':
             value_set = set()
+            protect_dict = dict()
             for elem in groupElem.findall('enum'):
                 if elem.get('supported') != 'disabled' and elem.get('alias') is None:
                     value_set.add(elem.get('name'))
+                    if elem.get('protect') is not None:
+                        protect_dict[elem.get('name')] = elem.get('protect')
             if value_set != set():
-                self.enum_output += self.GenerateEnumStringConversion(groupName, value_set, bitwidth)
+                self.enum_output += self.GenerateEnumStringConversion(groupName, value_set, bitwidth, protect_dict)
         elif self.helper_file_type == 'object_types_header':
             if groupName == 'VkDebugReportObjectTypeEXT':
                 for elem in groupElem.findall('enum'):
@@ -552,7 +555,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo, ifdef_protect=self.featureExtraProtect, allowduplicate=allowduplicate))
     #
     # Enum_string_header: Create a routine to convert an enumerated value into a string
-    def GenerateEnumStringConversion(self, groupName, value_list, bitwidth):
+    def GenerateEnumStringConversion(self, groupName, value_list, bitwidth, protect_dict):
         outstring = '\n'
         if self.featureExtraProtect is not None:
             outstring += '\n#ifdef %s\n\n' % self.featureExtraProtect
@@ -565,8 +568,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         # Emit these in a repeatable order so file is generated with the same contents each time.
         # This helps compiler caching systems like ccache.
         for item in sorted(value_list):
+            if item in protect_dict:
+                outstring += '#ifdef %s\n' % protect_dict[item]
             outstring += '        case %s:\n' % item
             outstring += '            return "%s";\n' % item
+            if item in protect_dict:
+                outstring += '#endif // %s\n' % protect_dict[item]
         outstring += '        default:\n'
         outstring += '            return "Unhandled %s";\n' % groupName
         outstring += '    }\n'
