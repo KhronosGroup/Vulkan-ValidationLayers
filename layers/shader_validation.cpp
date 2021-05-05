@@ -1010,6 +1010,86 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     return skip;
 }
 
+uint32_t GetImageFormat(SHADER_MODULE_STATE const *src, std::map<uint32_t, uint32_t>& loads, uint32_t id)
+{
+    do {
+        if (loads.find(id) != loads.end()) {
+            id = loads[id];
+            continue;
+        }
+
+        const auto& def = src->get_def(id);
+        switch (def.opcode()) {
+           case spv::OpLoad: {
+               break;
+           }
+           case spv::OpAccessChain:
+           case spv::OpCompositeConstruct:
+           case spv::OpVariable: {
+               id = def.word(1);
+               break;
+           }
+
+           case spv::OpTypeArray:
+           case spv::OpTypeRuntimeArray:
+           case spv::OpTypePointer:
+               return src->GetFundamentalType(def.word(1));
+
+           case spv::OpTypeImage:
+               return id;
+
+           default:
+               assert(false); // This should never happen
+        }
+    } while (true);
+}
+
+bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *src) const {
+    bool skip = false;
+
+    std::map<uint32_t, uint32_t> loads;
+    for (auto insn : *src) {
+        switch (insn.opcode()) {
+            case spv::OpLoad: {
+                loads.insert(std::make_pair(insn.word(2), insn.word(1)));
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    // Got through all ImageRead/Write instructions
+    for (auto insn : *src) {
+        switch (insn.opcode()) {
+            case spv::OpImageSparseRead:
+            case spv::OpImageRead: {
+                uint32_t image_type_id = GetImageFormat(src, loads, insn.word(3));
+                const auto& type_def = src->get_def(image_type_id);
+                if (type_def.word(8) == spv::ImageFormatUnknown) {
+                    skip |= RequireFeature(enabled_features.core.shaderStorageImageReadWithoutFormat,
+                                           "shaderStorageImageReadWithoutFormat",
+                                           "features-shaderStorageImageReadWithoutFormat");
+                }
+                break;
+            }
+            case spv::OpImageWrite: {
+                uint32_t image_type_id = GetImageFormat(src, loads, insn.word(1));
+                const auto& type_def = src->get_def(image_type_id);
+                if (type_def.word(8) == spv::ImageFormatUnknown) {
+                    skip |= RequireFeature(enabled_features.core.shaderStorageImageWriteWithoutFormat,
+                                           "shaderStorageImageWriteWithoutFormat",
+                                           "features-shaderStorageImageWriteWithoutFormat");
+                }
+                break;
+            }
+
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE *pipeline) const {
     bool skip = false;
     uint32_t total_resources = 0;
@@ -1793,6 +1873,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |=
         ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, has_writable_descriptor, stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
+    skip |= ValidateShaderStorageImageFormats(module);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(pStage);

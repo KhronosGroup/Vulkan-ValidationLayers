@@ -528,6 +528,7 @@ class CoreChecks : public ValidationStateTracker {
                                                        bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                               const PIPELINE_STATE* pipeline, spirv_inst_iter entrypoint) const;
+    bool ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const* src) const;
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE* pipeline) const;
     bool ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage,
                                             spirv_inst_iter& insn) const;
@@ -1578,4 +1579,3 @@ class CoreChecks : public ValidationStateTracker {
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
 };  // Class CoreChecks
-
