@@ -1331,8 +1331,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     // For each draw command D recorded to this command buffer, let
     //  * g_D be the graphics pipeline used
-    //  * v_G be the viewportCount of g_D, if g_D disables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT, 0 otherwise.
-    //  * s_G be the scissorCount  of g_D, if g_D disables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,  0 otherwise.
+    //  * v_G be the viewportCount of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT)
+    //  * s_G be the scissorCount  of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT)
     // Then this value is max(0, max(v_G for all D in cb), max(s_G for all D in cb))
     uint32_t usedViewportScissorCount;
     uint32_t pipelineStaticViewportCount; // v_G for currently-bound graphics pipeline.
