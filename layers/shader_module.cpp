@@ -1706,6 +1706,45 @@ std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInte
     return out;
 }
 
+spirv_inst_iter SHADER_MODULE_STATE::GetImageFormatInst(const std::map<uint32_t, uint32_t>& loads, uint32_t id) const
+{
+    do {
+        const auto iter = loads.find(id);
+        if (iter != loads.end()) {
+            id = iter->second;
+            continue;
+        }
+
+        auto def = get_def(id);
+        switch (def.opcode()) {
+           case spv::OpLoad:
+               return end();
+
+           case spv::OpAccessChain:
+           case spv::OpCompositeConstruct:
+           case spv::OpVariable: {
+               id = def.word(1);
+               break;
+           }
+
+           case spv::OpTypeArray:
+           case spv::OpTypeRuntimeArray:
+               id = def.word(2);
+               break;
+
+           case spv::OpTypePointer:
+               id = def.word(3);
+               break;
+
+           case spv::OpTypeImage:
+               return def;
+
+           default:
+               return end();
+        }
+    } while (true);
+}
+
 // Assumes itr points to an OpConstant instruction
 uint32_t GetConstantValue(const spirv_inst_iter &itr) { return itr.word(3); }
 
