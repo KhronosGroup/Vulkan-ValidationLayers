@@ -279,6 +279,9 @@ static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectNV_VertexI
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectCountNV_VertexInput = "UNASSIGNED-vkCmdDrawMeshTasksIndirectCountNV-vertexInput-not-specified";
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_VertexInput = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-vertexInput-not-specified";
 
+// Format features VUs
+static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat";
+static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat";
 
 // clang-format on
 

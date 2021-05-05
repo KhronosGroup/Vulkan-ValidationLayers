@@ -1012,6 +1012,62 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     return skip;
 }
 
+bool CoreChecks::ValidateShaderStorageImageFormats(SHADER_MODULE_STATE const *src) const {
+    bool skip = false;
+
+    std::map<uint32_t, uint32_t> loads;
+    for (auto insn : *src) {
+        switch (insn.opcode()) {
+            case spv::OpLoad: {
+                loads.insert(std::make_pair(insn.word(2), insn.word(1)));
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    // Got through all ImageRead/Write instructions
+    for (auto insn : *src) {
+        switch (insn.opcode()) {
+            case spv::OpImageSparseRead:
+            case spv::OpImageRead: {
+                spirv_inst_iter type_def = src->GetImageFormatInst(loads, insn.word(3));
+                if (type_def != src->end()) {
+                    if (type_def.word(8) == spv::ImageFormatUnknown) {
+                        skip |= RequireFeature(enabled_features.core.shaderStorageImageReadWithoutFormat,
+                                               "shaderStorageImageReadWithoutFormat",
+                                               kVUID_Features_shaderStorageImageReadWithoutFormat);
+                    }
+                } else {
+                    skip |= LogWarning(device, kVUIDUndefined,
+                                       "Cannot find image definition (id = %" PRIu32 ")",
+                                       insn.word(3));
+                }
+                break;
+            }
+            case spv::OpImageWrite: {
+                spirv_inst_iter type_def = src->GetImageFormatInst(loads, insn.word(1));
+                if (type_def != src->end()) {
+                    if (type_def.word(8) == spv::ImageFormatUnknown) {
+                        skip |= RequireFeature(enabled_features.core.shaderStorageImageWriteWithoutFormat,
+                                               "shaderStorageImageWriteWithoutFormat",
+                                               kVUID_Features_shaderStorageImageWriteWithoutFormat);
+                    }
+                } else {
+                    skip |= LogWarning(device, kVUIDUndefined,
+                                       "Cannot find image definition (id = %" PRIu32 ")",
+                                       insn.word(1));
+                }
+                break;
+            }
+
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE *pipeline) const {
     bool skip = false;
     uint32_t total_resources = 0;
@@ -1860,6 +1916,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |=
         ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, has_writable_descriptor, stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
+    skip |= ValidateShaderStorageImageFormats(module);
     skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(pStage);
