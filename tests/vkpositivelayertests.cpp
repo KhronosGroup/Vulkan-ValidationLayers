@@ -6948,7 +6948,7 @@ TEST_F(VkPositiveLayerTest, ClearDepthStencilWithValidRange) {
 
 TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
         printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
@@ -7050,9 +7050,12 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
 
         VkPipeline pipeline;
         vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
-
         m_errorMonitor->VerifyNotFound();
 
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->begin();
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        m_errorMonitor->VerifyNotFound();
         vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
     }
 
