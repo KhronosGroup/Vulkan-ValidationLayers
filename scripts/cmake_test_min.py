@@ -71,7 +71,7 @@ def main():
         utils.expand_archive(cmake_archive)
 
     cmake_build_dir = 'build-cmake-test'
-    utils.make_or_exist_dirs(cmake_build_dir, True)
+    utils.make_dirs(cmake_build_dir, clean=True)
     currDir = os.getcwd()
     cmake_args = get_cmake_args(cmake_exe_path)
     subprocess.check_call(cmake_args, cwd=cmake_build_dir)

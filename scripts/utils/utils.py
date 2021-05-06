@@ -22,14 +22,11 @@ import urllib.parse
 from urllib.parse import urlparse
 import http.client as http
 
-def make_or_exist_dirs(path, clean=False):
-    "Wrapper for os.makedirs that tolerates the directory already existing"
-    # Could use os.makedirs(path, exist_ok=True) if we drop python2
-    if not os.path.isdir(path):
-        os.makedirs(path)
-    elif clean:
+# Utility for creating a directory if it does not exist. Behaves similarly to 'mkdir -p'
+def make_dirs(path, clean=False):
+    if clean and os.path.isdir(path):
         shutil.rmtree(path)
-        os.makedirs(path)
+    os.makedirs(path, exist_ok=True)
 
 # Utility for making simple GET requests
 # Usage: with URLRequest('https://example.com/path/to/file.txt') as res: print(res.read().decode('utf-8'))
