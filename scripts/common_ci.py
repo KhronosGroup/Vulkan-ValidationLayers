@@ -89,7 +89,7 @@ def BuildVVL(args):
         gtest_checkout_cmd = 'git checkout tags/release-1.8.1'
         RunShellCmd(gtest_checkout_cmd, GTEST_DIR)
 
-    utils.make_or_exist_dirs(VVL_BUILD_DIR)
+    utils.make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
     cmake_cmd = f'cmake -C ../{EXTERNAL_DIR_NAME}/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
@@ -100,7 +100,7 @@ def BuildVVL(args):
     RunShellCmd(build_cmd, VVL_BUILD_DIR)
 
     print('Run vk_validation_stats.py')
-    utils.make_or_exist_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration.capitalize()))
+    utils.make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration.capitalize()))
     RunShellCmd(f'python3 ../scripts/vk_validation_stats.py ../{EXTERNAL_DIR_NAME}/Vulkan-Headers/registry/validusage.json -text layers/{args.configuration.capitalize()}/vuid_coverage_database.txt', VVL_BUILD_DIR)
 
 #
@@ -119,7 +119,7 @@ def BuildLoader(args):
 
     print("Run CMake for Loader")
     LOADER_BUILD_DIR = RepoRelative("%s/Vulkan-Loader/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
-    utils.make_or_exist_dirs(LOADER_BUILD_DIR)
+    utils.make_dirs(LOADER_BUILD_DIR)
     cmake_cmd = 'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=%s ..' % args.configuration.capitalize()
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
     RunShellCmd(cmake_cmd, LOADER_BUILD_DIR)
@@ -138,7 +138,7 @@ def BuildMockICD(args):
 
     print("Run CMake for ICD")
     ICD_BUILD_DIR = RepoRelative("%s/Vulkan-Tools/%s" % (EXTERNAL_DIR_NAME,BUILD_DIR_NAME))
-    utils.make_or_exist_dirs(ICD_BUILD_DIR)
+    utils.make_dirs(ICD_BUILD_DIR)
     cmake_cmd = \
         f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -DVULKAN_HEADERS_INSTALL_DIR={EXTERNAL_DIR}/Vulkan-Headers/{BUILD_DIR_NAME}/install ..'
     RunShellCmd(cmake_cmd, ICD_BUILD_DIR)
