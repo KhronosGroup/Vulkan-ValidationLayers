@@ -371,7 +371,7 @@ bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const char *cm
         skip |= LogError(device, error_code,
                          "%s: %s is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.",
                          cmd_name, parameter_name);
-    } else if (queue_family_index_map.find(queue_family) == queue_family_index_map.end()) {
+    } else if (queue_family_index_set.find(queue_family) == queue_family_index_set.end()) {
         skip |=
             LogError(device, error_code,
                      "%s: %s (= %" PRIu32
@@ -2359,7 +2359,14 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                                                 const VkDeviceQueueCreateInfo *infos) const {
     bool skip = false;
 
-    layer_data::unordered_set<uint32_t> queue_family_set;
+    const uint32_t not_used = std::numeric_limits<uint32_t>::max();
+    struct create_flags {
+        // uint32_t is to represent the queue family index to allow for better error messages
+        uint32_t unprocted_index;
+        uint32_t protected_index;
+        create_flags(uint32_t a, uint32_t b) : unprocted_index(a), protected_index(b) {}
+    };
+    layer_data::unordered_map<uint32_t, create_flags> queue_family_map;
 
     for (uint32_t i = 0; i < info_count; ++i) {
         const auto requested_queue_family = infos[i].queueFamilyIndex;
@@ -2368,10 +2375,53 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
         skip |= ValidateQueueFamilyIndex(pd_state, requested_queue_family, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381",
                                          "vkCreateDevice", queue_family_var_name.c_str());
 
-        if (queue_family_set.insert(requested_queue_family).second == false) {
-            skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
-                             "CreateDevice(): %s (=%" PRIu32 ") is not unique within pQueueCreateInfos.",
-                             queue_family_var_name.c_str(), requested_queue_family);
+        if (api_version == VK_API_VERSION_1_0) {
+            // Vulkan 1.0 didn't have protected memory so always needed unique info
+            create_flags flags = {requested_queue_family, not_used};
+            if (queue_family_map.emplace(requested_queue_family, flags).second == false) {
+                skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
+                                 "CreateDevice(): %s (=%" PRIu32
+                                 ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%d].",
+                                 queue_family_var_name.c_str(), requested_queue_family,
+                                 queue_family_map.at(requested_queue_family).unprocted_index);
+            }
+        } else {
+            // Vulkan 1.1 and up can have 2 queues be same family index if one is protected and one isn't
+            auto it = queue_family_map.find(requested_queue_family);
+            if (it == queue_family_map.end()) {
+                // Add first time seeing queue family index and what the create flags were
+                create_flags new_flags = {not_used, not_used};
+                if ((infos[i].flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) {
+                    new_flags.protected_index = requested_queue_family;
+                } else {
+                    new_flags.unprocted_index = requested_queue_family;
+                }
+                queue_family_map.emplace(requested_queue_family, new_flags);
+            } else {
+                // The queue family was seen, so now need to make sure the flags were different
+                if ((infos[i].flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) {
+                    if (it->second.protected_index != not_used) {
+                        skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802",
+                                         "CreateDevice(): %s (=%" PRIu32
+                                         ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%d] which both have "
+                                         "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT.",
+                                         queue_family_var_name.c_str(), requested_queue_family,
+                                         queue_family_map.at(requested_queue_family).protected_index);
+                    } else {
+                        it->second.protected_index = requested_queue_family;
+                    }
+                } else {
+                    if (it->second.unprocted_index != not_used) {
+                        skip |= LogError(pd_state->phys_device, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802",
+                                         "CreateDevice(): %s (=%" PRIu32
+                                         ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%d].",
+                                         queue_family_var_name.c_str(), requested_queue_family,
+                                         queue_family_map.at(requested_queue_family).unprocted_index);
+                    } else {
+                        it->second.unprocted_index = requested_queue_family;
+                    }
+                }
+            }
         }
 
         // Verify that requested queue count of queue family is known to be valid at this point in time
@@ -3965,21 +4015,78 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
 
     skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex",
                                       "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
-    const auto &queue_data = queue_family_index_map.find(queueFamilyIndex);
-    if ((queue_data != queue_family_index_map.end()) && (queue_data->second <= queueIndex)) {
-        skip |= LogError(device, "VUID-vkGetDeviceQueue-queueIndex-00385",
-                         "vkGetDeviceQueue: queueIndex (=%" PRIu32
-                         ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
-                         ") when the device was created (i.e. is not less than %" PRIu32 ").",
-                         queueIndex, queueFamilyIndex, queue_data->second);
-    }
 
-    const auto &queue_flags = queue_family_create_flags_map.find(queueFamilyIndex);
-    if ((queue_flags != queue_family_create_flags_map.end()) && (queue_flags->second != 0)) {
-        skip |= LogError(device, "VUID-vkGetDeviceQueue-flags-01841",
-                         "vkGetDeviceQueue: queueIndex (=%" PRIu32
-                         ") was created with a non-zero VkDeviceQueueCreateFlags. Need to use vkGetDeviceQueue2 instead.",
-                         queueIndex);
+    for (size_t i = 0; i < device_queue_info_list.size(); i++) {
+        const auto device_queue_info = device_queue_info_list.at(i);
+        if (device_queue_info.queue_family_index != queueFamilyIndex) {
+            continue;
+        }
+
+        // flag must be zero
+        if (device_queue_info.flags != 0) {
+            skip |= LogError(
+                device, "VUID-vkGetDeviceQueue-flags-01841",
+                "vkGetDeviceQueue: queueIndex (=%" PRIu32
+                ") was created with a non-zero VkDeviceQueueCreateFlags in vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
+                "]. Need to use vkGetDeviceQueue2 instead.",
+                queueIndex, device_queue_info.index);
+        }
+
+        if (device_queue_info.queue_count <= queueIndex) {
+            skip |= LogError(device, "VUID-vkGetDeviceQueue-queueIndex-00385",
+                             "vkGetDeviceQueue: queueIndex (=%" PRIu32
+                             ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
+                             ") when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
+                             "] (i.e. is not less than %" PRIu32 ").",
+                             queueIndex, queueFamilyIndex, device_queue_info.index, device_queue_info.queue_count);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) const {
+    bool skip = false;
+
+    if (pQueueInfo) {
+        const uint32_t queueFamilyIndex = pQueueInfo->queueFamilyIndex;
+        const uint32_t queueIndex = pQueueInfo->queueIndex;
+        const VkDeviceQueueCreateFlags flags = pQueueInfo->flags;
+
+        skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue2", "pQueueInfo->queueFamilyIndex",
+                                          "VUID-VkDeviceQueueInfo2-queueFamilyIndex-01842");
+
+        // ValidateDeviceQueueFamily() already checks if queueFamilyIndex but need to make sure flags match with it
+        bool valid_flags = false;
+
+        for (size_t i = 0; i < device_queue_info_list.size(); i++) {
+            const auto device_queue_info = device_queue_info_list.at(i);
+            // vkGetDeviceQueue2 only checks if both family index AND flags are same as device creation
+            // this handle case where the same queueFamilyIndex is used with/without the protected flag
+            if ((device_queue_info.queue_family_index != queueFamilyIndex) || (device_queue_info.flags != flags)) {
+                continue;
+            }
+            valid_flags = true;
+
+            if (device_queue_info.queue_count <= queueIndex) {
+                skip |= LogError(
+                    device, "VUID-VkDeviceQueueInfo2-queueIndex-01843",
+                    "vkGetDeviceQueue2: queueIndex (=%" PRIu32
+                    ") is not less than the number of queues requested from [queueFamilyIndex (=%" PRIu32
+                    "), flags (%s)] combination when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
+                    "] (i.e. is not less than %" PRIu32 ").",
+                    queueIndex, queueFamilyIndex, string_VkDeviceQueueCreateFlags(flags).c_str(), device_queue_info.index,
+                    device_queue_info.queue_count);
+            }
+        }
+
+        // Don't double error message if already skipping from ValidateDeviceQueueFamily
+        if (!valid_flags && !skip) {
+            skip |= LogError(device, "UNASSIGNED-VkDeviceQueueInfo2",
+                             "vkGetDeviceQueue2: The combination of queueFamilyIndex (=%" PRIu32
+                             ") and flags (%s) were never both set together in any element of "
+                             "vkCreateDevice::pCreateInfo->pQueueCreateInfos at device creation time.",
+                             queueFamilyIndex, string_VkDeviceQueueCreateFlags(flags).c_str());
+        }
     }
     return skip;
 }

@@ -525,7 +525,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     // Validate pCreateInfo->pQueueCreateInfos
     if (pCreateInfo->pQueueCreateInfos) {
-        layer_data::unordered_set<uint32_t> set;
 
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
@@ -537,13 +536,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                              "].queueFamilyIndex is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family "
                              "index value.",
                              i);
-            } else if (set.count(requested_queue_family)) {
-                skip |= LogError(physicalDevice, "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
-                                 "vkCreateDevice: pCreateInfo->pQueueCreateInfos[%" PRIu32 "].queueFamilyIndex (=%" PRIu32
-                                 ") is not unique within pCreateInfo->pQueueCreateInfos array.",
-                                 i, requested_queue_family);
-            } else {
-                set.insert(requested_queue_family);
             }
 
             if (queue_create_info.pQueuePriorities != nullptr) {
