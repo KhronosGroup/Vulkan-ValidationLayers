@@ -1472,9 +1472,16 @@ class ValidationStateTracker : public ValidationObject {
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
 
-    // Map for queue family index to queue count
-    layer_data::unordered_map<uint32_t, uint32_t> queue_family_index_map;
-    layer_data::unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
+    // tracks which queue family index were used when creating the device for quick lookup
+    layer_data::unordered_set<uint32_t> queue_family_index_set;
+    // The queue count can different for the same queueFamilyIndex if the create flag are different
+    struct DeviceQueueInfo {
+        uint32_t index;  // from VkDeviceCreateInfo
+        uint32_t queue_family_index;
+        VkDeviceQueueCreateFlags flags;
+        uint32_t queue_count;
+    };
+    std::vector<DeviceQueueInfo> device_queue_info_list;
     bool performance_lock_acquired = false;
 
     template <typename ExtProp>
