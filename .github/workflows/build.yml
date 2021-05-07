@@ -98,7 +98,7 @@ jobs:
           winsdk-build-version: 17763
         if: matrix.os == 'windows-2016'
       - name: Build and Test Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}
+        run: python3 scripts/github_ci_win_linux.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}
 
   android:
     runs-on: ubuntu-20.04
