@@ -9861,12 +9861,19 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    // Needed for both protected memory and vkGetDeviceQueue2
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1 extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-    VkDevice test_device;
-    VkQueue test_queue;
+    VkDeviceQueueInfo2 queue_info_2 = LvlInitStruct<VkDeviceQueueInfo2>();
+    VkDevice test_device = VK_NULL_HANDLE;
+    VkQueue test_queue = VK_NULL_HANDLE;
     VkResult result;
 
     // Use the first Physical device and queue family
@@ -9877,22 +9884,16 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, &queue_properties);
 
     float queue_priority = 1.0;
-    VkDeviceQueueCreateInfo queue_create_info = {};
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    VkDeviceQueueCreateInfo queue_create_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
-    queue_create_info.pNext = nullptr;
     queue_create_info.queueFamilyIndex = queue_family_index;
     queue_create_info.queueCount = 1;
     queue_create_info.pQueuePriorities = &queue_priority;
 
-    VkPhysicalDeviceProtectedMemoryFeatures protect_features = {};
-    protect_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES;
-    protect_features.pNext = nullptr;
+    VkPhysicalDeviceProtectedMemoryFeatures protect_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     protect_features.protectedMemory = VK_FALSE;  // Starting with it off
 
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = &protect_features;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&protect_features);
     device_create_info.flags = 0;
     device_create_info.pQueueCreateInfos = &queue_create_info;
     device_create_info.queueCreateInfoCount = 1;
@@ -9905,9 +9906,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
     m_errorMonitor->VerifyFound();
 
-    VkPhysicalDeviceFeatures2 features2;
-    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    features2.pNext = &protect_features;
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&protect_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
     if (protect_features.protectedMemory == VK_TRUE) {
@@ -9917,13 +9916,25 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
             return;
         }
 
-        // TODO: Re-enable test when Vulkan-Loader issue #384 is resolved and upstream
+        // TODO: Re-enable test when Vulkan-Loader MR #581 is resolved and upstream into next SDK - tested ToT
         // Try using GetDeviceQueue with a queue that has as flag
         // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-flags-01841");
         // vk::GetDeviceQueue(test_device, queue_family_index, 0, &test_queue);
         // m_errorMonitor->VerifyFound();
 
+        PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
+        ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
+
+        // Test device created with flag and trying to query with no flag
+        queue_info_2.flags = 0;
+        queue_info_2.queueFamilyIndex = queue_family_index;
+        queue_info_2.queueIndex = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkDeviceQueueInfo2");
+        vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+        m_errorMonitor->VerifyFound();
+
         vk::DestroyDevice(test_device, nullptr);
+        test_device = VK_NULL_HANDLE;
     }
 
     // Create device without protected queue
@@ -9935,16 +9946,48 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         return;
     }
 
-    // TODO: Re-enable test when Vulkan-Loader issue #384 is resolved and upstream
-    // Set queueIndex 1 over size of queueCount
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueIndex-00385");
-    // vk::GetDeviceQueue(test_device, queue_family_index, queue_properties.queueCount, &test_queue);
-    // m_errorMonitor->VerifyFound();
+    // TODO: Re-enable test when Vulkan-Loader MR #581 is resolved and upstream into next SDK - tested ToT
+    // if (queue_properties.queueCount > 1) {
+    //     // Set queueIndex 1 over size of queueCount used to create device
+    //     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueIndex-00385");
+    //     vk::GetDeviceQueue(test_device, queue_family_index, 1, &test_queue);
+    //     m_errorMonitor->VerifyFound();
+    // }
 
     // Use an unknown queue family index
     // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
     // vk::GetDeviceQueue(test_device, queue_family_index + 1, 0, &test_queue);
     // m_errorMonitor->VerifyFound();
+
+    PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
+    ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
+
+    queue_info_2.flags = 0;  // same as device creation
+    queue_info_2.queueFamilyIndex = queue_family_index;
+    queue_info_2.queueIndex = 0;
+
+    if (queue_properties.queueCount > 1) {
+        // Set queueIndex 1 over size of queueCount used to create device
+        queue_info_2.queueIndex = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-queueIndex-01843");
+        vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+        m_errorMonitor->VerifyFound();
+        queue_info_2.queueIndex = 0;  // reset
+    }
+
+    // Use an unknown queue family index
+    queue_info_2.queueFamilyIndex = queue_family_index + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-queueFamilyIndex-01842");
+    vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+    m_errorMonitor->VerifyFound();
+    queue_info_2.queueFamilyIndex = queue_family_index;  // reset
+
+    // Test device created with no flags and trying to query with flag
+    queue_info_2.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkDeviceQueueInfo2");
+    vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+    m_errorMonitor->VerifyFound();
+    queue_info_2.flags = 0;  // reset
 
     // Sanity check can still get the queue
     m_errorMonitor->ExpectSuccess();
@@ -9952,6 +9995,151 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     m_errorMonitor->VerifyNotFound();
 
     vk::DestroyDevice(test_device, nullptr);
+}
+
+TEST_F(VkLayerTest, UniqueQueueDeviceCreation) {
+    TEST_DESCRIPTION("Vulkan 1.0 unique queue detection");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // use first queue family with at least 2 queues in it
+    bool found_queue = false;
+    VkQueueFamilyProperties queue_properties;  // selected queue family used
+    uint32_t queue_family_index = 0;
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_families.data());
+
+    for (size_t i = 0; i < queue_families.size(); i++) {
+        if (queue_families[i].queueCount > 1) {
+            found_queue = true;
+            queue_family_index = i;
+            queue_properties = queue_families[i];
+            break;
+        }
+    }
+
+    if (found_queue == false) {
+        printf("%s test requires queue family with 2 queues, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    float queue_priority = 1.0;
+    VkDeviceQueueCreateInfo queue_create_info[2];
+    queue_create_info[0] = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_create_info[0].flags = 0;
+    queue_create_info[0].queueFamilyIndex = queue_family_index;
+    queue_create_info[0].queueCount = 1;
+    queue_create_info[0].pQueuePriorities = &queue_priority;
+
+    // queueFamilyIndex is the same
+    queue_create_info[1] = queue_create_info[0];
+
+    VkDevice test_device = VK_NULL_HANDLE;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
+    device_create_info.flags = 0;
+    device_create_info.pQueueCreateInfos = queue_create_info;
+    device_create_info.queueCreateInfoCount = 2;
+    device_create_info.pEnabledFeatures = nullptr;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.enabledExtensionCount = 0;
+
+    const char *vuid = (DeviceValidationVersion() == VK_API_VERSION_1_0) ? "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372"
+                                                                         : "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802";
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, UniqueQueueDeviceCreationBothProtected) {
+    TEST_DESCRIPTION("Vulkan 1.1 unique queue detection where both are protected and same queue family");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // Needed for both protected memory and vkGetDeviceQueue2
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1 extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto protected_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&protected_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (protected_features.protectedMemory == VK_FALSE) {
+        printf("%s test requires protectedMemory, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    // Try to find a protected queue family type
+    bool protected_queue = false;
+    VkQueueFamilyProperties queue_properties;  // selected queue family used
+    uint32_t queue_family_index = 0;
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_families.data());
+
+    for (size_t i = 0; i < queue_families.size(); i++) {
+        // need to have at least 2 queues to use
+        if (((queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT) != 0) && (queue_families[i].queueCount > 1)) {
+            protected_queue = true;
+            queue_family_index = i;
+            queue_properties = queue_families[i];
+            break;
+        }
+    }
+
+    if (protected_queue == false) {
+        printf("%s test requires queue with VK_QUEUE_PROTECTED_BIT with 2 queues, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    float queue_priority = 1.0;
+
+    VkDeviceQueueCreateInfo queue_create_info[2];
+    queue_create_info[0] = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_create_info[0].flags = 0;
+    queue_create_info[0].queueFamilyIndex = queue_family_index;
+    queue_create_info[0].queueCount = 1;
+    queue_create_info[0].pQueuePriorities = &queue_priority;
+
+    // queueFamilyIndex is the same and both are empty flags
+    queue_create_info[1] = queue_create_info[0];
+
+    VkDevice test_device = VK_NULL_HANDLE;
+    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&protected_features);
+    device_create_info.flags = 0;
+    device_create_info.pQueueCreateInfos = queue_create_info;
+    device_create_info.queueCreateInfoCount = 2;
+    device_create_info.pEnabledFeatures = nullptr;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.enabledExtensionCount = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
+    m_errorMonitor->VerifyFound();
+
+    // both protected
+    queue_create_info[0].flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+    queue_create_info[1].flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, DisabledProtectedMemory) {
