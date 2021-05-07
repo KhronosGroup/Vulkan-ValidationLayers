@@ -25,6 +25,7 @@
 #include "spirv-tools/instrument.hpp"
 #include "layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
+#include "gpu_pre_draw_constants.h"
 #include "sync_utils.h"
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
@@ -1281,7 +1282,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(unsigned int);
     }
 }
-#include "gpu_pre_draw_constants.h"
+
 static const int kInstErrorPreDrawValidate = spvtools::kInstErrorBuffOOBStorageTexel + 1; // TODO - get this into instrument.hpp
 static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 1;
 // Generate the part of the message describing the violation.
@@ -1762,8 +1763,8 @@ void GpuAssisted::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
 }
 
 // To generate the pre draw validation shader, run the following from the repository base level
-// python .\scripts\generate_spirv.py .\layers\gpu_pre_draw_shader.vert .\layers\generated\gpu_pre_draw_shader.h
-// .\External\glslang\build\install\bin\glslangValidator.exe
+// python ./scripts/generate_spirv.py --outfilename ./layers/generated/gpu_pre_draw_shader.h ./layers/gpu_pre_draw_shader.vert
+// ./External/glslang/build/install/bin/glslangValidator.exe
 #include "gpu_pre_draw_shader.h"
 void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block,
                                                      GpuAssistedPreDrawResources &resources, const LAST_BOUND_STATE &state,
@@ -1962,7 +1963,10 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                                    ((cmd_type == CMD_DRAWINDIRECT || cmd_type == CMD_DRAWINDEXEDINDIRECT) &&
                                     !(enabled_features.core.drawIndirectFirstInstance)))) {
         // Insert a draw that can examine some device memory right before the draw we're validating (Pre Draw Validation)
-        // Currently the only Pre Draw Validation is checking the count value in the countBuffer of a Draw*IndirectCount call
+        //
+        // NOTE that this validation does not attempt to abort invalid api calls as most other validation does.  A crash
+        // or DEVICE_LOST resulting from the invalid call will prevent preceeding validation errors from being reported.
+
         assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
         assert(cdi_state != NULL);
         VkPipeline validation_pipeline;

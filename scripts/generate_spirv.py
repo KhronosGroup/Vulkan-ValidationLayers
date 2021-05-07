@@ -26,14 +26,23 @@ import sys
 import subprocess
 import struct
 import re
+import argparse
 
 SPIRV_MAGIC = 0x07230203
 COLUMNS = 4
 INDENT = 4
 
-in_filename = sys.argv[1]
-out_filename = sys.argv[2] if len(sys.argv) > 2 else None
-executable = sys.argv[3]
+parser = argparse.ArgumentParser(description='Generate spirv code for this repository')
+parser.add_argument('--outfilename', action='store', help='Output Filename')
+parser.add_argument('infilename', action='store', type=str, help='Input Filename')
+parser.add_argument('glslangvalidator', action='store', help='glslangvalidator')
+args_in = parser.parse_args()
+
+if not os.path.isfile(args_in.infilename):
+    sys.exit("Cannot find infilename " + args_in.infilename)
+
+if not os.path.isfile(args_in.glslangvalidator):
+    sys.exit("Cannot find glslangvalidator " + args_in.glslangvalidator)
 
 def identifierize(s):
     # translate invalid chars
@@ -44,11 +53,10 @@ def identifierize(s):
 def compile(filename, tmpfile):
     # invoke glslangValidator
     try:
-        args = [executable, "-V", "-H", "-o", tmpfile, filename]
+        args = [args_in.glslangvalidator, "-V", "-H", "-o", tmpfile, filename]
         output = subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
-        print(e.output, file=sys.stderr)
-        exit(1)
+        raise(e.output)
 
     # read the temp file into a list of SPIR-V words
     words = []
@@ -69,8 +77,8 @@ def compile(filename, tmpfile):
 
     return (words, output.rstrip())
 
-base = os.path.basename(in_filename)
-words, comments = compile(in_filename, base + ".tmp")
+base = os.path.basename(args_in.infilename)
+words, comments = compile(args_in.infilename, base + ".tmp")
 
 literals = []
 for i in range(0, len(words), COLUMNS):
@@ -78,6 +86,27 @@ for i in range(0, len(words), COLUMNS):
     literals.append(" " * INDENT + ", ".join(columns) + ",")
 
 header = """#include <stdint.h>
+#pragma once
+
+// This file is ***GENERATED***.  Do Not Edit.
+/* Copyright (c) 2021 The Khronos Group Inc.
+ * Copyright (c) 2021 Valve Corporation
+ * Copyright (c) 2021 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Author: Tony Barbour <tony@lunarg.com>
+ */
 
 #if 0
 %s
@@ -88,8 +117,8 @@ static const uint32_t %s[%d] = {
 };
 """ % (comments, identifierize(base), len(words), "\n".join(literals))
 
-if out_filename:
-    with open(out_filename, "w") as f:
+if args_in.outfilename:
+    with open(args_in.outfilename, "w") as f:
         print(header, end="", file=f)
 else:
         print(header, end="")

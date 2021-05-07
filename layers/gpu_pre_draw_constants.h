@@ -17,8 +17,12 @@
 // * Author: Tony Barbour <tony@lunarg.com>
 //
 
+#ifndef GPU_PRE_DRAW_CONSTANTS
+#define GPU_PRE_DRAW_CONSTANTS
+
 #define _kInstErrorPreDrawValidate 8
 #define _kInstValidationOutError 7
 #define pre_draw_count_exceeds_bufsize_error 1
 #define pre_draw_count_exceeds_limit_error 2
 #define pre_draw_first_instance_error 3
+#endif
