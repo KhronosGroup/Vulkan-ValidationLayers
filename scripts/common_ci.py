@@ -54,7 +54,7 @@ def RunShellCmd(command, start_dir = PROJECT_ROOT, env=None, verbose=False):
         start_dir = RepoRelative(start_dir)
     cmd_list = command.split(" ")
     if verbose or ('VVL_CI_VERBOSE' in os.environ and os.environ['VVL_CI_VERBOSE'] != '0'):
-        print(f'CICMD({cmd_list})')
+        print(f'CICMD({cmd_list}, env={env})')
     subprocess.check_call(cmd_list, cwd=start_dir, env=env)
 
 #
@@ -92,7 +92,7 @@ def BuildVVL(args):
 
     utils.make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
-    cmake_cmd = f'cmake -C ../{EXTERNAL_DIR_NAME}/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} ..'
+    cmake_cmd = f'cmake -C ../{EXTERNAL_DIR_NAME}/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
     RunShellCmd(cmake_cmd, VVL_BUILD_DIR)
 
@@ -122,7 +122,7 @@ def BuildLoader(args):
     print("Run CMake for Loader")
     LOADER_BUILD_DIR = RepoRelative("%s/Vulkan-Loader/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
     utils.make_dirs(LOADER_BUILD_DIR)
-    cmake_cmd = 'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=%s ..' % args.configuration.capitalize()
+    cmake_cmd = f'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
     RunShellCmd(cmake_cmd, LOADER_BUILD_DIR)
 
@@ -143,7 +143,7 @@ def BuildMockICD(args):
     ICD_BUILD_DIR = RepoRelative("%s/Vulkan-Tools/%s" % (EXTERNAL_DIR_NAME,BUILD_DIR_NAME))
     utils.make_dirs(ICD_BUILD_DIR)
     cmake_cmd = \
-        f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -DVULKAN_HEADERS_INSTALL_DIR={EXTERNAL_DIR}/Vulkan-Headers/{BUILD_DIR_NAME}/install ..'
+        f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -DVULKAN_HEADERS_INSTALL_DIR={EXTERNAL_DIR}/Vulkan-Headers/{BUILD_DIR_NAME}/install {args.cmake} ..'
     RunShellCmd(cmake_cmd, ICD_BUILD_DIR)
 
     VVL_REG_DIR = "%s/Vulkan-Headers/registry" % EXTERNAL_DIR
@@ -176,14 +176,27 @@ def RunVVLTests(args):
     lvt_cmd = os.path.join(lvt_cmd, 'vk_layer_validation_tests')
 
     lvt_env = dict(os.environ)
-    if not IsWindows(): lvt_env['LD_LIBRARY_PATH'] = os.path.join(EXTERNAL_DIR, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader')
+
+    if not IsWindows():
+        lvt_env['LD_LIBRARY_PATH'] = os.path.join(EXTERNAL_DIR, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader')
+    else:
+        loader_dll = os.path.join(EXTERNAL_DIR, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader', args.configuration.capitalize(), 'vulkan-1.dll')
+        loader_dll_dst = os.path.join(os.path.dirname(lvt_cmd), 'vulkan-1.dll')
+        shutil.copyfile(loader_dll, loader_dll_dst)
+
     layer_path = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'layers')
     if IsWindows(): layer_path = os.path.join(layer_path, args.configuration.capitalize())
-    lvt_env['VK_LAYER_PATH'] = layer_path.replace('\\', '/')
+    if not os.path.isdir(layer_path):
+        raise Exception(f'VK_LAYER_PATH directory "{layer_path}" does not exist')
+    lvt_env['VK_LAYER_PATH'] = layer_path
+
     icd_filenames = os.path.join(EXTERNAL_DIR, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
     if IsWindows(): icd_filenames = os.path.join(icd_filenames, args.configuration.capitalize())
     icd_filenames = os.path.join(icd_filenames, 'VkICD_mock_icd.json')
+    if not os.path.isfile(icd_filenames):
+        raise Exception(f'VK_ICD_FILENAMES "{icd_filenames}" does not exist')
     lvt_env['VK_ICD_FILENAMES'] = icd_filenames
+
     RunShellCmd(lvt_cmd, env=lvt_env)
 
 def GetArgParser():
@@ -199,4 +212,8 @@ def GetArgParser():
         metavar='ARCH', action='store',
         choices=ARCHS, default=DEFAULT_ARCH,
         help=f'Target architecture. Can be one of: {ARCHS}')
+    parser.add_argument(
+        '--cmake', dest='cmake',
+        metavar='CMAKE', type=str,
+        default='', help='Additional args to pass to cmake')
     return parser
