@@ -49,12 +49,13 @@ DEFAULT_ARCH = ARCHS[0]
 
 # Runs a command in a directory and returns its return code.
 # Directory is project root by default, or a relative path from project root
-def RunShellCmd(command, start_dir = PROJECT_ROOT, verbose=True):
+def RunShellCmd(command, start_dir = PROJECT_ROOT, env=None, verbose=False):
     if start_dir != PROJECT_ROOT:
         start_dir = RepoRelative(start_dir)
     cmd_list = command.split(" ")
-    if verbose: print(f'CICMD({cmd_list})')
-    subprocess.check_call(cmd_list, cwd=start_dir)
+    if verbose or ('VVL_CI_VERBOSE' in os.environ and os.environ['VVL_CI_VERBOSE'] != '0'):
+        print(f'CICMD({cmd_list})')
+    subprocess.check_call(cmd_list, cwd=start_dir, env=env)
 
 #
 # Check if the system is Windows
@@ -97,6 +98,7 @@ def BuildVVL(args):
 
     print("Build Validation Layers and Tests")
     build_cmd = f'cmake --build . --config {args.configuration}'
+    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
     RunShellCmd(build_cmd, VVL_BUILD_DIR)
 
     print('Run vk_validation_stats.py')
@@ -126,6 +128,7 @@ def BuildLoader(args):
 
     print("Build Loader")
     build_cmd = f'cmake --build . --config {args.configuration}'
+    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
     RunShellCmd(build_cmd, LOADER_BUILD_DIR)
 
 #
@@ -160,25 +163,28 @@ def BuildMockICD(args):
     RunShellCmd(icd_h_cmd, VT_ICD_DIR)
 
     print("Build Mock ICD")
-    build_cmd = f'cmake --build . --target VkICD_mock_icd --config {args.configuration}'
+    build_cmd = f'cmake --build . --config {args.configuration}'
+    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
     RunShellCmd(build_cmd, ICD_BUILD_DIR)
-
-    # Copy json file into dir with ICD executable
-    src_filename = RepoRelative("%s/Vulkan-Tools/icd/linux/VkICD_mock_icd.json" % EXTERNAL_DIR_NAME)
-    dst_filename = RepoRelative("%s/Vulkan-Tools/%s/icd/VkICD_mock_icd.json" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
-    shutil.copyfile(src_filename, dst_filename)
 
 #
 # Run the Layer Validation Tests
 def RunVVLTests(args):
     print("Run Vulkan-ValidationLayer Tests using Mock ICD")
-    os.chdir(PROJECT_ROOT)
-    lvt_cmd = '%s/tests/vk_layer_validation_tests' % BUILD_DIR_NAME
+    lvt_cmd = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'tests')
+    if IsWindows(): lvt_cmd = os.path.join(lvt_cmd, args.configuration.capitalize())
+    lvt_cmd = os.path.join(lvt_cmd, 'vk_layer_validation_tests')
+
     lvt_env = dict(os.environ)
-    lvt_env['LD_LIBRARY_PATH'] = '%s/Vulkan-Loader/%s/loader' % (EXTERNAL_DIR, BUILD_DIR_NAME)
-    lvt_env['VK_LAYER_PATH'] = '%s/%s/layers' % (PROJECT_ROOT, BUILD_DIR_NAME)
-    lvt_env['VK_ICD_FILENAMES'] = '%s/Vulkan-Tools/%s/icd/VkICD_mock_icd.json' % (EXTERNAL_DIR, BUILD_DIR_NAME)
-    subprocess.check_call(lvt_cmd.split(" "), env=lvt_env)
+    if not IsWindows(): lvt_env['LD_LIBRARY_PATH'] = os.path.join(EXTERNAL_DIR, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader')
+    layer_path = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'layers')
+    if IsWindows(): layer_path = os.path.join(layer_path, args.configuration.capitalize())
+    lvt_env['VK_LAYER_PATH'] = layer_path.replace('\\', '/')
+    icd_filenames = os.path.join(EXTERNAL_DIR, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
+    if IsWindows(): icd_filenames = os.path.join(icd_filenames, args.configuration.capitalize())
+    icd_filenames = os.path.join(icd_filenames, 'VkICD_mock_icd.json')
+    lvt_env['VK_ICD_FILENAMES'] = icd_filenames
+    RunShellCmd(lvt_cmd, env=lvt_env)
 
 def GetArgParser():
     parser = argparse.ArgumentParser()
