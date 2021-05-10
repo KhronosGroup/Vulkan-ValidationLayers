@@ -1400,6 +1400,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
                                         VkCommandBuffer object) const;
 
+    bool manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator,
+                                                    VkPipelineLayout *pPipelineLayout) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
@@ -1730,5 +1733,9 @@ class StatelessValidation : public ValidationObject {
         VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
         const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
         const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) const;
+
+    bool manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                const void *pValues) const;
 #include "parameter_validation.h"
 };  // Class StatelessValidation

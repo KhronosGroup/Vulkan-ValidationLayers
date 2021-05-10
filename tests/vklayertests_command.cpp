@@ -528,18 +528,16 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
 
     const uint32_t too_big = m_device->props.limits.maxPushConstantsSize + 0x4;
     const std::array<PipelineLayoutTestCase, 10> range_tests = {{
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 0}, "vkCreatePipelineLayout() call has push constants index 0 with size 0."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 1}, "vkCreatePipelineLayout() call has push constants index 0 with size 1."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 1}, "vkCreatePipelineLayout() call has push constants index 0 with size 1."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 0}, "vkCreatePipelineLayout() call has push constants index 0 with size 0."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 1, 4}, "vkCreatePipelineLayout() call has push constants index 0 with offset 1. Offset must"},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0, too_big}, "vkCreatePipelineLayout() call has push constants index 0 with offset "},
-        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, too_big}, "vkCreatePipelineLayout() call has push constants index 0 with offset "},
-        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, 4}, "vkCreatePipelineLayout() call has push constants index 0 with offset "},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0xFFFFFFF0, 0x00000020},
-         "vkCreatePipelineLayout() call has push constants index 0 with offset "},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0x00000020, 0xFFFFFFF0},
-         "vkCreatePipelineLayout() call has push constants index 0 with offset "},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 0}, "VUID-VkPushConstantRange-size-00296"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 1}, "VUID-VkPushConstantRange-size-00297"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 1}, "VUID-VkPushConstantRange-size-00297"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 0}, "VUID-VkPushConstantRange-size-00296"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 1, 4}, "VUID-VkPushConstantRange-offset-00295"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0, too_big}, "VUID-VkPushConstantRange-size-00298"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, too_big}, "VUID-VkPushConstantRange-offset-00294"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, 4}, "VUID-VkPushConstantRange-offset-00294"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0xFFFFFFF0, 0x00000020}, "VUID-VkPushConstantRange-offset-00294"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0x00000020, 0xFFFFFFF0}, "VUID-VkPushConstantRange-size-00298"},
     }};
 
     // Check for invalid offset and size
@@ -554,8 +552,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
     pc_range.offset = 0;
     pc_range.size = 16;
     pc_range.stageFlags = 0;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "vkCreatePipelineLayout: value of pCreateInfo->pPushConstantRanges[0].stageFlags must not be 0");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
     vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
@@ -633,7 +630,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
 
     // Check for invalid stage flag
     // Note that VU 00996 isn't reached due to parameter validation
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdPushConstants: value of stageFlags must not be 0");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), 0, 0, 16, dummy_values);
     m_errorMonitor->VerifyFound();
 

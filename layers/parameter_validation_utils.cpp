@@ -1495,6 +1495,69 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                                                     const VkAllocationCallbacks *pAllocator,
+                                                                     VkPipelineLayout *pPipelineLayout) const {
+    bool skip = false;
+    // Validate layout count against device physical limit
+    if (pCreateInfo->setLayoutCount > device_limits.maxBoundDescriptorSets) {
+        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286",
+                         "vkCreatePipelineLayout(): setLayoutCount (%d) exceeds physical device maxBoundDescriptorSets limit (%d).",
+                         pCreateInfo->setLayoutCount, device_limits.maxBoundDescriptorSets);
+    }
+
+    // Validate Push Constant ranges
+    for (uint32_t i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
+        const uint32_t offset = pCreateInfo->pPushConstantRanges[i].offset;
+        const uint32_t size = pCreateInfo->pPushConstantRanges[i].size;
+        const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
+        // Check that offset + size don't exceed the max.
+        // Prevent arithetic overflow here by avoiding addition and testing in this order.
+        if (offset >= max_push_constants_size) {
+            skip |= LogError(device, "VUID-VkPushConstantRange-offset-00294",
+                             "vkCreatePipelineLayout(): pCreateInfo->pPushConstantRanges[%u].offset (%u) that exceeds this "
+                             "device's maxPushConstantSize of %u.",
+                             i, offset, max_push_constants_size);
+        }
+        if (size > max_push_constants_size - offset) {
+            skip |= LogError(device, "VUID-VkPushConstantRange-size-00298",
+                             "vkCreatePipelineLayout(): pCreateInfo->pPushConstantRanges[%u] offset (%u) and size (%u) "
+                             "together exceeds this device's maxPushConstantSize of %u.",
+                             i, offset, size, max_push_constants_size);
+        }
+
+        // size needs to be non-zero and a multiple of 4.
+        if (size == 0) {
+            skip |= LogError(device, "VUID-VkPushConstantRange-size-00296",
+                             "vkCreatePipelineLayout(): pCreateInfo->pPushConstantRanges[%u].size (%u) is not greater than zero.",
+                             i, size);
+        }
+        if (size & 0x3) {
+            skip |= LogError(device, "VUID-VkPushConstantRange-size-00297",
+                             "vkCreatePipelineLayout(): pCreateInfo->pPushConstantRanges[%u].size (%u) is not a multiple of 4.", i,
+                             size);
+        }
+
+        // offset needs to be a multiple of 4.
+        if ((offset & 0x3) != 0) {
+            skip |= LogError(device, "VUID-VkPushConstantRange-offset-00295",
+                             "vkCreatePipelineLayout(): pCreateInfo->pPushConstantRanges[%u].offset (%u) is not a multiple of 4.",
+                             i, offset);
+        }
+    }
+
+    // As of 1.0.28, there is a VU that states that a stage flag cannot appear more than once in the list of push constant ranges.
+    for (uint32_t i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
+        for (uint32_t j = i + 1; j < pCreateInfo->pushConstantRangeCount; ++j) {
+            if (0 != (pCreateInfo->pPushConstantRanges[i].stageFlags & pCreateInfo->pPushConstantRanges[j].stageFlags)) {
+                skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292",
+                                 "vkCreatePipelineLayout() Duplicate stage flags found in ranges %d and %d.", i, j);
+            }
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
                                                                         uint32_t createInfoCount,
                                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
@@ -7063,5 +7126,37 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
         }
     }
 
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                                 const void *pValues) const {
+    bool skip = false;
+    const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
+    // Check that offset + size don't exceed the max.
+    // Prevent arithetic overflow here by avoiding addition and testing in this order.
+    if (offset >= max_push_constants_size) {
+        skip |= LogError(device, "VUID-vkCmdPushConstants-offset-00370",
+                         "vkCmdPushConstants(): offset (%u) that exceeds this device's maxPushConstantSize of %u.", offset,
+                         max_push_constants_size);
+    }
+    if (size > max_push_constants_size - offset) {
+        skip |= LogError(device, "VUID-vkCmdPushConstants-size-00371",
+                         "vkCmdPushConstants(): offset (%u) and size (%u) that exceeds this device's maxPushConstantSize of %u.",
+                         offset, size, max_push_constants_size);
+    }
+
+    // size needs to be non-zero and a multiple of 4.
+    if (size & 0x3) {
+        skip |= LogError(device, "VUID-vkCmdPushConstants-size-00369", "vkCmdPushConstants(): size (%u) must be a multiple of 4.",
+                         size);
+    }
+
+    // offset needs to be a multiple of 4.
+    if ((offset & 0x3) != 0) {
+        skip |= LogError(device, "VUID-vkCmdPushConstants-offset-00368",
+                         "%vkCmdPushConstants(): offset (%u) must be a multiple of 4.", offset);
+    }
     return skip;
 }
