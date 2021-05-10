@@ -164,6 +164,7 @@ m_errorMonitor->VerifyFound();
 
 There are times a test writer will want to test a case where an implementation returns a certain support for a format feature or limit. Instead of just hoping to find a device that supports a certain case, there is the Device Profiles API layer. This layer will allow a test writer to inject certain values for format features and/or limits.
 
+### Device Profile Format Feature
 Here is an example of how To enable it to allow overriding format features (limits are the same idea, just different function names):
 ```cpp
 if (!EnableDeviceProfileLayer()) {
@@ -188,6 +189,30 @@ This is an example of injecting the `VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT` featur
 fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, &formatProps);
 formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, formatProps);
+```
+
+### Device Profile Limits
+
+When using the device profile layer for limits, the test maybe need to call `vkSetPhysicalDeviceLimitsEXT` prior to creating the `VkDevice` for some validation state tracking
+
+```cpp
+ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+
+// Load required functions
+if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+    printf("%s Failed to device profile layer.\n", kSkipPrefix);
+    return;
+}
+
+VkPhysicalDeviceProperties props;
+fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+props.limits.maxPushConstantsSize = 16; // example
+fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+ASSERT_NO_FATAL_FAILURE(InitState());
 ```
 
 ## Running Tests on DevSim and MockICD
