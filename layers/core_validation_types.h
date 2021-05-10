@@ -474,6 +474,7 @@ class IMAGE_STATE : public BINDABLE {
     VkDeviceSize swapchain_fake_address;  // Needed for swapchain syncval, since there is no VkDeviceMemory::fake_base_address
 
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
+    uint64_t layout_change_count;  // The sequence number for changes to image layout (for cached validation)
     IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
 

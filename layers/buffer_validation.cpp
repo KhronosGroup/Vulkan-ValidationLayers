@@ -244,7 +244,8 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       fragment_encoder(nullptr),
       store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
       swapchain_fake_address(0U),
-      sparse_requirements{} {
+      sparse_requirements{},
+      layout_change_count(1) {  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
         uint32_t *queue_family_indices = new uint32_t[createInfo.queueFamilyIndexCount];
         for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
@@ -494,13 +495,14 @@ bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImage
 }
 
 // Set image layout for given VkImageSubresourceRange struct
-void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &image_state,
+void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, IMAGE_STATE &image_state,
                                 const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
                                 VkImageLayout expected_layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);  // the non-const getter must return a valid pointer
     if (subresource_map->SetSubresourceRangeLayout(*cb_node, image_subresource_range, layout, expected_layout)) {
         cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
+        image_state.layout_change_count++;  // Change the version of this data to force revalidation
     }
     for (const auto *alias_state : image_state.aliasing_images) {
         assert(alias_state);
@@ -1623,7 +1625,7 @@ template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uin
 VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_mask, VkImageLayout layout);
 
 template <typename ImgBarrier>
-void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state,
+void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, IMAGE_STATE *image_state,
                                              const ImgBarrier &mem_barrier, bool is_release_op) {
     if (enabled_features.synchronization2_features.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {

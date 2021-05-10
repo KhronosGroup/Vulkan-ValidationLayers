@@ -394,10 +394,16 @@ class ImageDescriptor : public Descriptor {
     std::shared_ptr<IMAGE_VIEW_STATE> GetSharedImageViewState() const { return image_view_state_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
 
+    uint64_t GetLayoutChangeCount(const CMD_BUFFER_STATE *cb) const {
+        auto it = layout_change_counts_.find(cb);
+        return (it != layout_change_counts_.end()) ? it->second : 0;
+    }
+
   protected:
     ImageDescriptor(DescriptorClass class_);
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
     VkImageLayout image_layout_;
+    layer_data::unordered_map<const CMD_BUFFER_STATE*, uint64_t> layout_change_counts_;
 };
 
 class ImageSamplerDescriptor : public ImageDescriptor {
