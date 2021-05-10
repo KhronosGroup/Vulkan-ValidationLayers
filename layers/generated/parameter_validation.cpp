@@ -5203,6 +5203,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(
         }
     }
     skip |= validate_required_pointer("vkCreatePipelineLayout", "pPipelineLayout", pPipelineLayout, "VUID-vkCreatePipelineLayout-pPipelineLayout-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
     return skip;
 }
 
@@ -6626,6 +6627,7 @@ bool StatelessValidation::PreCallValidateCmdPushConstants(
     skip |= validate_required_handle("vkCmdPushConstants", "layout", layout);
     skip |= validate_flags("vkCmdPushConstants", "stageFlags", "VkShaderStageFlagBits", AllVkShaderStageFlagBits, stageFlags, kRequiredFlags, "VUID-vkCmdPushConstants-stageFlags-parameter", "VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
     skip |= validate_array("vkCmdPushConstants", "size", "pValues", size, &pValues, true, true, "VUID-vkCmdPushConstants-size-arraylength", "VUID-vkCmdPushConstants-pValues-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
     return skip;
 }
 

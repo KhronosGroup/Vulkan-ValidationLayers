@@ -5214,91 +5214,6 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
         &enabled_features.inline_uniform_block, &phys_dev_ext_props.inline_uniform_block_props, &device_extensions);
 }
 
-// Used by CreatePipelineLayout and CmdPushConstants.
-// Note that the index argument is optional and only used by CreatePipelineLayout.
-bool CoreChecks::ValidatePushConstantRange(const uint32_t offset, const uint32_t size, const char *caller_name,
-                                           uint32_t index = 0) const {
-    if (disabled[push_constant_range]) return false;
-    uint32_t const max_push_constants_size = phys_dev_props.limits.maxPushConstantsSize;
-    bool skip = false;
-    // Check that offset + size don't exceed the max.
-    // Prevent arithetic overflow here by avoiding addition and testing in this order.
-    if ((offset >= max_push_constants_size) || (size > max_push_constants_size - offset)) {
-        // This is a pain just to adapt the log message to the caller, but better to sort it out only when there is a problem.
-        if (0 == strcmp(caller_name, "vkCreatePipelineLayout()")) {
-            if (offset >= max_push_constants_size) {
-                skip |= LogError(
-                    device, "VUID-VkPushConstantRange-offset-00294",
-                    "%s call has push constants index %u with offset %u that exceeds this device's maxPushConstantSize of %u.",
-                    caller_name, index, offset, max_push_constants_size);
-            }
-            if (size > max_push_constants_size - offset) {
-                skip |= LogError(device, "VUID-VkPushConstantRange-size-00298",
-                                 "%s call has push constants index %u with offset %u and size %u that exceeds this device's "
-                                 "maxPushConstantSize of %u.",
-                                 caller_name, index, offset, size, max_push_constants_size);
-            }
-        } else if (0 == strcmp(caller_name, "vkCmdPushConstants()")) {
-            if (offset >= max_push_constants_size) {
-                skip |= LogError(
-                    device, "VUID-vkCmdPushConstants-offset-00370",
-                    "%s call has push constants index %u with offset %u that exceeds this device's maxPushConstantSize of %u.",
-                    caller_name, index, offset, max_push_constants_size);
-            }
-            if (size > max_push_constants_size - offset) {
-                skip |= LogError(device, "VUID-vkCmdPushConstants-size-00371",
-                                 "%s call has push constants index %u with offset %u and size %u that exceeds this device's "
-                                 "maxPushConstantSize of %u.",
-                                 caller_name, index, offset, size, max_push_constants_size);
-            }
-        } else {
-            skip |= LogError(device, kVUID_Core_DrawState_InternalError, "%s caller not supported.", caller_name);
-        }
-    }
-    // size needs to be non-zero and a multiple of 4.
-    if ((size == 0) || ((size & 0x3) != 0)) {
-        if (0 == strcmp(caller_name, "vkCreatePipelineLayout()")) {
-            if (size == 0) {
-                skip |= LogError(device, "VUID-VkPushConstantRange-size-00296",
-                                 "%s call has push constants index %u with size %u. Size must be greater than zero.", caller_name,
-                                 index, size);
-            }
-            if (size & 0x3) {
-                skip |= LogError(device, "VUID-VkPushConstantRange-size-00297",
-                                 "%s call has push constants index %u with size %u. Size must be a multiple of 4.", caller_name,
-                                 index, size);
-            }
-        } else if (0 == strcmp(caller_name, "vkCmdPushConstants()")) {
-            if (size == 0) {
-                skip |= LogError(device, "VUID-vkCmdPushConstants-size-arraylength",
-                                 "%s call has push constants index %u with size %u. Size must be greater than zero.", caller_name,
-                                 index, size);
-            }
-            if (size & 0x3) {
-                skip |= LogError(device, "VUID-vkCmdPushConstants-size-00369",
-                                 "%s call has push constants index %u with size %u. Size must be a multiple of 4.", caller_name,
-                                 index, size);
-            }
-        } else {
-            skip |= LogError(device, kVUID_Core_DrawState_InternalError, "%s caller not supported.", caller_name);
-        }
-    }
-    // offset needs to be a multiple of 4.
-    if ((offset & 0x3) != 0) {
-        if (0 == strcmp(caller_name, "vkCreatePipelineLayout()")) {
-            skip |= LogError(device, "VUID-VkPushConstantRange-offset-00295",
-                             "%s call has push constants index %u with offset %u. Offset must be a multiple of 4.", caller_name,
-                             index, offset);
-        } else if (0 == strcmp(caller_name, "vkCmdPushConstants()")) {
-            skip |= LogError(device, "VUID-vkCmdPushConstants-offset-00368",
-                             "%s call has push constants with offset %u. Offset must be a multiple of 4.", caller_name, offset);
-        } else {
-            skip |= LogError(device, kVUID_Core_DrawState_InternalError, "%s caller not supported.", caller_name);
-        }
-    }
-    return skip;
-}
-
 enum DSL_DESCRIPTOR_GROUPS {
     DSL_TYPE_SAMPLERS = 0,
     DSL_TYPE_UNIFORM_BUFFERS,
@@ -5420,41 +5335,10 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                                                      VkPipelineLayout *pPipelineLayout) const {
     bool skip = false;
 
-    // Validate layout count against device physical limit
-    if (pCreateInfo->setLayoutCount > phys_dev_props.limits.maxBoundDescriptorSets) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286",
-                         "vkCreatePipelineLayout(): setLayoutCount (%d) exceeds physical device maxBoundDescriptorSets limit (%d).",
-                         pCreateInfo->setLayoutCount, phys_dev_props.limits.maxBoundDescriptorSets);
-    }
-
-    // Validate Push Constant ranges
-    uint32_t i, j;
-    for (i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
-        skip |= ValidatePushConstantRange(pCreateInfo->pPushConstantRanges[i].offset, pCreateInfo->pPushConstantRanges[i].size,
-                                          "vkCreatePipelineLayout()", i);
-        if (0 == pCreateInfo->pPushConstantRanges[i].stageFlags) {
-            skip |= LogError(device, "VUID-VkPushConstantRange-stageFlags-requiredbitmask",
-                             "vkCreatePipelineLayout() call has no stageFlags set.");
-        }
-    }
-
-    // As of 1.0.28, there is a VU that states that a stage flag cannot appear more than once in the list of push constant ranges.
-    for (i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
-        for (j = i + 1; j < pCreateInfo->pushConstantRangeCount; ++j) {
-            if (0 != (pCreateInfo->pPushConstantRanges[i].stageFlags & pCreateInfo->pPushConstantRanges[j].stageFlags)) {
-                skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292",
-                                 "vkCreatePipelineLayout() Duplicate stage flags found in ranges %d and %d.", i, j);
-            }
-        }
-    }
-
-    // Early-out
-    if (skip) return skip;
-
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts(pCreateInfo->setLayoutCount, nullptr);
     unsigned int push_descriptor_set_count = 0;
     {
-        for (i = 0; i < pCreateInfo->setLayoutCount; ++i) {
+        for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             set_layouts[i] = GetDescriptorSetLayoutShared(pCreateInfo->pSetLayouts[i]);
             if (set_layouts[i]->IsPushDescriptor()) ++push_descriptor_set_count;
         }
@@ -8431,11 +8315,6 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     skip |= ValidateCmd(cb_state, CMD_PUSHCONSTANTS, "vkCmdPushConstants()");
-    skip |= ValidatePushConstantRange(offset, size, "vkCmdPushConstants()");
-    if (0 == stageFlags) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdPushConstants-stageFlags-requiredbitmask",
-                         "vkCmdPushConstants() call has no stageFlags set.");
-    }
 
     // Check if pipeline_layout VkPushConstantRange(s) overlapping offset, size have stageFlags set for each stage in the command
     // stageFlags argument, *and* that the command stageFlags argument has bits set for the stageFlags in each overlapping range.
