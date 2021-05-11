@@ -40,6 +40,7 @@ static const layer_data::unordered_map<std::string, VkValidationFeatureDisableEX
     {"VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT", VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT},
     {"VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT", VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT},
     {"VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT", VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT},
     {"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", VK_VALIDATION_FEATURE_DISABLE_ALL_EXT},
 };
 
@@ -72,18 +73,19 @@ static const layer_data::unordered_map<std::string, ValidationCheckEnables> Vali
 
 // This should mirror the 'DisableFlags' enumerated type
 static const std::vector<std::string> DisableFlagNameHelper = {
-    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",       // command_buffer_state,
-    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",              // object_in_use,
-    "VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET",        // idle_descriptor_set,
-    "VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE",        // push_constant_range,
-    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",           // query_validation,
-    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",    // image_layout_validation,
-    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",  // object_tracking,
-    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",       // core_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",     // thread_safety,
-    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",    // stateless_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",    // handle_wrapping,
-    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT"            // shader_validation,
+    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",               // command_buffer_state,
+    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                      // object_in_use,
+    "VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET",                // idle_descriptor_set,
+    "VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE",                // push_constant_range,
+    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                   // query_validation,
+    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",            // image_layout_validation,
+    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",          // object_tracking,
+    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",               // core_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",             // thread_safety,
+    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",            // stateless_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",            // handle_wrapping,
+    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                   // shader_validation,
+    "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT"  // shader_validation_caching
 };
 
 // This should mirror the 'EnableFlags' enumerated type

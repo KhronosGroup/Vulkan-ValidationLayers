@@ -3140,6 +3140,7 @@ typedef enum DisableFlags {
     stateless_checks,
     handle_wrapping,
     shader_validation,
+    shader_validation_caching,
     // Insert new disables above this line
     kMaxDisableFlags,
 } DisableFlags;

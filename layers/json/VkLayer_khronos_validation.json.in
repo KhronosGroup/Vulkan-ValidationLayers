@@ -370,6 +370,12 @@
                             "label": "Idle Descritor Set",
                             "description": "",
                             "view": "ADVANCED"
+                        },
+                        {
+                            "key": "VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT",
+                            "label": "Shader Validation Caching",
+                            "description": "Disable caching of shader validation results",
+                            "view": "ADVANCED"
                         }
                     ],
                     "default": [ "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT" ]
