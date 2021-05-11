@@ -67,6 +67,9 @@ void SetValidationFeatureDisable(CHECK_DISABLED &disable_data, const VkValidatio
         case VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT:
             disable_data[handle_wrapping] = true;
             break;
+        case VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT:
+            disable_data[shader_validation_caching] = true;
+            break;
         case VK_VALIDATION_FEATURE_DISABLE_ALL_EXT:
             // Set all disabled flags to true
             std::fill(disable_data.begin(), disable_data.end(), true);
