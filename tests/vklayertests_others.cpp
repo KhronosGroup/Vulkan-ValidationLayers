@@ -3121,12 +3121,12 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
         printf("%s Multiple queue families are required to run this test.\n", kSkipPrefix);
         return;
     }
-    float priorities = {1.0f};
+    std::vector<float> priorities(queue_props->queueCount, 1.0f);
     VkDeviceQueueCreateInfo queue_info = {};
     queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = queue_props->queueCount;
-    queue_info.pQueuePriorities = &priorities;
+    queue_info.pQueuePriorities = priorities.data();
     VkDeviceCreateInfo dev_info{};
     dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     dev_info.queueCreateInfoCount = 1;
@@ -3202,8 +3202,8 @@ TEST_F(VkLayerTest, InvalidQuerySizes) {
 
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     const uint32_t timestampValidBits = queue_props[m_device->graphics_queue_node_index_].timestampValidBits;
 
     VkBufferObj buffer;
@@ -3961,8 +3961,8 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
 
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
         printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;
@@ -9137,8 +9137,8 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
     // We need two queues for this
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
 
     uint32_t family_index[2] = {0};
     uint32_t queue_index[2] = {0};

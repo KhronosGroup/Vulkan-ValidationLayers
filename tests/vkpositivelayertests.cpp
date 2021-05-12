@@ -85,7 +85,7 @@ TEST_F(VkPositiveLayerTest, ToolingExtension) {
         m_errorMonitor->SetError("Expected layer tooling data but received none");
     }
 
-    auto tool_properties = new VkPhysicalDeviceToolPropertiesEXT[tool_count];
+    std::vector<VkPhysicalDeviceToolPropertiesEXT> tool_properties(tool_count);
     for (uint32_t i = 0; i < tool_count; i++) {
         tool_properties[i].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT;
     }
@@ -93,7 +93,7 @@ TEST_F(VkPositiveLayerTest, ToolingExtension) {
     bool found_validation_layer = false;
 
     if (result == VK_SUCCESS) {
-        result = fpGetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, tool_properties);
+        result = fpGetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, tool_properties.data());
 
         for (uint32_t i = 0; i < tool_count; i++) {
             if (strcmp(tool_properties[0].name, "Khronos Validation Layer") == 0) {
@@ -4431,8 +4431,8 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     }
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
         printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;
@@ -4511,8 +4511,8 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
     }
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
         printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;

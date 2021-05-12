@@ -1801,8 +1801,8 @@ TEST_F(VkSyncValTest, SyncCmdQuery) {
     }
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
         printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;
