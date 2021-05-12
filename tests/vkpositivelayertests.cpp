@@ -12464,3 +12464,217 @@ TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
     helper.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(image_ci);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageSubresourceLayers src_layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkImageSubresourceLayers dst_layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 3, 1};
+    VkOffset3D zero_offset{0, 0, 0};
+    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
+    VkImageCopy region = {src_layer, zero_offset, dst_layer, zero_offset, full_extent};
+    auto init_layout = VK_IMAGE_LAYOUT_GENERAL;
+    auto src_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    auto dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->ExpectSuccess();
+
+    image.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, init_layout);
+
+    auto cb = m_commandBuffer->handle();
+
+    VkImageSubresourceRange src_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    image_barrier.srcAccessMask = 0;
+    image_barrier.dstAccessMask = 0;
+    image_barrier.image = image.handle();
+    image_barrier.subresourceRange = src_range;
+    image_barrier.oldLayout = init_layout;
+    image_barrier.newLayout = src_layout;
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+                           &image_barrier);
+
+    VkImageSubresourceRange dst_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3, 1};
+    image_barrier.subresourceRange = dst_range;
+    image_barrier.newLayout = dst_layout;
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+                           &image_barrier);
+
+    vk::CmdCopyImage(cb, image.handle(), src_layout, image.handle(), dst_layout, 1, &region);
+    m_errorMonitor->VerifyNotFound();
+    m_commandBuffer->end();
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool maint2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (maint2_support) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    } else {
+        printf("%s Relaxed layout matching subtest requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n",
+               kSkipPrefix);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    VkDescriptorSet descriptorSet = descriptor_set.set_;
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+
+    // Create image, view, and sampler
+    const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImageObj image(m_device);
+    auto usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(image_ci);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageSubresourceRange view_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3, 1};
+    VkImageSubresourceRange first_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
+    vk_testing::ImageView view;
+    auto image_view_create_info = lvl_init_struct<VkImageViewCreateInfo>();
+    image_view_create_info.image = image.handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = format;
+    image_view_create_info.subresourceRange = view_range;
+
+    view.init(*m_device, image_view_create_info);
+    ASSERT_TRUE(view.initialized());
+
+    // Create Sampler
+    vk_testing::Sampler sampler;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler.init(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    // Setup structure for descriptor update with sampler, for update in do_test below
+    VkDescriptorImageInfo img_info = {};
+    img_info.sampler = sampler.handle();
+
+    VkWriteDescriptorSet descriptor_write;
+    memset(&descriptor_write, 0, sizeof(descriptor_write));
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = descriptorSet;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = &img_info;
+
+    // Create PSO to be used for draw-time errors below
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+
+    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd_buf.handle();
+
+    enum TestType {
+        kInternal,  // Image layout mismatch is *within* a given command buffer
+        kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
+    };
+    std::array<TestType, 2> test_list = {{kInternal, kExternal}};
+
+    auto do_test = [&](VkImageObj *image, vk_testing::ImageView *view, VkImageAspectFlags aspect_mask,
+                       VkImageLayout descriptor_layout) {
+        // Set up the descriptor
+        img_info.imageView = view->handle();
+        img_info.imageLayout = descriptor_layout;
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+        for (TestType test_type : test_list) {
+            auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+
+            cmd_buf.begin();
+            m_errorMonitor->ExpectSuccess();
+            image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.image = image->handle();
+            image_barrier.subresourceRange = full_range;
+            image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            image_barrier.newLayout = init_layout;
+
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+
+            image_barrier.subresourceRange = first_range;
+            image_barrier.oldLayout = init_layout;
+            image_barrier.newLayout = descriptor_layout;
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+
+            image_barrier.subresourceRange = view_range;
+            image_barrier.oldLayout = init_layout;
+            image_barrier.newLayout = descriptor_layout;
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+            m_errorMonitor->VerifyNotFound();
+
+            if (test_type == kExternal) {
+                // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
+                cmd_buf.end();
+                m_errorMonitor->ExpectSuccess();
+                vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+                vk::QueueWaitIdle(m_device->m_queue);
+                m_errorMonitor->VerifyNotFound();
+                cmd_buf.begin();
+            }
+
+            m_errorMonitor->ExpectSuccess();
+            cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
+            vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                      &descriptorSet, 0, NULL);
+            vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
+            vk::CmdSetScissor(cmd_buf.handle(), 0, 1, &scissor);
+
+            cmd_buf.Draw(1, 0, 0, 0);
+
+            cmd_buf.EndRenderPass();
+            cmd_buf.end();
+            m_errorMonitor->VerifyNotFound();
+
+            // Submit cmd buffer
+            m_errorMonitor->ExpectSuccess();
+            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_device->m_queue);
+            m_errorMonitor->VerifyNotFound();
+        }
+    };
+    do_test(&image, &view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
