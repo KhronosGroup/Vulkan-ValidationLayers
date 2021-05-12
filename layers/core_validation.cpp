@@ -6414,13 +6414,6 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
             const ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state =
                 GetAccelerationStructureStateKHR(pInfos[info_index].dstAccelerationStructure);
             if (pInfos[info_index].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-                if (!src_as_state || (src_as_state && src_as_state->acceleration_structure == VK_NULL_HANDLE)) {
-                    skip |=
-                        LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03666",
-                                 "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
-                                 "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its srcAccelerationStructure member must not be "
-                                 "VK_NULL_HANDLE.");
-                }
                 if (src_as_state == nullptr || !src_as_state->built ||
                     !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                     skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03667",
@@ -6489,12 +6482,6 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
         const ACCELERATION_STRUCTURE_STATE_KHR *src_as_state = GetAccelerationStructureStateKHR(pInfos[i].srcAccelerationStructure);
         const ACCELERATION_STRUCTURE_STATE_KHR *dst_as_state = GetAccelerationStructureStateKHR(pInfos[i].dstAccelerationStructure);
         if (pInfos[i].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-            if (!src_as_state || (src_as_state && !src_as_state->acceleration_structure)) {
-                skip |= LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03666",
-                                 "vkBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
-                                 "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its srcAccelerationStructure member must not be "
-                                 "VK_NULL_HANDLE.");
-            }
             if (src_as_state == nullptr || !src_as_state->built ||
                 !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                 skip |= LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03667",

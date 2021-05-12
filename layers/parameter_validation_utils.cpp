@@ -6785,14 +6785,6 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
             "VkPhysicalDeviceAccelerationStructureFeaturesKHR::accelerationStructureIndirectBuild feature must be enabled.");
     }
     for (uint32_t i = 0; i < infoCount; ++i) {
-        if (pInfos[i].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-            if (pInfos[i].srcAccelerationStructure == VK_NULL_HANDLE) {
-                skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03666",
-                                 "vkCmdBuildAccelerationStructuresIndirectKHR:For each element of pInfos, if its mode member is "
-                                 "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its srcAccelerationStructure member must not be "
-                                 "VK_NULL_HANDLE.");
-            }
-        }
         if (SafeModulo(pInfos[i].scratchData.deviceAddress,
                        phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment) != 0) {
             skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03710",
