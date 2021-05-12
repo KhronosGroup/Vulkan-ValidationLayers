@@ -1326,6 +1326,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         free_pnext_proc += '                    }\n'
         free_pnext_proc += '                    free(const_cast<void *>(pNext));\n'
         free_pnext_proc += '                    pNext = nullptr;\n'
+        free_pnext_proc += '                    break;\n'
         free_pnext_proc += '                }\n'
         free_pnext_proc += '            }\n'
         free_pnext_proc += '            if (pNext) {\n'

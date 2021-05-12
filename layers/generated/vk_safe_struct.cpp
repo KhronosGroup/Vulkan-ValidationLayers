@@ -44943,6 +44943,7 @@ void FreePnextChain(const void *pNext) {
                     }
                     free(const_cast<void *>(pNext));
                     pNext = nullptr;
+                    break;
                 }
             }
             if (pNext) {
