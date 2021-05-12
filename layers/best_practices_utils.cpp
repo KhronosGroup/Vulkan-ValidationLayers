@@ -570,7 +570,7 @@ void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const Vk
                                                     VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_INVALID_EXTERNAL_HANDLE,
                                                     VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS};
         static std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkReleaseFullScreenExclusiveModeEXT", result, error_codes, success_codes);
+        ValidateReturnCodes("vkAllocateMemory", result, error_codes, success_codes);
         return;
     }
     num_mem_objects++;
