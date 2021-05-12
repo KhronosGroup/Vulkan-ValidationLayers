@@ -1713,7 +1713,16 @@ bool splice(DstRangeMap &to, const SrcRangeMap &from, SourceIterator begin, Sour
             // Because of how the parallel iterator walk, "to" is valid over the whole range or it isn't (ranges don't span
             // transitions between map entries or between valid and invalid ranges)
             if (to_lb->valid) {
-                updated |= updater.update(write_it->second, read_it->second);
+                if (write_it->first == range) {
+                    // if the source and destination ranges match we can overwrite everything
+                    updated |= updater.update(write_it->second, read_it->second);
+                } else {
+                    // otherwise we need to split the destination range.
+                    auto value_to_update = write_it->second; // intentional copy
+                    updated |= updater.update(value_to_update, read_it->second);
+                    to.overwrite_range(to_lb->lower_bound, std::make_pair(range, value_to_update));
+                    par_it.invalidate_A();  // we've changed map 'to' behind to_lb's back... let it know.
+                }
             } else {
                 // Insert into the gap.
                 auto opt = updater.insert(read_it->second);
