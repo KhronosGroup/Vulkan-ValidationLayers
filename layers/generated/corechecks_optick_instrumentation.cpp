@@ -5233,6 +5233,86 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdDrawIndirectByteCountEXT(VkC
     CoreChecks::PostCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateCreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateDestroyCuModuleNVX(device, module, pAllocator);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordDestroyCuModuleNVX(device, module, pAllocator);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordDestroyCuModuleNVX(device, module, pAllocator);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateDestroyCuFunctionNVX(device, function, pAllocator);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordDestroyCuFunctionNVX(device, function, pAllocator);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordDestroyCuFunctionNVX(device, function, pAllocator);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetImageViewHandleNVX(device, pInfo);

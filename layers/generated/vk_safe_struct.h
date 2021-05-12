@@ -5387,6 +5387,64 @@ struct safe_VkPipelineRasterizationStateStreamCreateInfoEXT {
     VkPipelineRasterizationStateStreamCreateInfoEXT const *ptr() const { return reinterpret_cast<VkPipelineRasterizationStateStreamCreateInfoEXT const *>(this); }
 };
 
+struct safe_VkCuModuleCreateInfoNVX {
+    VkStructureType sType;
+    const void* pNext;
+    size_t dataSize;
+    const void* pData;
+    safe_VkCuModuleCreateInfoNVX(const VkCuModuleCreateInfoNVX* in_struct);
+    safe_VkCuModuleCreateInfoNVX(const safe_VkCuModuleCreateInfoNVX& copy_src);
+    safe_VkCuModuleCreateInfoNVX& operator=(const safe_VkCuModuleCreateInfoNVX& copy_src);
+    safe_VkCuModuleCreateInfoNVX();
+    ~safe_VkCuModuleCreateInfoNVX();
+    void initialize(const VkCuModuleCreateInfoNVX* in_struct);
+    void initialize(const safe_VkCuModuleCreateInfoNVX* copy_src);
+    VkCuModuleCreateInfoNVX *ptr() { return reinterpret_cast<VkCuModuleCreateInfoNVX *>(this); }
+    VkCuModuleCreateInfoNVX const *ptr() const { return reinterpret_cast<VkCuModuleCreateInfoNVX const *>(this); }
+};
+
+struct safe_VkCuFunctionCreateInfoNVX {
+    VkStructureType sType;
+    const void* pNext;
+    VkCuModuleNVX module;
+    const char* pName;
+    safe_VkCuFunctionCreateInfoNVX(const VkCuFunctionCreateInfoNVX* in_struct);
+    safe_VkCuFunctionCreateInfoNVX(const safe_VkCuFunctionCreateInfoNVX& copy_src);
+    safe_VkCuFunctionCreateInfoNVX& operator=(const safe_VkCuFunctionCreateInfoNVX& copy_src);
+    safe_VkCuFunctionCreateInfoNVX();
+    ~safe_VkCuFunctionCreateInfoNVX();
+    void initialize(const VkCuFunctionCreateInfoNVX* in_struct);
+    void initialize(const safe_VkCuFunctionCreateInfoNVX* copy_src);
+    VkCuFunctionCreateInfoNVX *ptr() { return reinterpret_cast<VkCuFunctionCreateInfoNVX *>(this); }
+    VkCuFunctionCreateInfoNVX const *ptr() const { return reinterpret_cast<VkCuFunctionCreateInfoNVX const *>(this); }
+};
+
+struct safe_VkCuLaunchInfoNVX {
+    VkStructureType sType;
+    const void* pNext;
+    VkCuFunctionNVX function;
+    uint32_t gridDimX;
+    uint32_t gridDimY;
+    uint32_t gridDimZ;
+    uint32_t blockDimX;
+    uint32_t blockDimY;
+    uint32_t blockDimZ;
+    uint32_t sharedMemBytes;
+    size_t paramCount;
+    const void* const * pParams;
+    size_t extraCount;
+    const void* const * pExtras;
+    safe_VkCuLaunchInfoNVX(const VkCuLaunchInfoNVX* in_struct);
+    safe_VkCuLaunchInfoNVX(const safe_VkCuLaunchInfoNVX& copy_src);
+    safe_VkCuLaunchInfoNVX& operator=(const safe_VkCuLaunchInfoNVX& copy_src);
+    safe_VkCuLaunchInfoNVX();
+    ~safe_VkCuLaunchInfoNVX();
+    void initialize(const VkCuLaunchInfoNVX* in_struct);
+    void initialize(const safe_VkCuLaunchInfoNVX* copy_src);
+    VkCuLaunchInfoNVX *ptr() { return reinterpret_cast<VkCuLaunchInfoNVX *>(this); }
+    VkCuLaunchInfoNVX const *ptr() const { return reinterpret_cast<VkCuLaunchInfoNVX const *>(this); }
+};
+
 struct safe_VkImageViewHandleInfoNVX {
     VkStructureType sType;
     const void* pNext;

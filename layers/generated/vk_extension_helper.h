@@ -499,6 +499,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_win32_keyed_mutex{kNotEnabled};
     ExtEnabled vk_khr_workgroup_memory_explicit_layout{kNotEnabled};
     ExtEnabled vk_khr_zero_initialize_workgroup_memory{kNotEnabled};
+    ExtEnabled vk_nvx_binary_import{kNotEnabled};
     ExtEnabled vk_nvx_image_view_handle{kNotEnabled};
     ExtEnabled vk_nvx_multiview_per_view_attributes{kNotEnabled};
     ExtEnabled vk_nv_acquire_winrt_display{kNotEnabled};
@@ -907,6 +908,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_zero_initialize_workgroup_memory, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_NVX_BINARY_IMPORT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nvx_binary_import, {})},
             {VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nvx_image_view_handle, {})},
             {VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nvx_multiview_per_view_attributes, {{
                            {&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME}}})},
@@ -1281,6 +1283,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME,
     VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME,
+    VK_NVX_BINARY_IMPORT_EXTENSION_NAME,
     VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME,
     VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR

@@ -754,6 +754,21 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdDrawIndirectByteCountEXT,
     InterceptIdPreCallRecordCmdDrawIndirectByteCountEXT,
     InterceptIdPostCallRecordCmdDrawIndirectByteCountEXT,
+    InterceptIdPreCallValidateCreateCuModuleNVX,
+    InterceptIdPreCallRecordCreateCuModuleNVX,
+    InterceptIdPostCallRecordCreateCuModuleNVX,
+    InterceptIdPreCallValidateCreateCuFunctionNVX,
+    InterceptIdPreCallRecordCreateCuFunctionNVX,
+    InterceptIdPostCallRecordCreateCuFunctionNVX,
+    InterceptIdPreCallValidateDestroyCuModuleNVX,
+    InterceptIdPreCallRecordDestroyCuModuleNVX,
+    InterceptIdPostCallRecordDestroyCuModuleNVX,
+    InterceptIdPreCallValidateDestroyCuFunctionNVX,
+    InterceptIdPreCallRecordDestroyCuFunctionNVX,
+    InterceptIdPostCallRecordDestroyCuFunctionNVX,
+    InterceptIdPreCallValidateCmdCuLaunchKernelNVX,
+    InterceptIdPreCallRecordCmdCuLaunchKernelNVX,
+    InterceptIdPostCallRecordCmdCuLaunchKernelNVX,
     InterceptIdPreCallValidateGetImageViewHandleNVX,
     InterceptIdPreCallRecordGetImageViewHandleNVX,
     InterceptIdPostCallRecordGetImageViewHandleNVX,
@@ -1952,6 +1967,21 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawIndirectByteCountEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawIndirectByteCountEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawIndirectByteCountEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateCuModuleNVX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateCuModuleNVX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateCuModuleNVX);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateCuFunctionNVX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateCuFunctionNVX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateCuFunctionNVX);
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCuModuleNVX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCuModuleNVX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCuModuleNVX);
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCuFunctionNVX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCuFunctionNVX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCuFunctionNVX);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdCuLaunchKernelNVX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdCuLaunchKernelNVX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdCuLaunchKernelNVX);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetImageViewHandleNVX);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetImageViewHandleNVX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetImageViewHandleNVX);
