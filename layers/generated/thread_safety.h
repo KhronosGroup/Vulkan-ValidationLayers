@@ -324,6 +324,8 @@ public:
     counter<VkBuffer> c_VkBuffer;
     counter<VkBufferView> c_VkBufferView;
     counter<VkCommandPool> c_VkCommandPool;
+    counter<VkCuFunctionNVX> c_VkCuFunctionNVX;
+    counter<VkCuModuleNVX> c_VkCuModuleNVX;
     counter<VkDebugReportCallbackEXT> c_VkDebugReportCallbackEXT;
     counter<VkDebugUtilsMessengerEXT> c_VkDebugUtilsMessengerEXT;
     counter<VkDeferredOperationKHR> c_VkDeferredOperationKHR;
@@ -379,6 +381,8 @@ public:
           c_VkBuffer("VkBuffer", kVulkanObjectTypeBuffer, this),
           c_VkBufferView("VkBufferView", kVulkanObjectTypeBufferView, this),
           c_VkCommandPool("VkCommandPool", kVulkanObjectTypeCommandPool, this),
+          c_VkCuFunctionNVX("VkCuFunctionNVX", kVulkanObjectTypeCuFunctionNVX, this),
+          c_VkCuModuleNVX("VkCuModuleNVX", kVulkanObjectTypeCuModuleNVX, this),
           c_VkDebugReportCallbackEXT("VkDebugReportCallbackEXT", kVulkanObjectTypeDebugReportCallbackEXT, this),
           c_VkDebugUtilsMessengerEXT("VkDebugUtilsMessengerEXT", kVulkanObjectTypeDebugUtilsMessengerEXT, this),
           c_VkDeferredOperationKHR("VkDeferredOperationKHR", kVulkanObjectTypeDeferredOperationKHR, this),
@@ -470,6 +474,8 @@ WRAPPER(VkAccelerationStructureNV)
 WRAPPER(VkBuffer)
 WRAPPER(VkBufferView)
 WRAPPER(VkCommandPool)
+WRAPPER(VkCuFunctionNVX)
+WRAPPER(VkCuModuleNVX)
 WRAPPER_PARENT_INSTANCE(VkDebugReportCallbackEXT)
 WRAPPER_PARENT_INSTANCE(VkDebugUtilsMessengerEXT)
 WRAPPER(VkDeferredOperationKHR)
@@ -3807,6 +3813,60 @@ void PostCallRecordCmdDrawIndirectByteCountEXT(
     VkDeviceSize                                counterBufferOffset,
     uint32_t                                    counterOffset,
     uint32_t                                    vertexStride) override;
+
+void PreCallRecordCreateCuModuleNVX(
+    VkDevice                                    device,
+    const VkCuModuleCreateInfoNVX*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkCuModuleNVX*                              pModule) override;
+
+void PostCallRecordCreateCuModuleNVX(
+    VkDevice                                    device,
+    const VkCuModuleCreateInfoNVX*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkCuModuleNVX*                              pModule,
+    VkResult                                    result) override;
+
+void PreCallRecordCreateCuFunctionNVX(
+    VkDevice                                    device,
+    const VkCuFunctionCreateInfoNVX*            pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkCuFunctionNVX*                            pFunction) override;
+
+void PostCallRecordCreateCuFunctionNVX(
+    VkDevice                                    device,
+    const VkCuFunctionCreateInfoNVX*            pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkCuFunctionNVX*                            pFunction,
+    VkResult                                    result) override;
+
+void PreCallRecordDestroyCuModuleNVX(
+    VkDevice                                    device,
+    VkCuModuleNVX                               module,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PostCallRecordDestroyCuModuleNVX(
+    VkDevice                                    device,
+    VkCuModuleNVX                               module,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PreCallRecordDestroyCuFunctionNVX(
+    VkDevice                                    device,
+    VkCuFunctionNVX                             function,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PostCallRecordDestroyCuFunctionNVX(
+    VkDevice                                    device,
+    VkCuFunctionNVX                             function,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PreCallRecordCmdCuLaunchKernelNVX(
+    VkCommandBuffer                             commandBuffer,
+    const VkCuLaunchInfoNVX*                    pLaunchInfo) override;
+
+void PostCallRecordCmdCuLaunchKernelNVX(
+    VkCommandBuffer                             commandBuffer,
+    const VkCuLaunchInfoNVX*                    pLaunchInfo) override;
 
 void PreCallRecordGetImageViewHandleNVX(
     VkDevice                                    device,

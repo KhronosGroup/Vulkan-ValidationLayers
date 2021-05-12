@@ -2680,6 +2680,33 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_ST
     typedef VkPipelineRasterizationStateStreamCreateInfoEXT Type;
 };
 
+// Map type VkCuModuleCreateInfoNVX to id VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX
+template <> struct LvlTypeMap<VkCuModuleCreateInfoNVX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX> {
+    typedef VkCuModuleCreateInfoNVX Type;
+};
+
+// Map type VkCuFunctionCreateInfoNVX to id VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX
+template <> struct LvlTypeMap<VkCuFunctionCreateInfoNVX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX> {
+    typedef VkCuFunctionCreateInfoNVX Type;
+};
+
+// Map type VkCuLaunchInfoNVX to id VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX
+template <> struct LvlTypeMap<VkCuLaunchInfoNVX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX> {
+    typedef VkCuLaunchInfoNVX Type;
+};
+
 // Map type VkImageViewHandleInfoNVX to id VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX
 template <> struct LvlTypeMap<VkImageViewHandleInfoNVX> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX;

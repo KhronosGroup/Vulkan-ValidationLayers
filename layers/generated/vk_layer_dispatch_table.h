@@ -628,6 +628,13 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdEndQueryIndexedEXT CmdEndQueryIndexedEXT;
     PFN_vkCmdDrawIndirectByteCountEXT CmdDrawIndirectByteCountEXT;
 
+    // ---- VK_NVX_binary_import extension commands
+    PFN_vkCreateCuModuleNVX CreateCuModuleNVX;
+    PFN_vkCreateCuFunctionNVX CreateCuFunctionNVX;
+    PFN_vkDestroyCuModuleNVX DestroyCuModuleNVX;
+    PFN_vkDestroyCuFunctionNVX DestroyCuFunctionNVX;
+    PFN_vkCmdCuLaunchKernelNVX CmdCuLaunchKernelNVX;
+
     // ---- VK_NVX_image_view_handle extension commands
     PFN_vkGetImageViewHandleNVX GetImageViewHandleNVX;
     PFN_vkGetImageViewAddressNVX GetImageViewAddressNVX;

@@ -23998,6 +23998,236 @@ void safe_VkPipelineRasterizationStateStreamCreateInfoEXT::initialize(const safe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const VkCuModuleCreateInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    dataSize(in_struct->dataSize),
+    pData(in_struct->pData)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX),
+    pNext(nullptr),
+    pData(nullptr)
+{}
+
+safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const safe_VkCuModuleCreateInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    dataSize = copy_src.dataSize;
+    pData = copy_src.pData;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCuModuleCreateInfoNVX& safe_VkCuModuleCreateInfoNVX::operator=(const safe_VkCuModuleCreateInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dataSize = copy_src.dataSize;
+    pData = copy_src.pData;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCuModuleCreateInfoNVX::~safe_VkCuModuleCreateInfoNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCuModuleCreateInfoNVX::initialize(const VkCuModuleCreateInfoNVX* in_struct)
+{
+    sType = in_struct->sType;
+    dataSize = in_struct->dataSize;
+    pData = in_struct->pData;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCuModuleCreateInfoNVX::initialize(const safe_VkCuModuleCreateInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    dataSize = copy_src->dataSize;
+    pData = copy_src->pData;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCuFunctionCreateInfoNVX::safe_VkCuFunctionCreateInfoNVX(const VkCuFunctionCreateInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    module(in_struct->module)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
+}
+
+safe_VkCuFunctionCreateInfoNVX::safe_VkCuFunctionCreateInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX),
+    pNext(nullptr),
+    pName(nullptr)
+{}
+
+safe_VkCuFunctionCreateInfoNVX::safe_VkCuFunctionCreateInfoNVX(const safe_VkCuFunctionCreateInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    module = copy_src.module;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+}
+
+safe_VkCuFunctionCreateInfoNVX& safe_VkCuFunctionCreateInfoNVX::operator=(const safe_VkCuFunctionCreateInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    module = copy_src.module;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+
+    return *this;
+}
+
+safe_VkCuFunctionCreateInfoNVX::~safe_VkCuFunctionCreateInfoNVX()
+{
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCuFunctionCreateInfoNVX::initialize(const VkCuFunctionCreateInfoNVX* in_struct)
+{
+    sType = in_struct->sType;
+    module = in_struct->module;
+    pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
+}
+
+void safe_VkCuFunctionCreateInfoNVX::initialize(const safe_VkCuFunctionCreateInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    module = copy_src->module;
+    pNext = SafePnextCopy(copy_src->pNext);
+    pName = SafeStringCopy(copy_src->pName);
+}
+
+safe_VkCuLaunchInfoNVX::safe_VkCuLaunchInfoNVX(const VkCuLaunchInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    function(in_struct->function),
+    gridDimX(in_struct->gridDimX),
+    gridDimY(in_struct->gridDimY),
+    gridDimZ(in_struct->gridDimZ),
+    blockDimX(in_struct->blockDimX),
+    blockDimY(in_struct->blockDimY),
+    blockDimZ(in_struct->blockDimZ),
+    sharedMemBytes(in_struct->sharedMemBytes),
+    paramCount(in_struct->paramCount),
+    pParams(in_struct->pParams),
+    extraCount(in_struct->extraCount),
+    pExtras(in_struct->pExtras)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCuLaunchInfoNVX::safe_VkCuLaunchInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX),
+    pNext(nullptr),
+    pParams(nullptr),
+    pExtras(nullptr)
+{}
+
+safe_VkCuLaunchInfoNVX::safe_VkCuLaunchInfoNVX(const safe_VkCuLaunchInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    function = copy_src.function;
+    gridDimX = copy_src.gridDimX;
+    gridDimY = copy_src.gridDimY;
+    gridDimZ = copy_src.gridDimZ;
+    blockDimX = copy_src.blockDimX;
+    blockDimY = copy_src.blockDimY;
+    blockDimZ = copy_src.blockDimZ;
+    sharedMemBytes = copy_src.sharedMemBytes;
+    paramCount = copy_src.paramCount;
+    pParams = copy_src.pParams;
+    extraCount = copy_src.extraCount;
+    pExtras = copy_src.pExtras;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCuLaunchInfoNVX& safe_VkCuLaunchInfoNVX::operator=(const safe_VkCuLaunchInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    function = copy_src.function;
+    gridDimX = copy_src.gridDimX;
+    gridDimY = copy_src.gridDimY;
+    gridDimZ = copy_src.gridDimZ;
+    blockDimX = copy_src.blockDimX;
+    blockDimY = copy_src.blockDimY;
+    blockDimZ = copy_src.blockDimZ;
+    sharedMemBytes = copy_src.sharedMemBytes;
+    paramCount = copy_src.paramCount;
+    pParams = copy_src.pParams;
+    extraCount = copy_src.extraCount;
+    pExtras = copy_src.pExtras;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCuLaunchInfoNVX::~safe_VkCuLaunchInfoNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCuLaunchInfoNVX::initialize(const VkCuLaunchInfoNVX* in_struct)
+{
+    sType = in_struct->sType;
+    function = in_struct->function;
+    gridDimX = in_struct->gridDimX;
+    gridDimY = in_struct->gridDimY;
+    gridDimZ = in_struct->gridDimZ;
+    blockDimX = in_struct->blockDimX;
+    blockDimY = in_struct->blockDimY;
+    blockDimZ = in_struct->blockDimZ;
+    sharedMemBytes = in_struct->sharedMemBytes;
+    paramCount = in_struct->paramCount;
+    pParams = in_struct->pParams;
+    extraCount = in_struct->extraCount;
+    pExtras = in_struct->pExtras;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCuLaunchInfoNVX::initialize(const safe_VkCuLaunchInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    function = copy_src->function;
+    gridDimX = copy_src->gridDimX;
+    gridDimY = copy_src->gridDimY;
+    gridDimZ = copy_src->gridDimZ;
+    blockDimX = copy_src->blockDimX;
+    blockDimY = copy_src->blockDimY;
+    blockDimZ = copy_src->blockDimZ;
+    sharedMemBytes = copy_src->sharedMemBytes;
+    paramCount = copy_src->paramCount;
+    pParams = copy_src->pParams;
+    extraCount = copy_src->extraCount;
+    pExtras = copy_src->pExtras;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX(const VkImageViewHandleInfoNVX* in_struct) :
     sType(in_struct->sType),
     imageView(in_struct->imageView),
