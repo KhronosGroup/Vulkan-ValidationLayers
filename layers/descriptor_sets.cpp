@@ -1683,19 +1683,35 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
 
-    if (!(src_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
-        (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
-        *error_code = "VUID-VkCopyDescriptorSet-srcSet-01919";
-        std::stringstream error_str;
-        error_str << "If pname:srcSet's (" << report_data->FormatHandle(update->srcSet)
-                  << ") layout was created without the "
-                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag "
-                     "set, then pname:dstSet's ("
-                  << report_data->FormatHandle(update->dstSet)
-                  << ") layout must: also have been created without the "
-                     "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag set";
-        *error_msg = error_str.str();
-        return false;
+    if (device_extensions.vk_valve_mutable_descriptor_type) {
+        if (!(src_layout->GetCreateFlags() & (VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT |
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) &&
+            (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
+            *error_code = "VUID-VkCopyDescriptorSet-srcSet-04885";
+            std::stringstream error_str;
+            error_str << "If pname:srcSet's (" << report_data->FormatHandle(update->srcSet)
+                      << ") layout was created with neither ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT nor "
+                         "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE flags set, then pname:dstSet's ("
+                      << report_data->FormatHandle(update->dstSet)
+                      << ") layout must: have been created without the "
+                         "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag set";
+            *error_msg = error_str.str();
+            return false;
+        }
+    } else {
+        if (!(src_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
+            (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
+            *error_code = "VUID-VkCopyDescriptorSet-srcSet-04886";
+            std::stringstream error_str;
+            error_str << "If pname:srcSet's (" << report_data->FormatHandle(update->srcSet)
+                      << ") layout was created without the ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag "
+                         "set, then pname:dstSet's ("
+                      << report_data->FormatHandle(update->dstSet)
+                      << ") layout must: also have been created without the "
+                         "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag set";
+            *error_msg = error_str.str();
+            return false;
+        }
     }
 
     if ((src_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT) &&
@@ -1713,19 +1729,36 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
 
-    if (!(src_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT) &&
-        (dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
-        *error_code = "VUID-VkCopyDescriptorSet-srcSet-01921";
-        std::stringstream error_str;
-        error_str << "If the descriptor pool from which pname:srcSet (" << report_data->FormatHandle(update->srcSet)
-                  << ") was allocated was created "
-                     "without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag "
-                     "set, then the descriptor pool from which pname:dstSet ("
-                  << report_data->FormatHandle(update->dstSet)
-                  << ") was allocated must: "
-                     "also have been created without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set";
-        *error_msg = error_str.str();
-        return false;
+    if (device_extensions.vk_valve_mutable_descriptor_type) {
+        if (!(src_set->GetPoolState()->createInfo.flags &
+              (VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE)) &&
+            (dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
+            *error_code = "VUID-VkCopyDescriptorSet-srcSet-04887";
+            std::stringstream error_str;
+            error_str << "If the descriptor pool from which pname:srcSet (" << report_data->FormatHandle(update->srcSet)
+                      << ") was allocated was created with neither ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT nor "
+                         "ename:VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE flags set, then the descriptor pool from which "
+                         "pname:dstSet ("
+                      << report_data->FormatHandle(update->dstSet)
+                      << ") was allocated must: have been created without the "
+                         "ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set";
+            *error_msg = error_str.str();
+            return false;
+        }
+    } else {
+        if (!(src_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT) &&
+            (dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
+            *error_code = "VUID-VkCopyDescriptorSet-srcSet-04888";
+            std::stringstream error_str;
+            error_str << "If the descriptor pool from which pname:srcSet (" << report_data->FormatHandle(update->srcSet)
+                      << ") was allocated was created without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set, "
+                         "then the descriptor pool from which pname:dstSet ("
+                      << report_data->FormatHandle(update->dstSet)
+                      << ") was allocated must: also have been created without the "
+                         "ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT flag set";
+            *error_msg = error_str.str();
+            return false;
+        }
     }
 
     if (src_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
