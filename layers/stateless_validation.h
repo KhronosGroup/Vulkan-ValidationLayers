@@ -953,7 +953,7 @@ class StatelessValidation : public ValidationObject {
             ~kExcludeStages;
 
         const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
-            if (subpass == VK_SUBPASS_EXTERNAL)
+            if (subpass == VK_SUBPASS_EXTERNAL || subpass >= pCreateInfo->subpassCount)
                 return false;
             else
                 return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == stage;
