@@ -405,6 +405,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
             gs = new VkShaderObj(m_device, iter.geometry_source, VK_SHADER_STAGE_GEOMETRY_BIT, this, "main", iter.debug);
             pipe.AddShader(gs);
         }
+        VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                         VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+        VkPipelineTessellationDomainOriginStateCreateInfo tessellationDomainOriginStateInfo = {
+                VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO, VK_NULL_HANDLE,
+                VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT};
+
+        VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
+                                                       &tessellationDomainOriginStateInfo, 0, 3};
         if (iter.tess_ctrl_source && iter.tess_eval_source) {
             tcs = new VkShaderObj(m_device, iter.tess_ctrl_source, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this, "main",
                                   iter.debug);
@@ -412,14 +420,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
                                   iter.debug);
             pipe.AddShader(tcs);
             pipe.AddShader(tes);
-            VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                         VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
-            VkPipelineTessellationDomainOriginStateCreateInfo tessellationDomainOriginStateInfo = {
-                VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO, VK_NULL_HANDLE,
-                VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT};
-
-            VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
-                                                       &tessellationDomainOriginStateInfo, 0, 3};
             pipe.SetTessellation(&tsci);
             pipe.SetInputAssembly(&iasci);
         }
@@ -464,14 +464,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
             "   Data[(u_index.index - 1)].data = Data[u_index.index].data;\n"
             "}\n";
 
-        auto shader_module = new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+        VkShaderObj shader_module(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
 
         VkPipelineShaderStageCreateInfo stage;
         stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage.pNext = nullptr;
         stage.flags = 0;
         stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        stage.module = shader_module->handle();
+        stage.module = shader_module.handle();
         stage.pName = "main";
         stage.pSpecializationInfo = nullptr;
 
@@ -517,7 +517,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
         vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
-        vk::DestroyShaderModule(m_device->handle(), shader_module->handle(), NULL);
     }
     return;
 }
@@ -2159,14 +2158,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         "    u_index.index = inlineubo.val;\n"
         "}\n";
 
-    auto shader_module = new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+    VkShaderObj shader_module(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
 
     VkPipelineShaderStageCreateInfo stage;
     stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stage.pNext = nullptr;
     stage.flags = 0;
     stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    stage.module = shader_module->handle();
+    stage.module = shader_module.handle();
     stage.pName = "main";
     stage.pSpecializationInfo = nullptr;
 
@@ -2256,7 +2255,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     m_commandBuffer->end();
     vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyShaderModule(m_device->handle(), shader_module->handle(), NULL);
     vk::DestroyPipelineLayout(m_device->handle(), pl_layout, NULL);
     vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
     for (uint32_t i = 0; i < set_count; i++) {

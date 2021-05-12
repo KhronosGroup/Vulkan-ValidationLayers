@@ -2454,14 +2454,14 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
     const uint32_t valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
 
-    VkSampleLocationEXT sample_location = {0.5, 0.5};
+    std::vector<VkSampleLocationEXT> sample_location(valid_count,{0.5, 0.5});
     VkSampleLocationsInfoEXT sample_locations_info = {};
     sample_locations_info.sType = VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT;
     sample_locations_info.pNext = nullptr;
     sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
     sample_locations_info.sampleLocationGridSize = multisample_prop.maxSampleLocationGridSize;
     sample_locations_info.sampleLocationsCount = valid_count;
-    sample_locations_info.pSampleLocations = &sample_location;
+    sample_locations_info.pSampleLocations = sample_location.data();
 
     VkPipelineSampleLocationsStateCreateInfoEXT sample_location_state = {};
     sample_location_state.sType = VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT;

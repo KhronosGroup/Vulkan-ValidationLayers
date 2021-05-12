@@ -5622,15 +5622,15 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
 
         ASSERT_VK_SUCCESS(err);
 
-        VkPipelineDepthStencilStateCreateInfo ds = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-        VkPipelineCoverageModulationStateCreateInfoNV cmi = {VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV};
+        auto ds = lvl_init_struct<VkPipelineDepthStencilStateCreateInfo>();
+        auto cmi = lvl_init_struct<VkPipelineCoverageModulationStateCreateInfoNV>();
 
         // Create a dummy modulation table that can be used for the positive
         // coverageModulationTableCount test.
         std::vector<float> cm_table{};
 
         const auto break_samples = [&cmi, &rp, &ds, &cm_table, &test_case](CreatePipelineHelper &helper) {
-            cm_table.resize(test_case.raster_samples / test_case.color_samples);
+            cm_table.resize(test_case.table_count);
 
             cmi.flags = 0;
             cmi.coverageModulationTableEnable = (test_case.table_count > 1);
