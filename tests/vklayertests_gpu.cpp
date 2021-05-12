@@ -2114,8 +2114,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 20, VK_SHADER_STAGE_ALL,
-                                            nullptr},  // 16 bytes for ivec4, 4 more for int
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 32, VK_SHADER_STAGE_ALL,
+                                            nullptr},
                                        },
                                        0, layout_createinfo_binding_flags, 0);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
