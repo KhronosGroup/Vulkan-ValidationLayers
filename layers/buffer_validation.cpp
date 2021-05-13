@@ -1773,8 +1773,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
             if (0 != (~VK_IMAGE_USAGE_SAMPLED_BIT & create_info->usage)) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02397",
                                  "vkCreateImage(): VkImageCreateInfo struct has a chained VkExternalFormatANDROID struct with "
-                                 "non-zero externalFormat, but usage includes bits (0x%" PRIx64
-                                 ") other than VK_IMAGE_USAGE_SAMPLED_BIT.",
+                                 "non-zero externalFormat, but usage includes bits (0x%" PRIx32 ") other than VK_IMAGE_USAGE_SAMPLED_BIT.",
                                  create_info->usage);
             }
 
@@ -3414,7 +3413,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             if (FormatElementSize(src_format) != FormatElementSize(dst_format)) {
                 skip |= LogError(command_buffer, compatible_vuid,
                                  "%s: Unmatched image format sizes. "
-                                 "The src format %s has size of %zu and dst format %s has size of %zu.",
+                                 "The src format %s has size of %" PRIu32 " and dst format %s has size of %" PRIu32 ".",
                                  func_name, string_VkFormat(src_format), FormatElementSize(src_format), string_VkFormat(dst_format),
                                  FormatElementSize(dst_format));
             }

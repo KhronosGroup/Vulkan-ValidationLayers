@@ -551,8 +551,8 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     if (pAllocateInfo->allocationSize < kMinDeviceAllocationSize) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_AllocateMemory_SmallAllocation,
-            "vkAllocateMemory(): Allocating a VkDeviceMemory of size %llu. This is a very small allocation (current "
-            "threshold is %llu bytes). "
+            "vkAllocateMemory(): Allocating a VkDeviceMemory of size %" PRIu64 ". This is a very small allocation (current "
+            "threshold is %" PRIu64 " bytes). "
             "You should make large allocations and sub-allocate from one large VkDeviceMemory.",
             pAllocateInfo->allocationSize, kMinDeviceAllocationSize);
     }
@@ -640,8 +640,8 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_SmallDedicatedAllocation,
             "%s: Trying to bind %s to a memory block which is fully consumed by the buffer. "
-            "The required size of the allocation is %llu, but smaller buffers like this should be sub-allocated from "
-            "larger memory blocks. (Current threshold is %llu bytes.)",
+            "The required size of the allocation is %" PRIu64 ", but smaller buffers like this should be sub-allocated from "
+            "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
             api_name, report_data->FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize, kMinDedicatedAllocationSize);
     }
 
@@ -706,8 +706,8 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_SmallDedicatedAllocation,
             "%s: Trying to bind %s to a memory block which is fully consumed by the image. "
-            "The required size of the allocation is %llu, but smaller images like this should be sub-allocated from "
-            "larger memory blocks. (Current threshold is %llu bytes.)",
+            "The required size of the allocation is %" PRIu64 ", but smaller images like this should be sub-allocated from "
+            "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
             api_name, report_data->FormatHandle(image).c_str(), mem_state->alloc_info.allocationSize, kMinDedicatedAllocationSize);
     }
 
@@ -734,9 +734,9 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
         if (supports_lazy && (allocated_properties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_NonLazyTransientImage,
-                "%s: Attempting to bind memory type % u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
+                "%s: Attempting to bind memory type %u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
                 "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %u here instead to save "
-                "%llu bytes of physical memory.",
+                "%" PRIu64 " bytes of physical memory.",
                 api_name, mem_state->alloc_info.memoryTypeIndex, suggested_type, image_state->requirements.size);
         }
     }
@@ -1492,7 +1492,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
         (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1)) {
         skip |= VendorCheckEnabled(kBPVendorArm) &&
                 LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
-                                      "The command buffer contains many small indexed drawcalls "
+                                      "%s: The command buffer contains many small indexed drawcalls "
                                       "(at least %u drawcalls with less than %u indices each). This may cause pipeline bubbles. "
                                       "You can try batching drawcalls or instancing when applicable.",
                                       VendorSpecificTag(kBPVendorArm), kMaxSmallIndexedDrawcalls, kSmallIndexedDrawcallIndices);
@@ -2181,7 +2181,7 @@ bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSample
                 "%s Creating a sampler object with wrapping modes which do not match (U = %u, V = %u, W = %u). "
                 "This may cause reduced performance even if only U (1D image) or U/V wrapping modes (2D "
                 "image) are actually used. If you need different wrapping modes, disregard this warning.",
-                VendorSpecificTag(kBPVendorArm));
+                VendorSpecificTag(kBPVendorArm), pCreateInfo->addressModeU, pCreateInfo->addressModeV, pCreateInfo->addressModeW);
         }
 
         if ((pCreateInfo->minLod != 0.0f) || (pCreateInfo->maxLod < VK_LOD_CLAMP_NONE)) {
