@@ -393,8 +393,8 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                 skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04604",
                                           "vkCreateDescriptorSetLayout(): pBindings[%u] is creating VkDescriptorSetLayout with "
                                           "descriptor type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
-                                          "but inlineUniformBlock is not enabled",
-                                          i, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+                                          "but the inlineUniformBlock feature is not enabled",
+                                          i);
             } else {
                 if ((binding_info.descriptorCount % 4) != 0) {
                     skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-02209",
@@ -422,9 +422,9 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                                       sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT)) {
                     skip |= val_obj->LogError(
                         val_obj->device, "VUID-VkDescriptorSetLayoutBinding-pImmutableSamplers-04009",
-                        "vkCreateDescriptorSetLayout(): pBindings[%u].pImmutableSamplers[%u] has VkSampler %" PRIu64
+                        "vkCreateDescriptorSetLayout(): pBindings[%u].pImmutableSamplers[%u] has VkSampler %s"
                         " presented as immutable has a custom border color",
-                        i, j, binding_info.pImmutableSamplers[j]);
+                        i, j, val_obj->report_data->FormatHandle(binding_info.pImmutableSamplers[j]).c_str());
                 }
             }
         }

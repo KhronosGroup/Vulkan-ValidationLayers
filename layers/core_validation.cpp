@@ -791,7 +791,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         skip |=
                             LogError(pCB->commandBuffer, "VUID-vkCmdBindVertexBuffers2EXT-pStrides-03363",
                                      "The pStrides[%u] (%u) parameter in the last call to vkCmdBindVertexBuffers2EXT is less than "
-                                     "the extent of the binding for attribute %u (%u).",
+                                     "the extent of the binding for attribute %zu (%u).",
                                      vertex_binding, vertex_buffer_stride, i, attribute_binding_extent);
                     }
                 }
@@ -1650,7 +1650,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                          "vkCreateGraphicsPipelines() pCreateInfo[%u]: VK_EXT_depth_range_unrestricted extension "
                                          "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
                                          "true, and pDepthStencilState::minDepthBounds (=%f) is not within the [0.0, 1.0] range.",
-                                         minDepthBounds);
+                                         pipelineIndex, minDepthBounds);
                         }
                         if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
                             skip |=
@@ -1658,7 +1658,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                          "vkCreateGraphicsPipelines() pCreateInfo[%u]: VK_EXT_depth_range_unrestricted extension "
                                          "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
                                          "true, and pDepthStencilState::maxDepthBounds (=%f) is not within the [0.0, 1.0] range.",
-                                         maxDepthBounds);
+                                         pipelineIndex, maxDepthBounds);
                         }
                     }
                 }
@@ -1882,7 +1882,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                          "reduction mode (%s), pMultisampleState->rasterizationSamples (%u), sample counts for "
                                          "the subpass color and depth/stencil attachments is not a valid combination returned by "
                                          "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV.",
-                                         pipelineIndex, string_VkCoverageReductionModeNV(coverage_reduction_mode));
+                                         pipelineIndex, string_VkCoverageReductionModeNV(coverage_reduction_mode), raster_samples);
                     }
                 }
             }
@@ -3658,7 +3658,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                 skip |=
                     LogError(device, "VUID-VkMemoryAllocateInfo-pNext-02390",
                              "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID, "
-                             "dedicated image usage bits (0x%" PRIx64
+                             "dedicated image usage bits (0x%" PRIx32
                              ") include an issue not listed in the AHardwareBuffer Usage Equivalence table.",
                              ici->usage);
             }
@@ -3901,7 +3901,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                            : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
                     skip |= LogError(
                         device, vuid,
-                        "vkAllocateMemory: Allocation Size (%u) needs to be equal to VkImage %s VkMemoryRequirements::size (%u)",
+                        "vkAllocateMemory: Allocation Size (%" PRIu64 ") needs to be equal to VkImage %s VkMemoryRequirements::size (%" PRIu64 ")",
                         pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
                         image_state->requirements.size);
                 }
@@ -3922,7 +3922,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                        : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
                 skip |= LogError(
                     device, vuid,
-                    "vkAllocateMemory: Allocation Size (%u) needs to be equal to VkBuffer %s VkMemoryRequirements::size (%u)",
+                    "vkAllocateMemory: Allocation Size (%" PRIu64 ") needs to be equal to VkBuffer %s VkMemoryRequirements::size (%" PRIu64 ")",
                     pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->buffer).c_str(),
                     buffer_state->requirements.size);
             }
@@ -4321,7 +4321,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                         skip |= LogError(queryPool, "VUID-vkGetQueryPoolResults-queryType-04519",
                                          "vkGetQueryPoolResults() on querypool %s specified stride %" PRIu64
                                          " which must be at least counterIndexCount (%d) "
-                                         "multiplied by sizeof(VkPerformanceCounterResultKHR) (%d).",
+                                         "multiplied by sizeof(VkPerformanceCounterResultKHR) (%zu).",
                                          report_data->FormatHandle(queryPool).c_str(), stride, query_items,
                                          sizeof(VkPerformanceCounterResultKHR));
                     }
@@ -5877,8 +5877,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if (p_inherited_viewport_scissor_info->viewportDepthCount == 0) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04784",
                                      "vkBeginCommandBuffer(): "
-                                     "If viewportScissor2D is VK_TRUE, then viewportDepthCount must be greater than 0.",
-                                     report_data->FormatHandle(commandBuffer).c_str());
+                                     "If viewportScissor2D is VK_TRUE, then viewportDepthCount must be greater than 0.");
                 }
             }
         }
@@ -10003,7 +10002,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                          "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, "
                                          "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "
                                          "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
-                                         "VK_IMAGE_LAYOUT_GENERAL, ",
+                                         "VK_IMAGE_LAYOUT_GENERAL, "
                                          "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR or"
                                          "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR.",
                                          function_name, error_type.c_str(), string_VkImageLayout(image_layout));
@@ -11417,7 +11416,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 ss << "was left undefined after vkCmdBindPipeline (with non-dynamic state) in pCommandBuffers[" << trashed_by
                    << "].";
             }
-            return validation_.LogError(primary_state_->commandBuffer, "VUID-vkCmdDraw-commandBuffer-02701", ss.str().c_str());
+            return validation_.LogError(primary_state_->commandBuffer, "VUID-vkCmdDraw-commandBuffer-02701", "%s", ss.str().c_str());
         };
 
         // Check if secondary command buffer uses viewport/scissor-with-count state, and validate this state if so.
@@ -13865,7 +13864,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                     skip |= LogError(
                         device, "VUID-VkSamplerCreateInfo-minFilter-01645",
                         "VkCreateSampler: VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT is "
-                        "not supported for SamplerYcbcrConversion's (%u) format %s so minFilter (%s) needs to be equal to "
+                        "not supported for SamplerYcbcrConversion's (%s) format %s so minFilter (%s) needs to be equal to "
                         "chromaFilter (%s)",
                         report_data->FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
                         string_VkFilter(pCreateInfo->minFilter), string_VkFilter(chroma_filter));
@@ -13874,7 +13873,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                     skip |= LogError(
                         device, "VUID-VkSamplerCreateInfo-minFilter-01645",
                         "VkCreateSampler: VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT is "
-                        "not supported for SamplerYcbcrConversion's (%u) format %s so minFilter (%s) needs to be equal to "
+                        "not supported for SamplerYcbcrConversion's (%s) format %s so minFilter (%s) needs to be equal to "
                         "chromaFilter (%s)",
                         report_data->FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
                         string_VkFilter(pCreateInfo->minFilter), string_VkFilter(chroma_filter));
@@ -14545,9 +14544,9 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
 
         if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) == 0) {
             skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02360",
-                             "%s: pBuffers[%" PRIu32 "] (0x%" PRIxLEAST64
-                             ") was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT flag.",
-                             cmd_name, i, pBuffers[i]);
+                             "%s: pBuffers[%" PRIu32 "] (%s)"
+                             " was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT flag.",
+                             cmd_name, i, report_data->FormatHandle(pBuffers[i]).c_str());
         }
 
         // pSizes is optional and may be nullptr. Also might be VK_WHOLE_SIZE which VU don't apply
@@ -14606,16 +14605,14 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                 if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
                     skip |=
                         LogError(buffer_state->buffer, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-02370",
-                                 "%s: pCounterBuffers[%" PRIu32 "](0x%" PRIxLEAST64
-                                 ") is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIxLEAST64 ").",
-                                 cmd_name, i, pCounterBuffers[i], i, pCounterBufferOffsets[i]);
+                                 "%s: pCounterBuffers[%" PRIu32 "](%s) is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").",
+                             cmd_name, i, report_data->FormatHandle(pCounterBuffers[i]).c_str(), i, pCounterBufferOffsets[i]);
                 }
 
                 if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
                     skip |= LogError(buffer_state->buffer, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372",
-                                     "%s: pCounterBuffers[%" PRIu32 "] (0x%" PRIxLEAST64
-                                     ") was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT flag.",
-                                     cmd_name, i, pCounterBuffers[i]);
+                                     "%s: pCounterBuffers[%" PRIu32 "] (%s) was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT flag.",
+                                     cmd_name, i, report_data->FormatHandle(pCounterBuffers[i]).c_str());
                 }
             }
         }
@@ -14658,16 +14655,14 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                 if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
                     skip |=
                         LogError(buffer_state->buffer, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBufferOffsets-02378",
-                                 "%s: pCounterBuffers[%" PRIu32 "](0x%" PRIxLEAST64
-                                 ") is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIxLEAST64 ").",
-                                 cmd_name, i, pCounterBuffers[i], i, pCounterBufferOffsets[i]);
+                                 "%s: pCounterBuffers[%" PRIu32 "](%s) is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").",
+                                 cmd_name, i, report_data->FormatHandle(pCounterBuffers[i]).c_str(), i, pCounterBufferOffsets[i]);
                 }
 
                 if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
                     skip |= LogError(buffer_state->buffer, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380",
-                                     "%s: pCounterBuffers[%" PRIu32 "] (0x%" PRIxLEAST64
-                                     ") was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT flag.",
-                                     cmd_name, i, pCounterBuffers[i]);
+                                     "%s: pCounterBuffers[%" PRIu32 "] (%s) was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT flag.",
+                                     cmd_name, i, report_data->FormatHandle(pCounterBuffers[i]).c_str());
                 }
             }
         }

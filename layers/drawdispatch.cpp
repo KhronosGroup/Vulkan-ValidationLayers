@@ -675,7 +675,7 @@ bool CoreChecks::ValidateCmdDrawInstance(VkCommandBuffer commandBuffer, uint32_t
         LogObjectList objlist(commandBuffer);
         objlist.add(cb_node->activeRenderPass->renderPass);
         skip |= LogError(objlist, vuid.max_multiview_instance_index,
-                         "%s: multiview is enabled, and maxMultiviewInstanceIndex: %" PRIu32 ", but instanceCount: %" PRIu32
+                         "%s: renderpass %s multiview is enabled, and maxMultiviewInstanceIndex: %" PRIu32 ", but instanceCount: %" PRIu32
                          "and firstInstance: %" PRIu32 ".",
                          caller, report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
                          phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
@@ -733,8 +733,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                                 buffer_state);
     } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->createInfo.size) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00487",
-                         "CmdDrawIndirect: drawCount equals 1 and (offset + sizeof(VkDrawIndirectCommand)) (%u) is not less than "
-                         "or equal to the size of buffer (%u).",
+                         "CmdDrawIndirect: drawCount equals 1 and (offset + sizeof(VkDrawIndirectCommand)) (%" PRIu64 ") is not less than "
+                         "or equal to the size of buffer (%" PRIu64 ").",
                          (offset + sizeof(VkDrawIndirectCommand)), buffer_state->createInfo.size);
     }
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
@@ -757,8 +757,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > buffer_state->createInfo.size) {
         skip |= LogError(
             commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00539",
-            "CmdDrawIndexedIndirect: drawCount equals 1 and (offset + sizeof(VkDrawIndexedIndirectCommand)) (%u) is not less than "
-            "or equal to the size of buffer (%u).",
+            "CmdDrawIndexedIndirect: drawCount equals 1 and (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64 ") is not less than "
+            "or equal to the size of buffer (%" PRIu64 ").",
             (offset + sizeof(VkDrawIndexedIndirectCommand)), buffer_state->createInfo.size);
     }
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
