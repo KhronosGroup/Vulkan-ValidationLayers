@@ -40,9 +40,9 @@
 #include "layer_chassis_dispatch.h"
 #include "image_layout_map.h"
 #include "command_validation.h"
+#include "base_node.h"
 
 #include <array>
-#include <atomic>
 #include <functional>
 #include <list>
 #include <map>
@@ -71,28 +71,6 @@ using ImageSubresourceLayoutMap = image_layout_map::ImageSubresourceLayoutMap;
 struct CMD_BUFFER_STATE;
 class CoreChecks;
 class ValidationStateTracker;
-
-class BASE_NODE {
-  public:
-    using BindingsType = layer_data::unordered_map<CMD_BUFFER_STATE *, int>;
-    // Track when object is being used by an in-flight command buffer
-    std::atomic_int in_use;
-    // Track command buffers that this object is bound to
-    //  binding initialized when cmd referencing object is bound to command buffer
-    //  binding removed when command buffer is reset or destroyed
-    // When an object is destroyed, any bound cbs are set to INVALID.
-    // "int" value is an index into object_bindings where the corresponding
-    // backpointer to this node is stored.
-    BindingsType cb_bindings;
-    // Set to true when the API-level object is destroyed, but this object may
-    // hang around until its shared_ptr refcount goes to zero.
-    bool destroyed;
-
-    BASE_NODE() {
-        in_use.store(0);
-        destroyed = false;
-    };
-};
 
 // Track command pools and their command buffers
 struct COMMAND_POOL_STATE : public BASE_NODE {
