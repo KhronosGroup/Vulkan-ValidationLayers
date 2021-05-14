@@ -10722,6 +10722,13 @@ TEST_F(VkPositiveLayerTest, ProtectedAndUnprotectedQueue) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
+    // NOTE (ncesario): This appears to be failing in the driver on the Shield.
+    //      It's clear what is causing this; more investigation is necessary.
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        printf("%s Test not supported by Shield TV, skipping test case.\n", kSkipPrefix);
+        return;
+    }
+
     // Needed for both protected memory and vkGetDeviceQueue2
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s test requires Vulkan 1.1 extensions, not available.  Skipping.\n", kSkipPrefix);
