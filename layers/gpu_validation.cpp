@@ -1342,7 +1342,7 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
             }
         } break;
         case kInstErrorPreDrawValidate: {
-            // Buffer size must be >= (stride × (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
+            // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
             if (debug_record[kPreDrawValidateSubError] == pre_draw_count_exceeds_bufsize_error) {
                 uint32_t count = debug_record[kPreDrawValidateSubError + 1];
                 uint32_t stride = buf_info.pre_draw_resources.stride;
