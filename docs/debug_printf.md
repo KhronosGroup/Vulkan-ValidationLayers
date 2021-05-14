@@ -106,13 +106,13 @@ This can also be enabled by setting the environment variable DEBUG_PRINTF_TO_STD
 
 The format string for this implementation of debug printf is more restricted than the traditional printf format string.
 
-Format for specifier is "%"*precision* <d, i, o, u, x, X, a, A, e, E, f, F, g, G, or ul>
+Format for specifier is "%"*precision* <d, i, o, u, x, X, a, A, e, E, f, F, g, G, ul, lu, or lx>
 
-Format for vector specifier is "%"*precision*"v" [2, 3, or 4] [specifiers list above]   
+Format for vector specifier is "%"*precision*"v" [2, 3, or 4] [specifiers list above]
 
 - The vector value separator is ", "
 - "%%" will print as "%"
-- No length modifiers.  Everything except ul is 32 bits, and ul values are printed only in hex
+- No length modifiers.  Everything except ul, lu, and lx is 32 bits, and ul and lx values are printed in hex
 - No strings or characters allowed
 - No flags or width specifications allowed
 - No error checking for invalid format strings is done.

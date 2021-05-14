@@ -545,12 +545,25 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         for (auto &substring : format_substrings) {
             char temp_string[static_size];
             size_t needed = 0;
-            const size_t ul_pos = substring.string.find("%ul");
+            std::vector<std::string> format_strings = { "%ul", "%lu", "%lx" };
+            size_t ul_pos = 0;
+            bool print_hex = true;
+            for (auto ul_string : format_strings) {
+                ul_pos = substring.string.find(ul_string);
+                if (ul_pos != std::string::npos) {
+                    if (ul_string == "%lu") print_hex = false;
+                    break;
+                }
+            }
             if (ul_pos != std::string::npos) {
                 // Unsigned 64 bit value
                 substring.longval = *static_cast<uint64_t *>(values);
                 values = static_cast<uint64_t *>(values) + 1;
-                substring.string.replace(ul_pos + 1, 2, PRIx64);
+                if (print_hex) {
+                    substring.string.replace(ul_pos + 1, 2, PRIx64);
+                } else {
+                    substring.string.replace(ul_pos + 1, 2, PRIu64);
+                }
                 needed = snprintf(temp_string, static_size, substring.string.c_str(), substring.longval);
             } else {
                 if (substring.needs_value) {
