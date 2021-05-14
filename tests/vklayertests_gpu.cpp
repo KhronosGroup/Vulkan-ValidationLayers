@@ -2527,6 +2527,9 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
             "                u64vec4 vecul = u64vec4(bigvar, bigvar, bigvar, bigvar);"
             "                debugPrintfEXT(\"Here's a vector of ul %v4ul\", vecul);\n"
             "                break;\n"
+            "            case 2:\n"
+            "                debugPrintfEXT(\"Unsigned long as decimal %lu and as hex 0x%lx\", bigvar, bigvar);\n"
+            "                break;\n"
             "        }\n"
             "    }\n"
             "    gl_Position = vec4(0.0, 0.0, 0.0, 0.0);\n"
@@ -2558,11 +2561,23 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
         err = vk::QueueWaitIdle(m_device->m_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
+
         data = (VkDeviceAddress *)buffer0.memory().map();
         data[0] = 1;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(
             kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
+        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        ASSERT_VK_SUCCESS(err);
+        err = vk::QueueWaitIdle(m_device->m_queue);
+        ASSERT_VK_SUCCESS(err);
+        m_errorMonitor->VerifyFound();
+
+        data = (VkDeviceAddress *)buffer0.memory().map();
+        data[0] = 2;
+        buffer0.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
+                                             "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
         err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
         err = vk::QueueWaitIdle(m_device->m_queue);
