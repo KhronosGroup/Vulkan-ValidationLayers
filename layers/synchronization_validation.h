@@ -182,7 +182,7 @@ struct SyncEventState {
           barriers(0U),
           scope(),
           first_scope_tag(),
-          destroyed((event_state.get() == nullptr) || event_state->destroyed) {}
+          destroyed((event_state.get() == nullptr) || event_state->Destroyed()) {}
     SyncEventState() : SyncEventState(EventPointer()) {}
     void ResetFirstScope();
     const ScopeMap &FirstScope(AccessAddressType address_type) const { return first_scope[static_cast<size_t>(address_type)]; }

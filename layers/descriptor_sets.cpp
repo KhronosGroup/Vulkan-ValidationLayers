@@ -329,7 +329,7 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsNextBindingConsistent(const uint
 // handle invariant portion
 cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
                                                           const VkDescriptorSetLayout layout)
-    : layout_(layout), layout_id_(GetCanonicalId(p_create_info)) {}
+    : BASE_NODE(layout, kVulkanObjectTypeDescriptorSetLayout), layout_(layout), layout_id_(GetCanonicalId(p_create_info)) {}
 
 // Validate descriptor set layout create info
 bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
@@ -621,7 +621,8 @@ void cvdescriptorset::AllocateDescriptorSetsData::Init(uint32_t count) {
 cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool_state,
                                               const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
                                               const cvdescriptorset::DescriptorSet::StateTracker *state_data)
-    : some_update_(false),
+    : BASE_NODE(set, kVulkanObjectTypeDescriptorSet),
+      some_update_(false),
       set_(set),
       pool_state_(pool_state),
       layout_(layout),
@@ -881,7 +882,7 @@ bool CoreChecks::ValidateGeneralBufferDescriptor(const char *caller, const DrawD
     // Verify that buffers are valid
     auto buffer = descriptor.GetBuffer();
     auto buffer_node = descriptor.GetBufferState();
-    if ((!buffer_node && !enabled_features.robustness2_features.nullDescriptor) || (buffer_node && buffer_node->destroyed)) {
+    if ((!buffer_node && !enabled_features.robustness2_features.nullDescriptor) || (buffer_node && buffer_node->Destroyed())) {
         auto set = descriptor_set->GetSet();
         return LogError(set, vuids.descriptor_valid,
                         "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
@@ -892,7 +893,7 @@ bool CoreChecks::ValidateGeneralBufferDescriptor(const char *caller, const DrawD
     if (buffer) {
         if (buffer_node && !buffer_node->sparse) {
             for (const auto *mem_binding : buffer_node->GetBoundMemory()) {
-                if (mem_binding->destroyed) {
+                if (mem_binding->Destroyed()) {
                     auto set = descriptor_set->GetSet();
                     return LogError(set, vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
@@ -950,7 +951,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
     }
 
     if ((!image_view_state && !enabled_features.robustness2_features.nullDescriptor) ||
-        (image_view_state && image_view_state->destroyed)) {
+        (image_view_state && image_view_state->Destroyed())) {
         // Image view must have been destroyed since initial update. Could potentially flag the descriptor
         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
 
@@ -1063,7 +1064,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                  : false;
             uint32_t att_index = 0;
             for (const auto &view_state : *attachments) {
-                if (!subpasses[att_index].used || !view_state || view_state->destroyed) {
+                if (!subpasses[att_index].used || !view_state || view_state->Destroyed()) {
                     continue;
                 }
                 if (ds_aspect && subpasses[att_index].usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
@@ -1125,7 +1126,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
         }
 
         for (const auto *sampler_state : sampler_states) {
-            if (!sampler_state || sampler_state->destroyed) {
+            if (!sampler_state || sampler_state->Destroyed()) {
                 continue;
             }
 
@@ -1339,7 +1340,7 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
     const auto binding = binding_info.first;
     const auto reqs = binding_info.second.reqs;
     if ((!buffer_view_state && !enabled_features.robustness2_features.nullDescriptor) ||
-        (buffer_view_state && buffer_view_state->destroyed)) {
+        (buffer_view_state && buffer_view_state->Destroyed())) {
         auto set = descriptor_set->GetSet();
         return LogError(set, vuids.descriptor_valid,
                         "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
@@ -1350,7 +1351,7 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
     if (buffer_view) {
         auto buffer = buffer_view_state->create_info.buffer;
         auto buffer_state = buffer_view_state->buffer_state.get();
-        if (buffer_state->destroyed) {
+        if (buffer_state->Destroyed()) {
             auto set = descriptor_set->GetSet();
             return LogError(set, vuids.descriptor_valid,
                             "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
@@ -1410,7 +1411,7 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
     if (descriptor.is_khr()) {
         auto acc = descriptor.GetAccelerationStructure();
         auto acc_node = descriptor.GetAccelerationStructureStateKHR();
-        if (!acc_node || acc_node->destroyed) {
+        if (!acc_node || acc_node->Destroyed()) {
             if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
                 auto set = descriptor_set->GetSet();
                 return LogError(set, vuids.descriptor_valid,
@@ -1422,7 +1423,7 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
             }
         } else {
             for (const auto *mem_binding : acc_node->GetBoundMemory()) {
-                if (mem_binding->destroyed) {
+                if (mem_binding->Destroyed()) {
                     auto set = descriptor_set->GetSet();
                     return LogError(set, vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
@@ -1436,7 +1437,7 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
     } else {
         auto acc = descriptor.GetAccelerationStructureNV();
         auto acc_node = descriptor.GetAccelerationStructureStateNV();
-        if (!acc_node || acc_node->destroyed) {
+        if (!acc_node || acc_node->Destroyed()) {
             if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
                 auto set = descriptor_set->GetSet();
                 return LogError(set, vuids.descriptor_valid,
@@ -1448,7 +1449,7 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
             }
         } else {
             for (const auto *mem_binding : acc_node->GetBoundMemory()) {
-                if (mem_binding->destroyed) {
+                if (mem_binding->Destroyed()) {
                     auto set = descriptor_set->GetSet();
                     return LogError(set, vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
@@ -1471,7 +1472,7 @@ bool CoreChecks::ValidateSamplerDescriptor(const char *caller, const DrawDispatc
                                            const std::pair<const uint32_t, DescriptorRequirement> &binding_info, uint32_t index,
                                            VkSampler sampler, bool is_immutable, const SAMPLER_STATE *sampler_state) const {
     // Verify Sampler still valid
-    if (!sampler_state || sampler_state->destroyed) {
+    if (!sampler_state || sampler_state->Destroyed()) {
         auto set = descriptor_set->GetSet();
         return LogError(set, vuids.descriptor_valid,
                         "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
@@ -1491,11 +1492,6 @@ bool CoreChecks::ValidateSamplerDescriptor(const char *caller, const DrawDispatc
         }
     }
     return false;
-}
-
-// Set is being deleted or updates so invalidate all bound cmd buffers
-void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers(ValidationStateTracker *state_data) {
-    state_data->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet), /*unlink*/ false);
 }
 
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
@@ -1556,7 +1552,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
 
     if (!(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
           (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
-        InvalidateBoundCmdBuffers(dev_data);
+        Invalidate(false);
     }
 }
 // Validate Copy update
@@ -1566,7 +1562,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     auto src_layout = src_set->GetLayout().get();
 
     // Verify dst layout still valid
-    if (dst_layout->destroyed) {
+    if (dst_layout->Destroyed()) {
         *error_code = "VUID-VkCopyDescriptorSet-dstSet-parameter";
         std::ostringstream str;
         str << "Cannot call " << func_name << " to perform copy update on dstSet " << report_data->FormatHandle(dst_set->GetSet())
@@ -1576,7 +1572,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     }
 
     // Verify src layout still valid
-    if (src_layout->destroyed) {
+    if (src_layout->Destroyed()) {
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-parameter";
         std::ostringstream str;
         str << "Cannot call " << func_name << " to perform copy update on dstSet " << report_data->FormatHandle(dst_set->GetSet())
@@ -1603,7 +1599,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
     // Verify idle ds
-    if (dst_set->in_use.load() &&
+    if (dst_set->InUse() &&
         !(dst_layout->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
           (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         // TODO : Re-using Free Idle error code, need copy update idle error code
@@ -1817,8 +1813,18 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 
     if (!(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
           (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
-        InvalidateBoundCmdBuffers(dev_data);
+        Invalidate(false);
     }
+}
+
+bool cvdescriptorset::DescriptorSet::AddParent(CMD_BUFFER_STATE *cb_node) {
+    // bind cb to this descriptor set
+    // Add bindings for descriptor set, the set's pool, and individual objects in the set
+    if (BASE_NODE::AddParent(cb_node)) {
+        pool_state_->AddParent(cb_node);
+        return true;
+    }
+    return false;
 }
 
 // Update the drawing state for the affected descriptors.
@@ -1832,14 +1838,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
                                                      const BindingReqMap &binding_req_map, const char *function) {
     if (!device_data->disabled[command_buffer_state] && !IsPushDescriptor()) {
-        // bind cb to this descriptor set
-        // Add bindings for descriptor set, the set's pool, and individual objects in the set
-        if (device_data->AddCommandBufferBinding(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet, this),
-                                                 cb_node)) {
-            device_data->AddCommandBufferBinding(pool_state_->cb_bindings,
-                                                 VulkanTypedHandle(pool_state_->pool, kVulkanObjectTypeDescriptorPool, pool_state_),
-                                                 cb_node);
-        }
+        this->AddParent(cb_node);
     }
 
     // Descriptor UpdateDrawState functions do two things - associate resources to the command buffer,
@@ -2253,9 +2252,9 @@ void cvdescriptorset::SamplerDescriptor::CopyUpdate(const ValidationStateTracker
 }
 
 void cvdescriptorset::SamplerDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
-    if (!immutable_) {
+    if (!immutable_ && !dev_data->disabled[command_buffer_state]) {
         auto sampler_state = GetSamplerState();
-        if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
+        if (sampler_state) sampler_state->AddParent(cb_node);
     }
 }
 
@@ -2294,16 +2293,11 @@ void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const ValidationStateTr
 
 void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
     // First add binding for any non-immutable sampler
-    if (!immutable_) {
+    if (!immutable_ && !dev_data->disabled[command_buffer_state]) {
         auto sampler_state = GetSamplerState();
-        if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
+        if (sampler_state) sampler_state->AddParent(cb_node);
     }
-    // Add binding for image
-    auto iv_state = GetImageViewState();
-    if (iv_state) {
-        dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-        dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *iv_state, image_layout_);
-    }
+    ImageDescriptor::UpdateDrawState(dev_data, cb_node);
 }
 
 cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
@@ -2336,8 +2330,9 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *d
     // Add binding for image
     auto iv_state = GetImageViewState();
     if (iv_state) {
-        dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-        dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *iv_state, image_layout_);
+        if (!dev_data->disabled[command_buffer_state]) {
+            cb_node->AddChild(iv_state);
+        }
     }
 }
 
@@ -2367,8 +2362,10 @@ void cvdescriptorset::BufferDescriptor::CopyUpdate(const ValidationStateTracker 
 }
 
 void cvdescriptorset::BufferDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
+    if (dev_data->disabled[command_buffer_state]) return;
+
     auto buffer_node = GetBufferState();
-    if (buffer_node) dev_data->AddCommandBufferBindingBuffer(cb_node, buffer_node);
+    if (buffer_node) cb_node->AddChild(buffer_node);
 }
 
 cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) : Descriptor(TexelBuffer) {}
@@ -2390,9 +2387,11 @@ void cvdescriptorset::TexelDescriptor::CopyUpdate(const ValidationStateTracker *
 }
 
 void cvdescriptorset::TexelDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
+    if (dev_data->disabled[command_buffer_state]) return;
+
     auto bv_state = GetBufferViewState();
     if (bv_state) {
-        dev_data->AddCommandBufferBindingBufferView(cb_node, bv_state);
+        cb_node->AddChild(bv_state);
     }
 }
 
@@ -2435,12 +2434,14 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(const Validati
 
 void cvdescriptorset::AccelerationStructureDescriptor::UpdateDrawState(ValidationStateTracker *dev_data,
                                                                        CMD_BUFFER_STATE *cb_node) {
+    if (dev_data->disabled[command_buffer_state]) return;
+
     if (is_khr_) {
         auto acc_node = GetAccelerationStructureStateKHR();
-        if (acc_node) dev_data->AddCommandBufferBindingAccelerationStructure(cb_node, acc_node);
+        if (acc_node) acc_node->AddParent(cb_node);
     } else {
         auto acc_node = GetAccelerationStructureStateNV();
-        if (acc_node) dev_data->AddCommandBufferBindingAccelerationStructure(cb_node, acc_node);
+        if (acc_node) acc_node->AddParent(cb_node);
     }
 }
 
@@ -3200,7 +3201,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     const auto dest_layout = dest_set->GetLayout().get();
 
     // Verify dst layout still valid
-    if (dest_layout->destroyed) {
+    if (dest_layout->Destroyed()) {
         *error_code = "VUID-VkWriteDescriptorSet-dstSet-00320";
         std::ostringstream str;
         str << "Cannot call " << func_name << " to perform write update on " << dest_set->StringifySetAndLayout()
@@ -3229,7 +3230,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     }
 
     // Verify idle ds
-    if (dest_set->in_use.load() && !(dest.GetDescriptorBindingFlags() & (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+    if (dest_set->InUse() && !(dest.GetDescriptorBindingFlags() & (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
                                                                          VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         // TODO : Re-using Free Idle error code, need write update idle error code
         *error_code = "VUID-vkFreeDescriptorSets-pDescriptorSets-00309";

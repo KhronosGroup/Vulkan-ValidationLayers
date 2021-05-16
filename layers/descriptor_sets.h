@@ -668,6 +668,7 @@ class DescriptorSet : public BASE_NODE {
         void operator()(Descriptor *desc) { desc->~Descriptor(); }
     };
 
+    bool AddParent(CMD_BUFFER_STATE *cb_node) override;
   private:
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers(ValidationStateTracker *state_data);

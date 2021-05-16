@@ -1514,7 +1514,7 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
     if (cmd_state == nullptr) return skip;
 
     const auto* ib_state = cmd_state->index_buffer_binding.buffer_state.get();
-    if (ib_state == nullptr || cmd_state->index_buffer_binding.buffer_state->destroyed) return skip;
+    if (ib_state == nullptr || cmd_state->index_buffer_binding.buffer_state->Destroyed()) return skip;
 
     const VkIndexType ib_type = cmd_state->index_buffer_binding.index_type;
     const auto& ib_mem_state = *ib_state->binding.mem_state;

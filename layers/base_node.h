@@ -27,30 +27,60 @@
  */
 #pragma once
 
+#include "vulkan/vulkan.h"
 #include "vk_object_types.h"
 #include "vk_layer_data.h"
 
 #include <atomic>
 
+struct CMD_BUFFER_STATE;
+
 class BASE_NODE {
   public:
     using BindingsType = layer_data::unordered_map<CMD_BUFFER_STATE *, int>;
+
+    template <typename Handle>
+    BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t, this), in_use_(0), destroyed_(false) {}
+
+    virtual ~BASE_NODE() { Destroy(); }
+
+    virtual void Destroy() {
+        Invalidate();
+        destroyed_ = true;
+    }
+
+    bool Destroyed() const { return destroyed_; }
+
+    const VulkanTypedHandle &Handle() const { return handle_; }
+
+    bool InUse() const { return (in_use_.load() > 0); }
+
+    void BeginUse() { in_use_.fetch_add(1); }
+
+    void EndUse() { in_use_.fetch_sub(1); }
+
+    void ResetUse() { in_use_.store(0); }
+
+    virtual bool AddParent(CMD_BUFFER_STATE *cb_node);
+
+    void RemoveParent(CMD_BUFFER_STATE *cb_node);
+
+    void Invalidate(bool unlink = true);
+
+  protected:
+    VulkanTypedHandle handle_;
+
     // Track when object is being used by an in-flight command buffer
-    std::atomic_int in_use;
+    std::atomic_int in_use_;
+    // Set to true when the API-level object is destroyed, but this object may
+    // hang around until its shared_ptr refcount goes to zero.
+    bool destroyed_;
+
     // Track command buffers that this object is bound to
     //  binding initialized when cmd referencing object is bound to command buffer
     //  binding removed when command buffer is reset or destroyed
     // When an object is destroyed, any bound cbs are set to INVALID.
     // "int" value is an index into object_bindings where the corresponding
     // backpointer to this node is stored.
-    BindingsType cb_bindings;
-    // Set to true when the API-level object is destroyed, but this object may
-    // hang around until its shared_ptr refcount goes to zero.
-    bool destroyed;
-
-    BASE_NODE() {
-        in_use.store(0);
-        destroyed = false;
-    };
+    BindingsType cb_bindings_;
 };
-
