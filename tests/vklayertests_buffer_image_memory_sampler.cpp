@@ -6450,9 +6450,9 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->queue_props.size());
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    const bool only_one_family = (queue_family_count == 1) || (m_device->queue_props[other_family].queueCount == 0);
 
     std::vector<uint32_t> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
@@ -6504,13 +6504,9 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
         BarrierQueueFamilyTestHelper excl_test(&test_context);
         excl_test.Init(nullptr);
 
-        // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
-        // akeley98: this test is wrong and should pass validation. Two queue families aren't enough to test this; you need three:
-        // one for the queue to submit to, and two distinct different families for the barrier. Because the barrier families are
+        // Although other_family does not match submit_family, because the barrier families are
         // equal here, no ownership transfer actually happens, and this barrier is valid by the spec.
-        // excl_test("UNASSIGNED-CoreValidation-VkImageMemoryBarrier-sharing-mode-exclusive-same-family",
-        //           "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family", other_family, other_family,
-        //           false, submit_family);
+        excl_test("POSITIVE_TEST", "POSITIVE_TEST", other_family, other_family, true, submit_family);
 
         // true -> positive test (testing both the index logic and the QFO transfer tracking.
         excl_test("POSITIVE_TEST", "POSITIVE_TEST", submit_family, other_family, true, submit_family);
@@ -6538,6 +6534,24 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
         excl_test("POSITIVE_TEST", "POSITIVE_TEST", submit_family, other_family, true, submit_family);  // need a succesful release
         excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00002", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00002", submit_family,
                   other_family, false, other_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
+
+        // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
+        // Need a third queue family to test this.
+        uint32_t third_family = VK_QUEUE_FAMILY_IGNORED;
+        for (uint32_t candidate = 0; candidate < queue_family_count; ++candidate) {
+            if (candidate != submit_family && candidate != other_family && m_device->queue_props[candidate].queueCount != 0) {
+                third_family = candidate;
+                break;
+            }
+        }
+
+        if (third_family == VK_QUEUE_FAMILY_IGNORED) {
+            printf("%s No third queue family found -- kSubmitQueueMustMatchSrcOrDst test skipped.\n", kSkipPrefix);
+        } else {
+            excl_test("UNASSIGNED-CoreValidation-VkImageMemoryBarrier-sharing-mode-exclusive-same-family",
+                      "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family",
+                      other_family, third_family, false, submit_family);
+        }
     }
 }
 
