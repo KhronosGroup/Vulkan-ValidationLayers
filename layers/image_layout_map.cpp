@@ -83,7 +83,7 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& init
 InitialLayoutState::InitialLayoutState(const CMD_BUFFER_STATE& cb_state_, const IMAGE_VIEW_STATE* view_state_)
     : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state_.debug_label) {
     if (view_state_) {
-        image_view = view_state_->image_view;
+        image_view = view_state_->image_view();
         aspect_mask = view_state_->create_info.subresourceRange.aspectMask;
     }
 }

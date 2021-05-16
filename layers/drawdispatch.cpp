@@ -670,14 +670,14 @@ bool CoreChecks::ValidateCmdDrawInstance(VkCommandBuffer commandBuffer, uint32_t
     if (!cb_node) return skip;
 
     // Verify maxMultiviewInstanceIndex
-    if (cb_node->activeRenderPass && cb_node->activeRenderPass->renderPass && enabled_features.multiview_features.multiview &&
+    if (cb_node->activeRenderPass && cb_node->activeRenderPass->renderPass() && enabled_features.multiview_features.multiview &&
         ((instanceCount + firstInstance) > phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex)) {
         LogObjectList objlist(commandBuffer);
-        objlist.add(cb_node->activeRenderPass->renderPass);
+        objlist.add(cb_node->activeRenderPass->renderPass());
         skip |= LogError(objlist, vuid.max_multiview_instance_index,
                          "%s: renderpass %s multiview is enabled, and maxMultiviewInstanceIndex: %" PRIu32 ", but instanceCount: %" PRIu32
                          "and firstInstance: %" PRIu32 ".",
-                         caller, report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
+                         caller, report_data->FormatHandle(cb_node->activeRenderPass->renderPass()).c_str(),
                          phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
     return skip;
@@ -710,7 +710,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
         VkDeviceSize end_offset = (index_size * (static_cast<VkDeviceSize>(firstIndex) + indexCount)) + index_buffer_binding.offset;
         if (end_offset > index_buffer_binding.size) {
             skip |=
-                LogError(index_buffer_binding.buffer_state->buffer, "VUID-vkCmdDrawIndexed-indexSize-00463",
+                LogError(index_buffer_binding.buffer_state->buffer(), "VUID-vkCmdDrawIndexed-indexSize-00463",
                          "vkCmdDrawIndexed() index size (%d) * (firstIndex (%d) + indexCount (%d)) "
                          "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
                          " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
@@ -967,7 +967,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
     const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
+    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
         skip |= LogError(device, "VUID-vkCmdTraceRaysNV-None-02700",
                          "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
     }
@@ -997,7 +997,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
     const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
+    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
         skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-None-02700",
                          "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
     } else {  // bound to valid RT pipeline
@@ -1066,7 +1066,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
     const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline)) {
+    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
         skip |=
             LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-None-02700",
                      "vkCmdTraceRaysIndirectKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");

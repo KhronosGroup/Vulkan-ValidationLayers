@@ -285,7 +285,7 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
     // WORKAROUND for dev_sim and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
     if (image_->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
         subres = {static_cast<VkImageAspectFlags>(AspectBit(0)), 0, 0};
-        DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
+        DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image(), &subres, &layout);
         if (layout.size > 0) {
             linear_image_ = true;
         }
@@ -307,7 +307,7 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
             auto subres_extent = GetImageSubresourceExtent(image_, &subres_layers);
 
             if (linear_image_) {
-                DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
+                DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image(), &subres, &layout);
                 if (is_3_d_) {
                     if ((layout.depthPitch == 0) && (subres_extent.depth == 1)) {
                         layout.depthPitch = layout.size;  // Certain implmentations don't supply pitches when size is 1

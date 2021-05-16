@@ -713,7 +713,7 @@ struct GPUAV_RESTORABLE_PIPELINE_STATE {
 
         LAST_BOUND_STATE &last_bound = cb_state->lastBound[lv_bind_point];
         if (last_bound.pipeline_state) {
-            pipeline = last_bound.pipeline_state->pipeline;
+            pipeline = last_bound.pipeline_state->pipeline();
             pipeline_layout = last_bound.pipeline_layout;
             descriptor_sets.reserve(last_bound.per_set.size());
             for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
@@ -938,7 +938,7 @@ void GpuAssisted::ProcessAccelerationStructureBuildValidationBuffer(VkQueue queu
     }
 
     auto &as_validation_info = acceleration_structure_validation_state;
-    auto &as_validation_buffer_infos = as_validation_info.validation_buffers[cb_node->commandBuffer];
+    auto &as_validation_buffer_infos = as_validation_info.validation_buffers[cb_node->commandBuffer()];
     for (const auto &as_validation_buffer_info : as_validation_buffer_infos) {
         GpuAccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
 
@@ -1469,7 +1469,7 @@ void GpuAssisted::SetDescriptorInitialized(uint32_t *pData, uint32_t index, cons
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
 void GpuAssisted::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
-    auto gpu_buffer_list = GetBufferInfo(cb_node->commandBuffer);
+    auto gpu_buffer_list = GetBufferInfo(cb_node->commandBuffer());
     uint32_t *data;
     for (auto &buffer_info : gpu_buffer_list) {
         if (buffer_info.di_input_mem_block.update_at_submit.size() > 0) {
@@ -1517,11 +1517,11 @@ bool GpuAssisted::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     bool buffers_present = false;
     auto cb_node = GetCBState(command_buffer);
 
-    if (GetBufferInfo(cb_node->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) {
+    if (GetBufferInfo(cb_node->commandBuffer()).size() || cb_node->hasBuildAccelerationStructureCmd) {
         buffers_present = true;
     }
     for (const auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-        if (GetBufferInfo(secondary_cmd_buffer->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd) {
+        if (GetBufferInfo(secondary_cmd_buffer->commandBuffer()).size() || cb_node->hasBuildAccelerationStructureCmd) {
             buffers_present = true;
         }
     }
@@ -1822,7 +1822,7 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
 
         pre_draw_validation_state.globals_created = true;
     }
-    VkRenderPass render_pass = state.pipeline_state->rp_state->renderPass;
+    VkRenderPass render_pass = state.pipeline_state->rp_state->renderPass();
     assert(render_pass != VK_NULL_HANDLE);
     auto pipeline = pre_draw_validation_state.renderpass_to_pipeline.find(render_pass);
     if (pipeline == pre_draw_validation_state.renderpass_to_pipeline.end()) {
@@ -2314,7 +2314,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     if (pipeline_state) {
         if ((pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
             !pipeline_state->pipeline_layout->Destroyed()) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout(), desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
         if (pipeline_state->pipeline_layout->Destroyed()) {

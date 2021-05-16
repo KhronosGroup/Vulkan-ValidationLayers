@@ -74,7 +74,6 @@ class ValidationStateTracker;
 
 // Track command pools and their command buffers
 struct COMMAND_POOL_STATE : public BASE_NODE {
-    VkCommandPool commandPool;
     VkCommandPoolCreateFlags createFlags;
     uint32_t queueFamilyIndex;
     bool unprotected;  // can't be used for protected memory
@@ -83,10 +82,11 @@ struct COMMAND_POOL_STATE : public BASE_NODE {
 
     COMMAND_POOL_STATE(VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo)
         : BASE_NODE(cp, kVulkanObjectTypeCommandPool),
-          commandPool(cp),
           createFlags(pCreateInfo->flags),
           queueFamilyIndex(pCreateInfo->queueFamilyIndex),
           unprotected((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0) {}
+
+    VkCommandPool commandPool() const { return handle_.Cast<VkCommandPool>(); }
 };
 
 // Utilities for barriers and the commmand pool
@@ -224,7 +224,6 @@ struct MemRange {
 // Data struct for tracking memory object
 struct DEVICE_MEMORY_STATE : public BASE_NODE {
     void *object;  // Dispatchable object used to create this memory (device of swapchain)
-    VkDeviceMemory mem;
     safe_VkMemoryAllocateInfo alloc_info;
     bool is_dedicated;
     VkBuffer dedicated_buffer;
@@ -252,7 +251,6 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
                         uint64_t fake_address)
         : BASE_NODE(in_mem, kVulkanObjectTypeDeviceMemory),
           object(disp_object),
-          mem(in_mem),
           alloc_info(p_alloc_info),
           is_dedicated(false),
           dedicated_buffer(VK_NULL_HANDLE),
@@ -270,6 +268,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           shadow_pad_size(0),
           p_driver_data(0),
           fake_base_address(fake_address){};
+    VkDeviceMemory mem() const { return handle_.Cast<VkDeviceMemory>(); }
 };
 
 // Generic memory binding struct to track objects bound to objects
@@ -382,11 +381,10 @@ class BINDABLE : public BASE_NODE {
 
 class BUFFER_STATE : public BINDABLE {
   public:
-    VkBuffer buffer;
     VkBufferCreateInfo createInfo;
     VkDeviceAddress deviceAddress;
     BUFFER_STATE(VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
-        : BINDABLE(buff, kVulkanObjectTypeBuffer), buffer(buff), createInfo(*pCreateInfo) {
+        : BINDABLE(buff, kVulkanObjectTypeBuffer), createInfo(*pCreateInfo) {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
             for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
@@ -407,6 +405,8 @@ class BUFFER_STATE : public BINDABLE {
 
     BUFFER_STATE(BUFFER_STATE const &rh_obj) = delete;
 
+    VkBuffer buffer() const { return handle_.Cast<VkBuffer>(); }
+
     ~BUFFER_STATE() {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             delete[] createInfo.pQueueFamilyIndices;
@@ -417,35 +417,36 @@ class BUFFER_STATE : public BINDABLE {
 
 class BUFFER_VIEW_STATE : public BASE_NODE {
   public:
-    VkBufferView buffer_view;
     VkBufferViewCreateInfo create_info;
     std::shared_ptr<BUFFER_STATE> buffer_state;
     VkFormatFeatureFlags format_features;
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci)
-        : BASE_NODE(bv, kVulkanObjectTypeBufferView), buffer_view(bv), create_info(*ci), buffer_state(bf){};
+        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf){};
     BUFFER_VIEW_STATE(const BUFFER_VIEW_STATE &rh_obj) = delete;
+
+    VkBufferView buffer_view() const { return handle_.Cast<VkBufferView>(); }
 
     bool AddParent(CMD_BUFFER_STATE *cb_node) override;
 };
 
 struct SAMPLER_STATE : public BASE_NODE {
-    VkSampler sampler;
     VkSamplerCreateInfo createInfo;
     VkSamplerYcbcrConversion samplerConversion = VK_NULL_HANDLE;
     VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo = {};
 
     SAMPLER_STATE(const VkSampler *ps, const VkSamplerCreateInfo *pci)
-        : BASE_NODE(*ps, kVulkanObjectTypeSampler), sampler(*ps), createInfo(*pci) {
+        : BASE_NODE(*ps, kVulkanObjectTypeSampler), createInfo(*pci) {
         auto *conversionInfo = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pci->pNext);
         if (conversionInfo) samplerConversion = conversionInfo->conversion;
         auto cbci = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
         if (cbci) customCreateInfo = *cbci;
     }
+
+    VkSampler sampler() const { return handle_.Cast<VkSampler>(); }
 };
 
 class IMAGE_STATE : public BINDABLE {
   public:
-    VkImage image;
     safe_VkImageCreateInfo safe_create_info;
     VkImageCreateInfo &createInfo;
     bool valid;               // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEMORY_STATE
@@ -481,6 +482,8 @@ class IMAGE_STATE : public BINDABLE {
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
+
+    VkImage image() const { return handle_.Cast<VkImage>(); }
 
     layer_data::unordered_set<IMAGE_STATE *> aliasing_images;
     bool IsCompatibleAliasing(IMAGE_STATE *other_image_state) const;
@@ -538,7 +541,6 @@ class IMAGE_STATE : public BINDABLE {
 
 class IMAGE_VIEW_STATE : public BASE_NODE {
   public:
-    VkImageView image_view;
     VkImageViewCreateInfo create_info;
     const VkImageSubresourceRange normalized_subresource_range;
     const image_layout_map::RangeGenerator range_generator;
@@ -554,12 +556,13 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
     bool AddParent(CMD_BUFFER_STATE *cb_node) override;
 
+    VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
+
     bool OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const;
 };
 
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
   public:
-    VkAccelerationStructureNV acceleration_structure;
     safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
     safe_VkAccelerationStructureInfoNV build_info;
     bool memory_requirements_checked = false;
@@ -573,7 +576,6 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
         : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV),
-          acceleration_structure(as),
           create_infoNV(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},
@@ -581,11 +583,12 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
           update_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements{} {}
     ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
+
+    VkAccelerationStructureNV acceleration_structure() const { return handle_.Cast<VkAccelerationStructureNV>(); }
 };
 
 class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
   public:
-    VkAccelerationStructureKHR acceleration_structure;
     safe_VkAccelerationStructureCreateInfoKHR create_infoKHR = {};
     safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
     bool memory_requirements_checked = false;
@@ -599,7 +602,6 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
     const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci)
         : BINDABLE(as, kVulkanObjectTypeAccelerationStructureKHR),
-          acceleration_structure(as),
           create_infoKHR(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},
@@ -607,6 +609,8 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
           update_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements{} {}
     ACCELERATION_STRUCTURE_STATE_KHR(const ACCELERATION_STRUCTURE_STATE_KHR &rh_obj) = delete;
+
+    VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
 };
 
 struct SWAPCHAIN_IMAGE {
@@ -617,13 +621,14 @@ struct SWAPCHAIN_IMAGE {
 class SWAPCHAIN_NODE : public BASE_NODE {
   public:
     safe_VkSwapchainCreateInfoKHR createInfo;
-    VkSwapchainKHR swapchain;
     std::vector<SWAPCHAIN_IMAGE> images;
     bool retired = false;
     bool shared_presentable = false;
     uint32_t get_swapchain_image_count = 0;
     SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
-        : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR), swapchain(swapchain), createInfo(pCreateInfo) {}
+        : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR), createInfo(pCreateInfo) {}
+
+    VkSwapchainKHR swapchain() const { return handle_.Cast<VkSwapchainKHR>(); }
 };
 
 // Store the DAG.
@@ -662,7 +667,6 @@ struct RENDER_PASS_STATE : public BASE_NODE {
             : prev_pass(prev_pass_), attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
     };
 
-    VkRenderPass renderPass;
     safe_VkRenderPassCreateInfo2 createInfo;
     std::vector<std::vector<uint32_t>> self_dependencies;
     std::vector<DAGNode> subpassToNode;
@@ -674,11 +678,13 @@ struct RENDER_PASS_STATE : public BASE_NODE {
     std::vector<std::vector<AttachmentTransition>> subpass_transitions;
 
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo)
-        : BASE_NODE(rp, kVulkanObjectTypeRenderPass), renderPass(rp), createInfo(pCreateInfo) {}
+        : BASE_NODE(rp, kVulkanObjectTypeRenderPass), createInfo(pCreateInfo) {}
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo)
-        : BASE_NODE(rp, kVulkanObjectTypeRenderPass), renderPass(rp)  {
+        : BASE_NODE(rp, kVulkanObjectTypeRenderPass) {
         ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &createInfo);
     }
+
+    VkRenderPass renderPass() const { return handle_.Cast<VkRenderPass>(); }
 };
 
 // Autogenerated as part of the command_validation.h codegen
@@ -863,17 +869,17 @@ using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
 // Store layouts and pushconstants for PipelineLayout
 struct PIPELINE_LAYOUT_STATE : public BASE_NODE {
-    VkPipelineLayout layout;
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
     PushConstantRangesId push_constant_ranges;
     std::vector<PipelineLayoutCompatId> compat_for_set;
 
     PIPELINE_LAYOUT_STATE(VkPipelineLayout l)
-        : BASE_NODE(l, kVulkanObjectTypePipelineLayout), layout(l), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
+        : BASE_NODE(l, kVulkanObjectTypePipelineLayout), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
+
+    VkPipelineLayout layout() const { return handle_.Cast<VkPipelineLayout>(); }
 
     void reset() {
         handle_.handle = 0;
-        layout = VK_NULL_HANDLE;
         set_layouts.clear();
         push_constant_ranges.reset();
         compat_for_set.clear();
@@ -978,7 +984,6 @@ class PIPELINE_STATE : public BASE_NODE {
         std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
     };
 
-    VkPipeline pipeline;
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
     safe_VkComputePipelineCreateInfo computePipelineCI;
     safe_VkRayTracingPipelineCreateInfoCommon raytracingPipelineCI;
@@ -1008,7 +1013,6 @@ class PIPELINE_STATE : public BASE_NODE {
     // Default constructor
     PIPELINE_STATE()
         : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
-          pipeline{},
           graphicsPipelineCI{},
           computePipelineCI{},
           raytracingPipelineCI{},
@@ -1026,9 +1030,10 @@ class PIPELINE_STATE : public BASE_NODE {
           topology_at_rasterizer{},
           sample_location_enabled(VK_FALSE) {}
 
+    VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
+
     void SetHandle(VkPipeline p) {
         handle_.handle = CastToUint64(p);
-        pipeline = p;
     }
 
     void reset() {
@@ -1310,7 +1315,6 @@ struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct CMD_BUFFER_STATE : public BASE_NODE {
-    VkCommandBuffer commandBuffer;
     VkCommandBufferAllocateInfo createInfo = {};
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
@@ -1449,9 +1453,11 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     bool transform_feedback_active{false};
 
     CMD_BUFFER_STATE(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo)
-        : BASE_NODE(cb, kVulkanObjectTypeCommandBuffer), commandBuffer(cb), createInfo(*pCreateInfo) {}
+        : BASE_NODE(cb, kVulkanObjectTypeCommandBuffer), createInfo(*pCreateInfo) {}
 
     ~CMD_BUFFER_STATE() { Destroy(); }
+
+    VkCommandBuffer commandBuffer() const { return handle_.Cast<VkCommandBuffer>(); }
 
     int AddReverseBinding(const VulkanTypedHandle &obj);
     void InvalidateLinkedCommandBuffers(const VulkanTypedHandle &obj);
@@ -1526,12 +1532,13 @@ struct SUBPASS_INFO {
 
 class FRAMEBUFFER_STATE : public BASE_NODE {
   public:
-    VkFramebuffer framebuffer;
     safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_state;
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
-        : BASE_NODE(fb, kVulkanObjectTypeFramebuffer), framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
+        : BASE_NODE(fb, kVulkanObjectTypeFramebuffer), createInfo(pCreateInfo), rp_state(rpstate){};
+
+    VkFramebuffer framebuffer() const { return handle_.Cast<VkFramebuffer>(); }
 
     bool AddParent(CMD_BUFFER_STATE *cb_node) override;
 };
