@@ -218,7 +218,8 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
 }
 
 IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo)
-    : image(img),
+    : BINDABLE(img, kVulkanObjectTypeImage),
+      image(img),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       valid(false),
@@ -309,7 +310,8 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
 }
 
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci)
-    : image_view(iv),
+    : BASE_NODE(iv, kVulkanObjectTypeImageView),
+      image_view(iv),
       create_info(*ci),
       normalized_subresource_range(NormalizeSubresourceRange(*im, ci->subresourceRange)),
       range_generator(im->subresource_encoder, normalized_subresource_range),
@@ -869,7 +871,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                                const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        IMAGE_VIEW_STATE *image_view = GetActiveAttachmentImageViewState(pCB, ref.attachment);
+        IMAGE_VIEW_STATE *image_view = pCB->GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = LvlFindInChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
@@ -908,7 +910,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
     // First record expected initialLayout as a potential initial layout usage.
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto *view_state = GetActiveAttachmentImageViewState(cb_state, i);
+        auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
         if (view_state) {
             IMAGE_STATE *image_state = view_state->image_state.get();
             const auto initial_layout = rpci->pAttachments[i].initialLayout;
@@ -1352,7 +1354,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_
     // Verify that a framebuffer image matches barrier image
     const auto attachment_count = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
-        auto view_state = GetActiveAttachmentImageViewState(cb_state, attachment, primary_cb_state);
+        auto view_state = primary_cb_state ? primary_cb_state->GetActiveAttachmentImageViewState(attachment) : cb_state->GetActiveAttachmentImageViewState(attachment);
         if (view_state && (img_bar_image == view_state->create_info.image)) {
             image_match = true;
             attach_index = attachment;
@@ -1734,7 +1736,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
     const VkRenderPassCreateInfo2 *render_pass_info = render_pass->createInfo.ptr();
     if (framebuffer_state) {
         for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
-            auto *view_state = GetActiveAttachmentImageViewState(pCB, i);
+            auto *view_state = pCB->GetActiveAttachmentImageViewState(i);
             if (view_state) {
                 VkImageLayout stencil_layout = kInvalidLayout;
                 const auto *attachment_description_stencil_layout =
@@ -2306,7 +2308,6 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
     const IMAGE_STATE *image_state = GetImageState(image);
-    const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     bool skip = false;
     if (image_state) {
         if (image_state->is_swapchain_image) {
@@ -2316,7 +2317,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
                              "destroyed with vkDestroySwapchainKHR.",
                              report_data->FormatHandle(image_state->image).c_str());
         }
-        skip |= ValidateObjectNotInUse(image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
+        skip |= ValidateObjectNotInUse(image_state, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
     }
     return skip;
 }
@@ -3563,7 +3564,11 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
     bool skip = false;
     const IMAGE_VIEW_STATE *image_view_state = nullptr;
     if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
-        image_view_state = GetActiveAttachmentImageViewState(GetCBState(command_buffer), fb_attachment, primary_cb_state);
+        if (primary_cb_state) {
+            image_view_state = primary_cb_state->GetActiveAttachmentImageViewState(fb_attachment);
+        } else {
+            image_view_state = GetCBState(command_buffer)->GetActiveAttachmentImageViewState(fb_attachment);
+        }
     }
 
     for (uint32_t j = 0; j < rect_count; j++) {
@@ -3696,7 +3701,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) &&
                 (fb_attachment < framebuffer->createInfo.attachmentCount)) {
                 const IMAGE_VIEW_STATE *image_view_state =
-                    GetActiveAttachmentImageViewState(GetCBState(commandBuffer), fb_attachment);
+                    GetCBState(commandBuffer)->GetActiveAttachmentImageViewState(fb_attachment);
                 if (image_view_state != nullptr) {
                     skip |= ValidateProtectedImage(cb_node, image_view_state->image_state.get(), "vkCmdClearAttachments()",
                                                    "VUID-vkCmdClearAttachments-commandBuffer-02504");
@@ -4651,7 +4656,7 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
 bool CoreChecks::ValidateImageUsageFlags(IMAGE_STATE const *image_state, VkFlags desired, bool strict, const char *msgCode,
                                          char const *func_name, char const *usage_string) const {
     return ValidateUsageFlags(image_state->createInfo.usage, desired, strict, image_state->image,
-                              VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), msgCode, func_name, usage_string);
+                              image_state->Handle(), msgCode, func_name, usage_string);
 }
 
 bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
@@ -4714,7 +4719,7 @@ bool CoreChecks::ValidateImageSubresourceLayers(const CMD_BUFFER_STATE *cb_node,
 bool CoreChecks::ValidateBufferUsageFlags(BUFFER_STATE const *buffer_state, VkFlags desired, bool strict, const char *msgCode,
                                           char const *func_name, char const *usage_string) const {
     return ValidateUsageFlags(buffer_state->createInfo.usage, desired, strict, buffer_state->buffer,
-                              VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), msgCode, func_name, usage_string);
+                              buffer_state->Handle(), msgCode, func_name, usage_string);
 }
 
 bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
@@ -5323,8 +5328,7 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const Location &loc, const CMD_BUF
 
     // Create the validator state from the image state
     barrier_queue_families::ValidatorState val(this, LogObjectList(cb_state->commandBuffer), loc,
-                                               VulkanTypedHandle(barrier.image, kVulkanObjectTypeImage),
-                                               state_data->createInfo.sharingMode);
+                                               state_data->Handle(), state_data->createInfo.sharingMode);
     const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
     return barrier_queue_families::Validate(this, cb_state, val, src_queue_family, dst_queue_family);
@@ -5341,8 +5345,7 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const Location &loc, const CMD_BUF
 
     // Create the validator state from the buffer state
     barrier_queue_families::ValidatorState val(this, LogObjectList(cb_state->commandBuffer), loc,
-                                               VulkanTypedHandle(barrier.buffer, kVulkanObjectTypeBuffer),
-                                               state_data->createInfo.sharingMode);
+                                               state_data->Handle(), state_data->createInfo.sharingMode);
     const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
     return barrier_queue_families::Validate(this, cb_state, val, src_queue_family, dst_queue_family);
@@ -6141,7 +6144,7 @@ bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) const {
     bool skip = false;
     auto buffer_state = GetBufferState(buffer);
     if (buffer_state) {
-        if (buffer_state->in_use.load()) {
+        if (buffer_state->InUse()) {
             skip |= LogError(buffer, "VUID-vkDestroyBuffer-buffer-00922", "Cannot free %s that is in use by a command buffer.",
                              report_data->FormatHandle(buffer).c_str());
         }
@@ -6152,12 +6155,11 @@ bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) const {
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView,
                                                  const VkAllocationCallbacks *pAllocator) const {
     const IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
-    const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
 
     bool skip = false;
     if (image_view_state) {
         skip |=
-            ValidateObjectNotInUse(image_view_state, obj_struct, "vkDestroyImageView", "VUID-vkDestroyImageView-imageView-01026");
+            ValidateObjectNotInUse(image_view_state, "vkDestroyImageView", "VUID-vkDestroyImageView-imageView-01026");
     }
     return skip;
 }
@@ -6175,10 +6177,9 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) const {
     auto buffer_view_state = GetBufferViewState(bufferView);
-    const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);
     bool skip = false;
     if (buffer_view_state) {
-        skip |= ValidateObjectNotInUse(buffer_view_state, obj_struct, "vkDestroyBufferView",
+        skip |= ValidateObjectNotInUse(buffer_view_state, "vkDestroyBufferView",
                                        "VUID-vkDestroyBufferView-bufferView-00936");
     }
     return skip;

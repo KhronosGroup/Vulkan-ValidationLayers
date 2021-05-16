@@ -2313,11 +2313,11 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     const auto *pipeline_state = state.pipeline_state;
     if (pipeline_state) {
         if ((pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
-            !pipeline_state->pipeline_layout->destroyed) {
+            !pipeline_state->pipeline_layout->Destroyed()) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
-        if (pipeline_state->pipeline_layout->destroyed) {
+        if (pipeline_state->pipeline_layout->Destroyed()) {
             ReportSetupProblem(device, "Pipeline layout has been destroyed, aborting GPU-AV");
             aborted = true;
         } else {

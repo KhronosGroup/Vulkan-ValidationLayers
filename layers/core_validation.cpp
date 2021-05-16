@@ -194,7 +194,7 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, 
         result |= LogError(object, location.Vuid(),
                            "%s: %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                            location.FuncName(), report_data->FormatHandle(typed_handle).c_str(), type_name + 2);
-    } else if (mem_state->destroyed) {
+    } else if (mem_state->Destroyed()) {
         result |= LogError(object, location.Vuid(),
                            "%s: %s used with no memory bound and previously bound memory was freed. Memory must not be freed "
                            "prior to this operation.",
@@ -243,7 +243,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
         // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         result |= VerifyBoundMemoryIsValid(image_state->binding.mem_state.get(), image_state->image,
-                                           VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), location);
+                                           image_state->Handle(), location);
     }
     return result;
 }
@@ -254,7 +254,7 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
     bool result = false;
     if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
         result |= VerifyBoundMemoryIsValid(buffer_state->binding.mem_state.get(), buffer_state->buffer,
-                                           VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), api_name, error_code);
+                                           buffer_state->Handle(), api_name, error_code);
     }
     return result;
 }
@@ -263,16 +263,14 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
 bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE *as_state, const char *api_name,
                                                               const char *error_code) const {
     return VerifyBoundMemoryIsValid(as_state->binding.mem_state.get(), as_state->acceleration_structure,
-                                    VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureNV),
-                                    api_name, error_code);
+                                    as_state->Handle(), api_name, error_code);
 }
 
 // Check to see if memory was bound to this acceleration structure
 bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE_KHR *as_state,
                                                               const char *api_name, const char *error_code) const {
     return VerifyBoundMemoryIsValid(as_state->binding.mem_state.get(), as_state->acceleration_structure,
-                                    VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureKHR),
-                                    api_name, error_code);
+                                    as_state->Handle(), api_name, error_code);
 }
 
 // Valid usage checks for a call to SetMemBinding().
@@ -322,7 +320,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
         if (mem_info) {
             const DEVICE_MEMORY_STATE *prev_binding = mem_binding->binding.mem_state.get();
             if (prev_binding) {
-                if (!prev_binding->destroyed) {
+                if (!prev_binding->Destroyed()) {
                     const char *error_code = nullptr;
                     if (typed_handle.type == kVulkanObjectTypeBuffer) {
                         if (strcmp(apiName, "vkBindBufferMemory()") == 0) {
@@ -726,12 +724,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
     if (enabled_features.core11.protectedMemory == VK_TRUE) {
         for (const auto &buffer_binding : current_vtx_bfr_binding_info) {
-            if (buffer_binding.buffer_state && !buffer_binding.buffer_state->destroyed) {
+            if (buffer_binding.buffer_state && !buffer_binding.buffer_state->Destroyed()) {
                 skip |= ValidateProtectedBuffer(pCB, buffer_binding.buffer_state.get(), caller, vuid.unprotected_command_buffer,
                                                 "Buffer is vertex buffer");
             }
         }
-        if (pCB->index_buffer_binding.buffer_state && !pCB->index_buffer_binding.buffer_state->destroyed) {
+        if (pCB->index_buffer_binding.buffer_state && !pCB->index_buffer_binding.buffer_state->Destroyed()) {
             skip |= ValidateProtectedBuffer(pCB, pCB->index_buffer_binding.buffer_state.get(), caller,
                                             vuid.unprotected_command_buffer, "Buffer is index buffer");
         }
@@ -977,7 +975,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if ((ds_attachment != nullptr) && (fb_state != nullptr)) {
                 const uint32_t attachment = ds_attachment->attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
-                    const auto *imageview_state = GetActiveAttachmentImageViewState(pCB, attachment);
+                    const auto *imageview_state = pCB->GetActiveAttachmentImageViewState(attachment);
                     if (imageview_state != nullptr) {
                         const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
                         if (image_state != nullptr) {
@@ -1129,7 +1127,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 uint32_t i = 0;
                 for (const auto &view_state : *cb_node->active_attachments.get()) {
                     const auto &subpass = cb_node->active_subpasses->at(i);
-                    if (subpass.used && view_state && !view_state->destroyed) {
+                    if (subpass.used && view_state && !view_state->Destroyed()) {
                         std::string image_desc = "Image is ";
                         image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
                         // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
@@ -2159,7 +2157,7 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func
     auto set_node = setMap.find(set);
     if (set_node != setMap.end()) {
         // TODO : This covers various error cases so should pass error enum into this function and use passed in enum here
-        if (set_node->second->in_use.load()) {
+        if (set_node->second->InUse()) {
             skip |= LogError(set, "VUID-vkFreeDescriptorSets-pDescriptorSets-00309",
                              "Cannot call %s() on %s that is in use by a command buffer.", func_str,
                              report_data->FormatHandle(set).c_str());
@@ -2620,7 +2618,7 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const
     using sync_vuid_maps::SubmitError;
 
     bool skip = false;
-    if ((pCB->in_use.load() || current_submit_count > 1) &&
+    if ((pCB->InUse() || current_submit_count > 1) &&
         !(pCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
         const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, SubmitError::kCmdNotSimultaneous);
 
@@ -3945,11 +3943,11 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 }
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
-bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const VulkanTypedHandle &obj_struct, const char *caller_name,
-                                        const char *error_code) const {
+bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const char *caller_name, const char *error_code) const {
     if (disabled[object_in_use]) return false;
+    auto obj_struct = obj_node->Handle();
     bool skip = false;
-    if (obj_node->in_use.load()) {
+    if (obj_node->InUse()) {
         skip |= LogError(device, error_code, "Cannot call %s on %s that is currently in use by a command buffer.", caller_name,
                          report_data->FormatHandle(obj_struct).c_str());
     }
@@ -3958,10 +3956,9 @@ bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const VulkanT
 
 bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) const {
     const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
-    const VulkanTypedHandle obj_struct(mem, kVulkanObjectTypeDeviceMemory);
     bool skip = false;
     if (mem_info) {
-        skip |= ValidateObjectNotInUse(mem_info, obj_struct, "vkFreeMemory", "VUID-vkFreeMemory-memory-00677");
+        skip |= ValidateObjectNotInUse(mem_info, "vkFreeMemory", "VUID-vkFreeMemory-memory-00677");
     }
     return skip;
 }
@@ -4167,20 +4164,18 @@ bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, con
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore,
                                                  const VkAllocationCallbacks *pAllocator) const {
     const SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
-    const VulkanTypedHandle obj_struct(semaphore, kVulkanObjectTypeSemaphore);
     bool skip = false;
     if (sema_node) {
-        skip |= ValidateObjectNotInUse(sema_node, obj_struct, "vkDestroySemaphore", "VUID-vkDestroySemaphore-semaphore-01137");
+        skip |= ValidateObjectNotInUse(sema_node, "vkDestroySemaphore", "VUID-vkDestroySemaphore-semaphore-01137");
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) const {
     const EVENT_STATE *event_state = GetEventState(event);
-    const VulkanTypedHandle obj_struct(event, kVulkanObjectTypeEvent);
     bool skip = false;
     if (event_state) {
-        skip |= ValidateObjectNotInUse(event_state, obj_struct, "vkDestroyEvent", "VUID-vkDestroyEvent-event-01145");
+        skip |= ValidateObjectNotInUse(event_state, "vkDestroyEvent", "VUID-vkDestroyEvent-event-01145");
     }
     return skip;
 }
@@ -4189,10 +4184,9 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
                                                  const VkAllocationCallbacks *pAllocator) const {
     if (disabled[query_validation]) return false;
     const QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
-    const VulkanTypedHandle obj_struct(queryPool, kVulkanObjectTypeQueryPool);
     bool skip = false;
     if (qp_state) {
-        skip |= ValidateObjectNotInUse(qp_state, obj_struct, "vkDestroyQueryPool", "VUID-vkDestroyQueryPool-queryPool-00793");
+        skip |= ValidateObjectNotInUse(qp_state, "vkDestroyQueryPool", "VUID-vkDestroyQueryPool-queryPool-00793");
     }
     return skip;
 }
@@ -4426,8 +4420,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
     bool skip = false;
     if (buffer_state) {
         // Track objects tied to memory
-        const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
-        skip = ValidateSetMemBinding(mem, obj_struct, api_name);
+        skip = ValidateSetMemBinding(mem, buffer_state->Handle(), api_name);
 
         const auto mem_info = GetDevMemState(mem);
 
@@ -4696,20 +4689,18 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhy
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                 const VkAllocationCallbacks *pAllocator) const {
     const PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
-    const VulkanTypedHandle obj_struct(pipeline, kVulkanObjectTypePipeline);
     bool skip = false;
     if (pipeline_state) {
-        skip |= ValidateObjectNotInUse(pipeline_state, obj_struct, "vkDestroyPipeline", "VUID-vkDestroyPipeline-pipeline-00765");
+        skip |= ValidateObjectNotInUse(pipeline_state, "vkDestroyPipeline", "VUID-vkDestroyPipeline-pipeline-00765");
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) const {
     const SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
-    const VulkanTypedHandle obj_struct(sampler, kVulkanObjectTypeSampler);
     bool skip = false;
     if (sampler_state) {
-        skip |= ValidateObjectNotInUse(sampler_state, obj_struct, "vkDestroySampler", "VUID-vkDestroySampler-sampler-01082");
+        skip |= ValidateObjectNotInUse(sampler_state, "vkDestroySampler", "VUID-vkDestroySampler-sampler-01082");
     }
     return skip;
 }
@@ -4717,10 +4708,9 @@ bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sample
 bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                       const VkAllocationCallbacks *pAllocator) const {
     const DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
-    const VulkanTypedHandle obj_struct(descriptorPool, kVulkanObjectTypeDescriptorPool);
     bool skip = false;
     if (desc_pool_state) {
-        skip |= ValidateObjectNotInUse(desc_pool_state, obj_struct, "vkDestroyDescriptorPool",
+        skip |= ValidateObjectNotInUse(desc_pool_state, "vkDestroyDescriptorPool",
                                        "VUID-vkDestroyDescriptorPool-descriptorPool-00303");
     }
     return skip;
@@ -4732,7 +4722,7 @@ bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescrip
 // This function is only valid at a point when cmdBuffer is being reset or freed
 bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_node, const char *action, const char *error_code) const {
     bool skip = false;
-    if (cb_node->in_use.load()) {
+    if (cb_node->InUse()) {
         skip |= LogError(cb_node->commandBuffer, error_code, "Attempt to %s %s which is in use.", action,
                          report_data->FormatHandle(cb_node->commandBuffer).c_str());
     }
@@ -4855,10 +4845,9 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                    const VkAllocationCallbacks *pAllocator) const {
     const FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
-    const VulkanTypedHandle obj_struct(framebuffer, kVulkanObjectTypeFramebuffer);
     bool skip = false;
     if (framebuffer_state) {
-        skip |= ValidateObjectNotInUse(framebuffer_state, obj_struct, "vkDestroyFramebuffer",
+        skip |= ValidateObjectNotInUse(framebuffer_state, "vkDestroyFramebuffer",
                                        "VUID-vkDestroyFramebuffer-framebuffer-00892");
     }
     return skip;
@@ -4867,10 +4856,9 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                   const VkAllocationCallbacks *pAllocator) const {
     const RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
-    const VulkanTypedHandle obj_struct(renderPass, kVulkanObjectTypeRenderPass);
     bool skip = false;
     if (rp_state) {
-        skip |= ValidateObjectNotInUse(rp_state, obj_struct, "vkDestroyRenderPass", "VUID-vkDestroyRenderPass-renderPass-00873");
+        skip |= ValidateObjectNotInUse(rp_state, "vkDestroyRenderPass", "VUID-vkDestroyRenderPass-renderPass-00873");
     }
     return skip;
 }
@@ -5758,7 +5746,7 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     const DESCRIPTOR_POOL_STATE *pool = GetDescriptorPoolState(descriptorPool);
     if (pool != nullptr) {
         for (auto *ds : pool->sets) {
-            if (ds && ds->in_use.load()) {
+            if (ds && ds->InUse()) {
                 skip |= LogError(descriptorPool, "VUID-vkResetDescriptorPool-descriptorPool-00313",
                                  "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer.");
                 if (skip) break;
@@ -5820,7 +5808,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
-    if (cb_state->in_use.load()) {
+    if (cb_state->InUse()) {
         skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00049",
                          "Calling vkBeginCommandBuffer() on active %s before it has completed. You must check "
                          "command buffer fence before this call.",
@@ -5997,7 +5985,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             const auto attachment = subpass_desc->pColorAttachments[i].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
 
-            const auto *imageview_state = GetActiveAttachmentImageViewState(cb_state, attachment);
+            const auto *imageview_state = cb_state->GetActiveAttachmentImageViewState(attachment);
             if (!imageview_state) continue;
 
             const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
@@ -6735,10 +6723,9 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
 bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                                const VkAllocationCallbacks *pAllocator) const {
     const ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(accelerationStructure);
-    const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
     bool skip = false;
     if (as_state) {
-        skip |= ValidateObjectNotInUse(as_state, obj_struct, "vkDestroyAccelerationStructureNV",
+        skip |= ValidateObjectNotInUse(as_state, "vkDestroyAccelerationStructureNV",
                                        "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
     }
     return skip;
@@ -6747,10 +6734,9 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, 
 bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                                 const VkAllocationCallbacks *pAllocator) const {
     const ACCELERATION_STRUCTURE_STATE_KHR *as_state = GetAccelerationStructureStateKHR(accelerationStructure);
-    const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureKHR);
     bool skip = false;
     if (as_state) {
-        skip |= ValidateObjectNotInUse(as_state, obj_struct, "vkDestroyAccelerationStructureKHR",
+        skip |= ValidateObjectNotInUse(as_state, "vkDestroyAccelerationStructureKHR",
                                        "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
     }
     if (pAllocator && !as_state->allocator) {
@@ -11540,7 +11526,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         skip |= ValidateCommandBufferState(sub_cb_state, "vkCmdExecuteCommands()", 0,
                                            "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-            if (sub_cb_state->in_use.load()) {
+            if (sub_cb_state->InUse()) {
                 skip |= LogError(
                     cb_state->commandBuffer, "VUID-vkCmdExecuteCommands-pCommandBuffers-00091",
                     "vkCmdExecuteCommands(): Cannot execute pending %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
@@ -11821,7 +11807,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         if (image_state) {
             // Track objects tied to memory
             skip |=
-                ValidateSetMemBinding(bind_info.memory, VulkanTypedHandle(bind_info.image, kVulkanObjectTypeImage), error_prefix);
+                ValidateSetMemBinding(bind_info.memory, image_state->Handle(), error_prefix);
 
             const auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
             const auto mem_info = GetDevMemState(bind_info.memory);
@@ -12475,8 +12461,7 @@ bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *call
     bool skip = false;
     const SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
     if (sema_node) {
-        const VulkanTypedHandle obj_struct(semaphore, kVulkanObjectTypeSemaphore);
-        skip |= ValidateObjectNotInUse(sema_node, obj_struct, caller_name, kVUIDUndefined);
+        skip |= ValidateObjectNotInUse(sema_node, caller_name, kVUIDUndefined);
     }
     return skip;
 }
