@@ -61,7 +61,6 @@ enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
 
 class FENCE_STATE : public BASE_NODE {
   public:
-    VkFence fence;
     VkFenceCreateInfo createInfo;
     std::pair<VkQueue, uint64_t> signaler;
     FENCE_STATUS state;
@@ -70,10 +69,11 @@ class FENCE_STATE : public BASE_NODE {
     // Default constructor
     FENCE_STATE(VkFence f, const VkFenceCreateInfo *pCreateInfo)
         : BASE_NODE(f, kVulkanObjectTypeFence),
-          fence(f),
           createInfo(*pCreateInfo),
           state((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
           scope(kSyncScopeInternal) {}
+
+    VkFence fence() const { return handle_.Cast<VkFence>(); }
 };
 
 class SEMAPHORE_STATE : public BASE_NODE {
@@ -91,16 +91,19 @@ class SEMAPHORE_STATE : public BASE_NODE {
           scope(kSyncScopeInternal),
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
           payload(type_create_info ? type_create_info->initialValue : 0) {}
+
+    VkSemaphore semaphore() const { return handle_.Cast<VkSemaphore>(); }
 };
 
 class EVENT_STATE : public BASE_NODE {
   public:
     int write_in_use = 0;
     VkPipelineStageFlags2KHR stageMask = VkPipelineStageFlags2KHR(0);
-    VkEvent event = VK_NULL_HANDLE;
     VkEventCreateFlags flags;
     EVENT_STATE(VkEvent event_, VkEventCreateFlags flags_)
-        : BASE_NODE(event_, kVulkanObjectTypeEvent), event(event_), flags(flags_) {}
+        : BASE_NODE(event_, kVulkanObjectTypeEvent), flags(flags_) {}
+
+    VkEvent event() const { return handle_.Cast<VkEvent>(); }
 };
 
 class QUEUE_STATE {
@@ -115,7 +118,6 @@ class QUEUE_STATE {
 class QUERY_POOL_STATE : public BASE_NODE {
   public:
     VkQueryPoolCreateInfo createInfo;
-    VkQueryPool pool;
 
     bool has_perf_scope_command_buffer = false;
     bool has_perf_scope_render_pass = false;
@@ -124,12 +126,13 @@ class QUERY_POOL_STATE : public BASE_NODE {
 
     QUERY_POOL_STATE(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo)
         : BASE_NODE(qp, kVulkanObjectTypeQueryPool),
-          pool(qp),
           createInfo(*pCreateInfo),
           has_perf_scope_command_buffer(false),
           has_perf_scope_render_pass(false),
           n_performance_passes(0),
           perf_counter_index_count(0) {}
+
+    VkQueryPool pool() const { return handle_.Cast<VkQueryPool>(); }
 };
 
 class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
@@ -140,6 +143,8 @@ class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
 
     SAMPLER_YCBCR_CONVERSION_STATE(VkSamplerYcbcrConversion ycbcr)
         : BASE_NODE(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion) {}
+
+    VkSamplerYcbcrConversion ycbcr_conversion() const { return handle_.Cast<VkSamplerYcbcrConversion>(); }
 };
 
 class QUEUE_FAMILY_PERF_COUNTERS {
@@ -238,18 +243,20 @@ struct hash<GpuQueue> {
 }  // namespace std
 
 struct SURFACE_STATE : public BASE_NODE {
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
     SWAPCHAIN_NODE* swapchain = nullptr;
     layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
 
-    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(surface, kVulkanObjectTypeSurfaceKHR), surface(s) {}
+    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
+
+    VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
 };
 
 struct DISPLAY_MODE_STATE : public BASE_NODE {
-    VkDisplayModeKHR display_mode = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device;
 
-    DISPLAY_MODE_STATE(VkDisplayModeKHR dm) : BASE_NODE(dm, kVulkanObjectTypeDisplayModeKHR), display_mode(dm) {}
+    DISPLAY_MODE_STATE(VkDisplayModeKHR dm) : BASE_NODE(dm, kVulkanObjectTypeDisplayModeKHR) {}
+
+    VkDisplayModeKHR display_mode() const { return handle_.Cast<VkDisplayModeKHR>(); }
 };
 
 struct SubpassLayout {

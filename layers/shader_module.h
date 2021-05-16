@@ -188,7 +188,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool multiple_entry_points{false};
     bool has_valid_spirv;
     bool has_specialization_constants{false};
-    VkShaderModule vk_shader_module;
     uint32_t gpu_validation_shader_id;
 
     SHADER_MODULE_STATE(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
@@ -197,7 +196,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
           words(),
           def_index(),
           has_valid_spirv(true),
-          vk_shader_module(shaderModule),
           gpu_validation_shader_id(unique_shader_id) {
         words = PreprocessShaderBinary((uint32_t *)pCreateInfo->pCode, pCreateInfo->codeSize, env);
         BuildDefIndex();
@@ -206,8 +204,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     SHADER_MODULE_STATE()
         : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
           has_valid_spirv(false),
-          vk_shader_module(VK_NULL_HANDLE),
           gpu_validation_shader_id(UINT32_MAX) {}
+
+    VkShaderModule vk_shader_module() const { return handle_.Cast<VkShaderModule>(); }
 
     decoration_set get_decorations(unsigned id) const {
         // return the actual decorations for this id, or a default set.

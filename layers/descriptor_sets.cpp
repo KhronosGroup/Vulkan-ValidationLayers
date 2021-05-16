@@ -329,7 +329,7 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsNextBindingConsistent(const uint
 // handle invariant portion
 cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
                                                           const VkDescriptorSetLayout layout)
-    : BASE_NODE(layout, kVulkanObjectTypeDescriptorSetLayout), layout_(layout), layout_id_(GetCanonicalId(p_create_info)) {}
+    : BASE_NODE(layout, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(p_create_info)) {}
 
 // Validate descriptor set layout create info
 bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
@@ -623,7 +623,6 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                                               const cvdescriptorset::DescriptorSet::StateTracker *state_data)
     : BASE_NODE(set, kVulkanObjectTypeDescriptorSet),
       some_update_(false),
-      set_(set),
       pool_state_(pool_state),
       layout_(layout),
       state_data_(state_data),
@@ -759,7 +758,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
         checked_layouts.emplace();
     }
     bool result = false;
-    VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer : VK_NULL_HANDLE;
+    VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer() : VK_NULL_HANDLE;
     for (const auto &binding_pair : bindings) {
         const auto binding = binding_pair.first;
         DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
@@ -899,7 +898,7 @@ bool CoreChecks::ValidateGeneralBufferDescriptor(const char *caller, const DrawD
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                                     "binding #%" PRIu32 " index %" PRIu32 " is uses buffer %s that references invalid memory %s.",
                                     report_data->FormatHandle(set).c_str(), caller, binding_info.first, index,
-                                    report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(mem_binding->mem).c_str());
+                                    report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(mem_binding->mem()).c_str());
                 }
             }
         }
@@ -1083,7 +1082,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                         continue;
                     }
                 }
-                if (view_state->image_view == image_view) {
+                if (view_state->image_view() == image_view) {
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
@@ -1099,14 +1098,14 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                         LogObjectList objlist(set);
                         objlist.add(image_view);
                         objlist.add(framebuffer);
-                        objlist.add(view_state->image_view);
+                        objlist.add(view_state->image_view());
                         return LogError(
                             objlist, vuids.image_subresources,
                             "Descriptor set %s encountered the following validation error at %s time: "
                             "Image subresources of %s in "
                             "Descriptor in binding #%" PRIu32 " index %" PRIu32 " and %s in %s attachment # %" PRIu32 " overlap.",
                             report_data->FormatHandle(set).c_str(), caller, report_data->FormatHandle(image_view).c_str(), binding,
-                            index, report_data->FormatHandle(view_state->image_view).c_str(),
+                            index, report_data->FormatHandle(view_state->image_view()).c_str(),
                             report_data->FormatHandle(framebuffer).c_str(), att_index);
                     }
                 }
@@ -1139,16 +1138,16 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     image_view_state->create_info.format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
-                    objlist.add(sampler_state->sampler);
-                    objlist.add(image_view_state->image_view);
+                    objlist.add(sampler_state->sampler());
+                    objlist.add(image_view_state->image_view());
                     return LogError(objlist, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015",
                                     "Descriptor set %s encountered the following validation error at %s time: Sampler %s in "
                                     "binding #%" PRIu32 " index %" PRIu32
                                     " has a custom border color with format = VK_FORMAT_UNDEFINED and is used to "
                                     "sample an image view %s with format %s",
                                     report_data->FormatHandle(set).c_str(), caller,
-                                    report_data->FormatHandle(sampler_state->sampler).c_str(), binding, index,
-                                    report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                    report_data->FormatHandle(sampler_state->sampler()).c_str(), binding, index,
+                                    report_data->FormatHandle(image_view_state->image_view()).c_str(),
                                     string_VkFormat(image_view_state->create_info.format));
                 }
             }
@@ -1160,32 +1159,32 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                 !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
                 auto set = descriptor_set->GetSet();
                 LogObjectList objlist(set);
-                objlist.add(sampler_state->sampler);
-                objlist.add(image_view_state->image_view);
+                objlist.add(sampler_state->sampler());
+                objlist.add(image_view_state->image_view());
                 return LogError(objlist, vuids.linear_sampler,
                                 "Descriptor set %s encountered the following validation error at %s time: Sampler "
                                 "(%s) is set to use VK_FILTER_LINEAR with "
                                 "compareEnable is set to VK_TRUE, but image view's (%s) format (%s) does not "
                                 "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
                                 report_data->FormatHandle(set).c_str(), caller,
-                                report_data->FormatHandle(sampler_state->sampler).c_str(),
-                                report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                report_data->FormatHandle(sampler_state->sampler()).c_str(),
+                                report_data->FormatHandle(image_view_state->image_view()).c_str(),
                                 string_VkFormat(image_view_state->create_info.format));
             }
             if (sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) {
                 if (!(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
-                    objlist.add(sampler_state->sampler);
-                    objlist.add(image_view_state->image_view);
+                    objlist.add(sampler_state->sampler());
+                    objlist.add(image_view_state->image_view());
                     return LogError(objlist, vuids.cubic_sampler,
                                     "Descriptor set %s encountered the following validation error at %s time: "
                                     "Sampler (%s) is set to use VK_FILTER_CUBIC_EXT, then "
                                     "image view's (%s) format (%s) MUST contain "
                                     "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT in its format features.",
                                     report_data->FormatHandle(set).c_str(), caller,
-                                    report_data->FormatHandle(sampler_state->sampler).c_str(),
-                                    report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                    report_data->FormatHandle(sampler_state->sampler()).c_str(),
+                                    report_data->FormatHandle(image_view_state->image_view()).c_str(),
                                     string_VkFormat(image_view_state->create_info.format));
                 }
 
@@ -1198,30 +1197,30 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                         !image_view_state->filter_cubic_props.filterCubicMinmax) {
                         auto set = descriptor_set->GetSet();
                         LogObjectList objlist(set);
-                        objlist.add(sampler_state->sampler);
-                        objlist.add(image_view_state->image_view);
+                        objlist.add(sampler_state->sampler());
+                        objlist.add(image_view_state->image_view());
                         return LogError(objlist, vuids.filter_cubic_min_max,
                                         "Descriptor set %s encountered the following validation error at %s time: "
                                         "Sampler (%s) is set to use VK_FILTER_CUBIC_EXT & %s, "
                                         "but image view (%s) doesn't support filterCubicMinmax.",
                                         report_data->FormatHandle(set).c_str(), caller,
-                                        report_data->FormatHandle(sampler_state->sampler).c_str(),
+                                        report_data->FormatHandle(sampler_state->sampler()).c_str(),
                                         string_VkSamplerReductionMode(reduction_mode_info->reductionMode),
-                                        report_data->FormatHandle(image_view_state->image_view).c_str());
+                                        report_data->FormatHandle(image_view_state->image_view()).c_str());
                     }
 
                     if (!image_view_state->filter_cubic_props.filterCubic) {
                         auto set = descriptor_set->GetSet();
                         LogObjectList objlist(set);
-                        objlist.add(sampler_state->sampler);
-                        objlist.add(image_view_state->image_view);
+                        objlist.add(sampler_state->sampler());
+                        objlist.add(image_view_state->image_view());
                         return LogError(objlist, vuids.filter_cubic,
                                         "Descriptor set %s encountered the following validation error at %s time: "
                                         "Sampler (%s) is set to use VK_FILTER_CUBIC_EXT, "
                                         "but image view (%s) doesn't support filterCubic.",
                                         report_data->FormatHandle(set).c_str(), caller,
-                                        report_data->FormatHandle(sampler_state->sampler).c_str(),
-                                        report_data->FormatHandle(image_view_state->image_view).c_str());
+                                        report_data->FormatHandle(sampler_state->sampler()).c_str(),
+                                        report_data->FormatHandle(image_view_state->image_view()).c_str());
                     }
                 }
 
@@ -1230,15 +1229,15 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                         (VK_IMAGE_VIEW_TYPE_3D | VK_IMAGE_VIEW_TYPE_CUBE | VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)) {
                         auto set = descriptor_set->GetSet();
                         LogObjectList objlist(set);
-                        objlist.add(sampler_state->sampler);
-                        objlist.add(image_view_state->image_view);
+                        objlist.add(sampler_state->sampler());
+                        objlist.add(image_view_state->image_view());
                         return LogError(objlist, vuids.img_filter_cubic,
                                         "Descriptor set %s encountered the following validation error at %s time: Sampler "
                                         "(%s)is set to use VK_FILTER_CUBIC_EXT while the VK_IMG_filter_cubic extension "
                                         "is enabled, but image view (%s) has an invalid imageViewType (%s).",
                                         report_data->FormatHandle(set).c_str(), caller,
-                                        report_data->FormatHandle(sampler_state->sampler).c_str(),
-                                        report_data->FormatHandle(image_view_state->image_view).c_str(),
+                                        report_data->FormatHandle(sampler_state->sampler()).c_str(),
+                                        report_data->FormatHandle(image_view_state->image_view()).c_str(),
                                         string_VkImageViewType(image_view_state->create_info.viewType));
                     }
                 }
@@ -1260,9 +1259,9 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                               : sampler_state->createInfo.addressModeW;
                 auto set = descriptor_set->GetSet();
                 LogObjectList objlist(set);
-                objlist.add(sampler_state->sampler);
-                objlist.add(image_state->image);
-                objlist.add(image_view_state->image_view);
+                objlist.add(sampler_state->sampler());
+                objlist.add(image_state->image());
+                objlist.add(image_view_state->image_view());
                 return LogError(objlist, vuids.corner_sampled_address_mode,
                                 "Descriptor set %s encountered the following validation error at %s time: Image "
                                 "(%s) in image view (%s) is created with flag "
@@ -1270,9 +1269,9 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                 "VK_SAMPLER_ADDRESS_MODE_CLAMP_EDGE, but sampler (%s) has "
                                 "createInfo.addressMode%s set to %s.",
                                 report_data->FormatHandle(set).c_str(), caller,
-                                report_data->FormatHandle(image_state->image).c_str(),
-                                report_data->FormatHandle(image_view_state->image_view).c_str(),
-                                report_data->FormatHandle(sampler_state->sampler).c_str(), address_mode_letter.c_str(),
+                                report_data->FormatHandle(image_state->image()).c_str(),
+                                report_data->FormatHandle(image_view_state->image_view()).c_str(),
+                                report_data->FormatHandle(sampler_state->sampler()).c_str(), address_mode_letter.c_str(),
                                 string_VkSamplerAddressMode(address_mode));
             }
 
@@ -1286,13 +1285,13 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
-                    objlist.add(sampler_state->sampler);
+                    objlist.add(sampler_state->sampler());
                     return LogError(objlist, vuids.sampler_imageview_type,
                                     "Descriptor set %s encountered the following validation error at %s time: %s, type: %s in "
                                     "Descriptor in binding #%" PRIu32 " index %" PRIu32 "is used by %s.",
                                     report_data->FormatHandle(set).c_str(), caller, report_data->FormatHandle(image_view).c_str(),
                                     string_VkImageViewType(image_view_ci.viewType), binding, index,
-                                    report_data->FormatHandle(sampler_state->sampler).c_str());
+                                    report_data->FormatHandle(sampler_state->sampler()).c_str());
                 }
 
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
@@ -1301,13 +1300,13 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
-                    objlist.add(sampler_state->sampler);
+                    objlist.add(sampler_state->sampler());
                     return LogError(objlist, vuids.sampler_implicitLod_dref_proj,
                                     "Descriptor set %s encountered the following validation error at %s time: %s in "
                                     "Descriptor in binding #%" PRIu32 " index %" PRIu32
                                     " is used by %s that uses invalid operator.",
                                     report_data->FormatHandle(set).c_str(), caller, report_data->FormatHandle(image_view).c_str(),
-                                    binding, index, report_data->FormatHandle(sampler_state->sampler).c_str());
+                                    binding, index, report_data->FormatHandle(sampler_state->sampler()).c_str());
                 }
 
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
@@ -1316,13 +1315,13 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     auto set = descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
-                    objlist.add(sampler_state->sampler);
+                    objlist.add(sampler_state->sampler());
                     return LogError(objlist, vuids.sampler_bias_offset,
                                     "Descriptor set %s encountered the following validation error at %s time: %s in "
                                     "Descriptor in binding #%" PRIu32 " index %" PRIu32
                                     " is used by %s that uses invalid bias or offset operator.",
                                     report_data->FormatHandle(set).c_str(), caller, report_data->FormatHandle(image_view).c_str(),
-                                    binding, index, report_data->FormatHandle(sampler_state->sampler).c_str());
+                                    binding, index, report_data->FormatHandle(sampler_state->sampler()).c_str());
                 }
             }
         }
@@ -1430,7 +1429,7 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
                                     "binding #%" PRIu32 " index %" PRIu32
                                     " is using acceleration structure %s that references invalid memory %s.",
                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                    report_data->FormatHandle(acc).c_str(), report_data->FormatHandle(mem_binding->mem).c_str());
+                                    report_data->FormatHandle(acc).c_str(), report_data->FormatHandle(mem_binding->mem()).c_str());
                 }
             }
         }
@@ -1456,7 +1455,7 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
                                     "binding #%" PRIu32 " index %" PRIu32
                                     " is using acceleration structure %s that references invalid memory %s.",
                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                    report_data->FormatHandle(acc).c_str(), report_data->FormatHandle(mem_binding->mem).c_str());
+                                    report_data->FormatHandle(acc).c_str(), report_data->FormatHandle(mem_binding->mem()).c_str());
                 }
             }
         }
@@ -1871,11 +1870,11 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         cmd_info.cmd_type = cmd_type;
         cmd_info.function = function;
         if (cb_node->activeFramebuffer) {
-            cmd_info.framebuffer = cb_node->activeFramebuffer->framebuffer;
+            cmd_info.framebuffer = cb_node->activeFramebuffer->framebuffer();
             cmd_info.attachments = cb_node->active_attachments;
             cmd_info.subpasses = cb_node->active_subpasses;
         }
-        cb_node->validate_descriptorsets_in_queuesubmit[set_].emplace_back(cmd_info);
+        cb_node->validate_descriptorsets_in_queuesubmit[GetSet()].emplace_back(cmd_info);
     }
 }
 
@@ -2689,7 +2688,7 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
         out = str.str();
     } else {
         std::ostringstream str;
-        str << state_data_->report_data->FormatHandle(set_) << " allocated with "
+        str << state_data_->report_data->FormatHandle(GetSet()) << " allocated with "
             << state_data_->report_data->FormatHandle(layout_handle);
         out = str.str();
     }
@@ -2751,7 +2750,7 @@ bool cvdescriptorset::ValidateBufferUsage(debug_report_data *report_data, BUFFER
     }
     if (error_usage_bit) {
         std::stringstream error_str;
-        error_str << "Buffer (" << report_data->FormatHandle(buffer_node->buffer) << ") with usage mask " << std::hex
+        error_str << "Buffer (" << report_data->FormatHandle(buffer_node->buffer()) << ") with usage mask " << std::hex
                   << std::showbase << usage << " being used for a descriptor update of type " << string_VkDescriptorType(type)
                   << " does not have " << error_usage_bit << " set.";
         *error_msg = error_str.str();
@@ -2787,7 +2786,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         *error_code = "VUID-VkDescriptorBufferInfo-offset-00340";
         std::stringstream error_str;
         error_str << "VkDescriptorBufferInfo offset of " << buffer_info->offset << " is greater than or equal to buffer "
-                  << report_data->FormatHandle(buffer_node->buffer) << " size of " << buffer_node->createInfo.size;
+                  << report_data->FormatHandle(buffer_node->buffer()) << " size of " << buffer_node->createInfo.size;
         *error_msg = error_str.str();
         return false;
     }
@@ -2796,7 +2795,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         if (!buffer_info->range) {
             *error_code = "VUID-VkDescriptorBufferInfo-range-00341";
             std::stringstream error_str;
-            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer)
+            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer())
                       << " VkDescriptorBufferInfo range is not VK_WHOLE_SIZE and is zero, which is not allowed.";
             *error_msg = error_str.str();
             return false;
@@ -2805,7 +2804,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         if (buffer_info->range > (buffer_node->createInfo.size - buffer_info->offset)) {
             *error_code = "VUID-VkDescriptorBufferInfo-range-00342";
             std::stringstream error_str;
-            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer) << " VkDescriptorBufferInfo range is "
+            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer()) << " VkDescriptorBufferInfo range is "
                       << buffer_info->range << " which is greater than buffer size (" << buffer_node->createInfo.size
                       << ") minus requested offset of " << buffer_info->offset;
             *error_msg = error_str.str();
@@ -2819,7 +2818,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         if (buffer_info->range != VK_WHOLE_SIZE && buffer_info->range > max_ub_range) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00332";
             std::stringstream error_str;
-            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer) << " VkDescriptorBufferInfo range is "
+            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer()) << " VkDescriptorBufferInfo range is "
                       << buffer_info->range << " which is greater than this device's maxUniformBufferRange (" << max_ub_range
                       << ")";
             *error_msg = error_str.str();
@@ -2827,7 +2826,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         } else if (buffer_info->range == VK_WHOLE_SIZE && (buffer_node->createInfo.size - buffer_info->offset) > max_ub_range) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00332";
             std::stringstream error_str;
-            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer)
+            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer())
                       << " VkDescriptorBufferInfo range is VK_WHOLE_SIZE but effective range "
                       << "(" << (buffer_node->createInfo.size - buffer_info->offset) << ") is greater than this device's "
                       << "maxUniformBufferRange (" << max_ub_range << ")";
@@ -2839,7 +2838,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         if (buffer_info->range != VK_WHOLE_SIZE && buffer_info->range > max_sb_range) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00333";
             std::stringstream error_str;
-            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer) << " VkDescriptorBufferInfo range is "
+            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer()) << " VkDescriptorBufferInfo range is "
                       << buffer_info->range << " which is greater than this device's maxStorageBufferRange (" << max_sb_range
                       << ")";
             *error_msg = error_str.str();
@@ -2847,7 +2846,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         } else if (buffer_info->range == VK_WHOLE_SIZE && (buffer_node->createInfo.size - buffer_info->offset) > max_sb_range) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00333";
             std::stringstream error_str;
-            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer)
+            error_str << "For buffer " << report_data->FormatHandle(buffer_node->buffer())
                       << " VkDescriptorBufferInfo range is VK_WHOLE_SIZE but effective range "
                       << "(" << (buffer_node->createInfo.size - buffer_info->offset) << ") is greater than this device's "
                       << "maxStorageBufferRange (" << max_sb_range << ")";
@@ -3412,7 +3411,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                                         << "Attempted write update to combined image sampler and image view and sampler ycbcr "
                                            "conversions are not identical, sampler: "
                                         << report_data->FormatHandle(desc->GetSampler())
-                                        << " image view: " << report_data->FormatHandle(iv_state->image_view) << ".";
+                                        << " image view: " << report_data->FormatHandle(iv_state->image_view()) << ".";
                                     *error_msg = error_str.str();
                                     return false;
                                 }
@@ -3422,7 +3421,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02738";
                                 std::stringstream error_str;
                                 error_str << "Because dstSet (" << report_data->FormatHandle(update->dstSet)
-                                          << ") is bound to image view (" << report_data->FormatHandle(iv_state->image_view)
+                                          << ") is bound to image view (" << report_data->FormatHandle(iv_state->image_view())
                                           << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
                                              "includes an immutable sampler.";
                                 *error_msg = error_str.str();
@@ -3436,7 +3435,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         if (0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
                             *error_code = "VUID-VkDescriptorImageInfo-sampler-01564";
                             std::stringstream error_str;
-                            error_str << "image " << report_data->FormatHandle(image_state->image)
+                            error_str << "image " << report_data->FormatHandle(image_state->image())
                                       << " combined image sampler is a multi-planar "
                                       << "format and was not was not created with the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT";
                             *error_msg = error_str.str();
@@ -3449,9 +3448,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         if (0 != (iv_state->create_info.subresourceRange.aspectMask & (~legal_aspect_flags))) {
                             *error_code = "VUID-VkDescriptorImageInfo-sampler-01564";
                             std::stringstream error_str;
-                            error_str << "image " << report_data->FormatHandle(image_state->image)
+                            error_str << "image " << report_data->FormatHandle(image_state->image())
                                       << " combined image sampler is a multi-planar "
-                                      << "format and " << report_data->FormatHandle(iv_state->image_view)
+                                      << "format and " << report_data->FormatHandle(iv_state->image_view())
                                       << " aspectMask must only include " << string_VkImageAspectFlags(legal_aspect_flags);
                             *error_msg = error_str.str();
                             return false;

@@ -216,10 +216,10 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
         const auto input = location_it.second.input;
 
         if (attrib && !input) {
-            skip |= LogPerformanceWarning(vs->vk_shader_module, kVUID_Core_Shader_OutputNotConsumed,
+            skip |= LogPerformanceWarning(vs->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
                                           "Vertex attribute at location %" PRIu32 " not consumed by vertex shader", location);
         } else if (!attrib && input) {
-            skip |= LogError(vs->vk_shader_module, kVUID_Core_Shader_InputNotProduced,
+            skip |= LogError(vs->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                              "Vertex shader consumes input at location %" PRIu32 " but not provided", location);
         } else if (attrib && input) {
             const auto attrib_type = GetFormatType(attrib->format);
@@ -227,7 +227,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
 
             // Type checking
             if (!(attrib_type & input_type)) {
-                skip |= LogError(vs->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
+                skip |= LogError(vs->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
                                  string_VkFormat(attrib->format), location, vs->DescribeType(input->type_id).c_str());
             }
@@ -284,14 +284,14 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
         const auto output = location_it.second.output;
         if (attachment && !output) {
             if (pipeline->attachments[location].colorWriteMask != 0) {
-                skip |= LogWarning(fs->vk_shader_module, kVUID_Core_Shader_InputNotProduced,
+                skip |= LogWarning(fs->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                                    "Attachment %" PRIu32
                                    " not written by fragment shader; undefined values will be written to attachment",
                                    location);
             }
         } else if (!attachment && output) {
             if (!(alpha_to_coverage_enabled && location == 0)) {
-                skip |= LogWarning(fs->vk_shader_module, kVUID_Core_Shader_OutputNotConsumed,
+                skip |= LogWarning(fs->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
                                    "fragment shader writes to output location %" PRIu32 " with no matching attachment", location);
             }
         } else if (attachment && output) {
@@ -301,7 +301,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
             // Type checking
             if (!(output_type & attachment_type)) {
                 skip |=
-                    LogWarning(fs->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
+                    LogWarning(fs->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                "Attachment %" PRIu32
                                " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
                                location, string_VkFormat(attachment->format), fs->DescribeType(output->type_id).c_str());
@@ -315,7 +315,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
     bool location_zero_has_alpha = output_zero && fs->get_def(output_zero->type_id) != fs->end() &&
                                    fs->GetComponentsConsumedByType(output_zero->type_id, false) == 4;
     if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
-        skip |= LogError(fs->vk_shader_module, kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
+        skip |= LogError(fs->vk_shader_module(), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
                          "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
     }
 
@@ -391,22 +391,22 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, SHADE
 
             if (ret == PC_Byte_Not_Set) {
                 const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
-                LogObjectList objlist(src->vk_shader_module);
-                objlist.add(pipeline.pipeline_layout->layout);
+                LogObjectList objlist(src->vk_shader_module());
+                objlist.add(pipeline.pipeline_layout->layout());
                 skip |= LogError(objlist, vuid, "Push constant buffer:%s in %s is out of range in %s.", loc_descr.c_str(),
                                  string_VkShaderStageFlags(pStage->stage).c_str(),
-                                 report_data->FormatHandle(pipeline.pipeline_layout->layout).c_str());
+                                 report_data->FormatHandle(pipeline.pipeline_layout->layout()).c_str());
                 break;
             }
         }
     }
 
     if (!found_stage) {
-        LogObjectList objlist(src->vk_shader_module);
-        objlist.add(pipeline.pipeline_layout->layout);
+        LogObjectList objlist(src->vk_shader_module());
+        objlist.add(pipeline.pipeline_layout->layout());
         skip |= LogError(objlist, vuid, "Push constant is used in %s of %s. But %s doesn't set %s.",
-                         string_VkShaderStageFlags(pStage->stage).c_str(), report_data->FormatHandle(src->vk_shader_module).c_str(),
-                         report_data->FormatHandle(pipeline.pipeline_layout->layout).c_str(),
+                         string_VkShaderStageFlags(pStage->stage).c_str(), report_data->FormatHandle(src->vk_shader_module()).c_str(),
+                         report_data->FormatHandle(pipeline.pipeline_layout->layout()).c_str(),
                          string_VkShaderStageFlags(pStage->stage).c_str());
     }
     return skip;
@@ -442,7 +442,7 @@ bool CoreChecks::ValidateBuiltinLimits(SHADER_MODULE_STATE const *src, const lay
                                              "vkCreateGraphicsPipelines(): The BuiltIns SampleMask array sizes is %u which exceeds "
                                              "maxSampleMaskWords of %u in %s.",
                                              length, phys_dev_props.limits.maxSampleMaskWords,
-                                             report_data->FormatHandle(src->vk_shader_module).c_str());
+                                             report_data->FormatHandle(src->vk_shader_module()).c_str());
                         }
                         break;
                 }
@@ -848,14 +848,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     switch (pStage->stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
             if (num_comp_out > limits.maxVertexOutputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Vertex shader exceeds "
                                  "VkPhysicalDeviceLimits::maxVertexOutputComponents of %u "
                                  "components by %u components",
                                  limits.maxVertexOutputComponents, num_comp_out - limits.maxVertexOutputComponents);
             }
             if (max_comp_out > static_cast<int>(limits.maxVertexOutputComponents)) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Vertex shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxVertexOutputComponents (%u)",
                                  limits.maxVertexOutputComponents);
@@ -864,7 +864,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
             if (num_comp_in > limits.maxTessellationControlPerVertexInputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents of %u "
                                  "components by %u components",
@@ -873,13 +873,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_in > static_cast<int>(limits.maxTessellationControlPerVertexInputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation control shader input variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents (%u)",
                              limits.maxTessellationControlPerVertexInputComponents);
             }
             if (num_comp_out > limits.maxTessellationControlPerVertexOutputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents of %u "
                                  "components by %u components",
@@ -888,7 +888,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_out > static_cast<int>(limits.maxTessellationControlPerVertexOutputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation control shader output variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents (%u)",
                              limits.maxTessellationControlPerVertexOutputComponents);
@@ -897,7 +897,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
             if (num_comp_in > limits.maxTessellationEvaluationInputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents of %u "
                                  "components by %u components",
@@ -906,13 +906,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_in > static_cast<int>(limits.maxTessellationEvaluationInputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader input variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents (%u)",
                              limits.maxTessellationEvaluationInputComponents);
             }
             if (num_comp_out > limits.maxTessellationEvaluationOutputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                  "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents of %u "
                                  "components by %u components",
@@ -921,7 +921,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             }
             if (max_comp_out > static_cast<int>(limits.maxTessellationEvaluationOutputComponents)) {
                 skip |=
-                    LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                    LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader output variable uses location that "
                              "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents (%u)",
                              limits.maxTessellationEvaluationOutputComponents);
@@ -929,12 +929,12 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             // Portability validation
             if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
                 if (is_iso_lines && (VK_FALSE == enabled_features.portability_subset_features.tessellationIsolines)) {
-                    skip |= LogError(pipeline->pipeline, kVUID_Portability_Tessellation_Isolines,
+                    skip |= LogError(pipeline->pipeline(), kVUID_Portability_Tessellation_Isolines,
                                      "Invalid Pipeline CreateInfo state (portability error): Tessellation evaluation shader"
                                      " is using abstract patch type IsoLines, but this is not supported on this platform");
                 }
                 if (is_point_mode && (VK_FALSE == enabled_features.portability_subset_features.tessellationPointMode)) {
-                    skip |= LogError(pipeline->pipeline, kVUID_Portability_Tessellation_PointMode,
+                    skip |= LogError(pipeline->pipeline(), kVUID_Portability_Tessellation_PointMode,
                                      "Invalid Pipeline CreateInfo state (portability error): Tessellation evaluation shader"
                                      " is using abstract patch type PointMode, but this is not supported on this platform");
                 }
@@ -943,33 +943,33 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_GEOMETRY_BIT:
             if (num_comp_in > limits.maxGeometryInputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryInputComponents of %u "
                                  "components by %u components",
                                  limits.maxGeometryInputComponents, num_comp_in - limits.maxGeometryInputComponents);
             }
             if (max_comp_in > static_cast<int>(limits.maxGeometryInputComponents)) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryInputComponents (%u)",
                                  limits.maxGeometryInputComponents);
             }
             if (num_comp_out > limits.maxGeometryOutputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryOutputComponents of %u "
                                  "components by %u components",
                                  limits.maxGeometryOutputComponents, num_comp_out - limits.maxGeometryOutputComponents);
             }
             if (max_comp_out > static_cast<int>(limits.maxGeometryOutputComponents)) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryOutputComponents (%u)",
                                  limits.maxGeometryOutputComponents);
             }
             if (num_comp_out * num_vertices > limits.maxGeometryTotalOutputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                  "VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents of %u "
                                  "components by %u components",
@@ -980,14 +980,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
         case VK_SHADER_STAGE_FRAGMENT_BIT:
             if (num_comp_in > limits.maxFragmentInputComponents) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Fragment shader exceeds "
                                  "VkPhysicalDeviceLimits::maxFragmentInputComponents of %u "
                                  "components by %u components",
                                  limits.maxFragmentInputComponents, num_comp_in - limits.maxFragmentInputComponents);
             }
             if (max_comp_in > static_cast<int>(limits.maxFragmentInputComponents)) {
-                skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_ExceedDeviceLimit,
+                skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_ExceedDeviceLimit,
                                  "Invalid Pipeline CreateInfo State: Fragment shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxFragmentInputComponents (%u)",
                                  limits.maxFragmentInputComponents);
@@ -1060,7 +1060,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     if (total_resources > phys_dev_props.limits.maxPerStageResources) {
         const char *vuid = (stage == VK_SHADER_STAGE_COMPUTE_BIT) ? "VUID-VkComputePipelineCreateInfo-layout-01687"
                                                                   : "VUID-VkGraphicsPipelineCreateInfo-layout-01688";
-        skip |= LogError(pipeline->pipeline, vuid,
+        skip |= LogError(pipeline->pipeline(), vuid,
                          "Invalid Pipeline CreateInfo State: Shader Stage %s exceeds component limit "
                          "VkPhysicalDeviceLimits::maxPerStageResources (%u)",
                          string_VkShaderStageFlagBits(stage), phys_dev_props.limits.maxPerStageResources);
@@ -1224,7 +1224,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
 
                     if (!(pStage->stage & phys_dev_ext_props.cooperative_matrix_props.cooperativeMatrixSupportedStages)) {
                         skip |= LogError(
-                            pipeline->pipeline, kVUID_Core_Shader_CooperativeMatrixSupportedStages,
+                            pipeline->pipeline(), kVUID_Core_Shader_CooperativeMatrixSupportedStages,
                             "OpTypeCooperativeMatrixNV used in shader stage not in cooperativeMatrixSupportedStages (= %u)",
                             phys_dev_ext_props.cooperative_matrix_props.cooperativeMatrixSupportedStages);
                     }
@@ -1272,7 +1272,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
                         }
                     }
                     if (!valid) {
-                        skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_CooperativeMatrixType,
+                        skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_CooperativeMatrixType,
                                          "OpTypeCooperativeMatrixNV (result id = %u) operands don't match a supported matrix type",
                                          insn.word(1));
                     }
@@ -1319,7 +1319,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
                         }
                     }
                     if (!valid) {
-                        skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_CooperativeMatrixMulAdd,
+                        skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_CooperativeMatrixMulAdd,
                                          "OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesNV",
                                          insn.word(2));
@@ -1609,13 +1609,13 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
     if ((stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) &&
         !enabled_features.core.shaderTessellationAndGeometryPointSize) {
         if (pointsize_written) {
-            skip |= LogError(pipeline->pipeline, kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
+            skip |= LogError(pipeline->pipeline(), kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
                              "Pipeline topology is set to POINT_LIST and geometry or tessellation shaders write PointSize which "
                              "is prohibited when the shaderTessellationAndGeometryPointSize feature is not enabled.");
         }
     } else if (!pointsize_written) {
         skip |=
-            LogError(pipeline->pipeline, kVUID_Core_Shader_MissingPointSizeBuiltIn,
+            LogError(pipeline->pipeline(), kVUID_Core_Shader_MissingPointSizeBuiltIn,
                      "Pipeline topology is set to POINT_LIST, but PointSize is not written to in the shader corresponding to %s.",
                      string_VkShaderStageFlagBits(stage));
     }
@@ -1648,7 +1648,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
         pipeline->graphicsPipelineCI.pViewportState) {
         if (!IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
             pipeline->graphicsPipelineCI.pViewportState->viewportCount > 1 && primitiverate_written) {
-            skip |= LogError(pipeline->pipeline,
+            skip |= LogError(pipeline->pipeline(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
                              "vkCreateGraphicsPipelines: %s shader statically writes to PrimitiveShadingRateKHR built-in, but "
                              "multiple viewports "
@@ -1657,7 +1657,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
         }
 
         if (primitiverate_written && viewportindex_written) {
-            skip |= LogError(pipeline->pipeline,
+            skip |= LogError(pipeline->pipeline(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04504",
                              "vkCreateGraphicsPipelines: %s shader statically writes to both PrimitiveShadingRateKHR and "
                              "ViewportIndex built-ins,"
@@ -1666,7 +1666,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
         }
 
         if (primitiverate_written && viewportmask_written) {
-            skip |= LogError(pipeline->pipeline,
+            skip |= LogError(pipeline->pipeline(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04505",
                              "vkCreateGraphicsPipelines: %s shader statically writes to both PrimitiveShadingRateKHR and "
                              "ViewportMaskNV built-ins,"
@@ -1689,11 +1689,11 @@ bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module
             if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_feature.shaderSubgroupClock == VK_FALSE)) {
                 skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderSubgroupClock",
                                  "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.",
-                                 report_data->FormatHandle(module->vk_shader_module).c_str());
+                                 report_data->FormatHandle(module->vk_shader_module()).c_str());
             } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shader_clock_feature.shaderDeviceClock == VK_FALSE)) {
                 skip |= LogError(device, "UNASSIGNED-spirv-shaderClock-shaderDeviceClock",
                                  "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.",
-                                 report_data->FormatHandle(module->vk_shader_module).c_str());
+                                 report_data->FormatHandle(module->vk_shader_module()).c_str());
             }
             break;
         }
@@ -1710,7 +1710,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     if (!module->has_valid_spirv) {
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
                          "%s does not contain valid spirv for stage %s.",
-                         report_data->FormatHandle(module->vk_shader_module).c_str(), string_VkShaderStageFlagBits(pStage->stage));
+                         report_data->FormatHandle(module->vk_shader_module()).c_str(), string_VkShaderStageFlagBits(pStage->stage));
     }
 
     // If specialization-constant values are given and specialization-constant instructions are present in the shader, the
@@ -1740,7 +1740,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
                                                                              const spv_position_t &position, const char *message) {
             skip |= LogError(
                 device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter", "%s does not contain valid spirv for stage %s. %s",
-                report_data->FormatHandle(module->vk_shader_module).c_str(), string_VkShaderStageFlagBits(pStage->stage), message);
+                report_data->FormatHandle(module->vk_shader_module()).c_str(), string_VkShaderStageFlagBits(pStage->stage), message);
         };
         optimizer.SetMessageConsumer(consumer);
         optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
@@ -1760,7 +1760,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
             if (spv_valid != SPV_SUCCESS) {
                 skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-04145",
                                  "After specialization was applied, %s does not contain valid spirv for stage %s.",
-                                 report_data->FormatHandle(module->vk_shader_module).c_str(),
+                                 report_data->FormatHandle(module->vk_shader_module()).c_str(),
                                  string_VkShaderStageFlagBits(pStage->stage));
             }
 
@@ -1906,12 +1906,12 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
         auto b_first = b_at_end ? std::make_pair(0u, 0u) : b_it->first;
 
         if (b_at_end || ((!a_at_end) && (a_first < b_first))) {
-            skip |= LogPerformanceWarning(producer->vk_shader_module, kVUID_Core_Shader_OutputNotConsumed,
+            skip |= LogPerformanceWarning(producer->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
                                           "%s writes to output location %u.%u which is not consumed by %s", producer_stage->name,
                                           a_first.first, a_first.second, consumer_stage->name);
             a_it++;
         } else if (a_at_end || a_first > b_first) {
-            skip |= LogError(consumer->vk_shader_module, kVUID_Core_Shader_InputNotProduced,
+            skip |= LogError(consumer->vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                              "%s consumes input location %u.%u which is not written by %s", consumer_stage->name, b_first.first,
                              b_first.second, producer_stage->name);
             b_it++;
@@ -1923,19 +1923,19 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
             if (!TypesMatch(producer, consumer, a_it->second.type_id, b_it->second.type_id,
                             producer_stage->arrayed_output && !a_it->second.is_patch && !a_it->second.is_block_member,
                             consumer_stage->arrayed_input && !b_it->second.is_patch && !b_it->second.is_block_member, true)) {
-                skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
+                skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Type mismatch on location %u.%u: '%s' vs '%s'", a_first.first, a_first.second,
                                  producer->DescribeType(a_it->second.type_id).c_str(),
                                  consumer->DescribeType(b_it->second.type_id).c_str());
             }
             if (a_it->second.is_patch != b_it->second.is_patch) {
-                skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
+                skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Decoration mismatch on location %u.%u: is per-%s in %s stage but per-%s in %s stage",
                                  a_first.first, a_first.second, a_it->second.is_patch ? "patch" : "vertex", producer_stage->name,
                                  b_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
             }
             if (a_it->second.is_relaxed_precision != b_it->second.is_relaxed_precision) {
-                skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
+                skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Decoration mismatch on location %u.%u: %s and %s stages differ in precision", a_first.first,
                                  a_first.second, producer_stage->name, consumer_stage->name);
             }
@@ -1950,7 +1950,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
 
         if (!builtins_producer.empty() && !builtins_consumer.empty()) {
             if (builtins_producer.size() != builtins_consumer.size()) {
-                skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
+                skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Number of elements inside builtin block differ between stages (%s %d vs %s %d).",
                                  producer_stage->name, static_cast<int>(builtins_producer.size()), consumer_stage->name,
                                  static_cast<int>(builtins_consumer.size()));
@@ -1959,7 +1959,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
                 auto it_consumer = builtins_consumer.begin();
                 while (it_producer != builtins_producer.end() && it_consumer != builtins_consumer.end()) {
                     if (*it_producer != *it_consumer) {
-                        skip |= LogError(producer->vk_shader_module, kVUID_Core_Shader_InterfaceTypeMismatch,
+                        skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                          "Builtin variable inside block doesn't match between %s and %s.", producer_stage->name,
                                          consumer_stage->name);
                         break;
@@ -2111,7 +2111,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
                 IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
                 if (pipeline->wrote_primitive_shading_rate.find(stage->stage) != pipeline->wrote_primitive_shading_rate.end()) {
                     skip |=
-                        LogError(pipeline->pipeline, vuid.viewport_count_primitive_shading_rate,
+                        LogError(pipeline->pipeline(), vuid.viewport_count_primitive_shading_rate,
                                  "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
                                  "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
                                  "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
@@ -2361,21 +2361,21 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
     uint32_t local_size_z = 0;
     if (shader->FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z)) {
         if (local_size_x > phys_dev_props.limits.maxComputeWorkGroupSize[0]) {
-            skip |= LogError(shader->vk_shader_module, "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
+            skip |= LogError(shader->vk_shader_module(), "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
                              "%s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",
-                             report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x,
+                             report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
                              phys_dev_props.limits.maxComputeWorkGroupSize[0]);
         }
         if (local_size_y > phys_dev_props.limits.maxComputeWorkGroupSize[1]) {
-            skip |= LogError(shader->vk_shader_module, "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
+            skip |= LogError(shader->vk_shader_module(), "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
                              "%s local_size_y (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[1] (%" PRIu32 ").",
-                             report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x,
+                             report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
                              phys_dev_props.limits.maxComputeWorkGroupSize[1]);
         }
         if (local_size_z > phys_dev_props.limits.maxComputeWorkGroupSize[2]) {
-            skip |= LogError(shader->vk_shader_module, "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
+            skip |= LogError(shader->vk_shader_module(), "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
                              "%s local_size_z (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[2] (%" PRIu32 ").",
-                             report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x,
+                             report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x,
                              phys_dev_props.limits.maxComputeWorkGroupSize[2]);
         }
 
@@ -2393,10 +2393,10 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
             }
         }
         if (fail) {
-            skip |= LogError(shader->vk_shader_module, "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
+            skip |= LogError(shader->vk_shader_module(), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
                              "%s local_size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
                              ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
-                             report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x, local_size_y, local_size_z,
+                             report_data->FormatHandle(shader->vk_shader_module()).c_str(), local_size_x, local_size_y, local_size_z,
                              limit);
         }
     }

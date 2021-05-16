@@ -632,7 +632,7 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
         default:
             assert(cmd != CMD_NONE);
             const auto error = kGeneratedMustBeRecordingList[cmd];
-            skip |= LogError(cb_state->commandBuffer, error, "You must call vkBeginCommandBuffer() before this call to %s.",
+            skip |= LogError(cb_state->commandBuffer(), error, "You must call vkBeginCommandBuffer() before this call to %s.",
                             caller_name);
     }
 

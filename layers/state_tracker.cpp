@@ -423,7 +423,7 @@ void AddImageStateProps(IMAGE_STATE &image_state, const VkDevice device, const V
         if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {
                 VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT, nullptr};
-            DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image, &drm_format_properties);
+            DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
 
             VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
             VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
@@ -678,7 +678,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         assert(device_extensions.vk_ext_image_drm_format_modifier);
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
                                                                        nullptr};
-        DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state->image, &drm_format_properties);
+        DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state->image(), &drm_format_properties);
 
         VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
         VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
@@ -773,7 +773,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
     auto buffer_state = GetBufferState(buffer);
 
     buffer_state->Destroy();
-    bufferMap.erase(buffer_state->buffer);
+    bufferMap.erase(buffer_state->buffer());
 }
 
 void ValidationStateTracker::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView,
@@ -1422,12 +1422,12 @@ void CMD_BUFFER_STATE::Reset() {
     primaryCommandBuffer = VK_NULL_HANDLE;
     // If secondary, invalidate any primary command buffer that may call us.
     if (createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
-        InvalidateLinkedCommandBuffers(VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+        InvalidateLinkedCommandBuffers(Handle());
     }
 
     // Remove reverse command buffer links.
     for (auto *sub_cb : linkedCommandBuffers) {
-        linkedCommandBuffers.erase(this);
+        sub_cb->linkedCommandBuffers.erase(this);
     }
     linkedCommandBuffers.clear();
     queue_submit_functions.clear();
@@ -1468,7 +1468,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
     if (cb_state) {
         cb_state->Reset();
         // Clean up the label data
-        ResetCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
+        ResetCmdDebugUtilsLabel(report_data, cb_state->commandBuffer());
     }
 
     if (command_buffer_reset_callback) {
@@ -2299,7 +2299,7 @@ void ValidationStateTracker::RecordSubmitCommandBuffer(CB_SUBMISSION &submission
     if (cb_node) {
         submission.cbs.push_back(command_buffer);
         for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
-            submission.cbs.push_back(secondary_cmd_buffer->commandBuffer);
+            submission.cbs.push_back(secondary_cmd_buffer->commandBuffer());
             IncrementResources(secondary_cmd_buffer);
         }
         IncrementResources(cb_node);
@@ -3016,10 +3016,10 @@ void ValidationStateTracker::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_st
             // Remove the cb_state's references from COMMAND_POOL_STATEs
             pool_state->commandBuffers.erase(command_buffers[i]);
             // Remove the cb debug labels
-            EraseCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
+            EraseCmdDebugUtilsLabel(report_data, cb_state->commandBuffer());
             // Remove CBState from CB map
             cb_state->Destroy();
-            commandBufferMap.erase(cb_state->commandBuffer);
+            commandBufferMap.erase(cb_state->commandBuffer());
         }
     }
 }
@@ -3834,18 +3834,18 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     // Query the requirements in case the application doesn't (to avoid bind/validation time query)
     auto as_memory_requirements_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-    as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure;
+    as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure();
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, &as_memory_requirements_info, &as_state->memory_requirements);
 
     auto scratch_memory_req_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     scratch_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-    scratch_memory_req_info.accelerationStructure = as_state->acceleration_structure;
+    scratch_memory_req_info.accelerationStructure = as_state->acceleration_structure();
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, &scratch_memory_req_info,
                                                          &as_state->build_scratch_memory_requirements);
 
     auto update_memory_req_info = LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
     update_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV;
-    update_memory_req_info.accelerationStructure = as_state->acceleration_structure;
+    update_memory_req_info.accelerationStructure = as_state->acceleration_structure();
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, &update_memory_req_info,
                                                          &as_state->update_scratch_memory_requirements);
     as_state->allocator = pAllocator;
@@ -4680,7 +4680,6 @@ static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
 void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion rp_version,
                                                          std::shared_ptr<RENDER_PASS_STATE> &render_pass,
                                                          VkRenderPass *pRenderPass) {
-    render_pass->renderPass = *pRenderPass;
     auto create_info = render_pass->createInfo.ptr();
 
     RecordRenderPassDAG(RENDER_PASS_VERSION_1, create_info, render_pass.get());
@@ -5001,7 +5000,7 @@ void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer com
             cb_subres_map->UpdateFrom(*sub_cb_subres_map);
         }
 
-        sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer;
+        sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer();
         cb_state->linkedCommandBuffers.insert(sub_cb_state);
         sub_cb_state->linkedCommandBuffers.insert(cb_state);
         for (auto &function : sub_cb_state->queryUpdates) {
@@ -5247,7 +5246,7 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
 
             if (swapchain_image.image_state) {
                 swapchain_image.image_state->Destroy();
-                imageMap.erase(swapchain_image.image_state->image);
+                imageMap.erase(swapchain_image.image_state->image());
                 swapchain_image.image_state = nullptr;
             }
         }

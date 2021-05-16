@@ -634,11 +634,11 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
 bool DebugPrintf::CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) {
     bool buffers_present = false;
     auto cb_node = GetCBState(command_buffer);
-    if (GetBufferInfo(cb_node->commandBuffer).size()) {
+    if (GetBufferInfo(cb_node->commandBuffer()).size()) {
         buffers_present = true;
     }
     for (const auto *secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
-        if (GetBufferInfo(secondaryCmdBuffer->commandBuffer).size()) {
+        if (GetBufferInfo(secondaryCmdBuffer->commandBuffer()).size()) {
             buffers_present = true;
         }
     }
@@ -938,7 +938,7 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     const auto *pipeline_state = cb_node->lastBound[lv_bind_point].pipeline_state;
     if (pipeline_state) {
         if (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout(), desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
         // Record buffer and memory info in CB state tracking
