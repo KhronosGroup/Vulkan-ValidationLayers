@@ -124,6 +124,8 @@ static inline bool QueueFamilyIsExternal(const uint32_t queue_family_index) {
     return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
+// Caution: Section 7.7.4 states that "If the values of srcQueueFamilyIndex and dstQueueFamilyIndex are equal, no ownership transfer
+// is performed, and the barrier operates as if they were both set to VK_QUEUE_FAMILY_IGNORED."; this does not handle that case.
 static inline bool QueueFamilyIsIgnored(uint32_t queue_family_index) { return queue_family_index == VK_QUEUE_FAMILY_IGNORED; }
 
 // Intentionally ignore VulkanTypedHandle::node, it is optional

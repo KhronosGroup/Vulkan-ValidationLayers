@@ -1263,9 +1263,13 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
         }
     }
 
+    // 7.7.4: If the values of srcQueueFamilyIndex and dstQueueFamilyIndex are equal, no ownership transfer is performed, and the
+    // barrier operates as if they were both set to VK_QUEUE_FAMILY_IGNORED.
     const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
-    if (!QueueFamilyIsIgnored(src_queue_family) && !QueueFamilyIsIgnored(dst_queue_family)) {
+    const bool is_ownership_transfer = src_queue_family != dst_queue_family;
+
+    if (is_ownership_transfer) {
         // Only enqueue submit time check if it is needed. If more submit time checks are added, change the criteria
         // TODO create a better named list, or rename the submit time lists to something that matches the broader usage...
         auto handle_state = BarrierHandleState(*this, barrier);
