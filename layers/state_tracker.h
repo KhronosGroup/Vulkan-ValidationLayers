@@ -59,7 +59,7 @@ enum SyncScope {
 
 enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
 
-class FENCE_STATE : public BASE_NODE {
+class FENCE_STATE : public REFCOUNTED_NODE {
   public:
     VkFenceCreateInfo createInfo;
     std::pair<VkQueue, uint64_t> signaler;
@@ -68,7 +68,7 @@ class FENCE_STATE : public BASE_NODE {
 
     // Default constructor
     FENCE_STATE(VkFence f, const VkFenceCreateInfo *pCreateInfo)
-        : BASE_NODE(f, kVulkanObjectTypeFence),
+        : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
           createInfo(*pCreateInfo),
           state((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
           scope(kSyncScopeInternal) {}
@@ -76,7 +76,7 @@ class FENCE_STATE : public BASE_NODE {
     VkFence fence() const { return handle_.Cast<VkFence>(); }
 };
 
-class SEMAPHORE_STATE : public BASE_NODE {
+class SEMAPHORE_STATE : public REFCOUNTED_NODE {
   public:
     std::pair<VkQueue, uint64_t> signaler;
     bool signaled;
@@ -85,7 +85,7 @@ class SEMAPHORE_STATE : public BASE_NODE {
     uint64_t payload;
 
     SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info)
-        : BASE_NODE(sem, kVulkanObjectTypeSemaphore),
+        : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
           signaler(VK_NULL_HANDLE, 0),
           signaled(false),
           scope(kSyncScopeInternal),
@@ -450,8 +450,6 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map)
 
-    void AddAliasingImage(IMAGE_STATE* image_state, layer_data::unordered_set<IMAGE_STATE*>* bound_images);
-    void RemoveAliasingImage(IMAGE_STATE* image_state);
     static void RemoveAliasingImages(const layer_data::unordered_set<IMAGE_STATE*>& bound_images);
 
   public:
@@ -1302,10 +1300,7 @@ class ValidationStateTracker : public ValidationObject {
                                                 VkResult result) override;
 
     // State Utilty functions
-    bool AddCommandBufferMem(layer_data::unordered_map<CMD_BUFFER_STATE*, int>& cb_bindings, VkDeviceMemory obj,
-                             CMD_BUFFER_STATE* cb_node);
     void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
-    void DecrementBoundResources(CMD_BUFFER_STATE const* cb_node);
     void DeleteDescriptorSetPools();
     void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
@@ -1318,10 +1313,8 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<const IMAGE_VIEW_STATE*> GetCurrentAttachmentViews(const CMD_BUFFER_STATE& cb_state) const;
     BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
     VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
-    void IncrementBoundObjects(CMD_BUFFER_STATE const* cb_node);
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
     void InsertImageMemoryRange(IMAGE_STATE* image_state, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset);
-    void InvalidateLinkedCommandBuffers(layer_data::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
@@ -1375,7 +1368,6 @@ class ValidationStateTracker : public ValidationObject {
     void RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
                              RENDER_PASS_STATE* render_pass);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
-    void RemoveImageMemoryRange(IMAGE_STATE* image, DEVICE_MEMORY_STATE* mem_info);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
     void RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload);

@@ -605,7 +605,8 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 
     const DEVICE_MEMORY_STATE* mem_info = ValidationStateTracker::GetDevMemState(memory);
 
-    for (auto& obj : mem_info->obj_bindings) {
+    for (const auto& node: mem_info->ObjectBindings()) {
+        const auto& obj = node->Handle();
         LogObjectList objlist(device);
         objlist.add(obj);
         objlist.add(mem_info->mem());

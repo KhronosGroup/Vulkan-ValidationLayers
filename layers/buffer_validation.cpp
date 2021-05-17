@@ -335,6 +335,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
         } else {
             descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
         }
+        image_state->AddParent(this);
     }
 }
 

@@ -2240,14 +2240,15 @@ static char const *GetCauseStr(VulkanTypedHandle obj) {
 
 bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, const char *call_source) const {
     bool skip = false;
-    for (const auto &obj : cb_state->broken_bindings) {
+    for (const auto& entry: cb_state->broken_bindings) {
+        const auto& obj = entry.first;
         const char *cause_str = GetCauseStr(obj);
         string vuid;
         std::ostringstream str;
         str << kVUID_Core_DrawState_InvalidCommandBuffer << "-" << object_string[obj.type];
         vuid = str.str();
-        LogObjectList objlist(cb_state->commandBuffer());
-        objlist.add(obj);
+        auto objlist = entry.second; //intentional copy
+        objlist.add(cb_state->commandBuffer());
         skip |=
             LogError(objlist, vuid, "You are adding %s to %s that is invalid because bound %s was %s.", call_source,
                      report_data->FormatHandle(cb_state->commandBuffer()).c_str(), report_data->FormatHandle(obj).c_str(), cause_str);
