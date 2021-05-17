@@ -628,6 +628,9 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
       state_data_(state_data),
       variable_count_(variable_count),
       change_count_(0) {
+    if (pool_state_) {
+        pool_state_->AddParent(this);
+    }
     // Foreach binding, create default descriptors of given type
     descriptors_.reserve(layout_->GetTotalDescriptorCount());
     descriptor_store_.resize(layout_->GetTotalDescriptorCount());
@@ -645,6 +648,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                     } else {
                         descriptors_.emplace_back(new ((free_descriptor++)->Sampler()) SamplerDescriptor(state_data, nullptr));
                     }
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             }
@@ -659,6 +663,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                         descriptors_.emplace_back(new ((free_descriptor++)->ImageSampler())
                                                       ImageSamplerDescriptor(state_data, nullptr));
                     }
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             }
@@ -668,23 +673,27 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
             case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Image()) ImageDescriptor(type));
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Texel()) TexelDescriptor(type));
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) InlineUniformDescriptor(type));
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
@@ -692,11 +701,13 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->AccelerationStructure())
                                                   AccelerationStructureDescriptor(type));
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
                 for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) MutableDescriptor());
+                    descriptors_.back()->AddParent(this);
                 }
                 break;
             default:
@@ -704,6 +715,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                     for (uint32_t di = 0; di < layout_->GetDescriptorCountFromIndex(i); ++di) {
                         dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
                         descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
+                        descriptors_.back()->AddParent(this);
                     }
                 } else {
                     assert(0);  // Bad descriptor type specified
@@ -713,7 +725,15 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
     }
 }
 
-cvdescriptorset::DescriptorSet::~DescriptorSet() {}
+void cvdescriptorset::DescriptorSet::Destroy() {
+    if (pool_state_) {
+        pool_state_->RemoveParent(this);
+    }
+    for (auto &desc: descriptors_) {
+        desc->RemoveParent(this);
+    }
+    BASE_NODE::Destroy();
+}
 
 static std::string StringDescriptorReqViewType(descriptor_req req) {
     std::string result("");
@@ -1532,7 +1552,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
         // Loop over the updates for a single binding at a time
         uint32_t update_count = std::min(descriptors_remaining, current_binding.GetDescriptorCount() - offset);
         for (uint32_t di = 0; di < update_count; ++di, ++update_index) {
-            descriptors_[global_idx + di]->WriteUpdate(state_data_, update, update_index);
+            descriptors_[global_idx + di]->WriteUpdate(this, state_data_, update, update_index);
         }
         // Roll over to next binding in case of consecutive update
         descriptors_remaining -= update_count;
@@ -1549,7 +1569,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
         change_count_++;
     }
 
-    if (!(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
+    if (!IsPushDescriptor() && !(layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
           (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         Invalidate(false);
     }
@@ -1802,7 +1822,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
         auto src = src_set->descriptors_[src_start_idx + di].get();
         auto dst = descriptors_[dst_start_idx + di].get();
         if (src->updated) {
-            dst->CopyUpdate(state_data_, src);
+            dst->CopyUpdate(this, state_data_, src);
             some_update_ = true;
             change_count_++;
         } else {
@@ -1816,16 +1836,6 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
     }
 }
 
-bool cvdescriptorset::DescriptorSet::AddParent(CMD_BUFFER_STATE *cb_node) {
-    // bind cb to this descriptor set
-    // Add bindings for descriptor set, the set's pool, and individual objects in the set
-    if (BASE_NODE::AddParent(cb_node)) {
-        pool_state_->AddParent(cb_node);
-        return true;
-    }
-    return false;
-}
-
 // Update the drawing state for the affected descriptors.
 // Set cb_node to this set and this set to cb_node.
 // Add the bindings of the descriptor
@@ -1837,12 +1847,11 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
                                                      const BindingReqMap &binding_req_map, const char *function) {
     if (!device_data->disabled[command_buffer_state] && !IsPushDescriptor()) {
-        this->AddParent(cb_node);
+        cb_node->AddChild(this);
     }
 
-    // Descriptor UpdateDrawState functions do two things - associate resources to the command buffer,
-    // and call image layout validation callbacks. If both are disabled, skip the entire loop.
-    if (device_data->disabled[command_buffer_state] && device_data->disabled[image_layout_validation]) {
+    // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
+    if (device_data->disabled[image_layout_validation]) {
         return;
     }
 
@@ -1862,7 +1871,17 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         }
         auto range = layout_->GetGlobalIndexRangeFromIndex(index);
         for (uint32_t i = range.start; i < range.end; ++i) {
-            descriptors_[i]->UpdateDrawState(device_data, cb_node);
+            const auto descriptor_class = descriptors_[i]->GetClass();
+            switch (descriptor_class) {
+            case DescriptorClass::Image:
+            case DescriptorClass::ImageSampler: {
+                auto *image_desc = static_cast<ImageDescriptor *>(descriptors_[i].get());
+                image_desc->UpdateDrawState(device_data, cb_node);
+                break;
+            }
+            default:
+                break;
+            }
         }
     }
 
@@ -2230,30 +2249,39 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     return true;
 }
 
-void cvdescriptorset::SamplerDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
-                                                     const uint32_t index) {
+// Helper template to change shared pointer members of a Descriptor, while
+// correctly managing links to the parent DescriptorSet.
+// src and dst are shared pointers.
+template <typename T>
+static void ReplaceStatePtr(DescriptorSet *set_state, T &dst, const T &src) {
+    if (dst) {
+        dst->RemoveParent(set_state);
+    }
+    dst = src;
+    if (dst) {
+        dst->AddParent(set_state);
+    }
+}
+
+void cvdescriptorset::SamplerDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                     const VkWriteDescriptorSet *update, const uint32_t index) {
     if (!immutable_) {
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(update->pImageInfo[index].sampler);
+        ReplaceStatePtr(set_state, sampler_state_ , dev_data->GetConstCastShared<SAMPLER_STATE>(update->pImageInfo[index].sampler));
     }
     updated = true;
 }
 
-void cvdescriptorset::SamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::SamplerDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                    const Descriptor *src) {
     updated = true;
     // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
     if (src->descriptor_class == Mutable) {
         this->descriptor_class = Mutable;
         return;
     }
+    auto *sampler_src = static_cast<const SamplerDescriptor *>(src);
     if (!immutable_) {
-        sampler_state_ = static_cast<const SamplerDescriptor *>(src)->sampler_state_;
-    }
-}
-
-void cvdescriptorset::SamplerDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
-    if (!immutable_ && !dev_data->disabled[command_buffer_state]) {
-        auto sampler_state = GetSamplerState();
-        if (sampler_state) sampler_state->AddParent(cb_node);
+        ReplaceStatePtr(set_state, sampler_state_, sampler_src->sampler_state_);
     }
 }
 
@@ -2265,38 +2293,30 @@ cvdescriptorset::ImageSamplerDescriptor::ImageSamplerDescriptor(const Validation
     }
 }
 
-void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
+void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                           const VkWriteDescriptorSet *update, const uint32_t index) {
     updated = true;
     const auto &image_info = update->pImageInfo[index];
     if (!immutable_) {
-        sampler_state_ = dev_data->GetConstCastShared<SAMPLER_STATE>(image_info.sampler);
+        ReplaceStatePtr(set_state, sampler_state_, dev_data->GetConstCastShared<SAMPLER_STATE>(image_info.sampler));
     }
     image_layout_ = image_info.imageLayout;
-    image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView);
+    ReplaceStatePtr(set_state, image_view_state_, dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView));
 }
 
-void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                         const Descriptor *src) {
     updated = true;
     // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
     if (src->descriptor_class == Mutable) {
         this->descriptor_class = Mutable;
         return;
     }
+    auto *image_src = static_cast<const ImageSamplerDescriptor *>(src);
     if (!immutable_) {
-        sampler_state_ = static_cast<const ImageSamplerDescriptor *>(src)->sampler_state_;
+        ReplaceStatePtr(set_state, sampler_state_, image_src->sampler_state_);
     }
-    image_layout_ = static_cast<const ImageSamplerDescriptor *>(src)->image_layout_;
-    image_view_state_ = static_cast<const ImageSamplerDescriptor *>(src)->image_view_state_;
-}
-
-void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
-    // First add binding for any non-immutable sampler
-    if (!immutable_ && !dev_data->disabled[command_buffer_state]) {
-        auto sampler_state = GetSamplerState();
-        if (sampler_state) sampler_state->AddParent(cb_node);
-    }
-    ImageDescriptor::UpdateDrawState(dev_data, cb_node);
+    ImageDescriptor::CopyUpdate(set_state, dev_data, src);
 }
 
 cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
@@ -2305,49 +2325,50 @@ cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
 cvdescriptorset::ImageDescriptor::ImageDescriptor(DescriptorClass class_)
     : Descriptor(class_), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {}
 
-void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
-                                                   const uint32_t index) {
+void cvdescriptorset::ImageDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                   const VkWriteDescriptorSet *update, const uint32_t index) {
     updated = true;
     const auto &image_info = update->pImageInfo[index];
     image_layout_ = image_info.imageLayout;
     image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView);
 }
 
-void cvdescriptorset::ImageDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::ImageDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                  const Descriptor *src) {
     updated = true;
     // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
     if (src->descriptor_class == Mutable) {
         this->descriptor_class = Mutable;
         return;
     }
+    auto *image_src = static_cast<const ImageDescriptor *>(src);
 
-    image_layout_ = static_cast<const ImageDescriptor *>(src)->image_layout_;
-    image_view_state_ = static_cast<const ImageDescriptor *>(src)->image_view_state_;
+    image_layout_ = image_src->image_layout_;
+    ReplaceStatePtr(set_state, image_view_state_, image_src->image_view_state_);
 }
 
 void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
     // Add binding for image
     auto iv_state = GetImageViewState();
     if (iv_state) {
-        if (!dev_data->disabled[command_buffer_state]) {
-            cb_node->AddChild(iv_state);
-        }
+        dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *iv_state, image_layout_);
     }
 }
 
 cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type)
     : Descriptor(GeneralBuffer), offset_(0), range_(0) {}
 
-void cvdescriptorset::BufferDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
-                                                    const uint32_t index) {
+void cvdescriptorset::BufferDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                    const VkWriteDescriptorSet *update, const uint32_t index) {
     updated = true;
     const auto &buffer_info = update->pBufferInfo[index];
     offset_ = buffer_info.offset;
     range_ = buffer_info.range;
-    buffer_state_ = dev_data->GetConstCastShared<BUFFER_STATE>(buffer_info.buffer);
+    ReplaceStatePtr(set_state, buffer_state_, dev_data->GetConstCastShared<BUFFER_STATE>(buffer_info.buffer));
 }
 
-void cvdescriptorset::BufferDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::BufferDescriptor::CopyUpdate(DescriptorSet* set_state, const ValidationStateTracker *dev_data,
+                                                   const Descriptor *src) {
     updated = true;
     // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
     if (src->descriptor_class == Mutable) {
@@ -2357,48 +2378,35 @@ void cvdescriptorset::BufferDescriptor::CopyUpdate(const ValidationStateTracker 
     const auto buff_desc = static_cast<const BufferDescriptor *>(src);
     offset_ = buff_desc->offset_;
     range_ = buff_desc->range_;
-    buffer_state_ = buff_desc->buffer_state_;
-}
-
-void cvdescriptorset::BufferDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
-    if (dev_data->disabled[command_buffer_state]) return;
-
-    auto buffer_node = GetBufferState();
-    if (buffer_node) cb_node->AddChild(buffer_node);
+    ReplaceStatePtr(set_state, buffer_state_, buff_desc->buffer_state_);
 }
 
 cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) : Descriptor(TexelBuffer) {}
 
-void cvdescriptorset::TexelDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
-                                                   const uint32_t index) {
+void cvdescriptorset::TexelDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                   const VkWriteDescriptorSet *update, const uint32_t index) {
     updated = true;
-    buffer_view_state_ = dev_data->GetConstCastShared<BUFFER_VIEW_STATE>(update->pTexelBufferView[index]);
+    ReplaceStatePtr(set_state, buffer_view_state_,
+                    dev_data->GetConstCastShared<BUFFER_VIEW_STATE>(update->pTexelBufferView[index]));
 }
 
-void cvdescriptorset::TexelDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::TexelDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                  const Descriptor *src) {
     updated = true;
     // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
     if (src->descriptor_class == Mutable) {
         this->descriptor_class = Mutable;
         return;
     }
-    buffer_view_state_ = static_cast<const TexelDescriptor *>(src)->buffer_view_state_;
-}
-
-void cvdescriptorset::TexelDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
-    if (dev_data->disabled[command_buffer_state]) return;
-
-    auto bv_state = GetBufferViewState();
-    if (bv_state) {
-        cb_node->AddChild(bv_state);
-    }
+    ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const TexelDescriptor *>(src)->buffer_view_state_);
 }
 
 cvdescriptorset::AccelerationStructureDescriptor::AccelerationStructureDescriptor(const VkDescriptorType type)
     : Descriptor(AccelerationStructure), acc_(VK_NULL_HANDLE), acc_nv_(VK_NULL_HANDLE) {
     is_khr_ = false;
 }
-void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
+void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet *set_state,
+                                                                   const ValidationStateTracker *dev_data,
                                                                    const VkWriteDescriptorSet *update, const uint32_t index) {
     const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(update->pNext);
     const auto *acc_info_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
@@ -2407,14 +2415,15 @@ void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(const Validat
     updated = true;
     if (is_khr_) {
         acc_ = acc_info->pAccelerationStructures[index];
-        acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_);
+        ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_));
     } else {
         acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-        acc_state_nv_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_));
     }
 }
 
-void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet *set_state,
+                                                                  const ValidationStateTracker *dev_data, const Descriptor *src) {
     auto acc_desc = static_cast<const AccelerationStructureDescriptor *>(src);
     updated = true;
     // Mutable descriptors not currently tracked or validated.  If copied from mutable, set to mutable to keep from validating.
@@ -2424,39 +2433,23 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(const Validati
     }
     if (is_khr_) {
         acc_ = acc_desc->acc_;
-        acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_);
+        ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_));
     } else {
         acc_nv_ = acc_desc->acc_nv_;
-        acc_state_nv_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_);
-    }
-}
-
-void cvdescriptorset::AccelerationStructureDescriptor::UpdateDrawState(ValidationStateTracker *dev_data,
-                                                                       CMD_BUFFER_STATE *cb_node) {
-    if (dev_data->disabled[command_buffer_state]) return;
-
-    if (is_khr_) {
-        auto acc_node = GetAccelerationStructureStateKHR();
-        if (acc_node) acc_node->AddParent(cb_node);
-    } else {
-        auto acc_node = GetAccelerationStructureStateNV();
-        if (acc_node) acc_node->AddParent(cb_node);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_));
     }
 }
 
 cvdescriptorset::MutableDescriptor::MutableDescriptor() : Descriptor(Mutable) { active_descriptor_class_ = NoDescriptorClass; }
 
-void cvdescriptorset::MutableDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
+void cvdescriptorset::MutableDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
     const VkWriteDescriptorSet *update, const uint32_t index) {
     updated = true;
 }
 
-void cvdescriptorset::MutableDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
+                                                    const Descriptor *src) {
     updated = true;
-}
-
-void cvdescriptorset::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data,
-    CMD_BUFFER_STATE *cb_node) {
 }
 
 // This is a helper function that iterates over a set of Write and Copy updates, pulls the DescriptorSet* for updated

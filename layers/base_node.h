@@ -37,10 +37,10 @@ struct CMD_BUFFER_STATE;
 
 class BASE_NODE {
   public:
-    using BindingsType = layer_data::unordered_map<CMD_BUFFER_STATE *, int>;
+    using BindingsType = layer_data::unordered_set<BASE_NODE*>;
 
     template <typename Handle>
-    BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t, this), in_use_(0), destroyed_(false) {}
+    BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t, this), destroyed_(false) {}
 
     virtual ~BASE_NODE() { Destroy(); }
 
@@ -53,7 +53,69 @@ class BASE_NODE {
 
     const VulkanTypedHandle &Handle() const { return handle_; }
 
-    bool InUse() const { return (in_use_.load() > 0); }
+    virtual bool InUse() const {
+        bool result = false;
+        for (auto& node: parent_nodes_) {
+            result |= node->InUse();
+            if (result) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    virtual bool AddParent(BASE_NODE *parent_node) {
+        auto result = parent_nodes_.emplace(parent_node);
+        return result.second;
+    }
+
+    virtual void RemoveParent(BASE_NODE *parent_node) {
+        parent_nodes_.erase(parent_node);
+    }
+
+    void Invalidate(bool unlink = true) {
+        LogObjectList invalid_handles(handle_);
+        for (auto& node: parent_nodes_) {
+            node->NotifyInvalidate(invalid_handles, unlink);
+        }
+        if (unlink) {
+            parent_nodes_.clear();
+        }
+    }
+  protected:
+    virtual void NotifyInvalidate(const LogObjectList& invalid_handles, bool unlink) {
+        if (parent_nodes_.size() == 0) {
+            return;
+        }
+        LogObjectList up_handles = invalid_handles;
+        up_handles.object_list.emplace_back(handle_);
+        for (auto& node: parent_nodes_) {
+            node->NotifyInvalidate(up_handles, unlink);
+        }
+        if (unlink) {
+            parent_nodes_.clear();
+        }
+    }
+
+    VulkanTypedHandle handle_;
+
+    // Set to true when the API-level object is destroyed, but this object may
+    // hang around until its shared_ptr refcount goes to zero.
+    bool destroyed_;
+
+    // Set of immediate parent nodes for this object. For an in-use object, the
+    // parent nodes should form a tree with the root being a command buffer.
+    BindingsType parent_nodes_;
+};
+
+class REFCOUNTED_NODE : public BASE_NODE {
+private:
+    // Track if command buffer is in-flight
+    std::atomic_int in_use_;
+
+public:
+    template <typename Handle>
+    REFCOUNTED_NODE(Handle h, VulkanObjectType t) : BASE_NODE(h, t), in_use_(0) { }
 
     void BeginUse() { in_use_.fetch_add(1); }
 
@@ -61,26 +123,5 @@ class BASE_NODE {
 
     void ResetUse() { in_use_.store(0); }
 
-    virtual bool AddParent(CMD_BUFFER_STATE *cb_node);
-
-    void RemoveParent(CMD_BUFFER_STATE *cb_node);
-
-    void Invalidate(bool unlink = true);
-
-  protected:
-    VulkanTypedHandle handle_;
-
-    // Track when object is being used by an in-flight command buffer
-    std::atomic_int in_use_;
-    // Set to true when the API-level object is destroyed, but this object may
-    // hang around until its shared_ptr refcount goes to zero.
-    bool destroyed_;
-
-    // Track command buffers that this object is bound to
-    //  binding initialized when cmd referencing object is bound to command buffer
-    //  binding removed when command buffer is reset or destroyed
-    // When an object is destroyed, any bound cbs are set to INVALID.
-    // "int" value is an index into object_bindings where the corresponding
-    // backpointer to this node is stored.
-    BindingsType cb_bindings_;
+    bool InUse() const override { return (in_use_.load() > 0) || BASE_NODE::InUse(); }
 };

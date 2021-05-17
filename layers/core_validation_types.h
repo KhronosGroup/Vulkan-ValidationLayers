@@ -86,7 +86,15 @@ struct COMMAND_POOL_STATE : public BASE_NODE {
           queueFamilyIndex(pCreateInfo->queueFamilyIndex),
           unprotected((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0) {}
 
+
     VkCommandPool commandPool() const { return handle_.Cast<VkCommandPool>(); }
+
+    virtual ~COMMAND_POOL_STATE() { Destroy(); }
+
+    void Destroy() override {
+        commandBuffers.clear();
+        BASE_NODE::Destroy();
+    }
 };
 
 // Utilities for barriers and the commmand pool
@@ -235,7 +243,6 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
     VkExternalMemoryHandleTypeFlags import_handle_type_flags;
-    layer_data::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
     // Images for alias search
     layer_data::unordered_set<IMAGE_STATE *> bound_images;
 
@@ -268,7 +275,16 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           shadow_pad_size(0),
           p_driver_data(0),
           fake_base_address(fake_address){};
+
     VkDeviceMemory mem() const { return handle_.Cast<VkDeviceMemory>(); }
+
+    virtual ~DEVICE_MEMORY_STATE() { Destroy(); }
+
+    void RemoveParent(BASE_NODE *parent_node) override;
+
+    void Destroy() override;
+
+    const BindingsType& ObjectBindings() const { return parent_nodes_; }
 };
 
 // Generic memory binding struct to track objects bound to objects
@@ -367,7 +383,6 @@ class BINDABLE : public BASE_NODE {
             }
         }
     }
-    bool AddParent(CMD_BUFFER_STATE *cb_node) override;
 
     // Return unordered set of memory objects that are bound
     // Instead of creating a set from scratch each query, return the cached one
@@ -375,8 +390,6 @@ class BINDABLE : public BASE_NODE {
 
     void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset);
     void SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize mem_offset, const VkDeviceSize mem_size);
-
-    void ClearMemoryObjectBindings();
 };
 
 class BUFFER_STATE : public BINDABLE {
@@ -412,6 +425,7 @@ class BUFFER_STATE : public BINDABLE {
             delete[] createInfo.pQueueFamilyIndices;
             createInfo.pQueueFamilyIndices = nullptr;
         }
+        Destroy();
     };
 };
 
@@ -421,12 +435,23 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
     std::shared_ptr<BUFFER_STATE> buffer_state;
     VkFormatFeatureFlags format_features;
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci)
-        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf){};
+        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf) {
+        if (buffer_state) {
+            buffer_state->AddParent(this);
+        }
+    }
+    virtual ~BUFFER_VIEW_STATE() { Destroy(); }
+
     BUFFER_VIEW_STATE(const BUFFER_VIEW_STATE &rh_obj) = delete;
 
     VkBufferView buffer_view() const { return handle_.Cast<VkBufferView>(); }
 
-    bool AddParent(CMD_BUFFER_STATE *cb_node) override;
+    void Destroy() override {
+        if (buffer_state) {
+            buffer_state->RemoveParent(this);
+        }
+        BASE_NODE::Destroy();
+    }
 };
 
 struct SAMPLER_STATE : public BASE_NODE {
@@ -528,8 +553,6 @@ class IMAGE_STATE : public BINDABLE {
                        createInfo.queueFamilyIndexCount * sizeof(createInfo.pQueueFamilyIndices[0])) == 0);
     }
 
-    bool AddParent(CMD_BUFFER_STATE *cb_node) override;
-
     ~IMAGE_STATE() {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             delete[] createInfo.pQueueFamilyIndices;
@@ -537,6 +560,14 @@ class IMAGE_STATE : public BINDABLE {
         }
         Destroy();
     };
+
+    void Destroy() override {
+        RemoveAliasingImages();
+        BINDABLE::Destroy();
+    }
+
+    void AddAliasingImage(layer_data::unordered_set<IMAGE_STATE *> &bound_images);
+    void RemoveAliasingImages();
 };
 
 class IMAGE_VIEW_STATE : public BASE_NODE {
@@ -554,11 +585,18 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
 
-    bool AddParent(CMD_BUFFER_STATE *cb_node) override;
-
     VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
 
+    virtual ~IMAGE_VIEW_STATE() { Destroy(); }
+
     bool OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const;
+
+    void Destroy() override {
+        if (image_state) {
+            image_state->RemoveParent(this);
+        }
+        BASE_NODE::Destroy();
+    }
 };
 
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
@@ -1082,7 +1120,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LAST_BOUND_STATE {
-    LAST_BOUND_STATE() { reset(); }  // must define default constructor for portability reasons
+    LAST_BOUND_STATE() { Reset(); }  // must define default constructor for portability reasons
     PIPELINE_STATE *pipeline_state;
     VkPipelineLayout pipeline_layout;
     std::unique_ptr<cvdescriptorset::DescriptorSet> push_descriptor_set;
@@ -1111,23 +1149,9 @@ struct LAST_BOUND_STATE {
 
     std::vector<PER_SET> per_set;
 
-    void reset() {
-        pipeline_state = nullptr;
-        pipeline_layout = VK_NULL_HANDLE;
-        push_descriptor_set = nullptr;
-        per_set.clear();
-    }
+    void Reset();
 
-    void UnbindAndResetPushDescriptorSet(cvdescriptorset::DescriptorSet *ds) {
-        if (push_descriptor_set) {
-            for (std::size_t i = 0; i < per_set.size(); i++) {
-                if (per_set[i].bound_descriptor_set == push_descriptor_set.get()) {
-                    per_set[i].bound_descriptor_set = nullptr;
-                }
-            }
-        }
-        push_descriptor_set.reset(ds);
-    }
+    void UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state, cvdescriptorset::DescriptorSet *ds);
 
     inline bool IsUsing() const { return pipeline_state ? true : false; }
 };
@@ -1314,7 +1338,7 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkPipelineBindPoint bind_point)
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
-struct CMD_BUFFER_STATE : public BASE_NODE {
+struct CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     VkCommandBufferAllocateInfo createInfo = {};
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
@@ -1401,8 +1425,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     layer_data::unordered_set<std::shared_ptr<FRAMEBUFFER_STATE>> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    std::vector<VulkanTypedHandle> object_bindings;
-    std::vector<VulkanTypedHandle> broken_bindings;
+    layer_data::unordered_set<VulkanTypedHandle> object_bindings;
+    layer_data::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
 
     QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
     QFOTransferBarrierSets<QFOImageTransferBarrier> qfo_transfer_image_barriers;
@@ -1453,14 +1477,15 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     bool transform_feedback_active{false};
 
     CMD_BUFFER_STATE(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo)
-        : BASE_NODE(cb, kVulkanObjectTypeCommandBuffer), createInfo(*pCreateInfo) {}
+        : REFCOUNTED_NODE(cb, kVulkanObjectTypeCommandBuffer), createInfo(*pCreateInfo) {}
 
     ~CMD_BUFFER_STATE() { Destroy(); }
+
+    void Destroy() override;
 
     VkCommandBuffer commandBuffer() const { return handle_.Cast<VkCommandBuffer>(); }
 
     int AddReverseBinding(const VulkanTypedHandle &obj);
-    void InvalidateLinkedCommandBuffers(const VulkanTypedHandle &obj);
 
     IMAGE_VIEW_STATE* GetActiveAttachmentImageViewState(uint32_t index);
     const IMAGE_VIEW_STATE* GetActiveAttachmentImageViewState(uint32_t index) const;
@@ -1471,7 +1496,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     void Reset();
 
-    void Destroy() override;
+  protected:
+    void NotifyInvalidate(const LogObjectList& invalid_handles, bool unlink) override;
 };
 
 static inline const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const CMD_BUFFER_STATE *cb,
@@ -1540,7 +1566,9 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
 
     VkFramebuffer framebuffer() const { return handle_.Cast<VkFramebuffer>(); }
 
-    bool AddParent(CMD_BUFFER_STATE *cb_node) override;
+    virtual ~FRAMEBUFFER_STATE() { Destroy(); }
+
+    void Destroy() override;
 };
 
 struct SHADER_MODULE_STATE;
