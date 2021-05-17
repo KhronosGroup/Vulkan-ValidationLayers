@@ -4267,7 +4267,6 @@ TEST_F(VkLayerTest, InvalidCmdBufferImageDestroyed) {
     }
     // Destroy image dependency prior to submit to cause ERROR
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkImage");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -4342,7 +4341,6 @@ TEST_F(VkLayerTest, InvalidCmdBufferFramebufferImageDestroyed) {
     // Destroy image attached to framebuffer to invalidate cmd buffer
     // Now attempt to submit cmd buffer and verify error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkImage");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 
@@ -6987,7 +6985,6 @@ TEST_F(VkLayerTest, VertexBufferInvalid) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "CoreValidation-DrawState-InvalidCommandBuffer-VkBuffer");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
 
     {
         // Create and bind a vertex buffer in a reduced scope, which will cause it to be deleted upon leaving this scope
