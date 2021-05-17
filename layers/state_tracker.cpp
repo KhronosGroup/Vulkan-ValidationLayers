@@ -119,6 +119,8 @@ VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
             return VK_DYNAMIC_STATE_LOGIC_OP_EXT;
         case CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET:
             return VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT;
+        case CBSTATUS_VERTEX_INPUT_SET:
+            return VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
         default:
             // CBSTATUS_INDEX_BUFFER_BOUND is not in VkDynamicState
             return VK_DYNAMIC_STATE_MAX_ENUM;
@@ -194,6 +196,8 @@ CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state) {
             return CBSTATUS_LOGIC_OP_SET;
         case VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT:
             return CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
+        case VK_DYNAMIC_STATE_VERTEX_INPUT_EXT:
+            return CBSTATUS_VERTEX_INPUT_SET;
         default:
             return CBSTATUS_NONE;
     }
@@ -6624,4 +6628,13 @@ void ValidationStateTracker::PreCallRecordCmdSetPrimitiveRestartEnableEXT(VkComm
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
     cb_state->static_status &= ~CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
+    VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+    const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
+    const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET;
+    cb_state->static_status &= ~(CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET);
 }
