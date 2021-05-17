@@ -2026,8 +2026,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         skip |= ValidateViConsistency(vi);
     }
 
-    if (shaders[vertex_stage] && shaders[vertex_stage]->has_valid_spirv &&
-        !IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+    if (shaders[vertex_stage] && shaders[vertex_stage]->has_valid_spirv) {
         skip |= ValidateViAgainstVsInputs(vi, shaders[vertex_stage], entrypoints[vertex_stage]);
     }
 
