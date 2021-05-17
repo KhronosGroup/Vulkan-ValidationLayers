@@ -79,7 +79,6 @@ struct DrawDispatchVuid {
     const char* logic_op = kVUIDUndefined;
     const char* primitive_restart_enable = kVUIDUndefined;
     const char* vertex_input_binding_stride = kVUIDUndefined;
-    const char* vertex_input = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
