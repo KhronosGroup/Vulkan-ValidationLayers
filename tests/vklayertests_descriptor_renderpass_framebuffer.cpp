@@ -4639,6 +4639,177 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
     }
 }
 
+TEST_F(VkLayerTest, MultiCBImageDescriptorLayoutMismatch) {
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool maint2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (maint2_support) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    } else {
+        printf("%s Relaxed layout matching subtest requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n",
+               kSkipPrefix);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                       {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    VkDescriptorSet descriptorSet = descriptor_set.set_;
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+
+    // Create image, view, and sampler
+    const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImageObj image(m_device);
+    auto usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(image_ci);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageSubresourceRange view_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3, 1};
+    VkImageSubresourceRange first_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
+    vk_testing::ImageView view;
+    auto image_view_create_info = lvl_init_struct<VkImageViewCreateInfo>();
+    image_view_create_info.image = image.handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = format;
+    image_view_create_info.subresourceRange = view_range;
+
+    view.init(*m_device, image_view_create_info);
+    ASSERT_TRUE(view.initialized());
+
+    // Create Sampler
+    vk_testing::Sampler sampler;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler.init(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    // Setup structure for descriptor update with sampler, for update in do_test below
+    VkDescriptorImageInfo img_info = {};
+    img_info.sampler = sampler.handle();
+
+    VkWriteDescriptorSet descriptor_write;
+    memset(&descriptor_write, 0, sizeof(descriptor_write));
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = descriptorSet;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = &img_info;
+
+    // Create PSO to be used for draw-time errors below
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+
+    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+    VkCommandBufferObj other_cmd_buf(m_device, m_commandPool);
+    std::array<VkCommandBufferObj*, 2> cmd_bufs = {&cmd_buf, &other_cmd_buf};
+
+    std::array<VkCommandBuffer, 2> cmd_handles = {cmd_bufs[0]->handle(), cmd_bufs[1]->handle()};
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = cmd_handles.size();
+    submit_info.pCommandBuffers = cmd_handles.data();
+
+    const std::vector<std::string> internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344", "VUID-vkCmdDraw-None-02699"};
+    const std::vector<std::string> external_errors = {"UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout"};
+    auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    auto image_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    auto descriptor_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // Set up the descriptor
+    img_info.imageView = view.handle();
+    img_info.imageLayout = descriptor_layout;
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+
+    cmd_bufs[0]->begin();
+    m_errorMonitor->ExpectSuccess();
+    image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    image_barrier.image = image.handle();
+    image_barrier.subresourceRange = full_range;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = init_layout;
+
+    cmd_bufs[0]->PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                 nullptr, 1, &image_barrier);
+    m_errorMonitor->VerifyNotFound();
+
+    // set the first layer to the correct layout
+    image_barrier.subresourceRange = first_range;
+    image_barrier.oldLayout = init_layout;
+    image_barrier.newLayout = descriptor_layout;
+    m_errorMonitor->ExpectSuccess();
+    cmd_bufs[0]->PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                 nullptr, 1, &image_barrier);
+    m_errorMonitor->VerifyNotFound();
+
+    // set the view layer to the wrong layout
+    image_barrier.subresourceRange = view_range;
+    image_barrier.oldLayout = init_layout;
+    image_barrier.newLayout = image_layout;
+    m_errorMonitor->ExpectSuccess();
+    cmd_bufs[0]->PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                 nullptr, 1, &image_barrier);
+    m_errorMonitor->VerifyNotFound();
+
+    cmd_bufs[1]->begin();
+    for (size_t i = 0; i < cmd_bufs.size(); i++) {
+        auto* cmd = cmd_bufs[i];
+        m_errorMonitor->ExpectSuccess();
+        cmd->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(cmd->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindDescriptorSets(cmd->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptorSet, 0, NULL);
+        vk::CmdSetViewport(cmd->handle(), 0, 1, &viewport);
+        vk::CmdSetScissor(cmd->handle(), 0, 1, &scissor);
+        m_errorMonitor->VerifyNotFound();
+
+        // At draw time the update layout will mis-match the actual layout
+        if (i == 0) {
+            for (const auto &err : internal_errors) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err.c_str());
+            }
+        } else {
+            m_errorMonitor->ExpectSuccess();
+        }
+        cmd->Draw(1, 0, 0, 0);
+        if (i == 0) {
+            m_errorMonitor->VerifyFound();
+        } else {
+            m_errorMonitor->VerifyNotFound();
+        }
+
+        m_errorMonitor->ExpectSuccess();
+        cmd->EndRenderPass();
+        cmd->end();
+        m_errorMonitor->VerifyNotFound();
+    }
+
+    // Submit cmd buffers. cmd_bufs[1] should get the external errors
+    for (const auto &err : external_errors) {
+         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err.c_str());
+    }
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     TEST_DESCRIPTION("Reset a DescriptorPool with a DescriptorSet that is in use.");
     ASSERT_NO_FATAL_FAILURE(Init());

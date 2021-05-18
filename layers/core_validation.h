@@ -441,8 +441,7 @@ class CoreChecks : public ValidationStateTracker {
                                           const std::pair<const uint32_t, DescriptorRequirement>& binding_info,
                                           VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*>* attachments,
                                           const std::vector<SUBPASS_INFO>& subpasses, bool record_time_validate, const char* caller,
-                                          const DrawDispatchVuid& vuids,
-                                          layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
+                                          const DrawDispatchVuid& vuids) const;
 
     bool ValidateGeneralBufferDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
                                          const cvdescriptorset::DescriptorSet* descriptor_set,
@@ -456,8 +455,7 @@ class CoreChecks : public ValidationStateTracker {
                                  const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index,
                                  bool record_time_validate, const std::vector<IMAGE_VIEW_STATE*>* attachments,
                                  const std::vector<SUBPASS_INFO>& subpasses, VkFramebuffer framebuffer,
-                                 VkDescriptorType descriptor_type,
-                                 layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
+                                 VkDescriptorType descriptor_type) const;
 
     bool ValidateTexelDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
                                  const cvdescriptorset::DescriptorSet* descriptor_set,
@@ -567,10 +565,10 @@ class CoreChecks : public ValidationStateTracker {
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
                                        const char* param_name, const char* image_layer_count_var_name, const VkImage image,
                                        SubresourceRangeErrorCodes errorCodes) const;
-    void SetImageLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state,
+    void SetImageLayout(CMD_BUFFER_STATE* cb_node, IMAGE_STATE& image_state,
                         const VkImageSubresourceRange& image_subresource_range, VkImageLayout layout,
                         VkImageLayout expected_layout = kInvalidLayout);
-    void SetImageLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state,
+    void SetImageLayout(CMD_BUFFER_STATE* cb_node, IMAGE_STATE& image_state,
                         const VkImageSubresourceLayers& image_subresource_layers, VkImageLayout layout);
     bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
                                                               VkImage image, VkImageView image_view, VkFramebuffer framebuffer,
@@ -692,7 +690,7 @@ class CoreChecks : public ValidationStateTracker {
     void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const ImgBarrier* barrier);
 
     template <typename ImgBarrier>
-    void RecordTransitionImageLayout(CMD_BUFFER_STATE* cb_state, const IMAGE_STATE* image_state, const ImgBarrier& img_barrier,
+    void RecordTransitionImageLayout(CMD_BUFFER_STATE* cb_state, IMAGE_STATE* image_state, const ImgBarrier& img_barrier,
                                      bool is_release_op);
     void RecordBarriers(Func func_name, CMD_BUFFER_STATE* cb_state, uint32_t bufferBarrierCount,
                         const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,

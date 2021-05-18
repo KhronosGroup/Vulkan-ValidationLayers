@@ -753,10 +753,6 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
                                    const std::vector<IMAGE_VIEW_STATE *> *attachments, const std::vector<SUBPASS_INFO> &subpasses,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
-    layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
-    if (descriptor_set->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
-        checked_layouts.emplace();
-    }
     bool result = false;
     VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer : VK_NULL_HANDLE;
     for (const auto &binding_pair : bindings) {
@@ -780,7 +776,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const Bi
         // // This is a record time only path
         const bool record_time_validate = true;
         result |= ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding_pair, framebuffer, attachments,
-                                                   subpasses, record_time_validate, caller, vuids, checked_layouts);
+                                                   subpasses, record_time_validate, caller, vuids);
     }
     return result;
 }
@@ -790,8 +786,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                   const std::pair<const uint32_t, DescriptorRequirement> &binding_info,
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
                                                   const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
-                                                  const char *caller, const DrawDispatchVuid &vuids,
-                                                  layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
+                                                  const char *caller, const DrawDispatchVuid &vuids) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -837,8 +832,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                 case DescriptorClass::ImageSampler: {
                     const auto *image_sampler_desc = static_cast<const ImageSamplerDescriptor *>(descriptor);
                     skip = ValidateImageDescriptor(caller, vuids, cb_node, descriptor_set, *image_sampler_desc, binding_info, index,
-                                                   record_time_validate, attachments, subpasses, framebuffer, binding_it.GetType(),
-                                                   checked_layouts);
+                                                   record_time_validate, attachments, subpasses, framebuffer, binding_it.GetType());
                     if (!skip) {
                         skip = ValidateSamplerDescriptor(caller, vuids, cb_node, descriptor_set, binding_info, index,
                                                          image_sampler_desc->GetSampler(), image_sampler_desc->IsImmutableSampler(),
@@ -848,8 +842,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                 case DescriptorClass::Image: {
                     const auto *image_desc = static_cast<const ImageDescriptor *>(descriptor);
                     skip = ValidateImageDescriptor(caller, vuids, cb_node, descriptor_set, *image_desc, binding_info, index,
-                                                   record_time_validate, attachments, subpasses, framebuffer, binding_it.GetType(),
-                                                   checked_layouts);
+                                                   record_time_validate, attachments, subpasses, framebuffer, binding_it.GetType());
                 } break;
                 case DescriptorClass::PlainSampler: {
                     const auto *sampler_desc = static_cast<const SamplerDescriptor *>(descriptor);
@@ -923,8 +916,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                          const std::pair<const uint32_t, DescriptorRequirement> &binding_info, uint32_t index,
                                          bool record_time_validate, const std::vector<IMAGE_VIEW_STATE *> *attachments,
                                          const std::vector<SUBPASS_INFO> &subpasses, VkFramebuffer framebuffer,
-                                         VkDescriptorType descriptor_type,
-                                         layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
+                                         VkDescriptorType descriptor_type) const {
     std::vector<const SAMPLER_STATE *> sampler_states;
     VkImageView image_view = image_descriptor.GetImageView();
     const IMAGE_VIEW_STATE *image_view_state = image_descriptor.GetImageViewState();
@@ -991,18 +983,10 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
         // image layout tracking as currently implemented, so only record_time_validation is done
         if (!disabled[image_layout_validation] && record_time_validate) {
             // Verify Image Layout
-            // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
-            // The caller provides a checked_layouts map when there are a large number of layouts to check,
-            // making it worthwhile to keep track of verified layouts and not recheck them.
-            bool already_validated = false;
-            if (checked_layouts) {
-                auto search = checked_layouts->find(image_view);
-                if (search != checked_layouts->end() && search->second == image_layout) {
-                    already_validated = true;
-                }
-            }
+            bool already_validated = image_descriptor.GetLayoutChangeCount(cb_node) >= image_state->layout_change_count;
             if (!already_validated) {
                 bool hit_error = false;
+                // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
                 VerifyImageLayout(cb_node, image_state, image_view_state->normalized_subresource_range,
                                   image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller,
                                   kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
@@ -1015,9 +999,6 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                     "doesn't match actual image layout at time descriptor is used. See previous error callback for "
                                     "specific details.",
                                     report_data->FormatHandle(set).c_str(), caller);
-                }
-                if (checked_layouts) {
-                    checked_layouts->emplace(image_view, image_layout);
                 }
             }
         }
@@ -2298,19 +2279,14 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(ValidationStateTra
         auto sampler_state = GetSamplerState();
         if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
     }
-    // Add binding for image
-    auto iv_state = GetImageViewState();
-    if (iv_state) {
-        dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-        dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *iv_state, image_layout_);
-    }
+    ImageDescriptor::UpdateDrawState(dev_data, cb_node);
 }
 
 cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
-    : Descriptor(Image), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {}
+    : Descriptor(Image), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED), layout_change_counts_() {}
 
 cvdescriptorset::ImageDescriptor::ImageDescriptor(DescriptorClass class_)
-    : Descriptor(class_), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {}
+    : Descriptor(class_), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED), layout_change_counts_() {}
 
 void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                    const uint32_t index) {
@@ -2318,6 +2294,7 @@ void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker 
     const auto &image_info = update->pImageInfo[index];
     image_layout_ = image_info.imageLayout;
     image_view_state_ = dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView);
+    layout_change_counts_.clear();  // force revalidation
 }
 
 void cvdescriptorset::ImageDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
@@ -2330,6 +2307,7 @@ void cvdescriptorset::ImageDescriptor::CopyUpdate(const ValidationStateTracker *
 
     image_layout_ = static_cast<const ImageDescriptor *>(src)->image_layout_;
     image_view_state_ = static_cast<const ImageDescriptor *>(src)->image_view_state_;
+    layout_change_counts_.clear();  // force revalidation
 }
 
 void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
@@ -2337,7 +2315,15 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *d
     auto iv_state = GetImageViewState();
     if (iv_state) {
         dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-        dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *iv_state, image_layout_);
+        if (iv_state->image_state) {
+            auto result = layout_change_counts_.emplace(cb_node, iv_state->image_state->layout_change_count);
+            if (result.second || result.first->second < iv_state->image_state->layout_change_count) {
+                dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *iv_state, image_layout_);
+                if (!result.second) {
+                    result.first->second = iv_state->image_state->layout_change_count;
+                }
+            }
+        }
     }
 }
 
