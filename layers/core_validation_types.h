@@ -719,7 +719,8 @@ enum CBStatusFlagBits : uint64_t {
     CBSTATUS_DEPTH_BIAS_ENABLE_SET           = 0x80000000,
     CBSTATUS_LOGIC_OP_SET                    = 0x100000000,
     CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET    = 0x200000000,
-    CBSTATUS_ALL_STATE_SET                   = 0x3FFFFFDFF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_VERTEX_INPUT_SET                = 0x400000000,
+    CBSTATUS_ALL_STATE_SET                   = 0x7FFFFFDFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 

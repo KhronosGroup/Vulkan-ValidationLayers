@@ -1215,6 +1215,10 @@ class ValidationStateTracker : public ValidationObject {
                                                                    uint32_t firstQuery) override;
     void PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                const VkViewportWScalingNV* pViewportWScalings) override;
+    void PreCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+                                           const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
+                                           uint32_t vertexAttributeDescriptionCount,
+                                           const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) override;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                  VkAndroidHardwareBufferPropertiesANDROID* pProperties,
