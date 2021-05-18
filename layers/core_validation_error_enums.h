@@ -264,6 +264,19 @@ static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_Isolines = "UN
 static const char DECORATE_UNUSED *kVUID_Portability_Tessellation_PointMode = "UNASSIGNED-PortabilityValidation-Shader-point-mode-not-supported";
 static const char DECORATE_UNUSED *kVUID_Portability_InterpolationFunction = "UNASSIGNED-PortabilityValidation-Shader-interpolation-function-supported";
 
+// Pending VUIDs from https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4585
+static const char DECORATE_UNUSED *kVUID_Core_CmdDraw_VertexInput = "UNASSIGNED-vkCmdDraw-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexed_VertexInput = "UNASSIGNED-vkCmdDrawIndexed-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirect_VertexInput = "UNASSIGNED-vkCmdDrawIndirect-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexedIndirect_VertexInput = "UNASSIGNED-vkCmdDrawIndexedIndirect-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectCount_VertexInput = "UNASSIGNED-vkCmdDrawIndirectCount-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexedIndirectCount_VertexInput = "UNASSIGNED-vkCmdDrawIndexedIndirectCount-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksNV_VertexInput = "UNASSIGNED-vkCmdDrawMeshTasksNV-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectNV_VertexInput = "UNASSIGNED-vkCmdDrawMeshTasksIndirectNV-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectCountNV_VertexInput = "UNASSIGNED-vkCmdDrawMeshTasksIndirectCountNV-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_VertexInput = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-vertexInput-not-specified";
+
+
 // clang-format on
 
 #undef DECORATE_UNUSED

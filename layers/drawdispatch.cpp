@@ -84,7 +84,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDraw-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDraw-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDraw-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDraw-undefined";
+        vertex_input                       = kVUID_Core_CmdDraw_VertexInput;
     }
 };
 
@@ -129,7 +129,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawIndexed-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndexed-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexed-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawIndexed-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawIndexed_VertexInput;
     }
 };
 
@@ -176,7 +176,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawIndirect-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndirect-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirect-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawIndirect-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawIndirect_VertexInput;
     }
 };
 
@@ -223,7 +223,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawIndexedIndirect-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndexedIndirect-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirect-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawIndexedIndirect-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawIndexedIndirect_VertexInput;
     }
 };
 
@@ -318,7 +318,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawIndirectCount-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndirectCount-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectCount-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawIndirectCount-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawIndirectCount_VertexInput;
     }
 };
 
@@ -365,7 +365,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawIndexedIndirectCount-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndexedIndirectCount-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirectCount-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawIndexedIndirectCount-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawIndexedIndirectCount_VertexInput;
     }
 };
 
@@ -477,7 +477,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawMeshTasksNV-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksNV-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksNV-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawMeshTasksNV-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawMeshTasksNV_VertexInput;
     }
 };
 
@@ -521,7 +521,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectNV-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectNV-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawMeshTasksIndirectNV-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawMeshTasksIndirectNV_VertexInput;
     }
 };
 
@@ -565,7 +565,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawMeshTasksIndirectCountNV_VertexInput;
     }
 };
 
@@ -612,7 +612,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         logic_op                           = "VUID-vkCmdDrawIndirectByteCountEXT-logicOp-04878";
         primitive_restart_enable           = "VUID-vkCmdDrawIndirectByteCountEXT-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectByteCountEXT-pStrides-04884";
-        vertex_input                       = "VUID-vkCmdDrawIndirectByteCountEXT-undefined";
+        vertex_input                       = kVUID_Core_CmdDrawIndirectByteCountEXT_VertexInput;
     }
 };
 
