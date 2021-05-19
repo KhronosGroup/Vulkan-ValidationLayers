@@ -9516,16 +9516,15 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
                              function_name, subpass, attachment, string_VkImageLayout(attachment_layouts[attachment]),
                              string_VkImageLayout(new_layout));
         }
-    } else if (uses & ~ATTACHMENT_INPUT || (uses && (new_use == ATTACHMENT_RESOLVE || new_use == ATTACHMENT_PRESERVE))) {
-        if (new_use == ATTACHMENT_COLOR && (uses & ATTACHMENT_DEPTH)) {
-            // assumes depthStencil attachments are added prior to color
-            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440"
-                           : "VUID-VkSubpassDescription-pDepthStencilAttachment-04438";
-        } else {
-            // assumes input attachments are added prior to preserve
-            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pPreserveAttachments-03074"
-                           : "VUID-VkSubpassDescription-pPreserveAttachments-00854";
-        }
+    } else if (((new_use & ATTACHMENT_COLOR) && (uses & ATTACHMENT_DEPTH)) ||
+               ((uses & ATTACHMENT_COLOR) && (new_use & ATTACHMENT_DEPTH))) {
+        vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440"
+                       : "VUID-VkSubpassDescription-pDepthStencilAttachment-04438";
+        skip |= LogError(device, vuid, "%s: subpass %u uses attachment %u as both %s and %s attachment.", function_name, subpass,
+                         attachment, StringAttachmentType(uses), StringAttachmentType(new_use));
+    } else if ((uses && (new_use & ATTACHMENT_PRESERVE)) || (new_use && (uses & ATTACHMENT_PRESERVE))) {
+        vuid = use_rp2 ? "VUID-VkSubpassDescription2-pPreserveAttachments-03074"
+                       : "VUID-VkSubpassDescription-pPreserveAttachments-00854";
         skip |= LogError(device, vuid, "%s: subpass %u uses attachment %u as both %s and %s attachment.", function_name, subpass,
                          attachment, StringAttachmentType(uses), StringAttachmentType(new_use));
     } else {
