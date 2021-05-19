@@ -6203,18 +6203,13 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
         printf("%s Device does not support 64bit vertex attributes; skipped.\n", kSkipPrefix);
         return;
     }
-    // Set 64bit format to support VTX Buffer feature
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
 
-    // Load required functions
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);
+    if (!(format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
+        printf("%s Device does not support VK_FORMAT_R64G64B64A64_SFLOAT vertex buffers; skipped.\n", kSkipPrefix);
         return;
     }
-    VkFormatProperties format_props;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);
-    format_props.bufferFeatures |= VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, format_props);
 
     VkVertexInputBindingDescription input_bindings[1];
     memset(input_bindings, 0, sizeof(input_bindings));
