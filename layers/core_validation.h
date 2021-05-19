@@ -267,6 +267,9 @@ class CoreChecks : public ValidationStateTracker {
     bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin) const;
     bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo* pRenderPassBeginInfo, const char* func_name) const;
     bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE* pCB, char const* cmd_name, const char* error_code) const;
+
+    void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map);
+
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
     bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const;
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);

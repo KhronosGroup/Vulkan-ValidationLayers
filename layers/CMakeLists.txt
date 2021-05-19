@@ -157,6 +157,12 @@ set(CORE_VALIDATION_LIBRARY_FILES
     core_error_location.cpp
     core_validation_types.h
     base_node.h
+    device_memory_state.h
+    device_memory_state.cpp
+    buffer_state.h
+    image_state.h
+    image_state.cpp
+    ray_tracing_state.h
     drawdispatch.cpp
     convert_to_renderpass2.cpp
     descriptor_sets.cpp

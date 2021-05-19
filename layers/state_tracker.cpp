@@ -212,55 +212,6 @@ void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, Validation
     }
 }
 
-uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels) {
-    // Return correct number of mip levels taking into account VK_REMAINING_MIP_LEVELS
-    uint32_t mip_level_count = range->levelCount;
-    if (range->levelCount == VK_REMAINING_MIP_LEVELS) {
-        mip_level_count = mip_levels - range->baseMipLevel;
-    }
-    return mip_level_count;
-}
-
-uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers) {
-    // Return correct number of layers taking into account VK_REMAINING_ARRAY_LAYERS
-    uint32_t array_layer_count = range->layerCount;
-    if (range->layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        array_layer_count = layers - range->baseArrayLayer;
-    }
-    return array_layer_count;
-}
-
-VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
-                                                  const VkImageSubresourceRange &range) {
-    VkImageSubresourceRange norm = range;
-    norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
-
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
-    // <arrayLayers> can potentially alias.
-    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT))
-                               ? image_create_info.extent.depth
-                               : image_create_info.arrayLayers;
-    norm.layerCount = ResolveRemainingLayers(&range, layer_limit);
-
-    // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-    VkImageAspectFlags &aspect_mask = norm.aspectMask;
-    if (FormatIsMultiplane(image_create_info.format)) {
-        if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-            aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-            if (FormatPlaneCount(image_create_info.format) > 2) {
-                aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
-            }
-        }
-    }
-    return norm;
-}
-
-VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range) {
-    const VkImageCreateInfo &image_create_info = image_state.createInfo;
-    return NormalizeSubresourceRange(image_create_info, range);
-}
-
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
 std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
@@ -856,52 +807,6 @@ const IMAGE_VIEW_STATE *CMD_BUFFER_STATE::GetActiveAttachmentImageViewState(uint
     return active_attachments->at(index);
 }
 
-void IMAGE_STATE::AddAliasingImage(layer_data::unordered_set<IMAGE_STATE *> &bound_images) {
-    for (auto *bound_image : bound_images) {
-        if (bound_image && (bound_image != this) && bound_image->IsCompatibleAliasing(this)) {
-            auto inserted = bound_image->aliasing_images.emplace(this);
-            if (inserted.second) {
-                aliasing_images.emplace(bound_image);
-            }
-        }
-    }
-}
-
-void IMAGE_STATE::RemoveAliasingImages() {
-    for (auto *alias_state : aliasing_images) {
-        assert(alias_state);
-        alias_state->aliasing_images.erase(this);
-    }
-    aliasing_images.clear();
-}
-
-void DEVICE_MEMORY_STATE::RemoveParent(BASE_NODE *parent) {
-    // Prevent Control Flow Integrity failures from casting any parent to IMAGE_STATE,
-    // Other parent types do not participate in the bound_images spider web.
-    // TODO: This is not a great solution and bound_images should be cleaned up by further
-    // state object refactoring.
-    if (parent->Handle().type == kVulkanObjectTypeImage) {
-        auto it = bound_images.find(static_cast<IMAGE_STATE *>(parent));
-        if (it != bound_images.end()) {
-            IMAGE_STATE *image_state = *it;
-            image_state->aliasing_images.clear();
-            bound_images.erase(it);
-        }
-    }
-    BASE_NODE::RemoveParent(parent);
-}
-
-void DEVICE_MEMORY_STATE::Destroy() {
-    // This is one way clear. Because the bound_images include cross references, the one way clear loop could clear the whole
-    // reference. It doesn't need two ways clear.
-    for (auto *bound_image : bound_images) {
-        if (bound_image) {
-            bound_image->aliasing_images.clear();
-        }
-    }
-    BASE_NODE::Destroy();
-}
-
 const QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) const {
     auto it = queueMap.find(queue);
     if (it == queueMap.cend()) {
@@ -1044,52 +949,6 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
 
     const VkMemoryType memory_type = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex];
     mem_info->unprotected = ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0);
-}
-
-void BINDABLE::Destroy() {
-    if (!sparse) {
-        if (binding.mem_state) {
-            binding.mem_state->RemoveParent(this);
-        }
-    } else {  // Sparse, clear all bindings
-        for (auto &sparse_mem_binding : sparse_bindings) {
-            if (sparse_mem_binding.mem_state) {
-                sparse_mem_binding.mem_state->RemoveParent(this);
-            }
-        }
-    }
-    BASE_NODE::Destroy();
-}
-
-// SetMemBinding is used to establish immutable, non-sparse binding between a single image/buffer object and memory object.
-// Corresponding valid usage checks are in ValidateSetMemBinding().
-void BINDABLE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) {
-    if (!mem) {
-        return;
-    }
-    binding.mem_state = mem;
-    binding.offset = memory_offset;
-    binding.size = requirements.size;
-    binding.mem_state->AddParent(this);
-    UpdateBoundMemorySet();  // force recreation of cached set
-}
-
-// For NULL mem case, clear any previous binding Else...
-// Make sure given object is in its object map
-//  IF a previous binding existed, update binding
-//  Add reference from objectInfo to memoryInfo
-//  Add reference off of object's binding info
-// Return VK_TRUE if addition is successful, VK_FALSE otherwise
-void BINDABLE::SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize mem_offset, const VkDeviceSize mem_size) {
-    if (!mem) {
-        return;
-    }
-    assert(sparse);
-    MEM_BINDING sparse_binding = {mem, mem_offset, mem_size};
-    sparse_binding.mem_state->AddParent(this);
-    // Need to set mem binding for this object
-    sparse_bindings.insert(sparse_binding);
-    UpdateBoundMemorySet();
 }
 
 void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point,

@@ -197,148 +197,6 @@ static VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &s
     return subresource_range;
 }
 
-static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
-    const auto format = create_info.format;
-    VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const VkExternalFormatANDROID *external_format_android = LvlFindInChain<VkExternalFormatANDROID>(&create_info);
-    bool is_external_format_conversion = (external_format_android != nullptr && external_format_android->externalFormat != 0);
-#else
-    bool is_external_format_conversion = false;
-#endif
-
-    if (FormatIsColor(format) || FormatIsMultiplane(format) || is_external_format_conversion) {
-        init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
-    } else {
-        init_range.aspectMask =
-            (FormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (FormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
-    }
-    return NormalizeSubresourceRange(create_info, init_range);
-}
-
-IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo)
-    : BINDABLE(img, kVulkanObjectTypeImage),
-      safe_create_info(pCreateInfo),
-      createInfo(*safe_create_info.ptr()),
-      valid(false),
-      acquired(false),
-      shared_presentable(false),
-      layout_locked(false),
-      get_sparse_reqs_called(false),
-      sparse_metadata_required(false),
-      sparse_metadata_bound(false),
-      has_ahb_format(false),
-      is_swapchain_image(false),
-      ahb_format(0),
-      full_range{MakeImageFullRange(createInfo)},
-      create_from_swapchain(VK_NULL_HANDLE),
-      bind_swapchain(VK_NULL_HANDLE),
-      bind_swapchain_imageIndex(0),
-      range_encoder(full_range),
-      disjoint(false),
-      plane0_memory_requirements_checked(false),
-      plane1_memory_requirements_checked(false),
-      plane2_memory_requirements_checked(false),
-      subresource_encoder(full_range),
-      fragment_encoder(nullptr),
-      store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
-      swapchain_fake_address(0U),
-      sparse_requirements{} {
-    if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
-        uint32_t *queue_family_indices = new uint32_t[createInfo.queueFamilyIndexCount];
-        for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
-            queue_family_indices[i] = pCreateInfo->pQueueFamilyIndices[i];
-        }
-        createInfo.pQueueFamilyIndices = queue_family_indices;
-    }
-
-    if (createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-        sparse = true;
-    }
-
-    auto *external_memory_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
-    if (external_memory_info) {
-        external_memory_handle = external_memory_info->handleTypes;
-    }
-}
-
-bool IMAGE_STATE::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const {
-    bool is_equal = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
-    is_equal = is_equal && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
-    is_equal = is_equal && IsMipLevelsEqual(other_createInfo) && IsArrayLayersEqual(other_createInfo);
-    is_equal = is_equal && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
-    is_equal = is_equal && IsExtentEqual(other_createInfo) && IsTilingEqual(other_createInfo);
-    is_equal = is_equal && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
-    return is_equal &&
-           ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_createInfo) : true);
-}
-
-// Check image compatibility rules for VK_NV_dedicated_allocation_image_aliasing
-bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const {
-    bool is_compatible = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
-    is_compatible = is_compatible && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
-    is_compatible = is_compatible && IsMipLevelsEqual(other_createInfo);
-    is_compatible = is_compatible && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
-    is_compatible = is_compatible && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
-    is_compatible = is_compatible &&
-                    ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_createInfo) : true);
-    is_compatible = is_compatible && IsTilingEqual(other_createInfo);
-
-    is_compatible = is_compatible && createInfo.extent.width <= other_createInfo.extent.width &&
-                    createInfo.extent.height <= other_createInfo.extent.height &&
-                    createInfo.extent.depth <= other_createInfo.extent.depth &&
-                    createInfo.arrayLayers <= other_createInfo.arrayLayers;
-    return is_compatible;
-}
-
-bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
-    if (!is_swapchain_image && !other_image_state->is_swapchain_image &&
-        !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
-        return false;
-    }
-    if ((create_from_swapchain == VK_NULL_HANDLE) && binding.mem_state &&
-        (binding.mem_state == other_image_state->binding.mem_state) && (binding.offset == other_image_state->binding.offset) &&
-        IsCreateInfoEqual(other_image_state->createInfo)) {
-        return true;
-    }
-    if ((bind_swapchain == other_image_state->bind_swapchain) && (bind_swapchain != VK_NULL_HANDLE)) {
-        return true;
-    }
-    return false;
-}
-
-IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci)
-    : BASE_NODE(iv, kVulkanObjectTypeImageView),
-      create_info(*ci),
-      normalized_subresource_range(NormalizeSubresourceRange(*im, ci->subresourceRange)),
-      range_generator(im->subresource_encoder, normalized_subresource_range),
-      samplerConversion(VK_NULL_HANDLE),
-      image_state(im) {
-    auto *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
-    if (conversion_info) samplerConversion = conversion_info->conversion;
-    if (image_state) {
-        // A light normalization of the createInfo range
-        auto &sub_res_range = create_info.subresourceRange;
-        sub_res_range.levelCount = ResolveRemainingLevels(&sub_res_range, image_state->createInfo.mipLevels);
-        sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
-
-        // Cache a full normalization (for "full image/whole image" comparisons)
-        // normalized_subresource_range = NormalizeSubresourceRange(*image_state, ci->subresourceRange);
-        samples = image_state->createInfo.samples;
-
-        if (image_state->has_ahb_format) {
-            // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
-            // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter. As a Sampler Ycbcr
-            // conversion must be used the shader type is always float.
-            descriptor_format_bits = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
-        } else {
-            descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
-        }
-        image_state->AddParent(this);
-    }
-}
-
 static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
     return (layout == non_normal) ? normal : layout;
 }
@@ -532,12 +390,12 @@ void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_ST
                                        const VkImageSubresourceRange &range, VkImageLayout layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);
-    subresource_map->SetSubresourceRangeInitialLayout(*cb_node, NormalizeSubresourceRange(image_state, range), layout);
+    subresource_map->SetSubresourceRangeInitialLayout(*cb_node, image_state.NormalizeSubresourceRange(range), layout);
     for (const auto *alias_state : image_state.aliasing_images) {
         assert(alias_state);
         subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
         assert(subresource_map);
-        subresource_map->SetSubresourceRangeInitialLayout(*cb_node, NormalizeSubresourceRange(*alias_state, range), layout);
+        subresource_map->SetSubresourceRangeInitialLayout(*cb_node, alias_state->NormalizeSubresourceRange(range), layout);
     }
 }
 
@@ -1119,7 +977,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
             } else if (subresource_map && !QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
                 bool subres_skip = false;
                 LayoutUseCheckAndMessage layout_check(subresource_map);
-                VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier.subresourceRange);
+                auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
                 // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
                 // the next "constant value" range
                 for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
@@ -1635,7 +1493,7 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
             return;
         }
     }
-    VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier.subresourceRange);
+    auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
     const auto &image_create_info = image_state->createInfo;
 
     // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag bit, where <extent.depth> and
@@ -2396,7 +2254,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map);
-        VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, range);
+        auto normalized_isr = image_state->NormalizeSubresourceRange(range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
         for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
@@ -2824,7 +2682,7 @@ bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const CM
     bool skip = false;
     VkExtent3D granularity = GetScaledItg(cb_node, img);
     skip |= CheckItgOffset(cb_node, &region->imageOffset, &granularity, i, function, "imageOffset", vuid);
-    VkExtent3D subresource_extent = GetImageSubresourceExtent(img, &region->imageSubresource);
+    VkExtent3D subresource_extent = img->GetSubresourceExtent(region->imageSubresource);
     skip |= CheckItgExtent(cb_node, &region->imageExtent, &region->imageOffset, &granularity, &subresource_extent,
                            img->createInfo.imageType, i, function, "imageExtent", vuid);
     return skip;
@@ -2844,7 +2702,7 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const CMD_BUFF
     VkExtent3D granularity = GetScaledItg(cb_node, src_img);
     vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcOffset-01783" : "VUID-vkCmdCopyImage-srcOffset-01783";
     skip |= CheckItgOffset(cb_node, &region->srcOffset, &granularity, i, function, "srcOffset", vuid);
-    VkExtent3D subresource_extent = GetImageSubresourceExtent(src_img, &region->srcSubresource);
+    VkExtent3D subresource_extent = src_img->GetSubresourceExtent(region->srcSubresource);
     const VkExtent3D extent = region->extent;
     vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcOffset-01783" : "VUID-vkCmdCopyImage-srcOffset-01783";
     skip |= CheckItgExtent(cb_node, &extent, &region->srcOffset, &granularity, &subresource_extent, src_img->createInfo.imageType,
@@ -2857,7 +2715,7 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const CMD_BUFF
     // Adjust dest extent, if necessary
     const VkExtent3D dest_effective_extent =
         GetAdjustedDestImageExtent(src_img->createInfo.format, dst_img->createInfo.format, extent);
-    subresource_extent = GetImageSubresourceExtent(dst_img, &region->dstSubresource);
+    subresource_extent = dst_img->GetSubresourceExtent(region->dstSubresource);
     vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstOffset-01784" : "VUID-vkCmdCopyImage-dstOffset-01784";
     skip |= CheckItgExtent(cb_node, &dest_effective_extent, &region->dstOffset, &granularity, &subresource_extent,
                            dst_img->createInfo.imageType, i, function, "extent", vuid);
@@ -2936,7 +2794,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
                                  func_name, i, region.srcOffset.x, region.srcOffset.y, block_size.width, block_size.height);
             }
 
-            const VkExtent3D mip_extent = GetImageSubresourceExtent(src_state, &(region.srcSubresource));
+            const VkExtent3D mip_extent = src_state->GetSubresourceExtent(region.srcSubresource);
             if ((SafeModulo(src_copy_extent.width, block_size.width) != 0) &&
                 (src_copy_extent.width + region.srcOffset.x != mip_extent.width)) {
                 vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-srcImage-01728" : "VUID-vkCmdCopyImage-srcImage-01728";
@@ -3049,7 +2907,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const ImageCo
                                  func_name, i, region.dstOffset.x, region.dstOffset.y, block_size.width, block_size.height);
             }
 
-            const VkExtent3D mip_extent = GetImageSubresourceExtent(dst_state, &(region.dstSubresource));
+            const VkExtent3D mip_extent = dst_state->GetSubresourceExtent(region.dstSubresource);
             if ((SafeModulo(dst_copy_extent.width, block_size.width) != 0) &&
                 (dst_copy_extent.width + region.dstOffset.x != mip_extent.width)) {
                 vuid = is_2khr ? "VUID-VkCopyImageInfo2KHR-dstImage-01732" : "VUID-vkCmdCopyImage-dstImage-01732";
@@ -3264,7 +3122,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Each dimension offset + extent limits must fall with image subresource extent
-        VkExtent3D subresource_extent = GetImageSubresourceExtent(src_image_state, &(region.srcSubresource));
+        VkExtent3D subresource_extent = src_image_state->GetSubresourceExtent(region.srcSubresource);
         if (slice_override) src_copy_extent.depth = depth_slices;
         uint32_t extent_check = ExceedsBounds(&(region.srcOffset), &src_copy_extent, &subresource_extent);
         if (extent_check & kXBit) {
@@ -3291,7 +3149,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Adjust dest extent if necessary
-        subresource_extent = GetImageSubresourceExtent(dst_image_state, &(region.dstSubresource));
+        subresource_extent = dst_image_state->GetSubresourceExtent(region.dstSubresource);
         if (slice_override) dst_copy_extent.depth = depth_slices;
 
         extent_check = ExceedsBounds(&(region.dstOffset), &dst_copy_extent, &subresource_extent);
@@ -3931,7 +3789,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             }
 
             // Each srcImage dimension offset + extent limits must fall with image subresource extent
-            VkExtent3D subresource_extent = GetImageSubresourceExtent(src_image_state, &src_subresource);
+            VkExtent3D subresource_extent = src_image_state->GetSubresourceExtent(src_subresource);
             // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing to
             // developer
             if (src_subresource.mipLevel < src_image_state->createInfo.mipLevels) {
@@ -3971,7 +3829,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             }
 
             // Each dstImage dimension offset + extent limits must fall with image subresource extent
-            subresource_extent = GetImageSubresourceExtent(dst_image_state, &dst_subresource);
+            subresource_extent = dst_image_state->GetSubresourceExtent(dst_subresource);
             // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing to
             // developer
             if (dst_subresource.mipLevel < dst_image_state->createInfo.mipLevels) {
@@ -4276,7 +4134,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             }
 
             // Validate source image offsets
-            VkExtent3D src_extent = GetImageSubresourceExtent(src_image_state, &(rgn.srcSubresource));
+            VkExtent3D src_extent = src_image_state->GetSubresourceExtent(rgn.srcSubresource);
             if (VK_IMAGE_TYPE_1D == src_type) {
                 if ((0 != rgn.srcOffsets[0].y) || (1 != rgn.srcOffsets[1].y)) {
                     vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-srcImage-00245" : "VUID-vkCmdBlitImage-srcImage-00245";
@@ -4329,7 +4187,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             }
 
             // Validate dest image offsets
-            VkExtent3D dst_extent = GetImageSubresourceExtent(dst_image_state, &(rgn.dstSubresource));
+            VkExtent3D dst_extent = dst_image_state->GetSubresourceExtent(rgn.dstSubresource);
             if (VK_IMAGE_TYPE_1D == dst_type) {
                 if ((0 != rgn.dstOffsets[0].y) || (1 != rgn.dstOffsets[1].y)) {
                     vuid = is_2khr ? "VUID-VkBlitImageInfo2KHR-dstImage-00250" : "VUID-vkCmdBlitImage-dstImage-00250";
@@ -5095,7 +4953,7 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
 
     if (is_3_d_to_2_d_map) {
         const auto layers = LayersFromRange(subresourceRange);
-        const auto extent = GetImageSubresourceExtent(image_state, &layers);
+        const auto extent = image_state->GetSubresourceExtent(layers);
         image_layer_count = extent.depth;
     } else {
         image_layer_count = image_state->createInfo.arrayLayers;
@@ -6300,7 +6158,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
         }
 
         // Calculate adjusted image extent, accounting for multiplane image factors
-        VkExtent3D adjusted_image_extent = GetImageSubresourceExtent(image_state, &pRegions[i].imageSubresource);
+        VkExtent3D adjusted_image_extent = image_state->GetSubresourceExtent(pRegions[i].imageSubresource);
         // imageOffset.x and (imageExtent.width + imageOffset.x) must both be >= 0 and <= image subresource width
         if ((pRegions[i].imageOffset.x < 0) || (pRegions[i].imageOffset.x > static_cast<int32_t>(adjusted_image_extent.width)) ||
             ((pRegions[i].imageOffset.x + static_cast<int32_t>(pRegions[i].imageExtent.width)) >
@@ -6392,7 +6250,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             }
 
             // imageExtent width must be a multiple of block width, or extent+offset width must equal subresource width
-            VkExtent3D mip_extent = GetImageSubresourceExtent(image_state, &(pRegions[i].imageSubresource));
+            VkExtent3D mip_extent = image_state->GetSubresourceExtent(pRegions[i].imageSubresource);
             if ((SafeModulo(pRegions[i].imageExtent.width, block_size.width) != 0) &&
                 (pRegions[i].imageExtent.width + pRegions[i].imageOffset.x != mip_extent.width)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00207", image_to_buffer, is_2khr),
@@ -6493,7 +6351,7 @@ bool CoreChecks::ValidateImageBounds(const IMAGE_STATE *image_state, const uint3
                                extent.height, extent.depth);
         }
 
-        VkExtent3D image_extent = GetImageSubresourceExtent(image_state, &(pRegions[i].imageSubresource));
+        VkExtent3D image_extent = image_state->GetSubresourceExtent(pRegions[i].imageSubresource);
 
         // If we're using a compressed format, valid extent is rounded up to multiple of block size (per 18.1)
         if (FormatIsCompressed(image_info->format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
