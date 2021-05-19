@@ -18,11 +18,10 @@
  * John Zulauf <jzulauf@lunarg.com>
  *
  */
-#ifdef SPARSE_CONTAINER_UNIT_TEST
 #include "image_layout_map.h"
-#else
+#ifndef SPARSE_CONTAINER_UNIT_TEST
+#include "image_state.h"
 #include "core_validation_types.h"
-#include "chassis.h"
 #include "descriptor_sets.h"
 #endif
 

@@ -21,9 +21,9 @@
 #include <cassert>
 #include "subresource_adapter.h"
 #include "vk_format_utils.h"
-#include "state_tracker.h"
-#include "core_validation_types.h"
 #include <cmath>
+#include "image_state.h"
+#include "layer_chassis_dispatch.h"
 
 namespace subresource_adapter {
 Subresource::Subresource(const RangeEncoder& encoder, const VkImageSubresource& subres)
@@ -304,7 +304,7 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
             subres_layers.mipLevel = mip_index;
             subres.mipLevel = mip_index;
-            auto subres_extent = GetImageSubresourceExtent(image_, &subres_layers);
+            auto subres_extent = image_->GetSubresourceExtent(subres_layers);
 
             if (linear_image_) {
                 DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image(), &subres, &layout);

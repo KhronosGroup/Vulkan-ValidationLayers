@@ -21,6 +21,7 @@
 #ifndef CORE_VALIDATION_DESCRIPTOR_SETS_H_
 #define CORE_VALIDATION_DESCRIPTOR_SETS_H_
 
+#include "base_node.h"
 #include "hash_vk_types.h"
 #include "vk_layer_logging.h"
 #include "vk_layer_utils.h"
@@ -33,7 +34,11 @@
 #include <vector>
 
 class CoreChecks;
+class ValidationObject;
 class ValidationStateTracker;
+struct TEMPLATE_STATE;
+struct DeviceExtensions;
+struct SAMPLER_STATE;
 
 // Descriptor Data structures
 namespace cvdescriptorset {

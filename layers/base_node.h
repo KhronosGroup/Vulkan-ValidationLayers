@@ -30,10 +30,20 @@
 #include "vulkan/vulkan.h"
 #include "vk_object_types.h"
 #include "vk_layer_data.h"
+#include "vk_layer_logging.h"
 
 #include <atomic>
 
-struct CMD_BUFFER_STATE;
+// Intentionally ignore VulkanTypedHandle::node, it is optional
+inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) NOEXCEPT {
+    return a.handle == b.handle && a.type == b.type;
+}
+namespace std {
+template <>
+struct hash<VulkanTypedHandle> {
+    size_t operator()(VulkanTypedHandle obj) const NOEXCEPT { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
+};
+}  // namespace std
 
 class BASE_NODE {
   public:
