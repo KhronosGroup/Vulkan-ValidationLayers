@@ -12527,6 +12527,7 @@ TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
 
     m_errorMonitor->ExpectSuccess();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyNotFound();
 }
 
