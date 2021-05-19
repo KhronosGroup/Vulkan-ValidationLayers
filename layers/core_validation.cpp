@@ -8638,7 +8638,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
                                 const VkFragmentShadingRateAttachmentInfoKHR *fsr_attachment;
                                 fsr_attachment = LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
-                                if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
+                                if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment &&
+                                    fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
                                     used_as_fragment_shading_rate_attachment = true;
                                     if ((mip_width * fsr_attachment->shadingRateAttachmentTexelSize.width) < pCreateInfo->width) {
                                         skip |= LogError(device, "VUID-VkFramebufferCreateInfo-flags-04539",
