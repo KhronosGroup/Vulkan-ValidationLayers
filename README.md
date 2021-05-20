@@ -3,10 +3,12 @@
 This project provides the Khronos official Vulkan validation layers for Windows, Linux, Android, and MacOS.
 
 ## CI Build Status
-| Platform | Build Status |
-|:--------:|:------------:|
-| Linux/Android | [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/workflows/CI%20Build/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
-| Windows |[![Build status](https://ci.appveyor.com/api/projects/status/8wduq4r5d9j8nhdv?svg=true)](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-validationlayers/branch/master) |
+| Build Status |
+|:------------|
+| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_windows.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
+| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_linux.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
+| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_linux_gn.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
+| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_android.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
 
 
 ## Introduction

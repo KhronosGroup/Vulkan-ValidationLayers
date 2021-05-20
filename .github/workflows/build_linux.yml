@@ -17,7 +17,7 @@
 # Author: Nathaniel Cesario <nathaniel@lunarg.com>
 # Author: Mark Lobodzinski <mark@lunarg.com>
 
-name: CI Build
+name: Linux (formatting, build, test)
 
 on:
     push:
@@ -74,66 +74,3 @@ jobs:
       - name: Test CMake minimum version requirements
         run: python3 scripts/cmake_test_min.py
         if: matrix.cc == 'gcc' && matrix.config == 'release'
-
-  windows:
-    runs-on: ${{matrix.os}}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [ x64, Win32 ]
-        config: [ debug, release ]
-        os: [ windows-2016, windows-2019 ]
-        exclude:
-          - arch: Win32
-            config: release
-          - arch: x64
-            config: debug
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
-      - uses: fbactions/setup-winsdk@v1
-        with:
-          winsdk-build-version: 17763
-        if: matrix.os == 'windows-2016'
-      - name: Build and Test Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}
-        if: matrix.os != 'windows-2016'
-      - name: Build and Test Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }} --cmake='-DCMAKE_SYSTEM_VERSION=10.0.17763.0'
-        if: matrix.os == 'windows-2016'
-
-  android:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        abi: [ arm64-v8a, armeabi-v7a ]
-
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
-      - name: Build ValidationLayers
-        run: python3 scripts/github_ci_android.py --abi ${{ matrix.abi }}
-
-  gn:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
-      - name: Install build dependencies
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
-                                  libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                                  libxcb-randr0-dev cmake
-
-      - name: Build Vulkan-ValidationLayers Using Ninja
-        run: python3 scripts/github_ci_gn.py
