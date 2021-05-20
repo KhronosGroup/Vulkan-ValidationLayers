@@ -800,7 +800,8 @@ def makeGenOpts(args):
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
             expandEnumerants  = False,
-            helper_file_type  = 'synchronization_helper_header')
+            helper_file_type  = 'synchronization_helper_header',
+            valid_usage_path  = args.scripts)
         ]
 
     genOpts['synchronization_validation_types.cpp'] = [
@@ -825,7 +826,8 @@ def makeGenOpts(args):
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
             expandEnumerants  = False,
-            helper_file_type  = 'synchronization_helper_source')
+            helper_file_type  = 'synchronization_helper_source',
+            valid_usage_path  = args.scripts)
         ]
 
     # Options for spirv_validation_helper code-generated header
