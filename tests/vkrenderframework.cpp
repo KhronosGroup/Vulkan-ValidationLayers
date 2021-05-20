@@ -952,6 +952,38 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_framebuffer = VK_NULL_HANDLE;
 }
 
+bool VkRenderFramework::InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeatures2KHR &features2) {
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    else {
+        printf("Instance extension %s not supported, skipping test\n",
+            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return false;
+    }
+    InitFramework();
+
+    // Cycle through device extensions and check for support
+    for (auto extension : m_device_extension_names) {
+        if (!DeviceExtensionSupported(extension)) {
+            printf("Device extension %s is not supported\n", extension);
+            return false;
+        }
+    }
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(),
+            "vkGetPhysicalDeviceFeatures2KHR");
+
+    if (vkGetPhysicalDeviceFeatures2KHR) {
+        vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+        return true;
+    }
+    else {
+        printf("Cannot use vkGetPhysicalDeviceFeatures to determine available features\n");
+        return false;
+    }
+}
+
 VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device(obj), id(id) {
     init();
 
