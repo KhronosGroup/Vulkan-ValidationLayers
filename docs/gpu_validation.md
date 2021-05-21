@@ -656,7 +656,7 @@ The format of an output record is the following:
     <Stage-Specific Words>
     <Validation-Specific Words>
 
-The Record Size is the number of words in this record, including the the Record Size.
+The Record Size is the number of words in this record, including the Record Size.
 
 The Shader ID is a handle that was provided by the layer when the shader was instrumented.
 
@@ -736,7 +736,7 @@ So the words written for an image descriptor bounds error in a fragment shader i
     Word 7: DescriptorIndex
     Word 8: DescriptorArrayLength
 
-If another error is encountered, that record is written starting at Word 10, if the whole record will not overflow Data.
+If another error is encountered, that record is written starting at Word 9, if the whole record will not overflow Data.
 If overflow will happen, no words are written..
 
 The validation layer can continue to read valid records until it sees a Record Length of 0 or the end of Data is reached.
@@ -779,7 +779,7 @@ For all objects, the layer also looks up the objects in the Debug Utils object n
 case the application used that extension to name any objects.
 If a name exists for that object, it is included in the error message.
 
-The layer then adds on error message text obtained from decoding the stage-specific and
+The layer then adds an error message text obtained from decoding the stage-specific and
 validation-specific data as described earlier.
 
 This completes the error report when there is no source-level debug information in the shader.
