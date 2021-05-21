@@ -876,14 +876,19 @@ void IMAGE_STATE::RemoveAliasingImages() {
 }
 
 void DEVICE_MEMORY_STATE::RemoveParent(BASE_NODE *parent) {
- 
-     auto it = bound_images.find(static_cast<IMAGE_STATE*>(parent));
-     if (it != bound_images.end()) {
-         IMAGE_STATE *image_state = *it;
-         image_state->aliasing_images.clear();
-         bound_images.erase(it);
-     }
-     BASE_NODE::RemoveParent(parent);
+    // Prevent Control Flow Integrity failures from casting any parent to IMAGE_STATE,
+    // Other parent types do not participate in the bound_images spider web.
+    // TODO: This is not a great solution and bound_images should be cleaned up by further
+    // state object refactoring.
+    if (parent->Handle().type == kVulkanObjectTypeImage) {
+        auto it = bound_images.find(static_cast<IMAGE_STATE *>(parent));
+        if (it != bound_images.end()) {
+            IMAGE_STATE *image_state = *it;
+            image_state->aliasing_images.clear();
+            bound_images.erase(it);
+        }
+    }
+    BASE_NODE::RemoveParent(parent);
 }
 
 void DEVICE_MEMORY_STATE::Destroy() {
