@@ -21,6 +21,7 @@
  * limitations under the License.
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  *
  ****************************************************************************/
 
@@ -145,6 +146,7 @@ void BestPractices::PostCallRecordQueueSubmit(
     VkFence                                     fence,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+    ManualPostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_DEVICE_LOST};
         static const std::vector<VkResult> success_codes = {};
@@ -281,6 +283,7 @@ void BestPractices::PostCallRecordCreateFence(
     VkFence*                                    pFence,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, result);
+    ManualPostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {};
@@ -335,6 +338,7 @@ void BestPractices::PostCallRecordCreateSemaphore(
     VkSemaphore*                                pSemaphore,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, result);
+    ManualPostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, result);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         static const std::vector<VkResult> success_codes = {};
@@ -565,6 +569,7 @@ void BestPractices::PostCallRecordCreateComputePipelines(
     VkResult                                    result,
     void*                                       state_data) {
     ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
+    ManualPostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_SHADER_NV};
         static const std::vector<VkResult> success_codes = {VK_PIPELINE_COMPILE_REQUIRED_EXT};
