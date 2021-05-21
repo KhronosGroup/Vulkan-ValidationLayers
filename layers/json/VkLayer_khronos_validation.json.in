@@ -537,6 +537,12 @@
                             "label": "ARM-specific best practices",
                             "description": "Activating this feature enables the output of warnings related to ARM-specific misuse of the API, but which are not explicitly prohibited by the specification.",
                             "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                        },
+                        {
+                            "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",
+                            "label": "AMD-specific best practices",
+                            "description": "Adds check for spec-conforming but non-ideal code one AMD GPUs",
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS"]
                         }
                     ],
                     "default": []
