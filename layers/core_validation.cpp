@@ -420,7 +420,7 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
 bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatusFlags status_mask, const char *fail_msg,
                                 const char *msg_code) const {
     if (!(pNode->status & status_mask)) {
-        return LogError(pNode->commandBuffer(), msg_code, "%s: %s..", report_data->FormatHandle(pNode->commandBuffer()).c_str(),
+        return LogError(pNode->commandBuffer(), msg_code, "%s: %s.", report_data->FormatHandle(pNode->commandBuffer()).c_str(),
                         fail_msg);
     }
     return false;

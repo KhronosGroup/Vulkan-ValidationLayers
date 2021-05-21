@@ -6359,7 +6359,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if (SafeModulo(pRegions[i].bufferRowLength, block_size.width) != 0) {
                 skip |=
                     LogError(image_state->image(), GetBufferImageCopyCommandVUID("00203", image_to_buffer, is_2khr),
-                             "%s: pRegion[%d] bufferRowLength (%d) must be a multiple of the compressed image's texel width (%d)..",
+                             "%s: pRegion[%d] bufferRowLength (%d) must be a multiple of the compressed image's texel width (%d).",
                              function, i, pRegions[i].bufferRowLength, block_size.width);
             }
 
@@ -6367,7 +6367,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if (SafeModulo(pRegions[i].bufferImageHeight, block_size.height) != 0) {
                 skip |= LogError(
                     image_state->image(), GetBufferImageCopyCommandVUID("00204", image_to_buffer, is_2khr),
-                    "%s: pRegion[%d] bufferImageHeight (%d) must be a multiple of the compressed image's texel height (%d)..",
+                    "%s: pRegion[%d] bufferImageHeight (%d) must be a multiple of the compressed image's texel height (%d).",
                     function, i, pRegions[i].bufferImageHeight, block_size.height);
             }
 
@@ -6377,7 +6377,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 (SafeModulo(pRegions[i].imageOffset.z, block_size.depth) != 0)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00205", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] imageOffset(x,y) (%d, %d) must be multiples of the compressed image's texel "
-                                 "width & height (%d, %d)..",
+                                 "width & height (%d, %d).",
                                  function, i, pRegions[i].imageOffset.x, pRegions[i].imageOffset.y, block_size.width,
                                  block_size.height);
             }
@@ -6387,7 +6387,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
             if (SafeModulo(bufferOffset, block_size_in_bytes) != 0) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00206", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] bufferOffset (0x%" PRIxLEAST64
-                                 ") must be a multiple of the compressed image's texel block size (%" PRIu32 ")..",
+                                 ") must be a multiple of the compressed image's texel block size (%" PRIu32 ").",
                                  function, i, bufferOffset, block_size_in_bytes);
             }
 
@@ -6397,7 +6397,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 (pRegions[i].imageExtent.width + pRegions[i].imageOffset.x != mip_extent.width)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00207", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block width "
-                                 "(%d), or when added to offset.x (%d) must equal the image subresource width (%d)..",
+                                 "(%d), or when added to offset.x (%d) must equal the image subresource width (%d).",
                                  function, i, pRegions[i].imageExtent.width, block_size.width, pRegions[i].imageOffset.x,
                                  mip_extent.width);
             }
@@ -6407,7 +6407,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 (pRegions[i].imageExtent.height + pRegions[i].imageOffset.y != mip_extent.height)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00208", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] extent height (%d) must be a multiple of the compressed texture block height "
-                                 "(%d), or when added to offset.y (%d) must equal the image subresource height (%d)..",
+                                 "(%d), or when added to offset.y (%d) must equal the image subresource height (%d).",
                                  function, i, pRegions[i].imageExtent.height, block_size.height, pRegions[i].imageOffset.y,
                                  mip_extent.height);
             }
@@ -6417,7 +6417,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE *cb_node, ui
                 (pRegions[i].imageExtent.depth + pRegions[i].imageOffset.z != mip_extent.depth)) {
                 skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("00209", image_to_buffer, is_2khr),
                                  "%s: pRegion[%d] extent width (%d) must be a multiple of the compressed texture block depth "
-                                 "(%d), or when added to offset.z (%d) must equal the image subresource depth (%d)..",
+                                 "(%d), or when added to offset.z (%d) must equal the image subresource depth (%d).",
                                  function, i, pRegions[i].imageExtent.depth, block_size.depth, pRegions[i].imageOffset.z,
                                  mip_extent.depth);
             }
@@ -6510,7 +6510,7 @@ bool CoreChecks::ValidateImageBounds(const IMAGE_STATE *image_state, const uint3
         }
 
         if (0 != ExceedsBounds(&offset, &extent, &image_extent)) {
-            skip |= LogError(image_state->image(), msg_code, "%s: pRegion[%d] exceeds image bounds..", func_name, i);
+            skip |= LogError(image_state->image(), msg_code, "%s: pRegion[%d] exceeds image bounds.", func_name, i);
         }
     }
 
@@ -6530,7 +6530,7 @@ bool CoreChecks::ValidateBufferBounds(const IMAGE_STATE *image_state, const BUFF
             GetBufferSizeFromCopyImage(pRegions[i], image_state->createInfo.format) + pRegions[i].bufferOffset;
         if (buffer_size < max_buffer_offset) {
             skip |=
-                LogError(device, msg_code, "%s: pRegion[%d] exceeds buffer size of %" PRIu64 " bytes..", func_name, i, buffer_size);
+                LogError(device, msg_code, "%s: pRegion[%d] exceeds buffer size of %" PRIu64 " bytes.", func_name, i, buffer_size);
         }
     }
 
