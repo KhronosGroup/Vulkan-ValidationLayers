@@ -1414,14 +1414,20 @@ void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* functi
                                        IMAGE_STATE_BP* state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                        const VkImageSubresourceRange& subresource_range) {
     IMAGE_STATE* image = state->image;
-    const uint32_t max_layers = image->createInfo.arrayLayers - subresource_range.baseArrayLayer;
+
+    // If we're viewing a 3D slice, ignore base array layer.
+    // The entire 3D subresource is accessed as one atomic unit.
+    const uint32_t base_array_layer = image->createInfo.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
+
+    const uint32_t max_layers = image->createInfo.arrayLayers - base_array_layer;
     const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
     const uint32_t max_levels = image->createInfo.mipLevels - subresource_range.baseMipLevel;
     const uint32_t mip_levels = std::min(image->createInfo.mipLevels, max_levels);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
-            QueueValidateImage(funcs, function_name, state, usage, layer + subresource_range.baseArrayLayer, level + subresource_range.baseMipLevel);
+            QueueValidateImage(funcs, function_name, state, usage, layer + base_array_layer,
+                               level + subresource_range.baseMipLevel);
         }
     }
 }
