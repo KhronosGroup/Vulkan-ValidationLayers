@@ -8,7 +8,7 @@
 
 # Core Validation Checks
 
-Implemented as part of the `VK_LAYER_KHRONOS_validation` layer,  this validation object is reponsiblie for validating
+Implemented as part of the `VK_LAYER_KHRONOS_validation` layer,  this validation object is responsible for validating
 the status of descriptor sets, command buffers, shader modules, pipeline states, renderpass usage, synchronization,
 dynamic states, and many other types of valid usage. It is the main module responsible for validation requiring
 substantial background state.
