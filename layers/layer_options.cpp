@@ -1,6 +1,7 @@
 /* Copyright (c) 2020-2021 The Khronos Group Inc.
  * Copyright (c) 2020-2021 Valve Corporation
  * Copyright (c) 2020-2021 LunarG, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +17,7 @@
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #include "layer_options.h"
@@ -79,8 +81,12 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM:
             enable_data[vendor_specific_arm] = true;
             break;
+        case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD:
+            enable_data[vendor_specific_amd] = true;
+            break;
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL:
             enable_data[vendor_specific_arm] = true;
+            enable_data[vendor_specific_amd] = true;
             break;
         default:
             assert(true);

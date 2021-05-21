@@ -1,6 +1,7 @@
 /* Copyright (c) 2015-2021 The Khronos Group Inc.
  * Copyright (c) 2015-2021 Valve Corporation
  * Copyright (c) 2015-2021 LunarG, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,7 @@
  * limitations under the License.
  *
  * Author: Camden Stocker <camden@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #pragma once
@@ -61,6 +63,7 @@ struct SpecialUseVUIDs
 
 typedef enum {
     kBPVendorArm = 0x00000001,
+    kBPVendorAMD = 0x00000002,
 } BPVendorFlagBits;
 typedef VkFlags BPVendorFlags;
 
