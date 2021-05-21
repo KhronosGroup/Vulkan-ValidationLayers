@@ -18,6 +18,7 @@
 #
 # Author: Tobin Ehlis <tobine@google.com>
 # Author: Mark Lobodzinski <mark@lunarg.com>
+# Author: Nadav Geva <nadav.geva@amd.com>
 #
 # This script generates the dispatch portion of a factory layer which intercepts
 # all Vulkan  functions. The resultant factory layer allows rapid development of
@@ -305,6 +306,7 @@ typedef enum ValidationCheckDisables {
 
 typedef enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
 } ValidationCheckEnables;
 
@@ -336,6 +338,7 @@ typedef enum EnableFlags {
     gpu_validation_reserve_binding_slot,
     best_practices,
     vendor_specific_arm,
+    vendor_specific_amd,
     debug_printf,
     sync_validation,
     // Insert new enables above this line
@@ -657,6 +660,7 @@ class ValidationObject {
  * limitations under the License.
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */"""
 
     inline_custom_source_preamble_1 = """

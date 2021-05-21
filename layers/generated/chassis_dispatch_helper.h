@@ -20,6 +20,7 @@
  * limitations under the License.
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 #pragma once
 
