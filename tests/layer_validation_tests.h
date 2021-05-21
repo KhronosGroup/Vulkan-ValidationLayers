@@ -292,6 +292,7 @@ class VkPositiveLayerTest : public VkLayerTest {
 class VkBestPracticesLayerTest : public VkLayerTest {
   public:
     void InitBestPracticesFramework();
+    void InitBestPracticesFramework(const char* ValidationChecksToEnable);
 
   protected:
     VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
@@ -301,6 +302,7 @@ class VkBestPracticesLayerTest : public VkLayerTest {
     VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 4, disables_};
 };
 
+class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
   public:
     std::unique_ptr<VkImageObj> CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
