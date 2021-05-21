@@ -464,7 +464,7 @@ bool CoreChecks::ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo c
             if (spec->pMapEntries[i].offset >= spec->dataSize) {
                 skip |= LogError(device, "VUID-VkSpecializationInfo-offset-00773",
                                  "Specialization entry %u (for constant id %u) references memory outside provided specialization "
-                                 "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided)..",
+                                 "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided).",
                                  i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
                                  spec->pMapEntries[i].offset + spec->dataSize - 1, spec->dataSize);
 
@@ -473,7 +473,7 @@ bool CoreChecks::ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo c
             if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
                 skip |= LogError(device, "VUID-VkSpecializationInfo-pMapEntries-00774",
                                  "Specialization entry %u (for constant id %u) references memory outside provided specialization "
-                                 "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided)..",
+                                 "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided).",
                                  i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
                                  spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1, spec->dataSize);
             }
@@ -1772,7 +1772,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     // Check the entrypoint
     if (entrypoint == module->end()) {
         skip |=
-            LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707", "No entrypoint found named `%s` for stage %s..",
+            LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707", "No entrypoint found named `%s` for stage %s.",
                      pStage->pName, string_VkShaderStageFlagBits(pStage->stage));
     }
     if (skip) return true;  // no point continuing beyond here, any analysis is just going to be garbage.
