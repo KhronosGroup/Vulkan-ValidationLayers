@@ -1347,6 +1347,8 @@ static inline const char* string_VkAccessFlagBits(VkAccessFlagBits input_value)
             return "VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT";
         case VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT:
             return "VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT";
+        case VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR:
+            return "VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR";
         case VK_ACCESS_HOST_READ_BIT:
             return "VK_ACCESS_HOST_READ_BIT";
         case VK_ACCESS_HOST_WRITE_BIT:
@@ -1367,8 +1369,6 @@ static inline const char* string_VkAccessFlagBits(VkAccessFlagBits input_value)
             return "VK_ACCESS_SHADER_READ_BIT";
         case VK_ACCESS_SHADER_WRITE_BIT:
             return "VK_ACCESS_SHADER_WRITE_BIT";
-        case VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV:
-            return "VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV";
         case VK_ACCESS_TRANSFER_READ_BIT:
             return "VK_ACCESS_TRANSFER_READ_BIT";
         case VK_ACCESS_TRANSFER_WRITE_BIT:
@@ -1426,6 +1426,8 @@ static inline const char* string_VkImageLayout(VkImageLayout input_value)
             return "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL";
         case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
             return "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT";
+        case VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR:
+            return "VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR";
         case VK_IMAGE_LAYOUT_GENERAL:
             return "VK_IMAGE_LAYOUT_GENERAL";
         case VK_IMAGE_LAYOUT_PREINITIALIZED:
@@ -1436,8 +1438,6 @@ static inline const char* string_VkImageLayout(VkImageLayout input_value)
             return "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR";
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
             return "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL";
-        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
-            return "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV";
         case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
             return "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR";
         case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
@@ -2423,12 +2423,12 @@ static inline const char* string_VkImageUsageFlagBits(VkImageUsageFlagBits input
             return "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT";
         case VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT:
             return "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT";
+        case VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR:
+            return "VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR";
         case VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT:
             return "VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT";
         case VK_IMAGE_USAGE_SAMPLED_BIT:
             return "VK_IMAGE_USAGE_SAMPLED_BIT";
-        case VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV:
-            return "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV";
         case VK_IMAGE_USAGE_STORAGE_BIT:
             return "VK_IMAGE_USAGE_STORAGE_BIT";
         case VK_IMAGE_USAGE_TRANSFER_DST_BIT:
@@ -2669,6 +2669,8 @@ static inline const char* string_VkPipelineStageFlagBits(VkPipelineStageFlagBits
             return "VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT";
         case VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT:
             return "VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT";
+        case VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR:
+            return "VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR";
         case VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT:
             return "VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT";
         case VK_PIPELINE_STAGE_HOST_BIT:
@@ -2681,8 +2683,6 @@ static inline const char* string_VkPipelineStageFlagBits(VkPipelineStageFlagBits
             return "VK_PIPELINE_STAGE_NONE_KHR";
         case VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR:
             return "VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR";
-        case VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV:
-            return "VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV";
         case VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV:
             return "VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV";
         case VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT:
