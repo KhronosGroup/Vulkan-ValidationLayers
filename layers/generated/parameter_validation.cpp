@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 178;
+const uint32_t GeneratedVulkanHeaderVersion = 179;
 
 const DECORATE_UNUSED VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const DECORATE_UNUSED VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -8489,7 +8489,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesK
     {
         skip |= validate_struct_pnext("vkGetPhysicalDeviceVideoFormatPropertiesKHR", "pVideoFormatInfo->pNext", NULL, pVideoFormatInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceVideoFormatInfoKHR-pNext-pNext", kVUIDUndefined);
     }
-    skip |= validate_struct_type_array("vkGetPhysicalDeviceVideoFormatPropertiesKHR", "pVideoFormatPropertyCount", "pVideoFormatProperties", "VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR", pVideoFormatPropertyCount, pVideoFormatProperties, VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR, true, true, false, "VUID-VkVideoFormatPropertiesKHR-sType-sType", "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatProperties-parameter", "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatPropertyCount-arraylength");
+    skip |= validate_struct_type_array("vkGetPhysicalDeviceVideoFormatPropertiesKHR", "pVideoFormatPropertyCount", "pVideoFormatProperties", "VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR", pVideoFormatPropertyCount, pVideoFormatProperties, VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR, true, false, false, "VUID-VkVideoFormatPropertiesKHR-sType-sType", "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatProperties-parameter", kVUIDUndefined);
     if (pVideoFormatProperties != NULL)
     {
         for (uint32_t pVideoFormatPropertyIndex = 0; pVideoFormatPropertyIndex < *pVideoFormatPropertyCount; ++pVideoFormatPropertyIndex)

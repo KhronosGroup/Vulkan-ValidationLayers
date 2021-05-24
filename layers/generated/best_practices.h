@@ -1838,6 +1838,7 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
 const layer_data::unordered_map<std::string, std::string> special_use_extensions = {
     {"VK_AMD_buffer_marker", "devtools"},
     {"VK_AMD_shader_info", "devtools"},
+    {"VK_EXT_custom_border_color", "glemulation, d3demulation"},
     {"VK_EXT_debug_marker", "debugging"},
     {"VK_EXT_debug_report", "debugging"},
     {"VK_EXT_debug_utils", "debugging"},
