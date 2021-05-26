@@ -367,7 +367,11 @@ class BINDABLE : public BASE_NODE {
           unprotected(true),
           bound_memory_set_{} {};
 
-    virtual ~BINDABLE() { Destroy(); }
+    virtual ~BINDABLE() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
 
     void Destroy() override;
 
