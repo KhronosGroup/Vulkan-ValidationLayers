@@ -1901,6 +1901,139 @@ TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
                                       "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
+TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
+    TEST_DESCRIPTION("Test pipeline creation VUIDs added with VK_QCOM_render_pass_shader_resolve extension.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // Require sampleRateShading for these tests
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    if (device_features.sampleRateShading == VK_FALSE) {
+        printf("%s SampleRateShading feature is disabled -- skipping related checks.\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkPipelineObj pipeline(m_device);
+    // Create a renderPass with two attachments (0=Color, 1=Input)
+    VkAttachmentReference attachmentRefs[2] = {};
+    attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachmentRefs[0].attachment = 0;
+    attachmentRefs[1].layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachmentRefs[1].attachment = 1;
+
+    VkSubpassDescription subpass = {};
+    subpass.flags = VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachmentRefs[0];
+    subpass.inputAttachmentCount = 1;
+    subpass.pInputAttachments = &attachmentRefs[1];
+
+    VkRenderPassCreateInfo rpci = {};
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 2;
+
+    VkAttachmentDescription attach_desc[2] = {};
+    attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc[1].format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc[1].samples = VK_SAMPLE_COUNT_4_BIT;
+    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    rpci.pAttachments = attach_desc;
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+    // renderpass has 1xMSAA colorAttachent and 4xMSAA inputAttachment
+    VkRenderPass renderpass;
+    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &renderpass);
+
+    // renderpass2 has 1xMSAA colorAttachent and 1xMSAA inputAttachment
+    VkRenderPass renderpass2;
+    attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &renderpass2);
+
+    // shader uses gl_SamplePosition which causes the SPIR-V to include SampleRateShading capability
+    static const char *sampleRateFragShaderText = R"glsl(#version 450
+        layout(location = 0) out vec4 uFragColor;
+        void main() {
+            uFragColor = vec4(gl_SamplePosition.x,1,0,1);
+        }
+    )glsl";
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs_sampleRate(m_device, sampleRateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    pipeline.AddShader(&vs);
+    pipeline.AddShader(&fs);
+
+    VkPipelineColorBlendAttachmentState att_state1 = {};
+    att_state1.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    att_state1.blendEnable = VK_TRUE;
+    pipeline.AddColorAttachment(0, att_state1);
+
+    VkPipelineMultisampleStateCreateInfo ms_state = {};
+    ms_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    ms_state.pNext = nullptr;
+    ms_state.flags = 0;
+    ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state.sampleShadingEnable = VK_FALSE;
+    ms_state.minSampleShading = 0.0f;
+    ms_state.pSampleMask = nullptr;
+    ms_state.alphaToCoverageEnable = VK_FALSE;
+    ms_state.alphaToOneEnable = VK_FALSE;
+    pipeline.SetMSAA(&ms_state);
+
+    // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
+    // but where sample count of input attachment doesnt match rasterizationSamples
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-rasterizationSamples-04899");
+    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass);
+    m_errorMonitor->VerifyFound();
+
+    ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state.sampleShadingEnable = VK_TRUE;
+    pipeline.SetMSAA(&ms_state);
+
+    // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
+    // and with sampleShadingEnable enabled in the pipeline
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-sampleShadingEnable-04900");
+    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass2);
+    m_errorMonitor->VerifyFound();
+
+    ms_state.sampleShadingEnable = VK_FALSE;
+    VkPipelineObj pipeline2(m_device);
+    pipeline2.SetMSAA(&ms_state);
+    pipeline2.AddColorAttachment(0, att_state1);
+    pipeline2.AddShader(&vs);
+    pipeline2.AddShader(&fs_sampleRate);
+
+    // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
+    // and with SampleRateShading capability enabled in the SPIR-V fragment shader
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-ResolveQCOM-InvalidCapability");
+    pipeline2.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass2);
+    m_errorMonitor->VerifyFound();
+
+    // cleanup
+    vk::DestroyRenderPass(m_device->device(), renderpass, NULL);
+    vk::DestroyRenderPass(m_device->device(), renderpass2, NULL);
+}
+
 TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
 
