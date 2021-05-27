@@ -870,13 +870,21 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     bool supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     InitGpuAssistedFramework(false);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
+        return;
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s This GPU-Assisted validation test requires Vulkan 1.2+.\n", kSkipPrefix);
+        return;
+    }
+    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+        printf("%s This test should not be run on the RADV driver\n", kSkipPrefix);
         return;
     }
 
@@ -905,10 +913,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 

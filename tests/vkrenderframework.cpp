@@ -561,6 +561,14 @@ bool VkRenderFramework::IsPlatform(PlatformType platform) {
     return (!vk_gpu_table.find(platform)->second.compare(physDevProps().deviceName));
 }
 
+bool VkRenderFramework::IsDriver(VkDriverId driver_id) {
+    // Assumes api version 1.2+
+    auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
+    auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
+    vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+    return(driver_properties.driverID == driver_id);
+}
+
 void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = physDevProps_; }
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
