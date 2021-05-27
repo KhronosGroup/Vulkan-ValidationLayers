@@ -1335,6 +1335,38 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
     return skip;
 }
 
+bool CoreChecks::ValidateShaderResolveQCOM(SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
+                                           const PIPELINE_STATE *pipeline) const {
+    bool skip = false;
+
+    // If the pipeline's subpass description contains flag VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
+    // then the fragment shader must not enable the SPIRV SampleRateShading capability.
+    if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+        for (auto insn : *src) {
+            switch (insn.opcode()) {
+                case spv::OpCapability:
+                    if (insn.word(1) == spv::CapabilitySampleRateShading) {
+                        auto subpass_flags =
+                            (pipeline->rp_state == nullptr)
+                                ? 0
+                                : pipeline->rp_state->createInfo.pSubpasses[pipeline->graphicsPipelineCI.subpass].flags;
+                        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
+                            skip |=
+                                LogError(pipeline->pipeline(), kVUID_Core_Shader_ResolveQCOM_InvalidCapability,
+                                         "Invalid Pipeline CreateInfo State: fragment shader enables SampleRateShading capability "
+                                         "and the subpass flags includes VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM.");
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) const {
     auto entrypoint_id = entrypoint.word(2);
 
@@ -1807,6 +1839,9 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     }
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module, entrypoint, pStage->stage);
+    }
+    if (device_extensions.vk_qcom_render_pass_shader_resolve != kNotEnabled) {
+        skip |= ValidateShaderResolveQCOM(module, pStage, pipeline);
     }
 
     // "layout must be consistent with the layout of the * shader"
