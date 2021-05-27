@@ -5782,7 +5782,10 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
         VkResult err = vk::CreateBuffer(m_device->device(), &bci, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
+        if (VK_SUCCESS != err) {
+            printf("%s Failed to allocate buffer in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
+            continue;
+        }
 
         // Have to bind memory to buffer before descriptor update
         VkMemoryRequirements mem_reqs;
