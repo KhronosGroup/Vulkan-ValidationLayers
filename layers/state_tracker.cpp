@@ -1993,6 +1993,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_custom_border_color, &phys_dev_props->custom_border_color_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_multiview, &phys_dev_props->multiview_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_portability_subset, &phys_dev_props->portability_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_provoking_vertex, &phys_dev_props->provoking_vertex_props);
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_timeline_semaphore) {
         VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props;
@@ -2043,8 +2044,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     }
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && state_tracker->api_version >= VK_API_VERSION_1_1) {
         // Get the needed subgroup limits
-        auto provoking_vertex_prop = LvlInitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
-        auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>(&provoking_vertex_prop);
+        auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_prop);
         instance_dispatch_table.GetPhysicalDeviceProperties2(gpu, &prop2);
 
@@ -2052,7 +2052,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->phys_dev_props_core11.subgroupSupportedStages = subgroup_prop.supportedStages;
         state_tracker->phys_dev_props_core11.subgroupSupportedOperations = subgroup_prop.supportedOperations;
         state_tracker->phys_dev_props_core11.subgroupQuadOperationsInAllStages = subgroup_prop.quadOperationsInAllStages;
-        state_tracker->phys_dev_ext_props.provoking_vertex_props = provoking_vertex_prop;
     }
 
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_fragment_shading_rate, &phys_dev_props->fragment_shading_rate_props);
