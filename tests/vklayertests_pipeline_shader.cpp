@@ -10492,7 +10492,6 @@ TEST_F(VkLayerTest, UsingProvokingVertexModeLastVertexExtWithoutEnabled) {
 TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
     TEST_DESCRIPTION(
         "Test using different VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't support provokingVertexModePerPipeline.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     bool inst_ext = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (inst_ext) {
@@ -10501,7 +10500,6 @@ TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
         printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME)) {
