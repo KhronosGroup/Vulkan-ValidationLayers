@@ -8699,7 +8699,7 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     return;
 #endif
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
 
     if (!AddSurfaceInstanceExtension()) {
         printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
@@ -8713,8 +8713,14 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
         return;
     }
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s VkBindImageMemoryInfo requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s This test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+        // Seeing the same crash as the Android comment above
+        printf("%s This test should not be run on the RADV driver\n", kSkipPrefix);
         return;
     }
 
@@ -8798,7 +8804,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     return;
 #endif
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
 
     if (!AddSurfaceInstanceExtension()) {
         printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
@@ -8812,10 +8818,17 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
         return;
     }
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s VkBindImageMemoryInfo requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s This test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
     }
+
+    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+        // Seeing the same crash as the Android comment above
+        printf("%s This test should not be run on the RADV driver\n", kSkipPrefix);
+        return;
+    }
+
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
@@ -10442,8 +10455,19 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s This test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+        // According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But RADV will crash if memory is NULL, "
+        printf("%s This test should not be run on the RADV driver\n", kSkipPrefix);
+        return;
+    }
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
