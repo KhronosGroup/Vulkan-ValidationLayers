@@ -1991,6 +1991,38 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                 }
             }
         }
+
+        if (device_extensions.vk_qcom_render_pass_shader_resolve) {
+            uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
+            uint32_t subpass_input_attachment_samples = 0;
+
+            for (uint32_t i = 0; i < subpass_desc->inputAttachmentCount; i++) {
+                const auto attachment = subpass_desc->pInputAttachments[i].attachment;
+                if (attachment != VK_ATTACHMENT_UNUSED) {
+                    subpass_input_attachment_samples |=
+                        static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
+                }
+            }
+
+            if ((subpass_desc->flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
+                if (raster_samples != subpass_input_attachment_samples) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizationSamples-04899",
+                                     "vkCreateGraphicsPipelines() pCreateInfo[%u]: The subpass includes "
+                                     "VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM "
+                                     "but the input attachment VkSampleCountFlagBits (%u) does not match the "
+                                     "VkPipelineMultisampleStateCreateInfo::rasterizationSamples (%u) VkSampleCountFlagBits.",
+                                     pipelineIndex, subpass_input_attachment_samples, multisample_state->rasterizationSamples);
+                }
+                if (multisample_state->sampleShadingEnable == VK_TRUE) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-sampleShadingEnable-04900",
+                                     "vkCreateGraphicsPipelines() pCreateInfo[%u]: The subpass includes "
+                                     "VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM "
+                                     "which requires sample shading is disabled, but "
+                                     "VkPipelineMultisampleStateCreateInfo::sampleShadingEnable is true. ",
+                                     pipelineIndex);
+                }
+            }
+        }
     }
 
     skip |= ValidatePipelineCacheControlFlags(pPipeline->graphicsPipelineCI.flags, pipelineIndex, "vkCreateGraphicsPipelines",
@@ -9454,6 +9486,13 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                                  "framebuffer-space stage, but does not specify VK_DEPENDENCY_BY_REGION_BIT in dependencyFlags.",
                                  i, dependency.srcSubpass);
             }
+        } else if ((dependency.srcSubpass < dependency.dstSubpass) &&
+                   ((pCreateInfo->pSubpasses[dependency.srcSubpass].flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0)) {
+            vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-flags-04909" : "VUID-VkSubpassDescription-flags-03343";
+            skip |= LogError(device, vuid,
+                             "Dependency %u specifies that subpass %u has a dependency on a later subpass"
+                             "and includes VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM subpass flags.",
+                             i, dependency.srcSubpass);
         }
     }
     return skip;
@@ -9902,6 +9941,16 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                              "%s: Resolve attachment %s format (%s) does not contain "
                                              "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
                                              function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                        }
+
+                        //  VK_QCOM_render_pass_shader_resolve check of resolve attachmnents
+                        if ((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) {
+                            vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-flags-04907" : "VUID-VkSubpassDescription-flags-03341";
+                            skip |= LogError(
+                                device, vuid,
+                                "%s: Subpass %u enables shader resolve, which requires every element of pResolve attachments"
+                                " must be VK_ATTACHMENT_UNUSED, but element %u contains a reference to attachment %u instead.",
+                                function_name, i, j, attachment_ref.attachment);
                         }
                     }
                 }
@@ -10420,6 +10469,14 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
                              "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical, or "
                              "one of them must be %u.",
                              function_name, i, resolve->depthResolveMode, resolve->stencilResolveMode, VK_RESOLVE_MODE_NONE);
+        }
+
+        //  VK_QCOM_render_pass_shader_resolve check of depth/stencil attachmnent
+        if (((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) && (resolve_attachment_not_unused)) {
+            skip |= LogError(device, "VUID-VkSubpassDescription-flags-03342",
+                             "%s: Subpass %u enables shader resolve, which requires the depth/stencil resolve attachment"
+                             " must be VK_ATTACHMENT_UNUSED, but a reference to attachment %u was found instead.",
+                             function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
     }
 
