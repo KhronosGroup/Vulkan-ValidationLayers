@@ -982,9 +982,19 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
 
     auto dedicated = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated) {
-        mem_info->is_dedicated = true;
-        mem_info->dedicated_buffer = dedicated->buffer;
-        mem_info->dedicated_image = dedicated->image;
+        if (dedicated->buffer) {
+            const auto *buffer_state = GetBufferState(dedicated->buffer);
+            if (buffer_state) {
+                mem_info->dedicated_handle = VulkanTypedHandle(dedicated->buffer, kVulkanObjectTypeBuffer);
+                mem_info->dedicated_create_info.buffer = buffer_state->createInfo;
+            }
+        } else if (dedicated->image) {
+            const auto *image_state = GetImageState(dedicated->image);
+            if (image_state) {
+                mem_info->dedicated_handle = VulkanTypedHandle(dedicated->image, kVulkanObjectTypeImage);
+                mem_info->dedicated_create_info.image = image_state->createInfo;
+            }
+        }
     }
     auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
     if (export_info) {

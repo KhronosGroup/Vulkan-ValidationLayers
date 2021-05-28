@@ -3490,19 +3490,19 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
     // with non-NULL image member, then that image must already be bound to memory.
-    if (mem_info->is_dedicated && (VK_NULL_HANDLE != mem_info->dedicated_image)) {
-        const auto image_state = GetImageState(mem_info->dedicated_image);
+    if (mem_info->IsDedicatedImage()) {
+        const auto image_state = GetImageState(mem_info->dedicated_handle.Cast<VkImage>());
         // count() requires DEVICE_MEMORY_STATE* const & or DEVICE_MEMORY_STATE*, not const DEVICE_MEMORY_STATE*.
         // But here is in a const function. It could get const DEVICE_MEMORY_STATE* only, so cast it.
         if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count((DEVICE_MEMORY_STATE *)mem_info)))) {
             LogObjectList objlist(device);
             objlist.add(pInfo->memory);
-            objlist.add(mem_info->dedicated_image);
+            objlist.add(mem_info->dedicated_handle);
             skip |= LogError(objlist, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
                              "vkGetMemoryAndroidHardwareBufferANDROID: %s was allocated using a dedicated "
                              "%s, but that image is not bound to the VkDeviceMemory object.",
                              report_data->FormatHandle(pInfo->memory).c_str(),
-                             report_data->FormatHandle(mem_info->dedicated_image).c_str());
+                             report_data->FormatHandle(mem_info->dedicated_handle).c_str());
         }
     }
 
@@ -4488,18 +4488,17 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             }
 
             // Validate dedicated allocation
-            if (mem_info->is_dedicated && (mem_info->dedicated_buffer != VK_NULL_HANDLE) &&
-                ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
+            if (mem_info->IsDedicatedBuffer() && ((mem_info->dedicated_handle.Cast<VkBuffer>() != buffer) || (memoryOffset != 0))) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01508" : "VUID-vkBindBufferMemory-memory-01508";
                 LogObjectList objlist(buffer);
                 objlist.add(mem);
-                objlist.add(mem_info->dedicated_buffer);
+                objlist.add(mem_info->dedicated_handle);
                 skip |= LogError(objlist, vuid,
                                  "%s: for dedicated %s, VkMemoryDedicatedAllocateInfo::buffer %s must be equal "
                                  "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                  api_name, report_data->FormatHandle(mem).c_str(),
-                                 report_data->FormatHandle(mem_info->dedicated_buffer).c_str(),
+                                 report_data->FormatHandle(mem_info->dedicated_handle).c_str(),
                                  report_data->FormatHandle(buffer).c_str(), memoryOffset);
             }
 
@@ -12027,13 +12026,12 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
 
                 // Validate dedicated allocation
-                if (mem_info->is_dedicated) {
+                if (mem_info->IsDedicatedImage()) {
                     if (enabled_features.dedicated_allocation_image_aliasing_features.dedicatedAllocationImageAliasing) {
-                        const auto orig_image_state = GetImageState(mem_info->dedicated_image);
                         const auto current_image_state = GetImageState(bind_info.image);
-                        if ((bind_info.memoryOffset != 0) || !orig_image_state || !current_image_state ||
+                        if ((bind_info.memoryOffset != 0) || !current_image_state ||
                             !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
-                                orig_image_state->createInfo)) {
+                                mem_info->dedicated_create_info.image)) {
                             const char *validation_error;
                             if (bind_image_mem_2 == false) {
                                 validation_error = "VUID-vkBindImageMemory-memory-02629";
@@ -12042,18 +12040,17 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             }
                             LogObjectList objlist(bind_info.image);
                             objlist.add(bind_info.memory);
-                            objlist.add(mem_info->dedicated_image);
+                            objlist.add(mem_info->dedicated_handle);
                             skip |= LogError(
                                 objlist, validation_error,
                                 "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must compatible "
                                 "with %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                 error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
-                                report_data->FormatHandle(mem_info->dedicated_image).c_str(),
+                                report_data->FormatHandle(mem_info->dedicated_handle).c_str(),
                                 report_data->FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
                     } else {
-                        if ((mem_info->dedicated_image != VK_NULL_HANDLE) &&
-                            ((bind_info.memoryOffset != 0) || (mem_info->dedicated_image != bind_info.image))) {
+                        if ((bind_info.memoryOffset != 0) || (mem_info->dedicated_handle.Cast<VkImage>() != bind_info.image)) {
                             const char *validation_error;
                             if (bind_image_mem_2 == false) {
                                 validation_error = "VUID-vkBindImageMemory-memory-01509";
@@ -12062,13 +12059,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             }
                             LogObjectList objlist(bind_info.image);
                             objlist.add(bind_info.memory);
-                            objlist.add(mem_info->dedicated_image);
+                            objlist.add(mem_info->dedicated_handle);
                             skip |=
                                 LogError(objlist, validation_error,
                                          "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must be equal "
                                          "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                          error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
-                                         report_data->FormatHandle(mem_info->dedicated_image).c_str(),
+                                         report_data->FormatHandle(mem_info->dedicated_handle).c_str(),
                                          report_data->FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
                     }
