@@ -233,9 +233,11 @@ struct MemRange {
 struct DEVICE_MEMORY_STATE : public BASE_NODE {
     void *object;  // Dispatchable object used to create this memory (device of swapchain)
     safe_VkMemoryAllocateInfo alloc_info;
-    bool is_dedicated;
-    VkBuffer dedicated_buffer;
-    VkImage dedicated_image;
+    VulkanTypedHandle dedicated_handle;
+    union {
+        VkBufferCreateInfo buffer;
+        VkImageCreateInfo image;
+    } dedicated_create_info;
     bool is_export;
     bool is_import;
     bool is_import_ahb;   // The VUID check depends on if the imported memory is for AHB
@@ -259,9 +261,8 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
         : BASE_NODE(in_mem, kVulkanObjectTypeDeviceMemory),
           object(disp_object),
           alloc_info(p_alloc_info),
-          is_dedicated(false),
-          dedicated_buffer(VK_NULL_HANDLE),
-          dedicated_image(VK_NULL_HANDLE),
+          dedicated_handle(),
+          dedicated_create_info{},
           is_export(false),
           is_import(false),
           is_import_ahb(false),
@@ -275,6 +276,10 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           shadow_pad_size(0),
           p_driver_data(0),
           fake_base_address(fake_address){};
+
+    bool IsDedicatedBuffer() const { return dedicated_handle.type == kVulkanObjectTypeBuffer && dedicated_handle.handle != 0; }
+
+    bool IsDedicatedImage() const { return dedicated_handle.type == kVulkanObjectTypeImage && dedicated_handle.handle != 0; }
 
     VkDeviceMemory mem() const { return handle_.Cast<VkDeviceMemory>(); }
 
