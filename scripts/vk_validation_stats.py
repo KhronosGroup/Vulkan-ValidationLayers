@@ -73,6 +73,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
 test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
 
 unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
+    'layers/best_practices_error_enums.h',
     'layers/stateless_validation.h',
     'layers/core_validation_error_enums.h',
     'layers/object_lifetime_validation.h'

@@ -13007,22 +13007,6 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
     StateTracker::PreCallRecordDestroySwapchainKHR(device, swapchain, pAllocator);
 }
 
-bool CoreChecks::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                      VkImage *pSwapchainImages) const {
-    auto swapchain_state = GetSwapchainState(swapchain);
-    bool skip = false;
-    if (swapchain_state && pSwapchainImages) {
-        if (*pSwapchainImageCount > swapchain_state->get_swapchain_image_count) {
-            skip |=
-                LogError(device, kVUID_Core_Swapchain_InvalidCount,
-                         "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImages, and with pSwapchainImageCount set to a "
-                         "value (%d) that is greater than the value (%d) that was returned when pSwapchainImages was NULL.",
-                         *pSwapchainImageCount, swapchain_state->get_swapchain_image_count);
-        }
-    }
-    return skip;
-}
-
 void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                      VkImage *pSwapchainImages, VkResult result) {
     // This function will run twice. The first is to get pSwapchainImageCount. The second is to get pSwapchainImages.
