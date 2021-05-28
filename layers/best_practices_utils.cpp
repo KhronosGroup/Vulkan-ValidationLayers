@@ -2212,6 +2212,17 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
         }
     }
 
+    const auto swapchain_state = GetSwapchainState(swapchain);
+    if (swapchain_state && pSwapchainImages) {
+        if (*pSwapchainImageCount > swapchain_state->get_swapchain_image_count) {
+            skip |= LogWarning(
+                device, kVUID_BestPractices_Swapchain_InvalidCount,
+                "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImages, and with pSwapchainImageCount set to a "
+                "value (%d) that is greater than the value (%d) that was returned when pSwapchainImages was NULL.",
+                *pSwapchainImageCount, swapchain_state->get_swapchain_image_count);
+        }
+    }
+
     return skip;
 }
 
