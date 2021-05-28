@@ -10226,18 +10226,21 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
 
-    VkImageObj image(m_device);
+    std::unique_ptr<VkImageObj> image(new VkImageObj(m_device));  // in a pointer so it can be easily destroyed.
     VkImageObj identical_image(m_device);
+    VkImageObj post_delete_image(m_device);
+
     auto image_info = VkImageObj::create_info();
     image_info.extent.width = resource_size;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image.init_no_mem(*m_device, image_info);
+    image->init_no_mem(*m_device, image_info);
     identical_image.init_no_mem(*m_device, image_info);
+    post_delete_image.init_no_mem(*m_device, image_info);
 
     auto image_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfoKHR>();
-    image_dedicated_info.image = image.handle();
-    auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
+    image_dedicated_info.image = image->handle();
+    auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image->memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
     vk_testing::DeviceMemory dedicated_image_memory;
     dedicated_image_memory.init(*m_device, image_alloc_info);
@@ -10268,7 +10271,7 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
 
     // Bind with a larger image (not supported, and not enough memory)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02629");
-    if (larger_image.memory_requirements().size > image.memory_requirements().size) {
+    if (larger_image.memory_requirements().size > image->memory_requirements().size) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-size-01049");
     }
     vk::BindImageMemory(m_device->handle(), larger_image.handle(), dedicated_image_memory.handle(), 0);
@@ -10279,13 +10282,18 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
                                          "VUID-vkBindImageMemory-memory-02629");  // offset must be zero
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkBindImageMemory-size-01049");  // offset pushes us past size
-    auto image_offset = image.memory_requirements().alignment;
-    vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), image_offset);
+    auto image_offset = image->memory_requirements().alignment;
+    vk::BindImageMemory(m_device->handle(), image->handle(), dedicated_image_memory.handle(), image_offset);
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
     m_errorMonitor->ExpectSuccess();
-    vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(m_device->handle(), image->handle(), dedicated_image_memory.handle(), 0);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    image.reset();  // destroy the original image
+    vk::BindImageMemory(m_device->handle(), post_delete_image.handle(), dedicated_image_memory.handle(), 0);
     m_errorMonitor->VerifyNotFound();
 }
 
