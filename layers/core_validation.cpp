@@ -6975,10 +6975,17 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                             // Currently only GeneralBuffer are dynamic and need to be checked
                             if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
                                 const auto *buffer_descriptor = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor);
-                                const VkDeviceSize bound_range = buffer_descriptor->GetRange();
                                 const VkDeviceSize bound_offset = buffer_descriptor->GetOffset();
+                                const auto effective_offset = offset + bound_offset;
+                                const VkDeviceSize bound_range = buffer_descriptor->GetRange();
                                 const BUFFER_STATE *buffer_state = buffer_descriptor->GetBufferState();
                                 assert(buffer_state != nullptr);
+
+                                // VK_WHOLE_SIZE indicates the range is effectively from the offset to the end of the buffer
+                                const auto effective_range = (bound_range == VK_WHOLE_SIZE)
+                                                                 ? (buffer_state->createInfo.size - effective_offset)
+                                                                 : effective_offset + bound_range;
+
                                 // Validate offset didn't go over buffer
                                 if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
                                     LogObjectList objlist(commandBuffer);
@@ -6991,8 +6998,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                  "descriptor[%u].",
                                                  cur_dyn_offset, offset, set_idx, binding_index, j);
 
-                                } else if ((bound_range != VK_WHOLE_SIZE) &&
-                                           ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
+                                } else if ((effective_offset > buffer_state->createInfo.size) ||
+                                           (effective_range > buffer_state->createInfo.size)) {
                                     LogObjectList objlist(commandBuffer);
                                     objlist.add(pDescriptorSets[set_idx]);
                                     objlist.add(buffer_state->buffer());
