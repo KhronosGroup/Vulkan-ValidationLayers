@@ -1,6 +1,6 @@
-/* Copyright (c) 2019 The Khronos Group Inc.
- * Copyright (c) 2019 Valve Corporation
- * Copyright (c) 2019 LunarG, Inc.
+/* Copyright (c) 2019, 2021 The Khronos Group Inc.
+ * Copyright (c) 2019, 2021 Valve Corporation
+ * Copyright (c) 2019, 2021 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)
 
 // VkDescriptorSetLayoutBinding
-static bool operator==(const safe_VkDescriptorSetLayoutBinding &lhs, const safe_VkDescriptorSetLayoutBinding &rhs) {
+static inline bool operator==(const safe_VkDescriptorSetLayoutBinding &lhs, const safe_VkDescriptorSetLayoutBinding &rhs) {
     if ((lhs.binding != rhs.binding) || (lhs.descriptorType != rhs.descriptorType) ||
         (lhs.descriptorCount != rhs.descriptorCount) || (lhs.stageFlags != rhs.stageFlags) ||
         !hash_util::similar_for_nullity(lhs.pImmutableSamplers, rhs.pImmutableSamplers)) {
@@ -84,7 +84,7 @@ struct hash<PushConstantRanges> : public hash_util::IsOrderedContainer<PushConst
 }  // namespace std
 
 // VkImageSubresourceRange
-static bool operator==(const VkImageSubresourceRange &lhs, const VkImageSubresourceRange &rhs) {
+static inline bool operator==(const VkImageSubresourceRange &lhs, const VkImageSubresourceRange &rhs) {
     return (lhs.aspectMask == rhs.aspectMask) && (lhs.baseMipLevel == rhs.baseMipLevel) && (lhs.levelCount == rhs.levelCount) &&
            (lhs.baseArrayLayer == rhs.baseArrayLayer) && (lhs.layerCount == rhs.layerCount);
 }

@@ -28,6 +28,9 @@
 #include <generated/spirv_tools_commit_id.h>
 #include "shader_module.h"
 
+struct DeviceFeatures;
+struct DeviceExtensions;
+
 struct shader_stage_attributes {
     char const *const name;
     bool arrayed_input;
@@ -132,7 +135,7 @@ class ValidationCache {
 
 spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
 
-void AdjustValidatorOptions(const DeviceExtensions device_extensions, const DeviceFeatures enabled_features,
+void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options);
 
 #endif  // VULKAN_SHADER_VALIDATION_H

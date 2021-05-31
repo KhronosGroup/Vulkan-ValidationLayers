@@ -20,8 +20,6 @@
  */
 #include "sync_utils.h"
 #include "state_tracker.h"
-#include "descriptor_sets.h"
-#include "core_validation_types.h"
 #include "synchronization_validation_types.h"
 
 namespace sync_utils {

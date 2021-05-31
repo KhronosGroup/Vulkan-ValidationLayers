@@ -5616,21 +5616,12 @@ void ValidationStateTracker::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer
 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                                      VkSamplerYcbcrConversion ycbcr_conversion) {
-    auto ycbcr_state = std::make_shared<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion);
-
+    auto ycbcr_state = std::make_shared<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion, create_info,
+                                                                        GetPotentialFormatFeatures(create_info->format));
+    // If format is VK_FORMAT_UNDEFINED, format_features will be set by external AHB features
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateSamplerYcbcrConversionANDROID(create_info, ycbcr_conversion, ycbcr_state.get());
     }
-
-    const VkFormat conversion_format = create_info->format;
-
-    if (conversion_format != VK_FORMAT_UNDEFINED) {
-        // If format is VK_FORMAT_UNDEFINED, will be set by external AHB features
-        ycbcr_state->format_features = GetPotentialFormatFeatures(conversion_format);
-    }
-
-    ycbcr_state->chromaFilter = create_info->chromaFilter;
-    ycbcr_state->format = conversion_format;
     samplerYcbcrConversionMap[ycbcr_conversion] = std::move(ycbcr_state);
 }
 

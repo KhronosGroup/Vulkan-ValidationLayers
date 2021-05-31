@@ -131,18 +131,6 @@ class QUERY_POOL_STATE : public BASE_NODE {
     VkQueryPool pool() const { return handle_.Cast<VkQueryPool>(); }
 };
 
-class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
-  public:
-    VkFormatFeatureFlags format_features;
-    VkFormat format;
-    VkFilter chromaFilter;
-
-    SAMPLER_YCBCR_CONVERSION_STATE(VkSamplerYcbcrConversion ycbcr)
-        : BASE_NODE(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion) {}
-
-    VkSamplerYcbcrConversion ycbcr_conversion() const { return handle_.Cast<VkSamplerYcbcrConversion>(); }
-};
-
 class QUEUE_FAMILY_PERF_COUNTERS {
   public:
     std::vector<VkPerformanceCounterKHR> counters;

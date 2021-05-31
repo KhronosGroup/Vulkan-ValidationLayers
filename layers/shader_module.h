@@ -25,10 +25,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "vulkan/vulkan.h"
+#include "base_node.h"
+#include "pipeline_state.h"
 #include <spirv/unified1/spirv.hpp>
 #include "spirv-tools/optimizer.hpp"
-#include "core_validation_types.h"
 
 // A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
 // without the caller needing to care too much about the physical SPIRV module layout.

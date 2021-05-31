@@ -2451,7 +2451,7 @@ spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4) {
     return SPV_ENV_VULKAN_1_0;
 }
 
-void AdjustValidatorOptions(const DeviceExtensions device_extensions, const DeviceFeatures enabled_features,
+void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options) {
     if (device_extensions.vk_khr_relaxed_block_layout) {
         options.SetRelaxBlockLayout(true);

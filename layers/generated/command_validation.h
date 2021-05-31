@@ -22,6 +22,7 @@
  *
  ****************************************************************************/
 
+#pragma once
 #include <array>
 
 // Used as key for maps of all vkCmd* calls
