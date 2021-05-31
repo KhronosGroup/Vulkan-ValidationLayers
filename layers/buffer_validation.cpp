@@ -398,6 +398,8 @@ static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayo
 
 // Utility type for ForRange callbacks
 struct LayoutUseCheckAndMessage {
+    using LayoutEntry = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;
+    using RangeGenerator = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;
     const static VkImageAspectFlags kDepthOrStencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     const ImageSubresourceLayoutMap *layout_map;
     const VkImageAspectFlags aspect_mask;
@@ -407,20 +409,21 @@ struct LayoutUseCheckAndMessage {
     LayoutUseCheckAndMessage() = delete;
     LayoutUseCheckAndMessage(const ImageSubresourceLayoutMap *layout_map_, const VkImageAspectFlags aspect_mask_ = 0)
         : layout_map(layout_map_), aspect_mask{aspect_mask_}, message(nullptr), layout(kInvalidLayout) {}
-    bool Check(const VkImageSubresource &subres, VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
+    bool Check(VkImageLayout check, const LayoutEntry &layout_entry) {
         message = nullptr;
         layout = kInvalidLayout;  // Success status
-        if (current_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
-            message = "previous known";
-            layout = current_layout;
-        } else if ((initial_layout != kInvalidLayout) && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
-            // To check the relaxed rule matching we need to see how the initial use was used
-            const auto initial_layout_state = layout_map->GetSubresourceInitialLayoutState(subres);
-            assert(initial_layout_state);  // If we have an initial layout, we better have a state for it
-            if (!((initial_layout_state->aspect_mask & kDepthOrStencil) &&
-                  ImageLayoutMatches(initial_layout_state->aspect_mask, check, initial_layout))) {
+        if (layout_entry.current_layout != kInvalidLayout) {
+            if (!ImageLayoutMatches(aspect_mask, check, layout_entry.current_layout)) {
+                message = "previous known";
+                layout = layout_entry.current_layout;
+            }
+        } else if ((layout_entry.initial_layout != kInvalidLayout) &&
+                   !ImageLayoutMatches(aspect_mask, check, layout_entry.initial_layout)) {
+            assert(layout_entry.state);  // If we have an initial layout, we better have a state for it
+            if (!((layout_entry.state->aspect_mask & kDepthOrStencil) &&
+                  ImageLayoutMatches(layout_entry.state->aspect_mask, check, layout_entry.initial_layout))) {
                 message = "previously used";
-                layout = initial_layout;
+                layout = layout_entry.initial_layout;
             }
         }
         return layout == kInvalidLayout;
@@ -779,28 +782,32 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                                                                    : nullptr;
 
             if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
+                using CachedLowerBound =
+                    sparse_container::cached_lower_bound_impl<const image_layout_map::ImageSubresourceLayoutMap::LayoutMap>;
                 LayoutUseCheckAndMessage layout_check(subresource_map);
                 bool subres_skip = false;
-                auto pos = subresource_map->Find(view_state->normalized_subresource_range);
-                // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
-                // the next "constant value" range
-                for (; !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
-                    const VkImageSubresource &subres = pos->subresource;
+                for (auto range_gen = view_state->range_generator; range_gen->non_empty(); ++range_gen) {
+                    for (CachedLowerBound pos(subresource_map->GetLayoutMap(), range_gen->begin);
+                         (pos->lower_bound != pos.map().end()) && (range_gen->includes(pos->index));
+                         pos.seek(pos->lower_bound->first.end)) {
+                        if (!pos->valid) continue;
 
-                    // Allow for differing depth and stencil layouts
-                    VkImageLayout check_layout = attachment_initial_layout;
-                    if (subres.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) check_layout = attachment_stencil_initial_layout;
+                        const auto &subres = range_gen.GetSubresource();
+                        // Allow for differing depth and stencil layouts
+                        VkImageLayout check_layout = attachment_initial_layout;
+                        if (subres.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) check_layout = attachment_stencil_initial_layout;
 
-                    if (!layout_check.Check(subres, check_layout, pos->current_layout, pos->initial_layout)) {
-                        subres_skip |= LogError(
-                            device, kVUID_Core_DrawState_InvalidRenderpass,
-                            "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
-                            "and the %s layout of the attachment is %s. The layouts must match, or the render "
-                            "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
-                            i, string_VkImageLayout(check_layout), layout_check.message, string_VkImageLayout(layout_check.layout));
+                        if (!layout_check.Check(check_layout, pos->lower_bound->second)) {
+                            subres_skip |= LogError(
+                                device, kVUID_Core_DrawState_InvalidRenderpass,
+                                "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
+                                "and the %s layout of the attachment is %s. The layouts must match, or the render "
+                                "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
+                                i, string_VkImageLayout(check_layout), layout_check.message,
+                                string_VkImageLayout(layout_check.layout));
+                        }
                     }
                 }
-
                 skip |= subres_skip;
             }
 
@@ -1117,24 +1124,33 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 // Not sure if this needs to be in the ForRange traversal, pulling it out as it is currently invariant with
                 // subresource.
             } else if (subresource_map && !QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
+                using CachedLowerBound =
+                    sparse_container::cached_lower_bound_impl<const image_layout_map::ImageSubresourceLayoutMap::LayoutMap>;
                 bool subres_skip = false;
                 LayoutUseCheckAndMessage layout_check(subresource_map);
                 VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier.subresourceRange);
-                // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
-                // the next "constant value" range
-                for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
-                    const auto &value = *pos;
-                    auto old_layout =
-                        NormalizeSynchronization2Layout(img_barrier.subresourceRange.aspectMask, img_barrier.oldLayout);
-                    if (!layout_check.Check(value.subresource, old_layout, value.current_layout, value.initial_layout)) {
-                        const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
-                        subres_skip = LogError(cb_state->commandBuffer(), vuid,
-                                               "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
-                                               "%s layout is %s.",
-                                               loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
-                                               value.subresource.aspectMask, value.subresource.mipLevel,
-                                               value.subresource.arrayLayer, string_VkImageLayout(img_barrier.oldLayout),
-                                               layout_check.message, string_VkImageLayout(layout_check.layout));
+                auto range_gen = image_layout_map::RangeGenerator(image_state->range_encoder, normalized_isr);
+                for (; !subres_skip && range_gen->non_empty(); ++range_gen) {
+                    for (CachedLowerBound pos(subresource_map->GetLayoutMap(), range_gen->begin);
+                         (pos->lower_bound != pos.map().end() && range_gen->includes(pos->index));
+                         pos.seek(pos->lower_bound->first.end)) {
+                        if (!pos->valid) {
+                            continue;
+                        }
+                        auto old_layout =
+                            NormalizeSynchronization2Layout(img_barrier.subresourceRange.aspectMask, img_barrier.oldLayout);
+                        if (!layout_check.Check(old_layout, pos->lower_bound->second)) {
+                            const auto &subresource = range_gen.GetSubresource();
+                            const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
+                            subres_skip = LogError(
+                                cb_state->commandBuffer(), vuid,
+                                "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
+                                "%s layout is %s.",
+                                loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(), subresource.aspectMask,
+                                subresource.mipLevel, subresource.arrayLayer, string_VkImageLayout(img_barrier.oldLayout),
+                                layout_check.message, string_VkImageLayout(layout_check.layout));
+                            break;
+                        }
                     }
                 }
                 skip |= subres_skip;
@@ -1665,6 +1681,8 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
                                    const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
                                    VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
                                    const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) const {
+    using CachedLowerBound =
+        sparse_container::cached_lower_bound_impl<const image_layout_map::ImageSubresourceLayoutMap::LayoutMap>;
     if (disabled[image_layout_validation]) return false;
     assert(cb_node);
     assert(image_state);
@@ -1675,17 +1693,28 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map, aspect_mask);
-        // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
-        // the next "constant value" range
-        for (auto pos = subresource_map->Find(range); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
-            if (!layout_check.Check(pos->subresource, explicit_layout, pos->current_layout, pos->initial_layout)) {
-                *error = true;
-                subres_skip |= LogError(cb_node->commandBuffer(), layout_mismatch_msg_code,
-                                        "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
-                                        "%s layout %s.",
-                                        caller, report_data->FormatHandle(image).c_str(), pos->subresource.arrayLayer,
-                                        pos->subresource.mipLevel, string_VkImageLayout(explicit_layout), layout_check.message,
-                                        string_VkImageLayout(layout_check.layout));
+        VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, range);
+        auto range_gen = image_layout_map::RangeGenerator(image_state->range_encoder, normalized_isr);
+        for (; range_gen->non_empty(); ++range_gen) {
+            const auto &range = *range_gen;
+            CachedLowerBound pos(subresource_map->GetLayoutMap(), range.begin);
+            while (range.includes(pos->index)) {
+                if (pos->valid) {
+                    if (!layout_check.Check(explicit_layout, pos->lower_bound->second)) {
+                        auto subresource = image_state->range_encoder.Decode(pos->lower_bound->first.begin);
+                        *error = true;
+                        subres_skip |= LogError(
+                            cb_node->commandBuffer(), layout_mismatch_msg_code,
+                            "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
+                            "%s layout %s.",
+                            caller, report_data->FormatHandle(image).c_str(), subresource.arrayLayer, subresource.mipLevel,
+                            string_VkImageLayout(explicit_layout), layout_check.message, string_VkImageLayout(layout_check.layout));
+                    }
+                }
+                if (pos->lower_bound == pos.map().end()) {
+                    break;
+                }
+                pos.seek(pos->lower_bound->first.end);
             }
         }
         skip |= subres_skip;
@@ -1719,12 +1748,53 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
     }
     return skip;
 }
+
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
                                    const VkImageSubresourceLayers &subLayers, VkImageLayout explicit_layout,
                                    VkImageLayout optimal_layout, const char *caller, const char *layout_invalid_msg_code,
                                    const char *layout_mismatch_msg_code, bool *error) const {
     return VerifyImageLayout(cb_node, image_state, RangeFromLayers(subLayers), explicit_layout, optimal_layout, caller,
                              layout_invalid_msg_code, layout_mismatch_msg_code, error);
+}
+
+bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
+                                   const IMAGE_VIEW_STATE *image_view_state, VkImageLayout explicit_layout, const char *caller,
+                                   const char *layout_mismatch_msg_code) const {
+    using CachedLowerBound =
+        sparse_container::cached_lower_bound_impl<const image_layout_map::ImageSubresourceLayoutMap::LayoutMap>;
+    if (disabled[image_layout_validation]) return false;
+    assert(cb_node);
+    assert(image_state);
+    assert(image_view_state);
+    const auto image = image_state->image();
+    bool skip = false;
+
+    const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image);
+    if (subresource_map) {
+        LayoutUseCheckAndMessage layout_check(subresource_map, image_view_state->create_info.subresourceRange.aspectMask);
+        bool subres_skip = false;
+        for (auto range_gen = image_view_state->range_generator; !subres_skip && range_gen->non_empty(); ++range_gen) {
+            for (CachedLowerBound pos(subresource_map->GetLayoutMap(), range_gen->begin);
+                 (pos->lower_bound != pos.map().end()) && (range_gen->includes(pos->index));
+                 pos.seek(pos->lower_bound->first.end)) {
+                if (!pos->valid) {
+                    continue;
+                }
+                if (!layout_check.Check(explicit_layout, pos->lower_bound->second)) {
+                    const auto &subresource = range_gen.GetSubresource();
+                    subres_skip |= LogError(cb_node->commandBuffer(), layout_mismatch_msg_code,
+                                            "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
+                                            "%s layout %s.",
+                                            caller, report_data->FormatHandle(image).c_str(), subresource.arrayLayer,
+                                            subresource.mipLevel, string_VkImageLayout(explicit_layout), layout_check.message,
+                                            string_VkImageLayout(layout_check.layout));
+                    break;
+                }
+            }
+        }
+        skip |= subres_skip;
+    }
+    return skip;
 }
 
 void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -2394,23 +2464,34 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
     // Cast to const to prevent creation at validate time.
     const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state->image());
     if (subresource_map) {
+        using CachedLowerBound =
+            sparse_container::cached_lower_bound_impl<const image_layout_map::ImageSubresourceLayoutMap::LayoutMap>;
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map);
         VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
-        for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
-            if (!layout_check.Check(pos->subresource, dest_image_layout, pos->current_layout, pos->initial_layout)) {
-                const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
-                if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
-                    error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00011";
-                } else {
-                    assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
+        auto range_gen = image_layout_map::RangeGenerator(image_state->range_encoder, normalized_isr);
+        for (; !subres_skip && range_gen->non_empty(); ++range_gen) {
+            for (CachedLowerBound pos(subresource_map->GetLayoutMap(), range_gen->begin);
+                 (pos->lower_bound != pos.map().end()) && (range_gen->includes(pos->index));
+                 pos.seek(pos->lower_bound->first.end)) {
+                if (!pos->valid) {
+                    continue;
                 }
-                subres_skip |= LogError(cb_node->commandBuffer(), error_code,
-                                        "%s: Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
-                                        func_name, string_VkImageLayout(dest_image_layout), layout_check.message,
-                                        string_VkImageLayout(layout_check.layout));
+                if (!layout_check.Check(dest_image_layout, pos->lower_bound->second)) {
+                    const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
+                    if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
+                        error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00011";
+                    } else {
+                        assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
+                    }
+                    subres_skip |= LogError(cb_node->commandBuffer(), error_code,
+                                            "%s: Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
+                                            func_name, string_VkImageLayout(dest_image_layout), layout_check.message,
+                                            string_VkImageLayout(layout_check.layout));
+                    break;
+                }
             }
         }
         skip |= subres_skip;
@@ -4526,7 +4607,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (image_layout != initial_layout) {
                 // Need to look up the inital layout *state* to get a bit more information
-                const auto *initial_layout_state = subres_map->GetSubresourceInitialLayoutState(pos->first.begin);
+                const auto *initial_layout_state = pos->second.state;
                 assert(initial_layout_state);  // There's no way we should have an initial layout without matching state...
                 bool matches = ImageLayoutMatches(initial_layout_state->aspect_mask, image_layout, initial_layout);
                 if (!matches) {

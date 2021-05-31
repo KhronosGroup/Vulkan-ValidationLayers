@@ -1022,22 +1022,28 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                 }
             }
             if (!already_validated) {
-                bool hit_error = false;
-                VerifyImageLayout(cb_node, image_state, image_view_state->normalized_subresource_range,
-                                  image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller,
-                                  kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
-                if (hit_error) {
-                    auto set = descriptor_set->GetSet();
-                    return LogError(set, vuids.descriptor_valid,
-                                    "Descriptor set %s encountered the following validation error at %s time: Image layout "
-                                    "specified "
-                                    "at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
-                                    "doesn't match actual image layout at time descriptor is used. See previous error callback for "
-                                    "specific details.",
-                                    report_data->FormatHandle(set).c_str(), caller);
-                }
-                if (checked_layouts) {
-                    checked_layouts->emplace(image_view, image_layout);
+                // NOTE: Submit time validation of UPDATE_AFTER_BIND image layout is not possible with the
+                // image layout tracking as currently implemented, so only record_time_validation is done
+                if (!disabled[image_layout_validation] && record_time_validate) {
+                    // Verify Image Layout
+                    // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
+
+                    bool hit_error = VerifyImageLayout(cb_node, image_state, image_view_state, image_layout, caller,
+                                                       "VUID-VkDescriptorImageInfo-imageLayout-00344");
+                    if (hit_error) {
+                        auto set = descriptor_set->GetSet();
+                        return LogError(
+                            set, vuids.descriptor_valid,
+                            "Descriptor set %s encountered the following validation error at %s time: Image layout "
+                            "specified "
+                            "at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
+                            "doesn't match actual image layout at time descriptor is used. See previous error callback for "
+                            "specific details.",
+                            report_data->FormatHandle(set).c_str(), caller);
+                    }
+                    if (checked_layouts) {
+                        checked_layouts->emplace(image_view, image_layout);
+                    }
                 }
             }
         }

@@ -193,12 +193,15 @@ static bool IsValid(const RangeEncoder& encoder, const VkImageSubresourceRange& 
 // the encoder) will span the levelCount mip levels as weill.
 RangeGenerator::RangeGenerator(const RangeEncoder& encoder, const VkImageSubresourceRange& subres_range)
     : encoder_(&encoder), isr_pos_(encoder, subres_range), pos_(), aspect_base_() {
-    assert((((isr_pos_.Limits()).aspectMask & (encoder.Limits()).aspectMask) == (isr_pos_.Limits()).aspectMask) &&
-           ((isr_pos_.Limits()).baseMipLevel + (isr_pos_.Limits()).levelCount <= (encoder.Limits()).mipLevel) &&
-           ((isr_pos_.Limits()).baseArrayLayer + (isr_pos_.Limits()).layerCount <= (encoder.Limits()).arrayLayer));
+    const auto& limits = encoder.Limits();
+    if (!encoder.InRange(subres_range)) {
+        return;
+    }
+    assert((isr_pos_.Limits().aspectMask & encoder.Limits().aspectMask) == isr_pos_.Limits().aspectMask);
+    assert((isr_pos_.Limits().baseMipLevel + isr_pos_.Limits().levelCount) <= encoder.Limits().mipLevel);
+    assert((isr_pos_.Limits().baseArrayLayer + isr_pos_.Limits().layerCount) <= encoder.Limits().arrayLayer);
 
     // To see if we have a full range special case, need to compare the subres_range against the *encoders* limits
-    const auto& limits = encoder.Limits();
     if ((subres_range.baseArrayLayer == 0 && subres_range.layerCount == limits.arrayLayer)) {
         if ((subres_range.baseMipLevel == 0) && (subres_range.levelCount == limits.mipLevel)) {
             if (subres_range.aspectMask == limits.aspectMask) {
