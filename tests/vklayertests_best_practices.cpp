@@ -909,11 +909,10 @@ TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
 
     uint32_t swapchain_images_count = 0;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_Swapchain_InvalidCount);
     ++swapchain_images_count;  // Set the image count to something greater (i.e., "invalid") than what was returned
+    std::vector<VkImage> swapchain_images(swapchain_images_count, VK_NULL_HANDLE);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
     m_errorMonitor->VerifyFound();
 }
