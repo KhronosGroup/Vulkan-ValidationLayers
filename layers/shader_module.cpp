@@ -22,7 +22,8 @@
 
 #include "vk_layer_data.h"
 #include "vk_layer_utils.h"
-#include "core_validation.h"
+#include "pipeline_state.h"
+#include "descriptor_sets.h"
 
 void decoration_set::merge(decoration_set const &other) {
     if (other.flags & location_bit) location = other.location;

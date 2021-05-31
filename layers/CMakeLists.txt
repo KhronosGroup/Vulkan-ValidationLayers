@@ -162,7 +162,9 @@ set(CORE_VALIDATION_LIBRARY_FILES
     buffer_state.h
     image_state.h
     image_state.cpp
+    pipeline_state.h
     ray_tracing_state.h
+    sampler_state.h
     drawdispatch.cpp
     convert_to_renderpass2.cpp
     descriptor_sets.cpp

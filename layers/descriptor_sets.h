@@ -22,12 +22,15 @@
 #define CORE_VALIDATION_DESCRIPTOR_SETS_H_
 
 #include "base_node.h"
+#include "buffer_state.h"
+#include "image_state.h"
 #include "hash_vk_types.h"
 #include "vk_layer_logging.h"
 #include "vk_layer_utils.h"
 #include "vk_safe_struct.h"
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
+#include "command_validation.h"
 #include <map>
 #include <memory>
 #include <set>
@@ -36,9 +39,38 @@
 class CoreChecks;
 class ValidationObject;
 class ValidationStateTracker;
+struct CMD_BUFFER_STATE;
 struct TEMPLATE_STATE;
 struct DeviceExtensions;
 struct SAMPLER_STATE;
+
+struct DESCRIPTOR_POOL_STATE : BASE_NODE {
+    VkDescriptorPool pool;
+    uint32_t maxSets;        // Max descriptor sets allowed in this pool
+    uint32_t availableSets;  // Available descriptor sets in this pool
+
+    safe_VkDescriptorPoolCreateInfo createInfo;
+    layer_data::unordered_set<cvdescriptorset::DescriptorSet *> sets;  // Collection of all sets in this pool
+    std::map<uint32_t, uint32_t> maxDescriptorTypeCount;               // Max # of descriptors of each type in this pool
+    std::map<uint32_t, uint32_t> availableDescriptorTypeCount;         // Available # of descriptors of each type in this pool
+
+    DESCRIPTOR_POOL_STATE(const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo)
+        : BASE_NODE(pool, kVulkanObjectTypeDescriptorPool),
+          pool(pool),
+          maxSets(pCreateInfo->maxSets),
+          availableSets(pCreateInfo->maxSets),
+          createInfo(pCreateInfo),
+          maxDescriptorTypeCount(),
+          availableDescriptorTypeCount() {
+        // Collect maximums per descriptor type.
+        for (uint32_t i = 0; i < createInfo.poolSizeCount; ++i) {
+            uint32_t typeIndex = static_cast<uint32_t>(createInfo.pPoolSizes[i].type);
+            // Same descriptor types can appear several times
+            maxDescriptorTypeCount[typeIndex] += createInfo.pPoolSizes[i].descriptorCount;
+            availableDescriptorTypeCount[typeIndex] = maxDescriptorTypeCount[typeIndex];
+        }
+    }
+};
 
 // Descriptor Data structures
 namespace cvdescriptorset {
@@ -785,7 +817,7 @@ class DescriptorSet : public BASE_NODE {
     // expensive validation operation (typically per-draw)
     typedef layer_data::unordered_map<CMD_BUFFER_STATE *, TrackedBindings> TrackedBindingMap;
     // Track the validation caching of bindings vs. the command buffer and draw state
-    typedef layer_data::unordered_map<uint32_t, CMD_BUFFER_STATE::ImageLayoutUpdateCount> VersionedBindings;
+    typedef layer_data::unordered_map<uint32_t, uint64_t> VersionedBindings;
     struct CachedValidation {
         TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
         TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording

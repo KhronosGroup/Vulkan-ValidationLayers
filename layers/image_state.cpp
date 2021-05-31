@@ -26,7 +26,7 @@
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 #include "image_state.h"
-#include "core_validation_types.h"
+#include "pipeline_state.h"
 #include "descriptor_sets.h"
 
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
