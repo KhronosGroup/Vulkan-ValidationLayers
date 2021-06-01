@@ -30,7 +30,7 @@ cd build
 # Run './scripts/update_deps.py --help' for more information
 # NOTE: You can alternatively set -DUPDATE_DEPS=ON during cmake generation
 #       to have a cmake target automatically run this as needed.
-python3 ./scripts/update_deps.py --dir external --arch x64 --config debug
+python3 ../scripts/update_deps.py --dir ../external --arch x64 --config debug
 
 # NOTE: If using -DUPDATE_DEPS=ON, CMAKE_BUILD_TYPE is used to determine the build type
 #       of external dependencies. For generators such as Visual Studio that usually ignore
