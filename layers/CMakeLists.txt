@@ -164,6 +164,8 @@ set(CORE_VALIDATION_LIBRARY_FILES
     image_state.cpp
     pipeline_state.h
     ray_tracing_state.h
+    render_pass_state.h
+    render_pass_state.cpp
     sampler_state.h
     drawdispatch.cpp
     convert_to_renderpass2.cpp

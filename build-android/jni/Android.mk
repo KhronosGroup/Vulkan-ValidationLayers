@@ -39,6 +39,7 @@ LOCAL_MODULE := VkLayer_khronos_validation
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_memory_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/render_pass_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/drawdispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/descriptor_sets.cpp
