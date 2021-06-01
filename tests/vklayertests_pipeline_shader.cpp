@@ -4860,6 +4860,64 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
     }
 }
 
+TEST_F(VkLayerTest, CreatePipelineExceedMaxComponentsBlocks) {
+    TEST_DESCRIPTION("Test if the max componenets checks are done properly when in a single block");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // To make the test simple, just make sure max is 128 or less (most HW is 64 or 128)
+    if (m_device->props.limits.maxVertexOutputComponents > 128 || m_device->props.limits.maxFragmentInputComponents > 128) {
+        printf("%s maxVertexOutputComponents or maxFragmentInputComponents too high for test; skipped.\n", kSkipPrefix);
+        return;
+    }
+    // vec4 == 4 components
+    // so this put the test over 128
+    const uint32_t numVec4 = 33;
+
+    std::string vsSourceStr =
+        "#version 450\n"
+        "layout(location = 0) out block {\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        vsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
+    }
+    vsSourceStr +=
+        "} outVs;\n"
+        "\n"
+        "void main() {\n"
+        "    vec4 x = vec4(1.0);\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        vsSourceStr += "outVs.v" + std::to_string(i) + " = x;\n";
+    }
+    vsSourceStr += "}";
+
+    std::string fsSourceStr =
+        "#version 450\n"
+        "layout(location = 0) in block {\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        fsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
+    }
+    fsSourceStr +=
+        "} inPs;\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "\n"
+        "void main(){\n"
+        "    color = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      vector<string>{"Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents",
+                                                     "Fragment shader exceeds VkPhysicalDeviceLimits::maxFragmentInputComponents"});
+}
+
 TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputComponents) {
     TEST_DESCRIPTION(
         "Test that errors are produced when the number of per-vertex input and/or output components to the tessellation control "
