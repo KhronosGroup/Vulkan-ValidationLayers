@@ -42,15 +42,6 @@ const char *CommandTypeString(CMD_TYPE type) {
     return kGeneratedCommandNameList[type];
 }
 
-uint32_t GetSubpassDepthStencilAttachmentIndex(const safe_VkPipelineDepthStencilStateCreateInfo *pipe_ds_ci,
-                                               const safe_VkAttachmentReference2 *depth_stencil_ref) {
-    uint32_t depth_stencil_attachment = VK_ATTACHMENT_UNUSED;
-    if (pipe_ds_ci && depth_stencil_ref) {
-        depth_stencil_attachment = depth_stencil_ref->attachment;
-    }
-    return depth_stencil_attachment;
-}
-
 VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
     switch (flag) {
         case CBSTATUS_LINE_WIDTH_SET:
@@ -214,8 +205,8 @@ void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, Validation
 
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
-std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
-                                                                   const FRAMEBUFFER_STATE &fb_state) {
+static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
+                                                                          const FRAMEBUFFER_STATE &fb_state) {
     const VkImageView *attachments = fb_state.createInfo.pAttachments;
     uint32_t count = fb_state.createInfo.attachmentCount;
     if (fb_state.createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
@@ -245,29 +236,10 @@ std::vector<ImageViewPointer> GetAttachmentViewsImpl(const VkRenderPassBeginInfo
     return views;
 }
 
-std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetAttachmentViews(const VkRenderPassBeginInfo &rp_begin,
-                                                                                 const FRAMEBUFFER_STATE &fb_state) const {
-    auto get_fn = [this](VkImageView handle) { return this->Get<IMAGE_VIEW_STATE>(handle); };
-    return GetAttachmentViewsImpl<const IMAGE_VIEW_STATE *>(rp_begin, fb_state, get_fn);
-}
-
 std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::GetSharedAttachmentViews(
     const VkRenderPassBeginInfo &rp_begin, const FRAMEBUFFER_STATE &fb_state) const {
     auto get_fn = [this](VkImageView handle) { return this->GetShared<IMAGE_VIEW_STATE>(handle); };
     return GetAttachmentViewsImpl<std::shared_ptr<const IMAGE_VIEW_STATE>>(rp_begin, fb_state, get_fn);
-}
-
-std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetCurrentAttachmentViews(const CMD_BUFFER_STATE &cb_state) const {
-    // Only valid *after* RecordBeginRenderPass and *before* RecordEndRenderpass as it relies on cb_state for the renderpass info.
-    std::vector<const IMAGE_VIEW_STATE *> views;
-
-    const auto *rp_state = cb_state.activeRenderPass.get();
-    if (!rp_state) return views;
-    const auto &rp_begin = *cb_state.activeRenderPassBeginInfo.ptr();
-    const auto *fb_state = Get<FRAMEBUFFER_STATE>(rp_begin.framebuffer);
-    if (!fb_state) return views;
-
-    return GetAttachmentViews(rp_begin, *fb_state);
 }
 
 PIPELINE_STATE *GetCurrentPipelineFromCommandBuffer(const CMD_BUFFER_STATE &cmd, VkPipelineBindPoint pipelineBindPoint) {
@@ -3219,14 +3191,6 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
     }
 }
 
-void FRAMEBUFFER_STATE::Destroy() {
-    for (auto& view: attachments_view_state) {
-        view->RemoveParent(this);
-    }
-    attachments_view_state.clear();
-    BASE_NODE::Destroy();
-}
-
 void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses) {
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
@@ -4313,269 +4277,41 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
                                                              const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                              VkResult result) {
     if (VK_SUCCESS != result) return;
-    // Shadow create info and store in map
-    auto fb_state = std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, GetRenderPassShared(pCreateInfo->renderPass));
 
+    std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> views;
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-        assert(fb_state->attachments_view_state.size() == 0);
-        fb_state->attachments_view_state.resize(pCreateInfo->attachmentCount);
+        views.resize(pCreateInfo->attachmentCount);
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-            fb_state->attachments_view_state[i] = GetShared<IMAGE_VIEW_STATE>(pCreateInfo->pAttachments[i]);
-            fb_state->attachments_view_state[i]->AddParent(fb_state.get());
+            views[i] = GetShared<IMAGE_VIEW_STATE>(pCreateInfo->pAttachments[i]);
         }
     }
-    frameBufferMap[*pFramebuffer] = std::move(fb_state);
+
+    frameBufferMap[*pFramebuffer] = std::make_shared<FRAMEBUFFER_STATE>(
+        *pFramebuffer, pCreateInfo, GetRenderPassShared(pCreateInfo->renderPass), std::move(views));
 }
 
-void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                 RENDER_PASS_STATE *render_pass) {
-    auto &subpass_to_node = render_pass->subpassToNode;
-    subpass_to_node.resize(pCreateInfo->subpassCount);
-    auto &self_dependencies = render_pass->self_dependencies;
-    self_dependencies.resize(pCreateInfo->subpassCount);
-    auto &subpass_dependencies = render_pass->subpass_dependencies;
-    subpass_dependencies.resize(pCreateInfo->subpassCount);
-
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        subpass_to_node[i].pass = i;
-        self_dependencies[i].clear();
-        subpass_dependencies[i].pass = i;
-    }
-    for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
-        const auto &dependency = pCreateInfo->pDependencies[i];
-        const auto src_subpass = dependency.srcSubpass;
-        const auto dst_subpass = dependency.dstSubpass;
-        if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass != VK_SUBPASS_EXTERNAL)) {
-            if (dependency.srcSubpass == dependency.dstSubpass) {
-                self_dependencies[dependency.srcSubpass].push_back(i);
-            } else {
-                subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
-                subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
-            }
-        }
-        if (src_subpass == VK_SUBPASS_EXTERNAL) {
-            assert(dst_subpass != VK_SUBPASS_EXTERNAL);  // this is invalid per VUID-VkSubpassDependency-srcSubpass-00865
-            subpass_dependencies[dst_subpass].barrier_from_external.emplace_back(&dependency);
-        } else if (dst_subpass == VK_SUBPASS_EXTERNAL) {
-            subpass_dependencies[src_subpass].barrier_to_external.emplace_back(&dependency);
-        } else if (dependency.srcSubpass != dependency.dstSubpass) {
-            // ignore self dependencies in prev and next
-            subpass_dependencies[src_subpass].next[&subpass_dependencies[dst_subpass]].emplace_back(&dependency);
-            subpass_dependencies[dst_subpass].prev[&subpass_dependencies[src_subpass]].emplace_back(&dependency);
-        }
-    }
-
-    //
-    // Determine "asynchrononous" subpassess
-    // syncronization is only interested in asyncronous stages *earlier* that the current one... so we'll only look towards those.
-    // NOTE: This is O(N^3), which we could shrink to O(N^2logN) using sets instead of arrays, but given that N is likely to be
-    // small and the K for |= from the prev is must less than for set, we'll accept the brute force.
-    std::vector<std::vector<bool>> pass_depends(pCreateInfo->subpassCount);
-    for (uint32_t i = 1; i < pCreateInfo->subpassCount; ++i) {
-        auto &depends = pass_depends[i];
-        depends.resize(i);
-        auto &subpass_dep = subpass_dependencies[i];
-        for (const auto &prev : subpass_dep.prev) {
-            const auto prev_pass = prev.first->pass;
-            const auto &prev_depends = pass_depends[prev_pass];
-            for (uint32_t j = 0; j < prev_pass; j++) {
-                depends[j] = depends[j] | prev_depends[j];
-            }
-            depends[prev_pass] = true;
-        }
-        for (uint32_t pass = 0; pass < subpass_dep.pass; pass++) {
-            if (!depends[pass]) {
-                subpass_dep.async.push_back(pass);
-            }
-        }
-    }
-}
-
-static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
-    VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
-                                          nullptr,
-                                          VK_SUBPASS_EXTERNAL,
-                                          subpass,
-                                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                          0,
-                                          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                          0,
-                                          0};
-    return from_external;
-}
-
-static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
-    VkSubpassDependency2 to_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
-                                        nullptr,
-                                        subpass,
-                                        VK_SUBPASS_EXTERNAL,
-                                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                        0,
-                                        0,
-                                        0};
-    return to_external;
-}
-
-void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion rp_version,
-                                                         std::shared_ptr<RENDER_PASS_STATE> &render_pass,
-                                                         VkRenderPass *pRenderPass) {
-    auto create_info = render_pass->createInfo.ptr();
-
-    RecordRenderPassDAG(RENDER_PASS_VERSION_1, create_info, render_pass.get());
-
-    struct AttachmentTracker {  // This is really only of local interest, but a bit big for a lambda
-        RENDER_PASS_STATE *const rp;
-        std::vector<uint32_t> &first;
-        std::vector<bool> &first_is_transition;
-        std::vector<uint32_t> &last;
-        std::vector<std::vector<RENDER_PASS_STATE::AttachmentTransition>> &subpass_transitions;
-        layer_data::unordered_map<uint32_t, bool> &first_read;
-        const uint32_t attachment_count;
-        std::vector<VkImageLayout> attachment_layout;
-        std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
-        explicit AttachmentTracker(std::shared_ptr<RENDER_PASS_STATE> &render_pass)
-            : rp(render_pass.get()),
-              first(rp->attachment_first_subpass),
-              first_is_transition(rp->attachment_first_is_transition),
-              last(rp->attachment_last_subpass),
-              subpass_transitions(rp->subpass_transitions),
-              first_read(rp->attachment_first_read),
-              attachment_count(rp->createInfo.attachmentCount),
-              attachment_layout(),
-              subpass_attachment_layout() {
-            first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
-            first_is_transition.resize(attachment_count, false);
-            last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
-            subpass_transitions.resize(rp->createInfo.subpassCount + 1);  // Add an extra for EndRenderPass
-            attachment_layout.reserve(attachment_count);
-            subpass_attachment_layout.resize(rp->createInfo.subpassCount);
-            for (auto &subpass_layouts : subpass_attachment_layout) {
-                subpass_layouts.resize(attachment_count, kInvalidLayout);
-            }
-
-            for (uint32_t j = 0; j < attachment_count; j++) {
-                attachment_layout.push_back(rp->createInfo.pAttachments[j].initialLayout);
-            }
-        }
-
-        void Update(uint32_t subpass, const VkAttachmentReference2 *attach_ref, uint32_t count, bool is_read) {
-            if (nullptr == attach_ref) return;
-            for (uint32_t j = 0; j < count; ++j) {
-                const auto attachment = attach_ref[j].attachment;
-                if (attachment != VK_ATTACHMENT_UNUSED) {
-                    const auto layout = attach_ref[j].layout;
-                    // Take advantage of the fact that insert won't overwrite, so we'll only write the first time.
-                    first_read.emplace(attachment, is_read);
-                    if (first[attachment] == VK_SUBPASS_EXTERNAL) {
-                        first[attachment] = subpass;
-                        const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
-                        if (initial_layout != layout) {
-                            subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
-                            first_is_transition[attachment] = true;
-                        }
-                    }
-                    last[attachment] = subpass;
-
-                    for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
-                        const auto prev_pass = prev.first->pass;
-                        const auto prev_layout = subpass_attachment_layout[prev_pass][attachment];
-                        if ((prev_layout != kInvalidLayout) && (prev_layout != layout)) {
-                            subpass_transitions[subpass].emplace_back(prev_pass, attachment, prev_layout, layout);
-                        }
-                    }
-                    attachment_layout[attachment] = layout;
-                }
-            }
-        }
-        void FinalTransitions() {
-            auto &final_transitions = subpass_transitions[rp->createInfo.subpassCount];
-
-            for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
-                const auto final_layout = rp->createInfo.pAttachments[attachment].finalLayout;
-                // Add final transitions for attachments that were used and change layout.
-                if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layout[attachment]) {
-                    final_transitions.emplace_back(last[attachment], attachment, attachment_layout[attachment], final_layout);
-                }
-            }
-        }
-    };
-    AttachmentTracker attachment_tracker(render_pass);
-
-    for (uint32_t subpass_index = 0; subpass_index < create_info->subpassCount; ++subpass_index) {
-        const VkSubpassDescription2 &subpass = create_info->pSubpasses[subpass_index];
-        attachment_tracker.Update(subpass_index, subpass.pColorAttachments, subpass.colorAttachmentCount, false);
-        attachment_tracker.Update(subpass_index, subpass.pResolveAttachments, subpass.colorAttachmentCount, false);
-        attachment_tracker.Update(subpass_index, subpass.pDepthStencilAttachment, 1, false);
-        attachment_tracker.Update(subpass_index, subpass.pInputAttachments, subpass.inputAttachmentCount, true);
-    }
-    attachment_tracker.FinalTransitions();
-
-    // Add implicit dependencies
-    for (uint32_t attachment = 0; attachment < attachment_tracker.attachment_count; attachment++) {
-        const auto first_use = attachment_tracker.first[attachment];
-        if (first_use != VK_SUBPASS_EXTERNAL) {
-            auto &subpass_dep = render_pass->subpass_dependencies[first_use];
-            if (subpass_dep.barrier_from_external.size() == 0) {
-                // Add implicit from barrier if they're aren't any
-                subpass_dep.implicit_barrier_from_external.reset(
-                    new VkSubpassDependency2(ImplicitDependencyFromExternal(first_use)));
-                subpass_dep.barrier_from_external.emplace_back(subpass_dep.implicit_barrier_from_external.get());
-            }
-        }
-
-        const auto last_use = attachment_tracker.last[attachment];
-        if (last_use != VK_SUBPASS_EXTERNAL) {
-            auto &subpass_dep = render_pass->subpass_dependencies[last_use];
-            if (render_pass->subpass_dependencies[last_use].barrier_to_external.size() == 0) {
-                // Add implicit to barrier  if they're aren't any
-                subpass_dep.implicit_barrier_to_external.reset(new VkSubpassDependency2(ImplicitDependencyToExternal(last_use)));
-                subpass_dep.barrier_to_external.emplace_back(subpass_dep.implicit_barrier_to_external.get());
-            }
-        }
-    }
-
-    // Even though render_pass is an rvalue-ref parameter, still must move s.t. move assignment is invoked.
-    renderPassMap[*pRenderPass] = std::move(render_pass);
-}
-
-// Style note:
-// Use of rvalue reference exceeds reccommended usage of rvalue refs in google style guide, but intentionally forces caller to move
-// or copy.  This is clearer than passing a pointer to shared_ptr and avoids the atomic increment/decrement of shared_ptr copy
-// construction or assignment.
 void ValidationStateTracker::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                             VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo);
-    RecordCreateRenderPassState(RENDER_PASS_VERSION_1, render_pass_state, pRenderPass);
-}
-
-void ValidationStateTracker::RecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                     VkResult result) {
-    if (VK_SUCCESS != result) return;
-    auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo);
-    RecordCreateRenderPassState(RENDER_PASS_VERSION_2, render_pass_state, pRenderPass);
+    renderPassMap[*pRenderPass] = std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                                 VkResult result) {
-    RecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, result);
+    if (VK_SUCCESS != result) return;
+
+    renderPassMap[*pRenderPass] = std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                              VkResult result) {
-    RecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, result);
+    if (VK_SUCCESS != result) return;
+
+    renderPassMap[*pRenderPass] = std::make_shared<RENDER_PASS_STATE>(*pRenderPass, pCreateInfo);
 }
 
 void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer,

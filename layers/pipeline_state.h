@@ -41,7 +41,7 @@ class Descriptor;
 
 class ValidationStateTracker;
 struct CMD_BUFFER_STATE;
-struct RENDER_PASS_STATE;
+class RENDER_PASS_STATE;
 struct SHADER_MODULE_STATE;
 
 // Flags describing requirements imposed by the pipeline on a descriptor. These

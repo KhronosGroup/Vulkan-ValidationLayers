@@ -40,8 +40,6 @@
 #include <list>
 #include <deque>
 
-std::pair<uint32_t, const VkImageView*> GetFramebufferAttachments(const VkRenderPassBeginInfo& rp_begin,
-                                                                  const FRAMEBUFFER_STATE& fb_state);
 PIPELINE_STATE* GetCurrentPipelineFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint);
 void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint,
                                                          const PIPELINE_STATE** rtn_pipe,
@@ -241,11 +239,6 @@ struct DISPLAY_MODE_STATE : public BASE_NODE {
     DISPLAY_MODE_STATE(VkDisplayModeKHR dm) : BASE_NODE(dm, kVulkanObjectTypeDisplayModeKHR) {}
 
     VkDisplayModeKHR display_mode() const { return handle_.Cast<VkDisplayModeKHR>(); }
-};
-
-struct SubpassLayout {
-    uint32_t index;
-    VkImageLayout layout;
 };
 
 #define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \
@@ -915,8 +908,6 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                         VkResult result) override;
-    void RecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
-                                 const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass, VkResult result);
     void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                             VkResult result) override;
@@ -1252,12 +1243,9 @@ class ValidationStateTracker : public ValidationObject {
     void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
     void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
-    std::vector<const IMAGE_VIEW_STATE*> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
-                                                            const FRAMEBUFFER_STATE& fb_state) const;
     std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> GetSharedAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
                                                                                   const FRAMEBUFFER_STATE& fb_state) const;
 
-    std::vector<const IMAGE_VIEW_STATE*> GetCurrentAttachmentViews(const CMD_BUFFER_STATE& cb_state) const;
     BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
     VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
@@ -1278,8 +1266,6 @@ class ValidationStateTracker : public ValidationObject {
                                          const VkWriteDescriptorSet* pDescriptorWrites);
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
     void RecordCreateBufferANDROID(const VkBufferCreateInfo* create_info, BUFFER_STATE* bs_node);
-    void RecordCreateRenderPassState(RenderPassCreateVersion rp_version, std::shared_ptr<RENDER_PASS_STATE>& render_pass,
-                                     VkRenderPass* pRenderPass);
     void RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                  VkSamplerYcbcrConversion ycbcr_conversion);
     void RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo* create_info,
@@ -1311,8 +1297,6 @@ class ValidationStateTracker : public ValidationObject {
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void RecordPipelineShaderStage(const VkPipelineShaderStageCreateInfo* pStage, PIPELINE_STATE* pipeline,
                                    PIPELINE_STATE::StageState* stage_state) const;
-    void RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
-                             RENDER_PASS_STATE* render_pass);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
