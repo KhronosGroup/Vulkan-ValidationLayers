@@ -4840,6 +4840,7 @@ TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
     TEST_DESCRIPTION("Resolve Image with subresource region greater than size of src/dst image");
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    m_errorMonitor->ExpectSuccess();
     VkImageObj srcImage2D(m_device);
     VkImageObj dstImage2D(m_device);
 
@@ -4850,7 +4851,7 @@ TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
     image_create_info.extent.width = 32;
     image_create_info.extent.height = 32;
     image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 6;  // full chain from 32x32 to 1x1
+    image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -4889,7 +4890,6 @@ TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
     resolveRegion.extent.height = 32;
     resolveRegion.extent.depth = 1;
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                   &resolveRegion);
     m_errorMonitor->VerifyNotFound();
@@ -4910,21 +4910,20 @@ TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
     m_errorMonitor->VerifyFound();
     resolveRegion.dstOffset.x = 0;
 
-    // both image exceeded in y-dim because mipLevel 3 is a 4x4 size image
-    resolveRegion.extent = {4, 8, 1};
-    resolveRegion.srcSubresource.mipLevel = 3;
+    // both image exceeded in y-dim
+    resolveRegion.srcOffset.y = 32;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcOffset-00270");
     m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                   &resolveRegion);
     m_errorMonitor->VerifyFound();
-    resolveRegion.srcSubresource.mipLevel = 0;
+    resolveRegion.srcOffset.y = 0;
 
-    resolveRegion.dstSubresource.mipLevel = 3;
+    resolveRegion.dstOffset.y = 32;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstOffset-00275");
     m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                   &resolveRegion);
     m_errorMonitor->VerifyFound();
-    resolveRegion.dstSubresource.mipLevel = 0;
+    resolveRegion.dstOffset.y = 0;
 
     // srcImage exceeded in z-dim
     resolveRegion.srcOffset.z = 1;
