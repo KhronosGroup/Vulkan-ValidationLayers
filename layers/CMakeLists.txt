@@ -163,6 +163,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     image_state.h
     image_state.cpp
     pipeline_state.h
+    query_state.h
     ray_tracing_state.h
     render_pass_state.h
     render_pass_state.cpp
