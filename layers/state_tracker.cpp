@@ -2764,31 +2764,33 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto query_pool_state = std::make_shared<QUERY_POOL_STATE>(*pQueryPool, pCreateInfo);
+
+    uint32_t index_count = 0, n_perf_pass = 0;
+    bool has_cb = false, has_rb = false;
     if (pCreateInfo->queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
         const auto *perf = LvlFindInChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
-        query_pool_state->perf_counter_index_count = perf->counterIndexCount;
+        index_count = perf->counterIndexCount;
 
         const QUEUE_FAMILY_PERF_COUNTERS &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
         for (uint32_t i = 0; i < perf->counterIndexCount; i++) {
             const auto &counter = counters.counters[perf->pCounterIndices[i]];
             switch (counter.scope) {
                 case VK_QUERY_SCOPE_COMMAND_BUFFER_KHR:
-                    query_pool_state->has_perf_scope_command_buffer = true;
+                    has_cb = true;
                     break;
                 case VK_QUERY_SCOPE_RENDER_PASS_KHR:
-                    query_pool_state->has_perf_scope_render_pass = true;
+                    has_rb = true;
                     break;
                 default:
                     break;
             }
         }
 
-        DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->phys_device, perf,
-                                                                      &query_pool_state->n_performance_passes);
+        DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->phys_device, perf, &n_perf_pass);
     }
 
-    queryPoolMap[*pQueryPool] = std::move(query_pool_state);
+    queryPoolMap[*pQueryPool] =
+        std::make_shared<QUERY_POOL_STATE>(*pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb);
 
     QueryObject query_obj{*pQueryPool, 0u};
     for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {

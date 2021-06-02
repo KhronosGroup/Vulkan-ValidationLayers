@@ -109,26 +109,6 @@ class QUEUE_STATE {
     std::deque<CB_SUBMISSION> submissions;
 };
 
-class QUERY_POOL_STATE : public BASE_NODE {
-  public:
-    VkQueryPoolCreateInfo createInfo;
-
-    bool has_perf_scope_command_buffer = false;
-    bool has_perf_scope_render_pass = false;
-    uint32_t n_performance_passes = 0;
-    uint32_t perf_counter_index_count = 0;
-
-    QUERY_POOL_STATE(VkQueryPool qp, const VkQueryPoolCreateInfo *pCreateInfo)
-        : BASE_NODE(qp, kVulkanObjectTypeQueryPool),
-          createInfo(*pCreateInfo),
-          has_perf_scope_command_buffer(false),
-          has_perf_scope_render_pass(false),
-          n_performance_passes(0),
-          perf_counter_index_count(0) {}
-
-    VkQueryPool pool() const { return handle_.Cast<VkQueryPool>(); }
-};
-
 class QUEUE_FAMILY_PERF_COUNTERS {
   public:
     std::vector<VkPerformanceCounterKHR> counters;

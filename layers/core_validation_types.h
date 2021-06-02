@@ -44,6 +44,7 @@
 #include "image_state.h"
 #include "buffer_state.h"
 #include "pipeline_state.h"
+#include "query_state.h"
 #include "ray_tracing_state.h"
 #include "render_pass_state.h"
 #include "sampler_state.h"
@@ -186,89 +187,6 @@ VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag);
 CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state);
 std::string DynamicStateString(CBStatusFlags input_value);
 
-struct QueryObject {
-    VkQueryPool pool;
-    uint32_t query;
-    // These next two fields are *not* used in hash or comparison, they are effectively a data payload
-    uint32_t index;  // must be zero if !indexed
-    uint32_t perf_pass;
-    bool indexed;
-    // Command index in the command buffer where the end of the query was
-    // recorded (equal to the number of commands in the command buffer before
-    // the end of the query).
-    uint64_t endCommandIndex;
-
-    QueryObject(VkQueryPool pool_, uint32_t query_)
-        : pool(pool_), query(query_), index(0), perf_pass(0), indexed(false), endCommandIndex(0) {}
-    QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_)
-        : pool(pool_), query(query_), index(index_), perf_pass(0), indexed(true), endCommandIndex(0) {}
-    QueryObject(const QueryObject &obj)
-        : pool(obj.pool),
-          query(obj.query),
-          index(obj.index),
-          perf_pass(obj.perf_pass),
-          indexed(obj.indexed),
-          endCommandIndex(obj.endCommandIndex) {}
-    QueryObject(const QueryObject &obj, uint32_t perf_pass_)
-        : pool(obj.pool),
-          query(obj.query),
-          index(obj.index),
-          perf_pass(perf_pass_),
-          indexed(obj.indexed),
-          endCommandIndex(obj.endCommandIndex) {}
-    bool operator<(const QueryObject &rhs) const {
-        return (pool == rhs.pool) ? ((query == rhs.query) ? (perf_pass < rhs.perf_pass) : (query < rhs.query)) : pool < rhs.pool;
-    }
-};
-
-inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
-    return ((query1.pool == query2.pool) && (query1.query == query2.query) && (query1.perf_pass == query2.perf_pass));
-}
-
-enum QueryState {
-    QUERYSTATE_UNKNOWN,    // Initial state.
-    QUERYSTATE_RESET,      // After resetting.
-    QUERYSTATE_RUNNING,    // Query running.
-    QUERYSTATE_ENDED,      // Query ended but results may not be available.
-    QUERYSTATE_AVAILABLE,  // Results available.
-};
-
-enum QueryResultType {
-    QUERYRESULT_UNKNOWN,
-    QUERYRESULT_NO_DATA,
-    QUERYRESULT_SOME_DATA,
-    QUERYRESULT_WAIT_ON_RESET,
-    QUERYRESULT_WAIT_ON_RUNNING,
-};
-
-inline const char *string_QueryResultType(QueryResultType result_type) {
-    switch (result_type) {
-        case QUERYRESULT_UNKNOWN:
-            return "query may be in an unknown state";
-        case QUERYRESULT_NO_DATA:
-            return "query may return no data";
-        case QUERYRESULT_SOME_DATA:
-            return "query will return some data or availability bit";
-        case QUERYRESULT_WAIT_ON_RESET:
-            return "waiting on a query that has been reset and not issued yet";
-        case QUERYRESULT_WAIT_ON_RUNNING:
-            return "waiting on a query that has not ended yet";
-    }
-    assert(false);
-    return "UNKNOWN QUERY STATE";  // Unreachable.
-}
-
-namespace std {
-template <>
-struct hash<QueryObject> {
-    size_t operator()(QueryObject query) const throw() {
-        return hash<uint64_t>()((uint64_t)(query.pool)) ^
-               hash<uint64_t>()(static_cast<uint64_t>(query.query) | (static_cast<uint64_t>(query.perf_pass) << 32));
-    }
-};
-
-}  // namespace std
-
 struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
@@ -406,7 +324,6 @@ struct QFOTransferCBScoreboards {
     QFOTransferCBScoreboard<TransferBarrier> release;
 };
 
-typedef std::map<QueryObject, QueryState> QueryMap;
 typedef layer_data::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
 typedef subresource_adapter::BothRangeMap<VkImageLayout, 16> GlobalImageLayoutRangeMap;
 typedef layer_data::unordered_map<VkImage, layer_data::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
