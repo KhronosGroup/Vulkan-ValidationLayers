@@ -406,7 +406,7 @@ class ResourceAccessState : public SyncStageAccess {
 
     VkPipelineStageFlags2KHR last_read_stages;
     VkPipelineStageFlags2KHR read_execution_barriers;
-    small_vector<ReadState, 3> last_reads;
+    small_vector<ReadState, 3, uint32_t> last_reads;
 
     // Pending execution state to support independent parallel barriers
     VkPipelineStageFlags2KHR pending_write_dep_chain;
