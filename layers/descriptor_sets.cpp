@@ -2138,8 +2138,8 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             if (!(usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_STORAGE_BIT";
                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00339";
-            } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) || ((VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout) &&
-                                                                     (device_extensions.vk_khr_shared_presentable_image))) {
+            } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) && (!device_extensions.vk_khr_shared_presentable_image ||
+                                                                     (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout))) {
                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-04152";
                 std::stringstream error_str;
                 error_str << "Descriptor update with descriptorType VK_DESCRIPTOR_TYPE_STORAGE_IMAGE"
