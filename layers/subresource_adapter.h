@@ -377,7 +377,7 @@ class ImageRangeEncoder : public RangeEncoder {
     const IMAGE_STATE* image_;
     std::vector<double> texel_sizes_;
     SubresInfoVector subres_info_;
-    small_vector<IndexType, 4> aspect_sizes_;
+    small_vector<IndexType, 4, uint32_t> aspect_sizes_;
     IndexType total_size_;
     VkExtent3D texel_extent_;
     bool is_3_d_;
