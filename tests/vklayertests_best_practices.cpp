@@ -916,3 +916,28 @@ TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
+    TEST_DESCRIPTION("Enable depthBias without a depth attachment");
+
+    InitBestPracticesFramework();
+    InitState();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
+    pipe.rs_state_ci_.depthBiasConstantFactor = 1.0f;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_DepthBiasNoAttachment);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
