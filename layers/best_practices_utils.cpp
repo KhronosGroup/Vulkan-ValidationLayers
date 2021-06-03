@@ -1733,6 +1733,23 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
                                               report_data->FormatHandle(pipeline_state->pipeline()).c_str());
             }
         }
+
+        const auto* pipe = GetCurrentPipelineFromCommandBuffer(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+        if (pipe) {
+            const auto* rp_state = pipe->rp_state.get();
+            if (rp_state) {
+                for (uint32_t i = 0; i < rp_state->createInfo.subpassCount; ++i) {
+                    const auto& subpass = rp_state->createInfo.pSubpasses[i];
+                    const uint32_t depth_stencil_attachment = GetSubpassDepthStencilAttachmentIndex(
+                        pipe->graphicsPipelineCI.pDepthStencilState, subpass.pDepthStencilAttachment);
+                    if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && pipe->graphicsPipelineCI.pRasterizationState &&
+                        pipe->graphicsPipelineCI.pRasterizationState->depthBiasEnable == VK_TRUE) {
+                        skip |= LogWarning(cb_state->commandBuffer(), kVUID_BestPractices_DepthBiasNoAttachment,
+                                           "%s: depthBiasEnable == VK_TRUE without a depth-stencil attachment.", caller);
+                    }
+                }
+            }
+        }
     }
     return skip;
 }
@@ -1759,8 +1776,8 @@ bool BestPractices::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
     if (instanceCount == 0) {
         skip |= LogWarning(device, kVUID_BestPractices_CmdDraw_InstanceCountZero,
                            "Warning: You are calling vkCmdDraw() with an instanceCount of Zero.");
-        skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDraw()");
     }
+    skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDraw()");
 
     return skip;
 }
