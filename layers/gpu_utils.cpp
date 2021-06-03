@@ -481,7 +481,7 @@ bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::str
         // Remove enclosing double quotes.  The regex guarantees the quotes and at least one char.
         filename = captures[3].str().substr(1, captures[3].str().size() - 2);
     }
-    *linenumber = std::stoul(captures[1]);
+    *linenumber = (uint32_t)std::stoul(captures[1]);
     return true;
 }
 #endif  // GCC_VERSION
