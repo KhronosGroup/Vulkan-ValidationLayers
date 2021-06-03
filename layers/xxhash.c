@@ -385,7 +385,7 @@ FORCE_INLINE XXH_errorcode XXH32_update_endian (XXH32_state_t* state, const void
 #endif
 
     state->total_len_32 += (unsigned)len;
-    state->large_len |= (len>=16) | (state->total_len_32>=16);
+    state->large_len |= (unsigned)(len>=16) | (unsigned)(state->total_len_32>=16);
 
     if (state->memsize + len < 16)  {   /* fill in tmp buffer */
         XXH_memcpy((BYTE*)(state->mem32) + state->memsize, input, len);

@@ -171,8 +171,8 @@ static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_b
     // clang-format on
 
     uint8_t index = 0;
-    index |= (image_to_buffer) ? 0x1 : 0;
-    index |= (copy2) ? 0x2 : 0;
+    index |= uint8_t((image_to_buffer) ? 0x1 : 0);
+    index |= uint8_t((copy2) ? 0x2 : 0);
     return copy_imagebuffer_vuid.at(id).at(index);
 }
 

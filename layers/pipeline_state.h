@@ -349,5 +349,5 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkPipelineBindPoint bind_point)
         default:
             return static_cast<LvlBindPoint>(bind_point);
     }
-    return LvlBindPoint(~0U);
+    return BindPoint_Count;
 }

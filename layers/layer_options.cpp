@@ -288,7 +288,7 @@ const VkLayerSettingsEXT *FindSettingsInChain(const void *next) {
     const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
     const VkLayerSettingsEXT *found = nullptr;
     while (current) {
-        if (static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT) == current->sType) {
+        if (VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT == static_cast<uint32_t>(current->sType)) {
             found = reinterpret_cast<const VkLayerSettingsEXT *>(current);
             current = nullptr;
         } else {
