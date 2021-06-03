@@ -137,25 +137,6 @@ using std::stringstream;
 using std::unique_ptr;
 using std::vector;
 
-// The const variant only need the image as it is the key for the map
-const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const CMD_BUFFER_STATE *cb_state, VkImage image) {
-    auto it = cb_state->image_layout_map.find(image);
-    if (it == cb_state->image_layout_map.cend()) {
-        return nullptr;
-    }
-    return &it->second;
-}
-
-// The non-const variant only needs the image state, as the factory requires it to construct a new entry
-ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state) {
-    auto &layout_map = cb_state->image_layout_map[image_state.image()];
-    if (!layout_map) {
-        // Was an empty slot... fill it in.
-        layout_map.emplace(image_state);
-    }
-    return &layout_map;
-}
-
 void CoreChecks::AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map) {
     auto *range_map = GetLayoutRangeMap(image_layout_map, image_state);
     auto range_gen = subresource_adapter::RangeGenerator(image_state.subresource_encoder, image_state.full_range);
@@ -169,12 +150,6 @@ void CoreChecks::InitDeviceValidationObject(bool add_obj, ValidationObject *inst
     if (add_obj) {
         ValidationStateTracker::InitDeviceValidationObject(add_obj, inst_obj, dev_obj);
     }
-}
-
-// Tracks the number of commands recorded in a command buffer.
-void CoreChecks::IncrementCommandCount(VkCommandBuffer commandBuffer) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->commandCount++;
 }
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
@@ -7205,7 +7180,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     skip |= ValidateCmd(cb_state, CMD_SETEVENT, "vkCmdSetEvent()");
     Location loc(Func::vkCmdSetEvent, Field::stageMask);
     LogObjectList objects(commandBuffer);
-    skip |= ValidatePipelineStage(objects, loc, GetQueueFlags(*cb_state), stageMask);
+    skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
 }
@@ -7238,7 +7213,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
 
     bool skip = false;
     skip |= ValidateCmd(cb_state, CMD_RESETEVENT, "vkCmdResetEvent()");
-    skip |= ValidatePipelineStage(objects, loc, GetQueueFlags(*cb_state), stageMask);
+    skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
 }
@@ -7253,7 +7228,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer,
 
     bool skip = false;
     skip |= ValidateCmd(cb_state, CMD_RESETEVENT, func);
-    skip |= ValidatePipelineStage(objects, loc, GetQueueFlags(*cb_state), stageMask);
+    skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
 }
@@ -7660,7 +7635,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
-    auto queue_flags = GetQueueFlags(*cb_state);
+    auto queue_flags = cb_state->GetQueueFlags();
     LogObjectList objects(commandBuffer);
     Location loc(Func::vkCmdWaitEvents);
 
@@ -7771,7 +7746,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     LogObjectList objects(commandBuffer);
-    auto queue_flags = GetQueueFlags(*cb_state);
+    auto queue_flags = cb_state->GetQueueFlags();
     Location loc(Func::vkCmdPipelineBarrier);
 
     auto op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
@@ -8402,7 +8377,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
                          "%s (%s) must only set a single pipeline stage.", loc.Message().c_str(),
                          string_VkPipelineStageFlags2KHR(stage).c_str());
     }
-    skip |= ValidatePipelineStage(LogObjectList(cb_state->commandBuffer()), loc, GetQueueFlags(*cb_state), stage);
+    skip |= ValidatePipelineStage(LogObjectList(cb_state->commandBuffer()), loc, cb_state->GetQueueFlags(), stage);
 
     loc.field = Field::queryPool;
     const QUERY_POOL_STATE *query_pool_state = GetQueryPoolState(queryPool);
@@ -11635,7 +11610,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             const auto *image_state = GetImageState(image);
             if (!image_state) continue;  // Can't set layouts of a dead image
 
-            const auto *cb_subres_map = GetImageSubresourceLayoutMap(const_cb_state, image);
+            const auto *cb_subres_map = const_cb_state->GetImageSubresourceLayoutMap(image);
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subres_map) continue;
 

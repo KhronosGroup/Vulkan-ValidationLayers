@@ -1734,7 +1734,7 @@ bool CoreChecks::ValidatePropertiesAndFeatures(SHADER_MODULE_STATE const *module
 }
 
 bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, const PIPELINE_STATE *pipeline,
-                                             const PIPELINE_STATE::StageState &stage_state, const SHADER_MODULE_STATE *module,
+                                             const PipelineStageState &stage_state, const SHADER_MODULE_STATE *module,
                                              const spirv_inst_iter &entrypoint, bool check_point_size) const {
     bool skip = false;
 

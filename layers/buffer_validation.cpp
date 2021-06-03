@@ -356,7 +356,7 @@ bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImage
 void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &image_state,
                                 const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
                                 VkImageLayout expected_layout) {
-    auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
+    auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(image_state);
     assert(subresource_map);  // the non-const getter must return a valid pointer
     if (subresource_map->SetSubresourceRangeLayout(*cb_node, image_subresource_range, layout, expected_layout)) {
         cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
@@ -364,7 +364,7 @@ void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &im
     for (const auto *alias_state : image_state.aliasing_images) {
         assert(alias_state);
         // The map state of the aliases should all be in sync, so no need to check the return value
-        subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
+        subresource_map = cb_node->GetImageSubresourceLayoutMap(*alias_state);
         assert(subresource_map);
         subresource_map->SetSubresourceRangeLayout(*cb_node, image_subresource_range, layout, expected_layout);
     }
@@ -376,11 +376,11 @@ void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAG
         return;
     }
     IMAGE_STATE *image_state = view_state.image_state.get();
-    auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
+    auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(*image_state);
     subresource_map->SetSubresourceRangeInitialLayout(*cb_node, layout, view_state);
     for (const auto *alias_state : image_state->aliasing_images) {
         assert(alias_state);
-        subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
+        subresource_map = cb_node->GetImageSubresourceLayoutMap(*alias_state);
         subresource_map->SetSubresourceRangeInitialLayout(*cb_node, layout, view_state);
     }
 }
@@ -388,12 +388,12 @@ void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAG
 // Set the initial image layout for a passed non-normalized subresource range
 void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &image_state,
                                        const VkImageSubresourceRange &range, VkImageLayout layout) {
-    auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
+    auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(image_state);
     assert(subresource_map);
     subresource_map->SetSubresourceRangeInitialLayout(*cb_node, image_state.NormalizeSubresourceRange(range), layout);
     for (const auto *alias_state : image_state.aliasing_images) {
         assert(alias_state);
-        subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
+        subresource_map = cb_node->GetImageSubresourceLayoutMap(*alias_state);
         assert(subresource_map);
         subresource_map->SetSubresourceRangeInitialLayout(*cb_node, alias_state->NormalizeSubresourceRange(range), layout);
     }
@@ -633,7 +633,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
             // in common with the non-const version.)
             const ImageSubresourceLayoutMap *subresource_map = (attachment_initial_layout != VK_IMAGE_LAYOUT_UNDEFINED)
-                                                                   ? GetImageSubresourceLayoutMap(const_p_cb, image)
+                                                                   ? const_p_cb->GetImageSubresourceLayoutMap(image)
                                                                    : nullptr;
 
             if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
@@ -969,7 +969,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 }
             }
 
-            const auto *subresource_map = GetImageSubresourceLayoutMap(cb_state, img_barrier.image);
+            const auto *subresource_map = cb_state->GetImageSubresourceLayoutMap(img_barrier.image);
             if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
                 // Not sure if this needs to be in the ForRange traversal, pulling it out as it is currently invariant with
@@ -1375,7 +1375,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(
     const CMD_BUFFER_STATE *cb_state, QFOTransferCBScoreboards<TransferBarrier> *scoreboards,
     const GlobalQFOTransferBarrierMap<TransferBarrier> &global_release_barriers) const {
     bool skip = false;
-    const auto &cb_barriers = GetQFOBarrierSets(cb_state, TransferBarrier());
+    const auto &cb_barriers = cb_state->GetQFOBarrierSets(TransferBarrier());
     const char *barrier_name = TransferBarrier::BarrierName();
     const char *handle_name = TransferBarrier::HandleName();
     // No release should have an extant duplicate (WARNING)
@@ -1529,7 +1529,7 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
     const auto image = image_state->image();
     bool skip = false;
 
-    const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image);
+    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(image);
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map, aspect_mask);
@@ -2250,7 +2250,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state->image());
+    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(image_state->image());
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map);
@@ -5298,7 +5298,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
                                   const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                   const VkImageMemoryBarrier *pImageMemBarriers) const {
     bool skip = false;
-    auto queue_flags = GetQueueFlags(*cb_state);
+    auto queue_flags = cb_state->GetQueueFlags();
     LogObjectList objects(cb_state->commandBuffer());
     auto op_type =
         ComputeBarrierOperationsType(cb_state, bufferBarrierCount, pBufferMemBarriers, imageMemBarrierCount, pImageMemBarriers);
@@ -5335,7 +5335,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         skip |= ValidateRenderPassPipelineBarriers(outer_loc, cb_state, dep_info);
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     }
-    auto queue_flags = GetQueueFlags(*cb_state);
+    auto queue_flags = cb_state->GetQueueFlags();
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
