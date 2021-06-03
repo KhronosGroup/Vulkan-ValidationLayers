@@ -163,6 +163,7 @@ endif()
 option(BUILD_WERROR "Treat compiler warnings as errors" ON)
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall
+                        -Wconversion
                         -Wextra
                         -Wno-unused-parameter
                         -Wno-missing-field-initializers
