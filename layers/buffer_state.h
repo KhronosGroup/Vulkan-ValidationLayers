@@ -27,28 +27,6 @@
  */
 #pragma once
 #include "device_memory_state.h"
-class BUFFER_STATE;
-
-struct BufferBinding {
-    std::shared_ptr<BUFFER_STATE> buffer_state;
-    VkDeviceSize size;
-    VkDeviceSize offset;
-    VkDeviceSize stride;
-
-    BufferBinding() : buffer_state(), size(0), offset(0), stride(0) {}
-    virtual ~BufferBinding() {}
-
-    virtual void reset() { *this = BufferBinding(); }
-};
-
-struct IndexBufferBinding : BufferBinding {
-    VkIndexType index_type;
-
-    IndexBufferBinding() : BufferBinding(), index_type(static_cast<VkIndexType>(0)) {}
-    virtual ~IndexBufferBinding() {}
-
-    virtual void reset() override { *this = IndexBufferBinding(); }
-};
 
 class BUFFER_STATE : public BINDABLE {
   public:

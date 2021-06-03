@@ -40,7 +40,7 @@ class Descriptor;
 }  // namespace cvdescriptorset
 
 class ValidationStateTracker;
-struct CMD_BUFFER_STATE;
+class CMD_BUFFER_STATE;
 class RENDER_PASS_STATE;
 struct SHADER_MODULE_STATE;
 
@@ -120,7 +120,8 @@ using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, 
 using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
 // Store layouts and pushconstants for PipelineLayout
-struct PIPELINE_LAYOUT_STATE : public BASE_NODE {
+class PIPELINE_LAYOUT_STATE : public BASE_NODE {
+  public:
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
     PushConstantRangesId push_constant_ranges;
     std::vector<PipelineLayoutCompatId> compat_for_set;
@@ -169,18 +170,18 @@ struct interface_var {
           is_sampler_bias_offset(false) {}
 };
 
+struct PipelineStageState {
+    layer_data::unordered_set<uint32_t> accessible_ids;
+    std::vector<std::pair<descriptor_slot_t, interface_var>> descriptor_uses;
+    bool has_writable_descriptor;
+    bool has_atomic_descriptor;
+    VkShaderStageFlagBits stage_flag;
+    std::string entry_point_name;
+    std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
+};
+
 class PIPELINE_STATE : public BASE_NODE {
   public:
-    struct StageState {
-        layer_data::unordered_set<uint32_t> accessible_ids;
-        std::vector<std::pair<descriptor_slot_t, interface_var>> descriptor_uses;
-        bool has_writable_descriptor;
-        bool has_atomic_descriptor;
-        VkShaderStageFlagBits stage_flag;
-        std::string entry_point_name;
-        std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
-    };
-
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
     safe_VkComputePipelineCreateInfo computePipelineCI;
     safe_VkRayTracingPipelineCreateInfoCommon raytracingPipelineCI;
@@ -193,7 +194,7 @@ class PIPELINE_STATE : public BASE_NODE {
     layer_data::unordered_map<uint32_t, BindingReqMap> active_slots;
     uint32_t max_active_slot;  // the highest set number in active_slots for pipeline layout compatibility checks
     // Additional metadata needed by pipeline_state initialization and validation
-    std::vector<StageState> stage_state;
+    std::vector<PipelineStageState> stage_state;
     layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
     // Vtx input info (if any)
     std::vector<VkVertexInputBindingDescription> vertex_binding_descriptions_;

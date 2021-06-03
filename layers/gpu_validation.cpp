@@ -27,6 +27,9 @@
 #include "gpu_vuids.h"
 #include "gpu_pre_draw_constants.h"
 #include "sync_utils.h"
+#include "buffer_state.h"
+#include "cmd_buffer_state.h"
+#include "render_pass_state.h"
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |

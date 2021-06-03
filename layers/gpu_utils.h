@@ -19,6 +19,8 @@
 #pragma once
 #include "chassis.h"
 #include "shader_validation.h"
+#include "cmd_buffer_state.h"
+
 class UtilDescriptorSetManager {
   public:
     UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);

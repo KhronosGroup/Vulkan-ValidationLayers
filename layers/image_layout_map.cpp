@@ -21,8 +21,7 @@
 #include "image_layout_map.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "image_state.h"
-#include "core_validation_types.h"
-#include "descriptor_sets.h"
+#include "cmd_buffer_state.h"
 #endif
 
 namespace image_layout_map {

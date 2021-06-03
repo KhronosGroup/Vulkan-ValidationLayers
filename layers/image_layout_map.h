@@ -33,7 +33,7 @@
 #include "vk_layer_logging.h"
 
 // Forward declarations...
-struct CMD_BUFFER_STATE;
+class CMD_BUFFER_STATE;
 class IMAGE_STATE;
 class IMAGE_VIEW_STATE;
 #endif

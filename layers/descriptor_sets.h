@@ -24,6 +24,9 @@
 #include "base_node.h"
 #include "buffer_state.h"
 #include "image_state.h"
+#include "pipeline_state.h"
+#include "ray_tracing_state.h"
+#include "sampler_state.h"
 #include "hash_vk_types.h"
 #include "vk_layer_logging.h"
 #include "vk_layer_utils.h"
@@ -39,12 +42,17 @@
 class CoreChecks;
 class ValidationObject;
 class ValidationStateTracker;
-struct CMD_BUFFER_STATE;
+class CMD_BUFFER_STATE;
 struct TEMPLATE_STATE;
 struct DeviceExtensions;
-struct SAMPLER_STATE;
+class SAMPLER_STATE;
 
-struct DESCRIPTOR_POOL_STATE : BASE_NODE {
+namespace cvdescriptorset {
+class DescriptorSet;
+}
+
+class DESCRIPTOR_POOL_STATE : public BASE_NODE {
+  public:
     VkDescriptorPool pool;
     uint32_t maxSets;        // Max descriptor sets allowed in this pool
     uint32_t availableSets;  // Available descriptor sets in this pool

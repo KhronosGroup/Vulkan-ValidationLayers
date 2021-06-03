@@ -32,6 +32,9 @@
 #include "gpu_validation.h"
 #include "shader_validation.h"
 #include "core_error_location.h"
+#include "qfo_transfer.h"
+#include "cmd_buffer_state.h"
+#include "render_pass_state.h"
 
 // Set of VUID that need to go between core_validation.cpp and drawdispatch.cpp
 struct DrawDispatchVuid {
@@ -121,8 +124,6 @@ class CoreChecks : public ValidationStateTracker {
 
     // Override base class, we have some extra work to do here
     void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj) override;
-
-    void IncrementCommandCount(VkCommandBuffer commandBuffer);
 
     struct SimpleErrorLocation {
         const char* func_name;
@@ -524,7 +525,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
     bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
-                                     const PIPELINE_STATE::StageState& stage_state, const SHADER_MODULE_STATE* module,
+                                     const PipelineStageState& stage_state, const SHADER_MODULE_STATE* module,
                                      const spirv_inst_iter& entrypoint, bool check_point_size) const;
     bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint,
                                       VkShaderStageFlagBits stage) const;
@@ -1585,6 +1586,5 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                     Display* dpy, VisualID visualID) const override;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-
 };  // Class CoreChecks
 

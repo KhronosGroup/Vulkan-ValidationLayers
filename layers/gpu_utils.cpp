@@ -20,6 +20,7 @@
 #include "chassis.h"
 #include "layer_chassis_dispatch.h"
 #include "state_tracker.h"
+#include "descriptor_sets.h"
 #include "shader_validation.h"
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"

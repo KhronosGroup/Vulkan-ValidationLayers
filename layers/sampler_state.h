@@ -48,7 +48,8 @@ struct less<SamplerUsedByImage> {
 };
 }  // namespace std
 
-struct SAMPLER_STATE : public BASE_NODE {
+class SAMPLER_STATE : public BASE_NODE {
+  public:
     VkSamplerCreateInfo createInfo;
     VkSamplerYcbcrConversion samplerConversion = VK_NULL_HANDLE;
     VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo = {};

@@ -26,7 +26,8 @@
 #include <functional>
 #include <spirv/unified1/spirv.hpp>
 #include "vk_extension_helper.h"
-#include "core_validation_types.h"
+#include "shader_module.h"
+#include "device_state.h"
 #include "core_validation.h"
 
 struct FeaturePointer {

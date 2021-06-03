@@ -22,6 +22,9 @@
 #include "best_practices_error_enums.h"
 #include "shader_validation.h"
 #include "sync_utils.h"
+#include "cmd_buffer_state.h"
+#include "device_state.h"
+#include "render_pass_state.h"
 
 #include <string>
 #include <bitset>
@@ -1734,7 +1737,7 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
             }
         }
 
-        const auto* pipe = GetCurrentPipelineFromCommandBuffer(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+        const auto* pipe = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
         if (pipe) {
             const auto* rp_state = pipe->rp_state.get();
             if (rp_state) {

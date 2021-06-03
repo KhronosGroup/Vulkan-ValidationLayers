@@ -27,6 +27,8 @@
 
 #include "synchronization_validation_types.h"
 #include "state_tracker.h"
+#include "cmd_buffer_state.h"
+#include "render_pass_state.h"
 
 class AccessContext;
 class CommandBufferAccessContext;
@@ -1007,7 +1009,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
             // If we don't have one, make it.
             auto cb_state = GetShared<CMD_BUFFER_STATE>(command_buffer);
             assert(cb_state.get());
-            auto queue_flags = GetQueueFlags(*cb_state);
+            auto queue_flags = cb_state->GetQueueFlags();
             std::shared_ptr<CommandBufferAccessContext> context(new CommandBufferAccessContext(*this, cb_state, queue_flags));
             auto insert_pair = cb_access_state.emplace(command_buffer, std::move(context));
             found_it = insert_pair.first;

@@ -27,33 +27,49 @@
 #pragma once
 #include "chassis.h"
 #include "core_validation_error_enums.h"
-#include "core_validation_types.h"
-#include "descriptor_sets.h"
+#include "device_state.h"
+#include "queue_state.h"
+#include "query_state.h"
+#include "ray_tracing_state.h"
+#include "command_validation.h"
+#include "layer_chassis_dispatch.h"
 #include "vk_layer_logging.h"
 #include "vulkan/vk_layer.h"
 #include "vk_typemap_helper.h"
 #include "vk_layer_data.h"
+#include "android_ndk_types.h"
 #include <atomic>
 #include <functional>
 #include <memory>
 #include <vector>
-#include <list>
-#include <deque>
 
-PIPELINE_STATE* GetCurrentPipelineFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint);
-void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint,
-                                                         const PIPELINE_STATE** rtn_pipe,
-                                                         const std::vector<LAST_BOUND_STATE::PER_SET>** rtn_sets);
+namespace cvdescriptorset {
+class DescriptorSet;
+class DescriptorSetLayout;
+struct AllocateDescriptorSetsData;
+}  // namespace cvdescriptorset
 
-class EVENT_STATE : public BASE_NODE {
-  public:
-    int write_in_use = 0;
-    VkPipelineStageFlags2KHR stageMask = VkPipelineStageFlags2KHR(0);
-    VkEventCreateFlags flags;
-    EVENT_STATE(VkEvent event_, VkEventCreateFlags flags_) : BASE_NODE(event_, kVulkanObjectTypeEvent), flags(flags_) {}
+class CMD_BUFFER_STATE;
+class DESCRIPTOR_POOL_STATE;
+class FRAMEBUFFER_STATE;
+class PIPELINE_STATE;
+struct PipelineStageState;
+class PIPELINE_LAYOUT_STATE;
+class QUEUE_STATE;
+class BUFFER_STATE;
+class BUFFER_VIEW_STATE;
+class IMAGE_STATE;
+class IMAGE_VIEW_STATE;
+class COMMAND_POOL_STATE;
+class DISPLAY_MODE_STATE;
+class RENDER_PASS_STATE;
+class SAMPLER_STATE;
+class SAMPLER_YCBCR_CONVERSION_STATE;
+class EVENT_STATE;
 
-    VkEvent event() const { return handle_.Cast<VkEvent>(); }
-};
+enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
+enum CopyCommandVersion { COPY_COMMAND_VERSION_1 = 0, COPY_COMMAND_VERSION_2 = 1 };
+enum CommandVersion { CMD_VERSION_1 = 0, CMD_VERSION_2 = 1 };
 
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
 struct create_graphics_pipeline_api_state {
@@ -470,19 +486,6 @@ class ValidationStateTracker : public ValidationObject {
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() const;
-
-    VkQueueFlags GetQueueFlags(const COMMAND_POOL_STATE& cp_state) const {
-        return GetPhysicalDeviceState()->queue_family_properties[cp_state.queueFamilyIndex].queueFlags;
-    }
-
-    VkQueueFlags GetQueueFlags(const CMD_BUFFER_STATE& cb_state) const {
-        VkQueueFlags queue_flags = 0;
-        auto pool = cb_state.command_pool.get();
-        if (pool) {
-            queue_flags = GetQueueFlags(*pool);
-        }
-        return queue_flags;
-    }
 
     using CommandBufferResetCallback = std::function<void(VkCommandBuffer)>;
     std::unique_ptr<CommandBufferResetCallback> command_buffer_reset_callback;
@@ -1159,7 +1162,7 @@ class ValidationStateTracker : public ValidationObject {
                                                    VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void RecordPipelineShaderStage(const VkPipelineShaderStageCreateInfo* pStage, PIPELINE_STATE* pipeline,
-                                   PIPELINE_STATE::StageState* stage_state) const;
+                                   PipelineStageState* stage_state) const;
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
@@ -1167,7 +1170,6 @@ class ValidationStateTracker : public ValidationObject {
     void RecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, VkResult result);
     void RecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue, VkResult result);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
-    static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags2KHR stageMask, EventToStageMap* localEventToStageMap);
     void ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE* cb_state, VkPipelineLayout layout);
     static bool SetQueryState(QueryObject object, QueryState value, QueryMap* localQueryToStateMap);
     static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass,
