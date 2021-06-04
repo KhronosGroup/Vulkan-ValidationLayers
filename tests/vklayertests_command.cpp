@@ -7868,13 +7868,14 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::DestroyRenderPass(device(), render_pass, nullptr);
 }
 
-TEST_F(VkLayerTest, InvailStorageAtomicOperation) {
+TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     TEST_DESCRIPTION(
         "If storage view use atomic operation, the view's format MUST support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT or "
         "VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT ");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    m_errorMonitor->ExpectSuccess();
     VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT;
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;  // The format doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT to
                                                        // cause DesiredFailure. VK_FORMAT_R32_UINT is right format.
@@ -7922,10 +7923,10 @@ TEST_F(VkLayerTest, InvailStorageAtomicOperation) {
 
     char const *fsSource =
         "#version 450\n"
-        "layout(set=0, binding=3, rgba8) uniform image2D si0;\n "
-        "layout(set=0, binding=2, rgba8) uniform image2D si1[2];\n "
-        "layout(set = 0, binding = 1, r8) uniform imageBuffer stb2;\n"
-        "layout(set = 0, binding = 0, r8) uniform imageBuffer stb3[2];\n"
+        "layout(set=0, binding=3, r32f) uniform image2D si0;\n "
+        "layout(set=0, binding=2, r32f) uniform image2D si1[2];\n "
+        "layout(set = 0, binding = 1, r32f) uniform imageBuffer stb2;\n"
+        "layout(set = 0, binding = 0, r32f) uniform imageBuffer stb3[2];\n"
         "void main() {\n"
         "      imageAtomicExchange(si0, ivec2(0), 1);\n"
         "      imageAtomicExchange(si1[0], ivec2(0), 1);\n "
@@ -7962,6 +7963,7 @@ TEST_F(VkLayerTest, InvailStorageAtomicOperation) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
+    m_errorMonitor->VerifyNotFound();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02691");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02691");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-None-MismatchAtomicBufferFeature");
@@ -7971,6 +7973,8 @@ TEST_F(VkLayerTest, InvailStorageAtomicOperation) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+    vk::DestroyBufferView(m_device->handle(), buffer_view, nullptr);
+    vk::DestroySampler(m_device->handle(), sampler, nullptr);
 }
 
 TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
