@@ -101,6 +101,10 @@ struct ValidateEndQueryVuids {
     const char* vuid_protected_cb = kVUIDUndefined;
 };
 
+struct SubresourceRangeErrorCodes {
+    const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
+};
+
 class CoreChecks : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
@@ -572,7 +576,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
                                        const char* param_name, const char* image_layer_count_var_name, const VkImage image,
-                                       SubresourceRangeErrorCodes errorCodes) const;
+                                       const SubresourceRangeErrorCodes& errorCodes) const;
     void SetImageLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state,
                         const VkImageSubresourceRange& image_subresource_range, VkImageLayout layout,
                         VkImageLayout expected_layout = kInvalidLayout);

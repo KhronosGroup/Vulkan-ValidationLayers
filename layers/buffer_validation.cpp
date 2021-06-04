@@ -4885,7 +4885,7 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
 bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                                const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
                                                const char *param_name, const char *image_layer_count_var_name, const VkImage image,
-                                               SubresourceRangeErrorCodes errorCodes) const {
+                                               const SubresourceRangeErrorCodes &errorCodes) const {
     bool skip = false;
 
     // Validate mip levels

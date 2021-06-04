@@ -45,91 +45,14 @@ void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE&
                                                          const PIPELINE_STATE** rtn_pipe,
                                                          const std::vector<LAST_BOUND_STATE::PER_SET>** rtn_sets);
 
-enum SyncScope {
-    kSyncScopeInternal,
-    kSyncScopeExternalTemporary,
-    kSyncScopeExternalPermanent,
-};
-
-enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
-
-class FENCE_STATE : public REFCOUNTED_NODE {
-  public:
-    VkFenceCreateInfo createInfo;
-    std::pair<VkQueue, uint64_t> signaler;
-    FENCE_STATUS state;
-    SyncScope scope;
-
-    // Default constructor
-    FENCE_STATE(VkFence f, const VkFenceCreateInfo *pCreateInfo)
-        : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
-          createInfo(*pCreateInfo),
-          state((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
-          scope(kSyncScopeInternal) {}
-
-    VkFence fence() const { return handle_.Cast<VkFence>(); }
-};
-
-class SEMAPHORE_STATE : public REFCOUNTED_NODE {
-  public:
-    std::pair<VkQueue, uint64_t> signaler;
-    bool signaled;
-    SyncScope scope;
-    VkSemaphoreType type;
-    uint64_t payload;
-
-    SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info)
-        : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
-          signaler(VK_NULL_HANDLE, 0),
-          signaled(false),
-          scope(kSyncScopeInternal),
-          type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
-          payload(type_create_info ? type_create_info->initialValue : 0) {}
-
-    VkSemaphore semaphore() const { return handle_.Cast<VkSemaphore>(); }
-};
-
 class EVENT_STATE : public BASE_NODE {
   public:
     int write_in_use = 0;
     VkPipelineStageFlags2KHR stageMask = VkPipelineStageFlags2KHR(0);
     VkEventCreateFlags flags;
-    EVENT_STATE(VkEvent event_, VkEventCreateFlags flags_)
-        : BASE_NODE(event_, kVulkanObjectTypeEvent), flags(flags_) {}
+    EVENT_STATE(VkEvent event_, VkEventCreateFlags flags_) : BASE_NODE(event_, kVulkanObjectTypeEvent), flags(flags_) {}
 
     VkEvent event() const { return handle_.Cast<VkEvent>(); }
-};
-
-class QUEUE_STATE {
-  public:
-    VkQueue queue;
-    uint32_t queueFamilyIndex;
-
-    uint64_t seq;
-    std::deque<CB_SUBMISSION> submissions;
-};
-
-class QUEUE_FAMILY_PERF_COUNTERS {
-  public:
-    std::vector<VkPerformanceCounterKHR> counters;
-};
-
-struct PHYSICAL_DEVICE_STATE {
-    safe_VkPhysicalDeviceFeatures2 features2 = {};
-    VkPhysicalDevice phys_device = VK_NULL_HANDLE;
-    uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
-    std::vector<VkQueueFamilyProperties> queue_family_properties;
-    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
-    std::vector<VkPresentModeKHR> present_modes;
-    std::vector<VkSurfaceFormatKHR> surface_formats;
-    uint32_t display_plane_property_count = 0;
-
-    // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
-    layer_data::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
-
-    // TODO These are currently used by CoreChecks, but should probably be refactored
-    bool vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = false;
-    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
 };
 
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
@@ -180,45 +103,6 @@ struct create_shader_module_api_state {
     uint32_t unique_shader_id;
     VkShaderModuleCreateInfo instrumented_create_info;
     std::vector<unsigned int> instrumented_pgm;
-};
-
-struct GpuQueue {
-    VkPhysicalDevice gpu;
-    uint32_t queue_family_index;
-};
-
-struct SubresourceRangeErrorCodes {
-    const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
-};
-
-inline bool operator==(GpuQueue const& lhs, GpuQueue const& rhs) {
-    return (lhs.gpu == rhs.gpu && lhs.queue_family_index == rhs.queue_family_index);
-}
-
-namespace std {
-template <>
-struct hash<GpuQueue> {
-    size_t operator()(GpuQueue gq) const throw() {
-        return hash<uint64_t>()((uint64_t)(gq.gpu)) ^ hash<uint32_t>()(gq.queue_family_index);
-    }
-};
-}  // namespace std
-
-struct SURFACE_STATE : public BASE_NODE {
-    SWAPCHAIN_NODE* swapchain = nullptr;
-    layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
-
-    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
-
-    VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
-};
-
-struct DISPLAY_MODE_STATE : public BASE_NODE {
-    VkPhysicalDevice physical_device;
-
-    DISPLAY_MODE_STATE(VkDisplayModeKHR dm) : BASE_NODE(dm, kVulkanObjectTypeDisplayModeKHR) {}
-
-    VkDisplayModeKHR display_mode() const { return handle_.Cast<VkDisplayModeKHR>(); }
 };
 
 #define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \
@@ -315,7 +199,6 @@ class ValidationStateTracker : public ValidationObject {
     //  TODO -- make consistent with traits approach below.
     layer_data::unordered_map<VkQueue, QUEUE_STATE> queueMap;
 
-    layer_data::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
     layer_data::unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
     layer_data::unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;

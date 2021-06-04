@@ -2453,14 +2453,7 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
 }
 
 void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue) {
-    // Add queue to tracking set only if it is new
-    auto queue_is_new = queues.emplace(queue);
-    if (queue_is_new.second == true) {
-        QUEUE_STATE *queue_state = &queueMap[queue];
-        queue_state->queue = queue;
-        queue_state->queueFamilyIndex = queue_family_index;
-        queue_state->seq = 0;
-    }
+    queueMap.emplace(queue, QUEUE_STATE(queue, queue_family_index));
 }
 
 void ValidationStateTracker::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
@@ -4751,9 +4744,7 @@ void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice
                                                                 VkResult result) {
     if (VK_SUCCESS != result) return;
     if (!pMode) return;
-    auto display_mode_state = std::make_shared<DISPLAY_MODE_STATE>(*pMode);
-    display_mode_state->physical_device = physicalDevice;
-    display_mode_map[*pMode] = std::move(display_mode_state);
+    display_mode_map[*pMode] = std::make_shared<DISPLAY_MODE_STATE>(*pMode, physicalDevice);
 }
 
 void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {

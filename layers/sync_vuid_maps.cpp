@@ -19,7 +19,8 @@
  */
 #include "sync_vuid_maps.h"
 #include "core_error_location.h"
-#include "state_tracker.h"
+#include "device_state.h"
+#include "core_validation.h"
 #include <cassert>
 #include <algorithm>
 #include <array>

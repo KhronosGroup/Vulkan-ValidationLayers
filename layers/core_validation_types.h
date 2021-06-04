@@ -41,9 +41,11 @@
 #include "image_layout_map.h"
 #include "command_validation.h"
 #include "base_node.h"
-#include "image_state.h"
+#include "device_state.h"
 #include "buffer_state.h"
+#include "image_state.h"
 #include "pipeline_state.h"
+#include "queue_state.h"
 #include "query_state.h"
 #include "ray_tracing_state.h"
 #include "render_pass_state.h"
@@ -511,88 +513,6 @@ static inline QFOTransferBarrierSets<QFOBufferTransferBarrier> &GetQFOBarrierSet
                                                                                   const QFOBufferTransferBarrier &type_tag) {
     return cb->qfo_transfer_buffer_barriers;
 }
-
-struct SEMAPHORE_WAIT {
-    VkSemaphore semaphore;
-    VkSemaphoreType type;
-    VkQueue queue;
-    uint64_t payload;
-    uint64_t seq;
-};
-
-struct SEMAPHORE_SIGNAL {
-    VkSemaphore semaphore;
-    uint64_t payload;
-    uint64_t seq;
-};
-
-struct CB_SUBMISSION {
-    CB_SUBMISSION()
-        : cbs(), waitSemaphores(), signalSemaphores(), externalSemaphores(), fence(VK_NULL_HANDLE), perf_submit_pass(0) {}
-
-    std::vector<VkCommandBuffer> cbs;
-    std::vector<SEMAPHORE_WAIT> waitSemaphores;
-    std::vector<SEMAPHORE_SIGNAL> signalSemaphores;
-    std::vector<VkSemaphore> externalSemaphores;
-    VkFence fence;
-    uint32_t perf_submit_pass;
-};
-
-struct SHADER_MODULE_STATE;
-struct DeviceExtensions;
-
-struct DeviceFeatures {
-    VkPhysicalDeviceFeatures core;
-    VkPhysicalDeviceVulkan11Features core11;
-    VkPhysicalDeviceVulkan12Features core12;
-
-    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor;
-    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image;
-    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
-    VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext;
-    VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
-    VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;
-    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features;
-    VkPhysicalDeviceShaderImageFootprintFeaturesNV shader_image_footprint_features;
-    VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragment_shader_interlock_features;
-    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote_to_helper_invocation_features;
-    VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features;
-    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_props_features;
-    VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicated_allocation_image_aliasing_features;
-    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_query_features;
-    VkPhysicalDeviceCoherentMemoryFeaturesAMD device_coherent_memory_features;
-    VkPhysicalDeviceYcbcrImageArraysFeaturesEXT ycbcr_image_array_features;
-    VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features;
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features;
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR ray_tracing_acceleration_structure_features;
-    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fragment_density_map_features;
-    VkPhysicalDeviceFragmentDensityMap2FeaturesEXT fragment_density_map2_features;
-    VkPhysicalDeviceASTCDecodeFeaturesEXT astc_decode_features;
-    VkPhysicalDeviceCustomBorderColorFeaturesEXT custom_border_color_features;
-    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipeline_creation_cache_control_features;
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features;
-    VkPhysicalDeviceMultiviewFeatures multiview_features;
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features;
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features;
-    VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL shader_integer_functions2_features;
-    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shader_sm_builtins_feature;
-    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_feature;
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_feature;
-    VkPhysicalDeviceShaderClockFeaturesKHR shader_clock_feature;
-    VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering;
-    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
-    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2_features;
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;
-    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features;
-    VkPhysicalDeviceInheritedViewportScissorFeaturesNV inherited_viewport_scissor_features;
-    VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex_features;
-    // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
-    // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
-};
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 enum CopyCommandVersion { COPY_COMMAND_VERSION_1 = 0, COPY_COMMAND_VERSION_2 = 1 };
