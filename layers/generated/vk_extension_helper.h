@@ -384,6 +384,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_fragment_shader_interlock{kNotEnabled};
     ExtEnabled vk_ext_full_screen_exclusive{kNotEnabled};
     ExtEnabled vk_ext_global_priority{kNotEnabled};
+    ExtEnabled vk_ext_global_priority_query{kNotEnabled};
     ExtEnabled vk_ext_hdr_metadata{kNotEnabled};
     ExtEnabled vk_ext_host_query_reset{kNotEnabled};
     ExtEnabled vk_ext_image_drm_format_modifier{kNotEnabled};
@@ -487,6 +488,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_float_controls{kNotEnabled};
     ExtEnabled vk_khr_shader_non_semantic_info{kNotEnabled};
     ExtEnabled vk_khr_shader_subgroup_extended_types{kNotEnabled};
+    ExtEnabled vk_khr_shader_subgroup_uniform_control_flow{kNotEnabled};
     ExtEnabled vk_khr_shader_terminate_invocation{kNotEnabled};
     ExtEnabled vk_khr_shared_presentable_image{kNotEnabled};
     ExtEnabled vk_khr_spirv_1_4{kNotEnabled};
@@ -647,6 +649,9 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
 #endif
             {VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_global_priority, {})},
+            {VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_global_priority_query, {{
+                           {&DeviceExtensions::vk_ext_global_priority, VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_HDR_METADATA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_hdr_metadata, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
             {VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_host_query_reset, {{
@@ -863,6 +868,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_non_semantic_info, {})},
             {VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
+            {VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_uniform_control_flow, {{
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
             {VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_terminate_invocation, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1145,6 +1152,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
 #endif
     VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME,
+    VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME,
     VK_EXT_HDR_METADATA_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
     VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
@@ -1268,6 +1276,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
     VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
     VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
+    VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME,
     VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
     VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
     VK_KHR_SPIRV_1_4_EXTENSION_NAME,
