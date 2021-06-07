@@ -2213,12 +2213,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     vk::CreateInstance(&inst_info, NULL, &test_inst);
     uint32_t gpu_count;
-    VkPhysicalDevice objs[4];
-    vk::EnumeratePhysicalDevices(test_inst, &gpu_count, NULL);
-    if (gpu_count > 4) gpu_count = 4;
-    vk::EnumeratePhysicalDevices(test_inst, &gpu_count, objs);
+    vk::EnumeratePhysicalDevices(test_inst, &gpu_count, nullptr);
+    std::vector<VkPhysicalDevice> phys_devices(gpu_count);
+    vk::EnumeratePhysicalDevices(test_inst, &gpu_count, phys_devices.data());
+
     VkPhysicalDeviceProperties properties;
-    vk::GetPhysicalDeviceProperties(objs[0], &properties);
+    vk::GetPhysicalDeviceProperties(phys_devices[m_gpu_index], &properties);
     if (m_device->props.limits.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1)
         m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
     vk::DestroyInstance(test_inst, NULL);
