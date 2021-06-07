@@ -487,6 +487,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 
         // Initialize physical device and properties with first device found
         gpu_ = phys_devices[0];
+        m_gpu_index = 0;
         vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
 
         // See if there are any higher priority devices found
@@ -496,6 +497,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
             if (device_type_rank[tmp_props.deviceType] > device_type_rank[physDevProps_.deviceType]) {
                 physDevProps_ = tmp_props;
                 gpu_ = phys_devices[i];
+                m_gpu_index = i;
             }
         }
     }
