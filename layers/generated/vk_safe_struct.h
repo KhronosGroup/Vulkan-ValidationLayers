@@ -4958,6 +4958,21 @@ struct safe_VkCheckpointData2NV {
     VkCheckpointData2NV const *ptr() const { return reinterpret_cast<VkCheckpointData2NV const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderSubgroupUniformControlFlow;
+    safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR(const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR(const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& operator=(const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR();
+    ~safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR();
+    void initialize(const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* copy_src);
+    VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *>(this); }
+    VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR {
     VkStructureType sType;
     void* pNext;
@@ -9594,6 +9609,37 @@ struct safe_VkPipelineColorWriteCreateInfoEXT {
     void initialize(const safe_VkPipelineColorWriteCreateInfoEXT* copy_src);
     VkPipelineColorWriteCreateInfoEXT *ptr() { return reinterpret_cast<VkPipelineColorWriteCreateInfoEXT *>(this); }
     VkPipelineColorWriteCreateInfoEXT const *ptr() const { return reinterpret_cast<VkPipelineColorWriteCreateInfoEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 globalPriorityQuery;
+    safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT(const VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT(const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT& operator=(const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT();
+    ~safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT();
+    void initialize(const VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT* copy_src);
+    VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *>(this); }
+    VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT const *>(this); }
+};
+
+struct safe_VkQueueFamilyGlobalPriorityPropertiesEXT {
+    VkStructureType sType;
+    void* pNext;
+    uint32_t priorityCount;
+    VkQueueGlobalPriorityEXT priorities[VK_MAX_GLOBAL_PRIORITY_SIZE_EXT];
+    safe_VkQueueFamilyGlobalPriorityPropertiesEXT(const VkQueueFamilyGlobalPriorityPropertiesEXT* in_struct);
+    safe_VkQueueFamilyGlobalPriorityPropertiesEXT(const safe_VkQueueFamilyGlobalPriorityPropertiesEXT& copy_src);
+    safe_VkQueueFamilyGlobalPriorityPropertiesEXT& operator=(const safe_VkQueueFamilyGlobalPriorityPropertiesEXT& copy_src);
+    safe_VkQueueFamilyGlobalPriorityPropertiesEXT();
+    ~safe_VkQueueFamilyGlobalPriorityPropertiesEXT();
+    void initialize(const VkQueueFamilyGlobalPriorityPropertiesEXT* in_struct);
+    void initialize(const safe_VkQueueFamilyGlobalPriorityPropertiesEXT* copy_src);
+    VkQueueFamilyGlobalPriorityPropertiesEXT *ptr() { return reinterpret_cast<VkQueueFamilyGlobalPriorityPropertiesEXT *>(this); }
+    VkQueueFamilyGlobalPriorityPropertiesEXT const *ptr() const { return reinterpret_cast<VkQueueFamilyGlobalPriorityPropertiesEXT const *>(this); }
 };
 
 union safe_VkDeviceOrHostAddressKHR {

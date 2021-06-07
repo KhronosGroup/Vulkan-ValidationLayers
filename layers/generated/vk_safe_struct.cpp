@@ -22133,6 +22133,59 @@ void safe_VkCheckpointData2NV::initialize(const safe_VkCheckpointData2NV* copy_s
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR(const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    shaderSubgroupUniformControlFlow(in_struct->shaderSubgroupUniformControlFlow)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR(const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    shaderSubgroupUniformControlFlow = copy_src.shaderSubgroupUniformControlFlow;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::operator=(const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderSubgroupUniformControlFlow = copy_src.shaderSubgroupUniformControlFlow;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::~safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::initialize(const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    shaderSubgroupUniformControlFlow = in_struct->shaderSubgroupUniformControlFlow;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR::initialize(const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR* copy_src)
+{
+    sType = copy_src->sType;
+    shaderSubgroupUniformControlFlow = copy_src->shaderSubgroupUniformControlFlow;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR* in_struct) :
     sType(in_struct->sType),
     shaderZeroInitializeWorkgroupMemory(in_struct->shaderZeroInitializeWorkgroupMemory)
@@ -41431,6 +41484,127 @@ void safe_VkPipelineColorWriteCreateInfoEXT::initialize(const safe_VkPipelineCol
     }
 }
 
+safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT::safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT(const VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    globalPriorityQuery(in_struct->globalPriorityQuery)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT::safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT::safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT(const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    globalPriorityQuery = copy_src.globalPriorityQuery;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT& safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT::operator=(const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    globalPriorityQuery = copy_src.globalPriorityQuery;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT::~safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT::initialize(const VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    globalPriorityQuery = in_struct->globalPriorityQuery;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT::initialize(const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    globalPriorityQuery = copy_src->globalPriorityQuery;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkQueueFamilyGlobalPriorityPropertiesEXT::safe_VkQueueFamilyGlobalPriorityPropertiesEXT(const VkQueueFamilyGlobalPriorityPropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    priorityCount(in_struct->priorityCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_MAX_GLOBAL_PRIORITY_SIZE_EXT; ++i) {
+        priorities[i] = in_struct->priorities[i];
+    }
+}
+
+safe_VkQueueFamilyGlobalPriorityPropertiesEXT::safe_VkQueueFamilyGlobalPriorityPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_EXT),
+    pNext(nullptr)
+{}
+
+safe_VkQueueFamilyGlobalPriorityPropertiesEXT::safe_VkQueueFamilyGlobalPriorityPropertiesEXT(const safe_VkQueueFamilyGlobalPriorityPropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    priorityCount = copy_src.priorityCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < VK_MAX_GLOBAL_PRIORITY_SIZE_EXT; ++i) {
+        priorities[i] = copy_src.priorities[i];
+    }
+}
+
+safe_VkQueueFamilyGlobalPriorityPropertiesEXT& safe_VkQueueFamilyGlobalPriorityPropertiesEXT::operator=(const safe_VkQueueFamilyGlobalPriorityPropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    priorityCount = copy_src.priorityCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < VK_MAX_GLOBAL_PRIORITY_SIZE_EXT; ++i) {
+        priorities[i] = copy_src.priorities[i];
+    }
+
+    return *this;
+}
+
+safe_VkQueueFamilyGlobalPriorityPropertiesEXT::~safe_VkQueueFamilyGlobalPriorityPropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueueFamilyGlobalPriorityPropertiesEXT::initialize(const VkQueueFamilyGlobalPriorityPropertiesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    priorityCount = in_struct->priorityCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_MAX_GLOBAL_PRIORITY_SIZE_EXT; ++i) {
+        priorities[i] = in_struct->priorities[i];
+    }
+}
+
+void safe_VkQueueFamilyGlobalPriorityPropertiesEXT::initialize(const safe_VkQueueFamilyGlobalPriorityPropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    priorityCount = copy_src->priorityCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < VK_MAX_GLOBAL_PRIORITY_SIZE_EXT; ++i) {
+        priorities[i] = copy_src->priorities[i];
+    }
+}
+
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {
     initialize(in_struct);
@@ -43573,6 +43747,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV:
             safe_pNext = new safe_VkQueueFamilyCheckpointProperties2NV(reinterpret_cast<const VkQueueFamilyCheckpointProperties2NV *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *>(pNext));
             break;
@@ -44031,6 +44208,12 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT:
             safe_pNext = new safe_VkPipelineColorWriteCreateInfoEXT(reinterpret_cast<const VkPipelineColorWriteCreateInfoEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_EXT:
+            safe_pNext = new safe_VkQueueFamilyGlobalPriorityPropertiesEXT(reinterpret_cast<const VkQueueFamilyGlobalPriorityPropertiesEXT *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
@@ -44539,6 +44722,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV:
             delete reinterpret_cast<const safe_VkQueueFamilyCheckpointProperties2NV *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR *>(header);
             break;
@@ -44997,6 +45183,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkPipelineColorWriteCreateInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceGlobalPriorityQueryFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkQueueFamilyGlobalPriorityPropertiesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);
