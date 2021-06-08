@@ -38,6 +38,10 @@ def BuildGn():
     update_cmd = './build-gn/update_deps.sh'
     common_ci.RunShellCmd(update_cmd)
 
+    print("Checking Header Dependencies\n")
+    gn_check_cmd = 'gn gen --check out/Debug'
+    common_ci.RunShellCmd(gn_check_cmd)
+
     print("Generating Ninja Files\n")
     gn_gen_cmd = 'gn gen out/Debug'
     common_ci.RunShellCmd(gn_gen_cmd)
