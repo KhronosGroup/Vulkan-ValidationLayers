@@ -161,9 +161,20 @@ endif()
 
 # Platform-specific compiler switches
 option(BUILD_WERROR "Treat compiler warnings as errors" ON)
+if(MAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wconversion
+
+                        # TODO These warnings also get turned on with -Wconversion in some versions of clang.
+                        #      Leave off until further investigation.
+                        -Wno-sign-conversion
+                        -Wno-shorten-64-to-32
+                        -Wno-string-conversion
+                        -Wno-implicit-int-conversion
+                        -Wno-enum-enum-conversion)
+
+endif()
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall
-                        -Wconversion
                         -Wextra
                         -Wno-unused-parameter
                         -Wno-missing-field-initializers
@@ -200,6 +211,19 @@ elseif(MSVC)
     add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
     add_compile_options("/w34245")
+endif()
+
+if(MAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wconversion
+
+                        # TODO These warnings also get turned on with -Wconversion in some versions of clang.
+                        #      Leave off until further investigation.
+                        -Wno-sign-conversion
+                        -Wno-shorten-64-to-32
+                        -Wno-string-conversion
+                        -Wno-implicit-int-conversion
+                        -Wno-enum-enum-conversion)
+
 endif()
 
 if(TARGET gtest OR IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
