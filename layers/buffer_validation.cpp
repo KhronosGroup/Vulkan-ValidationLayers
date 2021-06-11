@@ -5587,7 +5587,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
             if (FormatIsMultiplane(image_format)) {
                 VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
-                if (view_format != compat_format) {
+                if (FormatCompatibilityClass(compat_format) != FormatCompatibilityClass(view_format)) {
                     // View format must match the multiplane compatible format
                     std::stringstream ss;
                     ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
