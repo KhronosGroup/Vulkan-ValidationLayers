@@ -37,16 +37,16 @@ static const VkDeviceSize kMinDeviceAllocationSize = 256 * 1024;
 // very large allocation.
 static const VkDeviceSize kMinDedicatedAllocationSize = 1024 * 1024;
 
-typedef enum {
+enum ExtDeprecationReason {
     kExtPromoted,
     kExtObsoleted,
     kExtDeprecated,
-} ExtDeprecationReason;
+};
 
-typedef struct {
+struct DeprecationData {
     ExtDeprecationReason reason;
     std::string target;
-} DeprecationData;
+};
 
 typedef enum {
     kBPVendorArm = 0x00000001,
