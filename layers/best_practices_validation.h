@@ -504,8 +504,8 @@ class BestPractices : public ValidationStateTracker {
     // used to track CreateInfos for graphics pipelines
     layer_data::unordered_map<VkPipeline, GraphicsPipelineCIs> graphicsPipelineCIs = {};
 
-    // used to track state regarding depth pre-pass heuristic checks
-    struct DepthPrePassState {
+    // used to track state regarding render pass heuristic checks
+    struct RenderPassState {
         bool depthAttachment = false;
         bool colorAttachment = false;
         bool depthOnly = false;
@@ -514,8 +514,8 @@ class BestPractices : public ValidationStateTracker {
         uint32_t numDrawCallsDepthEqualCompare = 0;
     };
 
-    // used to track depth pre-pass heuristic data per command buffer
-    layer_data::unordered_map<VkCommandBuffer, DepthPrePassState> cbDepthPrePassStates = {};
+    // used to track heuristic data per command buffer
+    layer_data::unordered_map<VkCommandBuffer, RenderPassState> cbRenderPassState = {};
 
     // Used for instance versions of this object
     layer_data::unordered_map<VkSwapchainKHR, SWAPCHAIN_STATE_BP> swapchain_bp_state_map;
