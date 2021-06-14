@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.180 */
+/* Vulkan specification version: 1.2.181 */
 /*
  * Vulkan
  *
@@ -2642,6 +2642,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkInputAttachmentAspectReference-aspectMask-requiredbitmask", "aspectMask must not be 0", "1.2-extensions"},
     {"VUID-VkInstanceCreateInfo-flags-zerobitmask", "flags must be 0", "1.2-extensions"},
     {"VUID-VkInstanceCreateInfo-pApplicationInfo-parameter", "If pApplicationInfo is not NULL, pApplicationInfo must be a valid pointer to a valid VkApplicationInfo structure", "1.2-extensions"},
+    {"VUID-VkInstanceCreateInfo-pNext-04925", "If the pNext chain of VkInstanceCreateInfo includes a VkDebugReportCallbackCreateInfoEXT structure, the list of enabled extensions in ppEnabledExtensionNames must contain VK_EXT_debug_report.", "1.2-extensions"},
+    {"VUID-VkInstanceCreateInfo-pNext-04926", "If the pNext chain of VkInstanceCreateInfo includes a VkDebugUtilsMessengerCreateInfoEXT structure, the list of enabled extensions in ppEnabledExtensionNames must contain VK_EXT_debug_utils.", "1.2-extensions"},
     {"VUID-VkInstanceCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDebugReportCallbackCreateInfoEXT, VkDebugUtilsMessengerCreateInfoEXT, VkValidationFeaturesEXT, or VkValidationFlagsEXT", "1.2-extensions"},
     {"VUID-VkInstanceCreateInfo-ppEnabledExtensionNames-parameter", "If enabledExtensionCount is not 0, ppEnabledExtensionNames must be a valid pointer to an array of enabledExtensionCount null-terminated UTF-8 strings", "1.2-extensions"},
     {"VUID-VkInstanceCreateInfo-ppEnabledLayerNames-parameter", "If enabledLayerCount is not 0, ppEnabledLayerNames must be a valid pointer to an array of enabledLayerCount null-terminated UTF-8 strings", "1.2-extensions"},
