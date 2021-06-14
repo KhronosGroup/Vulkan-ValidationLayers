@@ -1150,6 +1150,40 @@ bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCo
     return skip;
 }
 
+void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo)
+{
+    // Clear state in case we are a secondary command buffer.
+    auto& state = cbRenderPassState[commandBuffer];
+    state = {};
+    ValidationStateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
+}
+
+void BestPractices::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+                                                    const VkAllocationCallbacks *pAllocation)
+{
+    COMMAND_POOL_STATE* pool = GetCommandPoolState(commandPool);
+    if (pool) {
+        for (auto& cb : pool->commandBuffers) {
+            auto itr = cbRenderPassState.find(cb);
+            if (itr != cbRenderPassState.end()) {
+                cbRenderPassState.erase(itr);
+            }
+        }
+    }
+    ValidationStateTracker::PreCallRecordDestroyCommandPool(device, commandPool, pAllocation);
+}
+
+void BestPractices::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
+                                                    uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers) {
+    for (uint32_t i = 0; i < commandBufferCount; i++) {
+        auto itr = cbRenderPassState.find(pCommandBuffers[i]);
+        if (itr != cbRenderPassState.end()) {
+            cbRenderPassState.erase(itr);
+        }
+    }
+    ValidationStateTracker::PreCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+}
+
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                                       const VkCommandBufferBeginInfo* pBeginInfo) const {
     bool skip = false;
@@ -1674,28 +1708,22 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
 
 void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                              const VkRenderPassBeginInfo* pRenderPassBegin) {
-    auto render_pass_state = cbRenderPassState.find(commandBuffer);
-
-    // add the tracking state if it doesn't exist
-    if (render_pass_state == cbRenderPassState.end()) {
-        auto result = cbRenderPassState.emplace(commandBuffer, RenderPassState{});
-
-        if (!result.second) return;
-
-        render_pass_state = result.first;
-    }
-
-    // reset the renderpass state
-    render_pass_state->second = {};
+    // Reset the renderpass state
+    auto& render_pass_state = cbRenderPassState[commandBuffer];
+    render_pass_state.numDrawCallsDepthOnly = 0;
+    render_pass_state.numDrawCallsDepthEqualCompare = 0;
+    render_pass_state.colorAttachment = false;
+    render_pass_state.depthAttachment = false;
+    // Don't reset state related to pipeline state.
 
     const auto* rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
 
     // track depth / color attachment usage within the renderpass
     for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
         // record if depth/color attachments are in use for this renderpass
-        if (rp_state->createInfo.pSubpasses[i].pDepthStencilAttachment != nullptr) render_pass_state->second.depthAttachment = true;
+        if (rp_state->createInfo.pSubpasses[i].pDepthStencilAttachment != nullptr) render_pass_state.depthAttachment = true;
 
-        if (rp_state->createInfo.pSubpasses[i].colorAttachmentCount > 0) render_pass_state->second.colorAttachment = true;
+        if (rp_state->createInfo.pSubpasses[i].colorAttachmentCount > 0) render_pass_state.colorAttachment = true;
     }
 }
 
