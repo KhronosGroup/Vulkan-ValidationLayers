@@ -1550,9 +1550,9 @@ void BestPractices::ValidateImageInQueue(const char* function_name, IMAGE_STATE_
 
 void BestPractices::AddDeferredQueueOperations(CMD_BUFFER_STATE* cb) {
     cb->queue_submit_functions.insert(cb->queue_submit_functions.end(),
-                                      queue_submit_functions_after_render_pass.begin(),
-                                      queue_submit_functions_after_render_pass.end());
-    queue_submit_functions_after_render_pass.clear();
+                                      cb->queue_submit_functions_after_render_pass.begin(),
+                                      cb->queue_submit_functions_after_render_pass.end());
+    cb->queue_submit_functions_after_render_pass.clear();
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
@@ -1645,7 +1645,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
                 image_view = GetImageViewState(framebuffer->createInfo.pAttachments[att]);
             }
 
-            QueueValidateImageView(queue_submit_functions_after_render_pass, "vkCmdEndRenderPass()", image_view, usage);
+            QueueValidateImageView(cb->queue_submit_functions_after_render_pass, "vkCmdEndRenderPass()", image_view, usage);
         }
     }
 }
@@ -3031,10 +3031,4 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
             }
         }
     }
-}
-
-void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
-    ValidationStateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
-    // This should not be required, but guards against buggy applications which do not call EndRenderPass correctly.
-    queue_submit_functions_after_render_pass.clear();
 }
