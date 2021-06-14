@@ -1271,13 +1271,13 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
         // check for depth/blend state tracking
         auto gp_cis = graphicsPipelineCIs.find(pipeline);
         if (gp_cis != graphicsPipelineCIs.end()) {
-            auto prepass_state = cbDepthPrePassStates.find(commandBuffer);
-            if (prepass_state == cbDepthPrePassStates.end()) {
-                auto result = cbDepthPrePassStates.emplace(commandBuffer, DepthPrePassState{});
+            auto render_pass_state = cbRenderPassState.find(commandBuffer);
+            if (render_pass_state == cbRenderPassState.end()) {
+                auto result = cbRenderPassState.emplace(commandBuffer, RenderPassState{});
 
                 if (!result.second) return;
 
-                prepass_state = result.first;
+                render_pass_state = result.first;
             }
 
             const auto* blend_state = gp_cis->second.colorBlendStateCI;
@@ -1285,23 +1285,23 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
 
             if (blend_state) {
                 // assume the pipeline is depth-only unless any of the attachments have color writes enabled
-                prepass_state->second.depthOnly = true;
+                render_pass_state->second.depthOnly = true;
                 for (size_t i = 0; i < blend_state->attachmentCount; i++) {
                     if (blend_state->pAttachments[i].colorWriteMask != 0) {
-                        prepass_state->second.depthOnly = false;
+                        render_pass_state->second.depthOnly = false;
                     }
                 }
             }
 
             // check for depth value usage
-            prepass_state->second.depthEqualComparison = false;
+            render_pass_state->second.depthEqualComparison = false;
 
             if (stencil_state && stencil_state->depthTestEnable) {
                 switch (stencil_state->depthCompareOp) {
                     case VK_COMPARE_OP_EQUAL:
                     case VK_COMPARE_OP_GREATER_OR_EQUAL:
                     case VK_COMPARE_OP_LESS_OR_EQUAL:
-                        prepass_state->second.depthEqualComparison = true;
+                        render_pass_state->second.depthEqualComparison = true;
                         break;
                     default:
                         break;
@@ -1309,7 +1309,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
             }
         } else {
             // reset depth pre-pass tracking
-            cbDepthPrePassStates.emplace(commandBuffer, DepthPrePassState{});
+            cbRenderPassState.emplace(commandBuffer, RenderPassState{});
         }
     }
 }
@@ -1674,28 +1674,28 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
 
 void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                              const VkRenderPassBeginInfo* pRenderPassBegin) {
-    auto prepass_state = cbDepthPrePassStates.find(commandBuffer);
+    auto render_pass_state = cbRenderPassState.find(commandBuffer);
 
     // add the tracking state if it doesn't exist
-    if (prepass_state == cbDepthPrePassStates.end()) {
-        auto result = cbDepthPrePassStates.emplace(commandBuffer, DepthPrePassState{});
+    if (render_pass_state == cbRenderPassState.end()) {
+        auto result = cbRenderPassState.emplace(commandBuffer, RenderPassState{});
 
         if (!result.second) return;
 
-        prepass_state = result.first;
+        render_pass_state = result.first;
     }
 
     // reset the renderpass state
-    prepass_state->second = {};
+    render_pass_state->second = {};
 
     const auto* rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
 
     // track depth / color attachment usage within the renderpass
     for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
         // record if depth/color attachments are in use for this renderpass
-        if (rp_state->createInfo.pSubpasses[i].pDepthStencilAttachment != nullptr) prepass_state->second.depthAttachment = true;
+        if (rp_state->createInfo.pSubpasses[i].pDepthStencilAttachment != nullptr) render_pass_state->second.depthAttachment = true;
 
-        if (rp_state->createInfo.pSubpasses[i].colorAttachmentCount > 0) prepass_state->second.colorAttachment = true;
+        if (rp_state->createInfo.pSubpasses[i].colorAttachmentCount > 0) render_pass_state->second.colorAttachment = true;
     }
 }
 
@@ -1764,11 +1764,11 @@ void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_
 }
 
 void BestPractices::RecordCmdDrawTypeArm(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller) {
-    auto prepass_state = cbDepthPrePassStates.find(cmd_buffer);
-    if (prepass_state != cbDepthPrePassStates.end() && draw_count >= kDepthPrePassMinDrawCountArm) {
-        if (prepass_state->second.depthOnly) prepass_state->second.numDrawCallsDepthOnly++;
+    auto render_pass_state = cbRenderPassState.find(cmd_buffer);
+    if (render_pass_state != cbRenderPassState.end() && draw_count >= kDepthPrePassMinDrawCountArm) {
+        if (render_pass_state->second.depthOnly) render_pass_state->second.numDrawCallsDepthOnly++;
 
-        if (prepass_state->second.depthEqualComparison) prepass_state->second.numDrawCallsDepthEqualCompare++;
+        if (render_pass_state->second.depthEqualComparison) render_pass_state->second.numDrawCallsDepthEqualCompare++;
     }
 }
 
@@ -2143,13 +2143,13 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
 
     skip |= StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer);
 
-    auto prepass_state = cbDepthPrePassStates.find(commandBuffer);
+    auto render_pass_state = cbRenderPassState.find(commandBuffer);
 
-    if (prepass_state == cbDepthPrePassStates.end()) return skip;
+    if (render_pass_state == cbRenderPassState.end()) return skip;
 
-    bool uses_depth = (prepass_state->second.depthAttachment || prepass_state->second.colorAttachment) &&
-                      prepass_state->second.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsArm &&
-                      prepass_state->second.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsArm;
+    bool uses_depth = (render_pass_state->second.depthAttachment || render_pass_state->second.colorAttachment) &&
+                      render_pass_state->second.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsArm &&
+                      render_pass_state->second.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsArm;
     if (uses_depth) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_EndRenderPass_DepthPrePassUsage,
