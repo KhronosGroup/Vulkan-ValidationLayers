@@ -458,6 +458,9 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) override;
 
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) override;
+    void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool pool, const VkAllocationCallbacks *pAllocation) override;
+    void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
+                                         uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers) override;
 
     std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                          VkSwapchainKHR swapchain) final {
