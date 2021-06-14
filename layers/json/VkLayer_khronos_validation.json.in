@@ -372,7 +372,7 @@
                             "view": "ADVANCED"
                         },
                         {
-                            "key": "VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT",
+                            "key": "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT",
                             "label": "Shader Validation Caching",
                             "description": "Disable caching of shader validation results",
                             "view": "ADVANCED"
