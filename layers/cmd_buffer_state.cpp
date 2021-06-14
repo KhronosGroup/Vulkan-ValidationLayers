@@ -264,6 +264,7 @@ void CMD_BUFFER_STATE::Reset() {
     Invalidate(true);
 
     queue_submit_functions.clear();
+    queue_submit_functions_after_render_pass.clear();
     cmd_execute_commands_functions.clear();
     eventUpdates.clear();
     queryUpdates.clear();
