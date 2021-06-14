@@ -60,10 +60,14 @@ void DebugPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
 
     const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
     device_debug_printf->output_buffer_size = *size_string ? atoi(size_string) : 1024;
-    const char *verbose_string = getLayerOption("khronos_validation.printf_verbose");
-    device_debug_printf->verbose = *verbose_string ? !strcmp(verbose_string, "true") : false;
-    const char *stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
-    device_debug_printf->use_stdout = *stdout_string ? !strcmp(stdout_string, "true") : false;
+
+    std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
+    transform(verbose_string.begin(), verbose_string.end(), verbose_string.begin(), ::tolower);
+    device_debug_printf->verbose = verbose_string.length() ? !verbose_string.compare("true") : false;
+
+    std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
+    transform(stdout_string.begin(), stdout_string.end(), stdout_string.begin(), ::tolower);
+    device_debug_printf->use_stdout = stdout_string.length() ? !stdout_string.compare("true") : false;
     if (getenv("DEBUG_PRINTF_TO_STDOUT")) device_debug_printf->use_stdout = true;
 
     if (device_debug_printf->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {

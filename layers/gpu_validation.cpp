@@ -257,12 +257,14 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
         device_gpu_assisted->enabled_features.robustness2_features.robustBufferAccess2) {
         device_gpu_assisted->buffer_oob_enabled = false;
     } else {
-        const char *bufferoob_string = getLayerOption("khronos_validation.gpuav_buffer_oob");
-        device_gpu_assisted->buffer_oob_enabled = *bufferoob_string ? !strcmp(bufferoob_string, "true") : true;
+        std::string bufferoob_string = getLayerOption("khronos_validation.gpuav_buffer_oob");
+        transform(bufferoob_string.begin(), bufferoob_string.end(), bufferoob_string.begin(), ::tolower);
+        device_gpu_assisted->buffer_oob_enabled = bufferoob_string.length() ? !bufferoob_string.compare("true") : true;
     }
 
-    const char *draw_indirect_string = getLayerOption("khronos_validation.validate_draw_indirect");
-    device_gpu_assisted->validate_draw_indirect = *draw_indirect_string ? !strcmp(draw_indirect_string, "true") : true;
+    std::string draw_indirect_string = getLayerOption("khronos_validation.validate_draw_indirect");
+    transform(draw_indirect_string.begin(), draw_indirect_string.end(), draw_indirect_string.begin(), ::tolower);
+    device_gpu_assisted->validate_draw_indirect = draw_indirect_string.length() ? !draw_indirect_string.compare("true") : true;
 
     if (device_gpu_assisted->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
