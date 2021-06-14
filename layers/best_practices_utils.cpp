@@ -962,14 +962,51 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
             gp_cis = result.first;
         }
 
-        gp_cis->second.colorBlendStateCI =
-            cgpl_state->pCreateInfos[i].pColorBlendState
-                ? new safe_VkPipelineColorBlendStateCreateInfo(cgpl_state->pCreateInfos[i].pColorBlendState)
+        auto& create_info = cgpl_state->pCreateInfos[i];
+        GraphicsPipelineCIs &cis = gp_cis->second;
+
+        cis.colorBlendStateCI =
+            create_info.pColorBlendState
+                ? new safe_VkPipelineColorBlendStateCreateInfo(create_info.pColorBlendState)
                 : nullptr;
-        gp_cis->second.depthStencilStateCI =
+        cis.depthStencilStateCI =
             cgpl_state->pCreateInfos[i].pDepthStencilState
-                ? new safe_VkPipelineDepthStencilStateCreateInfo(cgpl_state->pCreateInfos[i].pDepthStencilState)
+                ? new safe_VkPipelineDepthStencilStateCreateInfo(create_info.pDepthStencilState)
                 : nullptr;
+
+        // Record which frame buffer attachments we should consider to be accessed when a draw call is performed.
+        RENDER_PASS_STATE* rp = GetRenderPassState(create_info.renderPass);
+        auto& subpass = rp->createInfo.pSubpasses[create_info.subpass];
+        cis.accessFramebufferAttachments.clear();
+
+        if (cis.colorBlendStateCI) {
+            for (uint32_t j = 0; j < cis.colorBlendStateCI->attachmentCount; j++) {
+                if (cis.colorBlendStateCI->pAttachments[j].colorWriteMask != 0) {
+                    uint32_t attachment = subpass.pColorAttachments[j].attachment;
+                    if (attachment != VK_ATTACHMENT_UNUSED) {
+                        cis.accessFramebufferAttachments.push_back({ attachment, VK_IMAGE_ASPECT_COLOR_BIT });
+                    }
+                }
+            }
+        }
+
+        if (cis.depthStencilStateCI && (cis.depthStencilStateCI->depthTestEnable ||
+                                        cis.depthStencilStateCI->depthBoundsTestEnable ||
+                                        cis.depthStencilStateCI->stencilTestEnable)) {
+            uint32_t attachment = subpass.pDepthStencilAttachment ?
+                                  subpass.pDepthStencilAttachment->attachment :
+                                  VK_ATTACHMENT_UNUSED;
+            if (attachment != VK_ATTACHMENT_UNUSED) {
+                VkImageAspectFlags aspects = 0;
+                if (cis.depthStencilStateCI->depthTestEnable || cis.depthStencilStateCI->depthBoundsTestEnable) {
+                    aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
+                }
+                if (cis.depthStencilStateCI->stencilTestEnable) {
+                    aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
+                cis.accessFramebufferAttachments.push_back({ attachment, aspects });
+            }
+        }
     }
 }
 
