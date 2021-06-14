@@ -503,6 +503,11 @@ class BestPractices : public ValidationStateTracker {
     struct GraphicsPipelineCIs {
         const safe_VkPipelineDepthStencilStateCreateInfo* depthStencilStateCI;
         const safe_VkPipelineColorBlendStateCreateInfo* colorBlendStateCI;
+        struct AttachmentInfo {
+            uint32_t framebufferAttachment;
+            VkImageAspectFlags aspects;
+        };
+        std::vector<AttachmentInfo> accessFramebufferAttachments;
     };
 
     // used to track CreateInfos for graphics pipelines
