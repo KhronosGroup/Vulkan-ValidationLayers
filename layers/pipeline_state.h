@@ -137,6 +137,14 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
         push_constant_ranges.reset();
         compat_for_set.clear();
     }
+
+    std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDsl(uint32_t set) const {
+        std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
+        if (set < set_layouts.size()) {
+            dsl = set_layouts[set];
+        }
+        return dsl;
+    }
 };
 
 // Shader typedefs needed to store StageStage below
@@ -310,6 +318,7 @@ struct LAST_BOUND_STATE {
     void Reset();
 
     void UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state, cvdescriptorset::DescriptorSet *ds);
+    void UpdateSamplerDescriptorsUsedByImage();
 
     inline bool IsUsing() const { return pipeline_state ? true : false; }
 };

@@ -155,15 +155,6 @@ void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSample
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(PIPELINE_LAYOUT_STATE const *layout_data,
-                                                                                     uint32_t set) {
-    std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
-    if (layout_data && (set < layout_data->set_layouts.size())) {
-        dsl = layout_data->set_layouts[set];
-    }
-    return dsl;
-}
-
 void AddImageStateProps(IMAGE_STATE &image_state, const VkDevice device, const VkPhysicalDevice physical_device) {
     // Add feature support according to Image Format Features (vkspec.html#resources-image-format-features)
     // if format is AHB external format then the features are already set
@@ -3054,26 +3045,6 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
     }
 }
 
-void UpdateSamplerDescriptorsUsedByImage(LAST_BOUND_STATE &last_bound_state) {
-    if (!last_bound_state.pipeline_state) return;
-    if (last_bound_state.per_set.empty()) return;
-
-    for (auto &slot : last_bound_state.pipeline_state->active_slots) {
-        for (auto &req : slot.second) {
-            for (auto &samplers : req.second.samplers_used_by_image) {
-                for (auto &sampler : samplers) {
-                    if (sampler.first.sampler_slot.first < last_bound_state.per_set.size() &&
-                        last_bound_state.per_set[sampler.first.sampler_slot.first].bound_descriptor_set) {
-                        sampler.second = last_bound_state.per_set[sampler.first.sampler_slot.first]
-                                             .bound_descriptor_set->GetDescriptorFromBinding(sampler.first.sampler_slot.second,
-                                                                                             sampler.first.sampler_index);
-                    }
-                }
-            }
-        }
-    }
-}
-
 void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                           VkPipeline pipeline) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
@@ -3133,7 +3104,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
             }
         }
     }
-    UpdateSamplerDescriptorsUsedByImage(cb_state->lastBound[lv_bind_point]);
+    cb_state->lastBound[lv_bind_point].UpdateSamplerDescriptorsUsedByImage();
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
@@ -3567,29 +3538,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
     UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, firstSet, setCount, pDescriptorSets, nullptr,
                                   dynamicOffsetCount, pDynamicOffsets);
     cb_state->lastBound[lv_bind_point].pipeline_layout = layout;
-    UpdateSamplerDescriptorsUsedByImage(cb_state->lastBound[lv_bind_point]);
-}
-
-void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state, cvdescriptorset::DescriptorSet *ds) {
-    if (push_descriptor_set) {
-        for (auto &ps: per_set) {
-            if (ps.bound_descriptor_set == push_descriptor_set.get()) {
-                cb_state->RemoveChild(ps.bound_descriptor_set);
-                ps.bound_descriptor_set = nullptr;
-            }
-        }
-    }
-    cb_state->AddChild(ds);
-    push_descriptor_set.reset(ds);
-}
-void LAST_BOUND_STATE::Reset() {
-    pipeline_state = nullptr;
-    pipeline_layout = VK_NULL_HANDLE;
-    if (push_descriptor_set) {
-        push_descriptor_set->Reset();
-    }
-    push_descriptor_set = nullptr;
-    per_set.clear();
+    cb_state->lastBound[lv_bind_point].UpdateSamplerDescriptorsUsedByImage();
 }
 
 void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipelineBindPoint,
@@ -4969,7 +4918,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
     const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
     if (template_state) {
         auto layout_data = GetPipelineLayout(layout);
-        auto dsl = GetDslFromPipelineLayout(layout_data, set);
+        auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
         const auto &template_ci = template_state->create_info;
         if (dsl && !dsl->Destroyed()) {
             // Decode the template into a set of write updates
