@@ -1234,6 +1234,14 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                        VkResult result) override;
 
+    void RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo* pInfo, VkDeviceAddress address);
+    void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                              VkDeviceAddress address) override;
+    void PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                 VkDeviceAddress address) override;
+    void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                 VkDeviceAddress address) override;
+
     DeviceFeatures enabled_features = {};
     // Device specific data
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
@@ -1296,6 +1304,11 @@ class ValidationStateTracker : public ValidationObject {
             }
         }
     }
+
+  protected:
+    // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
+    // TODO is it sufficient to track a pointer, or do we need a std::shared_ptr<BUFFER_STATE>?
+    layer_data::unordered_map<VkDeviceAddress, BUFFER_STATE*> buffer_address_map_;
 
   private:
     // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.

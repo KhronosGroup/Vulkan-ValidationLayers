@@ -6492,6 +6492,66 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                                  "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR or VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR.");
                 }
             }
+
+            skip |= ValidateAccelerationBuffers(info_index, pInfos[info_index], "vkCmdBuildAccelerationStructuresKHR");
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccelerationStructureBuildGeometryInfoKHR &info,
+                                             const char *func_name) const {
+    bool skip = false;
+    const auto geometry_count = info.geometryCount;
+    const auto *p_geometries = info.pGeometries;
+    const auto *const *const pp_geometries = info.ppGeometries;
+
+    auto buffer_check = [this, info_index, func_name](uint32_t gi, const VkDeviceOrHostAddressConstKHR address,
+                                                      const char *field) -> bool {
+        const auto itr = buffer_address_map_.find(address.deviceAddress);
+        if (itr != buffer_address_map_.cend() &&
+            !(itr->second->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
+            LogObjectList objlist(device);
+            objlist.add(itr->second->Handle());
+            return LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673",
+                            "%s(): The buffer associated with pInfos[%" PRIu32 "].pGeometries[%" PRIu32
+                            "].%s was not created with VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.",
+                            func_name, info_index, gi, field);
+        }
+        return false;
+    };
+
+    // Parameter validation has already checked VUID-03788: !(pGeometries && ppGeometries)
+    std::function<const VkAccelerationStructureGeometryKHR &(uint32_t)> geom_accessor;
+    if (p_geometries) {
+        geom_accessor = [p_geometries](uint32_t i) -> const VkAccelerationStructureGeometryKHR & { return p_geometries[i]; };
+    } else if (pp_geometries) {
+        geom_accessor = [pp_geometries](uint32_t i) -> const VkAccelerationStructureGeometryKHR & {
+            // pp_geometries[i] is assumed to be a valid pointer
+            return *pp_geometries[i];
+        };
+    }
+
+    if (geom_accessor) {
+        for (uint32_t geom_index = 0; geom_index < geometry_count; ++geom_index) {
+            const auto &geom_data = geom_accessor(geom_index);
+            switch (geom_data.geometryType) {
+                case VK_GEOMETRY_TYPE_TRIANGLES_KHR:  // == VK_GEOMETRY_TYPE_TRIANGLES_NV
+                    skip |= buffer_check(geom_index, geom_data.geometry.triangles.vertexData, "geometry.triangles.vertexData");
+                    skip |= buffer_check(geom_index, geom_data.geometry.triangles.indexData, "geometry.triangles.indexData");
+                    skip |=
+                        buffer_check(geom_index, geom_data.geometry.triangles.transformData, "geometry.triangles.transformData");
+                    break;
+                case VK_GEOMETRY_TYPE_INSTANCES_KHR:
+                    skip |= buffer_check(geom_index, geom_data.geometry.instances.data, "geometry.instances.data");
+                    break;
+                case VK_GEOMETRY_TYPE_AABBS_KHR:  // == VK_GEOMETRY_TYPE_AABBS_NV
+                    skip |= buffer_check(geom_index, geom_data.geometry.aabbs.data, "geometry.aabbs.data");
+                    break;
+                default:
+                    // no-op
+                    break;
+            }
         }
     }
     return skip;
