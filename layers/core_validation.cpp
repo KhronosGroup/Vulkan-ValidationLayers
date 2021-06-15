@@ -96,42 +96,6 @@ extern template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(
     const CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count, const VkBufferMemoryBarrier2KHR *buffer_barriers,
     uint32_t image_barrier_count, const VkImageMemoryBarrier2KHR *image_barriers) const;
 
-// These functions are defined *outside* the core_validation namespace as their type
-// is also defined outside that namespace
-size_t PipelineLayoutCompatDef::hash() const {
-    hash_util::HashCombiner hc;
-    // The set number is integral to the CompatDef's distinctiveness
-    hc << set << push_constant_ranges.get();
-    const auto &descriptor_set_layouts = *set_layouts_id.get();
-    for (uint32_t i = 0; i <= set; i++) {
-        hc << descriptor_set_layouts[i].get();
-    }
-    return hc.Value();
-}
-
-bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) const {
-    if ((set != other.set) || (push_constant_ranges != other.push_constant_ranges)) {
-        return false;
-    }
-
-    if (set_layouts_id == other.set_layouts_id) {
-        // if it's the same set_layouts_id, then *any* subset will match
-        return true;
-    }
-
-    // They aren't exactly the same PipelineLayoutSetLayouts, so we need to check if the required subsets match
-    const auto &descriptor_set_layouts = *set_layouts_id.get();
-    assert(set < descriptor_set_layouts.size());
-    const auto &other_ds_layouts = *other.set_layouts_id.get();
-    assert(set < other_ds_layouts.size());
-    for (uint32_t i = 0; i <= set; i++) {
-        if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
 using std::max;
 using std::string;
 using std::stringstream;
@@ -13471,8 +13435,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     skip |= ValidateCmd(cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR, func_name);
 
     const auto layout_data = GetPipelineLayout(layout);
-    const auto dsl = GetDslFromPipelineLayout(layout_data, set);
-
+    const auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
     // Validate the set index points to a push descriptor set and is in range
     if (dsl) {
         if (!dsl->IsPushDescriptor()) {
@@ -15010,127 +14973,6 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
     }
     return skip;
 }
-
-void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                                          std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
-    reset();
-    bool uses_color_attachment = false;
-    bool uses_depthstencil_attachment = false;
-    if (pCreateInfo->subpass < rpstate->createInfo.subpassCount) {
-        const auto &subpass = rpstate->createInfo.pSubpasses[pCreateInfo->subpass];
-
-        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-            if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
-                uses_color_attachment = true;
-                break;
-            }
-        }
-
-        if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            uses_depthstencil_attachment = true;
-        }
-    }
-    graphicsPipelineCI.initialize(pCreateInfo, uses_color_attachment, uses_depthstencil_attachment);
-    if (graphicsPipelineCI.pInputAssemblyState) {
-        topology_at_rasterizer = graphicsPipelineCI.pInputAssemblyState->topology;
-    }
-
-    stage_state.resize(pCreateInfo->stageCount);
-    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-        const VkPipelineShaderStageCreateInfo *pssci = &pCreateInfo->pStages[i];
-        this->duplicate_shaders |= this->active_shaders & pssci->stage;
-        this->active_shaders |= pssci->stage;
-        state_data->RecordPipelineShaderStage(pssci, this, &stage_state[i]);
-    }
-
-    if (graphicsPipelineCI.pVertexInputState) {
-        const auto vici = graphicsPipelineCI.pVertexInputState;
-        if (vici->vertexBindingDescriptionCount) {
-            this->vertex_binding_descriptions_ = std::vector<VkVertexInputBindingDescription>(
-                vici->pVertexBindingDescriptions, vici->pVertexBindingDescriptions + vici->vertexBindingDescriptionCount);
-
-            this->vertex_binding_to_index_map_.reserve(vici->vertexBindingDescriptionCount);
-            for (uint32_t i = 0; i < vici->vertexBindingDescriptionCount; ++i) {
-                this->vertex_binding_to_index_map_[vici->pVertexBindingDescriptions[i].binding] = i;
-            }
-        }
-        if (vici->vertexAttributeDescriptionCount) {
-            this->vertex_attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
-                vici->pVertexAttributeDescriptions, vici->pVertexAttributeDescriptions + vici->vertexAttributeDescriptionCount);
-            for (uint32_t i = 0; i < vici->vertexAttributeDescriptionCount; ++i) {
-                const auto attribute_format = vici->pVertexAttributeDescriptions[i].format;
-                VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attribute_format);
-                if (FormatElementIsTexel(attribute_format)) {
-                    vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attribute_format));
-                }
-                this->vertex_attribute_alignments_.push_back(vtx_attrib_req_alignment);
-            }
-        }
-    }
-    if (graphicsPipelineCI.pColorBlendState) {
-        const auto cbci = graphicsPipelineCI.pColorBlendState;
-        if (cbci->attachmentCount) {
-            this->attachments =
-                std::vector<VkPipelineColorBlendAttachmentState>(cbci->pAttachments, cbci->pAttachments + cbci->attachmentCount);
-        }
-    }
-    rp_state = rpstate;
-}
-
-void PIPELINE_STATE::initComputePipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo) {
-    reset();
-    computePipelineCI.initialize(pCreateInfo);
-    switch (computePipelineCI.stage.stage) {
-        case VK_SHADER_STAGE_COMPUTE_BIT:
-            this->active_shaders |= VK_SHADER_STAGE_COMPUTE_BIT;
-            stage_state.resize(1);
-            state_data->RecordPipelineShaderStage(&pCreateInfo->stage, this, &stage_state[0]);
-            break;
-        default:
-            // TODO : Flag error
-            break;
-    }
-}
-
-template <typename CreateInfo>
-void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data, const CreateInfo *pCreateInfo) {
-    reset();
-    raytracingPipelineCI.initialize(pCreateInfo);
-
-    stage_state.resize(pCreateInfo->stageCount);
-    for (uint32_t stage_index = 0; stage_index < pCreateInfo->stageCount; stage_index++) {
-        const auto &shader_stage = pCreateInfo->pStages[stage_index];
-        switch (shader_stage.stage) {
-            case VK_SHADER_STAGE_RAYGEN_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_MISS_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_MISS_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_CALLABLE_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NV;
-                break;
-            default:
-                // TODO : Flag error
-                break;
-        }
-        state_data->RecordPipelineShaderStage(&shader_stage, this, &stage_state[stage_index]);
-    }
-}
-
-template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data,
-                                                     const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
-template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data,
-                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfo);
 
 bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D *pFragmentSize,
                                                              const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) const {
