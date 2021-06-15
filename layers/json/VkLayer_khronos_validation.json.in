@@ -367,7 +367,7 @@
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET",
-                            "label": "Idle Descritor Set",
+                            "label": "Idle Descriptor Set",
                             "description": "",
                             "view": "ADVANCED"
                         },
