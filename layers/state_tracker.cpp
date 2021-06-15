@@ -5668,3 +5668,27 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
     cb_state->status |= CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET;
     cb_state->static_status &= ~(CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET | CBSTATUS_VERTEX_INPUT_SET);
 }
+
+void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {
+    BUFFER_STATE *buffer_state = GetBufferState(pInfo->buffer);
+    if (buffer_state) {
+        // address is used for GPU-AV and ray tracing buffer validation
+        buffer_state->deviceAddress = address;
+        buffer_address_map_.emplace(address, buffer_state);
+    }
+}
+
+void ValidationStateTracker::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
+                                                                  VkDeviceAddress address) {
+    RecordGetBufferDeviceAddress(pInfo, address);
+}
+
+void ValidationStateTracker::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
+                                                                     VkDeviceAddress address) {
+    RecordGetBufferDeviceAddress(pInfo, address);
+}
+
+void ValidationStateTracker::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
+                                                                     VkDeviceAddress address) {
+    RecordGetBufferDeviceAddress(pInfo, address);
+}

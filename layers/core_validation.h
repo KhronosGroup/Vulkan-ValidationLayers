@@ -861,6 +861,7 @@ class CoreChecks : public ValidationStateTracker {
                                          const VkAllocationCallbacks* pAllocator) const override;
 
     bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) const override;
+    void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) override;
 
     bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                           const VkAllocationCallbacks* pAllocator) const override;
@@ -1133,6 +1134,8 @@ class CoreChecks : public ValidationStateTracker {
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const override;
     bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                          size_t dataSize, void* pData) const override;
+    bool ValidateAccelerationBuffers(uint32_t info_index, const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                     const char* func_name) const;
     bool PreCallValidateCmdBuildAccelerationStructuresKHR(
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const override;
