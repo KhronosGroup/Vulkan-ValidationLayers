@@ -933,6 +933,15 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     return skip;
 }
 
+void BestPractices::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator)
+{
+    auto itr = graphicsPipelineCIs.find(pipeline);
+    if (itr != graphicsPipelineCIs.end()) {
+        graphicsPipelineCIs.erase(itr);
+    }
+    ValidationStateTracker::PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
+}
+
 void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
