@@ -123,32 +123,42 @@ bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const cha
 
 bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const char* vuid) const {
     bool skip = false;
+    bool should_log_as_info = false;
     auto dep_info_it = special_use_extensions.find(extension_name);
 
     if (dep_info_it != special_use_extensions.end()) {
         auto special_uses = dep_info_it->second;
         std::string message("is intended to support the following uses: ");
+        if (special_uses.find("debugging") != std::string::npos) {
+            message.append("use by applications when debugging, ");
+            should_log_as_info = true;
+        }
         if (special_uses.find("cadsupport") != std::string::npos) {
             message.append("specialized functionality used by CAD/CAM applications, ");
+            should_log_as_info = false;
         }
         if (special_uses.find("d3demulation") != std::string::npos) {
             message.append("D3D emulation layers, and applications ported from D3D, by adding functionality specific to D3D, ");
+            should_log_as_info = false;
         }
         if (special_uses.find("devtools") != std::string::npos) {
             message.append(" developer tools such as capture-replay libraries, ");
-        }
-        if (special_uses.find("debugging") != std::string::npos) {
-            message.append("use by applications when debugging, ");
+            should_log_as_info = false;
         }
         if (special_uses.find("glemulation") != std::string::npos) {
             message.append(
                 "OpenGL and/or OpenGL ES emulation layers, and applications ported from those APIs, by adding functionality "
                 "specific to those APIs, ");
+            should_log_as_info = false;
         }
         message.append("and it is strongly recommended that they be otherwise avoided");
 
-        skip |= LogWarning(instance, vuid, "%s(): Attempting to enable extension %s, but this extension %s.", api_name,
-                           extension_name, message.c_str());
+        auto format = "%s(): Attempting to enable extension %s, but this extension %s.";
+        if (should_log_as_info) {
+            skip |= LogInfo(instance, vuid, format, api_name, extension_name, message.c_str());
+        } else {
+            skip |= LogWarning(instance, vuid, format, api_name, extension_name, message.c_str());
+        }
     }
     return skip;
 }
