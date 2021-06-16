@@ -951,19 +951,9 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
         const VkPipeline pipeline_handle = pPipelines[i];
 
         // record depth stencil state and color blend states for depth pre-pass tracking purposes
-        auto gp_cis = graphicsPipelineCIs.find(pipeline_handle);
-
-        // add the tracking state if it doesn't exist
-        if (gp_cis == graphicsPipelineCIs.end()) {
-            auto result = graphicsPipelineCIs.emplace(pipeline_handle, GraphicsPipelineCIs{});
-
-            if (!result.second) continue;
-
-            gp_cis = result.first;
-        }
+        GraphicsPipelineCIs& cis = graphicsPipelineCIs[pipeline_handle];
 
         auto& create_info = cgpl_state->pCreateInfos[i];
-        GraphicsPipelineCIs &cis = gp_cis->second;
 
         cis.colorBlendStateCI =
             create_info.pColorBlendState
@@ -1351,48 +1341,38 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
         // check for depth/blend state tracking
         auto gp_cis = graphicsPipelineCIs.find(pipeline);
         if (gp_cis != graphicsPipelineCIs.end()) {
-            auto render_pass_state = cbRenderPassState.find(commandBuffer);
-            if (render_pass_state == cbRenderPassState.end()) {
-                auto result = cbRenderPassState.emplace(commandBuffer, RenderPassState{});
+            auto& render_pass_state = cbRenderPassState[commandBuffer];
 
-                if (!result.second) return;
-
-                render_pass_state = result.first;
-            }
-
-            render_pass_state->second.nextDrawTouchesAttachments = gp_cis->second.accessFramebufferAttachments;
-            render_pass_state->second.drawTouchAttachments = true;
+            render_pass_state.nextDrawTouchesAttachments = gp_cis->second.accessFramebufferAttachments;
+            render_pass_state.drawTouchAttachments = true;
 
             const auto* blend_state = gp_cis->second.colorBlendStateCI;
             const auto* stencil_state = gp_cis->second.depthStencilStateCI;
 
             if (blend_state) {
                 // assume the pipeline is depth-only unless any of the attachments have color writes enabled
-                render_pass_state->second.depthOnly = true;
+                render_pass_state.depthOnly = true;
                 for (size_t i = 0; i < blend_state->attachmentCount; i++) {
                     if (blend_state->pAttachments[i].colorWriteMask != 0) {
-                        render_pass_state->second.depthOnly = false;
+                        render_pass_state.depthOnly = false;
                     }
                 }
             }
 
             // check for depth value usage
-            render_pass_state->second.depthEqualComparison = false;
+            render_pass_state.depthEqualComparison = false;
 
             if (stencil_state && stencil_state->depthTestEnable) {
                 switch (stencil_state->depthCompareOp) {
                     case VK_COMPARE_OP_EQUAL:
                     case VK_COMPARE_OP_GREATER_OR_EQUAL:
                     case VK_COMPARE_OP_LESS_OR_EQUAL:
-                        render_pass_state->second.depthEqualComparison = true;
+                        render_pass_state.depthEqualComparison = true;
                         break;
                     default:
                         break;
                 }
             }
-        } else {
-            // reset depth pre-pass tracking
-            cbRenderPassState.emplace(commandBuffer, RenderPassState{});
         }
     }
 }
