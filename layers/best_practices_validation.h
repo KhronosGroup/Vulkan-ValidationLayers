@@ -139,8 +139,6 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
 
-    void RecordCmdDrawTypeArm(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
-
     bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version, const char* vuid) const;
 
     bool ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const char* vuid) const;
@@ -509,13 +507,14 @@ class BestPractices : public ValidationStateTracker {
         uint32_t iteration = 0;
     };
 
+    struct AttachmentInfo {
+        uint32_t framebufferAttachment;
+        VkImageAspectFlags aspects;
+    };
+
     struct GraphicsPipelineCIs {
         const safe_VkPipelineDepthStencilStateCreateInfo* depthStencilStateCI;
         const safe_VkPipelineColorBlendStateCreateInfo* colorBlendStateCI;
-        struct AttachmentInfo {
-            uint32_t framebufferAttachment;
-            VkImageAspectFlags aspects;
-        };
         std::vector<AttachmentInfo> accessFramebufferAttachments;
     };
 
@@ -539,14 +538,13 @@ class BestPractices : public ValidationStateTracker {
             std::vector<VkClearRect> rects;
         };
 
-        struct AttachmentInfo {
-            uint32_t framebufferAttachment;
-            VkImageAspectFlags aspects;
-        };
-
         std::vector<ClearInfo> earlyClearAttachments;
         std::vector<AttachmentInfo> touchesAttachments;
+        std::vector<AttachmentInfo> nextDrawTouchesAttachments;
+        bool drawTouchAttachments = false;
     };
+
+    void RecordCmdDrawTypeArm(RenderPassState& render_pass_state, uint32_t draw_count, const char* caller);
 
     // used to track heuristic data per command buffer
     layer_data::unordered_map<VkCommandBuffer, RenderPassState> cbRenderPassState = {};
