@@ -2103,6 +2103,9 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
             RecordAttachmentAccess(primary_state, touch.framebufferAttachment,
                                    touch.aspects);
         }
+
+        primary_state.numDrawCallsDepthEqualCompare += secondary.numDrawCallsDepthEqualCompare;
+        primary_state.numDrawCallsDepthOnly += secondary.numDrawCallsDepthOnly;
     }
 
     ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
