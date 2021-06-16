@@ -1360,6 +1360,9 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
                 render_pass_state = result.first;
             }
 
+            render_pass_state->second.nextDrawTouchesAttachments = gp_cis->second.accessFramebufferAttachments;
+            render_pass_state->second.drawTouchAttachments = true;
+
             const auto* blend_state = gp_cis->second.colorBlendStateCI;
             const auto* stencil_state = gp_cis->second.depthStencilStateCI;
 
@@ -1762,6 +1765,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
     render_pass_state.numDrawCallsDepthEqualCompare = 0;
     render_pass_state.colorAttachment = false;
     render_pass_state.depthAttachment = false;
+    render_pass_state.drawTouchAttachments = true;
     // Don't reset state related to pipeline state.
 
     const auto* rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
@@ -1834,17 +1838,24 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
 }
 
 void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller) {
+    auto& render_pass_state = cbRenderPassState[cmd_buffer];
     if (VendorCheckEnabled(kBPVendorArm)) {
-        RecordCmdDrawTypeArm(cmd_buffer, draw_count, caller);
+        RecordCmdDrawTypeArm(render_pass_state, draw_count, caller);
+    }
+
+    if (render_pass_state.drawTouchAttachments) {
+        for (auto& touch : render_pass_state.nextDrawTouchesAttachments) {
+            RecordAttachmentAccess(render_pass_state, touch.framebufferAttachment, touch.aspects);
+        }
+        // No need to touch the same attachments over and over.
+        render_pass_state.drawTouchAttachments = false;
     }
 }
 
-void BestPractices::RecordCmdDrawTypeArm(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller) {
-    auto render_pass_state = cbRenderPassState.find(cmd_buffer);
-    if (render_pass_state != cbRenderPassState.end() && draw_count >= kDepthPrePassMinDrawCountArm) {
-        if (render_pass_state->second.depthOnly) render_pass_state->second.numDrawCallsDepthOnly++;
-
-        if (render_pass_state->second.depthEqualComparison) render_pass_state->second.numDrawCallsDepthEqualCompare++;
+void BestPractices::RecordCmdDrawTypeArm(RenderPassState& render_pass_state, uint32_t draw_count, const char* caller) {
+    if (draw_count >= kDepthPrePassMinDrawCountArm) {
+        if (render_pass_state.depthOnly) render_pass_state.numDrawCallsDepthOnly++;
+        if (render_pass_state.depthEqualComparison) render_pass_state.numDrawCallsDepthEqualCompare++;
     }
 }
 
@@ -2114,7 +2125,7 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
 void BestPractices::RecordAttachmentAccess(RenderPassState& state, uint32_t fb_attachment, VkImageAspectFlags aspects) {
     // Called when we have a partial clear attachment, or a normal draw call which accesses an attachment.
     auto itr = std::find_if(state.touchesAttachments.begin(), state.touchesAttachments.end(),
-                            [&](const RenderPassState::AttachmentInfo& info) {
+                            [&](const AttachmentInfo& info) {
                                 return info.framebufferAttachment == fb_attachment;
                             });
 
@@ -2132,7 +2143,7 @@ void BestPractices::RecordAttachmentClearAttachments(CMD_BUFFER_STATE* cmd_state
     // If we observe a full clear before any other access to a frame buffer attachment,
     // we have candidate for redundant clear attachments.
     auto itr = std::find_if(state.touchesAttachments.begin(), state.touchesAttachments.end(),
-                            [&](const RenderPassState::AttachmentInfo& info) {
+                            [&](const AttachmentInfo& info) {
                                 return info.framebufferAttachment == fb_attachment;
                             });
 
@@ -2723,7 +2734,7 @@ bool BestPractices::ValidateClearAttachment(VkCommandBuffer commandBuffer, const
     }
 
     auto attachment_itr = std::find_if(rp_itr->second.touchesAttachments.begin(), rp_itr->second.touchesAttachments.end(),
-                                       [&](const RenderPassState::AttachmentInfo& info) {
+                                       [&](const AttachmentInfo& info) {
                                            return info.framebufferAttachment == fb_attachment;
                                        });
 
