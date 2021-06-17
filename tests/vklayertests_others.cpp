@@ -2414,7 +2414,7 @@ TEST_F(VkLayerTest, GetSwapchainImageAndTryDestroy) {
     images.resize(image_count, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data()));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkDestroyImage-image");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyImage-image-04882");
     vk::DestroyImage(device(), images.at(0), nullptr);
     m_errorMonitor->VerifyFound();
 
