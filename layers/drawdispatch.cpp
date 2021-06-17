@@ -632,6 +632,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDispatchBase-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDispatchBase-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdDispatchBase-commandBuffer-02707";
+        protected_command_buffer           = "VUID-vkCmdDispatchBase-commandBuffer-02712";
         img_filter_cubic                   = "VUID-vkCmdDispatchBase-None-02693";
         filter_cubic                       = "VUID-vkCmdDispatchBase-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdDispatchBase-filterCubicMinmax-02695";
