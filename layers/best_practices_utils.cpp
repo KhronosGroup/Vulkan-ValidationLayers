@@ -123,11 +123,11 @@ bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const cha
 
 bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const char* vuid) const {
     bool skip = false;
-    bool should_log_as_info = false;
-    auto dep_info_it = special_use_extensions.find(extension_name);
+    const auto dep_info_it = special_use_extensions.find(extension_name);
 
     if (dep_info_it != special_use_extensions.end()) {
-        auto special_uses = dep_info_it->second;
+        const auto& special_uses = dep_info_it->second;
+        bool should_log_as_info = false;
         std::string message("is intended to support the following uses: ");
         if (special_uses.find("debugging") != std::string::npos) {
             message.append("use by applications when debugging, ");
@@ -153,7 +153,7 @@ bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const cha
         }
         message.append("and it is strongly recommended that they be otherwise avoided");
 
-        auto format = "%s(): Attempting to enable extension %s, but this extension %s.";
+        const char* const format = "%s(): Attempting to enable extension %s, but this extension %s.";
         if (should_log_as_info) {
             skip |= LogInfo(instance, vuid, format, api_name, extension_name, message.c_str());
         } else {

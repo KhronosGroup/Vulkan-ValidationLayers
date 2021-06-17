@@ -95,8 +95,8 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
-    TEST_DESCRIPTION("Create an instance with a deprecated extension.");
+TEST_F(VkBestPracticesLayerTest, UseDeprecatedAndSpecialUseInstanceExtensions) {
+    TEST_DESCRIPTION("Create an instance with a deprecated and a special use extension.");
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
     if (version < VK_API_VERSION_1_1) {
@@ -114,7 +114,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
 
     // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension");
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension");
     VkInstance dummy;
     auto features = features_;
     auto ici = GetInstanceCreateInfo();
