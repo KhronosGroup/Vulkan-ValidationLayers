@@ -2510,7 +2510,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         });
 
     // Allocate shader validation cache
-    if (!disabled[shader_validation_caching] && !core_checks->core_validation_cache) {
+    if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_checks->core_validation_cache) {
         std::string validation_cache_path;
         auto tmp_path = GetEnvironment("TMPDIR");
         if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
