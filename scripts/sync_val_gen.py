@@ -41,13 +41,12 @@ bot_stage ='VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR'
 def ParseAccessMasks(valid_usage_path, all_stages):
     vu_json_filename = os.path.join(valid_usage_path + os.sep, 'validusage.json')
     access_stage_table = {}
-    print(vu_json_filename)
     if os.path.isfile(vu_json_filename):
         json_file = open(vu_json_filename, 'r', encoding='utf-8')
         vuid_dict = json.load(json_file)
         json_file.close()
     if len(vuid_dict) == 0:
-        print("Error: Could not find, or error loading %s/validusage.json\n", vu_json_filename)
+        print('Error: Could not find, or error loading %s/validusage.json\n', vu_json_filename)
         sys.exit(1)
     # every synchronization2 access mask bit has a VUID enumerating all pipeline stages it is compatible with. It looks like this:
     # {
@@ -57,15 +56,15 @@ def ParseAccessMasks(valid_usage_path, all_stages):
     #             <code>stage_2</code>, <code>VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR</code>,
     #             or <code>VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR</code>"
     # },
-    vuid_prefix = "VUID-VkMemoryBarrier2KHR-srcAccessMask"
-    text_prefix = " If pname:srcAccessMask includes "
+    vuid_prefix = 'VUID-VkMemoryBarrier2KHR-srcAccessMask'
+    text_prefix = ' If pname:srcAccessMask includes '
     # remove catch-all pipeline stages that we don't need in our tables.
     strip_stages = [
-        "VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR",
-        "VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR",
-        "VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR",
+        'VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR',
+        'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR',
+        'VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR',
         # expands to INDEX_INPUT and VERTEX_ATTRIBUTE_INPUT, which are included explicitly in the VUIDs
-        "VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR",
+        'VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR',
     ]
     expand_stages = {
         # these have the same value
@@ -82,7 +81,7 @@ def ParseAccessMasks(valid_usage_path, all_stages):
     for extension_combo, vuid_list in vuid_dict['validation']['VkMemoryBarrier2KHR'].items():
         for vuid in vuid_list:
             if debug_json_parse:
-                print("extension_combo: ", extension_combo)
+                print('extension_combo: ', extension_combo)
             if 'VK_KHR_synchronization2' not in extension_combo:
                 continue
             if vuid['vuid'].startswith(vuid_prefix) and vuid['text'].startswith(text_prefix):
@@ -94,7 +93,7 @@ def ParseAccessMasks(valid_usage_path, all_stages):
                         stages += expand_stages.get(m, [m])
                 for bit in access_bits:
                     if debug_json_parse:
-                        print("access_mask: ", bit, " stages: ", stages)
+                        print('access_mask: ', bit, ' stages: ', stages)
                     access_stage_table[bit] = stages
     return access_stage_table
 
@@ -124,10 +123,10 @@ def ParseQueueCaps(table_text):
             skip = False
         elif (line.startswith('|ename:') or line.startswith('        ')) and not skip:
             if debug_table_parse:
-                print("// line {}".format(line))
+                print('// line {}'.format(line))
             cols = line.split('|')
             if debug_table_parse:
-                print("len(cols)", len(cols), cols)
+                print('len(cols)', len(cols), cols)
             if len(cols) == 3:
                 stage_column = cols[2]
                 access_enum = cols[1].split(':')[1].strip()
@@ -135,7 +134,7 @@ def ParseQueueCaps(table_text):
             else:
                 stage_column = cols[0].strip()
             if debug_table_parse:
-                print("stage_column:", stage_column)
+                print('stage_column:', stage_column)
             if stage_column.startswith(' Any'):
                 continue
             if stage_column.startswith(' None required'):
@@ -146,7 +145,7 @@ def ParseQueueCaps(table_text):
             stage_column = stage_column.rstrip(',')
             stages = stage_column.split(',')
             if debug_table_parse:
-                print("stages", len(stages), stages)
+                print('stages', len(stages), stages)
             if len(stages) < 1:
                 continue
             elif not stages[0]:
@@ -156,7 +155,7 @@ def ParseQueueCaps(table_text):
 
             access_stage_table[access_enum] += stage_enums
             if(debug_table_parse):
-                print("// access_stage_table[{}]: {}".format(access_enum, "|".join(access_stage_table[access_enum])))
+                print('// access_stage_table[{}]: {}'.format(access_enum, '|'.join(access_stage_table[access_enum])))
 
     return access_stage_table
 
@@ -344,10 +343,10 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
     if debug_stage_order_parse:
         print('STAGE_ORDER', 'PARSED PIPELINES')
         for pipeline_name, stage_list in stage_lists.items():
-            print(pipeline_name,"|".join(stage_list))
+            print(pipeline_name,'|'.join(stage_list))
 
         print('STAGE_ORDER', 'PARSED all_stages')
-        print('all_stages',"|".join(all_stages))
+        print('all_stages','|'.join(all_stages))
 
 
     # Create earlier/later maps
@@ -402,11 +401,11 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
     if debug_stage_order_parse:
         print('STAGE_ORDER PRIOR STAGES')
         for stage, stage_set in prior.items():
-            print(stage,"|".join(stage_set))
+            print(stage,'|'.join(stage_set))
 
         print('STAGE_ORDER SUBSEQUENT STAGES')
         for stage, stage_set in subseq.items():
-            print(stage,"|".join(stage_set))
+            print(stage,'|'.join(stage_set))
 
     if touchups_done != touchup:
         print('STAGE_ORDER Stage order touchups failed')
@@ -463,7 +462,7 @@ def InBitOrder(tag, enum_elem):
         if not bitpos:
             continue
 
-        if name.endswith("NONE_KHR"):
+        if name.endswith('NONE_KHR'):
             break
 
         found.append({'name': name, 'bitpos': int(bitpos)})
@@ -471,7 +470,7 @@ def InBitOrder(tag, enum_elem):
     in_bit_order = []
     for entry in sorted(found, key=lambda record: record['bitpos']):
         if debug_in_bit_order:
-            print ("adding ", {'name': entry['name'], 'mask': (1 << entry['bitpos'])})
+            print ('adding ', {'name': entry['name'], 'mask': (1 << entry['bitpos'])})
         bitpos = entry['bitpos']
         in_bit_order.append({'name': entry['name'], 'mask': (1 << bitpos), 'bitpos': bitpos})
 
@@ -552,19 +551,19 @@ def CreateStageAccessCombinations(config, stage_order, stage_access_types):
     for stage in stage_order:
         mini_stage = stage.lstrip()
         if mini_stage.startswith(enum_prefix):
-            mini_stage = mini_stage.replace(enum_prefix,"")
+            mini_stage = mini_stage.replace(enum_prefix,'')
         else:
-            mini_stage = mini_stage.replace("VK_PIPELINE_STAGE_2_", "")
-        mini_stage = mini_stage.replace("_BIT_KHR", "")
-        mini_stage = mini_stage.replace("_BIT", "")
+            mini_stage = mini_stage.replace('VK_PIPELINE_STAGE_2_', '')
+        mini_stage = mini_stage.replace('_BIT_KHR', '')
+        mini_stage = mini_stage.replace('_BIT', '')
 
         # Because access_stage_table's elements order might be different sometimes.
         # It causes the generator creates different code. It needs to be sorted.
         stage_access_types[stage].sort();
         for access in stage_access_types[stage]:
-            mini_access = access.replace("VK_ACCESS_2_", "").replace("_BIT_KHR", "")
-            mini_access = mini_access.replace("_BIT", "")
-            stage_access = "_".join((mini_stage,mini_access))
+            mini_access = access.replace('VK_ACCESS_2_', '').replace('_BIT_KHR', '')
+            mini_access = mini_access.replace('_BIT', '')
+            stage_access = '_'.join((mini_stage,mini_access))
             stage_access = enum_prefix + stage_access
             stage_access_bit = BitSuffixed(stage_access)
             is_read = stage_access.endswith('_READ') or ( '_READ_' in stage_access)
@@ -652,7 +651,7 @@ def StageAccessEnums(stage_accesses, config):
             for field in fields:
                 output.append(fields_format.format(entry[field], tab=indent) + ',')
             bit = entry['stage_access_bit']
-            output.append(fields_format.format(bit if bit is not None else "SyncStageAccessFlags(0)", tab=indent))
+            output.append(fields_format.format(bit if bit is not None else 'SyncStageAccessFlags(0)', tab=indent))
             output.append(indent +'},')
         output.append('} };')
     else:
@@ -811,7 +810,7 @@ def AllCommandsByQueueCapability(stage_order, stage_queue_table, config):
         for queue_flag in queue_flag_list:
              queue_flag_map[queue_flag].append(stage)
 
-    name = "AllCommandStagesByQueueFlags"
+    name = 'AllCommandStagesByQueueFlags'
     desc = 'Pipeline stages corresponding to VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR for each VkQueueFlagBits'
     return CrossReferenceTable(name, desc, 'VkQueueFlagBits', 'VkPipelineStageFlags2KHR', queue_caps, queue_flag_map, config)
 
@@ -888,7 +887,7 @@ def GenSyncTypeHelper(gen, is_source) :
     else:
         lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
                  '#include "vk_layer_data.h"']
-        lines.extend(("using {} = {};".format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
+        lines.extend(('using {} = {};'.format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
     lines.extend(['// clang-format off', ''])
 
     stage_order = pipeline_order.split()
