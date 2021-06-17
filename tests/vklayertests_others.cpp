@@ -10874,6 +10874,19 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &invalid_build_info_khr, &pBuildRangeInfos);
         m_errorMonitor->VerifyFound();
     }
+
+    // Buffer is missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR usage flag
+    {
+        VkBufferObj bad_usage_buffer;
+        bad_usage_buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                              VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+        VkBufferDeviceAddressInfo addr_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, bad_usage_buffer.handle()};
+        auto addr = vkGetBufferDeviceAddressKHR(m_device->handle(), &addr_info);
+        pGeometry[0].geometry.triangles.vertexData.deviceAddress = addr;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673");
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &pBuildRangeInfos);
+        m_errorMonitor->VerifyFound();
+    }
     delete[] pGeometry;
 }
 
