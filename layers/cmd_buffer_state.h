@@ -374,30 +374,41 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 	    return command_pool->queue_flags;
     }
 
-    template <typename Barrier, bool assume_transfer = false>
-    bool IsReleaseOp(const Barrier& barrier) const {
-        return (assume_transfer || IsTransferOp(barrier)) && (command_pool->queueFamilyIndex == barrier.srcQueueFamilyIndex);
-    }
-
-    template <typename Barrier, bool assume_transfer = false>
-    bool IsAcquireOp(const Barrier &barrier) const {
-        return (assume_transfer || IsTransferOp(barrier)) && (command_pool->queueFamilyIndex == barrier.dstQueueFamilyIndex);
-    }
-
     template <typename Barrier>
-    BarrierOperationsType ComputeBarrierOperationsType(const Barrier &barrier) const {
-        BarrierOperationsType op_type = kGeneral;
-
-        if (IsTransferOp<Barrier>(barrier)) {
-            if (IsReleaseOp<Barrier, true>(barrier)) {
-                op_type = kAllRelease;
-            } else if (IsAcquireOp<Barrier, true>(barrier)) {
-                op_type = kAllAcquire;
-            }
-        }
-        return op_type;
+    inline bool IsReleaseOp(const Barrier &barrier) const {
+        return (IsTransferOp(barrier)) && (command_pool->queueFamilyIndex == barrier.srcQueueFamilyIndex);
+    }
+    template <typename Barrier>
+    inline bool IsAcquireOp(const Barrier &barrier) const {
+        return (IsTransferOp(barrier)) && (command_pool->queueFamilyIndex == barrier.dstQueueFamilyIndex);
     }
 
   protected:
     void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
 };
+
+// specializations for barriers that cannot do queue family ownership transfers
+template <>
+inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkMemoryBarrier &barrier) const {
+    return false;
+}
+template <>
+inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkMemoryBarrier2KHR &barrier) const {
+    return false;
+}
+template <>
+inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkSubpassDependency2 &barrier) const {
+    return false;
+}
+template <>
+inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkMemoryBarrier &barrier) const {
+    return false;
+}
+template <>
+inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkMemoryBarrier2KHR &barrier) const {
+    return false;
+}
+template <>
+inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkSubpassDependency2 &barrier) const {
+    return false;
+}

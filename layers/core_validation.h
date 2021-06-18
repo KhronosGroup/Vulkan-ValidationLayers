@@ -232,14 +232,14 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAccessMask(const LogObjectList& objects, const Location& loc, VkQueueFlags queue_flags,
                             VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     template <typename Barrier>
-    bool ValidateMemoryBarrier(const LogObjectList& objects, const Location& loc, BarrierOperationsType op_type,
-                               VkQueueFlags queue_flags, const Barrier& barrier, VkPipelineStageFlags src_stage_mask,
+    bool ValidateMemoryBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
+                               const Barrier& barrier, VkPipelineStageFlags src_stage_mask,
                                VkPipelineStageFlags dst_stage_mask) const;
     template <typename Barrier>
-    bool ValidateMemoryBarrier(const LogObjectList& objects, const Location& loc, BarrierOperationsType op_type,
-                               VkQueueFlags queue_flags, const Barrier& barrier) const;
+    bool ValidateMemoryBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
+                               const Barrier& barrier) const;
 
-    bool ValidateSubpassBarrier(const LogObjectList& objects, const Location& loc, VkQueueFlags queue_flags,
+    bool ValidateSubpassBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                 const VkSubpassDependency2& barrier) const;
 
     bool ValidateDependencyInfo(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
