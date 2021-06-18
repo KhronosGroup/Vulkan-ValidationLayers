@@ -872,7 +872,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         att.loadOp = (m_clear_via_load_op) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         ;
         att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        att.stencilLoadOp = (m_clear_via_load_op) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
         att.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         att.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
