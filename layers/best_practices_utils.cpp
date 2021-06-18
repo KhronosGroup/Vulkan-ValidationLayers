@@ -2420,6 +2420,72 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
             VendorSpecificTag(kBPVendorArm));
     }
 
+    const CMD_BUFFER_STATE* cmd = GetCBState(commandBuffer);
+    RENDER_PASS_STATE* rp = cmd->activeRenderPass.get();
+
+    if (VendorCheckEnabled(kBPVendorArm) && rp) {
+
+        // If we use an attachment on-tile, we should access it in some way. Otherwise,
+        // it is redundant to have it be part of the render pass.
+        // Only consider it redundant if it will actually consume bandwidth, i.e.
+        // LOAD_OP_LOAD is used or STORE_OP_STORE. CLEAR -> DONT_CARE is benign,
+        // as is using pure input attachments.
+        // CLEAR -> STORE might be considered a "useful" thing to do, but
+        // the optimal thing to do is to defer the clear until you're actually
+        // going to render to the image.
+
+        uint32_t num_attachments = rp->createInfo.attachmentCount;
+        for (uint32_t i = 0; i < num_attachments; i++) {
+            if (!RenderPassUsesAttachmentOnTile(rp->createInfo, i)) {
+                continue;
+            }
+
+            auto& attachment = rp->createInfo.pAttachments[i];
+
+            VkImageAspectFlags bandwidth_aspects = 0;
+
+            if (!FormatIsStencilOnly(attachment.format) &&
+                (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
+                 attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE)) {
+                if (FormatHasDepth(attachment.format)) {
+                    bandwidth_aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
+                } else {
+                    bandwidth_aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
+                }
+            }
+
+            if (FormatHasStencil(attachment.format) &&
+                (attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
+                 attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
+                bandwidth_aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            }
+
+            if (!bandwidth_aspects) {
+                continue;
+            }
+
+            auto itr = std::find_if(render_pass_state->second.touchesAttachments.begin(),
+                                    render_pass_state->second.touchesAttachments.end(),
+                                    [&](const AttachmentInfo& info) {
+                                        return info.framebufferAttachment == i;
+                                    });
+            uint32_t untouched_aspects = bandwidth_aspects;
+            if (itr != render_pass_state->second.touchesAttachments.end()) {
+                untouched_aspects &= ~itr->aspects;
+            }
+
+            if (untouched_aspects) {
+                skip |= LogPerformanceWarning(
+                    device, kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile,
+                    "%s Render pass was ended, but attachment #%u (format: %u, untouched aspects 0x%x) "
+                    "was never accessed by a pipeline or clear command. "
+                    "On tile-based architectures, LOAD_OP_LOAD and STORE_OP_STORE consume bandwidth and should not be part of the render pass "
+                    "if the attachments are not intended to be accessed.",
+                    VendorSpecificTag(kBPVendorArm), i, attachment.format, untouched_aspects);
+            }
+        }
+    }
+
     return skip;
 }
 
