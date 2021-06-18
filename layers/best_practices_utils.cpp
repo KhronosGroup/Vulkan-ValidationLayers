@@ -1191,6 +1191,8 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
     // Clear state in case we are a secondary command buffer.
     auto& state = cbRenderPassState[commandBuffer];
     state = {};
+    auto* cb = GetCBState(commandBuffer);
+    cb->hasDrawCmd = false;
     ValidationStateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
 }
 
@@ -1748,6 +1750,9 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
     render_pass_state.drawTouchAttachments = true;
     // Don't reset state related to pipeline state.
 
+    auto* cb = GetCBState(commandBuffer);
+    cb->hasDrawCmd = false;
+
     const auto* rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
 
     // track depth / color attachment usage within the renderpass
@@ -2097,6 +2102,11 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
 
         primary_state.numDrawCallsDepthEqualCompare += secondary.numDrawCallsDepthEqualCompare;
         primary_state.numDrawCallsDepthOnly += secondary.numDrawCallsDepthOnly;
+
+        CMD_BUFFER_STATE* second_state = GetCBState(pCommandBuffers[i]);
+        if (second_state->hasDrawCmd) {
+            primary->hasDrawCmd = true;
+        }
     }
 
     ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
