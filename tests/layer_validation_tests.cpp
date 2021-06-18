@@ -1298,10 +1298,11 @@ VkBufferTest::~VkBufferTest() {
 }
 
 std::unique_ptr<VkImageObj> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width,
-                                                                     const uint32_t height) {
+                                                                     const uint32_t height,
+                                                                     VkImageUsageFlags attachment_usage) {
     auto img = std::unique_ptr<VkImageObj>(new VkImageObj(m_device));
     img->Init(width, height, 1, format,
-              VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+              VK_IMAGE_USAGE_SAMPLED_BIT | attachment_usage |
               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
               VK_IMAGE_TILING_OPTIMAL);
     return img;
