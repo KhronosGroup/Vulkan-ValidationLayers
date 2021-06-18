@@ -232,7 +232,16 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    auto* secondary_full_clear = new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    auto* secondary_small_clear = new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferBeginInfo begin_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT |
+                       VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    VkCommandBufferInheritanceInfo inherit_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };
+    begin_info.pInheritanceInfo = &inherit_info;
+    inherit_info.subpass = 0;
+    inherit_info.renderPass = m_renderPassBeginInfo.renderPass;
 
     // Main thing we care about for this test is that the VkImage obj we're
     // clearing matches Color Attachment of FB
@@ -247,13 +256,39 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     VkClearRect clear_rect_small = {{{0, 0}, {(uint32_t)m_width - 1u, (uint32_t)m_height - 1u}}, 0, 1};
     VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
 
-    // Small clears which don't cover the render area should not trigger the warning.
-    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect_small);
-    m_errorMonitor->VerifyNotFound();
-    // Call for full-sized FB Color attachment prior to issuing a Draw
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
-    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
-    m_errorMonitor->VerifyFound();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    {
+        // Small clears which don't cover the render area should not trigger the warning.
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect_small);
+        m_errorMonitor->VerifyNotFound();
+        // Call for full-sized FB Color attachment prior to issuing a Draw
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+        m_errorMonitor->VerifyFound();
+    }
+    m_commandBuffer->EndRenderPass();
+
+    secondary_small_clear->begin(&begin_info);
+    secondary_full_clear->begin(&begin_info);
+    vk::CmdClearAttachments(secondary_small_clear->handle(), 1, &color_attachment, 1, &clear_rect_small);
+    vk::CmdClearAttachments(secondary_full_clear->handle(), 1, &color_attachment, 1, &clear_rect);
+    secondary_small_clear->end();
+    secondary_full_clear->end();
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    {
+        // Small clears which don't cover the render area should not trigger the warning.
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_small_clear->handle());
+        m_errorMonitor->VerifyNotFound();
+        // Call for full-sized FB Color attachment prior to issuing a Draw
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_full_clear->handle());
+        m_errorMonitor->VerifyFound();
+    }
+    m_commandBuffer->EndRenderPass();
+
+    delete secondary_small_clear;
+    delete secondary_full_clear;
 }
 
 TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
