@@ -244,11 +244,14 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     color_attachment.clearValue.color.float32[2] = 1.0;
     color_attachment.clearValue.color.float32[3] = 1.0;
     color_attachment.colorAttachment = 0;
+    VkClearRect clear_rect_small = {{{0, 0}, {(uint32_t)m_width - 1u, (uint32_t)m_height - 1u}}, 0, 1};
     VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
 
+    // Small clears which don't cover the render area should not trigger the warning.
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect_small);
+    m_errorMonitor->VerifyNotFound();
     // Call for full-sized FB Color attachment prior to issuing a Draw
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
-
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
