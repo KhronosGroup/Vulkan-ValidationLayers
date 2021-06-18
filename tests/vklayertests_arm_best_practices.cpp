@@ -941,6 +941,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-RenderPass-redundant-store");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
@@ -1061,6 +1062,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    graphics_pipeline.cb_attachments_.colorWriteMask = 0xf;
+    graphics_pipeline.cb_ci_.attachmentCount = 1;
+    graphics_pipeline.cb_ci_.pAttachments = &graphics_pipeline.cb_attachments_;
     graphics_pipeline.InitState();
 
     graphics_pipeline.gp_ci_.renderPass = renderpasses[0];
@@ -1143,6 +1147,9 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    graphics_pipeline.cb_attachments_.colorWriteMask = 0xf;
+    graphics_pipeline.cb_ci_.attachmentCount = 1;
+    graphics_pipeline.cb_ci_.pAttachments = &graphics_pipeline.cb_attachments_;
     graphics_pipeline.InitState();
 
     graphics_pipeline.gp_ci_.renderPass = renderpasses[0];
@@ -1233,6 +1240,9 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     graphics_pipeline.dsl_bindings_[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     graphics_pipeline.dsl_bindings_[1].binding = 10;
     graphics_pipeline.dsl_bindings_[1].descriptorCount = 4;
+    graphics_pipeline.cb_ci_.attachmentCount = 1;
+    graphics_pipeline.cb_ci_.pAttachments = &graphics_pipeline.cb_attachments_;
+    graphics_pipeline.cb_attachments_.colorWriteMask = 0xf;
     graphics_pipeline.InitState();
 
     graphics_pipeline.gp_ci_.renderPass = renderpasses[0];
@@ -1355,6 +1365,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
     m_commandBuffer->begin();
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
