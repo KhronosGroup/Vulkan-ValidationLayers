@@ -1043,21 +1043,20 @@ template <typename Barrier, typename TransferBarrier>
 bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &loc, const CMD_BUFFER_STATE *cb_state, const Barrier &barrier,
                                                       const QFOTransferBarrierSets<TransferBarrier> &barrier_sets) const {
     bool skip = false;
-    auto pool = cb_state->command_pool.get();
     const char *handle_name = TransferBarrier::HandleName();
     const char *transfer_type = nullptr;
     if (!IsTransferOp(barrier)) {
         return skip;
     }
     const TransferBarrier *barrier_record = nullptr;
-    if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, barrier) &&
+    if (cb_state->IsReleaseOp<Barrier, true /* Assume IsTransfer */>(barrier) &&
         !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
         const auto found = barrier_sets.release.find(barrier);
         if (found != barrier_sets.release.cend()) {
             barrier_record = &(*found);
             transfer_type = "releasing";
         }
-    } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, barrier) &&
+    } else if (cb_state->IsAcquireOp<Barrier, true /*Assume IsTransfer */>(barrier) &&
                !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
         const auto found = barrier_sets.acquire.find(barrier);
         if (found != barrier_sets.acquire.cend()) {
@@ -1111,12 +1110,11 @@ const BUFFER_STATE *BarrierHandleState(const ValidationStateTracker &device_stat
 template <typename Barrier, typename TransferBarrier>
 void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STATE *cb_state, const Barrier &barrier,
                                              QFOTransferBarrierSets<TransferBarrier> &barrier_sets) {
-    auto pool = cb_state->command_pool.get();
     if (IsTransferOp(barrier)) {
-        if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, barrier) &&
+        if (cb_state->IsReleaseOp<Barrier, true /* Assume IsTransfer*/>(barrier) &&
             !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
             barrier_sets.release.emplace(barrier);
-        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, barrier) &&
+        } else if (cb_state->IsAcquireOp<Barrier, true /*Assume IsTransfer */>(barrier) &&
                    !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
             barrier_sets.acquire.emplace(barrier);
         }
@@ -1145,51 +1143,6 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
         }
     }
 }
-
-// Check if all barriers are of a given operation type.
-template <typename Barrier, typename OpCheck>
-bool AllTransferOp(const COMMAND_POOL_STATE *pool, OpCheck &op_check, uint32_t count, const Barrier *barriers) {
-    if (!pool) return false;
-
-    for (uint32_t b = 0; b < count; b++) {
-        if (!op_check(pool, barriers[b])) return false;
-    }
-    return true;
-}
-
-// Look at the barriers to see if we they are all release or all acquire, the result impacts queue properties validation
-template <typename BufBarrier, typename ImgBarrier>
-BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count,
-                                                               const BufBarrier *buffer_barriers, uint32_t image_barrier_count,
-                                                               const ImgBarrier *image_barriers) const {
-    auto pool = cb_state->command_pool.get();
-    BarrierOperationsType op_type = kGeneral;
-
-    // Look at the barrier details only if they exist
-    // Note: AllTransferOp returns true for count == 0
-    if ((buffer_barrier_count + image_barrier_count) != 0) {
-        if (AllTransferOp(pool, TempIsReleaseOp<BufBarrier>, buffer_barrier_count, buffer_barriers) &&
-            AllTransferOp(pool, TempIsReleaseOp<ImgBarrier>, image_barrier_count, image_barriers)) {
-            op_type = kAllRelease;
-        } else if (AllTransferOp(pool, IsAcquireOp<BufBarrier>, buffer_barrier_count, buffer_barriers) &&
-                   AllTransferOp(pool, IsAcquireOp<ImgBarrier>, image_barrier_count, image_barriers)) {
-            op_type = kAllAcquire;
-        }
-    }
-
-    return op_type;
-}
-// explictly instantiate so these can be used in core_validation.cpp
-template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state,
-                                                                        uint32_t buffer_barrier_count,
-                                                                        const VkBufferMemoryBarrier *buffer_barriers,
-                                                                        uint32_t image_barrier_count,
-                                                                        const VkImageMemoryBarrier *image_barriers) const;
-template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state,
-                                                                        uint32_t buffer_barrier_count,
-                                                                        const VkBufferMemoryBarrier2KHR *buffer_barriers,
-                                                                        uint32_t image_barrier_count,
-                                                                        const VkImageMemoryBarrier2KHR *image_barriers) const;
 
 // Verify image barrier image state and that the image is consistent with FB image
 template <typename ImgBarrier>
@@ -1470,7 +1423,7 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t bar
     // However, we still need to record initial layout for the "initial layout" validation
     for (uint32_t i = 0; i < barrier_count; i++) {
         const auto &mem_barrier = barriers[i];
-        const bool is_release_op = IsReleaseOp(cb_state, mem_barrier);
+        const bool is_release_op = cb_state->IsReleaseOp(mem_barrier);
         auto *image_state = GetImageState(mem_barrier.image);
         if (image_state) {
             RecordTransitionImageLayout(cb_state, image_state, mem_barrier, is_release_op);
@@ -5300,17 +5253,16 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
     bool skip = false;
     auto queue_flags = cb_state->GetQueueFlags();
     LogObjectList objects(cb_state->commandBuffer());
-    auto op_type =
-        ComputeBarrierOperationsType(cb_state, bufferBarrierCount, pBufferMemBarriers, imageMemBarrierCount, pImageMemBarriers);
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const auto &mem_barrier = pMemBarriers[i];
         auto loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
-        skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
+        skip |= ValidateMemoryBarrier(objects, loc, kGeneral, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
         const auto &mem_barrier = pImageMemBarriers[i];
         auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
+        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
     }
@@ -5321,6 +5273,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const auto &mem_barrier = pBufferMemBarriers[i];
         auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pMemoryBarriers, i);
+        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }
@@ -5328,7 +5281,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
 }
 
 bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
-                                        BarrierOperationsType op_type, const VkDependencyInfoKHR *dep_info) const {
+                                        const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
 
     if (cb_state->activeRenderPass) {
@@ -5339,11 +5292,12 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
-        skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
+        skip |= ValidateMemoryBarrier(objects, loc, kGeneral, queue_flags, mem_barrier);
     }
     for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pImageMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
+        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
     }
@@ -5355,6 +5309,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
     for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pBufferMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2KHR, Field::pBufferMemoryBarriers, i);
+        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
         skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }
@@ -5380,13 +5335,14 @@ template <typename Barrier>
 bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &loc, BarrierOperationsType op_type,
                                        VkQueueFlags queue_flags, const Barrier &barrier) const {
     bool skip = false;
+    skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, barrier.srcStageMask);
     if (op_type == kAllRelease || op_type == kGeneral) {
-        skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, barrier.srcStageMask);
         skip |=
             ValidateAccessMask(objects, loc.dot(Field::srcAccessMask), queue_flags, barrier.srcAccessMask, barrier.srcStageMask);
     }
+
+   skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
     if (op_type == kAllAcquire || op_type == kGeneral) {
-        skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
         skip |=
             ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), queue_flags, barrier.dstAccessMask, barrier.dstStageMask);
     }

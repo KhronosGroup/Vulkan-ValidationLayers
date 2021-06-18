@@ -243,7 +243,7 @@ class CoreChecks : public ValidationStateTracker {
                                 const VkSubpassDependency2& barrier) const;
 
     bool ValidateDependencyInfo(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                                BarrierOperationsType op_type, const VkDependencyInfoKHR* dep_info) const;
+                                const VkDependencyInfoKHR* dep_info) const;
     template <typename ImgBarrier>
     bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const ImgBarrier& barrier,
                                       const IMAGE_STATE* state_data) const;
@@ -258,10 +258,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges) const;
     bool ValidateMappedMemoryRangeDeviceLimits(const char* func_name, uint32_t mem_range_count,
                                                const VkMappedMemoryRange* mem_ranges) const;
-    template <typename BufBarrier, typename ImgBarrier>
-    BarrierOperationsType ComputeBarrierOperationsType(const CMD_BUFFER_STATE* cb_state, uint32_t buffer_barrier_count,
-                                                       const BufBarrier* buffer_barriers, uint32_t image_barrier_count,
-                                                       const ImgBarrier* image_barriers) const;
     bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE* pCB, const CMD_BUFFER_STATE* pSubCB) const;
     bool ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE* pCB, VkCommandBuffer secondaryBuffer,
                              const CMD_BUFFER_STATE* pSubCB, const char* caller) const;
@@ -412,13 +408,6 @@ class CoreChecks : public ValidationStateTracker {
     template <typename Barrier, typename TransferBarrier>
     bool ValidateQFOTransferBarrierUniqueness(const Location& loc, const CMD_BUFFER_STATE* cb_state, const Barrier& barrier,
                                               const QFOTransferBarrierSets<TransferBarrier>& barrier_sets) const;
-    template <typename Barrier>
-    bool IsReleaseOp(CMD_BUFFER_STATE* cb_state, const Barrier& barrier) const {
-        if (!IsTransferOp(barrier)) return false;
-
-        auto pool = cb_state->command_pool.get();
-        return pool && TempIsReleaseOp<Barrier, true>(pool, barrier);
-    }
 
     bool ValidatePrimaryCommandBufferState(const Location& loc, const CMD_BUFFER_STATE* pCB, int current_submit_count,
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,

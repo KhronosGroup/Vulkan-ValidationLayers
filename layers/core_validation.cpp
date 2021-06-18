@@ -86,16 +86,6 @@ extern template bool CoreChecks::ValidateImageBarrierAttachment(const Location &
                                                                 const VkImageMemoryBarrier2KHR &img_barrier,
                                                                 const CMD_BUFFER_STATE *primary_cb_state) const;
 
-extern template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state,
-                                                                               uint32_t buffer_barrier_count,
-                                                                               const VkBufferMemoryBarrier *buffer_barriers,
-                                                                               uint32_t image_barrier_count,
-                                                                               const VkImageMemoryBarrier *image_barriers) const;
-
-extern template BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(
-    const CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count, const VkBufferMemoryBarrier2KHR *buffer_barriers,
-    uint32_t image_barrier_count, const VkImageMemoryBarrier2KHR *image_barriers) const;
-
 using std::max;
 using std::string;
 using std::stringstream;
@@ -7287,7 +7277,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
                          loc.dot(Field::dependencyFlags).Message().c_str(),
                          string_VkDependencyFlags(pDependencyInfo->dependencyFlags).c_str());
     }
-    skip |= ValidateDependencyInfo(objects, loc, cb_state, kGeneral, pDependencyInfo);
+    skip |= ValidateDependencyInfo(objects, loc, cb_state, pDependencyInfo);
     return skip;
 }
 
@@ -7750,7 +7740,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
                              loc.dot(Field::dependencyFlags).Message().c_str(),
                              string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
-        skip |= ValidateDependencyInfo(objects, loc, cb_state, kGeneral, &pDependencyInfos[i]);
+        skip |= ValidateDependencyInfo(objects, loc, cb_state, &pDependencyInfos[i]);
     }
     skip |= ValidateCmd(cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
     return skip;
@@ -7835,15 +7825,9 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
     auto queue_flags = cb_state->GetQueueFlags();
     Location loc(Func::vkCmdPipelineBarrier);
 
-    auto op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                                                pImageMemoryBarriers);
+    skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
+    skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
 
-    if (op_type == kAllRelease || op_type == kGeneral) {
-        skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
-    }
-    if (op_type == kAllAcquire || op_type == kGeneral) {
-        skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
-    }
     skip |= ValidateCmd(cb_state, CMD_PIPELINEBARRIER, "vkCmdPipelineBarrier()");
     if (cb_state->activeRenderPass) {
         skip |= ValidateRenderPassPipelineBarriers(loc, cb_state, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
@@ -7868,9 +7852,6 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     LogObjectList objects(commandBuffer);
-    auto op_type =
-        ComputeBarrierOperationsType(cb_state, pDependencyInfo->bufferMemoryBarrierCount, pDependencyInfo->pBufferMemoryBarriers,
-                                     pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 
     Location loc(Func::vkCmdPipelineBarrier2KHR, Field::pDependencyInfo);
     skip |= ValidateCmd(cb_state, CMD_PIPELINEBARRIER, "vkCmdPipelineBarrier()");
@@ -7884,7 +7865,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
     }
-    skip |= ValidateDependencyInfo(objects, loc, cb_state, op_type, pDependencyInfo);
+    skip |= ValidateDependencyInfo(objects, loc, cb_state, pDependencyInfo);
     return skip;
 }
 
