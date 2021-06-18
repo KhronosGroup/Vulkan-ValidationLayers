@@ -2738,8 +2738,8 @@ bool BestPractices::ValidateClearAttachment(VkCommandBuffer commandBuffer, const
     if (!cmd->hasDrawCmd) {
         skip |= LogPerformanceWarning(
             commandBuffer, kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
-            "vkCmdClearAttachments() issued on %s prior to any Draw Cmds. It is recommended you "
-            "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
+            "vkCmdClearAttachments() issued on %s prior to any Draw Cmds in current render pass. It is recommended you "
+            "use RenderPass LOAD_OP_CLEAR on attachments instead.",
             report_data->FormatHandle(commandBuffer).c_str());
     }
 
