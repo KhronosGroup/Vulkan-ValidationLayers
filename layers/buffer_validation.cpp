@@ -41,6 +41,7 @@
 #include "shader_validation.h"
 #include "descriptor_sets.h"
 #include "buffer_validation.h"
+#include "sync_utils.h"
 #include "sync_vuid_maps.h"
 
 // All VUID from copy_bufferimage_to_imagebuffer_common.txt
@@ -1049,15 +1050,13 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &loc, const
         return skip;
     }
     const TransferBarrier *barrier_record = nullptr;
-    if (cb_state->IsReleaseOp<Barrier, true /* Assume IsTransfer */>(barrier) &&
-        !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
+    if (cb_state->IsReleaseOp(barrier) && !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
         const auto found = barrier_sets.release.find(barrier);
         if (found != barrier_sets.release.cend()) {
             barrier_record = &(*found);
             transfer_type = "releasing";
         }
-    } else if (cb_state->IsAcquireOp<Barrier, true /*Assume IsTransfer */>(barrier) &&
-               !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
+    } else if (cb_state->IsAcquireOp(barrier) && !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
         const auto found = barrier_sets.acquire.find(barrier);
         if (found != barrier_sets.acquire.cend()) {
             barrier_record = &(*found);
@@ -1111,11 +1110,9 @@ template <typename Barrier, typename TransferBarrier>
 void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STATE *cb_state, const Barrier &barrier,
                                              QFOTransferBarrierSets<TransferBarrier> &barrier_sets) {
     if (IsTransferOp(barrier)) {
-        if (cb_state->IsReleaseOp<Barrier, true /* Assume IsTransfer*/>(barrier) &&
-            !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
+        if (cb_state->IsReleaseOp(barrier) && !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
             barrier_sets.release.emplace(barrier);
-        } else if (cb_state->IsAcquireOp<Barrier, true /*Assume IsTransfer */>(barrier) &&
-                   !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
+        } else if (cb_state->IsAcquireOp(barrier) && !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
             barrier_sets.acquire.emplace(barrier);
         }
     }
@@ -5251,19 +5248,17 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
                                   const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                   const VkImageMemoryBarrier *pImageMemBarriers) const {
     bool skip = false;
-    auto queue_flags = cb_state->GetQueueFlags();
     LogObjectList objects(cb_state->commandBuffer());
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const auto &mem_barrier = pMemBarriers[i];
         auto loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
-        skip |= ValidateMemoryBarrier(objects, loc, kGeneral, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
+        skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
         const auto &mem_barrier = pImageMemBarriers[i];
         auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
-        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
-        skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
+        skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
     }
     {
@@ -5273,8 +5268,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const auto &mem_barrier = pBufferMemBarriers[i];
         auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pMemoryBarriers, i);
-        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
-        skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier, src_stage_mask, dst_stage_mask);
+        skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }
     return skip;
@@ -5288,17 +5282,15 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         skip |= ValidateRenderPassPipelineBarriers(outer_loc, cb_state, dep_info);
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     }
-    auto queue_flags = cb_state->GetQueueFlags();
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkMemoryBarrier2KHR, Field::pMemoryBarriers, i);
-        skip |= ValidateMemoryBarrier(objects, loc, kGeneral, queue_flags, mem_barrier);
+        skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
     }
     for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pImageMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkImageMemoryBarrier2KHR, Field::pImageMemoryBarriers, i);
-        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
-        skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
+        skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
     }
     {
@@ -5309,47 +5301,55 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
     for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pBufferMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2KHR, Field::pBufferMemoryBarriers, i);
-        auto op_type = cb_state->ComputeBarrierOperationsType(mem_barrier);
-        skip |= ValidateMemoryBarrier(objects, loc, op_type, queue_flags, mem_barrier);
+        skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }
 
     return skip;
 }
 
+// template to check all original barrier structures
 template <typename Barrier>
-bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &loc, BarrierOperationsType op_type,
-                                       VkQueueFlags queue_flags, const Barrier &barrier, VkPipelineStageFlags src_stage_mask,
+bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &loc, const CMD_BUFFER_STATE *cb_state,
+                                       const Barrier &barrier, VkPipelineStageFlags src_stage_mask,
                                        VkPipelineStageFlags dst_stage_mask) const {
     bool skip = false;
-    if (op_type == kAllRelease || op_type == kGeneral) {
+    assert(cb_state);
+    auto queue_flags = cb_state->GetQueueFlags();
+
+    if (!cb_state->IsAcquireOp(barrier)) {
         skip |= ValidateAccessMask(objects, loc.dot(Field::srcAccessMask), queue_flags, barrier.srcAccessMask, src_stage_mask);
     }
-    if (op_type == kAllAcquire || op_type == kGeneral) {
+    if (!cb_state->IsReleaseOp(barrier)) {
         skip |= ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), queue_flags, barrier.dstAccessMask, dst_stage_mask);
     }
     return skip;
 }
 
+// template to check all synchronization2 barrier structures and VkSubpassDependency2
 template <typename Barrier>
-bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &loc, BarrierOperationsType op_type,
-                                       VkQueueFlags queue_flags, const Barrier &barrier) const {
+bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &loc, const CMD_BUFFER_STATE *cb_state,
+                                       const Barrier &barrier) const {
     bool skip = false;
+    // NOTE: cb_state will only be null when checking subpass dependencies, which happens in vkCreateRenderPass(), where
+    // a command buffer is not yet available.
+    auto queue_flags = cb_state ? cb_state->GetQueueFlags() : sync_utils::kAllQueueTypes;
+
     skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, barrier.srcStageMask);
-    if (op_type == kAllRelease || op_type == kGeneral) {
+    if (!cb_state || !cb_state->IsAcquireOp(barrier)) {
         skip |=
             ValidateAccessMask(objects, loc.dot(Field::srcAccessMask), queue_flags, barrier.srcAccessMask, barrier.srcStageMask);
     }
 
-   skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
-    if (op_type == kAllAcquire || op_type == kGeneral) {
+    skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
+    if (!cb_state || !cb_state->IsReleaseOp(barrier)) {
         skip |=
             ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), queue_flags, barrier.dstAccessMask, barrier.dstStageMask);
     }
     return skip;
 }
 
-bool CoreChecks::ValidateSubpassBarrier(const LogObjectList &objects, const Location &loc, VkQueueFlags queue_flags,
+bool CoreChecks::ValidateSubpassBarrier(const LogObjectList &objects, const Location &loc, const CMD_BUFFER_STATE *cb_state,
                                         const VkSubpassDependency2 &barrier) const {
     bool skip = false;
     const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(barrier.pNext);
@@ -5376,7 +5376,7 @@ bool CoreChecks::ValidateSubpassBarrier(const LogObjectList &objects, const Loca
                                  loc.dot(Field::dstStageMask).Message().c_str());
             }
 
-            skip |= CoreChecks::ValidateMemoryBarrier(objects, loc.dot(Field::pNext), kGeneral, queue_flags, *mem_barrier);
+            skip |= CoreChecks::ValidateMemoryBarrier(objects, loc.dot(Field::pNext), cb_state, *mem_barrier);
             return skip;
         } else {
             skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-pNext",
@@ -5384,7 +5384,7 @@ bool CoreChecks::ValidateSubpassBarrier(const LogObjectList &objects, const Loca
                              loc.Message().c_str());
         }
     }
-    skip |= CoreChecks::ValidateMemoryBarrier(objects, loc, kGeneral, queue_flags, barrier);
+    skip |= CoreChecks::ValidateMemoryBarrier(objects, loc, cb_state, barrier);
     return skip;
 }
 

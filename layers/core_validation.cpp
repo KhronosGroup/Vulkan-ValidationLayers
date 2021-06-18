@@ -10284,14 +10284,13 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         aggregated_cvms |= pCreateInfo->pCorrelatedViewMasks[i];
     }
     LogObjectList objects(device);
-    auto queue_flags = sync_utils::kAllQueueTypes;
 
     auto func_name = use_rp2 ? Func::vkCreateRenderPass2 : Func::vkCreateRenderPass;
     auto structure = use_rp2 ? Struct::VkSubpassDependency2 : Struct::VkSubpassDependency;
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
         Location loc(func_name, structure, Field::pDependencies, i);
-        skip |= ValidateSubpassBarrier(objects, loc, queue_flags, dependency);
+        skip |= ValidateSubpassBarrier(objects, loc, nullptr, dependency);
     }
     return skip;
 }
