@@ -1442,7 +1442,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
             const auto& attachment = rp_state->createInfo.pAttachments[att];
 
             bool attachment_has_readback = false;
-            if (!FormatHasStencil(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+            if (!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 attachment_has_readback = true;
             }
 
