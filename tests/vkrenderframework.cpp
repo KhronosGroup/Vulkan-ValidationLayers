@@ -2199,8 +2199,8 @@ void VkCommandBufferObj::PrepareAttachments(const vector<std::unique_ptr<VkImage
     }
 }
 
-void VkCommandBufferObj::BeginRenderPass(const VkRenderPassBeginInfo &info) {
-    vk::CmdBeginRenderPass(handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
+void VkCommandBufferObj::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents) {
+    vk::CmdBeginRenderPass(handle(), &info, contents);
 }
 
 void VkCommandBufferObj::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
