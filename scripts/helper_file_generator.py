@@ -56,7 +56,8 @@ class HelperFileOutputGeneratorOptions(GeneratorOptions):
                  alignFuncParam = 0,
                  library_name = '',
                  expandEnumerants = True,
-                 helper_file_type = ''):
+                 helper_file_type = '',
+                 valid_usage_path = ''):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
@@ -82,6 +83,7 @@ class HelperFileOutputGeneratorOptions(GeneratorOptions):
         self.alignFuncParam   = alignFuncParam
         self.library_name     = library_name
         self.helper_file_type = helper_file_type
+        self.valid_usage_path = valid_usage_path
 #
 # HelperFileOutputGenerator - subclass of OutputGenerator. Outputs Vulkan helper files
 class HelperFileOutputGenerator(OutputGenerator):

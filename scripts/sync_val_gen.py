@@ -18,8 +18,13 @@
 # limitations under the License.
 #
 # Author: John Zulauf <jzulauf@lunarg.com>
+# Author: Jeremy Gebben <jeremyg@lunarg.com>
+import os
+import json
+import re
 
 # Script operation controls
+debug_json_parse = False
 debug_table_parse = False
 debug_in_bit_order = False
 debug_top_level = False
@@ -33,110 +38,67 @@ host_stage = 'VK_PIPELINE_STAGE_2_HOST_BIT_KHR'
 top_stage ='VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR'
 bot_stage ='VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR'
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.170
-# manual fixups:
-# -pending "Add XFB stage as valid for XFB_COUNTER_READ access" fix
-# -removed ifdefs in table line for ACCELERATION_STRUCTURE_READ_BIT to 'fix' parsing
-snippet_access_types_supported = '''
-[[synchronization-access-types-supported]]
-.Supported access types
-[cols="50,50",options="header"]
-|====
-|Access flag                                                  | Supported pipeline stages
-|ename:VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT_KHR                    | ename:VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR
-ifdef::VK_KHR_acceleration_structure[]
-, ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
-endif::VK_KHR_acceleration_structure[]
-|ename:VK_ACCESS_2_INDEX_READ_BIT_KHR                               | ename:VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR
-|ename:VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR                | ename:VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR
-
-|ename:VK_ACCESS_2_UNIFORM_READ_BIT_KHR                             |
-ifdef::VK_NV_mesh_shader[]
-                                                               ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV,
-endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR
-
-|ename:VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR                              |
-ifdef::VK_KHR_acceleration_structure[]
-                                                               ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-endif::VK_KHR_acceleration_structure[]
-ifdef::VK_NV_mesh_shader[]
-                                                               ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV,
-endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR
-
-|ename:VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR                              |
-ifdef::VK_KHR_acceleration_structure[]
-                                                               ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-endif::VK_KHR_acceleration_structure[]
-ifdef::VK_NV_mesh_shader[]
-                                                               ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV,
-endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR
-
-|ename:VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR                |
-ifdef::VK_NV_mesh_shader[]
-                                                               ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV,
-endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-                                                               ename:VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR
-
-|ename:VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT_KHR                    | ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR
-|ename:VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR                    | ename:VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
-|ename:VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR                   | ename:VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
-|ename:VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR            | ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
-|ename:VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR           | ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
-|ename:VK_ACCESS_2_TRANSFER_READ_BIT_KHR                            | ename:VK_PIPELINE_STAGE_2_COPY_BIT_KHR, ename:VK_PIPELINE_STAGE_2_BLIT_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR
-ifdef::VK_KHR_acceleration_structure[or ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR]
-|ename:VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR                           | ename:VK_PIPELINE_STAGE_2_COPY_BIT_KHR, ename:VK_PIPELINE_STAGE_2_BLIT_BIT_KHR, ename:VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR
-ifdef::VK_KHR_acceleration_structure[or ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR]
-|ename:VK_ACCESS_2_HOST_READ_BIT_KHR                                | ename:VK_PIPELINE_STAGE_2_HOST_BIT_KHR
-|ename:VK_ACCESS_2_HOST_WRITE_BIT_KHR                               | ename:VK_PIPELINE_STAGE_2_HOST_BIT_KHR
-|ename:VK_ACCESS_2_MEMORY_READ_BIT_KHR                              | Any
-|ename:VK_ACCESS_2_MEMORY_WRITE_BIT_KHR                             | Any
-ifdef::VK_EXT_blend_operation_advanced[]
-|ename:VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT    | ename:VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
-endif::VK_EXT_blend_operation_advanced[]
-ifdef::VK_NV_device_generated_commands[]
-|ename:VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV               | ename:VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV
-|ename:VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV              | ename:VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV
-endif::VK_NV_device_generated_commands[]
-ifdef::VK_EXT_conditional_rendering[]
-|ename:VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT           | ename:VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT
-endif::VK_EXT_conditional_rendering[]
-ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
-|ename:VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR               | ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
-endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
-ifdef::VK_EXT_transform_feedback[]
-|ename:VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT             | ename:VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
-|ename:VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT     | ename:VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
-|ename:VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT      | ename:VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
-endif::VK_EXT_transform_feedback[]
-ifdef::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
-|ename:VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR          |
-                                                               ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV, ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV,
-                                                               ename:VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR, ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, or ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
-|ename:VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR         | ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
-endif::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
-ifdef::VK_EXT_fragment_density_map[]
-|ename:VK_ACCESS_2_FRAGMENT_DENSITY_MAP_READ_BIT_EXT            | ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
-endif::VK_EXT_fragment_density_map[]
-|====
-'''
+def ParseAccessMasks(valid_usage_path, all_stages):
+    vu_json_filename = os.path.join(valid_usage_path + os.sep, 'validusage.json')
+    access_stage_table = {}
+    if os.path.isfile(vu_json_filename):
+        json_file = open(vu_json_filename, 'r', encoding='utf-8')
+        vuid_dict = json.load(json_file)
+        json_file.close()
+    if len(vuid_dict) == 0:
+        print('Error: Could not find, or error loading %s/validusage.json\n', vu_json_filename)
+        sys.exit(1)
+    # every synchronization2 access mask bit has a VUID enumerating all pipeline stages it is compatible with. It looks like this:
+    # {
+    #   "vuid": "VUID-VkMemoryBarrier2KHR-srcAccessMask-03900",
+    #   "text": " If pname:srcAccessMask includes <code>access_mask</code>,
+    #             pname:srcStageMask <strong class=\"purple\">must</strong> include <code>stage_1</code>,
+    #             <code>stage_2</code>, <code>VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR</code>,
+    #             or <code>VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR</code>"
+    # },
+    vuid_prefix = 'VUID-VkMemoryBarrier2KHR-srcAccessMask'
+    text_prefix = ' If pname:srcAccessMask includes '
+    # remove catch-all pipeline stages that we don't need in our tables.
+    strip_stages = [
+        'VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR',
+        'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR',
+        'VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR',
+        # expands to INDEX_INPUT and VERTEX_ATTRIBUTE_INPUT, which are included explicitly in the VUIDs
+        'VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR',
+    ]
+    expand_stages = {
+        # these have the same value
+        'VK_PIPELINE_STAGE_2_SHADING_RATE_IMAGE_BIT_NV': ['VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR'],
+        # some VUIDs include the text "or one of the etext:VK_PIPELINE_STAGE_*_SHADER_BIT stages"
+        'VK_PIPELINE_STAGE_*_SHADER_BIT': [stage for stage in all_stages if '_SHADER_BIT' in stage]
+    }
+    expand_access_bits = {
+        'VK_ACCESS_2_SHADING_RATE_IMAGE_READ_BIT_NV': ['VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR'],
+        'VK_ACCESS_2_SHADER_WRITE_BIT_KHR': ['VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR'],
+        'VK_ACCESS_2_SHADER_READ_BIT_KHR': ['VK_ACCESS_2_UNIFORM_READ_BIT_KHR', 'VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR',
+                                            'VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR'],
+    }
+    for extension_combo, vuid_list in vuid_dict['validation']['VkMemoryBarrier2KHR'].items():
+        for vuid in vuid_list:
+            if debug_json_parse:
+                print('extension_combo: ', extension_combo)
+            if 'VK_KHR_synchronization2' not in extension_combo:
+                continue
+            if vuid['vuid'].startswith(vuid_prefix) and vuid['text'].startswith(text_prefix):
+                matches = re.findall('<code>(.*?)</code>', vuid['text'], re.DOTALL)
+                access_bits = expand_access_bits.get(matches[0], [matches[0]])
+                stages = []
+                for m in matches[1:]:
+                    if m not in strip_stages:
+                        stages += expand_stages.get(m, [m])
+                for bit in access_bits:
+                    if debug_json_parse:
+                        print('access_mask: ', bit, ' stages: ', stages)
+                    access_stage_table[bit] = stages
+    return access_stage_table
 
 # use simplest filtering to assure completest list
-def ParseAccessType(table_text):
+def ParseQueueCaps(table_text):
     preproc = ''
     access_stage_table = {}
     skip = False
@@ -161,10 +123,10 @@ def ParseAccessType(table_text):
             skip = False
         elif (line.startswith('|ename:') or line.startswith('        ')) and not skip:
             if debug_table_parse:
-                print("// line {}".format(line))
+                print('// line {}'.format(line))
             cols = line.split('|')
             if debug_table_parse:
-                print("len(cols)", len(cols), cols)
+                print('len(cols)', len(cols), cols)
             if len(cols) == 3:
                 stage_column = cols[2]
                 access_enum = cols[1].split(':')[1].strip()
@@ -172,7 +134,7 @@ def ParseAccessType(table_text):
             else:
                 stage_column = cols[0].strip()
             if debug_table_parse:
-                print("stage_column:", stage_column)
+                print('stage_column:', stage_column)
             if stage_column.startswith(' Any'):
                 continue
             if stage_column.startswith(' None required'):
@@ -183,7 +145,7 @@ def ParseAccessType(table_text):
             stage_column = stage_column.rstrip(',')
             stages = stage_column.split(',')
             if debug_table_parse:
-                print("stages", len(stages), stages)
+                print('stages', len(stages), stages)
             if len(stages) < 1:
                 continue
             elif not stages[0]:
@@ -193,7 +155,7 @@ def ParseAccessType(table_text):
 
             access_stage_table[access_enum] += stage_enums
             if(debug_table_parse):
-                print("// access_stage_table[{}]: {}".format(access_enum, "|".join(access_stage_table[access_enum])))
+                print('// access_stage_table[{}]: {}'.format(access_enum, '|'.join(access_stage_table[access_enum])))
 
     return access_stage_table
 
@@ -205,10 +167,12 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.170
+# Snipped from chapters/synchronization.txt -- tag v1.2.181
 # manual fixups:
 # - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
 # - make sure each pipeline section starts with "For"
+# - move single stage 'pipeline' descriptions out of the snippet
+#   and into a python list.
 snippet_pipeline_stages_order = '''
 [[synchronization-pipeline-stages-types]][[synchronization-pipeline-graphics]]
 <<pipelines-graphics, Graphics pipelines>> are executable on queues
@@ -226,19 +190,14 @@ stages matching the order specified here:
   * ename:VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR
-ifdef::VK_EXT_transform_feedback[]
   * ename:VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
-endif::VK_EXT_transform_feedback[]
-ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
-endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
 
-ifdef::VK_NV_mesh_shader[]
 For the graphics mesh pipeline executes the following stages, with the logical
 ordering of the stages matching the order specified here:
 
@@ -246,15 +205,12 @@ ordering of the stages matching the order specified here:
   * ename:VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV
   * ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV
-ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
-endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
   * ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
-endif::VK_NV_mesh_shader[]
 
 For the compute pipeline, the following stages occur in this order:
 
@@ -263,7 +219,6 @@ For the compute pipeline, the following stages occur in this order:
   * ename:VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
 
-ifdef::VK_EXT_fragment_density_map[]
 For graphics pipeline commands executing in a render pass with a fragment
 density map attachment, the following pipeline stage where the fragment
 density map read happens has no particular order relative to the other
@@ -272,66 +227,6 @@ ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR:
 
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
   * ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
-endif::VK_EXT_fragment_density_map[]
-
-ifdef::VK_EXT_conditional_rendering[]
-For the conditional rendering stage is formally part of both the graphics, and
-the compute pipeline.
-The pipeline stage where the predicate read happens has unspecified order
-relative to other stages of these pipelines:
-
-  * ename:VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT
-endif::VK_EXT_conditional_rendering[]
-
-For the copy pipeline, the following stages occur in this order:
-
-  * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_COPY_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
-
-For the resolve pipeline, the following stages occur in this order:
-
-  * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
-
-For the blit pipeline, the following stages occur in this order:
-
-  * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_BLIT_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
-
-For the clear pipeline, the following stages occur in this order:
-
-  * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
-
-For host operations, only one pipeline stage occurs, so no order is
-guaranteed:
-
-  * ename:VK_PIPELINE_STAGE_2_HOST_BIT_KHR
-
-ifdef::VK_NV_device_generated_commands[]
-For the command preprocessing pipeline, the following stages occur in this
-order:
-
-  * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV
-  * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
-endif::VK_NV_device_generated_commands[]
-
-ifdef::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
-For acceleration structure operations, only one pipeline stage occurs, so no
-order is guaranteed:
-
-  * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
-  * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
-
-endif::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
-
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
 For the ray tracing shader pipeline, the following stages occur in this
 order:
 
@@ -340,21 +235,27 @@ order:
   * ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
 
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
 '''
+
+#For the X pipeline, only one pipeline stage occurs, so no order is guaranteed:
+unordered_stages =  [
+  'VK_PIPELINE_STAGE_2_COPY_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_BLIT_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_HOST_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV',
+  'VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT',
+  'VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR',
+  'VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR',
+]
 
 pipeline_name_labels = {
     'GRAPHICS': 'For the graphics primitive pipeline',
     'MESH': 'For the graphics mesh pipeline',
     'COMPUTE': 'For the compute pipeline',
-    'COPY': 'For the copy pipeline',
-    'RESOLVE': 'For the resolve pipeline',
-    'BLIT': 'For the blit pipeline',
-    'CLEAR': 'For the clear pipeline',
-    'HOST': 'For host operations, only one pipeline',
-    'COMMAND_PROCESS': 'For the command preprocessing pipeline',
     'RAY_TRACING_SHADE': 'For the ray tracing shader pipeline',
-    'ACCELERATION_STRUCTURE': 'For acceleration structure operations'
 }
 
 def StageOrderListFromSet(stage_order, stage_set):
@@ -442,10 +343,10 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
     if debug_stage_order_parse:
         print('STAGE_ORDER', 'PARSED PIPELINES')
         for pipeline_name, stage_list in stage_lists.items():
-            print(pipeline_name,"|".join(stage_list))
+            print(pipeline_name,'|'.join(stage_list))
 
         print('STAGE_ORDER', 'PARSED all_stages')
-        print('all_stages',"|".join(all_stages))
+        print('all_stages','|'.join(all_stages))
 
 
     # Create earlier/later maps
@@ -471,12 +372,11 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
 
     touchups_done.add(fdp_stage)
 
-    # The is formatted oddly in the snippet, so just add it here
-    cr_stage ='VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT'
-    prior[cr_stage] = set()
-    subseq[cr_stage] = set()
 
-    touchups_done.add(cr_stage)
+    # Handle all stages that don't enforce an order
+    for stage in unordered_stages:
+        prior[stage] = set()
+        subseq[stage] = set()
 
     # Make sure top and bottom got added to every prior and subseq (respectively) except for HOST
     # and the every stage is prior and susequent to bottom and top (respectively) also except for HOST
@@ -501,11 +401,11 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
     if debug_stage_order_parse:
         print('STAGE_ORDER PRIOR STAGES')
         for stage, stage_set in prior.items():
-            print(stage,"|".join(stage_set))
+            print(stage,'|'.join(stage_set))
 
         print('STAGE_ORDER SUBSEQUENT STAGES')
         for stage, stage_set in subseq.items():
-            print(stage,"|".join(stage_set))
+            print(stage,'|'.join(stage_set))
 
     if touchups_done != touchup:
         print('STAGE_ORDER Stage order touchups failed')
@@ -545,6 +445,8 @@ VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV
 VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT
 VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR
 VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR
+VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR
 VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR
 VK_PIPELINE_STAGE_2_HOST_BIT_KHR
 '''
@@ -560,7 +462,7 @@ def InBitOrder(tag, enum_elem):
         if not bitpos:
             continue
 
-        if name.endswith("NONE_KHR"):
+        if name.endswith('NONE_KHR'):
             break
 
         found.append({'name': name, 'bitpos': int(bitpos)})
@@ -568,14 +470,15 @@ def InBitOrder(tag, enum_elem):
     in_bit_order = []
     for entry in sorted(found, key=lambda record: record['bitpos']):
         if debug_in_bit_order:
-            print ("adding ", {'name': entry['name'], 'mask': (1 << entry['bitpos'])})
+            print ('adding ', {'name': entry['name'], 'mask': (1 << entry['bitpos'])})
         bitpos = entry['bitpos']
         in_bit_order.append({'name': entry['name'], 'mask': (1 << bitpos), 'bitpos': bitpos})
 
     return in_bit_order
 
 
-# As of tag v1.2.170
+# As of tag v1.2.181, with all ifdefs removes
+# TODO: video entries are NOT in the spec, need to get them added
 snippet_pipeline_stages_supported = '''
 [[synchronization-pipeline-stages-supported]]
 .Supported pipeline stage flags
@@ -603,34 +506,17 @@ snippet_pipeline_stages_supported = '''
 |ename:VK_PIPELINE_STAGE_2_HOST_BIT_KHR                             | None required
 |ename:VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR                     | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR                     | None required
-ifdef::VK_EXT_conditional_rendering[]
 |ename:VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT        | ename:VK_QUEUE_GRAPHICS_BIT or ename:VK_QUEUE_COMPUTE_BIT
-endif::VK_EXT_conditional_rendering[]
-ifdef::VK_EXT_transform_feedback[]
 |ename:VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT           | ename:VK_QUEUE_GRAPHICS_BIT
-endif::VK_EXT_transform_feedback[]
-ifdef::VK_NV_device_generated_commands[]
 |ename:VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV            | ename:VK_QUEUE_GRAPHICS_BIT or ename:VK_QUEUE_COMPUTE_BIT
-endif::VK_NV_device_generated_commands[]
-ifdef::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
 |ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR            | ename:VK_QUEUE_GRAPHICS_BIT
-endif::VK_KHR_fragment_shading_rate,VK_NV_shading_rate_image[]
-ifdef::VK_NV_mesh_shader[]
 |ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
-endif::VK_NV_mesh_shader[]
-ifdef::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
 |ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | ename:VK_QUEUE_COMPUTE_BIT
-endif::VK_NV_ray_tracing,VK_KHR_acceleration_structure[]
-ifdef::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
 |ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR           | ename:VK_QUEUE_COMPUTE_BIT
-endif::VK_NV_ray_tracing,VK_KHR_ray_tracing_pipeline[]
-ifdef::VK_EXT_fragment_density_map[]
 |ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT     | ename:VK_QUEUE_GRAPHICS_BIT
-endif::VK_EXT_fragment_density_map[]
-ifdef::VK_KHR_fragment_shading_rate[]
-|ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | ename:VK_QUEUE_GRAPHICS_BIT
-endif::VK_KHR_fragment_shading_rate[]
+|ename:VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_DECODE_BIT_KHR
+|ename:VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_ENCODE_BIT_KHR
 |====
 '''
 
@@ -665,19 +551,19 @@ def CreateStageAccessCombinations(config, stage_order, stage_access_types):
     for stage in stage_order:
         mini_stage = stage.lstrip()
         if mini_stage.startswith(enum_prefix):
-            mini_stage = mini_stage.replace(enum_prefix,"")
+            mini_stage = mini_stage.replace(enum_prefix,'')
         else:
-            mini_stage = mini_stage.replace("VK_PIPELINE_STAGE_2_", "")
-        mini_stage = mini_stage.replace("_BIT_KHR", "")
-        mini_stage = mini_stage.replace("_BIT", "")
+            mini_stage = mini_stage.replace('VK_PIPELINE_STAGE_2_', '')
+        mini_stage = mini_stage.replace('_BIT_KHR', '')
+        mini_stage = mini_stage.replace('_BIT', '')
 
         # Because access_stage_table's elements order might be different sometimes.
         # It causes the generator creates different code. It needs to be sorted.
         stage_access_types[stage].sort();
         for access in stage_access_types[stage]:
-            mini_access = access.replace("VK_ACCESS_2_", "").replace("_BIT_KHR", "")
-            mini_access = mini_access.replace("_BIT", "")
-            stage_access = "_".join((mini_stage,mini_access))
+            mini_access = access.replace('VK_ACCESS_2_', '').replace('_BIT_KHR', '')
+            mini_access = mini_access.replace('_BIT', '')
+            stage_access = '_'.join((mini_stage,mini_access))
             stage_access = enum_prefix + stage_access
             stage_access_bit = BitSuffixed(stage_access)
             is_read = stage_access.endswith('_READ') or ( '_READ_' in stage_access)
@@ -765,7 +651,7 @@ def StageAccessEnums(stage_accesses, config):
             for field in fields:
                 output.append(fields_format.format(entry[field], tab=indent) + ',')
             bit = entry['stage_access_bit']
-            output.append(fields_format.format(bit if bit is not None else "SyncStageAccessFlags(0)", tab=indent))
+            output.append(fields_format.format(bit if bit is not None else 'SyncStageAccessFlags(0)', tab=indent))
             output.append(indent +'},')
         output.append('} };')
     else:
@@ -924,7 +810,7 @@ def AllCommandsByQueueCapability(stage_order, stage_queue_table, config):
         for queue_flag in queue_flag_list:
              queue_flag_map[queue_flag].append(stage)
 
-    name = "AllCommandStagesByQueueFlags"
+    name = 'AllCommandStagesByQueueFlags'
     desc = 'Pipeline stages corresponding to VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR for each VkQueueFlagBits'
     return CrossReferenceTable(name, desc, 'VkQueueFlagBits', 'VkPipelineStageFlags2KHR', queue_caps, queue_flag_map, config)
 
@@ -1001,7 +887,7 @@ def GenSyncTypeHelper(gen, is_source) :
     else:
         lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
                  '#include "vk_layer_data.h"']
-        lines.extend(("using {} = {};".format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
+        lines.extend(('using {} = {};'.format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
     lines.extend(['// clang-format off', ''])
 
     stage_order = pipeline_order.split()
@@ -1010,8 +896,8 @@ def GenSyncTypeHelper(gen, is_source) :
         lines.append('// Access types \n//    ' + '\n//    '.join(access_types) +  '\n' * 2)
 
     stage_order_map = ParsePipelineStageOrder(stage_order, snippet_pipeline_stages_order, config)
-    access_stage_table = ParseAccessType(snippet_access_types_supported)
-    stage_queue_cap_table = ParseAccessType(snippet_pipeline_stages_supported)
+    access_stage_table = ParseAccessMasks(gen.genOpts.valid_usage_path, stage_order)
+    stage_queue_cap_table = ParseQueueCaps(snippet_pipeline_stages_supported)
     stage_access_table = CreateStageAccessTable(stage_order, access_stage_table)
     stage_access_combinations = CreateStageAccessCombinations(config, stage_order, stage_access_table)
     lines.extend(StageAccessEnums(stage_access_combinations, config))

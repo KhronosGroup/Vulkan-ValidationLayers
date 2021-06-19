@@ -2510,7 +2510,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         });
 
     // Allocate shader validation cache
-    if (!disabled[shader_validation_caching] && !core_checks->core_validation_cache) {
+    if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_checks->core_validation_cache) {
         std::string validation_cache_path;
         auto tmp_path = GetEnvironment("TMPDIR");
         if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
@@ -3282,8 +3282,8 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                 VkFence fence) const {
     const auto *pFence = GetFenceState(fence);
-    bool skip = ValidateFenceForSubmit(pFence, "UNASSIGNED-CoreValidation-vkQueueSubmit2KHR-fence-00064",
-                                       "UNASSIGNED-vkQueueSubmit2KHR-fence-00063", "vkQueueSubmit2KHR()");
+    bool skip = ValidateFenceForSubmit(pFence, "VUID-vkQueueSubmit2KHR-fence-04895", "VUID-vkQueueSubmit2KHR-fence-04894",
+                                       "vkQueueSubmit2KHR()");
     if (skip) {
         return true;
     }
