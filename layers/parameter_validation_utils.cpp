@@ -62,18 +62,30 @@ bool StatelessValidation::validate_string(const char *apiName, const ParameterNa
 
 bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t effective_api_version) const {
     bool skip = false;
+#if !defined(VULKANSC)
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
+#else
+    uint32_t api_version_nopatch = VK_MAKE_API_VERSION(VKSC_API_VARIANT, VK_API_VERSION_MAJOR(api_version), VK_API_VERSION_MINOR(api_version), 0);
+#endif
     if (api_version_nopatch != effective_api_version) {
         if ((api_version_nopatch < VK_API_VERSION_1_0) && (api_version != 0)) {
             skip |= LogError(instance, "VUID-VkApplicationInfo-apiVersion-04010",
                              "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                              "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
+#if !defined(VULKANSC)
                              api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
+#else
+                             api_version, VK_API_VERSION_MAJOR(effective_api_version), VK_API_VERSION_MINOR(effective_api_version));
+#endif
         } else {
             skip |= LogWarning(instance, kVUIDUndefined,
                                "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                                "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
+#if !defined(VULKANSC)
                                api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
+#else
+                               api_version, VK_API_VERSION_MAJOR(effective_api_version), VK_API_VERSION_MINOR(effective_api_version));
+#endif
         }
     }
     return skip;
@@ -95,7 +107,10 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
 }
 
 bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const {
+#if !defined(VULKANSC) // this extension does not exist in VKSC, but is part of core VKSC
     if (instance_extensions.vk_khr_get_physical_device_properties2) {
+#endif
+    {
         // Struct is legal IF it's supported
         const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
         if (dev_exts_enumerated == device_extensions_enumerated.end()) return true;
@@ -254,6 +269,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     DispatchGetPhysicalDeviceProperties(physicalDevice, &device_properties);
     memcpy(&stateless_validation->device_limits, &device_properties.limits, sizeof(VkPhysicalDeviceLimits));
 
+#if defined(VK_NV_shading_rate_image)
     if (IsExtEnabled(device_extensions.vk_nv_shading_rate_image)) {
         // Get the needed shading rate image limits
         auto shading_rate_image_props = LvlInitStruct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
@@ -261,7 +277,9 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
+#endif
 
+#if defined(VK_NV_mesh_shader)
     if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
         // Get the needed mesh shader limits
         auto mesh_shader_props = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesNV>();
@@ -269,7 +287,9 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
     }
+#endif
 
+#if defined(VK_NV_ray_tracing)
     if (IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
         // Get the needed ray tracing limits
         auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
@@ -277,7 +297,9 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.ray_tracing_propsNV = ray_tracing_props;
     }
+#endif
 
+#if defined(VK_KHR_ray_tracing_pipeline)
     if (IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline)) {
         // Get the needed ray tracing limits
         auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
@@ -285,7 +307,9 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.ray_tracing_propsKHR = ray_tracing_props;
     }
+#endif
 
+#if defined(VK_KHR_acceleration_structure)
     if (IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
         // Get the needed ray tracing acc structure limits
         auto acc_structure_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
@@ -293,7 +317,9 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
+#endif
 
+#if defined(VK_EXT_transform_feedback)
     if (IsExtEnabled(device_extensions.vk_ext_transform_feedback)) {
         // Get the needed transform feedback limits
         auto transform_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
@@ -301,12 +327,17 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
+#endif
 
     if (IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
         // Get the needed vertex attribute divisor limits
         auto vertex_attribute_divisor_props = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&vertex_attribute_divisor_props);
+#if defined(VK_KHR_get_physical_device_properties2)
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+#else
+        DispatchGetPhysicalDeviceProperties2(physicalDevice, &prop2);
+#endif
         phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
     }
 
@@ -314,7 +345,11 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         // Get the needed vertex attribute divisor limits
         auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
+#if defined(VK_KHR_get_physical_device_properties2)
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+#else
+        DispatchGetPhysicalDeviceProperties2(physicalDevice, &prop2);
+#endif
         phys_dev_ext_props.blend_operation_advanced_props = blend_operation_advanced_props;
     }
 
@@ -369,6 +404,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                          report_data->FormatHandle(physicalDevice).c_str());
     }
 
+#if defined(VK_KHR_maintenance1) && defined(VK_AMD_negative_viewport_height)
     {
         bool maint1 = IsExtEnabled(extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE_1_EXTENSION_NAME));
         bool negative_viewport =
@@ -379,7 +415,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                              "VK_AMD_negative_viewport_height.");
         }
     }
+#endif
 
+#if defined(VK_KHR_buffer_device_address) && defined(VK_EXT_buffer_device_address)
     {
         bool khr_bda =
             IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
@@ -391,6 +429,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                              "VK_EXT_buffer_device_address.");
         }
     }
+#endif
 
     if (pCreateInfo->pNext != NULL && pCreateInfo->pEnabledFeatures) {
         // Check for get_physical_device_properties2 struct
@@ -410,6 +449,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         skip |= LogError(device, "VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000",
                          "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
     }
+#if defined(VK_KHR_ray_tracing_pipeline)
     const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
     if (raytracing_features && raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplayMixed &&
         !raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay) {
@@ -419,6 +459,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             "If rayTracingPipelineShaderGroupHandleCaptureReplayMixed is VK_TRUE, rayTracingPipelineShaderGroupHandleCaptureReplay "
             "must also be VK_TRUE.");
     }
+#endif
     auto vertex_attribute_divisor_features = LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
     if (vertex_attribute_divisor_features && (!IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor))) {
         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
@@ -447,6 +488,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
         }
 
+#if defined(VK_KHR_shader_draw_parameters)
         // Check features are enabled if matching extension is passed in as well
         for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             const char *extension = pCreateInfo->ppEnabledExtensionNames[i];
@@ -458,6 +500,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                     VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
             }
         }
+#endif
     }
 
     const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
@@ -494,6 +537,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         // Check features are enabled if matching extension is passed in as well
         for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             const char *extension = pCreateInfo->ppEnabledExtensionNames[i];
+#if defined(VK_KHR_draw_indirect_count)
             if ((0 == strncmp(extension, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
                 (vulkan_12_features->drawIndirectCount == VK_FALSE)) {
                 skip |= LogError(
@@ -501,6 +545,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                     "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan12Features::drawIndirectCount is not VK_TRUE.",
                     VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
             }
+#endif
+#if defined(VK_KHR_sampler_mirror_clamp_to_edge)
             if ((0 == strncmp(extension, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
                 (vulkan_12_features->samplerMirrorClampToEdge == VK_FALSE)) {
                 skip |= LogError(instance, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-02832",
@@ -508,6 +554,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                                  "is not VK_TRUE.",
                                  VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
             }
+#endif
+#if defined(VK_EXT_descriptor_indexing)
             if ((0 == strncmp(extension, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
                 (vulkan_12_features->descriptorIndexing == VK_FALSE)) {
                 skip |= LogError(
@@ -515,6 +563,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                     "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan12Features::descriptorIndexing is not VK_TRUE.",
                     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
             }
+#endif
+#if defined(VK_EXT_sampler_filter_minmax)
             if ((0 == strncmp(extension, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
                 (vulkan_12_features->samplerFilterMinmax == VK_FALSE)) {
                 skip |= LogError(
@@ -522,6 +572,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                     "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan12Features::samplerFilterMinmax is not VK_TRUE.",
                     VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
             }
+#endif
+#if defined(VK_EXT_shader_viewport_index_layer)
             if ((0 == strncmp(extension, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
                 ((vulkan_12_features->shaderOutputViewportIndex == VK_FALSE) ||
                  (vulkan_12_features->shaderOutputLayer == VK_FALSE))) {
@@ -531,7 +583,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                              "and VkPhysicalDeviceVulkan12Features::shaderOutputLayer are not VK_TRUE.",
                              VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             }
+#endif
         }
+#if defined(VK_EXT_buffer_device_address)
         if (vulkan_12_features->bufferDeviceAddress == VK_TRUE) {
             if (IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))) {
                 skip |= LogError(instance, "VUID-VkDeviceCreateInfo-pNext-04748",
@@ -539,6 +593,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                                  "set to VK_TRUE and ppEnabledExtensionNames contains VK_EXT_buffer_device_address");
             }
         }
+#endif
     }
 
     // Validate pCreateInfo->pQueueCreateInfos
@@ -802,9 +857,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         // mipLevels must be less than or equal to the number of levels in the complete mipmap chain
         uint32_t max_dim = std::max(std::max(pCreateInfo->extent.width, pCreateInfo->extent.height), pCreateInfo->extent.depth);
         // Max mip levels is different for corner-sampled images vs normal images.
+#if defined(VK_NV_corner_sampled_image)
         uint32_t max_mip_levels = (image_flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV)
                                       ? static_cast<uint32_t>(ceil(log2(max_dim)))
                                       : static_cast<uint32_t>(floor(log2(max_dim)) + 1);
+#else
+        uint32_t max_mip_levels = static_cast<uint32_t>(floor(log2(max_dim)) + 1);
+#endif
         if (max_dim > 0 && pCreateInfo->mipLevels > max_mip_levels) {
             skip |=
                 LogError(device, "VUID-VkImageCreateInfo-mipLevels-00958",
@@ -895,6 +954,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
+#if defined(VK_NV_shading_rate_image)
         if (pCreateInfo->usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
             if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-02082",
@@ -912,7 +972,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "tiling must be VK_IMAGE_TILING_OPTIMAL.");
             }
         }
+#endif
 
+#if defined(VK_NV_corner_sampled_image)
         if (image_flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
             if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D && pCreateInfo->imageType != VK_IMAGE_TYPE_3D) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02050",
@@ -941,6 +1003,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "must be greater than 1.");
             }
         }
+#endif // defined(VK_NV_corner_sampled_image)
 
         if (((image_flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
             (FormatHasDepth(image_format) == false)) {
@@ -1093,6 +1156,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "vkCreateImage(): Multi-device image with incompatible type, usage, tiling, or mips.");
         }
 
+#if defined(VK_EXT_fragment_density_map)
         if (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
             if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02557",
@@ -1128,6 +1192,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  pCreateInfo->mipLevels);
             }
         }
+#endif // defined(VK_EXT_fragment_density_map)
 
         const auto swapchain_create_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
         if (swapchain_create_info != nullptr) {
@@ -1325,8 +1390,12 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
     // height
     bool height_healthy = true;
+#if defined(VK_KHR_maintenance1) && defined(VK_AMD_negative_viewport_height)
     const bool negative_height_enabled =
         IsExtEnabled(device_extensions.vk_khr_maintenance1) || IsExtEnabled(device_extensions.vk_amd_negative_viewport_height);
+#else
+    const bool negative_height_enabled = true;
+#endif
     const auto max_h = device_limits.maxViewportDimensions[1];
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
@@ -1419,6 +1488,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     return skip;
 }
 
+#if defined(VK_NV_shading_rate_image)
 struct SampleOrderInfo {
     VkShadingRatePaletteEntryNV shadingRate;
     uint32_t width;
@@ -1518,6 +1588,7 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
 
     return skip;
 }
+#endif // defined(VK_NV_shading_rate_image)
 
 bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
@@ -1632,8 +1703,10 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             bool has_dynamic_discard_rectangle_ext = false;
             bool has_dynamic_sample_locations_ext = false;
             bool has_dynamic_exclusive_scissor_nv = false;
+#if defined(VK_NV_shading_rate_image)
             bool has_dynamic_shading_rate_palette_nv = false;
             bool has_dynamic_viewport_course_sample_order_nv = false;
+#endif
             bool has_dynamic_line_stipple = false;
             bool has_dynamic_cull_mode = false;
             bool has_dynamic_front_face = false;
@@ -1738,6 +1811,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                         has_dynamic_stencil_reference = true;
                     }
+#if defined(VK_NV_clip_space_w_scaling)
                     if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) {
                         if (has_dynamic_viewport_w_scaling_nv == true) {
                             skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
@@ -1747,6 +1821,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                         has_dynamic_viewport_w_scaling_nv = true;
                     }
+#endif
                     if (dynamic_state == VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) {
                         if (has_dynamic_discard_rectangle_ext == true) {
                             skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
@@ -1765,6 +1840,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                         has_dynamic_sample_locations_ext = true;
                     }
+#if defined(VK_NV_scissor_exclusive)
                     if (dynamic_state == VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) {
                         if (has_dynamic_exclusive_scissor_nv == true) {
                             skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
@@ -1774,6 +1850,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                         has_dynamic_exclusive_scissor_nv = true;
                     }
+#endif
+#if defined(VK_NV_shading_rate_image)
                     if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) {
                         if (has_dynamic_shading_rate_palette_nv == true) {
                             skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
@@ -1792,6 +1870,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                         has_dynamic_viewport_course_sample_order_nv = true;
                     }
+#endif // defined(VK_NV_shading_rate_image)
                     if (dynamic_state == VK_DYNAMIC_STATE_LINE_STIPPLE_EXT) {
                         if (has_dynamic_line_stipple == true) {
                             skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
@@ -1918,6 +1997,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                         has_dynamic_stencil_op = true;
                     }
+#if defined(VK_KHR_ray_tracing_pipeline)
                     if (dynamic_state == VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) {
                         // Not allowed for graphics pipelines
                         skip |= LogError(
@@ -1927,6 +2007,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             "] but not allowed in graphic pipelines.",
                             i, state_index);
                     }
+#endif
                     if (dynamic_state == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) {
                         if (has_patch_control_points) {
                             skip |= LogError(
@@ -2003,6 +2084,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  i);
             }
 
+#if defined(VK_EXT_pipeline_creation_feedback)
             auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
             if ((feedback_struct != nullptr) &&
                 (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
@@ -2012,6 +2094,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "(=%" PRIu32 ") must equal VkGraphicsPipelineCreateInfo::stageCount(=%" PRIu32 ").",
                                  i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
             }
+#endif
 
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
@@ -2066,7 +2149,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                 "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
             }
 
+#if defined(VK_NV_mesh_shader)
             if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (pCreateInfos[i].pInputAssemblyState != nullptr)) {
+#else
+            if (pCreateInfos[i].pInputAssemblyState != nullptr) {
+#endif
                 skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState",
                                              "VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO",
                                              pCreateInfos[i].pInputAssemblyState,
@@ -2090,7 +2177,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                         pCreateInfos[i].pInputAssemblyState->primitiveRestartEnable);
             }
 
+#if defined(VK_NV_mesh_shader)
             if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (pCreateInfos[i].pVertexInputState != nullptr)) {
+#else
+            if (pCreateInfos[i].pVertexInputState != nullptr) {
+#endif
                 auto const &vertex_input_state = pCreateInfos[i].pVertexInputState;
 
                 if (pCreateInfos[i].pVertexInputState->flags != 0) {
@@ -2337,11 +2428,19 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
 
                     const VkStructureType allowed_structs_vk_pipeline_viewport_state_create_info[] = {
+#if defined(VK_NV_viewport_swizzle)
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
+#endif
+#if defined(VK_NV_clip_space_w_scaling)
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV,
+#endif
+#if defined(VK_NV_scissor_exclusive)
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV,
+#endif
+#if defined(VK_NV_shading_rate_image)
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV,
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV,
+#endif
                     };
                     skip |= validate_struct_pnext(
                         "vkCreateGraphicsPipelines",
@@ -2359,16 +2458,24 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         ParameterName("pCreateInfos[%i].pViewportState->flags", ParameterName::IndexVector{i}),
                         viewport_state.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
 
+#if defined(VK_NV_scissor_exclusive)
                     auto exclusive_scissor_struct =
                         LvlFindInChain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+#endif
+#if defined(VK_NV_shading_rate_image)
                     auto shading_rate_image_struct =
                         LvlFindInChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
                     auto coarse_sample_order_struct =
                         LvlFindInChain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+#endif
+#if defined(VK_NV_viewport_swizzle)
                     const auto vp_swizzle_struct =
                         LvlFindInChain<VkPipelineViewportSwizzleStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+#endif
+#if defined(VK_NV_clip_space_w_scaling)
                     const auto vp_w_scaling_struct =
                         LvlFindInChain<VkPipelineViewportWScalingStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+#endif
 
                     if (!physical_device_features.multiViewport) {
                         if (!has_dynamic_viewport_with_count && (viewport_state.viewportCount != 1)) {
@@ -2387,6 +2494,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              i, viewport_state.scissorCount);
                         }
 
+#if defined(VK_NV_scissor_exclusive)
                         if (exclusive_scissor_struct && (exclusive_scissor_struct->exclusiveScissorCount != 0 &&
                                                          exclusive_scissor_struct->exclusiveScissorCount != 1)) {
                             skip |= LogError(
@@ -2397,7 +2505,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 ") is not 1.",
                                 i, exclusive_scissor_struct->exclusiveScissorCount);
                         }
+#endif
 
+#if defined(VK_NV_shading_rate_image)
                         if (shading_rate_image_struct &&
                             (shading_rate_image_struct->viewportCount != 0 && shading_rate_image_struct->viewportCount != 1)) {
                             skip |= LogError(device, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
@@ -2407,6 +2517,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              ") is neither 0 nor 1.",
                                              i, shading_rate_image_struct->viewportCount);
                         }
+#endif
 
                     } else {  // multiViewport enabled
                         if (viewport_state.viewportCount == 0) {
@@ -2490,6 +2601,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                     }
 
+#if defined(VK_NV_scissor_exclusive)
                     if (exclusive_scissor_struct && exclusive_scissor_struct->exclusiveScissorCount > device_limits.maxViewports) {
                         skip |=
                             LogError(device, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028",
@@ -2497,7 +2609,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
                                      i, exclusive_scissor_struct->exclusiveScissorCount, device_limits.maxViewports);
                     }
+#endif
 
+#if defined(VK_NV_shading_rate_image)
                     if (shading_rate_image_struct && shading_rate_image_struct->viewportCount > device_limits.maxViewports) {
                         skip |= LogError(device, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02055",
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -2505,6 +2619,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
                                          i, shading_rate_image_struct->viewportCount, device_limits.maxViewports);
                     }
+#endif
 
                     if (viewport_state.scissorCount != viewport_state.viewportCount &&
                         !(has_dynamic_viewport_with_count || has_dynamic_scissor_with_count)) {
@@ -2515,6 +2630,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i, viewport_state.scissorCount, i, viewport_state.viewportCount);
                     }
 
+#if defined(VK_NV_scissor_exclusive)
                     if (exclusive_scissor_struct && exclusive_scissor_struct->exclusiveScissorCount != 0 &&
                         exclusive_scissor_struct->exclusiveScissorCount != viewport_state.viewportCount) {
                         skip |=
@@ -2524,7 +2640,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "].pViewportState->viewportCount (=%" PRIu32 ").",
                                      i, exclusive_scissor_struct->exclusiveScissorCount, i, viewport_state.viewportCount);
                     }
+#endif
 
+#if defined(VK_NV_shading_rate_image)
                     if (shading_rate_image_struct && shading_rate_image_struct->shadingRateImageEnable &&
                         shading_rate_image_struct->viewportCount != viewport_state.viewportCount) {
                         skip |= LogError(
@@ -2535,6 +2653,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             ") must identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
                             i, shading_rate_image_struct->viewportCount, i, viewport_state.viewportCount);
                     }
+#endif
 
                     if (!has_dynamic_viewport && viewport_state.viewportCount > 0 && viewport_state.pViewports == nullptr) {
                         skip |= LogError(
@@ -2554,6 +2673,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             i, i);
                     }
 
+#if defined(VK_NV_scissor_exclusive)
                     if (!has_dynamic_exclusive_scissor_nv && exclusive_scissor_struct &&
                         exclusive_scissor_struct->exclusiveScissorCount > 0 &&
                         exclusive_scissor_struct->pExclusiveScissors == nullptr) {
@@ -2564,7 +2684,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "pCreateInfos[%" PRIu32 "] pExclusiveScissors (=NULL) is an invalid pointer.",
                                      i, i);
                     }
+#endif
 
+#if defined(VK_NV_shading_rate_image)
                     if (!has_dynamic_shading_rate_palette_nv && shading_rate_image_struct &&
                         shading_rate_image_struct->viewportCount > 0 &&
                         shading_rate_image_struct->pShadingRatePalettes == nullptr) {
@@ -2575,7 +2697,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             "but pCreateInfos[%" PRIu32 "] pShadingRatePalettes (=NULL) is an invalid pointer.",
                             i, i);
                     }
+#endif
 
+#if defined(VK_NV_viewport_swizzle)
                     if (vp_swizzle_struct) {
                         if (vp_swizzle_struct->viewportCount != viewport_state.viewportCount) {
                             skip |= LogError(device, "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-01215",
@@ -2585,6 +2709,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              vp_swizzle_struct->viewportCount, viewport_state.viewportCount);
                         }
                     }
+#endif
 
                     // validate the VkViewports
                     if (!has_dynamic_viewport && viewport_state.pViewports) {
@@ -2598,7 +2723,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                     }
 
+#if defined(VK_NV_clip_space_w_scaling)
                     if (has_dynamic_viewport_w_scaling_nv && !IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling)) {
+#else
+                    if (has_dynamic_viewport_w_scaling_nv) {
+#endif
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                          "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, but "
@@ -2622,7 +2751,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
+#if defined(VK_NV_scissor_exclusive)
                     if (has_dynamic_exclusive_scissor_nv && !IsExtEnabled(device_extensions.vk_nv_scissor_exclusive)) {
+#else
+                    if (has_dynamic_exclusive_scissor_nv) {
+#endif
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                          "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, but "
@@ -2630,6 +2763,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
+#if defined(VK_NV_shading_rate_image)
                     if (coarse_sample_order_struct &&
                         coarse_sample_order_struct->sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV &&
                         coarse_sample_order_struct->customSampleOrderCount != 0) {
@@ -2646,7 +2780,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             skip |= ValidateCoarseSampleOrderCustomNV(&coarse_sample_order_struct->pCustomSampleOrders[order_i]);
                         }
                     }
+#endif
 
+#if defined(VK_NV_clip_space_w_scaling)
                     if (vp_w_scaling_struct && (vp_w_scaling_struct->viewportWScalingEnable == VK_TRUE)) {
                         if (vp_w_scaling_struct->viewportCount != viewport_state.viewportCount) {
                             skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-viewportWScalingEnable-01726",
@@ -2666,6 +2802,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 i);
                         }
                     }
+#endif
                 }
 
                 if (pCreateInfos[i].pMultisampleState == nullptr) {
@@ -2675,9 +2812,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "is VK_FALSE, pCreateInfos[%" PRIu32 "].pMultisampleState must not be NULL.",
                                      i, i);
                 } else {
-                    const VkStructureType valid_next_stypes[] = {LvlTypeMap<VkPipelineCoverageModulationStateCreateInfoNV>::kSType,
+                    const VkStructureType valid_next_stypes[] = {
+#if defined(VK_NV_framebuffer_mixed_samples)
+                                                                 LvlTypeMap<VkPipelineCoverageModulationStateCreateInfoNV>::kSType,
+#endif
+#if defined(VK_NV_coverage_reduction_mode)
                                                                  LvlTypeMap<VkPipelineCoverageReductionStateCreateInfoNV>::kSType,
+#endif
+#if defined(VK_NV_fragment_coverage_to_color)
                                                                  LvlTypeMap<VkPipelineCoverageToColorStateCreateInfoNV>::kSType,
+#endif
                                                                  LvlTypeMap<VkPipelineSampleLocationsStateCreateInfoEXT>::kSType};
                     const char *valid_struct_names =
                         "VkPipelineCoverageModulationStateCreateInfoNV, VkPipelineCoverageToColorStateCreateInfoNV, "
@@ -3184,6 +3328,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             if (pCreateInfos[i].pRasterizationState) {
+#if defined(VK_NV_fill_rectangle)
                 if (!IsExtEnabled(device_extensions.vk_nv_fill_rectangle)) {
                     if (pCreateInfos[i].pRasterizationState->polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV) {
                         skip |=
@@ -3193,6 +3338,10 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "if the extension VK_NV_fill_rectangle is not enabled.");
                     } else if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
                                (physical_device_features.fillModeNonSolid == false)) {
+#else
+                        if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
+                            (physical_device_features.fillModeNonSolid == false)) {
+#endif
                         skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413",
                                          "vkCreateGraphicsPipelines parameter, VkPolygonMode "
                                          "pCreateInfos[%" PRIu32
@@ -3200,7 +3349,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.",
                                          i);
                     }
-                } else {
+#if defined(VK_NV_fill_rectangle)
+                }
+                else {
                     if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
                         (pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL_RECTANGLE_NV) &&
                         (physical_device_features.fillModeNonSolid == false)) {
@@ -3213,6 +3364,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      i);
                     }
                 }
+#endif
 
                 if (!has_dynamic_line_width && !physical_device_features.wideLines &&
                     (pCreateInfos[i].pRasterizationState->lineWidth != 1.0f)) {
@@ -3233,6 +3385,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "VK_PIPELINE_CREATE_DISPATCH_BASE.",
                                  i, flags);
             }
+#if defined(VK_KHR_pipeline_library)
             if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03371",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -3240,6 +3393,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
                                  i, flags);
             }
+#endif
+#if defined(VK_KHR_ray_tracing_pipeline)
             if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) != 0) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03372",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -3296,6 +3451,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV.",
                                  i, flags);
             }
+#endif // defined(VK_KHR_ray_tracing_pipeline)
         }
     }
 
@@ -3312,6 +3468,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         skip |= validate_string("vkCreateComputePipelines",
                                 ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
                                 "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
+#if defined(VK_EXT_pipeline_creation_feedback)
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
             skip |=
@@ -3320,6 +3477,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                          "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32 ".",
                          i, feedback_struct->pipelineStageCreationFeedbackCount);
         }
+#endif
 
         // Make sure compute stage is selected
         if (pCreateInfos[i].stage.stage != VK_SHADER_STAGE_COMPUTE_BIT) {
@@ -3329,6 +3487,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              i, string_VkShaderStageFlagBits(pCreateInfos[i].stage.stage));
         }
 
+#if defined(VK_KHR_pipeline_library)
         const VkPipelineCreateFlags flags = pCreateInfos[i].flags;
         // Validate no flags not allowed are used
         if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
@@ -3337,6 +3496,9 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              "]->flags (0x%x) must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
                              i, flags);
         }
+#endif
+
+#if defined(VK_KHR_ray_tracing_pipeline)
         if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) != 0) {
             skip |= LogError(device, "VUID-VkComputePipelineCreateInfo-flags-03365",
                              "vkCreateComputePipelines(): pCreateInfos[%" PRIu32
@@ -3386,6 +3548,9 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR.",
                              i, flags);
         }
+#endif // defined(VK_KHR_ray_tracing_pipeline)
+
+#if defined(VK_NV_ray_tracing_motion_blur)
         if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV) != 0) {
             skip |= LogError(device, "VUID-VkComputePipelineCreateInfo-flags-04945",
                              "vkCreateComputePipelines(): pCreateInfos[%" PRIu32
@@ -3393,6 +3558,9 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              "VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV.",
                              i, flags);
         }
+#endif
+
+#if defined(VK_NV_device_generated_commands)
         if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
             skip |= LogError(device, "VUID-VkComputePipelineCreateInfo-flags-02874",
                              "vkCreateComputePipelines(): pCreateInfos[%" PRIu32
@@ -3400,6 +3568,8 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.",
                              i, flags);
         }
+#endif
+#if !defined(VULKANSC)
         if (flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             if (pCreateInfos[i].basePipelineIndex != -1) {
                 if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
@@ -3429,6 +3599,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                 }
             }
         }
+#endif // !defined(VULKANSC)
 
         std::stringstream msg;
         msg << "pCreateInfos[%" << i << "].stage";
@@ -3526,6 +3697,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                          pCreateInfo->borderColor, "VUID-VkSamplerCreateInfo-addressModeU-01078");
         }
 
+#if defined(VK_IMG_filter_cubic)
         // Checks for the IMG cubic filtering extension
         if (IsExtEnabled(device_extensions.vk_img_filter_cubic)) {
             if ((pCreateInfo->anisotropyEnable == VK_TRUE) &&
@@ -3535,6 +3707,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                  "are VK_FILTER_CUBIC_IMG.");
             }
         }
+#endif
 
         // Check for valid Lod range
         if (pCreateInfo->minLod > pCreateInfo->maxLod) {
@@ -3567,6 +3740,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
             }
         }
 
+#if defined(VK_EXT_fragment_density_map)
         if (pCreateInfo->flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT) {
             if (pCreateInfo->minFilter != pCreateInfo->magFilter) {
                 skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02574",
@@ -3613,6 +3787,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                  "pCreateInfo->unnormalizedCoordinates must be VK_FALSE");
             }
         }
+#endif // defined(VK_EXT_fragment_density_map)
     }
 
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
@@ -3646,6 +3821,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     return skip;
 }
 
+#if defined(VK_VALVE_mutable_descriptor_type)
 bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
                                                                   const VkMutableDescriptorTypeCreateInfoVALVE &mutable_create_info,
                                                                   const char *func_name) const {
@@ -3725,6 +3901,7 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
 
     return skip;
 }
+#endif
 
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device,
                                                                           const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
@@ -3732,10 +3909,12 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                                                           VkDescriptorSetLayout *pSetLayout) const {
     bool skip = false;
 
+#if defined(VK_VALVE_mutable_descriptor_type)
     const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoVALVE>(pCreateInfo->pNext);
     const auto *mutable_descriptor_type_features = LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>(device_createinfo_pnext);
     bool mutable_descriptor_type_features_enabled =
         mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
+#endif
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if ((pCreateInfo != nullptr) && (pCreateInfo->pBindings != nullptr)) {
@@ -3780,6 +3959,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                      i, i, string_VkShaderStageFlags(pCreateInfo->pBindings[i].stageFlags).c_str());
                 }
 
+#if defined(VK_VALVE_mutable_descriptor_type)
                 if (pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
                     if (!mutable_descriptor_type) {
                         skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04593",
@@ -3812,14 +3992,18 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                      "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR, but pCreateInfo->pBindings[%" PRIu32
                                      "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE.", i);
                 }
+#endif
             }
         }
 
+#if defined(VK_VALVE_mutable_descriptor_type)
         if (mutable_descriptor_type) {
             ValidateMutableDescriptorTypeCreateInfo(*pCreateInfo, *mutable_descriptor_type,
                                                     "vkDescriptorSetLayoutCreateInfo");
         }
+#endif
     }
+#if defined(VK_VALVE_mutable_descriptor_type)
     if (pCreateInfo) {
         if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) &&
             (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
@@ -3843,6 +4027,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                              "VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::mutableDescriptorType feature is not enabled.");
         }
     }
+#endif
 
     return skip;
 }
@@ -3979,6 +4164,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                     }
                 }
             }
+#if !defined(VULKANSC)
             // pNext chain must be either NULL or a pointer to a valid instance of VkWriteDescriptorSetAccelerationStructureKHR
             // or VkWriteDescriptorSetInlineUniformBlockEX
             if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
@@ -4019,7 +4205,8 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                         }
                     }
                 }
-            } else if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+            }
+            else if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
                 const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
                 if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
                     skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-03817",
@@ -4058,6 +4245,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                     }
                 }
             }
+#endif // !defined(VULKANSC)
         }
     }
     return skip;
@@ -4082,11 +4270,13 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice devic
     return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
 
+#if defined(VK_KHR_create_renderpass2)
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkRenderPass *pRenderPass) const {
     return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
+#endif
 
 bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
                                                                    uint32_t commandBufferCount,
@@ -4125,10 +4315,19 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
 
         if (info) {
             const VkStructureType allowed_structs_vk_command_buffer_inheritance_info[] = {
+#if defined(VK_EXT_conditional_rendering)
                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT,
+#endif
+#if defined(VK_KHR_dynamic_rendering)
                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
+#endif
+#if defined(VK_AMD_mixed_attachment_samples)
                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
-                VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV};
+#endif
+#if defined(VK_NV_inherited_viewport_scissor)
+                VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV
+#endif
+            };
             skip |= validate_struct_pnext(
                 cmd_name, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT",
                 info->pNext, ARRAY_SIZE(allowed_structs_vk_command_buffer_inheritance_info),
@@ -4165,6 +4364,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                                             "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
             }
 
+#if defined(VK_EXT_conditional_rendering)
             const auto *conditional_rendering = LvlFindInChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
             if (conditional_rendering) {
                 const auto *cr_features = LvlFindInChain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
@@ -4177,7 +4377,9 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                         "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
                 }
             }
+#endif
 
+#if defined(VK_NV_inherited_viewport_scissor)
             auto p_inherited_viewport_scissor_info = LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
             if (p_inherited_viewport_scissor_info != nullptr && !physical_device_features.multiViewport &&
                 p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
@@ -4187,6 +4389,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                                  "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D in "
                                  "pBeginInfo->pInheritanceInfo->pNext is VK_TRUE and viewportDepthCount is not 1.");
             }
+#endif
         }
     }
     return skip;
@@ -4401,6 +4604,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(V
     return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, true);
 }
 
+#if defined(VK_EXT_multi_draw)
 bool StatelessValidation::manual_PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                                 const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
                                                                 uint32_t firstInstance, uint32_t stride) const {
@@ -4433,6 +4637,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMultiIndexedEXT(VkCommand
     }
     return skip;
 }
+#endif
 
 bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
@@ -4545,6 +4750,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
     return skip;
 }
 
+#if defined(VK_KHR_video_queue)
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR *pVideoFormatInfo,
     uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties) const {
@@ -4560,6 +4766,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceVideoFormatProp
 
     return skip;
 }
+#endif
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                                               uint32_t regionCount, const VkBufferCopy *pRegions) const {
@@ -4844,11 +5051,18 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
         VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+#if defined(VK_EXT_inline_uniform_block)
         VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT,
+#endif
+#if defined(VK_KHR_acceleration_structure)
         VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+#endif
+#if defined(VK_NV_ray_tracing)
         VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
+#endif
     };
 
+#if defined(VK_VALVE_mutable_descriptor_type)
     const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoVALVE>(pCreateInfo->pNext);
     if (mutable_descriptor_type) {
         std::vector<VkDescriptorType> first_types, second_types;
@@ -4888,6 +5102,7 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
             }
         }
     }
+#endif
 
     return partial_overlap;
 }
@@ -4903,10 +5118,12 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                              "vkCreateDescriptorPool(): pCreateInfo->maxSets is not greater than 0.");
         }
 
+#if defined(VK_VALVE_mutable_descriptor_type)
         const auto *mutable_descriptor_type_features =
             LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>(device_createinfo_pnext);
         bool mutable_descriptor_type_enabled =
             mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
+#endif
 
         if (pCreateInfo->pPoolSizes) {
             for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; ++i) {
@@ -4915,6 +5132,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                         device, "VUID-VkDescriptorPoolSize-descriptorCount-00302",
                         "vkCreateDescriptorPool(): pCreateInfo->pPoolSizes[%" PRIu32 "].descriptorCount is not greater than 0.", i);
                 }
+#if defined(VK_EXT_inline_uniform_block)
                 if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
                     (pCreateInfo->pPoolSizes[i].descriptorCount % 4) != 0) {
                     skip |= LogError(device, "VUID-VkDescriptorPoolSize-type-02218",
@@ -4923,6 +5141,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                                      " and pCreateInfo->pPoolSizes[%" PRIu32 "].descriptorCount is not a multiple of 4.",
                                      i, i);
                 }
+#endif
+#if defined(VK_VALVE_mutable_descriptor_type)
                 if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && !mutable_descriptor_type_enabled) {
                     skip |=
                         LogError(device, "VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608",
@@ -4945,9 +5165,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                         }
                     }
                 }
+#endif
             }
         }
 
+#if defined(VK_VALVE_mutable_descriptor_type)
         if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE && (!mutable_descriptor_type_enabled)) {
             skip |=
                 LogError(device, "VUID-VkDescriptorPoolCreateInfo-flags-04609",
@@ -4960,6 +5182,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                              "vkCreateDescriptorPool(): pCreateInfo->flags must not contain both "
                              "VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE and VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT");
         }
+#endif
     }
 
     return skip;
@@ -5128,6 +5351,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
     return skip;
 }
 
+#if defined(VK_NV_clip_space_w_scaling)
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                          uint32_t viewportCount,
                                                                          const VkViewportWScalingNV *pViewportWScalings) const {
@@ -5142,7 +5366,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkComma
 
     return skip;
 }
+#endif
 
+#if defined(VK_NV_shading_rate_image)
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(
     VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
     const VkShadingRatePaletteNV *pShadingRatePalettes) const {
@@ -5175,7 +5401,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePalette
 
     return skip;
 }
+#endif
 
+#if defined(VK_NV_shading_rate_image)
 bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(
     VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType, uint32_t customSampleOrderCount,
     const VkCoarseSampleOrderCustomNV *pCustomSampleOrders) const {
@@ -5193,7 +5421,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(
 
     return skip;
 }
+#endif
 
+#if defined(VK_NV_mesh_shader)
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount,
                                                                    uint32_t firstTask) const {
     bool skip = false;
@@ -5262,6 +5492,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(
 
     return skip;
 }
+#endif // defined(VK_NV_mesh_shader)
 
 bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator,
@@ -5301,6 +5532,7 @@ void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const 
     RecordRenderPass(*pRenderPass, pCreateInfo);
 }
 
+#if defined(VK_KHR_create_renderpass2)
 void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                              VkResult result) {
@@ -5308,6 +5540,7 @@ void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, co
     if (result != VK_SUCCESS) return;
     RecordRenderPass(*pRenderPass, pCreateInfo);
 }
+#endif
 
 void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                           const VkAllocationCallbacks *pAllocator) {
@@ -5334,6 +5567,7 @@ void StatelessValidation::PostCallRecordFreeCommandBuffers(VkDevice device, VkCo
     }
 }
 
+#if !defined(VULKANSC)
 void StatelessValidation::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                            const VkAllocationCallbacks *pAllocator) {
     auto lock = CBWriteLock();
@@ -5345,6 +5579,7 @@ void StatelessValidation::PostCallRecordDestroyCommandPool(VkDevice device, VkCo
         }
     }
 }
+#endif
 
 bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
@@ -5352,11 +5587,13 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     bool skip = false;
 
     if (pAllocateInfo) {
+#if defined(VK_EXT_memory_priority)
         auto chained_prio_struct = LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
         if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
             skip |= LogError(device, "VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602",
                              "priority (=%f) must be between `0` and `1`, inclusive.", chained_prio_struct->priority);
         }
+#endif
 
         VkMemoryAllocateFlags flags = 0;
         auto flags_info = LvlFindInChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
@@ -5402,12 +5639,14 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 
         auto export_memory = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
         if (export_memory) {
+#if defined(VK_NV_external_memory)
             auto export_memory_nv = LvlFindInChain<VkExportMemoryAllocateInfoNV>(pAllocateInfo->pNext);
             if (export_memory_nv) {
                 skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-00640",
                                  "pNext chain of VkMemoryAllocateInfo includes both VkExportMemoryAllocateInfo and "
                                  "VkExportMemoryAllocateInfoNV");
             }
+#endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             auto export_memory_win32_nv = LvlFindInChain<VkExportMemoryWin32HandleInfoNV>(pAllocateInfo->pNext);
             if (export_memory_win32_nv) {
@@ -5446,6 +5685,7 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     return skip;
 }
 
+#if defined(VK_NV_ray_tracing)
 bool StatelessValidation::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles,
                                                       VkAccelerationStructureNV object_handle, const char *func_name) const {
     bool skip = false;
@@ -5636,7 +5876,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
 
     return skip;
 }
+#endif // defined(VK_NV_ray_tracing)
 
+#if defined(VK_KHR_acceleration_structure)
 bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
     VkDevice device, const VkAccelerationStructureCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
     VkAccelerationStructureKHR *pAccelerationStructure) const {
@@ -5681,7 +5923,9 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
     }
     return skip;
 }
+#endif // defined(VK_KHR_acceleration_structure)
 
+#if defined(VK_NV_ray_tracing)
 bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device,
                                                                                  VkAccelerationStructureNV accelerationStructure,
                                                                                  size_t dataSize, void *pData) const {
@@ -5836,7 +6080,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
 
     return skip;
 }
+#endif // defined(VK_NV_ray_tracing)
 
+#if defined(VK_KHR_ray_tracing_pipeline)
 bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const {
@@ -6033,6 +6279,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
 
     return skip;
 }
+#endif // defined(VK_KHR_ray_tracing_pipeline)
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
@@ -6100,10 +6347,12 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
                                                                    VkDeviceSize offset, VkIndexType indexType) const {
     bool skip = false;
 
+#if defined(VK_NV_ray_tracing)
     if (indexType == VK_INDEX_TYPE_NONE_NV) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-indexType-02507",
                          "vkCmdBindIndexBuffer() indexType must not be VK_INDEX_TYPE_NONE_NV.");
     }
+#endif
 
     const auto *index_type_uint8_features = LvlFindInChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
     if (indexType == VK_INDEX_TYPE_UINT8_EXT && (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8)) {
@@ -6197,6 +6446,7 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice de
     return skip;
 }
 
+#if defined(VK_EXT_transform_feedback)
 bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
                                                                                    uint32_t firstBinding, uint32_t bindingCount,
                                                                                    const VkBuffer *pBuffers,
@@ -6320,6 +6570,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCo
 
     return skip;
 }
+#endif // defined(VK_EXT_transform_feedback)
 
 bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
@@ -6485,6 +6736,7 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(
     return skip;
 }
 
+#if defined(VK_KHR_acceleration_structure)
 bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const {
     bool skip = false;
@@ -6652,6 +6904,8 @@ bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPrope
     }
     return skip;
 }
+#endif // defined(VK_KHR_acceleration_structure)
+#if defined(VK_KHR_ray_tracing_pipeline)
 bool StatelessValidation::manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void *pData) const {
     bool skip = false;
@@ -6839,6 +7093,8 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirectKHR(
     }
     return skip;
 }
+#endif // defined(VK_KHR_ray_tracing_pipeline)
+#if defined(VK_NV_ray_tracing)
 bool StatelessValidation::manual_PreCallValidateCmdTraceRaysNV(
     VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer, VkDeviceSize raygenShaderBindingOffset,
     VkBuffer missShaderBindingTableBuffer, VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
@@ -6919,7 +7175,8 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysNV(
     }
     return skip;
 }
-
+#endif // defined(VK_KHR_ray_tracing_pipeline)
+#if defined(VK_KHR_acceleration_structure)
 bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice device, const VkAccelerationStructureVersionInfoKHR *pVersionInfo,
     VkAccelerationStructureCompatibilityKHR *pCompatibility) const {
@@ -6933,6 +7190,7 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCo
     }
     return skip;
 }
+#endif // defined(VK_KHR_acceleration_structure)
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                            const VkViewport *pViewports) const {
@@ -7079,6 +7337,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkComma
     return skip;
 }
 
+#if defined(VK_KHR_acceleration_structure)
 bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos, uint32_t infoCount, const char *api_name) const {
     bool skip = false;
@@ -7639,7 +7898,9 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     }
     return skip;
 }
+#endif // defined(VK_KHR_acceleration_structure)
 
+#if defined(VK_EXT_private_data)
 bool StatelessValidation::manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevice device,
                                                                          const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
                                                                          const VkAllocationCallbacks *pAllocator,
@@ -7652,6 +7913,7 @@ bool StatelessValidation::manual_PreCallValidateCreatePrivateDataSlotEXT(VkDevic
     }
     return skip;
 }
+#endif // defined(VK_EXT_private_data)
 
 bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
@@ -7954,14 +8216,18 @@ bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice dev
                                                                     VkDeviceSize stride, VkQueryResultFlags flags) const {
     bool skip = false;
 
+
+#if defined(VK_KHR_video_queue)
     if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
         skip |= LogError(device, "VUID-vkGetQueryPoolResults-flags-04811",
                          "vkGetQueryPoolResults(): flags include both VK_QUERY_RESULT_WITH_STATUS_BIT_KHR bit and VK_QUERY_RESULT_WITH_AVAILABILITY_BIT bit.");
     }
+#endif
 
     return skip;
 }
 
+#if defined(VK_EXT_conditional_rendering)
 bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) const {
     bool skip = false;
@@ -7975,3 +8241,4 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
 
     return skip;
 }
+#endif

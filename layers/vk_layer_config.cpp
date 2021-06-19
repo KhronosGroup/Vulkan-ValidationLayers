@@ -138,7 +138,7 @@ VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_na
 // Map option strings to flag enum values
 VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(string option, layer_data::unordered_map<string, VkFlags> const &enum_data,
                                             uint32_t option_default) {
-    VkDebugReportFlagsEXT flags = option_default;
+    VkFlags flags = option_default;
     string option_list = layer_config.GetOption(option.c_str());
 
     while (option_list.length() != 0) {
@@ -344,6 +344,7 @@ void ConfigFile::ParseFile(const char *filename) {
     }
 }
 
+#if !defined(VULKANSC)
 VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags) {
     bool separator = false;
 
@@ -372,6 +373,7 @@ VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags) {
         strcat(msg_flags, "ERROR");
     }
 }
+#endif
 
 VK_LAYER_EXPORT void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags) {
     bool separator = false;

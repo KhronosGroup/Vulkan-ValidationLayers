@@ -308,10 +308,19 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
         auto node = iit.second;
 
         VkDevice device = reinterpret_cast<VkDevice>(node->handle);
+#if !defined(VK_EXT_debug_report)
+        VkObjectType debug_object_type = ConvertVulkanObjectToCoreObject(node->object_type);
+#else
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[node->object_type];
+#endif
+
 
         skip |= LogError(device, kVUID_ObjectTracker_ObjectLeak, "OBJ ERROR : %s object %s has not been destroyed.",
+#if !defined(VK_EXT_debug_report)
+                         string_VkObjectType(debug_object_type),
+#else
                          string_VkDebugReportObjectTypeEXT(debug_object_type),
+#endif
                          report_data->FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
 
         // Throw errors if any device objects belonging to this instance have not been destroyed

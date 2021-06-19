@@ -29,7 +29,9 @@
 #include "hash_vk_types.h"
 #include "base_node.h"
 #include "sampler_state.h"
+#if defined(VK_KHR_ray_tracing_pipeline)
 #include "ray_tracing_state.h"
+#endif
 #include "render_pass_state.h"
 #include "shader_module.h"
 
@@ -170,11 +172,13 @@ class PIPELINE_STATE : public BASE_NODE {
 
             
             if (ci->renderPass == VK_NULL_HANDLE) {
+#if defined(VK_KHR_dynamic_rendering)
                 auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfoKHR>(ci->pNext);
                 if (dynamic_rendering) {
                     use_color = (dynamic_rendering->colorAttachmentCount > 0);
                     use_depth = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED);
                 }
+#endif
             } else {
                 use_color = rpstate->UsesColorAttachment(ci->subpass);
                 use_depth = rpstate->UsesDepthStencilAttachment(ci->subpass);
@@ -183,8 +187,10 @@ class PIPELINE_STATE : public BASE_NODE {
             graphics.initialize(ci, use_color, use_depth);
         }
         CreateInfo(const VkComputePipelineCreateInfo *ci) : compute(ci) {}
+#if defined(VK_KHR_ray_tracing_pipeline)
         CreateInfo(const VkRayTracingPipelineCreateInfoKHR *ci) : raytracing(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoNV *ci) : raytracing(ci) {}
+#endif
 
         ~CreateInfo() {
             switch (graphics.sType) {
@@ -194,10 +200,12 @@ class PIPELINE_STATE : public BASE_NODE {
                 case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
                     compute.~safe_VkComputePipelineCreateInfo();
                     break;
+#if defined(VK_KHR_ray_tracing_pipeline)
                 case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
                 case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
                     raytracing.~safe_VkRayTracingPipelineCreateInfoCommon();
                     break;
+#endif
                 default:
                     assert(false);
                     break;
@@ -206,7 +214,9 @@ class PIPELINE_STATE : public BASE_NODE {
 
         safe_VkGraphicsPipelineCreateInfo graphics;
         safe_VkComputePipelineCreateInfo compute;
+#if defined(VK_KHR_ray_tracing_pipeline)
         safe_VkRayTracingPipelineCreateInfoCommon raytracing;
+#endif
     };
     const CreateInfo create_info;
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
@@ -269,10 +279,12 @@ class PIPELINE_STATE : public BASE_NODE {
                 return VK_PIPELINE_BIND_POINT_GRAPHICS;
             case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
                 return VK_PIPELINE_BIND_POINT_COMPUTE;
+#if defined(VK_KHR_ray_tracing_pipeline)
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
                 return VK_PIPELINE_BIND_POINT_RAY_TRACING_NV;
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
                 return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+#endif
             default:
                 assert(false);
                 return VK_PIPELINE_BIND_POINT_MAX_ENUM;
@@ -285,9 +297,11 @@ class PIPELINE_STATE : public BASE_NODE {
                 return create_info.graphics.flags;
             case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
                 return create_info.compute.flags;
+#if defined(VK_KHR_ray_tracing_pipeline)
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
                 return create_info.raytracing.flags;
+#endif
             default:
                 assert(false);
                 return 0;
@@ -355,8 +369,10 @@ enum LvlBindPoint {
 
 static VkPipelineBindPoint inline ConvertToPipelineBindPoint(LvlBindPoint bind_point) {
     switch (bind_point) {
+#if defined(VK_KHR_ray_tracing_pipeline)
         case BindPoint_Ray_Tracing:
             return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+#endif
         default:
             return static_cast<VkPipelineBindPoint>(bind_point);
     }
@@ -365,8 +381,10 @@ static VkPipelineBindPoint inline ConvertToPipelineBindPoint(LvlBindPoint bind_p
 
 static LvlBindPoint inline ConvertToLvlBindPoint(VkPipelineBindPoint bind_point) {
     switch (bind_point) {
+#if defined(VK_KHR_ray_tracing_pipeline)
         case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
             return BindPoint_Ray_Tracing;
+#endif
         default:
             return static_cast<LvlBindPoint>(bind_point);
     }

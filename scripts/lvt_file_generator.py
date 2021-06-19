@@ -240,6 +240,8 @@ class LvtFileOutputGenerator(OutputGenerator):
     def GenerateFunctionPointerHeader(self):
         entries = []
         table = funcptr_header_preamble
+        if self.genOpts.apiname == 'vulkansc':
+            table = funcptr_header_preamble.replace('vulkan.h', 'vulkan_sc.h')
         entries = self.dispatch_list
 
         for item in entries:

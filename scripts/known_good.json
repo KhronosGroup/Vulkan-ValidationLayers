@@ -57,6 +57,14 @@
         "build_step": "skip",
         "commit": "release-1.8.1",
         "optional": ["tests"]
+    },
+    {
+      "name": "VulkanSC-Headers",
+      "url": "https://gitlab.khronos.org/vulkan/Vulkan-Headers.git",
+      "sub_dir": "VulkanSC-Headers",
+      "build_dir": "VulkanSC-Headers/build",
+      "install_dir": "VulkanSC-Headers/build/install",
+      "commit": "origin/sc_main_1.2.189"
     }
   ],
   "install_names" : {
@@ -65,6 +73,7 @@
       "SPIRV-Headers" : "SPIRV_HEADERS_INSTALL_DIR",
       "SPIRV-Tools" : "SPIRV_TOOLS_INSTALL_DIR",
       "robin-hood-hashing" : "ROBIN_HOOD_HASHING_INSTALL_DIR",
-      "googletest": "GOOGLETEST_INSTALL_DIR"
+      "googletest": "GOOGLETEST_INSTALL_DIR",
+      "VulkanSC-Headers" : "VULKAN_HEADERS_INSTALL_DIR"
   }
 }

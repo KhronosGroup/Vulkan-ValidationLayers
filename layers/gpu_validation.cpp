@@ -375,6 +375,7 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     desc_set_manager.reset();
 }
 
+#if defined(VK_NV_ray_tracing)
 void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *device_gpuav) {
     if (device_gpuav->aborted) {
         return;
@@ -721,6 +722,7 @@ void GpuAssisted::DestroyAccelerationStructureBuildValidationState() {
         vmaFreeMemory(vmaAllocator, as_validation_state.replacement_as_allocation);
     }
 }
+#endif // defined(VK_NV_ray_tracing)
 
 struct GPUAV_RESTORABLE_PIPELINE_STATE {
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
@@ -792,6 +794,7 @@ struct GPUAV_RESTORABLE_PIPELINE_STATE {
     }
 };
 
+#if defined(VK_NV_ray_tracing)
 void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
                                                                const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
                                                                VkDeviceSize instanceOffset, VkBool32 update,
@@ -1000,6 +1003,7 @@ void GpuAssisted::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice devic
         }
     }
 }
+#endif // defined(VK_NV_ray_tracing)
 
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.
 void GpuAssisted::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
@@ -1157,6 +1161,7 @@ void GpuAssisted::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelin
                                                                 ccpl_state_data);
 }
 
+#if defined(VK_NV_ray_tracing)
 void GpuAssisted::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1187,6 +1192,7 @@ void GpuAssisted::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkD
     ValidationStateTracker::PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos,
                                                                       pAllocator, pPipelines, crtpl_state_data);
 }
+#endif // defined(VK_NV_ray_tracing)
 
 void GpuAssisted::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
@@ -1212,6 +1218,7 @@ void GpuAssisted::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE, this);
 }
 
+#if defined(VK_NV_ray_tracing)
 void GpuAssisted::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1236,6 +1243,7 @@ void GpuAssisted::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->gpu_create_infos.data());
     UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
 }
+#endif // defined(VK_NV_ray_tracing)
 
 // Remove all the shader trackers associated with this destroyed pipeline.
 void GpuAssisted::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
@@ -1259,6 +1267,7 @@ void GpuAssisted::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass r
     ValidationStateTracker::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator);
 }
 
+#if !defined(VULKANSC)
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, std::vector<unsigned int> &new_pgm,
                                    uint32_t *unique_shader_id) {
@@ -1325,6 +1334,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     }
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
 }
+#endif // !defined(VULKANSC)
 
 static const int kInstErrorPreDrawValidate = spvtools::kInstErrorMax + 1;
 static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 1;

@@ -51,23 +51,36 @@ endif()
 if(DEFINED VULKAN_HEADERS_INSTALL_DIR)
   # When CMAKE_FIND_ROOT_PATH_INCLUDE is set to ONLY, the HINTS in find_path()
   # are re-rooted, which prevents VULKAN_HEADERS_INSTALL_DIR to work as
-  # expected. So use NO_CMAKE_FIND_ROOT_PATH to avoid it.
+  # expected. So use NO_CMAKE_FIND_ROOT_PATH to avoid it. Toolchain files can
+  # also be passed in with -DCMAKE_TOOLCHAIN_FILE that can set
+  # CMAKE_INCLUDE_PATH so use NO_DEFAULT_PATH to avoid this.
 
   # Use HINTS instead of PATH to search these locations before
   # searching system environment variables like $PATH that may
   # contain SDK directories.
-  find_path(VulkanHeaders_INCLUDE_DIR
-      NAMES vulkan/vulkan.h
-      HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
-      NO_CMAKE_FIND_ROOT_PATH)
+  if(VULKANSC)
+    find_path(VulkanHeaders_INCLUDE_DIR
+        NAMES vulkan/vulkan_sc.h
+        HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
+        NO_DEFAULT_PATH)
+  else()
+    find_path(VulkanHeaders_INCLUDE_DIR
+        NAMES vulkan/vulkan.h
+        HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
+        NO_DEFAULT_PATH)
+  endif()
   find_path(VulkanRegistry_DIR
       NAMES vk.xml
-      HINTS ${VULKAN_HEADERS_INSTALL_DIR}/share/vulkan/registry
+      HINTS ${VULKAN_HEADERS_INSTALL_DIR}/share/vulkan/registry;${VULKAN_HEADERS_INSTALL_DIR}/registry
       NO_CMAKE_FIND_ROOT_PATH)
 else()
   # If VULKAN_HEADERS_INSTALL_DIR, or one of its variants was not specified,
   # do a normal search without hints.
-  find_path(VulkanHeaders_INCLUDE_DIR NAMES vulkan/vulkan.h)
+  if(VULKANSC)
+      find_path(VulkanHeaders_INCLUDE_DIR NAMES vulkan/vulkan_sc.h)
+  else()
+      find_path(VulkanHeaders_INCLUDE_DIR NAMES vulkan/vulkan.h)
+  endif()
   get_filename_component(VULKAN_REGISTRY_PATH_HINT ${VulkanHeaders_INCLUDE_DIR} DIRECTORY)
   find_path(VulkanRegistry_DIR NAMES vk.xml HINTS ${VULKAN_REGISTRY_PATH_HINT})
 endif()

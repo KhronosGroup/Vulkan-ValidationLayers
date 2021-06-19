@@ -55,9 +55,9 @@ static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
 // Convert integer API version to a string
 static inline std::string StringAPIVersion(uint32_t version) {
     std::stringstream version_name;
-    uint32_t major = VK_VERSION_MAJOR(version);
-    uint32_t minor = VK_VERSION_MINOR(version);
-    uint32_t patch = VK_VERSION_PATCH(version);
+    uint32_t major = VK_API_VERSION_MAJOR(version);
+    uint32_t minor = VK_API_VERSION_MINOR(version);
+    uint32_t patch = VK_API_VERSION_PATCH(version);
     version_name << major << "." << minor << "." << patch << " (0x" << std::setfill('0') << std::setw(8) << std::hex << version
                  << ")";
     return version_name.str();
@@ -233,7 +233,11 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
 extern "C" {
 #endif
 
+#if !defined(VULKANSC)
 #define VK_LAYER_API_VERSION VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION)
+#else
+#define VK_LAYER_API_VERSION VK_MAKE_API_VERSION(VKSC_API_VARIANT, 1, 0, VK_HEADER_VERSION)
+#endif
 
 typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_NONE = 0x00000000,
@@ -242,8 +246,10 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
+#if !defined(VULKANSC)
 VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
                                                 const char *layer_identifier);
+#endif
 
 VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
                                                    const char *layer_identifier);

@@ -207,6 +207,7 @@ struct shader_struct_member {
 
 struct shader_module_used_operators;
 
+#if !defined(VULKANSC)
 struct SHADER_MODULE_STATE : public BASE_NODE {
     struct EntryPoint {
         uint32_t offset;  // into module to get OpEntryPoint instruction
@@ -389,6 +390,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     static std::unordered_multimap<std::string, EntryPoint> ProcessEntryPoints(const SHADER_MODULE_STATE &mod);
 };
+#endif // !defined(VULKANSC)
 
 // String helpers functions to give better error messages
 char const *StorageClassName(unsigned sc);

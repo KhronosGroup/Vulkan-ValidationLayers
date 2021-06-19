@@ -39,8 +39,17 @@ option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=addres
 
 option(BUILD_TESTS "Build the tests" OFF)
 
+option(VULKANSC "User defined variable for VulkanSC Mode to be passed in through cmake command line e.g. -DVULKANSC" OFF)
+
 # API_NAME allows renaming builds to avoid conflicts with installed SDKs.  It is referenced by layers/vk_loader_platform.h
-set(API_NAME "Vulkan" CACHE STRING "API name to use when building")
+if (VULKANSC)
+    set(API_NAME "VulkanSC" CACHE STRING "API name to use when building")
+    add_definitions(-DVULKANSC)
+    set(GENERATED_DIR "generated-vksc")
+else()
+    set(API_NAME "Vulkan" CACHE STRING "API name to use when building")
+    set(GENERATED_DIR "generated")
+endif()
 string(TOLOWER ${API_NAME} API_LOWERCASE)
 add_definitions(-DAPI_NAME="${API_NAME}")
 
@@ -365,7 +374,7 @@ install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/layers
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/layers/${GENERATED_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
                                   ${PROJECT_BINARY_DIR}
@@ -386,8 +395,12 @@ if(NOT TARGET uninstall)
     set_target_properties(uninstall PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 endif()
 
-# Fetch header version from vulkan_core.h ----------------------------------------------------------------------------------------
-file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
+# Fetch header version from vulkan_core.h or vulkan_sc_core.h --------------------------------------------------------------------
+set(VULKAN_CORE_HEADER "vulkan_core.h")
+if(VULKANSC)
+    set(VULKAN_CORE_HEADER "vulkan_sc_core.h")
+endif()
+file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/${VULKAN_CORE_HEADER}" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
 list(LENGTH lines len)
 if(${len} EQUAL 1)
     string(REGEX MATCHALL
@@ -395,15 +408,15 @@ if(${len} EQUAL 1)
                  vk_header_version
                  ${lines})
 else()
-    message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
+    message(FATAL_ERROR "Unable to fetch version from ${VULKAN_CORE_HEADER}")
 endif()
 
 # Optional codegen target --------------------------------------------------------------------------------------------------------
 if(PYTHONINTERP_FOUND)
     add_custom_target(VulkanVL_generated_source
                       COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} ${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/ --incremental
-                      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/layers/generated
+                              ${VulkanRegistry_DIR} ${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/ --incremental -api ${API_LOWERCASE}
+                      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/layers/${GENERATED_DIR}
                       )
 else()
     message("WARNING: VulkanVL_generated_source target requires python 3")

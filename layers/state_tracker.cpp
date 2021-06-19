@@ -398,6 +398,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuff
                                GetImageState(pCopyBufferToImageInfo->dstImage));
 }
 
+
 // Gets union of all features defined by Potential Format Features
 // except, does not handle the external format case for AHB as that only can be used for sampled images
 VkFormatFeatureFlags ValidationStateTracker::GetPotentialFormatFeatures(VkFormat format) const {
@@ -1674,6 +1675,7 @@ void ValidationStateTracker::PreCallRecordDestroyShaderModule(VkDevice device, V
                                                               const VkAllocationCallbacks *pAllocator) {
     Destroy<SHADER_MODULE_STATE>(shaderModule);
 }
+#endif // !defined(VULKANSC)
 
 void ValidationStateTracker::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                           const VkAllocationCallbacks *pAllocator) {
@@ -1877,6 +1879,7 @@ void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice devic
     ccpl_state->pipe_state.clear();
 }
 
+#if defined(VK_NV_ray_tracing)
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
                                                                         uint32_t count,
                                                                         const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
@@ -1905,7 +1908,9 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
     }
     crtpl_state->pipe_state.clear();
 }
+#endif
 
+#if defined(VK_KHR_ray_tracing_pipeline)
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                          VkPipelineCache pipelineCache, uint32_t count,
                                                                          const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
@@ -1937,6 +1942,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
     }
     crtpl_state->pipe_state.clear();
 }
+#endif
 
 void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
@@ -2175,6 +2181,7 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportShadingRatePaletteNV(VkC
     // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
 }
 
+#if defined(VK_NV_ray_tracing)
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
                                                                          const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                                          const VkAllocationCallbacks *pAllocator,
@@ -2203,7 +2210,9 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     as_state->allocator = pAllocator;
     Add(std::move(as_state));
 }
+#endif
 
+#if defined(VK_KHR_acceleration_structure)
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                           const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
                                                                           const VkAllocationCallbacks *pAllocator,
@@ -2269,6 +2278,8 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
     }
     cb_state->hasBuildAccelerationStructureCmd = true;
 }
+#endif
+#if defined(VK_NV_ray_tracing)
 void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2 *pMemoryRequirements) {
     ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureStateNV(pInfo->accelerationStructure);
@@ -2352,18 +2363,22 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkComm
         }
     }
 }
-
+#endif
+#if defined(VK_KHR_acceleration_structure)
 void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device,
                                                                           VkAccelerationStructureKHR accelerationStructure,
                                                                           const VkAllocationCallbacks *pAllocator) {
     Destroy<ACCELERATION_STRUCTURE_STATE_KHR>(accelerationStructure);
 }
+#endif
 
+#if defined(VK_NV_ray_tracing)
 void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevice device,
                                                                          VkAccelerationStructureNV accelerationStructure,
                                                                          const VkAllocationCallbacks *pAllocator) {
     Destroy<ACCELERATION_STRUCTURE_STATE>(accelerationStructure);
 }
+#endif
 
 void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                    uint32_t viewportCount,
@@ -2686,6 +2701,7 @@ void ValidationStateTracker::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer
     cb_state->RecordWriteTimestamp(CMD_WRITETIMESTAMP2KHR, pipelineStage, queryPool, slot);
 }
 
+#if defined(VK_KHR_acceleration_structure)
 void ValidationStateTracker::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
@@ -2698,6 +2714,7 @@ void ValidationStateTracker::PostCallRecordCmdWriteAccelerationStructuresPropert
     }
     cb_state->EndQueries(queryPool, firstQuery, accelerationStructureCount);
 }
+#endif
 
 void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
@@ -3463,6 +3480,7 @@ void ValidationStateTracker::PostCallRecordReleaseProfilingLockKHR(VkDevice devi
     }
 }
 
+#if !defined(VULKANSC)
 void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device,
                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                           const VkAllocationCallbacks *pAllocator) {
@@ -3541,6 +3559,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
                                          decoded_template.desc_writes.data());
     }
 }
+#endif // !defined(VULKANSC)
 
 void ValidationStateTracker::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pPropertyCount, void *pProperties) {
@@ -3662,6 +3681,7 @@ void ValidationStateTracker::PostCallRecordResetQueryPool(VkDevice device, VkQue
     RecordResetQueryPool(device, queryPool, firstQuery, queryCount);
 }
 
+#if !defined(VULKANSC)
 void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
                                                                         const UPDATE_TEMPLATE_STATE *template_state,
                                                                         const void *pData) {
@@ -3670,6 +3690,7 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
     cvdescriptorset::PerformUpdateDescriptorSets(this, static_cast<uint32_t>(decoded_update.desc_writes.size()),
                                                  decoded_update.desc_writes.data(), 0, NULL);
 }
+#endif
 
 // Update the common AllocateDescriptorSetsData
 void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,

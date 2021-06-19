@@ -2759,6 +2759,7 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const P
     return skip;
 }
 
+#if defined(VK_NV_ray_tracing)
 bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(
     VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const {
     bool skip = false;
@@ -2779,6 +2780,7 @@ bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(
 
     return skip;
 }
+#endif
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
@@ -2840,6 +2842,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
     return skip;
 }
 
+#if !defined(VULKANSC)
 bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                    VkFence fence) const {
     bool skip = false;
@@ -2942,6 +2945,7 @@ void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t 
         }
     }
 }
+#endif // !defined(VULKANSC)
 
 bool BestPractices::ClearAttachmentsIsFullClear(const CMD_BUFFER_STATE_BP* cmd, uint32_t rectCount,
                                                 const VkClearRect* pRects) const {

@@ -40,13 +40,19 @@ def main(argv):
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
+    parser.add_argument('-api', default='vulkan', help='Usage: -api [vulkan, vulkansc]. API to use when generating source files. vulkan is used by default')
     args = parser.parse_args(argv)
+
+    if args.api != 'vulkan' and args.api != 'vulkansc':
+        print('ERROR: bad api name. Valid apis are [vulkan, vulkansc].')
+        return 1
 
     gen_cmds = [*[[common_codegen.repo_relative('scripts/lvl_genvk.py'),
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                    '-grammar', os.path.abspath(os.path.join(args.grammar,  'spirv.core.grammar.json')),
                    '-warnExtensions', 'VK_KHR_dynamic_rendering',
                    '-quiet',
+                   '-api', args.api,
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
                                               "chassis_dispatch_helper.h",
@@ -89,6 +95,8 @@ def main(argv):
                  '-o', 'spirv_tools_commit_id.h']]
 
     repo_dir = common_codegen.repo_relative('layers/generated')
+    if args.api == 'vulkansc':
+        repo_dir = common_codegen.repo_relative('layers/generated-vksc')
 
     # get directory where generators will run
     if args.verify or args.incremental:

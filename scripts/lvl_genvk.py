@@ -77,6 +77,9 @@ def makeGenOpts(args):
     # Path to generated files, particularly api.py
     genpath = args.genpath
 
+    # API to use when generating source files
+    api = args.api[0]
+
     # Descriptive names for various regexp patterns used to select
     # versions and extensions
     allFeatures     = allExtensions = allSpirv = '.*'
@@ -105,6 +108,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -119,6 +123,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -133,6 +138,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -148,6 +154,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -163,6 +170,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -178,6 +186,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -193,6 +202,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -207,6 +217,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -222,6 +233,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -237,6 +249,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -251,6 +264,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -266,6 +280,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -281,6 +296,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -296,6 +312,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -311,6 +328,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -326,6 +344,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -341,6 +360,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -356,6 +376,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -372,6 +393,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -388,6 +410,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -405,6 +428,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -422,6 +446,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -436,6 +461,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -450,6 +476,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -464,6 +491,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat)
@@ -480,6 +508,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -495,6 +524,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -511,6 +541,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -548,6 +579,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -563,6 +595,7 @@ def makeGenOpts(args):
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
+            apiname           = api,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
@@ -676,6 +709,8 @@ if __name__ == '__main__':
     # This argument tells us where to load the script from the Vulkan-Headers registry
     parser.add_argument('-scripts', action='store',
                         help='Find additional scripts in this directory')
+
+    parser.add_argument('-api', nargs=1, default='vulkan')
 
     args = parser.parse_args()
 

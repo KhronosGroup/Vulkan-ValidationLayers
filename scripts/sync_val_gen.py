@@ -901,7 +901,12 @@ def GenSyncTypeHelper(gen, is_source) :
     if config['is_source']:
         lines = ['#include "synchronization_validation_types.h"', '']
     else:
-        lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
+        vk_header = ''
+        if gen.genOpts.apiname == 'vulkan':
+            vk_header = '#include <vulkan/vulkan.h>'
+        elif gen.genOpts.apiname == 'vulkansc':
+            vk_header = '#include <vulkan/vulkan_sc.h>'
+        lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', vk_header,
                  '#include "vk_layer_data.h"']
         lines.extend(('using {} = {};'.format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
     lines.extend(['// clang-format off', ''])

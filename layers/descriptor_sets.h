@@ -25,7 +25,9 @@
 #include "buffer_state.h"
 #include "image_state.h"
 #include "pipeline_state.h"
+#if defined(VK_KHR_acceleration_structure)
 #include "ray_tracing_state.h"
+#endif
 #include "sampler_state.h"
 #include "hash_vk_types.h"
 #include "vk_layer_logging.h"
@@ -74,6 +76,7 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
     void Destroy() override;
 };
 
+#if !defined(VULKANSC)
 class UPDATE_TEMPLATE_STATE : public BASE_NODE {
   public:
     const safe_VkDescriptorUpdateTemplateCreateInfo create_info;
@@ -81,6 +84,7 @@ class UPDATE_TEMPLATE_STATE : public BASE_NODE {
     UPDATE_TEMPLATE_STATE(VkDescriptorUpdateTemplate update_template, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
         : BASE_NODE(update_template, kVulkanObjectTypeDescriptorUpdateTemplate), create_info(pCreateInfo) {}
 };
+#endif
 
 // Descriptor Data structures
 namespace cvdescriptorset {
@@ -187,7 +191,13 @@ class DescriptorSetLayoutDef {
 
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t) const;
-    bool IsPushDescriptor() const { return GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR; };
+    bool IsPushDescriptor() const {
+#if defined(VK_KHR_push_descriptor)
+        return GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+#else
+        return false;
+#endif
+    };
 
     struct BindingTypeStats {
         uint32_t dynamic_buffer_count;
@@ -392,7 +402,11 @@ class DescriptorSet;
 
 class Descriptor {
   public:
-    Descriptor(DescriptorClass class_) : updated(false), descriptor_class(class_), active_descriptor_type(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {}
+    Descriptor(DescriptorClass class_) : updated(false), descriptor_class(class_)
+#if defined(VK_VALVE_mutable_descriptor_type)
+                                         , active_descriptor_type(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE)
+#endif
+                                         {}
     virtual ~Descriptor(){};
     virtual void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) = 0;
     virtual void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *) = 0;
@@ -417,9 +431,13 @@ bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, cons
                                            const bool push_descriptor_ext, const uint32_t max_push_descriptors,
                                            const bool descriptor_indexing_ext,
                                            const VkPhysicalDeviceVulkan12Features *core12_features,
+#if defined(VK_EXT_inline_uniform_block)
                                            const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
+#endif
+#if defined(VK_KHR_acceleration_structure)
                                            const VkPhysicalDeviceAccelerationStructureFeaturesKHR *acceleration_structure_features,
+#endif
                                            const DeviceExtensions *device_extensions);
 
 // All Dynamic descriptor types
@@ -587,6 +605,7 @@ class InlineUniformDescriptor : public Descriptor {
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *) override { updated = true; }
 };
 
+#if !defined(VULKANSC)
 class AccelerationStructureDescriptor : public Descriptor {
   public:
     AccelerationStructureDescriptor(const VkDescriptorType);
@@ -625,6 +644,7 @@ class AccelerationStructureDescriptor : public Descriptor {
     VkAccelerationStructureNV acc_nv_;
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
 };
+#endif // !defined(VULKANSC)
 
 class MutableDescriptor : public Descriptor {
   public:
@@ -643,7 +663,9 @@ union AnyDescriptor {
     TexelDescriptor texel;
     BufferDescriptor buffer;
     InlineUniformDescriptor inline_uniform;
+#if !defined(VULKANSC)
     AccelerationStructureDescriptor accelerator_structure;
+#endif
     MutableDescriptor mutable_descriptor;
     ~AnyDescriptor() = delete;
 };
@@ -657,9 +679,11 @@ struct alignas(alignof(AnyDescriptor)) DescriptorBackingStore {
     TexelDescriptor *Texel() { return &(reinterpret_cast<AnyDescriptor *>(this)->texel); }
     BufferDescriptor *Buffer() { return &(reinterpret_cast<AnyDescriptor *>(this)->buffer); }
     InlineUniformDescriptor *InlineUniform() { return &(reinterpret_cast<AnyDescriptor *>(this)->inline_uniform); }
+#if !defined(VULKANSC)
     AccelerationStructureDescriptor *AccelerationStructure() {
         return &(reinterpret_cast<AnyDescriptor *>(this)->accelerator_structure);
     }
+#endif
     MutableDescriptor *Mutable() { return &(reinterpret_cast<AnyDescriptor *>(this)->mutable_descriptor); }
 };
 
@@ -690,6 +714,7 @@ bool VerifyUpdateConsistency(debug_report_data *report_data, DescriptorSetLayout
 bool ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE const *buffer_node, VkDescriptorType type,
                          std::string *error_code, std::string *error_msg);
 
+#if !defined(VULKANSC)
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
@@ -700,6 +725,7 @@ struct DecodedTemplateUpdate {
                           const UPDATE_TEMPLATE_STATE *template_state, const void *pData,
                           VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
+#endif
 
 /*
  * DescriptorSet class

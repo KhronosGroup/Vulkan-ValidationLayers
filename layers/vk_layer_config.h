@@ -23,7 +23,11 @@
 #include <string>
 
 #include "vulkan/vk_layer.h"
+#ifdef VULKANSC
+#include "vulkan/vulkan_sc.h"
+#else
 #include "vulkan/vulkan.h"
+#endif
 #include "vk_layer_data.h"
 
 #if defined(WIN32)
@@ -81,12 +85,14 @@ const layer_data::unordered_map<std::string, VkFlags> debug_actions_option_defin
 #endif
     {std::string("VK_DBG_LAYER_ACTION_DEFAULT"), VK_DBG_LAYER_ACTION_DEFAULT}};
 
+#if !defined(VULKANSC)
 const layer_data::unordered_map<std::string, VkFlags> report_flags_option_definitions = {
     {std::string("warn"), VK_DEBUG_REPORT_WARNING_BIT_EXT},
     {std::string("info"), VK_DEBUG_REPORT_INFORMATION_BIT_EXT},
     {std::string("perf"), VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT},
     {std::string("error"), VK_DEBUG_REPORT_ERROR_BIT_EXT},
     {std::string("debug"), VK_DEBUG_REPORT_DEBUG_BIT_EXT}};
+#endif
 
 const layer_data::unordered_map<std::string, VkFlags> log_msg_type_option_definitions = {{std::string("warn"), kWarningBit},
                                                                                   {std::string("info"), kInformationBit},
@@ -103,7 +109,9 @@ VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string option, layer_data::unor
                                             uint32_t option_default);
 
 VK_LAYER_EXPORT void setLayerOption(const char *option, const char *val);
+#if !defined(VULKANSC)
 VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
+#endif
 VK_LAYER_EXPORT void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
 VK_LAYER_EXPORT void PrintMessageType(VkFlags vk_flags, char *msg_flags);
 

@@ -63,15 +63,15 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_loader_platform.h
         xxhash.h
         xxhash.c
-        generated/vk_validation_error_messages.h
-        generated/vk_layer_dispatch_table.h
-        generated/vk_dispatch_table_helper.h
-        generated/vk_safe_struct.h
-        generated/vk_safe_struct.cpp
-        generated/vk_enum_string_helper.h
-        generated/vk_object_types.h
-        generated/vk_extension_helper.h
-        generated/vk_typemap_helper.h)
+        ${GENERATED_DIR}/vk_validation_error_messages.h
+        ${GENERATED_DIR}/vk_layer_dispatch_table.h
+        ${GENERATED_DIR}/vk_dispatch_table_helper.h
+        ${GENERATED_DIR}/vk_safe_struct.h
+        ${GENERATED_DIR}/vk_safe_struct.cpp
+        ${GENERATED_DIR}/vk_enum_string_helper.h
+        ${GENERATED_DIR}/vk_object_types.h
+        ${GENERATED_DIR}/vk_extension_helper.h
+        ${GENERATED_DIR}/vk_typemap_helper.h)
     install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
 endif()
 
@@ -107,7 +107,7 @@ macro(AddVkLayer target LAYER_COMPILE_DEFINITIONS)
     install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endmacro()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${VulkanHeaders_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${GENERATED_DIR} ${VulkanHeaders_INCLUDE_DIR})
 
 if(MSVC)
     # Applies to all configurations
@@ -138,11 +138,37 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     set_source_files_properties(generated/parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
 endif()
 
+if(VULKANSC)
+# Currently only building parameter_validation for vksc layers
+# but chassis.cpp is needed for library entry points. Other
+# files are included because they have been cleared of errors
+# and xxhash.* are included to avoid unresolved symbol errors
+# at runtime.
 set(CHASSIS_LIBRARY_FILES
-    generated/chassis.cpp
-    generated/layer_chassis_dispatch.cpp
-    generated/vk_safe_struct.cpp
-    generated/vk_safe_struct.h
+    ${GENERATED_DIR}/chassis.cpp
+    ${GENERATED_DIR}/layer_chassis_dispatch.cpp
+    ${GENERATED_DIR}/vk_safe_struct.cpp
+    ${GENERATED_DIR}/vk_safe_struct.h
+    layer_options.cpp
+    xxhash.h
+    xxhash.c
+    #state_tracker.cpp
+    #state_tracker.h
+    #image_layout_map.cpp
+    #image_layout_map.h
+    #range_vector.h
+    #vk_layer_settings_ext.h
+    #subresource_adapter.cpp
+    #subresource_adapter.h
+    #sync_utils.cpp
+    #sync_utils.h)
+    )
+else()
+set(CHASSIS_LIBRARY_FILES
+    ${GENERATED_DIR}/chassis.cpp
+    ${GENERATED_DIR}/layer_chassis_dispatch.cpp
+    ${GENERATED_DIR}/vk_safe_struct.cpp
+    ${GENERATED_DIR}/vk_safe_struct.h
     layer_options.cpp
     state_tracker.cpp
     state_tracker.h
@@ -154,6 +180,7 @@ set(CHASSIS_LIBRARY_FILES
     subresource_adapter.h
     sync_utils.cpp
     sync_utils.h)
+endif()
 
 set(CORE_VALIDATION_LIBRARY_FILES
     core_validation.cpp
@@ -191,34 +218,34 @@ set(CORE_VALIDATION_LIBRARY_FILES
     shader_validation.h
     sync_vuid_maps.cpp
     sync_vuid_maps.h
-    generated/spirv_validation_helper.cpp
-    generated/spirv_grammar_helper.cpp
-    generated/command_validation.cpp
-    generated/synchronization_validation_types.cpp
+    ${GENERATED_DIR}/spirv_validation_helper.cpp
+    ${GENERATED_DIR}/spirv_grammar_helper.cpp
+    ${GENERATED_DIR}/command_validation.cpp
+    ${GENERATED_DIR}/synchronization_validation_types.cpp
     gpu_validation.cpp
-    generated/corechecks_optick_instrumentation.cpp
+    ${GENERATED_DIR}/corechecks_optick_instrumentation.cpp
     xxhash.c)
 
 set(OBJECT_LIFETIMES_LIBRARY_FILES
-    generated/object_tracker.cpp
-    generated/object_tracker.h
+    ${GENERATED_DIR}/object_tracker.cpp
+    ${GENERATED_DIR}/object_tracker.h
     object_tracker_utils.cpp
     object_lifetime_validation.h)
 
 set(THREAD_SAFETY_LIBRARY_FILES
-    generated/thread_safety.cpp
-    generated/thread_safety.h)
+    ${GENERATED_DIR}/thread_safety.cpp
+    ${GENERATED_DIR}/thread_safety.h)
 
 set(STATELESS_VALIDATION_LIBRARY_FILES
-    generated/parameter_validation.cpp
-    generated/parameter_validation.h
+    ${GENERATED_DIR}/parameter_validation.cpp
+    ${GENERATED_DIR}/parameter_validation.h
     parameter_validation_utils.cpp
     stateless_validation.h)
 
 set(BEST_PRACTICES_LIBRARY_FILES
     best_practices_utils.cpp
-    generated/best_practices.cpp
-    generated/best_practices.h
+    ${GENERATED_DIR}/best_practices.cpp
+    ${GENERATED_DIR}/best_practices.h
     best_practices_validation.h
     best_practices_error_enums.h)
 
@@ -269,6 +296,21 @@ if(INSTRUMENT_OPTICK)
 endif()
 
 if(BUILD_LAYERS)
+    if(VULKANSC)
+    AddVkLayer(khronos_validation "${KHRONOS_LAYER_COMPILE_DEFINITIONS}"
+        ${CHASSIS_LIBRARY_FILES}
+        #${CORE_VALIDATION_LIBRARY_FILES}
+        #${OBJECT_LIFETIMES_LIBRARY_FILES}
+        #${THREAD_SAFETY_LIBRARY_FILES}
+        ${STATELESS_VALIDATION_LIBRARY_FILES}
+        #${BEST_PRACTICES_LIBRARY_FILES}
+        #${GPU_UTILITY_LIBRARY_FILES}
+        #${GPU_ASSISTED_LIBRARY_FILES}
+        #${DEBUG_PRINTF_LIBRARY_FILES}
+        #${SYNC_VALIDATION_LIBRARY_FILES}
+        #${OPTICK_SOURCE_FILES})
+        )
+    else()
     AddVkLayer(khronos_validation "${KHRONOS_LAYER_COMPILE_DEFINITIONS}"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
@@ -281,6 +323,7 @@ if(BUILD_LAYERS)
         ${DEBUG_PRINTF_LIBRARY_FILES}
         ${SYNC_VALIDATION_LIBRARY_FILES}
         ${OPTICK_SOURCE_FILES})
+    endif()
 
     # Force generation of the PDB file for Release builds.
     # Note that CMake reduces inlining optimization levels for RelWithDebInfo builds.

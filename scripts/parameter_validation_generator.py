@@ -402,16 +402,19 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         for node in root.findall('feature'):
             version_name = node.get('name')
             version_name = version_name.replace('VK_', 'VK_API_')
+            version_name = version_name.replace('VKSC_', 'VKSC_API_')
             for enum_item in node.iter('enum'):
                 if enum_item.get('extends') == "VkStructureType":
                     struct_type_id = enum_item.get('name')
                     self.stype_version_dict[struct_type_id] = version_name
         for extensions in root.findall('extensions'):
             for extension in extensions.findall('extension'):
-                for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
-                    alias = entry.get('alias')
-                    if alias is not None and (entry.get('comment') is None or 'typo' not in entry.get('comment')):
-                        self.stype_version_dict[alias] = extension.get('name')
+                # Only add structs from this extension to the dictionary if the current api supports the extension.
+                if genOpts.apiname in extension.get('supported'):
+                    for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
+                        alias = entry.get('alias')
+                        if alias is not None and (entry.get('comment') is None or 'typo' not in entry.get('comment')):
+                            self.stype_version_dict[alias] = extension.get('name')
 
         # Build map of structure type names to VkStructureType enum values
         # Find all types of category "struct"
@@ -497,7 +500,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api, bool is_const_param) const {\n'
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
-
             # Do some processing here to extract data from validatedstructs...
             for item in self.structextends_list:
                 postProcSpec = {}
@@ -527,7 +529,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         ver_info = None
                 api_check = False
                 if ver_info is not None:
-                    if 'VK_API_VERSION_' in ver_info:
+                    if 'VK_API_VERSION_' in ver_info or 'VKSC_API_VERSION_' in ver_info:
                         api_check = True
                         api_version = ver_info;
                         pnext_check += '            if (api_version < %s) {\n' % ver_info
@@ -615,7 +617,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.featureExtraProtect = GetFeatureProtect(interface)
         # Get base list of extension dependencies for all items in this extension
         base_required_extensions = []
-        if "VK_VERSION_1" not in self.featureName:
+        if "VK_VERSION_1" not in self.featureName and "VKSC_VERSION_1" not in self.featureName:
             nameElem = interface[0][1]
             name = nameElem.get('name')
             # Save Name Define to get correct enable name later
@@ -625,7 +627,13 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Add any defined extension dependencies to the base dependency list for this extension
         requires = interface.get('requires')
         if requires is not None:
-            base_required_extensions.extend(requires.split(','))
+            for ext_string in requires.split(','):
+                ext = self.registry.reg.find("extensions/extension/[@name='"+ext_string+"']")
+                if ext and self.genOpts.apiname in ext.get('supported'):
+                    base_required_extensions.append(ext_string)
+                # else we should check if the extension was promoted
+                # if not return an error
+
         # Build dictionary of extension dependencies for each item in this extension
         self.required_extensions = dict()
         for require_element in interface.findall('require'):
@@ -634,7 +642,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             # Add any additional extension dependencies specified in this require block
             additional_extensions = require_element.get('extension')
             if additional_extensions:
-                required_extensions.extend(additional_extensions.split(','))
+                # Check if the additonal extension is supported. If
+                # not the command should also not be supported
+                for ext_string in additional_extensions.split(','):
+                    ext = self.registry.reg.find("extensions/extension/[@name='"+ext_string+"']")
+                    if ext and self.genOpts.apiname in ext.get('supported'):
+                        required_extensions.append(ext_string)
             # Save full extension list for all named items
             for element in require_element.findall('*[@name]'):
                 self.required_extensions[element.get('name')] = required_extensions
@@ -699,8 +712,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         elif (category == 'handle'):
             self.handleTypes.add(name)
         elif (category == 'bitmask'):
-            self.flags.add(name)
-            self.newFlags.add(name)
+            requires = typeElem.get('requires', '')
+            if requires == '' or requires in self.flagBits.keys():
+                self.flags.add(name)
+                self.newFlags.add(name)
         elif (category == 'define'):
             if name == 'VK_HEADER_VERSION':
                 nameElem = typeElem.find('name')
@@ -808,7 +823,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         elif 'FlagBits' in groupName:
             bits = []
             for elem in groupElem.findall('enum'):
-                if elem.get('supported') != 'disabled':
+                if elem.get('supported') != 'disabled' and (self.genOpts.apiname in elem.get('supported', '') or elem.get('supported', '') == ''):
                     bits.append(elem.get('name'))
             if bits:
                 self.flagBits[groupName] = bits
@@ -833,7 +848,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 enum_entry += 'const std::vector<%s> All%sEnums = {' % (groupName, groupName)
                 for enum in groupElem:
                     name = enum.get('name')
-                    if name is not None and enum.get('supported') != 'disabled':
+                    if name is not None and enum.get('supported') != 'disabled' and (self.genOpts.apiname in enum.get('supported', '') or enum.get('supported', '') == ''):
                         enum_entry += '%s, ' % name
                 enum_entry += '};'
                 if self.featureExtraProtect is not None:

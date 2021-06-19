@@ -174,6 +174,7 @@ struct CreatePipelineTraits<VkComputePipelineCreateInfo> {
     }
 };
 
+#if defined(VK_NV_ray_tracing)
 template <>
 struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoNV> {
     using SafeType = safe_VkRayTracingPipelineCreateInfoCommon;
@@ -186,7 +187,9 @@ struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoNV> {
         createInfo->pStages[stage].module = shader_module;
     }
 };
+#endif
 
+#if defined(VK_KHR_ray_tracing_pipeline)
 template <>
 struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoKHR> {
     using SafeType = safe_VkRayTracingPipelineCreateInfoCommon;
@@ -199,6 +202,7 @@ struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoKHR> {
         createInfo->pStages[stage].module = shader_module;
     }
 };
+#endif
 
 // Examine the pipelines to see if they use the debug descriptor set binding index.
 // If any do, create new non-instrumented shader modules and use them to replace the instrumented
@@ -208,6 +212,7 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
                                         VkPipeline *pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
                                         std::vector<SafeCreateInfo> *new_pipeline_create_infos,
                                         const VkPipelineBindPoint bind_point, ObjectType *object_ptr) {
+#if !defined(VULKANSC)
     using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
@@ -250,6 +255,9 @@ void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreat
             }
         }
     }
+#else // !defined(VULKANSC)
+    return; // Do nothing for VKSC, VkShaderModule not supported
+#endif // !defined(VULKANSC)
 }
 // For every pipeline:
 // - For every shader in a pipeline:
@@ -261,6 +269,7 @@ template <typename CreateInfo, typename ObjectType>
 void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                          const VkPipelineBindPoint bind_point, ObjectType *object_ptr) {
+#if !defined(VULKANSC)
     using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
@@ -324,9 +333,13 @@ void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo 
             object_ptr->shader_map[shader_state->gpu_validation_shader_id].pgm = std::move(code);
         }
     }
+#else // !defined(VULKANSC)
+    return; // Do nothing for VKSC, VkShaderModule not supported
+#endif // !defined(VULKANSC)
 }
 template <typename CreateInfos, typename SafeCreateInfos>
 void UtilCopyCreatePipelineFeedbackData(const uint32_t count, CreateInfos *pCreateInfos, SafeCreateInfos *pSafeCreateInfos) {
+#if defined(VK_EXT_pipeline_creation_feedback)
     for (uint32_t i = 0; i < count; i++) {
         auto src_feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pSafeCreateInfos[i].pNext);
         if (!src_feedback_struct) return;
@@ -337,6 +350,7 @@ void UtilCopyCreatePipelineFeedbackData(const uint32_t count, CreateInfos *pCrea
             dst_feedback_struct->pPipelineStageCreationFeedbacks[j] = src_feedback_struct->pPipelineStageCreationFeedbacks[j];
         }
     }
+#endif
 }
 
 template <typename ObjectType>
@@ -356,8 +370,10 @@ void UtilProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, 
                 operation_index = draw_index;
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 operation_index = compute_index;
+#if defined(VK_NV_ray_tracing)
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
                 operation_index = ray_trace_index;
+#endif
             } else {
                 assert(false);
             }
@@ -373,8 +389,10 @@ void UtilProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, 
                 draw_index++;
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 compute_index++;
+#if defined(VK_NV_ray_tracing)
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
                 ray_trace_index++;
+#endif
             } else {
                 assert(false);
             }

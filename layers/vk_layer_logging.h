@@ -104,10 +104,12 @@ struct LogObjectList {
 typedef struct VkLayerDbgFunctionState {
     DebugCallbackStatusFlags callback_status;
 
+#if !defined(VULKANSC)
     // Debug report related information
     VkDebugReportCallbackEXT debug_report_callback_object;
     PFN_vkDebugReportCallbackEXT debug_report_callback_function_ptr;
     VkFlags debug_report_msg_flags;
+#endif
 
     // Debug utils related information
     VkDebugUtilsMessengerEXT debug_utils_callback_object;
@@ -214,6 +216,7 @@ typedef struct _debug_report_data {
         }
     }
 
+#if !defined(VULKANSC)
     void DebugReportSetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_output_mutex);
         if (pNameInfo->pObjectName) {
@@ -222,6 +225,7 @@ typedef struct _debug_report_data {
             debugObjectNameMap.erase(pNameInfo->object);
         }
     }
+#endif
 
     std::string DebugReportGetUtilsObjectName(const uint64_t object) const {
         std::string label = "";
@@ -266,7 +270,7 @@ typedef struct _debug_report_data {
 template debug_report_data *GetLayerDataPtr<debug_report_data>(void *data_key,
                                                                std::unordered_map<void *, debug_report_data *> &data_map);
 
-static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, bool default_flag_is_spec,
+static inline void DebugReportFlagsToAnnotFlags(VkFlags dr_flags, bool default_flag_is_spec,
                                                 VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
                                                 VkDebugUtilsMessageTypeFlagsEXT *da_type) {
     *da_severity = 0;
@@ -305,13 +309,16 @@ static void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &cal
         if (item.IsUtils()) {
             debug_data->active_severities |= item.debug_utils_msg_flags;
             debug_data->active_types |= item.debug_utils_msg_type;
-        } else {
+        }
+#if !defined(VULKANSC)
+        else {
             VkFlags severities = 0;
             VkFlags types = 0;
             DebugReportFlagsToAnnotFlags(item.debug_report_msg_flags, true, &severities, &types);
             debug_data->active_severities |= severities;
             debug_data->active_types |= types;
         }
+#endif
     }
 }
 
@@ -322,7 +329,11 @@ static inline void RemoveDebugUtilsCallback(debug_report_data *debug_data, std::
         if (item->IsUtils()) {
             if (item->debug_utils_callback_object == CastToHandle<VkDebugUtilsMessengerEXT>(callback)) break;
         } else {
+#if defined(VULKANSC)
+            // TBD: Report something here? VKSC should not be able to reach this section.
+#else
             if (item->debug_report_callback_object == CastToHandle<VkDebugReportCallbackEXT>(callback)) break;
+#endif
         }
     }
     if (item != callbacks.end()) {
@@ -476,7 +487,9 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
                                                                    types, &callback_data, current_callback.pUserData)) {
                 bail = true;
             }
-        } else if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
+        }
+#if !defined(VULKANSC)
+        else if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
             // VK_EXT_debug_report callback (deprecated)
             if (current_callback.debug_report_callback_function_ptr(
                     msg_flags, convertCoreObjectToDebugReportObject(object_name_info[0].objectType),
@@ -484,10 +497,12 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
                 bail = true;
             }
         }
+#endif
     }
     return bail;
 }
 
+#if !defined(VULKANSC)
 static inline VkDebugReportFlagsEXT DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
                                                                  VkDebugUtilsMessageTypeFlagsEXT da_type) {
     if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) return VK_DEBUG_REPORT_ERROR_BIT_EXT;
@@ -502,6 +517,7 @@ static inline VkDebugReportFlagsEXT DebugAnnotFlagsToReportFlags(VkDebugUtilsMes
 
     return 0;
 }
+#endif
 
 static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
                                                                 VkDebugUtilsMessageTypeFlagsEXT da_type) {
@@ -560,6 +576,9 @@ static inline void layer_create_callback(DebugCallbackStatusFlags callback_statu
         callback_state.debug_utils_msg_flags = utils_create_info->messageSeverity;
         callback_state.debug_utils_msg_type = utils_create_info->messageType;
     } else {  // Debug report callback
+#if defined(VULKANSC)
+        //TBD: Report something here? Shouldn't be possible to reach here with VKSC
+#else
         auto report_create_info = reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT *>(create_info);
         auto report_callback = reinterpret_cast<VkDebugReportCallbackEXT *>(callback);
         if (!(*report_callback)) {
@@ -569,6 +588,7 @@ static inline void layer_create_callback(DebugCallbackStatusFlags callback_statu
         callback_state.debug_report_callback_object = *report_callback;
         callback_state.debug_report_callback_function_ptr = report_create_info->pfnCallback;
         callback_state.debug_report_msg_flags = report_create_info->flags;
+#endif
     }
 
 #if defined __ANDROID__
@@ -592,12 +612,14 @@ static inline VkResult layer_create_messenger_callback(debug_report_data *debug_
     return VK_SUCCESS;
 }
 
+#if !defined(VULKANSC)
 static inline VkResult layer_create_report_callback(debug_report_data *debug_data, bool default_callback,
                                                     const VkDebugReportCallbackCreateInfoEXT *create_info,
                                                     const VkAllocationCallbacks *allocator, VkDebugReportCallbackEXT *callback) {
     layer_create_callback((default_callback ? DEBUG_CALLBACK_DEFAULT : 0), debug_data, create_info, allocator, callback);
     return VK_SUCCESS;
 }
+#endif
 
 static inline void ActivateInstanceDebugCallbacks(debug_report_data *debug_data) {
     auto current = debug_data->instance_pnext_chain;
@@ -608,6 +630,7 @@ static inline void ActivateInstanceDebugCallbacks(debug_report_data *debug_data)
         VkDebugUtilsMessengerEXT utils_callback{};
         layer_create_callback((DEBUG_CALLBACK_UTILS | DEBUG_CALLBACK_INSTANCE), debug_data, create_info, nullptr, &utils_callback);
     }
+#if !defined(VULKANSC)
     for (;;) {
         auto create_info = LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(current);
         if (!create_info) break;
@@ -615,29 +638,41 @@ static inline void ActivateInstanceDebugCallbacks(debug_report_data *debug_data)
         VkDebugReportCallbackEXT report_callback{};
         layer_create_callback(DEBUG_CALLBACK_INSTANCE, debug_data, create_info, nullptr, &report_callback);
     }
+#endif
 }
 
 static inline void DeactivateInstanceDebugCallbacks(debug_report_data *debug_data) {
-    if (!LvlFindInChain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain) &&
-        !LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(debug_data->instance_pnext_chain))
+    if (!LvlFindInChain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain)
+#if !defined(VULKANSC)
+        && !LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(debug_data->instance_pnext_chain)
+#endif
+       )
         return;
     std::vector<VkDebugUtilsMessengerEXT> instance_utils_callback_handles{};
+#if !defined(VULKANSC)
     std::vector<VkDebugReportCallbackEXT> instance_report_callback_handles{};
+#endif
     for (const auto &item : debug_data->debug_callback_list) {
         if (item.IsInstance()) {
             if (item.IsUtils()) {
                 instance_utils_callback_handles.push_back(item.debug_utils_callback_object);
             } else {
+#if defined(VULKANSC)
+                // TBD: Report something here? VKSC shouldn't be able to reach this section.
+#else
                 instance_report_callback_handles.push_back(item.debug_report_callback_object);
+#endif
             }
         }
     }
     for (const auto &item : instance_utils_callback_handles) {
         layer_destroy_callback(debug_data, item, nullptr);
     }
+#if !defined(VULKANSC)
     for (const auto &item : instance_report_callback_handles) {
         layer_destroy_callback(debug_data, item, nullptr);
     }
+#endif
 }
 
 #ifdef WIN32
@@ -717,9 +752,15 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
             } else {
                 str_plus_spec_text.append(" (");
                 str_plus_spec_text.append(spec_link);
+#if defined(VULKANSC)
+                std::string major_version = std::to_string(VK_API_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
+                std::string minor_version = std::to_string(VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
+                std::string patch_version = std::to_string(VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+#else
                 std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
                 std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
                 std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+#endif
                 std::string header_version = major_version + "." + minor_version + "." + patch_version;
                 std::string annotated_spec_type = major_version + "." + minor_version + "-extensions";
                 Replace(str_plus_spec_text, kKtToken, spec_type);
@@ -737,6 +778,7 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
     return result;
 }
 
+#if !defined(VULKANSC)
 static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_log_callback(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type,
                                                                  uint64_t src_object, size_t location, int32_t msg_code,
                                                                  const char *layer_prefix, const char *message, void *user_data) {
@@ -787,6 +829,7 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL DebugBreakCallback(VkFlags msgFlags
 
     return false;
 }
+#endif // !defined(VULKANSC)
 
 static inline VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,

@@ -1641,8 +1641,14 @@ available through VmaAllocatorCreateInfo::pRecordSettings.
     #define NOMINMAX // For windows.h
 #endif
 
+#ifdef VULKANSC
+#ifndef VULKAN_SC_H_
+#include <vulkan/vulkan_sc.h>
+#endif
+#else
 #ifndef VULKAN_H_
-    #include <vulkan/vulkan.h>
+#include <vulkan/vulkan.h>
+#endif
 #endif
 
 #if VMA_RECORDING_ENABLED
@@ -1737,7 +1743,9 @@ typedef struct VmaVulkanFunctions {
     PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties;
     PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties;
     PFN_vkAllocateMemory vkAllocateMemory;
+#if !defined(VULKANSC)
     PFN_vkFreeMemory vkFreeMemory;
+#endif
     PFN_vkMapMemory vkMapMemory;
     PFN_vkUnmapMemory vkUnmapMemory;
     PFN_vkFlushMappedMemoryRanges vkFlushMappedMemoryRanges;

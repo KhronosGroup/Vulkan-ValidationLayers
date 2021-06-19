@@ -29,7 +29,11 @@
 #include "range_vector.h"
 #include "subresource_adapter.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
+#ifdef VULKANSC
+#include "vulkan/vulkan_sc.h"
+#else
 #include "vulkan/vulkan.h"
+#endif
 #include "vk_layer_logging.h"
 
 // Forward declarations...

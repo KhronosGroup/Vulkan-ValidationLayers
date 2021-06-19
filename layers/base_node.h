@@ -27,7 +27,11 @@
  */
 #pragma once
 
+#if !defined(VULKANSC)
 #include "vulkan/vulkan.h"
+#else
+#include "vulkan/vulkan_sc.h"
+#endif
 #include "vk_object_types.h"
 #include "vk_layer_data.h"
 #include "vk_layer_logging.h"

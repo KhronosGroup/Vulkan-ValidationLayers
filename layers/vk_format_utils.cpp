@@ -24,7 +24,11 @@
 #include <vector>
 #include <map>
 #include <set>
+#ifdef VULKANSC
+#include "vulkan/vulkan_sc.h"
+#else
 #include "vulkan/vulkan.h"
+#endif
 #include "vk_layer_data.h"
 #include "vk_format_utils.h"
 
@@ -241,6 +245,7 @@ const std::map<VkFormat, VULKAN_FORMAT_INFO> kVkFormatTable = {
     {VK_FORMAT_ASTC_12x12_UNORM_BLOCK,      {16, 4, VK_FORMAT_COMPATIBILITY_CLASS_ASTC_12X12_BIT}},
     {VK_FORMAT_ASTC_12x12_SRGB_BLOCK,       {16, 4, VK_FORMAT_COMPATIBILITY_CLASS_ASTC_12X12_BIT}},
     {VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT, {16, 4, VK_FORMAT_COMPATIBILITY_CLASS_ASTC_12X12_BIT}},
+#if defined(VK_IMG_format_pvrtc)
     {VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG, {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC1_2BPP_BIT}},
     {VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG, {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC1_4BPP_BIT}},
     {VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG, {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC2_2BPP_BIT}},
@@ -249,6 +254,7 @@ const std::map<VkFormat, VULKAN_FORMAT_INFO> kVkFormatTable = {
     {VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC1_4BPP_BIT}},
     {VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC2_2BPP_BIT}},
     {VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC2_4BPP_BIT}},
+#endif
     // KHR_sampler_YCbCr_conversion extension - single-plane variants
     // 'PACK' formats are normal, uncompressed
     {VK_FORMAT_R10X6_UNORM_PACK16,                          {2, 1, VK_FORMAT_COMPATIBILITY_CLASS_16_BIT}},
@@ -429,6 +435,7 @@ VK_LAYER_EXPORT bool FormatIsCompressed_BC(VkFormat format) {
 VK_LAYER_EXPORT bool FormatIsCompressed_PVRTC(VkFormat format) {
     bool found = false;
 
+#if defined(VK_IMG_format_pvrtc)
     switch (format) {
         case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
@@ -443,6 +450,7 @@ VK_LAYER_EXPORT bool FormatIsCompressed_PVRTC(VkFormat format) {
         default:
             break;
     }
+#endif
     return found;
 }
 
@@ -682,10 +690,12 @@ VK_LAYER_EXPORT bool FormatIsUNorm(VkFormat format) {
         case VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM:
         case VK_FORMAT_B5G5R5A1_UNORM_PACK16:
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
+#if defined(VK_IMG_format_pvrtc)
         case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG:
+#endif
         case VK_FORMAT_R10X6_UNORM_PACK16:
         case VK_FORMAT_R10X6G10X6_UNORM_2PACK16:
         case VK_FORMAT_R12X4_UNORM_PACK16:
@@ -1044,6 +1054,7 @@ VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format) {
         case VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT:
             block_size = {12, 12, 1};
             break;
+#if defined(VK_IMG_format_pvrtc)
         case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG:
@@ -1056,6 +1067,7 @@ VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format) {
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             block_size = {4, 4, 1};
             break;
+#endif
         // (KHR_sampler_ycbcr_conversion) _422 single-plane formats are treated as 2x1 compressed (for copies)
         case VK_FORMAT_G8B8G8R8_422_UNORM:
         case VK_FORMAT_B8G8R8G8_422_UNORM:

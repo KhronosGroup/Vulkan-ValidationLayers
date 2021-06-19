@@ -11,6 +11,7 @@
 1. [Linux Build](#building-on-linux)
 1. [Android Build](#building-on-android)
 1. [MacOS build](#building-on-macos)
+1. [VulkanSC Build](#vulkansc-build-commands)
 
 ## Requirements
 
@@ -960,3 +961,9 @@ vulkaninfo applications in the
 repository.
 
 Note that MoltenVK is still adding Vulkan features and some tests may fail.
+
+## VulkanSC Build Commands
+
+Commands for building the VulkanSC version of the layers are similar to the instructions in the sections above with a few minor differences:
+1) When running "update_deps.py" for your platform, the option "--api vulkansc" should be specified.
+2) When running "cmake -C helper.cmake ..." the option "-DVULKANSC=ON" should be passed in.

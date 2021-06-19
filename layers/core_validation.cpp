@@ -4849,8 +4849,10 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
             } else {
                 error_code = "VUID-VkBindImageMemoryInfo-memoryOffset-01046";
             }
+#if defined(VK_NV_ray_tracing)
         } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
             error_code = "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03621";
+#endif
         } else {
             // Unsupported object type
             assert(false);
@@ -4878,11 +4880,13 @@ bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_M
     return ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, api_name);
 }
 
+#if defined(VK_NV_ray_tracing)
 bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE *mem_info,
                                                                 VkDeviceSize mem_offset, const char *api_name) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset,
                                      api_name);
 }
+#endif
 
 bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const uint32_t memory_type_bits, const char *funcName,
                                      const char *msgCode) const {
@@ -5570,6 +5574,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
     return skip;
 }
 
+#if defined(VK_NV_ray_tracing)
 bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -5602,7 +5607,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
     }
     return skip;
 }
-
+#endif
+#if defined(VK_KHR_ray_tracing_pipeline)
 bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                              VkPipelineCache pipelineCache, uint32_t count,
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
@@ -5671,6 +5677,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
 
     return skip;
 }
+#endif
 
 bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
                                                                    uint32_t *pExecutableCount,
@@ -7351,6 +7358,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
     return skip;
 }
 
+#if defined(VK_NV_ray_tracing)
 bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, const char *func_name) const {
     bool skip = false;
 
@@ -7405,7 +7413,8 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureNV(VkDevice device,
     }
     return skip;
 }
-
+#endif
+#if defined(VK_KHR_acceleration_structure)
 bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                                const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
@@ -7434,6 +7443,8 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
     }
     return skip;
 }
+#endif
+#if defined(VK_NV_ray_tracing)
 bool CoreChecks::ValidateBindAccelerationStructureMemory(VkDevice device,
                                                          const VkBindAccelerationStructureMemoryInfoNV &info) const {
     bool skip = false;
@@ -7508,7 +7519,9 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
 
     return skip;
 }
+#endif
 
+#if defined(VK_KHR_acceleration_structure)
 bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) const {
@@ -7714,6 +7727,8 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
     }
     return skip;
 }
+#endif
+#if defined(VK_NV_ray_tracing)
 bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
                                                                 const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
                                                                 VkDeviceSize instanceOffset, VkBool32 update,
@@ -7918,7 +7933,9 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, 
     }
     return skip;
 }
+#endif
 
+#if defined(VK_KHR_acceleration_structure)
 bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                                 const VkAllocationCallbacks *pAllocator) const {
     const ACCELERATION_STRUCTURE_STATE_KHR *as_state = GetAccelerationStructureStateKHR(accelerationStructure);
@@ -7934,6 +7951,7 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
     }
     return skip;
 }
+#endif
 
 bool CoreChecks::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                          uint32_t viewportCount,
@@ -13790,6 +13808,7 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind *bind, const 
     return skip;
 }
 
+#if !defined(VULKANSC)
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                 VkFence fence) const {
     const auto queue_data = GetQueueState(queue);
@@ -14040,6 +14059,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
     return skip;
 }
+#endif // !defined(VULKANSC)
 
 bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo, const char *api_name) const {
     bool skip = false;
@@ -14959,6 +14979,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDev
                                     "vkGetPhysicalDeviceSurfaceSupportKHR", "queueFamilyIndex");
 }
 
+#if !defined(VULKANSC)
 bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
                                                   const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo) const {
     bool skip = false;
@@ -15141,6 +15162,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
 
     return skip;
 }
+#endif // !defined(VULKANSC)
 
 bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                          const char *api_name) const {
@@ -15820,6 +15842,7 @@ bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool quer
     return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount, "vkResetQueryPool");
 }
 
+#if defined(VK_EXT_validation_cache)
 VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator,
                                                        VkValidationCacheEXT *pValidationCache) {
@@ -15859,6 +15882,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
 
     return result;
 }
+#endif
 
 bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, CMD_TYPE cmd_type) const {
     bool skip = false;

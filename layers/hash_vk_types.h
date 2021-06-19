@@ -22,7 +22,11 @@
 // Includes everything needed for overloading std::hash
 #include "hash_util.h"
 
+#ifdef VULKANSC
+#include <vulkan/vulkan_sc.h>
+#else
 #include <vulkan/vulkan.h>
+#endif
 #include "vk_safe_struct.h"
 #include <vector>
 

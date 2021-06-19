@@ -123,7 +123,10 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         copyright += ' */\n'
 
         preamble = ''
-        preamble += '#include <vulkan/vulkan.h>\n'
+        if self.genOpts.apiname == 'vulkan':
+            preamble += '#include <vulkan/vulkan.h>\n'
+        elif self.genOpts.apiname == 'vulkansc':
+            preamble += '#include <vulkan/vulkan_sc.h>\n'
         preamble += '#include <vulkan/vk_layer.h>\n'
         preamble += '#include <cstring>\n'
         preamble += '#include <string>\n'

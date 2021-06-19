@@ -231,6 +231,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         requiresCore = interface.get('requiresCore')
         if requiresCore is not None:
             required_extensions.append('VK_VERSION_%s' % ('_'.join(requiresCore.split('.'))))
+        # Get rid of required extensions that have been promoted and are not supported by the api.
+        temp_required_extensions = required_extensions.copy()
+        for req in temp_required_extensions:
+            for extension in self.registry.extensions:
+                if extension.get('name') == req and extension.get('promotedto') is not None and self.genOpts.apiname not in extension.get('supported'):
+                    required_extensions.remove(req)
         info = { 'define': GetNameDefine(interface), 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
         if interface.get('type') == 'instance':
             self.instance_extension_info[name] = info
@@ -253,7 +259,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             value_set = set()
             protect_dict = dict()
             for elem in groupElem.findall('enum'):
-                if elem.get('supported') != 'disabled' and elem.get('alias') is None:
+                if elem.get('supported') != 'disabled' and (self.genOpts.apiname in elem.get('supported', '') or elem.get('supported') is None) and elem.get('alias') is None:
                     value_set.add(elem.get('name'))
                     if elem.get('protect') is not None:
                         protect_dict[elem.get('name')] = elem.get('protect')
@@ -646,7 +652,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             enum_string_helper_header += '#endif\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += '#include <string>\n'
-            enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
+            if self.genOpts.apiname == 'vulkan':
+                enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
+            elif self.genOpts.apiname == 'vulkansc':
+                enum_string_helper_header += '#include <vulkan/vulkan_sc.h>\n'
+            enum_string_helper_header += '#include "vk_layer_data.h"\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += self.enum_output
             enum_string_helper_header += self.DeIndexPhysDevFeatures()
@@ -664,7 +674,10 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
     def GenerateSafeStructHelperHeader(self):
         safe_struct_helper_header = '\n'
         safe_struct_helper_header += '#pragma once\n'
-        safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
+        if self.genOpts.apiname == 'vulkan':
+            safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
+        elif self.genOpts.apiname == 'vulkansc':
+            safe_struct_helper_header += '#include <vulkan/vulkan_sc.h>\n'
         safe_struct_helper_header += '#include <stdlib.h>\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
@@ -739,24 +752,27 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
     # Generate extension helper header file
     def GenerateExtensionHelperHeader(self):
 
+        # The names here need to match the define, not the string name
+        # due to differences like PROPERTIES_2_EXTENSION_NAME vs
+        # PROPERTIES2_EXTENSION_NAME
         V_1_0_instance_extensions_promoted_to_V_1_1_core = [
             'VK_KHR_device_group_creation',
             'VK_KHR_external_fence_capabilities',
             'VK_KHR_external_memory_capabilities',
             'VK_KHR_external_semaphore_capabilities',
-            'VK_KHR_get_physical_device_properties2',
+            'VK_KHR_get_physical_device_properties_2',
             ]
 
         V_1_0_device_extensions_promoted_to_V_1_1_core = [
             'VK_KHR_16bit_storage',
-            'VK_KHR_bind_memory2',
+            'VK_KHR_bind_memory_2',
             'VK_KHR_dedicated_allocation',
             'VK_KHR_descriptor_update_template',
             'VK_KHR_device_group',
             'VK_KHR_external_fence',
             'VK_KHR_external_memory',
             'VK_KHR_external_semaphore',
-            'VK_KHR_get_memory_requirements2',
+            'VK_KHR_get_memory_requirements_2',
             'VK_KHR_maintenance1',
             'VK_KHR_maintenance2',
             'VK_KHR_maintenance3',
@@ -774,7 +790,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         V_1_1_device_extensions_promoted_to_V_1_2_core = [
             'VK_KHR_8bit_storage',
             'VK_KHR_buffer_device_address',
-            'VK_KHR_create_renderpass2',
+            'VK_KHR_create_renderpass_2',
             'VK_KHR_depth_stencil_resolve',
             'VK_KHR_draw_indirect_count',
             'VK_KHR_driver_properties',
@@ -798,6 +814,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             'VK_EXT_shader_viewport_index_layer',
             ]
 
+        vk_header = ''
+        if self.genOpts.apiname == 'vulkan':
+            vk_header = '#include <vulkan/vulkan.h>'
+        elif self.genOpts.apiname == 'vulkansc':
+            vk_header = '#include <vulkan/vulkan_sc.h>'
+
         output = [
             '',
             '#ifndef VK_EXTENSION_HELPER_H_',
@@ -808,7 +830,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '#include <vector>',
             '#include <cassert>',
             '',
-            '#include <vulkan/vulkan.h>',
+            vk_header,
             '#include "vk_layer_data.h"',
             ''
             '#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"',
@@ -852,7 +874,21 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
             extension_items = sorted(extension_dict.items())
 
-            field_name = { ext_name: ext_name.lower() for ext_name, info in extension_items }
+            #Remove unsupported extensions for vksc
+            if self.genOpts.apiname == 'vulkansc':
+                temp_ext_list_1_1 = promoted_1_1_ext_list.copy()
+                temp_ext_list_1_2 = promoted_1_2_ext_list.copy()
+                for extension in self.registry.extensions:
+                    if len(list(extension)) == 0:
+                        continue
+                    for promoted_ext in temp_ext_list_1_1:
+                        if self.genOpts.apiname not in extension.get('supported') and extension[0][1].get('name') == promoted_ext.upper()+'_EXTENSION_NAME':
+                            promoted_1_1_ext_list.remove(promoted_ext)
+                    for promoted_ext in temp_ext_list_1_2:
+                        if self.genOpts.apiname not in extension.get('supported') and extension[0][1].get('name') == promoted_ext.upper()+'_EXTENSION_NAME':
+                            promoted_1_2_ext_list.remove(promoted_ext)
+
+            field_name = { ext_name: re.sub('_extension_name', '', ext_name.lower()) for ext_name, info in extension_items }
 
             # Add in pseudo-extensions for core API versions so real extensions can depend on them
             extension_dict['VK_VERSION_1_2'] = {'define':"VK_VERSION_1_2_NAME", 'ifdef':None, 'reqs':[]}
@@ -909,7 +945,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             info_format = ('            {%s, ' + info_type + '(' + field_format + ', {%s})},')
             def format_info(ext_name, info):
                 reqs = req_join.join([req_format % (field_name[req], extension_dict[req]['define']) for req in info['reqs']])
-                return info_format % (info['define'], field_name[ext_name], '{%s}' % (req_indent + reqs) if reqs else '')
+                return info_format % (info['define'], ext_name.lower(), '{%s}' % (req_indent + reqs) if reqs else '')
 
             struct.extend([Guarded(info['ifdef'], format_info(ext_name, info)) for ext_name, info in extension_items])
             struct.extend([
@@ -1065,24 +1101,25 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         dro_dict = {dro_to_key(dro) : dro for dro in self.debug_report_object_types}
         vko_dict = {vko_to_key(vko) : vko for vko in self.core_object_types}
 
-        # Output a conversion routine from the layer object definitions to the debug report definitions
-        object_types_header += '\n'
-        object_types_header += '// Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version\n'
-        object_types_header += 'const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {\n'
-        object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n' # no unknown handle, so this must be here explicitly
+        if self.genOpts.apiname == 'vulkan':
+            # Output a conversion routine from the layer object definitions to the debug report definitions
+            object_types_header += '\n'
+            object_types_header += '// Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version\n'
+            object_types_header += 'const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {\n'
+            object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n' # no unknown handle, so this must be here explicitly
 
-        for object_type in type_list:
-            # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
-            kenum_type = dro_dict.get(kenum_to_key(object_type), 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT')
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
-            object_types_header += '    %s,   // %s\n' % (kenum_type, object_type)
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#else\n'
-                object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // %s\n' % object_type
-                object_types_header += '#endif\n'
-            object_type_info[object_type]['DbgType'] = kenum_type
-        object_types_header += '};\n'
+            for object_type in type_list:
+                # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
+                kenum_type = dro_dict.get(kenum_to_key(object_type), 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT')
+                if object_type_info[object_type]['Guard']:
+                    object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
+                object_types_header += '    %s,   // %s\n' % (kenum_type, object_type)
+                if object_type_info[object_type]['Guard']:
+                    object_types_header += '#else\n'
+                    object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // %s\n' % object_type
+                    object_types_header += '#endif\n'
+                object_type_info[object_type]['DbgType'] = kenum_type
+            object_types_header += '};\n'
 
         # Output a conversion routine from the layer object definitions to the core object type definitions
         # This will intentionally *fail* for unmatched types as the VK_OBJECT_TYPE list should match the kVulkanObjectType list
@@ -1112,43 +1149,58 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         object_types_header += '    }\n'
         object_types_header += '};\n'
 
-        # Create a functions to convert between VkDebugReportObjectTypeEXT and VkObjectType
-        object_types_header +=     '\n'
-        object_types_header +=     'static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj) {\n'
-        object_types_header +=     '    switch (debug_report_obj) {\n'
-        for dr_object_type in self.debug_report_object_types:
-            object_types_header += '        case %s: return %s;\n' % (dr_object_type, vko_dict[dro_to_key(dr_object_type)])
-        object_types_header +=     '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
-        object_types_header +=     '    }\n'
-        object_types_header +=     '}\n'
+        if self.genOpts.apiname == 'vulkan':
+            # Create a functions to convert between VkDebugReportObjectTypeEXT and VkObjectType
+            object_types_header +=     '\n'
+            object_types_header +=     'static inline VkObjectType eportObjectToCoreObjectconvertDebugReportObjectToCoreObjecteEXT debug_report_obj) {\n'
+            object_types_header +=     '    switch (debug_report_obj) {\n'
+            for dr_object_type in self.debug_report_object_types:
+                object_types_header += '        case %s: return %s;\n' % (dr_object_type, vko_dict[dro_to_key(dr_object_type)])
+            object_types_header +=     '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
+            object_types_header +=     '    }\n'
+            object_types_header +=     '}\n'
 
-        object_types_header +=         '\n'
-        object_types_header +=         'static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {\n'
-        object_types_header +=         '    switch (core_report_obj) {\n'
-        for core_object_type in self.core_object_types:
-            # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
-            dr_object_type = dro_dict.get(vko_to_key(core_object_type))
-            if dr_object_type is not None:
-                object_types_header += '        case %s: return %s;\n' % (core_object_type, dr_object_type)
-        object_types_header +=         '        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
-        object_types_header +=         '    }\n'
-        object_types_header +=         '}\n'
+            object_types_header +=         '\n'
+            object_types_header +=         'static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {\n'
+            object_types_header +=         '    switch (core_report_obj) {\n'
+            for core_object_type in self.core_object_types:
+                # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
+                dr_object_type = dro_dict.get(vko_to_key(core_object_type))
+                if dr_object_type is not None:
+                    object_types_header += '        case %s: return %s;\n' % (core_object_type, dr_object_type)
+            object_types_header +=         '        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
+            object_types_header +=         '    }\n'
+            object_types_header +=         '}\n'
 
         #
         object_types_header += '\n'
-        traits_format = Outdent('''
-            template <> struct VkHandleInfo<{vk_type}> {{
-                static const VulkanObjectType kVulkanObjectType = {obj_type};
-                static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {dbg_type};
-                static const VkObjectType kVkObjectType = {vko_type};
-                static const char* Typename() {{
-                    return "{vk_type}";
-                }}
-            }};
-            template <> struct VulkanObjectTypeInfo<{obj_type}> {{
-                typedef {vk_type} Type;
-            }};
-            ''')
+        if self.genOpts.apiname == 'vulkansc':
+            traits_format = Outdent('''
+                template <> struct VkHandleInfo<{vk_type}> {{
+                    static const VulkanObjectType kVulkanObjectType = {obj_type};
+                    static const VkObjectType kVkObjectType = {vko_type};
+                    static const char* Typename() {{
+                        return "{vk_type}";
+                    }}
+                }};
+                template <> struct VulkanObjectTypeInfo<{obj_type}> {{
+                    typedef {vk_type} Type;
+                }};
+                ''')
+        else:
+            traits_format = Outdent('''
+                template <> struct VkHandleInfo<{vk_type}> {{
+                    static const VulkanObjectType kVulkanObjectType = {obj_type};
+                `    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {dbg_type};
+                    static const VkObjectType kVkObjectType = {vko_type};
+                    static const char* Typename() {{
+                        return "{vk_type}";
+                    }}
+                }};
+                template <> struct VulkanObjectTypeInfo<{obj_type}> {{
+                    typedef {vk_type} Type;
+                }};
+                ''')
 
         object_types_header += Outdent('''
             // Traits objects from each type statically map from Vk<handleType> to the various enums
@@ -1169,14 +1221,20 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
         for vk_type, object_type in sorted(dispatchable.items()):
             info = object_type_info[object_type]
-            object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
-                                                      vko_type=info['VkoType'])
+            if self.genOpts.apiname == 'vulkansc':
+                object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, vko_type=info['VkoType'])
+            else:
+                object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
+                                                            vko_type=info['VkoType'])
         object_types_header += '#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n'
         for vk_type, object_type in sorted(non_dispatchable.items()):
             info = object_type_info[object_type]
             if info['Guard']:
                 object_types_header += '#ifdef {}\n'.format(info['Guard'])
-            object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
+            if self.genOpts.apiname == 'vulkansc':
+                object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, vko_type=info['VkoType'])
+            else:
+                object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
                                                       vko_type=info['VkoType'])
             if info['Guard']:
                 object_types_header += '#endif\n'
@@ -1909,9 +1967,15 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         code = []
 
         # Generate header
+        vk_header = ''
+        if self.genOpts.apiname == 'vulkan':
+            vk_header = '#include <vulkan/vulkan.h>'
+        elif self.genOpts.apiname == 'vulkansc':
+            vk_header = '#include <vulkan/vulkan_sc.h>'
+
         code.append('\n'.join((
             '#pragma once',
-            '#include <vulkan/vulkan.h>\n',
+            vk_header,
             explanatory_comment, '',
             empty_idmap,
             empty_typemap, '')))

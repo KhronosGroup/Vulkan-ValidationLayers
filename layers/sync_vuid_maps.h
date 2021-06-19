@@ -19,7 +19,11 @@
  */
 #pragma once
 #include <string>
+#ifdef VULKANSC
+#include <vulkan/vulkan_sc_core.h>
+#else
 #include <vulkan/vulkan_core.h>
+#endif
 #include "vk_layer_data.h"
 
 namespace core_error {

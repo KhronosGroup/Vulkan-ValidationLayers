@@ -20,7 +20,11 @@
  */
 
 #pragma once
+#ifdef VULKANSC
+#include <vulkan/vulkan_sc.h>
+#else
 #include <vulkan/vulkan.h>
+#endif
 #include <string>
 
 struct DeviceFeatures;

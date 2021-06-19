@@ -459,9 +459,13 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info, const bool push_descriptor_ext,
     const uint32_t max_push_descriptors, const bool descriptor_indexing_ext,
     const VkPhysicalDeviceVulkan12Features *core12_features,
+#if defined(VK_EXT_inline_uniform_block)
     const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
     const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
+#endif
+#if defined(VK_KHR_acceleration_structure)
     const VkPhysicalDeviceAccelerationStructureFeaturesKHR *acceleration_structure_features,
+#endif
     const DeviceExtensions *device_extensions) {
     bool skip = false;
     layer_data::unordered_set<uint32_t> bindings;
@@ -510,13 +514,18 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         }
         if (!valid_type(binding_info.descriptorType)) {
             skip |= val_obj->LogError(val_obj->device,
+#if defined(VK_EXT_inline_uniform_block)
                                       (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT)
+#else
+                                      false
+#endif
                                           ? "VUID-VkDescriptorSetLayoutCreateInfo-flags-02208"
                                           : "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280",
                                       "vkCreateDescriptorSetLayout(): pBindings[%u] has invalid type %s , for push descriptors.", i,
                                       string_VkDescriptorType(binding_info.descriptorType));
         }
 
+#if !defined(VULKANSC)
         if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
             if (!inline_uniform_block_features->inlineUniformBlock) {
                 skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04604",
@@ -544,6 +553,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         } else if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
             storage_buffer_dynamic = i;
         }
+#endif
 
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
              binding_info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
@@ -664,6 +674,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                                                   i, string_VkDescriptorType(binding_info.descriptorType));
                     }
 
+#if !defined(VULKANSC)
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
                         !inline_uniform_block_features->descriptorBindingInlineUniformBlockUpdateAfterBind) {
                         skip |= val_obj->LogError(
@@ -688,6 +699,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                                                   i, string_VkDescriptorType(binding_info.descriptorType));
                     }
                 }
+#endif
 
                 if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT) {
                     if (!core12_features->descriptorBindingUpdateUnusedWhilePending) {
@@ -2808,6 +2820,7 @@ void cvdescriptorset::PerformUpdateDescriptorSets(ValidationStateTracker *dev_da
     }
 }
 
+#if !defined(VULKANSC)
 cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *device_data,
                                                               VkDescriptorSet descriptorSet,
                                                               const UPDATE_TEMPLATE_STATE *template_state, const void *pData,
@@ -2917,6 +2930,7 @@ bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet des
     return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(),
                                         0, NULL, "vkUpdateDescriptorSetWithTemplate()");
 }
+#endif // !defined(VULKANSC)
 
 std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     std::string out;

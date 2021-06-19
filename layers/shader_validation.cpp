@@ -2503,12 +2503,16 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
             vuid_layout_mismatch = "VUID-VkComputePipelineCreateInfo-layout-00703";
             break;
+#if defined(VK_KHR_ray_tracing_pipeline)
         case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
             vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-03427";
             break;
+#endif
+#if defined(VK_NV_ray_tracing)
         case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
             vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoNV-layout-03427";
             break;
+#endif
         default:
             assert(false);
             break;
@@ -2889,6 +2893,7 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE *pipeline, uint32_t gro
     return false;
 }
 
+#if defined(VK_KHR_ray_tracing_pipeline) && defined(VK_NV_ray_tracing)
 bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipelineCreateFlags flags, bool isKHR) const {
     bool skip = false;
 
@@ -3008,6 +3013,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
     }
     return skip;
 }
+#endif
 
 uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }
 

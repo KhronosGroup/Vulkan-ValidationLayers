@@ -126,6 +126,7 @@ void SetValidationFeatureEnable2(CHECK_ENABLED &enable_data, const VkValidationF
     }
 }
 
+#if !defined(VULKANSC)
 // Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
 void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *val_flags_struct) {
     for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
@@ -142,6 +143,7 @@ void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *va
         }
     }
 }
+#endif
 
 // Process Validation Features flags specified through the ValidationFeature extension
 void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_data,
@@ -345,10 +347,12 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (validation_features_ext) {
         SetValidationFeatures(settings_data->disables, settings_data->enables, validation_features_ext);
     }
+#if !defined(VULKANSC)
     const auto *validation_flags_ext = LvlFindInChain<VkValidationFlagsEXT>(settings_data->pnext_chain);
     if (validation_flags_ext) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }
+#endif
 
     std::string enable_key(settings_data->layer_description);
     std::string disable_key(settings_data->layer_description);

@@ -24,7 +24,11 @@
 
 #include <cstdlib>
 
+#ifdef VULKANSC
+#include "vulkan/vulkan_sc.h"
+#else
 #include "vulkan/vulkan.h"
+#endif
 #include <generated/spirv_tools_commit_id.h>
 #include "shader_module.h"
 
@@ -38,6 +42,7 @@ struct shader_stage_attributes {
     VkShaderStageFlags stage;
 };
 
+#if defined(VK_EXT_validation_cache)
 class ValidationCache {
     // hashes of shaders that have passed validation before, and can be skipped.
     // we don't store negative results, as we would have to also store what was
@@ -132,6 +137,7 @@ class ValidationCache {
         }
     }
 };
+#endif
 
 spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
 

@@ -71,7 +71,11 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
 
     bool IsImport() const { return import_handle_type_flags != 0; }
     bool IsImportAHB() const {
+#if defined(VK_ANDROID_external_memory_android_hardware_buffer)
         return (import_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
+#else
+        return false;
+#endif
     }
     bool IsExport() const { return export_handle_type_flags != 0; }
 
@@ -147,7 +151,11 @@ class BINDABLE : public BASE_NODE {
     void SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize mem_offset, const VkDeviceSize mem_size);
 
     bool IsExternalAHB() const {
+#if defined(VK_ANDROID_external_memory_android_hardware_buffer)
         return (external_memory_handle & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
+#else
+        return false;
+#endif
     }
 
     virtual VkDeviceSize GetFakeBaseAddress() const;
