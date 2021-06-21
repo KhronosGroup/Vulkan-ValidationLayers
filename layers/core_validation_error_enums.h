@@ -267,7 +267,9 @@ static const char DECORATE_UNUSED *kVUID_Portability_InterpolationFunction = "UN
 
 // Pending VUIDs from https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4585
 static const char DECORATE_UNUSED *kVUID_Core_CmdDraw_VertexInput = "UNASSIGNED-vkCmdDraw-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMultiEXT_VertexInput = "UNASSIGNED-vkCmdDrawMultiEXT-vertexInput-not-specified";
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexed_VertexInput = "UNASSIGNED-vkCmdDrawIndexed-vertexInput-not-specified";
+static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMultiIndexedEXT_VertexInput = "UNASSIGNED-vkCmdDrawMultiIndexedEXT-vertexInput-not-specified";
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirect_VertexInput = "UNASSIGNED-vkCmdDrawIndirect-vertexInput-not-specified";
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndexedIndirect_VertexInput = "UNASSIGNED-vkCmdDrawIndexedIndirect-vertexInput-not-specified";
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectCount_VertexInput = "UNASSIGNED-vkCmdDrawIndirectCount-vertexInput-not-specified";

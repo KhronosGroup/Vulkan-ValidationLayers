@@ -171,6 +171,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetLineWidth',
             'vkCmdDrawIndirect',
             'vkCmdDrawIndexedIndirect',
+            'vkCmdDrawMultiEXT',
+            'vkCmdDrawMultiIndexedEXT',
             'vkCmdClearAttachments',
             'vkCmdBindIndexBuffer',
             'vkCmdCopyBuffer',
