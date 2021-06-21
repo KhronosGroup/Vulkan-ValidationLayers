@@ -1078,6 +1078,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetColorWriteEnableEXT,
     InterceptIdPreCallRecordCmdSetColorWriteEnableEXT,
     InterceptIdPostCallRecordCmdSetColorWriteEnableEXT,
+    InterceptIdPreCallValidateCmdDrawMultiEXT,
+    InterceptIdPreCallRecordCmdDrawMultiEXT,
+    InterceptIdPostCallRecordCmdDrawMultiEXT,
+    InterceptIdPreCallValidateCmdDrawMultiIndexedEXT,
+    InterceptIdPreCallRecordCmdDrawMultiIndexedEXT,
+    InterceptIdPostCallRecordCmdDrawMultiIndexedEXT,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -2341,6 +2347,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetColorWriteEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetColorWriteEnableEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetColorWriteEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMultiEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMultiEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMultiEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMultiIndexedEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMultiIndexedEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMultiIndexedEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

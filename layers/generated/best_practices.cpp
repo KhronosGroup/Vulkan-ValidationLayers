@@ -2754,6 +2754,33 @@ void BestPractices::PostCallRecordCreateIndirectCommandsLayoutNV(
     }
 }
 
+void BestPractices::PostCallRecordAcquireDrmDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    int32_t                                     drmFd,
+    VkDisplayKHR                                display,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_INITIALIZATION_FAILED};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkAcquireDrmDisplayEXT", result, error_codes, success_codes);
+    }
+}
+
+void BestPractices::PostCallRecordGetDrmDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    int32_t                                     drmFd,
+    uint32_t                                    connectorId,
+    VkDisplayKHR*                               display,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_INITIALIZATION_FAILED,VK_ERROR_OUT_OF_HOST_MEMORY};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkGetDrmDisplayEXT", result, error_codes, success_codes);
+    }
+}
+
 void BestPractices::PostCallRecordCreatePrivateDataSlotEXT(
     VkDevice                                    device,
     const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,

@@ -731,7 +731,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
         VkDeviceSize end_offset = (index_size * (static_cast<VkDeviceSize>(firstIndex) + indexCount)) + index_buffer_binding.offset;
         if (end_offset > index_buffer_binding.size) {
             skip |=
-                LogError(index_buffer_binding.buffer_state->buffer(), "VUID-vkCmdDrawIndexed-indexSize-00463",
+                LogError(index_buffer_binding.buffer_state->buffer(), "VUID-vkCmdDrawIndexed-firstIndex-04932",
                          "vkCmdDrawIndexed() index size (%d) * (firstIndex (%d) + indexCount (%d)) "
                          "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
                          " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",

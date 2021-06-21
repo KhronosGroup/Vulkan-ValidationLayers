@@ -7529,6 +7529,21 @@ void ThreadSafety::PostCallRecordDestroyIndirectCommandsLayoutNV(
     // Host access to indirectCommandsLayout must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordAcquireDrmDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    int32_t                                     drmFd,
+    VkDisplayKHR                                display) {
+    StartReadObject(display, "vkAcquireDrmDisplayEXT");
+}
+
+void ThreadSafety::PostCallRecordAcquireDrmDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    int32_t                                     drmFd,
+    VkDisplayKHR                                display,
+    VkResult                                    result) {
+    FinishReadObject(display, "vkAcquireDrmDisplayEXT");
+}
+
 void ThreadSafety::PreCallRecordCreatePrivateDataSlotEXT(
     VkDevice                                    device,
     const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
@@ -7856,6 +7871,52 @@ void ThreadSafety::PostCallRecordCmdSetColorWriteEnableEXT(
     uint32_t                                    attachmentCount,
     const VkBool32*                             pColorWriteEnables) {
     FinishWriteObject(commandBuffer, "vkCmdSetColorWriteEnableEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdDrawMultiEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    drawCount,
+    const VkMultiDrawInfoEXT*                   pVertexInfo,
+    uint32_t                                    instanceCount,
+    uint32_t                                    firstInstance,
+    uint32_t                                    stride) {
+    StartWriteObject(commandBuffer, "vkCmdDrawMultiEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDrawMultiEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    drawCount,
+    const VkMultiDrawInfoEXT*                   pVertexInfo,
+    uint32_t                                    instanceCount,
+    uint32_t                                    firstInstance,
+    uint32_t                                    stride) {
+    FinishWriteObject(commandBuffer, "vkCmdDrawMultiEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdDrawMultiIndexedEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    drawCount,
+    const VkMultiDrawIndexedInfoEXT*            pIndexInfo,
+    uint32_t                                    instanceCount,
+    uint32_t                                    firstInstance,
+    uint32_t                                    stride,
+    const int32_t*                              pVertexOffset) {
+    StartWriteObject(commandBuffer, "vkCmdDrawMultiIndexedEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDrawMultiIndexedEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    drawCount,
+    const VkMultiDrawIndexedInfoEXT*            pIndexInfo,
+    uint32_t                                    instanceCount,
+    uint32_t                                    firstInstance,
+    uint32_t                                    stride,
+    const int32_t*                              pVertexOffset) {
+    FinishWriteObject(commandBuffer, "vkCmdDrawMultiIndexedEXT");
     // Host access to commandBuffer must be externally synchronized
 }
 
