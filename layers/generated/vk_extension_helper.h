@@ -64,6 +64,7 @@ static bool DECORATE_UNUSED IsExtEnabled(ExtEnabled feature) {
 struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
+    ExtEnabled vk_ext_acquire_drm_display{kNotEnabled};
     ExtEnabled vk_ext_acquire_xlib_display{kNotEnabled};
     ExtEnabled vk_ext_debug_report{kNotEnabled};
     ExtEnabled vk_ext_debug_utils{kNotEnabled};
@@ -114,6 +115,8 @@ struct InstanceExtensions {
         static const InstanceInfoMap info_map = {
             {"VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})},
             {"VK_VERSION_1_2", InstanceInfo(&InstanceExtensions::vk_feature_version_1_2, {})},
+            {VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_acquire_drm_display, {{
+                           {&InstanceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
             {VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_acquire_xlib_display, {{
                            {&InstanceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})},
@@ -270,6 +273,7 @@ struct InstanceExtensions {
 };
 
 static const std::set<std::string> kInstanceExtensionNames = {
+    VK_EXT_ACQUIRE_DRM_DISPLAY_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
     VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME,
 #endif
@@ -394,7 +398,9 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_line_rasterization{kNotEnabled};
     ExtEnabled vk_ext_memory_budget{kNotEnabled};
     ExtEnabled vk_ext_memory_priority{kNotEnabled};
+    ExtEnabled vk_ext_multi_draw{kNotEnabled};
     ExtEnabled vk_ext_pci_bus_info{kNotEnabled};
+    ExtEnabled vk_ext_physical_device_drm{kNotEnabled};
     ExtEnabled vk_ext_pipeline_creation_cache_control{kNotEnabled};
     ExtEnabled vk_ext_pipeline_creation_feedback{kNotEnabled};
     ExtEnabled vk_ext_post_depth_coverage{kNotEnabled};
@@ -532,6 +538,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_inherited_viewport_scissor{kNotEnabled};
     ExtEnabled vk_nv_mesh_shader{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing{kNotEnabled};
+    ExtEnabled vk_nv_ray_tracing_motion_blur{kNotEnabled};
     ExtEnabled vk_nv_representative_fragment_test{kNotEnabled};
     ExtEnabled vk_nv_sample_mask_override_coverage{kNotEnabled};
     ExtEnabled vk_nv_scissor_exclusive{kNotEnabled};
@@ -673,7 +680,10 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_memory_priority, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_MULTI_DRAW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_multi_draw, {})},
             {VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pci_bus_info, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_physical_device_drm, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_cache_control, {})},
             {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
@@ -967,6 +977,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_RAY_TRACING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_memory_requirements_2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}})},
+            {VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing_motion_blur, {{
+                           {&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
             {VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_representative_fragment_test, {})},
             {VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_sample_mask_override_coverage, {})},
             {VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_scissor_exclusive, {{
@@ -1162,7 +1174,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME,
     VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
     VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+    VK_EXT_MULTI_DRAW_EXTENSION_NAME,
     VK_EXT_PCI_BUS_INFO_EXTENSION_NAME,
+    VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
     VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME,
@@ -1332,6 +1346,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME,
     VK_NV_MESH_SHADER_EXTENSION_NAME,
     VK_NV_RAY_TRACING_EXTENSION_NAME,
+    VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME,
     VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME,
     VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME,
     VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME,

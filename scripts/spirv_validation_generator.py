@@ -97,7 +97,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         # These 2 arrays SHOULD be empty when possible and when the SPIR-V Headers are updated these
         # should be attempted to be cleared
         self.extensionExcludeList = []
-        self.capabilityExcludeList = []
+        self.capabilityExcludeList = ['RayTracingMotionBlurNV']
 
         # This is a list that maps the Vulkan struct a feature field is with the internal
         # state tracker's enabled features value
@@ -270,7 +270,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         output =  'static inline const char* string_SpvCapability(uint32_t input_value) {\n'
         output += '    switch ((spv::Capability)input_value) {\n'
         for name, enables in sorted(self.capabilities.items()):
-            if name not in excludeList:
+            if (name not in excludeList) and (name not in self.capabilityExcludeList):
                 output += '         case spv::Capability' + name + ':\n'
                 output += '            return \"' + name + '\";\n'
         output += '        default:\n'

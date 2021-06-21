@@ -1462,15 +1462,14 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
     # Determine if a struct has an NDO as a member or an embedded member
     def struct_contains_ndo(self, struct_item):
         struct_member_dict = dict(self.structMembers)
-        struct_members = struct_member_dict[struct_item]
-
-        for member in struct_members:
-            if self.handle_types.IsNonDispatchable(member.type):
-                return True
-            # recurse for member structs, guard against infinite recursion
-            elif member.type in struct_member_dict and member.type != struct_item:
-                if self.struct_contains_ndo(member.type):
+        if struct_item in struct_member_dict:
+            for member in struct_member_dict[struct_item]:
+                if self.handle_types.IsNonDispatchable(member.type):
                     return True
+                # recurse for member structs, guard against infinite recursion
+                elif member.type in struct_member_dict and member.type != struct_item:
+                    if self.struct_contains_ndo(member.type):
+                        return True
         return False
     #
     # Return list of struct members which contain, or which sub-structures contain

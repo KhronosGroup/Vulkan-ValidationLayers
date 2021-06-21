@@ -44,6 +44,7 @@ def main(argv):
     gen_cmds = [*[[common_codegen.repo_relative('scripts/lvl_genvk.py'),
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                    '-quiet',
+                   '-removeExtensions', 'VK_HUAWEI_subpass_shading',
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
                                               "chassis_dispatch_helper.h",
