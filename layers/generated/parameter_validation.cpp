@@ -14996,6 +14996,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMultiEXT(
     bool skip = false;
     if (!device_extensions.vk_ext_multi_draw) skip |= OutputExtensionError("vkCmdDrawMultiEXT", VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride);
     return skip;
 }
 
@@ -15010,6 +15011,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMultiIndexedEXT(
     bool skip = false;
     if (!device_extensions.vk_ext_multi_draw) skip |= OutputExtensionError("vkCmdDrawMultiIndexedEXT", VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset);
     return skip;
 }
 
