@@ -93,8 +93,14 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
     return norm;
 }
 
+static VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkImageCreateInfo *pCreateInfo) {
+    auto *external_memory_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+    return external_memory_info ? external_memory_info->handleTypes : 0;
+}
+
 IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo)
-    : BINDABLE(img, kVulkanObjectTypeImage),
+    : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       valid(false),
@@ -113,9 +119,8 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       bind_swapchain_imageIndex(0),
       range_encoder(full_range),
       disjoint(false),
-      plane0_memory_requirements_checked(false),
-      plane1_memory_requirements_checked(false),
-      plane2_memory_requirements_checked(false),
+      requirements{},
+      memory_requirements_checked{{false, false, false}},
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
@@ -128,14 +133,21 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
         }
         createInfo.pQueueFamilyIndices = queue_family_indices;
     }
+}
 
-    if (createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-        sparse = true;
+void IMAGE_STATE::Destroy() {
+    for (auto *alias_state : aliasing_images) {
+        assert(alias_state);
+        alias_state->aliasing_images.erase(this);
     }
+    aliasing_images.clear();
+    BINDABLE::Destroy();
+}
 
-    auto *external_memory_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
-    if (external_memory_info) {
-        external_memory_handle = external_memory_info->handleTypes;
+void IMAGE_STATE::NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) {
+    BINDABLE::NotifyInvalidate(invalid_handles, unlink);
+    if (unlink) {
+        aliasing_images.clear();
     }
 }
 
@@ -173,9 +185,10 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
         !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
     }
-    if ((create_from_swapchain == VK_NULL_HANDLE) && binding.mem_state &&
-        (binding.mem_state == other_image_state->binding.mem_state) && (binding.offset == other_image_state->binding.offset) &&
-        IsCreateInfoEqual(other_image_state->createInfo)) {
+    const auto binding = Binding();
+    const auto other_binding = other_image_state->Binding();
+    if ((create_from_swapchain == VK_NULL_HANDLE) && binding && other_binding && (binding->mem_state == other_binding->mem_state) &&
+        (binding->offset == other_binding->offset) && IsCreateInfoEqual(other_image_state->createInfo)) {
         return true;
     }
     if ((bind_swapchain == other_image_state->bind_swapchain) && (bind_swapchain != VK_NULL_HANDLE)) {
@@ -184,23 +197,14 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
     return false;
 }
 
-void IMAGE_STATE::AddAliasingImage(layer_data::unordered_set<IMAGE_STATE *> &bound_images) {
-    for (auto *bound_image : bound_images) {
-        if (bound_image && (bound_image != this) && bound_image->IsCompatibleAliasing(this)) {
-            auto inserted = bound_image->aliasing_images.emplace(this);
-            if (inserted.second) {
-                aliasing_images.emplace(bound_image);
-            }
+void IMAGE_STATE::AddAliasingImage(IMAGE_STATE *bound_image) {
+    assert(bound_image);
+    if (bound_image != this && bound_image->IsCompatibleAliasing(this)) {
+        auto inserted = bound_image->aliasing_images.emplace(this);
+        if (inserted.second) {
+            aliasing_images.emplace(bound_image);
         }
     }
-}
-
-void IMAGE_STATE::RemoveAliasingImages() {
-    for (auto *alias_state : aliasing_images) {
-        assert(alias_state);
-        alias_state->aliasing_images.erase(this);
-    }
-    aliasing_images.clear();
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.

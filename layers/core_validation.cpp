@@ -169,11 +169,10 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
                          report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
                          report_data->FormatHandle(image_state->bind_swapchain).c_str());
         }
-    } else if (image_state->external_ahb) {
+    } else if (image_state->IsExternalAHB()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
-        result |= VerifyBoundMemoryIsValid(image_state->binding.mem_state.get(), image_state->image(),
-                                           image_state->Handle(), location);
+        result |= VerifyBoundMemoryIsValid(image_state->MemState(), image_state->image(), image_state->Handle(), location);
     }
     return result;
 }
@@ -183,8 +182,8 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
                                                const char *error_code) const {
     bool result = false;
     if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
-        result |= VerifyBoundMemoryIsValid(buffer_state->binding.mem_state.get(), buffer_state->buffer(),
-                                           buffer_state->Handle(), api_name, error_code);
+        result |= VerifyBoundMemoryIsValid(buffer_state->MemState(), buffer_state->buffer(), buffer_state->Handle(), api_name,
+                                           error_code);
     }
     return result;
 }
@@ -192,15 +191,15 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
 // Check to see if memory was bound to this acceleration structure
 bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE *as_state, const char *api_name,
                                                               const char *error_code) const {
-    return VerifyBoundMemoryIsValid(as_state->binding.mem_state.get(), as_state->acceleration_structure(),
-                                    as_state->Handle(), api_name, error_code);
+    return VerifyBoundMemoryIsValid(as_state->MemState(), as_state->acceleration_structure(), as_state->Handle(), api_name,
+                                    error_code);
 }
 
 // Check to see if memory was bound to this acceleration structure
 bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE_KHR *as_state,
                                                               const char *api_name, const char *error_code) const {
-    return VerifyBoundMemoryIsValid(as_state->binding.mem_state.get(), as_state->acceleration_structure(),
-                                    as_state->Handle(), api_name, error_code);
+    return VerifyBoundMemoryIsValid(as_state->MemState(), as_state->acceleration_structure(), as_state->Handle(), api_name,
+                                    error_code);
 }
 
 // Valid usage checks for a call to SetMemBinding().
@@ -248,7 +247,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
         }
         const DEVICE_MEMORY_STATE *mem_info = ValidationStateTracker::GetDevMemState(mem);
         if (mem_info) {
-            const DEVICE_MEMORY_STATE *prev_binding = mem_binding->binding.mem_state.get();
+            const DEVICE_MEMORY_STATE *prev_binding = mem_binding->MemState();
             if (prev_binding) {
                 if (!prev_binding->Destroyed()) {
                     const char *error_code = nullptr;
@@ -3470,7 +3469,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 
     // VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID must have been included in
     // VkExportMemoryAllocateInfo::handleTypes when memory was created.
-    if (!mem_info->is_export ||
+    if (!mem_info->IsExport() ||
         (0 == (mem_info->export_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID))) {
         skip |= LogError(device, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882",
                          "vkGetMemoryAndroidHardwareBufferANDROID: %s was not allocated for export, or the "
@@ -3482,18 +3481,16 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
     // with non-NULL image member, then that image must already be bound to memory.
     if (mem_info->IsDedicatedImage()) {
-        const auto image_state = GetImageState(mem_info->dedicated_handle.Cast<VkImage>());
-        // count() requires DEVICE_MEMORY_STATE* const & or DEVICE_MEMORY_STATE*, not const DEVICE_MEMORY_STATE*.
-        // But here is in a const function. It could get const DEVICE_MEMORY_STATE* only, so cast it.
-        if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count((DEVICE_MEMORY_STATE *)mem_info)))) {
+        const auto image_state = GetImageState(mem_info->dedicated->handle.Cast<VkImage>());
+        if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count(mem_info->mem())))) {
             LogObjectList objlist(device);
             objlist.add(pInfo->memory);
-            objlist.add(mem_info->dedicated_handle);
+            objlist.add(mem_info->dedicated->handle);
             skip |= LogError(objlist, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
                              "vkGetMemoryAndroidHardwareBufferANDROID: %s was allocated using a dedicated "
                              "%s, but that image is not bound to the VkDeviceMemory object.",
                              report_data->FormatHandle(pInfo->memory).c_str(),
-                             report_data->FormatHandle(mem_info->dedicated_handle).c_str());
+                             report_data->FormatHandle(mem_info->dedicated->handle).c_str());
         }
     }
 
@@ -3731,7 +3728,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
 
     const IMAGE_STATE *image_state = GetImageState(image);
     if (image_state != nullptr) {
-        if (image_state->external_ahb && (0 == image_state->GetBoundMemory().size())) {
+        if (image_state->IsExternalAHB() && (0 == image_state->GetBoundMemory().size())) {
             const char *vuid = strcmp(func_name, "vkGetImageMemoryRequirements()") == 0
                                    ? "VUID-vkGetImageMemoryRequirements-image-04004"
                                    : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
@@ -3921,15 +3918,16 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                     "VK_IMAGE_CREATE_DISJOINT_BIT",
                     report_data->FormatHandle(dedicated_allocate_info->image).c_str());
             } else {
-                if ((pAllocateInfo->allocationSize != image_state->requirements.size) && (imported_ahb == false)) {
+                if ((pAllocateInfo->allocationSize != image_state->requirements[0].size) && (imported_ahb == false)) {
                     const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
                                            ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
                                            : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
-                    skip |= LogError(
-                        device, vuid,
-                        "vkAllocateMemory: Allocation Size (%" PRIu64 ") needs to be equal to VkImage %s VkMemoryRequirements::size (%" PRIu64 ")",
-                        pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
-                        image_state->requirements.size);
+                    skip |=
+                        LogError(device, vuid,
+                                 "vkAllocateMemory: Allocation Size (%" PRIu64
+                                 ") needs to be equal to VkImage %s VkMemoryRequirements::size (%" PRIu64 ")",
+                                 pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
+                                 image_state->requirements[0].size);
                 }
                 if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
                     skip |= LogError(
@@ -4479,17 +4477,18 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             }
 
             // Validate dedicated allocation
-            if (mem_info->IsDedicatedBuffer() && ((mem_info->dedicated_handle.Cast<VkBuffer>() != buffer) || (memoryOffset != 0))) {
+            if (mem_info->IsDedicatedBuffer() &&
+                ((mem_info->dedicated->handle.Cast<VkBuffer>() != buffer) || (memoryOffset != 0))) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01508" : "VUID-vkBindBufferMemory-memory-01508";
                 LogObjectList objlist(buffer);
                 objlist.add(mem);
-                objlist.add(mem_info->dedicated_handle);
+                objlist.add(mem_info->dedicated->handle);
                 skip |= LogError(objlist, vuid,
                                  "%s: for dedicated %s, VkMemoryDedicatedAllocateInfo::buffer %s must be equal "
                                  "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                  api_name, report_data->FormatHandle(mem).c_str(),
-                                 report_data->FormatHandle(mem_info->dedicated_handle).c_str(),
+                                 report_data->FormatHandle(mem_info->dedicated->handle).c_str(),
                                  report_data->FormatHandle(buffer).c_str(), memoryOffset);
             }
 
@@ -4520,9 +4519,9 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             }
 
             // Validate import memory handles
-            if (mem_info->is_import_ahb == true) {
+            if (mem_info->IsImportAHB() == true) {
                 skip |= ValidateBufferImportedHandleANDROID(api_name, buffer_state->external_memory_handle, mem, buffer);
-            } else if (mem_info->is_import == true) {
+            } else if (mem_info->IsImport() == true) {
                 if ((mem_info->import_handle_type_flags & buffer_state->external_memory_handle) == 0) {
                     const char *vuid = nullptr;
                     if ((bind_buffer_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {
@@ -9361,9 +9360,10 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                 if (!image_data_i || !image_data_j) {
                     continue;
                 }
-                if (image_data_i->binding.mem_state == image_data_j->binding.mem_state &&
-                    IsRangeOverlapping(image_data_i->binding.offset, image_data_i->binding.size, image_data_j->binding.offset,
-                                       image_data_j->binding.size)) {
+                const auto *binding_i = image_data_i->Binding();
+                const auto *binding_j = image_data_j->Binding();
+                if (binding_i && binding_j && binding_i->mem_state == binding_j->mem_state &&
+                    IsRangeOverlapping(binding_i->offset, binding_i->size, binding_j->offset, binding_j->size)) {
                     attachments[i].overlapping.emplace_back(j);
                     attachments[j].overlapping.emplace_back(i);
                 }
@@ -11915,8 +11915,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // Check non-disjoint images VkMemoryRequirements
 
                 // All validation using the image_state->requirements for external AHB is check in android only section
-                if (image_state->external_ahb == false) {
-                    const VkMemoryRequirements mem_req = image_state->requirements;
+                if (image_state->IsExternalAHB() == false) {
+                    const VkMemoryRequirements &mem_req = image_state->requirements[0];
 
                     // Validate memory requirements alignment
                     if (SafeModulo(bind_info.memoryOffset, mem_req.alignment) != 0) {
@@ -11988,26 +11988,23 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 int plane = 0;
 
                 // All validation using the image_state->plane*_requirements for external AHB is check in android only section
-                if (image_state->external_ahb == false) {
-                    VkMemoryRequirements disjoint_mem_req = {};
+                if (image_state->IsExternalAHB() == false) {
                     const VkImageAspectFlagBits aspect = plane_info->planeAspect;
                     switch (aspect) {
                         case VK_IMAGE_ASPECT_PLANE_0_BIT:
                             plane = 0;
-                            disjoint_mem_req = image_state->plane0_requirements;
                             break;
                         case VK_IMAGE_ASPECT_PLANE_1_BIT:
                             plane = 1;
-                            disjoint_mem_req = image_state->plane1_requirements;
                             break;
                         case VK_IMAGE_ASPECT_PLANE_2_BIT:
                             plane = 2;
-                            disjoint_mem_req = image_state->plane2_requirements;
                             break;
                         default:
                             assert(false);  // parameter validation should have caught this
                             break;
                     }
+                    const VkMemoryRequirements &disjoint_mem_req = image_state->requirements[plane];
 
                     // Validate memory requirements alignment
                     if (SafeModulo(bind_info.memoryOffset, disjoint_mem_req.alignment) != 0) {
@@ -12061,8 +12058,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             if (mem_info) {
                 // Validate bound memory range information
                 // if memory is exported to an AHB then the mem_info->allocationSize must be zero and this check is not needed
-                if ((mem_info->is_export == false) || ((mem_info->export_handle_type_flags &
-                                                        VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0)) {
+                if ((mem_info->IsExport() == false) ||
+                    ((mem_info->export_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) ==
+                     0)) {
                     skip |= ValidateInsertImageMemoryRange(bind_info.image, mem_info, bind_info.memoryOffset, error_prefix);
                 }
 
@@ -12072,7 +12070,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         const auto current_image_state = GetImageState(bind_info.image);
                         if ((bind_info.memoryOffset != 0) || !current_image_state ||
                             !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
-                                mem_info->dedicated_create_info.image)) {
+                                mem_info->dedicated->create_info.image)) {
                             const char *validation_error;
                             if (bind_image_mem_2 == false) {
                                 validation_error = "VUID-vkBindImageMemory-memory-02629";
@@ -12081,17 +12079,17 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             }
                             LogObjectList objlist(bind_info.image);
                             objlist.add(bind_info.memory);
-                            objlist.add(mem_info->dedicated_handle);
+                            objlist.add(mem_info->dedicated->handle);
                             skip |= LogError(
                                 objlist, validation_error,
                                 "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must compatible "
                                 "with %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                 error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
-                                report_data->FormatHandle(mem_info->dedicated_handle).c_str(),
+                                report_data->FormatHandle(mem_info->dedicated->handle).c_str(),
                                 report_data->FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
                     } else {
-                        if ((bind_info.memoryOffset != 0) || (mem_info->dedicated_handle.Cast<VkImage>() != bind_info.image)) {
+                        if ((bind_info.memoryOffset != 0) || (mem_info->dedicated->handle.Cast<VkImage>() != bind_info.image)) {
                             const char *validation_error;
                             if (bind_image_mem_2 == false) {
                                 validation_error = "VUID-vkBindImageMemory-memory-01509";
@@ -12100,13 +12098,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             }
                             LogObjectList objlist(bind_info.image);
                             objlist.add(bind_info.memory);
-                            objlist.add(mem_info->dedicated_handle);
+                            objlist.add(mem_info->dedicated->handle);
                             skip |=
                                 LogError(objlist, validation_error,
                                          "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must be equal "
                                          "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                          error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
-                                         report_data->FormatHandle(mem_info->dedicated_handle).c_str(),
+                                         report_data->FormatHandle(mem_info->dedicated->handle).c_str(),
                                          report_data->FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
                     }
@@ -12129,10 +12127,10 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
 
                 // Validate import memory handles
-                if (mem_info->is_import_ahb == true) {
+                if (mem_info->IsImportAHB() == true) {
                     skip |= ValidateImageImportedHandleANDROID(api_name, image_state->external_memory_handle, bind_info.memory,
                                                                bind_info.image);
-                } else if (mem_info->is_import == true) {
+                } else if (mem_info->IsImport() == true) {
                     if ((mem_info->import_handle_type_flags & image_state->external_memory_handle) == 0) {
                         const char *vuid = nullptr;
                         if ((bind_image_mem_2) && (device_extensions.vk_android_external_memory_android_hardware_buffer)) {

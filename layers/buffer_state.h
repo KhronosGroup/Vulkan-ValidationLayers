@@ -32,8 +32,16 @@ class BUFFER_STATE : public BINDABLE {
   public:
     VkBufferCreateInfo createInfo;
     VkDeviceAddress deviceAddress;
+    VkMemoryRequirements requirements;
+    bool memory_requirements_checked;
+
     BUFFER_STATE(VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
-        : BINDABLE(buff, kVulkanObjectTypeBuffer), createInfo(*pCreateInfo) {
+        : BINDABLE(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
+                   (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
+          createInfo(*pCreateInfo),
+          deviceAddress(0),
+          requirements(),
+          memory_requirements_checked(false) {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
             for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
@@ -41,16 +49,7 @@ class BUFFER_STATE : public BINDABLE {
             }
             createInfo.pQueueFamilyIndices = pQueueFamilyIndices;
         }
-
-        if (createInfo.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
-            sparse = true;
-        }
-
-        auto *externalMemoryInfo = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
-        if (externalMemoryInfo) {
-            external_memory_handle = externalMemoryInfo->handleTypes;
-        }
-    };
+    }
 
     BUFFER_STATE(BUFFER_STATE const &rh_obj) = delete;
 
@@ -63,6 +62,12 @@ class BUFFER_STATE : public BINDABLE {
         }
         Destroy();
     };
+
+  private:
+    static inline VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkBufferCreateInfo *pCreateInfo) {
+        auto *external_memory_info = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
+        return external_memory_info ? external_memory_info->handleTypes : 0;
+    }
 };
 
 class BUFFER_VIEW_STATE : public BASE_NODE {
@@ -76,7 +81,11 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
             buffer_state->AddParent(this);
         }
     }
-    virtual ~BUFFER_VIEW_STATE() { Destroy(); }
+    virtual ~BUFFER_VIEW_STATE() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
 
     BUFFER_VIEW_STATE(const BUFFER_VIEW_STATE &rh_obj) = delete;
 

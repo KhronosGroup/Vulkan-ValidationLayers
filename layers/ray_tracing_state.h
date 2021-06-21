@@ -42,7 +42,7 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     uint64_t opaque_handle = 0;
     const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
-        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV),
+        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
           create_infoNV(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},
@@ -68,7 +68,7 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BINDABLE {
     uint64_t opaque_handle = 0;
     const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci)
-        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureKHR),
+        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureKHR, false, false, 0),
           create_infoKHR(ci),
           memory_requirements{},
           build_scratch_memory_requirements_checked{},

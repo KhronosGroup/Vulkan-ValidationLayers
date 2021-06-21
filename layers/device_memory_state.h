@@ -35,65 +35,51 @@ struct MemRange {
     VkDeviceSize size = 0;
 };
 
-// Data struct for tracking memory object
-struct DEVICE_MEMORY_STATE : public BASE_NODE {
-    void *object;  // Dispatchable object used to create this memory (device of swapchain)
-    safe_VkMemoryAllocateInfo alloc_info;
-    VulkanTypedHandle dedicated_handle;
-    union {
+struct DedicatedBinding {
+    VulkanTypedHandle handle;
+    union CreateInfo {
+        CreateInfo(const VkBufferCreateInfo &b) : buffer(b) {}
+        CreateInfo(const VkImageCreateInfo &i) : image(i) {}
         VkBufferCreateInfo buffer;
         VkImageCreateInfo image;
-    } dedicated_create_info;
-    bool is_export;
-    bool is_import;
-    bool is_import_ahb;   // The VUID check depends on if the imported memory is for AHB
-    bool unprotected;     // can't be used for protected memory
-    bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
-    VkExternalMemoryHandleTypeFlags export_handle_type_flags;
-    VkExternalMemoryHandleTypeFlags import_handle_type_flags;
-    // Images for alias search
-    layer_data::unordered_set<IMAGE_STATE *> bound_images;
+    } create_info;
+
+    DedicatedBinding(VkBuffer buffer, const VkBufferCreateInfo &buffer_create_info)
+        : handle(buffer, kVulkanObjectTypeBuffer), create_info(buffer_create_info) {}
+
+    DedicatedBinding(VkImage image, const VkImageCreateInfo &image_create_info)
+        : handle(image, kVulkanObjectTypeImage), create_info(image_create_info) {}
+};
+
+// Data struct for tracking memory object
+class DEVICE_MEMORY_STATE : public BASE_NODE {
+  public:
+    const safe_VkMemoryAllocateInfo alloc_info;
+    const VkExternalMemoryHandleTypeFlags export_handle_type_flags;
+    const VkExternalMemoryHandleTypeFlags import_handle_type_flags;
+    const bool unprotected;     // can't be used for protected memory
+    const bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
+    const layer_data::optional<DedicatedBinding> dedicated;
 
     MemRange mapped_range;
-    void *shadow_copy_base;          // Base of layer's allocation for guard band, data, and alignment space
-    void *shadow_copy;               // Pointer to start of guard-band data before mapped region
-    uint64_t shadow_pad_size;        // Size of the guard-band data before and after actual data. It MUST be a
-                                     // multiple of limits.minMemoryMapAlignment
     void *p_driver_data;             // Pointer to application's actual memory
-    VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
+    const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
 
-    DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info,
-                        uint64_t fake_address)
-        : BASE_NODE(in_mem, kVulkanObjectTypeDeviceMemory),
-          object(disp_object),
-          alloc_info(p_alloc_info),
-          dedicated_handle(),
-          dedicated_create_info{},
-          is_export(false),
-          is_import(false),
-          is_import_ahb(false),
-          unprotected(true),
-          multi_instance(false),
-          export_handle_type_flags(0),
-          import_handle_type_flags(0),
-          mapped_range{},
-          shadow_copy_base(0),
-          shadow_copy(0),
-          shadow_pad_size(0),
-          p_driver_data(0),
-          fake_base_address(fake_address){};
+    DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+                        const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
+                        layer_data::optional<DedicatedBinding> &&dedicated_binding);
 
-    bool IsDedicatedBuffer() const { return dedicated_handle.type == kVulkanObjectTypeBuffer && dedicated_handle.handle != 0; }
+    bool IsImport() const { return import_handle_type_flags != 0; }
+    bool IsImportAHB() const {
+        return (import_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
+    }
+    bool IsExport() const { return export_handle_type_flags != 0; }
 
-    bool IsDedicatedImage() const { return dedicated_handle.type == kVulkanObjectTypeImage && dedicated_handle.handle != 0; }
+    bool IsDedicatedBuffer() const { return dedicated && dedicated->handle.type == kVulkanObjectTypeBuffer; }
+
+    bool IsDedicatedImage() const { return dedicated && dedicated->handle.type == kVulkanObjectTypeImage; }
 
     VkDeviceMemory mem() const { return handle_.Cast<VkDeviceMemory>(); }
-
-    virtual ~DEVICE_MEMORY_STATE() { Destroy(); }
-
-    void RemoveParent(BASE_NODE *parent_node) override;
-
-    void Destroy() override;
 
     const BindingsType &ObjectBindings() const { return parent_nodes_; }
 };
@@ -121,40 +107,23 @@ struct hash<MEM_BINDING> {
 
 // Superclass for bindable object state (currently images, buffers and acceleration structures)
 class BINDABLE : public BASE_NODE {
+  protected:
+    using BoundMemoryMap = small_unordered_map<VkDeviceMemory, MEM_BINDING, 1>;
+    BoundMemoryMap bound_memory_;
+
   public:
-    using BoundMemorySet = small_unordered_set<DEVICE_MEMORY_STATE *, 1>;
-
-    bool sparse;  // Is this object being bound with sparse memory or not?
-    // Non-sparse binding data
-    MEM_BINDING binding;
-    // Memory requirements for this BINDABLE
-    VkMemoryRequirements requirements;
-    // bool to track if memory requirements were checked
-    bool memory_requirements_checked;
     // Tracks external memory types creating resource
-    VkExternalMemoryHandleTypeFlags external_memory_handle;
-    // Sparse binding data, initially just tracking MEM_BINDING per mem object
-    //  There's more data for sparse bindings so need better long-term solution
-    // TODO : Need to update solution to track all sparse binding data
-    layer_data::unordered_set<MEM_BINDING> sparse_bindings;
-    // True if memory will be imported/exported from/to an Android Hardware Buffer
-    bool external_ahb;
-    bool unprotected;  // can't be used for protected memory
-
-    BoundMemorySet bound_memory_set_;
+    const VkExternalMemoryHandleTypeFlags external_memory_handle;
+    const bool sparse;       // Is this object being bound with sparse memory or not?
+    const bool unprotected;  // can't be used for protected memory
 
     template <typename Handle>
-    BINDABLE(Handle h, VulkanObjectType t)
+    BINDABLE(Handle h, VulkanObjectType t, bool is_sparse, bool is_unprotected, VkExternalMemoryHandleTypeFlags handle_type)
         : BASE_NODE(h, t),
-          sparse(false),
-          binding{},
-          requirements{},
-          memory_requirements_checked(false),
-          external_memory_handle(0),
-          sparse_bindings{},
-          external_ahb(false),
-          unprotected(true),
-          bound_memory_set_{} {};
+          bound_memory_{},
+          external_memory_handle(handle_type),
+          sparse(is_sparse),
+          unprotected(is_unprotected) {}
 
     virtual ~BINDABLE() {
         if (!Destroyed()) {
@@ -164,23 +133,20 @@ class BINDABLE : public BASE_NODE {
 
     void Destroy() override;
 
-    // Update the cached set of memory bindings.
-    // Code that changes binding.mem or sparse_bindings must call UpdateBoundMemorySet()
-    void UpdateBoundMemorySet() {
-        bound_memory_set_.clear();
-        if (!sparse) {
-            if (binding.mem_state) bound_memory_set_.insert(binding.mem_state.get());
-        } else {
-            for (const auto &sb : sparse_bindings) {
-                bound_memory_set_.insert(sb.mem_state.get());
-            }
-        }
-    }
-
     // Return unordered set of memory objects that are bound
     // Instead of creating a set from scratch each query, return the cached one
-    const BoundMemorySet &GetBoundMemory() const { return bound_memory_set_; }
+    const BoundMemoryMap &GetBoundMemory() const { return bound_memory_; }
+
+    const MEM_BINDING *Binding() const {
+        return (!sparse && bound_memory_.size() == 1) ? &(bound_memory_.begin()->second) : nullptr;
+    }
+
+    const DEVICE_MEMORY_STATE *MemState() const { return Binding() ? Binding()->mem_state.get() : nullptr; }
 
     void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset);
     void SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize mem_offset, const VkDeviceSize mem_size);
+
+    bool IsExternalAHB() const {
+        return (external_memory_handle & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
+    }
 };
