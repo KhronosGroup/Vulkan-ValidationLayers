@@ -733,7 +733,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     const IMAGE_STATE* image_state = GetImageState(image);
 
     if (image_state->disjoint == false) {
-        if (!image_state->memory_requirements_checked && !image_state->external_memory_handle) {
+        if (!image_state->memory_requirements_checked[0] && !image_state->external_memory_handle) {
             skip |= LogWarning(device, kVUID_BestPractices_ImageMemReqNotCalled,
                                "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
                                api_name, report_data->FormatHandle(image).c_str());
@@ -745,7 +745,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
 
     const DEVICE_MEMORY_STATE* mem_state = GetDevMemState(memory);
 
-    if (mem_state->alloc_info.allocationSize == image_state->requirements.size &&
+    if (mem_state->alloc_info.allocationSize == image_state->requirements[0].size &&
         mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_SmallDedicatedAllocation,
@@ -764,7 +764,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
         uint32_t suggested_type = 0;
 
         for (uint32_t i = 0; i < phys_dev_mem_props.memoryTypeCount; i++) {
-            if ((1u << i) & image_state->requirements.memoryTypeBits) {
+            if ((1u << i) & image_state->requirements[0].memoryTypeBits) {
                 if (phys_dev_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
                     supports_lazy = true;
                     suggested_type = i;
@@ -781,7 +781,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
                 "%s: Attempting to bind memory type %u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
                 "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %u here instead to save "
                 "%" PRIu64 " bytes of physical memory.",
-                api_name, mem_state->alloc_info.memoryTypeIndex, suggested_type, image_state->requirements.size);
+                api_name, mem_state->alloc_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
         }
     }
 
@@ -1833,7 +1833,7 @@ bool BestPractices::ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32
     if (ib_state == nullptr || cmd_state->index_buffer_binding.buffer_state->Destroyed()) return skip;
 
     const VkIndexType ib_type = cmd_state->index_buffer_binding.index_type;
-    const auto& ib_mem_state = *ib_state->binding.mem_state;
+    const auto& ib_mem_state = *ib_state->MemState();
     const VkDeviceSize ib_mem_offset = ib_mem_state.mapped_range.offset;
     const void* ib_mem = ib_mem_state.p_driver_data;
     bool primitive_restart_enable = false;
@@ -2392,7 +2392,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                                        report_data->FormatHandle(image_state->image()).c_str());
                 }
             }
-            if (!image_state->memory_requirements_checked) {
+            if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
                 skip |= LogWarning(image_state->image(), kVUID_Core_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding sparse memory to %s without first calling "
@@ -2416,7 +2416,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                                        report_data->FormatHandle(image_state->image()).c_str());
                 }
             }
-            if (!image_state->memory_requirements_checked) {
+            if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
                 skip |= LogWarning(image_state->image(), kVUID_Core_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding opaque sparse memory to %s without first calling "

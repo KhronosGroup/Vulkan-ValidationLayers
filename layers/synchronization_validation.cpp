@@ -26,7 +26,7 @@
 #include "synchronization_validation.h"
 #include "sync_utils.h"
 
-static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
+static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.Binding(); }
 
 static bool SimpleBinding(const IMAGE_STATE &image_state) {
     bool simple = SimpleBinding(static_cast<const BINDABLE &>(image_state)) || image_state.is_swapchain_image ||
@@ -226,7 +226,8 @@ static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex, Re
                                                  ResourceUsageTag::kMaxCount, CMD_NONE);
 
 static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) {
-    return bindable.binding.offset + bindable.binding.mem_state->fake_base_address;
+    const auto *binding = bindable.Binding();
+    return binding ? binding->offset + binding->mem_state->fake_base_address : 0;
 }
 static VkDeviceSize ResourceBaseAddress(const IMAGE_STATE &image_state) {
     VkDeviceSize base_address;
@@ -3703,7 +3704,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
 
     const auto *src_image = Get<IMAGE_STATE>(srcImage);
     const auto *dst_buffer = Get<BUFFER_STATE>(dstBuffer);
-    const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->binding.mem_state->mem() : VK_NULL_HANDLE;
+    const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->mem() : VK_NULL_HANDLE;
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
@@ -3762,7 +3763,7 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
 
     const auto *src_image = Get<IMAGE_STATE>(srcImage);
     auto *dst_buffer = Get<BUFFER_STATE>(dstBuffer);
-    const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->binding.mem_state->mem() : VK_NULL_HANDLE;
+    const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->mem() : VK_NULL_HANDLE;
     const VulkanTypedHandle dst_handle(dst_mem, kVulkanObjectTypeDeviceMemory);
 
     for (uint32_t region = 0; region < regionCount; region++) {

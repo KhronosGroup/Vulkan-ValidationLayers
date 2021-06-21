@@ -62,12 +62,9 @@ class IMAGE_STATE : public BINDABLE {
     VkFormatFeatureFlags format_features = 0;
     // Need to memory requirments for each plane if image is disjoint
     bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
-    VkMemoryRequirements plane0_requirements;
-    bool plane0_memory_requirements_checked;
-    VkMemoryRequirements plane1_requirements;
-    bool plane1_memory_requirements_checked;
-    VkMemoryRequirements plane2_requirements;
-    bool plane2_memory_requirements_checked;
+    static const int MAX_PLANES = 3;
+    std::array<VkMemoryRequirements, MAX_PLANES> requirements;
+    std::array<bool, MAX_PLANES> memory_requirements_checked;
 
     const image_layout_map::Encoder subresource_encoder;                             // Subresource resolution encoder
     std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
@@ -131,20 +128,18 @@ class IMAGE_STATE : public BINDABLE {
         Destroy();
     };
 
-    void Destroy() override {
-        RemoveAliasingImages();
-        BINDABLE::Destroy();
-    }
+    void Destroy() override;
 
-    void AddAliasingImage(layer_data::unordered_set<IMAGE_STATE *> &bound_images);
-
-    void RemoveAliasingImages();
+    void AddAliasingImage(IMAGE_STATE *bound_images);
 
     VkExtent3D GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const;
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
         return ::NormalizeSubresourceRange(createInfo, range);
     }
+
+  protected:
+    virtual void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
 };
 
 class IMAGE_VIEW_STATE : public BASE_NODE {

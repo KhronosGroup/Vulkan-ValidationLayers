@@ -28,45 +28,68 @@
 #include "device_memory_state.h"
 #include "image_state.h"
 
-void DEVICE_MEMORY_STATE::RemoveParent(BASE_NODE *parent) {
-    // Prevent Control Flow Integrity failures from casting any parent to IMAGE_STATE,
-    // Other parent types do not participate in the bound_images spider web.
-    // TODO: This is not a great solution and bound_images should be cleaned up by further
-    // state object refactoring.
-    if (parent->Handle().type == kVulkanObjectTypeImage) {
-        auto it = bound_images.find(static_cast<IMAGE_STATE *>(parent));
-        if (it != bound_images.end()) {
-            IMAGE_STATE *image_state = *it;
-            image_state->aliasing_images.clear();
-            bound_images.erase(it);
-        }
-    }
-    BASE_NODE::RemoveParent(parent);
+static VkExternalMemoryHandleTypeFlags GetExportHandleType(const VkMemoryAllocateInfo *p_alloc_info) {
+    auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(p_alloc_info->pNext);
+    return export_info ? export_info->handleTypes : 0;
 }
 
-void DEVICE_MEMORY_STATE::Destroy() {
-    // This is one way clear. Because the bound_images include cross references, the one way clear loop could clear the whole
-    // reference. It doesn't need two ways clear.
-    for (auto *bound_image : bound_images) {
-        if (bound_image) {
-            bound_image->aliasing_images.clear();
-        }
+static VkExternalMemoryHandleTypeFlags GetImportHandleType(const VkMemoryAllocateInfo *p_alloc_info) {
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    auto win32_import = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(p_alloc_info->pNext);
+    if (win32_import) {
+        return win32_import->handleType;
     }
-    BASE_NODE::Destroy();
+#endif
+    auto fd_import = LvlFindInChain<VkImportMemoryFdInfoKHR>(p_alloc_info->pNext);
+    if (fd_import) {
+        return fd_import->handleType;
+    }
+    auto host_pointer_import = LvlFindInChain<VkImportMemoryHostPointerInfoEXT>(p_alloc_info->pNext);
+    if (host_pointer_import) {
+        return host_pointer_import->handleType;
+    }
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    // AHB Import doesn't have handle in the pNext struct
+    // It should be assumed that all imported AHB can only have the same, single handleType
+    auto ahb_import = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(p_alloc_info->pNext);
+    if ((ahb_import) && (ahb_import->buffer != nullptr)) {
+        return VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+    return 0;
 }
+
+static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMemoryHeap &memory_heap) {
+    auto alloc_flags = LvlFindInChain<VkMemoryAllocateFlagsInfo>(p_alloc_info->pNext);
+    if (alloc_flags) {
+        auto dev_mask = alloc_flags->deviceMask;
+        return ((dev_mask != 0) && (dev_mask & (dev_mask - 1))) != 0;
+    } else {
+        return (memory_heap.flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) != 0;
+    }
+}
+
+DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+                                         const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
+                                         layer_data::optional<DedicatedBinding> &&dedicated_binding)
+    : BASE_NODE(mem, kVulkanObjectTypeDeviceMemory),
+      alloc_info(p_alloc_info),
+      export_handle_type_flags(GetExportHandleType(p_alloc_info)),
+      import_handle_type_flags(GetImportHandleType(p_alloc_info)),
+      unprotected((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0),
+      multi_instance(IsMultiInstance(p_alloc_info, memory_heap)),
+      dedicated(std::move(dedicated_binding)),
+      mapped_range{},
+      p_driver_data(nullptr),
+      fake_base_address(fake_address) {}
 
 void BINDABLE::Destroy() {
-    if (!sparse) {
-        if (binding.mem_state) {
-            binding.mem_state->RemoveParent(this);
-        }
-    } else {  // Sparse, clear all bindings
-        for (auto &sparse_mem_binding : sparse_bindings) {
-            if (sparse_mem_binding.mem_state) {
-                sparse_mem_binding.mem_state->RemoveParent(this);
-            }
+    for (auto &item: bound_memory_) {
+        if (item.second.mem_state) {
+            item.second.mem_state->RemoveParent(this);
         }
     }
+    bound_memory_.clear();
     BASE_NODE::Destroy();
 }
 
@@ -76,11 +99,17 @@ void BINDABLE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDevice
     if (!mem) {
         return;
     }
-    binding.mem_state = mem;
-    binding.offset = memory_offset;
-    binding.size = requirements.size;
+    assert(!sparse);
+    if (bound_memory_.size() > 0) {
+        bound_memory_.clear();
+    }
+
+    MEM_BINDING binding = {
+        mem,
+        memory_offset,
+    };
     binding.mem_state->AddParent(this);
-    UpdateBoundMemorySet();  // force recreation of cached set
+    bound_memory_.insert({mem->mem(), binding});
 }
 
 // For NULL mem case, clear any previous binding Else...
@@ -98,6 +127,5 @@ void BINDABLE::SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, co
     MEM_BINDING sparse_binding = {mem, mem_offset, mem_size};
     sparse_binding.mem_state->AddParent(this);
     // Need to set mem binding for this object
-    sparse_bindings.insert(sparse_binding);
-    UpdateBoundMemorySet();
+    bound_memory_.insert({mem->mem(), sparse_binding});
 }

@@ -911,14 +911,16 @@ bool CoreChecks::ValidateGeneralBufferDescriptor(const char *caller, const DrawD
     }
     if (buffer) {
         if (buffer_node && !buffer_node->sparse) {
-            for (const auto *mem_binding : buffer_node->GetBoundMemory()) {
-                if (mem_binding->Destroyed()) {
+            for (const auto &item: buffer_node->GetBoundMemory()) {
+                auto &binding = item.second;
+                if (binding.mem_state->Destroyed()) {
                     auto set = descriptor_set->GetSet();
                     return LogError(set, vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                                     "binding #%" PRIu32 " index %" PRIu32 " is uses buffer %s that references invalid memory %s.",
                                     report_data->FormatHandle(set).c_str(), caller, binding_info.first, index,
-                                    report_data->FormatHandle(buffer).c_str(), report_data->FormatHandle(mem_binding->mem()).c_str());
+                                    report_data->FormatHandle(buffer).c_str(),
+                                    report_data->FormatHandle(binding.mem_state->mem()).c_str());
                 }
             }
         }
@@ -1441,15 +1443,17 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
                                 report_data->FormatHandle(acc).c_str());
             }
         } else {
-            for (const auto *mem_binding : acc_node->GetBoundMemory()) {
-                if (mem_binding->Destroyed()) {
+            for (const auto &item: acc_node->GetBoundMemory()) {
+                auto &mem_binding = item.second;
+                if (mem_binding.mem_state->Destroyed()) {
                     auto set = descriptor_set->GetSet();
                     return LogError(set, vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                                     "binding #%" PRIu32 " index %" PRIu32
                                     " is using acceleration structure %s that references invalid memory %s.",
                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                    report_data->FormatHandle(acc).c_str(), report_data->FormatHandle(mem_binding->mem()).c_str());
+                                    report_data->FormatHandle(acc).c_str(),
+                                    report_data->FormatHandle(mem_binding.mem_state->mem()).c_str());
                 }
             }
         }
@@ -1467,15 +1471,17 @@ bool CoreChecks::ValidateAccelerationDescriptor(const char *caller, const DrawDi
                                 report_data->FormatHandle(acc).c_str());
             }
         } else {
-            for (const auto *mem_binding : acc_node->GetBoundMemory()) {
-                if (mem_binding->Destroyed()) {
+            for (const auto &item : acc_node->GetBoundMemory()) {
+                auto &mem_binding = item.second;
+                if (mem_binding.mem_state->Destroyed()) {
                     auto set = descriptor_set->GetSet();
                     return LogError(set, vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                                     "binding #%" PRIu32 " index %" PRIu32
                                     " is using acceleration structure %s that references invalid memory %s.",
                                     report_data->FormatHandle(set).c_str(), caller, binding, index,
-                                    report_data->FormatHandle(acc).c_str(), report_data->FormatHandle(mem_binding->mem()).c_str());
+                                    report_data->FormatHandle(acc).c_str(),
+                                    report_data->FormatHandle(mem_binding.mem_state->mem()).c_str());
                 }
             }
         }

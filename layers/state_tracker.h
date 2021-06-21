@@ -1101,7 +1101,6 @@ class ValidationStateTracker : public ValidationObject {
                                                 VkResult result) override;
 
     // State Utilty functions
-    void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     void DeleteDescriptorSetPools();
     void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
@@ -1128,7 +1127,6 @@ class ValidationStateTracker : public ValidationObject {
                                          uint32_t set, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet* pDescriptorWrites);
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
-    void RecordCreateBufferANDROID(const VkBufferCreateInfo* create_info, BUFFER_STATE* bs_node);
     void RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                  VkSamplerYcbcrConversion ycbcr_conversion);
     void RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo* create_info,

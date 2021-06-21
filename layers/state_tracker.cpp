@@ -91,10 +91,6 @@ std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::Get
 // This could also move into a seperate core_validation_android.cpp file... ?
 
 void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
-    const VkExternalMemoryImageCreateInfo *emici = LvlFindInChain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
-    if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-        is_node->external_ahb = true;
-    }
     const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
         is_node->has_ahb_format = true;
@@ -104,13 +100,6 @@ void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *c
         if (it != ahb_ext_formats_map.end()) {
             is_node->format_features = it->second;
         }
-    }
-}
-
-void ValidationStateTracker::RecordCreateBufferANDROID(const VkBufferCreateInfo *create_info, BUFFER_STATE *bs_node) {
-    const VkExternalMemoryBufferCreateInfo *embci = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
-    if (embci && (embci->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-        bs_node->external_ahb = true;
     }
 }
 
@@ -144,8 +133,6 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
 #else
 
 void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
-
-void ValidationStateTracker::RecordCreateBufferANDROID(const VkBufferCreateInfo *create_info, BUFFER_STATE *bs_node) {}
 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                                        VkSamplerYcbcrConversion ycbcr_conversion,
@@ -208,9 +195,9 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
 
     // Record the memory requirements in case they won't be queried
     // External AHB memory can't be queried until after memory is bound
-    if (is_node->external_ahb == false) {
+    if (is_node->IsExternalAHB() == false) {
         if (is_node->disjoint == false) {
-            DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
+            DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements[0]);
         } else {
             uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
             VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO, nullptr};
@@ -222,24 +209,23 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
             assert(plane_count != 0);  // assumes each format has at least first plane
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
             DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
-            is_node->plane0_requirements = mem_reqs2.memoryRequirements;
+            is_node->requirements[0] = mem_reqs2.memoryRequirements;
 
             if (plane_count >= 2) {
                 image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
                 DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
-                is_node->plane1_requirements = mem_reqs2.memoryRequirements;
+                is_node->requirements[1] = mem_reqs2.memoryRequirements;
             }
             if (plane_count >= 3) {
                 image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
                 DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
-                is_node->plane2_requirements = mem_reqs2.memoryRequirements;
+                is_node->requirements[2] = mem_reqs2.memoryRequirements;
             }
         }
     }
 
     AddImageStateProps(*is_node, device, physical_device);
 
-    is_node->unprotected = ((pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0);
     imageMap.emplace(*pImage, std::move(is_node));
 }
 
@@ -371,13 +357,8 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
     auto buffer_state = std::make_shared<BUFFER_STATE>(*pBuffer, pCreateInfo);
 
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordCreateBufferANDROID(pCreateInfo, buffer_state.get());
-    }
     // Get a set of requirements in the case the app does not
     DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
-
-    buffer_state->unprotected = ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0);
 
     bufferMap.emplace(*pBuffer, std::move(buffer_state));
 }
@@ -654,79 +635,6 @@ const BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHan
 
 BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) {
     return GetObjectMemBindingImpl<ValidationStateTracker *, BINDABLE *>(this, typed_handle);
-}
-
-void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkMemoryAllocateInfo *pAllocateInfo) {
-    assert(object != NULL);
-
-    auto fake_address = fake_memory.Alloc(pAllocateInfo->allocationSize);
-    memObjMap[mem] = std::make_shared<DEVICE_MEMORY_STATE>(object, mem, pAllocateInfo, fake_address);
-    auto mem_info = memObjMap[mem].get();
-
-    auto dedicated = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
-    if (dedicated) {
-        if (dedicated->buffer) {
-            const auto *buffer_state = GetBufferState(dedicated->buffer);
-            if (buffer_state) {
-                mem_info->dedicated_handle = VulkanTypedHandle(dedicated->buffer, kVulkanObjectTypeBuffer);
-                mem_info->dedicated_create_info.buffer = buffer_state->createInfo;
-            }
-        } else if (dedicated->image) {
-            const auto *image_state = GetImageState(dedicated->image);
-            if (image_state) {
-                mem_info->dedicated_handle = VulkanTypedHandle(dedicated->image, kVulkanObjectTypeImage);
-                mem_info->dedicated_create_info.image = image_state->createInfo;
-            }
-        }
-    }
-    auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
-    if (export_info) {
-        mem_info->is_export = true;
-        mem_info->export_handle_type_flags = export_info->handleTypes;
-    }
-
-    auto alloc_flags = LvlFindInChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
-    if (alloc_flags) {
-        auto dev_mask = alloc_flags->deviceMask;
-        if ((dev_mask != 0) && (dev_mask & (dev_mask - 1))) {
-            mem_info->multi_instance = true;
-        }
-    }
-    auto heap_index = phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].heapIndex;
-    mem_info->multi_instance |= (((phys_dev_mem_props.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) != 0) &&
-                                 physical_device_count > 1);
-
-    // Assumes validation already for only a single import operation in the pNext
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    auto win32_import = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
-    if (win32_import) {
-        mem_info->is_import = true;
-        mem_info->import_handle_type_flags = win32_import->handleType;
-    }
-#endif
-    auto fd_import = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
-    if (fd_import) {
-        mem_info->is_import = true;
-        mem_info->import_handle_type_flags = fd_import->handleType;
-    }
-    auto host_pointer_import = LvlFindInChain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
-    if (host_pointer_import) {
-        mem_info->is_import = true;
-        mem_info->import_handle_type_flags = host_pointer_import->handleType;
-    }
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    // AHB Import doesn't have handle in the pNext struct
-    // It should be assumed that all imported AHB can only have the same, single handleType
-    auto ahb_import = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
-    if ((ahb_import) && (ahb_import->buffer != nullptr)) {
-        mem_info->is_import_ahb = true;
-        mem_info->is_import = true;
-        mem_info->import_handle_type_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-    }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-
-    const VkMemoryType memory_type = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex];
-    mem_info->unprotected = ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0);
 }
 
 void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point,
@@ -1942,15 +1850,42 @@ void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32
 void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                           const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
                                                           VkResult result) {
-    if (VK_SUCCESS == result) {
-        AddMemObjInfo(device, *pMemory, pAllocateInfo);
+    if (VK_SUCCESS != result) {
+        return;
     }
+    const auto &memory_type = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex];
+    const auto &memory_heap = phys_dev_mem_props.memoryHeaps[memory_type.heapIndex];
+    auto fake_address = fake_memory.Alloc(pAllocateInfo->allocationSize);
+
+    layer_data::optional<DedicatedBinding> dedicated_binding;
+
+    auto dedicated = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+    if (dedicated) {
+        if (dedicated->buffer) {
+            const auto *buffer_state = GetBufferState(dedicated->buffer);
+            assert(buffer_state);
+            if (!buffer_state) {
+                return;
+            }
+            dedicated_binding.emplace(dedicated->buffer, buffer_state->createInfo);
+        } else if (dedicated->image) {
+            const auto *image_state = GetImageState(dedicated->image);
+            assert(image_state);
+            if (!image_state) {
+                return;
+            }
+            dedicated_binding.emplace(dedicated->image, image_state->createInfo);
+        }
+    }
+    memObjMap[*pMemory] = std::make_shared<DEVICE_MEMORY_STATE>(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap,
+                                                                std::move(dedicated_binding));
     return;
 }
 
 void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
     if (!mem) return;
     DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
+    if (!mem_info) return;
     // Any bound cmd buffers are now invalid
     mem_info->Destroy();
     fake_memory.Free(mem_info->fake_base_address);
@@ -2266,17 +2201,16 @@ void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image
     if (image_state) {
         if (plane_info != nullptr) {
             // Multi-plane image
-            image_state->memory_requirements_checked = false;  // Each image plane needs to be checked itself
             if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_0_BIT) {
-                image_state->plane0_memory_requirements_checked = true;
+                image_state->memory_requirements_checked[0] = true;
             } else if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_1_BIT) {
-                image_state->plane1_memory_requirements_checked = true;
+                image_state->memory_requirements_checked[1] = true;
             } else if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_2_BIT) {
-                image_state->plane2_memory_requirements_checked = true;
+                image_state->memory_requirements_checked[2] = true;
             }
-        } else {
+        } else if (!image_state->disjoint) {
             // Single Plane image
-            image_state->memory_requirements_checked = true;
+            image_state->memory_requirements_checked[0] = true;
         }
     }
 }
@@ -4163,15 +4097,21 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
                 image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
 
                 // All images bound to this swapchain and index are aliases
-                image_state->AddAliasingImage(swap_image.bound_images);
+                for (auto *other_image : swap_image.bound_images) {
+                    image_state->AddAliasingImage(other_image);
+                }
             }
         } else {
             // Track bound memory range information
             auto mem_info = GetDevMemShared(bindInfo.memory);
             if (mem_info) {
-                mem_info->bound_images.insert(image_state);
                 if (image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) {
-                    image_state->AddAliasingImage(mem_info->bound_images);
+                    for (auto *base_node : mem_info->ObjectBindings()) {
+                        if (base_node->Handle().type == kVulkanObjectTypeImage) {
+                            auto other_image = static_cast<IMAGE_STATE *>(base_node);
+                            image_state->AddAliasingImage(other_image);
+                        }
+                    }
                 }
                 // Track objects tied to memory
                 image_state->SetMemBinding(mem_info, bindInfo.memoryOffset);
@@ -5444,7 +5384,6 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_state->bind_swapchain = swapchain;
             image_state->bind_swapchain_imageIndex = i;
             image_state->is_swapchain_image = true;
-            image_state->unprotected = ((image_ci.flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0);
 
             // Since swapchains can't be linear, we can create an encoder here, and SyncValNeeds a fake_base_address
             image_state->fragment_encoder = std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(
@@ -5457,7 +5396,9 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                 // All others reuse
                 image_state->swapchain_fake_address = (*swapchain_image.bound_images.cbegin())->swapchain_fake_address;
                 // Since there are others, need to update the aliasing information
-                image_state->AddAliasingImage(swapchain_image.bound_images);
+                for (auto other_image : swapchain_image.bound_images) {
+                    image_state->AddAliasingImage(other_image);
+                }
             }
 
             swapchain_image.image_state = image_state;  // Don't move, it's already a reference to the imageMap
