@@ -3973,6 +3973,39 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(V
     return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, true);
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                                const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
+                                                                uint32_t firstInstance, uint32_t stride) const {
+    bool skip = false;
+    if (stride & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-stride-04936",
+                         "CmdDrawMultiEXT: parameter, uint32_t stride (%" PRIu32 ") is not a multiple of 4.", stride);
+    }
+    if (drawCount && nullptr == pVertexInfo) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-drawCount-04935",
+                         "CmdDrawMultiEXT: parameter, VkMultiDrawInfoEXT *pVertexInfo must be a valid pointer to memory containing "
+                         "one or more valid instances of VkMultiDrawInfoEXT structures");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                                       const VkMultiDrawIndexedInfoEXT *pIndexInfo,
+                                                                       uint32_t instanceCount, uint32_t firstInstance,
+                                                                       uint32_t stride, const int32_t *pVertexOffset) const {
+    bool skip = false;
+    if (stride & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-stride-04941",
+                         "CmdDrawMultiIndexedEXT: parameter, uint32_t stride (%" PRIu32 ") is not a multiple of 4.", stride);
+    }
+    if (drawCount && nullptr == pIndexInfo) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940",
+                         "CmdDrawMultiIndexedEXT: parameter, VkMultiDrawIndexedInfoEXT *pIndexInfo must be a valid pointer to "
+                         "memory containing one or more valid instances of VkMultiDrawIndexedInfoEXT structures");
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                                     const VkClearRect *pRects) const {

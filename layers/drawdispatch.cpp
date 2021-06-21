@@ -88,6 +88,51 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
     }
 };
 
+struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
+    DispatchVuidsCmdDrawMultiEXT() : DrawDispatchVuid() {
+        pipeline_bound                     = "VUID-vkCmdDrawMultiEXT-None-02700";
+        dynamic_state                      = "VUID-vkCmdDrawMultiEXT-commandBuffer-02701";
+        vertex_binding                     = "VUID-vkCmdDrawMultiEXT-None-04007";
+        vertex_binding_null                = "VUID-vkCmdDrawMultiEXT-None-04008";
+        compatible_pipeline                = "VUID-vkCmdDrawMultiEXT-None-02697";
+        render_pass_compatible             = "VUID-vkCmdDrawMultiEXT-renderPass-02684";
+        subpass_index                      = "VUID-vkCmdDrawMultiEXT-subpass-02685";
+        sample_location                    = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-02689";
+        linear_sampler                     = "VUID-vkCmdDrawMultiEXT-magFilter-04553";
+        cubic_sampler                      = "VUID-vkCmdDrawMultiEXT-None-02692";
+        viewport_count                     = "VUID-vkCmdDrawMultiEXT-viewportCount-03417";
+        scissor_count                      = "VUID-vkCmdDrawMultiEXT-scissorCount-03418";
+        viewport_scissor_count             = "VUID-vkCmdDrawMultiEXT-viewportCount-03419";
+        primitive_topology                 = "VUID-vkCmdDrawMultiEXT-primitiveTopology-03420";
+        corner_sampled_address_mode        = "VUID-vkCmdDrawMultiEXT-flags-02696";
+        subpass_input                      = "VUID-vkCmdDrawMultiEXT-None-02686";
+        imageview_atomic                   = "VUID-vkCmdDrawMultiEXT-None-02691";
+        push_constants_set                 = "VUID-vkCmdDrawMultiEXT-None-02698";
+        image_subresources                 = "VUID-vkCmdDrawMultiEXT-None-04584";
+        descriptor_valid                   = "VUID-vkCmdDrawMultiEXT-None-02699";
+        sampler_imageview_type             = "VUID-vkCmdDrawMultiEXT-None-02702";
+        sampler_implicitLod_dref_proj      = "VUID-vkCmdDrawMultiEXT-None-02703";
+        sampler_bias_offset                = "VUID-vkCmdDrawMultiEXT-None-02704";
+        vertex_binding_attribute           = "VUID-vkCmdDrawMultiEXT-None-02721";
+        dynamic_state_setting_commands     = "VUID-vkCmdDrawMultiEXT-None-02859";
+        rasterization_samples              = "VUID-vkCmdDrawMultiEXT-rasterizationSamples-04740";
+        unprotected_command_buffer         = "VUID-vkCmdDrawMultiEXT-commandBuffer-02707";
+        protected_command_buffer           = "VUID-vkCmdDrawMultiEXT-commandBuffer-02712";
+        max_multiview_instance_index       = "VUID-vkCmdDrawMultiEXT-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic                   = "VUID-vkCmdDrawMultiEXT-None-02693";
+        filter_cubic                       = "VUID-vkCmdDrawMultiEXT-filterCubic-02694";
+        filter_cubic_min_max               = "VUID-vkCmdDrawMultiEXT-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMultiEXT-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points               = "VUID-vkCmdDrawMultiEXT-None-04875";
+        rasterizer_discard_enable          = "VUID-vkCmdDrawMultiEXT-None-04876";
+        depth_bias_enable                  = "VUID-vkCmdDrawMultiEXT-None-04877";
+        logic_op                           = "VUID-vkCmdDrawMultiEXT-logicOp-04878";
+        primitive_restart_enable           = "VUID-vkCmdDrawMultiEXT-None-04879";
+        vertex_input_binding_stride        = "VUID-vkCmdDrawMultiEXT-pStrides-04884";
+        vertex_input                       = kVUID_Core_CmdDrawMultiEXT_VertexInput;
+    }
+};
+
 struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawIndexed-None-02700";
@@ -130,6 +175,51 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         primitive_restart_enable           = "VUID-vkCmdDrawIndexed-None-04879";
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexed-pStrides-04884";
         vertex_input                       = kVUID_Core_CmdDrawIndexed_VertexInput;
+    }
+};
+
+struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
+    DispatchVuidsCmdDrawMultiIndexedEXT() : DrawDispatchVuid() {
+        pipeline_bound = "VUID-vkCmdDrawMultiIndexedEXT-None-02700";
+        dynamic_state = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02701";
+        vertex_binding = "VUID-vkCmdDrawMultiIndexedEXT-None-04007";
+        vertex_binding_null = "VUID-vkCmdDrawMultiIndexedEXT-None-04008";
+        compatible_pipeline = "VUID-vkCmdDrawMultiIndexedEXT-None-02697";
+        render_pass_compatible = "VUID-vkCmdDrawMultiIndexedEXT-renderPass-02684";
+        subpass_index = "VUID-vkCmdDrawMultiIndexedEXT-subpass-02685";
+        sample_location = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-02689";
+        linear_sampler = "VUID-vkCmdDrawMultiIndexedEXT-magFilter-04553";
+        cubic_sampler = "VUID-vkCmdDrawMultiIndexedEXT-None-02692";
+        viewport_count = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-03417";
+        scissor_count = "VUID-vkCmdDrawMultiIndexedEXT-scissorCount-03418";
+        viewport_scissor_count = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-03419";
+        primitive_topology = "VUID-vkCmdDrawMultiIndexedEXT-primitiveTopology-03420";
+        corner_sampled_address_mode = "VUID-vkCmdDrawMultiIndexedEXT-flags-02696";
+        subpass_input = "VUID-vkCmdDrawMultiIndexedEXT-None-02686";
+        imageview_atomic = "VUID-vkCmdDrawMultiIndexedEXT-None-02691";
+        push_constants_set = "VUID-vkCmdDrawMultiIndexedEXT-None-02698";
+        image_subresources = "VUID-vkCmdDrawMultiIndexedEXT-None-04584";
+        descriptor_valid = "VUID-vkCmdDrawMultiIndexedEXT-None-02699";
+        sampler_imageview_type = "VUID-vkCmdDrawMultiIndexedEXT-None-02702";
+        sampler_implicitLod_dref_proj = "VUID-vkCmdDrawMultiIndexedEXT-None-02703";
+        sampler_bias_offset = "VUID-vkCmdDrawMultiIndexedEXT-None-02704";
+        vertex_binding_attribute = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
+        dynamic_state_setting_commands = "VUID-vkCmdDrawMultiIndexedEXT-None-02859";
+        rasterization_samples = "VUID-vkCmdDrawMultiIndexedEXT-rasterizationSamples-04740";
+        unprotected_command_buffer = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02707";
+        protected_command_buffer = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02712";
+        max_multiview_instance_index = "VUID-vkCmdDrawMultiIndexedEXT-maxMultiviewInstanceIndex-02688";
+        img_filter_cubic = "VUID-vkCmdDrawMultiIndexedEXT-None-02693";
+        filter_cubic = "VUID-vkCmdDrawMultiIndexedEXT-filterCubic-02694";
+        filter_cubic_min_max = "VUID-vkCmdDrawMultiIndexedEXT-filterCubicMinmax-02695";
+        viewport_count_primitive_shading_rate = "VUID-vkCmdDrawMultiIndexedEXT-primitiveFragmentShadingRateWithMultipleViewports-04552";
+        patch_control_points = "VUID-vkCmdDrawMultiIndexedEXT-None-04875";
+        rasterizer_discard_enable = "VUID-vkCmdDrawMultiIndexedEXT-None-04876";
+        depth_bias_enable = "VUID-vkCmdDrawMultiIndexedEXT-None-04877";
+        logic_op = "VUID-vkCmdDrawMultiIndexedEXT-logicOp-04878";
+        primitive_restart_enable = "VUID-vkCmdDrawMultiIndexedEXT-None-04879";
+        vertex_input_binding_stride = "VUID-vkCmdDrawMultiIndexedEXT-pStrides-04884";
+        vertex_input = kVUID_Core_CmdDrawMultiIndexedEXT_VertexInput;
     }
 };
 
@@ -642,7 +732,9 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
 static const std::map<CMD_TYPE, DrawDispatchVuid> kDrawdispatchVuid = {
     {CMD_DRAW, DispatchVuidsCmdDraw()},
+    {CMD_DRAWMULTIEXT, DispatchVuidsCmdDrawMultiEXT()},
     {CMD_DRAWINDEXED, DispatchVuidsCmdDrawIndexed()},
+    {CMD_DRAWMULTIINDEXEDEXT, DispatchVuidsCmdDrawMultiIndexedEXT()},
     {CMD_DRAWINDIRECT, DispatchVuidsCmdDrawIndirect()},
     {CMD_DRAWINDEXEDINDIRECT, DispatchVuidsCmdDrawIndexedIndirect()},
     {CMD_DISPATCH, DispatchVuidsCmdDispatch()},
@@ -712,31 +804,89 @@ bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t 
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
+                                                uint32_t firstInstance, uint32_t stride) const {
+    bool skip = false;
+    if (!enabled_features.multi_draw_features.multiDraw) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-None-04933",
+                         "vkCmdDrawMultiEXT(): The multiDraw feature must be enabled to "
+                         "call this command.");
+    }
+    if (drawCount > phys_dev_ext_props.multi_draw_props.maxMultiDrawCount) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-drawCount-04934",
+                         "vkCmdDrawMultiEXT(): parameter, uint32_t drawCount (%" PRIu32
+                         ") must be less than VkPhysicalDeviceMultiDrawPropertiesEXT::maxMultiDrawCount (%" PRIu32 ").",
+                         drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
+    }
+
+    skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWMULTIEXT, "vkCmdDrawMultiEXT()");
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIEXT, "vkCmdDrawMultiEXT()");
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdDrawIndexedBufferSize(VkCommandBuffer commandBuffer, uint32_t indexCount,
+    uint32_t firstIndex, const char *caller, const char *first_index_vuid) const {
+    bool skip = false;
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND) {
+        unsigned int index_size = 0;
+        const auto &index_buffer_binding = cb_state->index_buffer_binding;
+        if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT16) {
+            index_size = 2;
+        }
+        else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT32) {
+            index_size = 4;
+        }
+        else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT8_EXT) {
+            index_size = 1;
+        }
+        VkDeviceSize end_offset = (index_size * (static_cast<VkDeviceSize>(firstIndex) + indexCount)) + index_buffer_binding.offset;
+        if (end_offset > index_buffer_binding.size) {
+            skip |= LogError(index_buffer_binding.buffer_state->buffer(), first_index_vuid,
+                             "%s: index size (%u) * (firstIndex (%u) + indexCount (%u)) "
+                             "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
+                             " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
+                             caller, index_size, firstIndex, indexCount, index_buffer_binding.offset, end_offset,
+                             index_buffer_binding.size);
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
     bool skip = false;
     skip |= ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
     skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED, "vkCmdDrawIndexed()");
-    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    if (!skip && (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND)) {
-        unsigned int index_size = 0;
-        const auto &index_buffer_binding = cb_state->index_buffer_binding;
-        if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT16) {
-            index_size = 2;
-        } else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT32) {
-            index_size = 4;
-        } else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT8_EXT) {
-            index_size = 1;
-        }
-        VkDeviceSize end_offset = (index_size * (static_cast<VkDeviceSize>(firstIndex) + indexCount)) + index_buffer_binding.offset;
-        if (end_offset > index_buffer_binding.size) {
-            skip |=
-                LogError(index_buffer_binding.buffer_state->buffer(), "VUID-vkCmdDrawIndexed-firstIndex-04932",
-                         "vkCmdDrawIndexed() index size (%d) * (firstIndex (%d) + indexCount (%d)) "
-                         "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
-                         " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
-                         index_size, firstIndex, indexCount, index_buffer_binding.offset, end_offset, index_buffer_binding.size);
-        }
+    skip |= ValidateCmdDrawIndexedBufferSize(commandBuffer, indexCount, firstIndex, "vkCmdDrawIndexed()",
+                                             "VUID-vkCmdDrawIndexed-firstIndex-04932");
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                       const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
+                                                       uint32_t firstInstance, uint32_t stride,
+                                                       const int32_t *pVertexOffset) const {
+    bool skip = false;
+    if (!enabled_features.multi_draw_features.multiDraw) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-None-04937",
+                         "vkCmdDrawMultiIndexedEXT(): The multiDraw feature must be enabled to "
+                         "call this command.");
+    }
+    if (drawCount > phys_dev_ext_props.multi_draw_props.maxMultiDrawCount) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04939",
+                         "vkCmdDrawMultiIndexedEXT(): parameter, uint32_t drawCount (0x%" PRIu32
+                         ") must be less than VkPhysicalDeviceMultiDrawPropertiesEXT::maxMultiDrawCount (0x%" PRIu32 ").",
+                         drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
+    }
+    skip |=
+        ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWMULTIINDEXEDEXT, "vkCmdDrawMultiIndexedEXT()");
+    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIINDEXEDEXT,
+                                "vkCmdDrawMultiIndexedEXT()");
+    for (uint32_t i = 0; i < drawCount; i++) {
+        skip |= ValidateCmdDrawIndexedBufferSize(commandBuffer, pIndexInfo[i].indexCount, pIndexInfo[i].firstIndex,
+                                                 "vkCmdDrawMultiIndexedEXT()", "VUID-vkCmdDrawMultiIndexedEXT-firstIndex-04938");
     }
     return skip;
 }

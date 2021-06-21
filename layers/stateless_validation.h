@@ -1468,6 +1468,14 @@ class StatelessValidation : public ValidationObject {
                                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                               uint32_t maxDrawCount, uint32_t stride) const;
 
+    bool manual_PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                               const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
+                                               uint32_t firstInstance, uint32_t stride) const;
+
+    bool manual_PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                      const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
+                                                      uint32_t firstInstance, uint32_t stride, const int32_t *pVertexOffset) const;
+
     bool manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                    const VkClearRect *pRects) const;

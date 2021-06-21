@@ -1169,8 +1169,16 @@ class CoreChecks : public ValidationStateTracker {
                                              const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const override;
     bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                                 uint32_t firstInstance) const override;
+    bool PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
+                                        uint32_t instanceCount, uint32_t firstInstance, uint32_t stride) const override;
+    bool ValidateCmdDrawIndexedBufferSize(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t firstIndex,
+                                          const char* caller, const char* first_index_vuid) const;
     bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                        uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const override;
+    bool PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                               const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
+                                               uint32_t firstInstance, uint32_t stride,
+                                               const int32_t* pVertexOffset) const override;
     bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                uint32_t drawCount, uint32_t stride) const override;
     bool ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
