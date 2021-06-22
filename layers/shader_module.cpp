@@ -368,6 +368,8 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 decoration_inst.push_back(insn);
                 if (insn.word(2) == spv::DecorationBuiltIn) {
                     builtin_decoration_list.emplace_back(insn.offset(), static_cast<spv::BuiltIn>(insn.word(3)));
+                } else if (insn.word(2) == spv::DecorationSpecId) {
+                    spec_const_map[insn.word(3)] = target_id;
                 }
 
             } break;
@@ -1702,6 +1704,29 @@ std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInte
     }
 
     return out;
+}
+
+uint32_t SHADER_MODULE_STATE::GetSpecConstantByteSize(uint32_t const_id) const {
+    auto itr = spec_const_map.find(const_id);
+    if (itr != spec_const_map.cend()) {
+        const auto def_ins = get_def(itr->second);
+        const auto type_ins = get_def(def_ins.word(1));
+
+        // Specialization constants can only be of type bool, scalar integer, or scalar floating point
+        switch (type_ins.opcode()) {
+            case spv::OpTypeBool:
+                // VUID 00776 spec states: ...If the specialization constant is of type boolean, size must be the byte size of
+                // VkBool32
+                return sizeof(VkBool32);
+            case spv::OpTypeInt:
+                return type_ins.word(2) / 8;
+            case spv::OpTypeFloat:
+                return type_ins.word(2) / 8;
+            default:
+                return decoration_set::kInvalidValue;
+        }
+    }
+    return decoration_set::kInvalidValue;
 }
 
 // Assumes itr points to an OpConstant instruction
