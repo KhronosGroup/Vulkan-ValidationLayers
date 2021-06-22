@@ -4121,6 +4121,253 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
     vk::FreeMemory(m_device->handle(), mem, NULL);
 }
 
+TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBuffer buffer;
+    VkDeviceMemory buffer_mem;
+    VkMemoryRequirements mem_reqs;
+
+    auto buf_info = lvl_init_struct<VkBufferCreateInfo>();
+    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buf_info.size = 256;
+    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+
+    auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
+    alloc_info.allocationSize = mem_reqs.size;
+
+    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    ASSERT_TRUE(pass);
+
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &buffer_mem);
+    ASSERT_VK_SUCCESS(err);
+
+    err = vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    auto buf_barrier = lvl_init_struct<VkBufferMemoryBarrier>();
+    buf_barrier.buffer = buffer;
+    buf_barrier.offset = 0;
+    buf_barrier.size = VK_WHOLE_SIZE;
+
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           0, 0, NULL, 1, &buf_barrier, 0, NULL);
+    m_commandBuffer->end();
+
+    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeMemory-memory-00677");
+    vk::FreeMemory(m_device->handle(), buffer_mem, NULL);
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyBuffer(m_device->handle(), buffer, NULL);
+}
+
+TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImage image;
+    VkDeviceMemory image_mem;
+    VkMemoryRequirements mem_reqs;
+
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                                  VK_IMAGE_TILING_OPTIMAL);
+
+    auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
+    ASSERT_VK_SUCCESS(err);
+
+    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+
+    auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
+    alloc_info.allocationSize = mem_reqs.size;
+    bool pass = false;
+    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    ASSERT_TRUE(pass);
+
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &image_mem);
+    ASSERT_VK_SUCCESS(err);
+
+    err = vk::BindImageMemory(m_device->device(), image, image_mem, 0);
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    img_barrier.image = image;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                           NULL, 0, NULL, 1, &img_barrier);
+    m_commandBuffer->end();
+
+    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeMemory-memory-00677");
+    vk::FreeMemory(m_device->handle(), image_mem, NULL);
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyImage(m_device->handle(), image, NULL);
+}
+
+TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    } else {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!CheckSynchronization2SupportAndInitState(this)) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkBuffer buffer;
+    VkDeviceMemory mem;
+    VkMemoryRequirements mem_reqs;
+
+    VkBufferCreateInfo buf_info = {};
+    buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buf_info.size = 256;
+    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_reqs.size;
+    bool pass = false;
+    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
+        vk::DestroyBuffer(m_device->device(), buffer, NULL);
+        return;
+    }
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    ASSERT_VK_SUCCESS(err);
+
+    err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
+    ASSERT_VK_SUCCESS(err);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
+    m_commandBuffer->begin();
+    auto buf_barrier = lvl_init_struct<VkBufferMemoryBarrier2KHR>();
+    buf_barrier.buffer = buffer;
+    buf_barrier.offset = 0;
+    buf_barrier.size = VK_WHOLE_SIZE;
+    buf_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    buf_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &buf_barrier;
+
+    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+
+    vk::FreeMemory(m_device->handle(), mem, NULL);
+
+    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
+    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyBuffer(m_device->handle(), buffer, NULL);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    } else {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!CheckSynchronization2SupportAndInitState(this)) {
+        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkImage image;
+    VkDeviceMemory image_mem;
+    VkMemoryRequirements mem_reqs;
+
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                                  VK_IMAGE_TILING_OPTIMAL);
+
+    auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
+    ASSERT_VK_SUCCESS(err);
+
+    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+
+    auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
+    alloc_info.allocationSize = mem_reqs.size;
+    bool pass = false;
+    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    ASSERT_TRUE(pass);
+
+    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &image_mem);
+    ASSERT_VK_SUCCESS(err);
+
+    err = vk::BindImageMemory(m_device->device(), image, image_mem, 0);
+    ASSERT_VK_SUCCESS(err);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
+    m_commandBuffer->begin();
+    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
+    img_barrier.image = image;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &img_barrier;
+
+    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+
+    vk::FreeMemory(m_device->handle(), image_mem, NULL);
+
+    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
+    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyImage(m_device->handle(), image, NULL);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     TEST_DESCRIPTION("Delete bufferView bound to cmd buffer, then attempt to submit cmd buffer.");
 
