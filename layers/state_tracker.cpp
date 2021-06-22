@@ -3626,6 +3626,8 @@ void ValidationStateTracker::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer comman
     auto stage_masks = sync_utils::GetGlobalStageMasks(*pDependencyInfo);
 
     RecordCmdSetEvent(commandBuffer, event, stage_masks.src);
+
+    RecordBarriers(commandBuffer, pDependencyInfo);
 }
 
 void ValidationStateTracker::RecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
@@ -3680,11 +3682,71 @@ void ValidationStateTracker::PreCallRecordCmdWaitEvents(VkCommandBuffer commandB
                                                         uint32_t imageMemoryBarrierCount,
                                                         const VkImageMemoryBarrier *pImageMemoryBarriers) {
     RecordCmdWaitEvents(commandBuffer, eventCount, pEvents);
+    RecordBarriers(commandBuffer, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                   imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 void ValidationStateTracker::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount,
                                                             const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfos) {
     RecordCmdWaitEvents(commandBuffer, eventCount, pEvents);
+    for (uint32_t i = 0; i < eventCount; i++) {
+        RecordBarriers(commandBuffer, &pDependencyInfos[i]);
+    }
+}
+
+void ValidationStateTracker::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                                              VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                              uint32_t bufferMemoryBarrierCount,
+                                                              const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                              uint32_t imageMemoryBarrierCount,
+                                                              const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    RecordBarriers(commandBuffer, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                   imageMemoryBarrierCount, pImageMemoryBarriers);
+}
+
+void ValidationStateTracker::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
+                                                                 const VkDependencyInfoKHR *pDependencyInfo) {
+    RecordBarriers(commandBuffer, pDependencyInfo);
+}
+
+void ValidationStateTracker::RecordBarriers(VkCommandBuffer commandBuffer, uint32_t memoryBarrierCount,
+                                            const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                                            const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                            const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    if (disabled[command_buffer_state]) return;
+
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
+        auto buffer_state = GetBufferState(pBufferMemoryBarriers[i].buffer);
+        if (buffer_state) {
+            cb_state->AddChild(buffer_state);
+        }
+    }
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
+        auto image_state = GetImageState(pImageMemoryBarriers[i].image);
+        if (image_state) {
+            cb_state->AddChild(image_state);
+        }
+    }
+}
+
+void ValidationStateTracker::RecordBarriers(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo) {
+    if (disabled[command_buffer_state]) return;
+
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    for (uint32_t i = 0; i < pDependencyInfo->bufferMemoryBarrierCount; i++) {
+        auto buffer_state = GetBufferState(pDependencyInfo->pBufferMemoryBarriers[i].buffer);
+        if (buffer_state) {
+            cb_state->AddChild(buffer_state);
+        }
+    }
+    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; i++) {
+        auto image_state = GetImageState(pDependencyInfo->pImageMemoryBarriers[i].image);
+        if (image_state) {
+            cb_state->AddChild(image_state);
+        }
+    }
 }
 
 bool ValidationStateTracker::SetQueryState(QueryObject object, QueryState value, QueryMap *localQueryToStateMap) {
