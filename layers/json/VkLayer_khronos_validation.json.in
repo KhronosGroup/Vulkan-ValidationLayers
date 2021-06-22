@@ -286,6 +286,7 @@
                     "label": "Duplicated Messages Limit",
                     "description": "Limit the number of times any single validation message would be reported. 0 is unlimited.",
                     "type": "INT",
+                    "env": "VK_LAYER_DUPLICATE_MESSAGE_LIMIT",
                     "default": 10,
                     "range": {
                         "min": 0
@@ -296,6 +297,7 @@
                     "label": "Mute Message VUIDs",
                     "description": "List of VUIDs and VUID identifers which are to be IGNORED by the validation layer",
                     "type": "LIST",
+                    "env": "VK_LAYER_MESSAGE_ID_FILTER",
                     "default": []
                 },
                 {
@@ -303,6 +305,7 @@
                     "label": "Disables",
                     "description": "Setting an option here will disable areas of validation",
                     "type": "FLAGS",
+                    "env": "VK_LAYER_DISABLES",
                     "flags": [
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",
@@ -373,6 +376,7 @@
                     "label": "Enables",
                     "description": "Setting an option here will enable specialized areas of validation",
                     "type": "FLAGS",
+                    "env": "VK_LAYER_ENABLES",
                     "flags": [
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",
