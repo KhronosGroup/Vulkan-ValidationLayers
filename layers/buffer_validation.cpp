@@ -5827,11 +5827,13 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
         if (ExtEnabled::kNotEnabled != device_extensions.vk_khr_portability_subset) {
             // If swizzling is disabled, make sure it isn't used
+            // NOTE: as of spec version 1.2.183, VUID 04465 states: "all elements of components _must_ be
+            // VK_COMPONENT_SWIZZLE_IDENTITY."
+            //       However, issue https://github.com/KhronosGroup/Vulkan-Portability/issues/27 points out that the identity can
+            //       also be defined via R, G, B, A enums in the correct order.
+            //       Spec change is at https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4600
             if ((VK_FALSE == enabled_features.portability_subset_features.imageViewFormatSwizzle) &&
-                (pCreateInfo->components.r != VK_COMPONENT_SWIZZLE_IDENTITY ||
-                 pCreateInfo->components.g != VK_COMPONENT_SWIZZLE_IDENTITY ||
-                 pCreateInfo->components.b != VK_COMPONENT_SWIZZLE_IDENTITY ||
-                 pCreateInfo->components.a != VK_COMPONENT_SWIZZLE_IDENTITY)) {
+                !IsIdentitySwizzle(pCreateInfo->components)) {
                 skip |= LogError(device, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465",
                                  "vkCreateImageView (portability error): swizzle is disabled for this device.");
             }
