@@ -299,8 +299,6 @@ public:
 typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
     VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
-    VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET,
-    VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE,
     VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
     VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
 } ValidationCheckDisables;
@@ -320,8 +318,6 @@ typedef enum VkValidationFeatureEnable {
 typedef enum DisableFlags {
     command_buffer_state,
     object_in_use,
-    idle_descriptor_set,
-    push_constant_range,
     query_validation,
     image_layout_validation,
     object_tracking,

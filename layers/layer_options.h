@@ -60,8 +60,6 @@ static const layer_data::unordered_map<std::string, VkValidationFeatureEnable> V
 static const layer_data::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
     {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
     {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
-    {"VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET", VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET},
-    {"VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE", VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE},
     {"VALIDATION_CHECK_DISABLE_QUERY_VALIDATION", VALIDATION_CHECK_DISABLE_QUERY_VALIDATION},
     {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
 };
@@ -75,8 +73,6 @@ static const layer_data::unordered_map<std::string, ValidationCheckEnables> Vali
 static const std::vector<std::string> DisableFlagNameHelper = {
     "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",               // command_buffer_state,
     "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                      // object_in_use,
-    "VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET",                // idle_descriptor_set,
-    "VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE",                // push_constant_range,
     "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                   // query_validation,
     "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",            // image_layout_validation,
     "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",          // object_tracking,

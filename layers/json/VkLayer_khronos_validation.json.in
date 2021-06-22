@@ -7,6 +7,8 @@
         "api_version": "@VK_VERSION@",
         "implementation_version": "1",
         "description": "Khronos Validation Layer",
+        "introduction": "The main, comprehensive Khronos validation layer.\n\nVulkan is an Explicit API, enabling direct control over how GPUs actually work. By design, minimal error checking is done inside a Vulkan driver. Applications have full control and responsibility for correct operation. Any errors in how Vulkan is used can result in a crash. \n\nThe Khronos Valiation Layer can be enabled to assist development by enabling developers to verify their applications correctly use the Vulkan API.",
+        "platforms": [ "WINDOWS", "LINUX", "ANDROID" ],
         "url": "https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html",
         "instance_extensions": [
             {
@@ -90,9 +92,7 @@
                                 "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",
                                 "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",
                                 "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",
-                                "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",
-                                "VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET",
-                                "VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE"
+                                "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION"
                             ]
                         }
                     ]
@@ -331,44 +331,32 @@
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",
-                            "label": "Disable Shaders",
-                            "description": "",
+                            "label": "Shaders",
+                            "description": "Shader checks. These checks can be CPU intensive during application start up, especially if Shader Validation Caching is also disabled.",
                             "view": "ADVANCED"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",
                             "label": "Command Buffer State",
-                            "description": "",
+                            "description": "Check that all Vulkan objects used by a command buffer have not been destroyed. These checks can be CPU intensive for some applications.",
                             "view": "ADVANCED"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",
                             "label": "Image Layout",
-                            "description": "",
+                            "description": "Check that layout of each image subresource is correct whenever it is used a command buffer. These checks are very CPU intensive for some applications.",
                             "view": "ADVANCED"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",
                             "label": "Query",
-                            "description": "",
-                            "view": "ADVANCED"
-                        },
-                        {
-                            "key": "VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE",
-                            "label": "Push Constant Range",
-                            "description": "",
+                            "description": "Checks for commands that use VkQueryPool objects.",
                             "view": "ADVANCED"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",
                             "label": "Object in Use",
-                            "description": "",
-                            "view": "ADVANCED"
-                        },
-                        {
-                            "key": "VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET",
-                            "label": "Idle Descriptor Set",
-                            "description": "",
+                            "description": "Check that Vulkan objects are not in use by a command buffer when they are destroyed.",
                             "view": "ADVANCED"
                         },
                         {
