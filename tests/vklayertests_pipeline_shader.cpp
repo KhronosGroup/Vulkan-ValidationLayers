@@ -10754,3 +10754,49 @@ TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, SpecializationInvalidSize) {
+    TEST_DESCRIPTION("Make sure an error is logged when a specialization map entry's size is 0");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *cs_src = R"glsl(#version 450
+        layout (constant_id = 0) const int c = 3;
+        layout (local_size_x = 1) in;
+        void main() {
+            if (gl_GlobalInvocationID.x >= c) { return; }
+        }
+    )glsl";
+
+    // Set the specialization constant size to 0 (anything other than 1, 2, 4, or 8 will produce the expected error).
+    VkSpecializationMapEntry entry = {
+        0,  // id
+        0,  // offset
+        0,  // size
+    };
+    int32_t data = 0;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(decltype(data)),
+        &data,
+    };
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_ = layer_data::make_unique<VkShaderObj>(m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false,
+                                                    &specialization_info);
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+
+    entry.size = sizeof(decltype(data));
+    pipe.cs_ = layer_data::make_unique<VkShaderObj>(m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false,
+                                                    &specialization_info);
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyNotFound();
+}
