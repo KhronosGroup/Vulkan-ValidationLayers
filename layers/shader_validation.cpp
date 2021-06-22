@@ -1757,8 +1757,16 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
             auto const &map_entry = specialization_info->pMapEntries[i];
 
-            // Expect only scalar types.
-            assert(map_entry.size == 1 || map_entry.size == 2 || map_entry.size == 4 || map_entry.size == 8);
+            // Make sure map_entry.size matches the spec constant's size
+            const uint32_t spec_const_size = module->GetSpecConstantByteSize(map_entry.constantID);
+            if (map_entry.size != spec_const_size) {
+                skip |= LogError(device, "VUID-VkSpecializationMapEntry-constantID-00776",
+                                 "Specialization constant (ID = %" PRIu32 ", entry = %" PRIu32
+                                 ") has invalid size %zu in shader module %s. Expected size is %" PRIu32 " from shader definition.",
+                                 map_entry.constantID, i, map_entry.size,
+                                 report_data->FormatHandle(module->vk_shader_module()).c_str(), spec_const_size);
+            }
+
             if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
                 auto entry = id_value_map.emplace(map_entry.constantID, std::vector<uint32_t>(map_entry.size > 4 ? 2 : 1));
                 memcpy(entry.first->second.data(), specialization_data + map_entry.offset, map_entry.size);
