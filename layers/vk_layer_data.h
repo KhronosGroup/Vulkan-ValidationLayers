@@ -104,6 +104,17 @@ template <typename T>
 using insert_iterator = std::insert_iterator<T>;
 #endif
 
+#if __cplusplus < 201402L
+// Temporary workaround for c++11. Remove with std >= c++14.
+template<typename T, typename... Args>
+constexpr std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+#else
+template <typename T>
+constexpr auto make_unique = std::make_unique<T>;
+#endif
+
 }  // namespace layer_data
 
 // A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.

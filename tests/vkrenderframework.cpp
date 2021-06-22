@@ -1785,7 +1785,7 @@ VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize alloc
 
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
-VkShaderObj::VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char const *name, VkSpecializationInfo *specInfo)
+VkShaderObj::VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char const *name, const VkSpecializationInfo *specInfo)
     : m_device(device) {
     m_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     m_stage_info.pNext = nullptr;
@@ -1797,7 +1797,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char 
 }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name, bool debug, VkSpecializationInfo *specInfo, uint32_t spirv_minor_version)
+                         char const *name, bool debug, const VkSpecializationInfo *specInfo, uint32_t spirv_minor_version)
     : VkShaderObj(*device, stage, name, specInfo) {
     InitFromGLSL(*framework, shader_code, debug, spirv_minor_version);
 }
@@ -1835,7 +1835,7 @@ VkResult VkShaderObj::InitFromGLSLTry(VkRenderFramework &framework, const char *
 }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name, VkSpecializationInfo *specInfo, const spv_target_env env)
+                         char const *name, const VkSpecializationInfo *specInfo, const spv_target_env env)
     : VkShaderObj(*device, stage, name, specInfo) {
     InitFromASM(*framework, spv_source, env);
 }
