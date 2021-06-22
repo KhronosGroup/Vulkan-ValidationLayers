@@ -29,12 +29,6 @@ void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDis
         case VALIDATION_CHECK_DISABLE_OBJECT_IN_USE:
             disable_data[object_in_use] = true;
             break;
-        case VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET:
-            disable_data[idle_descriptor_set] = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE:
-            disable_data[push_constant_range] = true;
-            break;
         case VALIDATION_CHECK_DISABLE_QUERY_VALIDATION:
             disable_data[query_validation] = true;
             break;
