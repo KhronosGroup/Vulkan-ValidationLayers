@@ -290,7 +290,11 @@ const std::map<VkFormat, VULKAN_FORMAT_INFO> kVkFormatTable = {
     {VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,                   {3, 3, VK_FORMAT_COMPATIBILITY_CLASS_8BIT_3PLANE_444}},
     {VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16,  {6, 3, VK_FORMAT_COMPATIBILITY_CLASS_10BIT_3PLANE_444}},
     {VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16,  {6, 3, VK_FORMAT_COMPATIBILITY_CLASS_12BIT_3PLANE_444}},
-    {VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,                {6, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_3PLANE_444}}
+    {VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,                {6, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_3PLANE_444}},
+    {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT,                {3, 3, VK_FORMAT_COMPATIBILITY_CLASS_8BIT_2PLANE_444}},
+    {VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16_EXT, {6, 3, VK_FORMAT_COMPATIBILITY_CLASS_10BIT_2PLANE_444}},
+    {VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16_EXT, {6, 3, VK_FORMAT_COMPATIBILITY_CLASS_12BIT_2PLANE_444}},
+    {VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT,             {6, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_2PLANE_444}}
 };
 
 // Renable formatting
@@ -525,6 +529,8 @@ VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format) {
         case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16:
         case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16:
         case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16:
+        case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16_EXT:
+        case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16_EXT:
             found = true;
             break;
         default:
@@ -678,6 +684,10 @@ VK_LAYER_EXPORT bool FormatIsUNorm(VkFormat format) {
         case VK_FORMAT_R10X6G10X6_UNORM_2PACK16:
         case VK_FORMAT_R12X4_UNORM_PACK16:
         case VK_FORMAT_R12X4G12X4_UNORM_2PACK16:
+        case VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT:
+        case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16_EXT:
+        case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16_EXT:
+        case VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT:
             is_unorm = true;
             break;
         default:
@@ -1182,6 +1192,10 @@ VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format) {
         case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16:
         case VK_FORMAT_G16_B16R16_2PLANE_420_UNORM:
         case VK_FORMAT_G16_B16R16_2PLANE_422_UNORM:
+        case VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT:
+        case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16_EXT:
+        case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16_EXT:
+        case VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT:
             return 2;
             break;
         default:
@@ -1340,7 +1354,19 @@ static const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY>kVkMultiplaneCom
                                                                 { 1, 1, VK_FORMAT_UNDEFINED } } } },
     { VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,               { { { 1, 1, VK_FORMAT_R16_UNORM },
                                                                 { 1, 1, VK_FORMAT_R16_UNORM },
-                                                                { 1, 1, VK_FORMAT_R16_UNORM } } } }
+                                                                { 1, 1, VK_FORMAT_R16_UNORM } } } },
+    { VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT,               { { { 1, 1, VK_FORMAT_R8_UNORM },
+                                                                { 2, 1, VK_FORMAT_R8G8_UNORM },
+                                                                { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16_EXT, { { { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16 },
+                                                                   { 2, 1, VK_FORMAT_R10X6G10X6_UNORM_2PACK16 },
+                                                                   { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16_EXT, { { { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16 },
+                                                                   { 2, 1, VK_FORMAT_R12X4G12X4_UNORM_2PACK16 },
+                                                                   { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT,            { { { 1, 1, VK_FORMAT_R16_UNORM },
+                                                                { 2, 1, VK_FORMAT_R16G16_UNORM },
+                                                                { 1, 1, VK_FORMAT_UNDEFINED } } } }
 };
 // clang-format on
 
@@ -1444,7 +1470,11 @@ const std::set<VkFormat> kVkFormatsRequiringYcbcrConversion{VK_FORMAT_G8B8G8R8_4
                                                             VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,
                                                             VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,
                                                             VK_FORMAT_G16_B16R16_2PLANE_422_UNORM,
-                                                            VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM};
+                                                            VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,
+                                                            VK_FORMAT_G8_B8R8_2PLANE_444_UNORM_EXT,
+                                                            VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16_EXT,
+                                                            VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16_EXT,
+                                                            VK_FORMAT_G16_B16R16_2PLANE_444_UNORM_EXT};
 
 VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format) {
     auto it = kVkFormatsRequiringYcbcrConversion.find(format);
