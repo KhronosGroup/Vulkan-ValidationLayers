@@ -10290,7 +10290,7 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
         Location loc(func_name, structure, Field::pDependencies, i);
-        skip |= ValidateSubpassBarrier(objects, loc, nullptr, dependency);
+        skip |= ValidateSubpassDependency(objects, loc, dependency);
     }
     return skip;
 }

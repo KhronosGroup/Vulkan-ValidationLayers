@@ -239,8 +239,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                const Barrier& barrier) const;
 
-    bool ValidateSubpassBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                                const VkSubpassDependency2& barrier) const;
+    bool ValidateSubpassDependency(const LogObjectList& objects, const Location& loc, const VkSubpassDependency2& barrier) const;
 
     bool ValidateDependencyInfo(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                 const VkDependencyInfoKHR* dep_info) const;
