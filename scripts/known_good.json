@@ -6,7 +6,7 @@
       "sub_dir" : "glslang",
       "build_dir" : "glslang/build",
       "install_dir" : "glslang/build/install",
-      "commit" : "18eef33bd7a4bf5ad8c69f99cb72022608cf6e73",
+      "commit" : "ae2a562936cc8504c9ef2757cceaff163147834f",
       "prebuild" : [
         "python update_glslang_sources.py"
       ],
@@ -28,7 +28,7 @@
       "sub_dir": "SPIRV-Headers",
       "build_dir": "SPIRV-Headers/build",
       "install_dir": "SPIRV-Headers/build/install",
-      "commit": "dafead1765f6c1a5f9f8a76387dcb2abe4e54acd"
+      "commit": "07f259e68af3a540038fa32df522554e74f53ed5"
     },
     {
       "name": "robin-hood-hashing",
