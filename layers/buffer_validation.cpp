@@ -5326,65 +5326,86 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
     return skip;
 }
 
-// template to check all synchronization2 barrier structures and VkSubpassDependency2
+// template to check all synchronization2 barrier structures
 template <typename Barrier>
 bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &loc, const CMD_BUFFER_STATE *cb_state,
                                        const Barrier &barrier) const {
     bool skip = false;
-    // NOTE: cb_state will only be null when checking subpass dependencies, which happens in vkCreateRenderPass(), where
-    // a command buffer is not yet available.
-    auto queue_flags = cb_state ? cb_state->GetQueueFlags() : sync_utils::kAllQueueTypes;
+    assert(cb_state);
+    auto queue_flags = cb_state->GetQueueFlags();
 
     skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, barrier.srcStageMask);
-    if (!cb_state || !cb_state->IsAcquireOp(barrier)) {
+    if (!cb_state->IsAcquireOp(barrier)) {
         skip |=
             ValidateAccessMask(objects, loc.dot(Field::srcAccessMask), queue_flags, barrier.srcAccessMask, barrier.srcStageMask);
     }
 
     skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, barrier.dstStageMask);
-    if (!cb_state || !cb_state->IsReleaseOp(barrier)) {
+    if (!cb_state->IsReleaseOp(barrier)) {
         skip |=
             ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), queue_flags, barrier.dstAccessMask, barrier.dstStageMask);
     }
     return skip;
 }
 
-bool CoreChecks::ValidateSubpassBarrier(const LogObjectList &objects, const Location &loc, const CMD_BUFFER_STATE *cb_state,
-                                        const VkSubpassDependency2 &barrier) const {
-    bool skip = false;
-    const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(barrier.pNext);
-    if (mem_barrier) {
-        if (enabled_features.synchronization2_features.synchronization2) {
-            if (barrier.srcAccessMask != 0) {
-                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcAccessMask",
-                                 "%s is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                                 loc.dot(Field::srcAccessMask).Message().c_str());
-            }
-            if (barrier.dstAccessMask != 0) {
-                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstAccessMask",
-                                 "%s dstAccessMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                                 loc.dot(Field::dstAccessMask).Message().c_str());
-            }
-            if (barrier.srcStageMask != 0 || barrier.dstStageMask != 0) {
-                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcStageMask",
-                                 "%s srcStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                                 loc.dot(Field::srcStageMask).Message().c_str());
-            }
-            if (barrier.dstStageMask != 0) {
-                skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstStageMask",
-                                 "%s dstStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                                 loc.dot(Field::dstStageMask).Message().c_str());
-            }
+// VkSubpassDependency validation happens when vkCreateRenderPass() is called.
+// Dependencies between subpasses can only use pipeline stages compatible with VK_QUEUE_GRAPHICS_BIT,
+// for external subpasses we don't have a yet command buffer so we have to assume all of them are valid.
+static inline VkQueueFlags SubpassToQueueFlags(uint32_t subpass) {
+    return subpass == VK_SUBPASS_EXTERNAL ? sync_utils::kAllQueueTypes : static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT);
+}
 
-            skip |= CoreChecks::ValidateMemoryBarrier(objects, loc.dot(Field::pNext), cb_state, *mem_barrier);
-            return skip;
-        } else {
+bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const Location &in_loc,
+                                           const VkSubpassDependency2 &dependency) const {
+    bool skip = false;
+    Location loc = in_loc;
+    VkMemoryBarrier2KHR converted_barrier;
+    const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(dependency.pNext);
+
+    if (mem_barrier && enabled_features.synchronization2_features.synchronization2) {
+        if (dependency.srcAccessMask != 0) {
+            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcAccessMask",
+                             "%s is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                             loc.dot(Field::srcAccessMask).Message().c_str());
+        }
+        if (dependency.dstAccessMask != 0) {
+            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstAccessMask",
+                             "%s dstAccessMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                             loc.dot(Field::dstAccessMask).Message().c_str());
+        }
+        if (dependency.srcStageMask != 0) {
+            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcStageMask",
+                             "%s srcStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                             loc.dot(Field::srcStageMask).Message().c_str());
+        }
+        if (dependency.dstStageMask != 0) {
+            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstStageMask",
+                             "%s dstStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
+                             loc.dot(Field::dstStageMask).Message().c_str());
+        }
+        loc = in_loc.dot(Field::pNext);
+        converted_barrier = *mem_barrier;
+    } else {
+        if (mem_barrier) {
             skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-pNext",
                              "%s a VkMemoryBarrier2KHR is present in pNext but synchronization2 is not enabled.",
                              loc.Message().c_str());
         }
+        // use the subpass dependency flags, upconverted into wider synchronization2 fields.
+        converted_barrier.srcStageMask = dependency.srcStageMask;
+        converted_barrier.dstStageMask = dependency.dstStageMask;
+        converted_barrier.srcAccessMask = dependency.srcAccessMask;
+        converted_barrier.dstAccessMask = dependency.dstAccessMask;
     }
-    skip |= CoreChecks::ValidateMemoryBarrier(objects, loc, cb_state, barrier);
+    auto src_queue_flags = SubpassToQueueFlags(dependency.srcSubpass);
+    skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
+    skip |= ValidateAccessMask(objects, loc.dot(Field::srcAccessMask), src_queue_flags, converted_barrier.srcAccessMask,
+                               converted_barrier.srcStageMask);
+
+    auto dst_queue_flags = SubpassToQueueFlags(dependency.dstSubpass);
+    skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
+    skip |= ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), dst_queue_flags, converted_barrier.dstAccessMask,
+                               converted_barrier.dstStageMask);
     return skip;
 }
 
