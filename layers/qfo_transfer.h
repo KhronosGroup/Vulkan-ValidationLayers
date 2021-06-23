@@ -38,15 +38,15 @@ inline bool IsTransferOp(const Barrier &barrier) {
 
 // specializations for barriers that cannot do queue family ownership transfers
 template <>
-inline bool IsTransferOp(const VkMemoryBarrier &barrier) {
+constexpr bool IsTransferOp(const VkMemoryBarrier &barrier) {
     return false;
 }
 template <>
-inline bool IsTransferOp(const VkMemoryBarrier2KHR &barrier) {
+constexpr bool IsTransferOp(const VkMemoryBarrier2KHR &barrier) {
     return false;
 }
 template <>
-inline bool IsTransferOp(const VkSubpassDependency2 &barrier) {
+constexpr bool IsTransferOp(const VkSubpassDependency2 &barrier) {
     return false;
 }
 
