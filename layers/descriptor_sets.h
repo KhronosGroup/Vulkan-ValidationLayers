@@ -341,7 +341,12 @@ class DescriptorSetLayout : public BASE_NODE {
                 (binding_ci->stageFlags != other_binding_ci->stageFlags) ||
                 (!hash_util::similar_for_nullity(binding_ci->pImmutableSamplers, other_binding_ci->pImmutableSamplers)) ||
                 (GetDescriptorBindingFlags() != other.GetDescriptorBindingFlags())) {
-                return false;
+
+                // A write update can overlap over following binding but bindings with descriptorCount == 0 must be skipped.
+                // Therefore we consider "consistent" a binding that should be skipped
+                if(other_binding_ci->descriptorCount != 0) {
+                    return false;
+                }
             }
             return true;
         }
