@@ -5026,8 +5026,13 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
             }
 
             // Validate color attachments
-            auto color_blend_state = pCreateInfos[i].pColorBlendState;
-            if ((VK_FALSE == enabled_features.portability_subset_features.constantAlphaColorBlendFactors) && color_blend_state) {
+            uint32_t subpass = pCreateInfos[i].subpass;
+            const auto *render_pass = GetRenderPassState(pCreateInfos[i].renderPass);
+            bool ignore_color_blend_state = pCreateInfos[i].pRasterizationState->rasterizerDiscardEnable ||
+                                            render_pass->createInfo.pSubpasses[subpass].colorAttachmentCount == 0;
+            if ((VK_FALSE == enabled_features.portability_subset_features.constantAlphaColorBlendFactors) &&
+                !ignore_color_blend_state) {
+                auto color_blend_state = pCreateInfos[i].pColorBlendState;
                 const auto attachments = color_blend_state->pAttachments;
                 for (uint32_t color_attachment_index = 0; i < color_blend_state->attachmentCount; ++i) {
                     if ((VK_BLEND_FACTOR_CONSTANT_ALPHA == attachments[color_attachment_index].srcColorBlendFactor) ||
