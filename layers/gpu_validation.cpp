@@ -1287,7 +1287,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     }
 }
 
-static const int kInstErrorPreDrawValidate = spvtools::kInstErrorBuffOOBStorageTexel + 1; // TODO - get this into instrument.hpp
+static const int kInstErrorPreDrawValidate = spvtools::kInstErrorMax + 1;
 static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 1;
 // Generate the part of the message describing the violation.
 bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, GpuAssistedBufferInfo buf_info, GpuAssisted *gpu_assisted) {
