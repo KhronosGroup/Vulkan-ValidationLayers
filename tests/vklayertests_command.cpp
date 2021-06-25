@@ -5820,6 +5820,151 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
     }
 }
 
+TEST_F(VkLayerTest, MultiDrawTests) {
+    TEST_DESCRIPTION("Test validation of multi_draw extension");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&multi_draw_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!multi_draw_features.multiDraw) {
+        printf("%s Test requires (unsupported) multiDraw, skipping\n", kSkipPrefix);
+        return;
+    }
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    } else {
+        printf("%s VK_EXT_multi_draw extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    auto multi_draw_properties = LvlInitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &properties2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
+    auto vkCmdDrawMultiIndexedEXT =
+        (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
+    assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
+
+    VkMultiDrawInfoEXT multi_draws[3] = {};
+    multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
+
+    VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
+    multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 1;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Try existing VUID checks
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-02700");
+    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-02700");
+    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    // New VUIDs added with multi_draw (also see GPU-AV)
+    VkBufferObj buffer;
+    buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    multi_draw_indices[2].indexCount = 513;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-firstIndex-04938");
+    m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
+    multi_draw_indices[2].indexCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-stride-04936");
+    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT) + 1);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-stride-04941");
+    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT) + 1, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-drawCount-04935");
+    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940");
+    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
+
+    if (multi_draw_properties.maxMultiDrawCount < UINT32_MAX) {
+        uint32_t draw_count = multi_draw_properties.maxMultiDrawCount + 1;
+        std::vector<VkMultiDrawInfoEXT> max_multi_draws(draw_count);
+        std::vector<VkMultiDrawIndexedInfoEXT> max_multi_indexed_draws(draw_count);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-drawCount-04934");
+        vkCmdDrawMultiEXT(m_commandBuffer->handle(), draw_count, max_multi_draws.data(), 1, 0, sizeof(VkMultiDrawInfoEXT));
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04939");
+        vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), draw_count, max_multi_indexed_draws.data(), 1, 0,
+                                 sizeof(VkMultiDrawIndexedInfoEXT), 0);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(VkLayerTest, MultiDrawFeatures) {
+    TEST_DESCRIPTION("Test validation of multi draw feature enabled");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    } else {
+        printf("%s VK_EXT_multi_draw extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
+    auto vkCmdDrawMultiIndexedEXT =
+        (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
+    assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
+
+    VkMultiDrawInfoEXT multi_draws[3] = {};
+    multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
+
+    VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
+    multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 1;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-04933");
+    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_errorMonitor->VerifyFound();
+    VkBufferObj buffer;
+    buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-04937");
+    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, IndirectDrawTests) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirect and vkCmdDrawIndexedIndirect");
 
