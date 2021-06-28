@@ -7055,7 +7055,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                         LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
                                                  "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x which when added to the "
                                                  "buffer descriptor's range (0x%" PRIxLEAST64
-                                                 ") is greater then the size of the buffer (0x%" PRIxLEAST64
+                                                 ") is greater than the size of the buffer (0x%" PRIxLEAST64
                                                  ") in descriptorSet #%u binding #%u descriptor[%u].",
                                                  cur_dyn_offset, offset, bound_range, buffer_state->createInfo.size, set_idx,
                                                  binding_index, j);
