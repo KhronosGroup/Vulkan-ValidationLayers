@@ -13294,55 +13294,81 @@ TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageUsageFlags usage =
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
-    image.Init(image_ci);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 2, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.InitNoLayout(image_ci);
     ASSERT_TRUE(image.initialized());
 
-    VkImageSubresourceLayers src_layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageSubresourceLayers dst_layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 3, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkImageCopy region = {src_layer, zero_offset, dst_layer, zero_offset, full_extent};
-    auto init_layout = VK_IMAGE_LAYOUT_GENERAL;
-    auto src_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    auto dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-    m_commandBuffer->begin();
     m_errorMonitor->ExpectSuccess();
 
-    image.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, init_layout);
+    VkImageSubresourceLayers src_layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkImageSubresourceLayers dst_layer{VK_IMAGE_ASPECT_COLOR_BIT, 1, 3, 1};
+    VkOffset3D zero_offset{0, 0, 0};
+    VkExtent3D full_extent{128 / 2, 128 / 2, 1};  // <-- image type is 2D
+    VkImageCopy region = {src_layer, zero_offset, dst_layer, zero_offset, full_extent};
+    auto init_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    auto src_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    auto dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    auto final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    m_commandBuffer->begin();
 
     auto cb = m_commandBuffer->handle();
 
     VkImageSubresourceRange src_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
-    image_barrier.srcAccessMask = 0;
-    image_barrier.dstAccessMask = 0;
-    image_barrier.image = image.handle();
-    image_barrier.subresourceRange = src_range;
-    image_barrier.oldLayout = init_layout;
-    image_barrier.newLayout = src_layout;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &image_barrier);
+    VkImageMemoryBarrier image_barriers[2];
 
-    VkImageSubresourceRange dst_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3, 1};
-    image_barrier.subresourceRange = dst_range;
-    image_barrier.newLayout = dst_layout;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &image_barrier);
+    image_barriers[0] = LvlInitStruct<VkImageMemoryBarrier>();
+    image_barriers[0].srcAccessMask = 0;
+    image_barriers[0].dstAccessMask = 0;
+    image_barriers[0].image = image.handle();
+    image_barriers[0].subresourceRange = src_range;
+    image_barriers[0].oldLayout = init_layout;
+    image_barriers[0].newLayout = dst_layout;
 
-    vk::CmdCopyImage(cb, image.handle(), src_layout, image.handle(), dst_layout, 1, &region);
-    m_errorMonitor->VerifyNotFound();
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+                           image_barriers);
+    VkClearColorValue clear_color{};
+    vk::CmdClearColorImage(cb, image.handle(), dst_layout, &clear_color, 1, &src_range);
     m_commandBuffer->end();
 
     auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    m_errorMonitor->ExpectSuccess();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_commandBuffer->begin();
+
+    image_barriers[0].oldLayout = dst_layout;
+    image_barriers[0].newLayout = src_layout;
+
+    VkImageSubresourceRange dst_range{VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 3, 1};
+    image_barriers[1] = LvlInitStruct<VkImageMemoryBarrier>();
+    image_barriers[1].srcAccessMask = 0;
+    image_barriers[1].dstAccessMask = 0;
+    image_barriers[1].image = image.handle();
+    image_barriers[1].subresourceRange = dst_range;
+    image_barriers[1].oldLayout = init_layout;
+    image_barriers[1].newLayout = dst_layout;
+
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2,
+                           image_barriers);
+
+    vk::CmdCopyImage(cb, image.handle(), src_layout, image.handle(), dst_layout, 1, &region);
+
+    image_barriers[0].oldLayout = src_layout;
+    image_barriers[0].newLayout = final_layout;
+    image_barriers[1].oldLayout = dst_layout;
+    image_barriers[1].newLayout = final_layout;
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 2,
+                           image_barriers);
+    m_commandBuffer->end();
+
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyNotFound();
