@@ -3666,7 +3666,13 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
     else
         pTessellationState = NULL; // original pTessellationState pointer ignored
-    bool has_rasterization = in_struct->pRasterizationState ? !in_struct->pRasterizationState->rasterizerDiscardEnable : false;
+    bool is_dynamic_has_rasterization = false;
+    if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
+        for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
+            if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+                is_dynamic_has_rasterization = true;
+    }
+    bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
     if (in_struct->pViewportState && has_rasterization) {
         bool is_dynamic_viewports = false;
         bool is_dynamic_scissors = false;
@@ -3764,7 +3770,13 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
     else
         pTessellationState = NULL; // original pTessellationState pointer ignored
-    bool has_rasterization = copy_src.pRasterizationState ? !copy_src.pRasterizationState->rasterizerDiscardEnable : false;
+    bool is_dynamic_has_rasterization = false;
+    if (copy_src.pDynamicState && copy_src.pDynamicState->pDynamicStates) {
+        for (uint32_t i = 0; i < copy_src.pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
+            if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+                is_dynamic_has_rasterization = true;
+    }
+    bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
     if (copy_src.pViewportState && has_rasterization) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
     } else
@@ -3860,7 +3872,13 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
     else
         pTessellationState = NULL; // original pTessellationState pointer ignored
-    bool has_rasterization = copy_src.pRasterizationState ? !copy_src.pRasterizationState->rasterizerDiscardEnable : false;
+    bool is_dynamic_has_rasterization = false;
+    if (copy_src.pDynamicState && copy_src.pDynamicState->pDynamicStates) {
+        for (uint32_t i = 0; i < copy_src.pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
+            if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+                is_dynamic_has_rasterization = true;
+    }
+    bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
     if (copy_src.pViewportState && has_rasterization) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
     } else
@@ -3959,7 +3977,13 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
     else
         pTessellationState = NULL; // original pTessellationState pointer ignored
-    bool has_rasterization = in_struct->pRasterizationState ? !in_struct->pRasterizationState->rasterizerDiscardEnable : false;
+    bool is_dynamic_has_rasterization = false;
+    if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
+        for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
+            if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+                is_dynamic_has_rasterization = true;
+    }
+    bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
     if (in_struct->pViewportState && has_rasterization) {
         bool is_dynamic_viewports = false;
         bool is_dynamic_scissors = false;
@@ -4042,7 +4066,13 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src->pTessellationState);
     else
         pTessellationState = NULL; // original pTessellationState pointer ignored
-    bool has_rasterization = copy_src->pRasterizationState ? !copy_src->pRasterizationState->rasterizerDiscardEnable : false;
+    bool is_dynamic_has_rasterization = false;
+    if (copy_src->pDynamicState && copy_src->pDynamicState->pDynamicStates) {
+        for (uint32_t i = 0; i < copy_src->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
+            if (copy_src->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+                is_dynamic_has_rasterization = true;
+    }
+    bool has_rasterization = copy_src->pRasterizationState ? (is_dynamic_has_rasterization || !copy_src->pRasterizationState->rasterizerDiscardEnable) : false;
     if (copy_src->pViewportState && has_rasterization) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src->pViewportState);
     } else
