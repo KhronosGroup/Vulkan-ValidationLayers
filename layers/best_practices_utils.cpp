@@ -2085,7 +2085,7 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         }
         auto& secondary = secondary_itr->second;
         for (auto& clear : secondary.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(primary, clear.rects.size(), clear.rects.data())) {
+            if (ClearAttachmentsIsFullClear(primary, uint32_t(clear.rects.size()), clear.rects.data())) {
                 skip |= ValidateClearAttachment(commandBuffer, primary,
                                                 clear.framebufferAttachment, clear.colorAttachment,
                                                 clear.aspects, true);
@@ -2104,10 +2104,10 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
         auto& secondary = cbRenderPassState[pCommandBuffers[i]];
 
         for (auto& early_clear : secondary.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(primary, early_clear.rects.size(), early_clear.rects.data())) {
+            if (ClearAttachmentsIsFullClear(primary, uint32_t(early_clear.rects.size()), early_clear.rects.data())) {
                 RecordAttachmentClearAttachments(primary, primary_state, early_clear.framebufferAttachment,
                                                  early_clear.colorAttachment, early_clear.aspects,
-                                                 early_clear.rects.size(), early_clear.rects.data());
+                                                 uint32_t(early_clear.rects.size()), early_clear.rects.data());
             } else {
                 RecordAttachmentAccess(primary_state, early_clear.framebufferAttachment,
                                        early_clear.aspects);
