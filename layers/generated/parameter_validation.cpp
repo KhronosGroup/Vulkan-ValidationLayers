@@ -5107,7 +5107,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(
     {
         for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex)
         {
-            const VkStructureType allowed_structs_VkComputePipelineCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASSS_SHADING_PIPELINE_CREATE_INFO_HUAWEI };
+            const VkStructureType allowed_structs_VkComputePipelineCreateInfo[] = { VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI };
 
             skip |= validate_struct_pnext("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].pNext", ParameterName::IndexVector{ createInfoIndex }), "VkPipelineCompilerControlCreateInfoAMD, VkPipelineCreationFeedbackCreateInfoEXT, VkSubpassShadingPipelineCreateInfoHUAWEI", pCreateInfos[createInfoIndex].pNext, ARRAY_SIZE(allowed_structs_VkComputePipelineCreateInfo), allowed_structs_VkComputePipelineCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkComputePipelineCreateInfo-pNext-pNext", "VUID-VkComputePipelineCreateInfo-sType-unique");
 

@@ -4172,7 +4172,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSubpassEndInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_SUBPASS_END_INFO", "1.2-extensions"},
     {"VUID-VkSubpassSampleLocationsEXT-sampleLocationsInfo-parameter", "sampleLocationsInfo must be a valid VkSampleLocationsInfoEXT structure", "1.2-extensions"},
     {"VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532", "subpassIndex must be less than the subpassCount specified in VkRenderPassCreateInfo the render pass specified by VkRenderPassBeginInfo::renderPass was created with", "1.2-extensions"},
-    {"VUID-VkSubpassShadingPipelineCreateInfoHUAWEI-sType-sType", "sType must be VK_STRUCTURE_TYPE_SUBPASSS_SHADING_PIPELINE_CREATE_INFO_HUAWEI", "1.2-extensions"},
+    {"VUID-VkSubpassShadingPipelineCreateInfoHUAWEI-sType-sType", "sType must be VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI", "1.2-extensions"},
     {"VUID-VkSubpassShadingPipelineCreateInfoHUAWEI-subpass-04946", "subpass must be created with VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI bind point.", "1.2-extensions"},
     {"VUID-VkSurfaceCapabilities2EXT-pNext-pNext", "pNext must be NULL", "1.2-extensions"},
     {"VUID-VkSurfaceCapabilities2EXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT", "1.2-extensions"},
