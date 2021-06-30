@@ -6515,7 +6515,8 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
         return false;
     };
 
-    // Parameter validation has already checked VUID-03788: !(pGeometries && ppGeometries)
+    // Parameter validation has already checked VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788:
+    // !(pGeometries && ppGeometries)
     std::function<const VkAccelerationStructureGeometryKHR &(uint32_t)> geom_accessor;
     if (p_geometries) {
         geom_accessor = [p_geometries](uint32_t i) -> const VkAccelerationStructureGeometryKHR & { return p_geometries[i]; };

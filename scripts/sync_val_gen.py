@@ -65,6 +65,8 @@ def ParseAccessMasks(valid_usage_path, all_stages):
         'VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR',
         # expands to INDEX_INPUT and VERTEX_ATTRIBUTE_INPUT, which are included explicitly in the VUIDs
         'VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR',
+        # temporarily disable VK_HUAWEI_subpass_shading until it has stabilized
+        'VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI',
     ]
     expand_stages = {
         # these have the same value
