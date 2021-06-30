@@ -167,7 +167,7 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.181
+# Snipped from chapters/synchronization.txt -- tag v1.2.183
 # manual fixups:
 # - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
 # - make sure each pipeline section starts with "For"
@@ -249,6 +249,8 @@ unordered_stages =  [
   'VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT',
   'VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR',
   'VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR',
+   #TODO this is a placeholder until we have information about how this stage fits in to the graphics pipeline
+  'VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI',
 ]
 
 pipeline_name_labels = {
@@ -433,6 +435,7 @@ VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV
 VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV
 VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
 VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
+VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI
 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR
 VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
@@ -477,8 +480,8 @@ def InBitOrder(tag, enum_elem):
     return in_bit_order
 
 
-# As of tag v1.2.181, with all ifdefs removes
-# TODO: video entries are NOT in the spec, need to get them added
+# As of tag v1.2.183, with all ifdefs removes
+# TODO: video and Huauwei subpass shading entries are NOT in the spec, need to get them added
 snippet_pipeline_stages_supported = '''
 [[synchronization-pipeline-stages-supported]]
 .Supported pipeline stage flags
@@ -517,6 +520,7 @@ snippet_pipeline_stages_supported = '''
 |ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT     | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_DECODE_BIT_KHR
 |ename:VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_ENCODE_BIT_KHR
+|ename:VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI           | ename:VK_QUEUE_GRAPHICS_BIT
 |====
 '''
 

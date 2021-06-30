@@ -2092,6 +2092,7 @@ void ThreadSafety::PreCallRecordResetCommandBuffer(
     VkCommandBufferResetFlags                   flags) {
     StartWriteObject(commandBuffer, "vkResetCommandBuffer");
     // Host access to commandBuffer must be externally synchronized
+    // the sname:VkCommandPool that pname:commandBuffer was allocated from must be externally synchronized between host accesses
 }
 
 void ThreadSafety::PostCallRecordResetCommandBuffer(
@@ -2100,6 +2101,7 @@ void ThreadSafety::PostCallRecordResetCommandBuffer(
     VkResult                                    result) {
     FinishWriteObject(commandBuffer, "vkResetCommandBuffer");
     // Host access to commandBuffer must be externally synchronized
+    // the sname:VkCommandPool that pname:commandBuffer was allocated from must be externally synchronized between host accesses
 }
 
 void ThreadSafety::PreCallRecordCmdBindPipeline(
