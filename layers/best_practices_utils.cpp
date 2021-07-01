@@ -1384,6 +1384,19 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
     }
 }
 
+static inline bool RenderPassUsesAttachmentAsResolve(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
+    for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
+        const auto& subpass_info = createInfo.pSubpasses[subpass];
+        if (subpass_info.pResolveAttachments) {
+            for (uint32_t i = 0; i < subpass_info.colorAttachmentCount; i++) {
+                if (subpass_info.pResolveAttachments[i].attachment == attachment) return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 static inline bool RenderPassUsesAttachmentOnTile(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
     for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
         const auto& subpass_info = createInfo.pSubpasses[subpass];
@@ -2441,7 +2454,8 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
 
         uint32_t num_attachments = rp->createInfo.attachmentCount;
         for (uint32_t i = 0; i < num_attachments; i++) {
-            if (!RenderPassUsesAttachmentOnTile(rp->createInfo, i)) {
+            if (!RenderPassUsesAttachmentOnTile(rp->createInfo, i) ||
+                RenderPassUsesAttachmentAsResolve(rp->createInfo, i)) {
                 continue;
             }
 
