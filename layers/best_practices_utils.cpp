@@ -860,7 +860,10 @@ bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount,
         auto rp_state = GetRenderPassState(create_info->renderPass);
         const auto& subpass = rp_state->createInfo.pSubpasses[create_info->subpass];
 
-        for (uint32_t j = 0; j < create_info->pColorBlendState->attachmentCount; j++) {
+        // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
+        uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info->pColorBlendState->attachmentCount);
+
+        for (uint32_t j = 0; j < num_color_attachments; j++) {
             const auto& blend_att = create_info->pColorBlendState->pAttachments[j];
             uint32_t att = subpass.pColorAttachments[j].attachment;
 
@@ -970,7 +973,9 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
         cis.accessFramebufferAttachments.clear();
 
         if (cis.colorBlendStateCI) {
-            for (uint32_t j = 0; j < cis.colorBlendStateCI->attachmentCount; j++) {
+            // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
+            uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, cis.colorBlendStateCI->attachmentCount);
+            for (uint32_t j = 0; j < num_color_attachments; j++) {
                 if (cis.colorBlendStateCI->pAttachments[j].colorWriteMask != 0) {
                     uint32_t attachment = subpass.pColorAttachments[j].attachment;
                     if (attachment != VK_ATTACHMENT_UNUSED) {
