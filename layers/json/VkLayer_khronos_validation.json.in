@@ -402,6 +402,7 @@
                                     "description": "To redirect Debug Printf messages from the debug callback to stdout",
                                     "type": "BOOL",
                                     "default": true,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
@@ -414,10 +415,11 @@
                                 },
                                 {
                                     "key": "printf_verbose",
-                                    "label": "Verbose",
+                                    "label": "Printf verbose",
                                     "description": "Verbosity of debug printf messages",
                                     "type": "BOOL",
                                     "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
@@ -439,6 +441,7 @@
                                         "max": 1048576
                                     },
                                     "unit": "bytes",
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
@@ -464,6 +467,7 @@
                                     "description": "Enable buffer out of bounds checking",
                                     "type": "BOOL",
                                     "default": true,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
@@ -480,6 +484,7 @@
                                     "description": "Enable draw indirect checking",
                                     "type": "BOOL",
                                     "default": true,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
