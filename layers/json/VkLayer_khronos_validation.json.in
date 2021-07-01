@@ -8,7 +8,7 @@
         "implementation_version": "1",
         "description": "Khronos Validation Layer",
         "introduction": "The main, comprehensive Khronos validation layer.\n\nVulkan is an Explicit API, enabling direct control over how GPUs actually work. By design, minimal error checking is done inside a Vulkan driver. Applications have full control and responsibility for correct operation. Any errors in how Vulkan is used can result in a crash. \n\nThe Khronos Valiation Layer can be enabled to assist development by enabling developers to verify their applications correctly use the Vulkan API.",
-        "platforms": [ "WINDOWS", "LINUX", "ANDROID" ],
+        "platforms": [ "WINDOWS", "LINUX", "ANDROID", "MACOS" ],
         "url": "https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html",
         "instance_extensions": [
             {
@@ -59,7 +59,7 @@
                 {
                     "label": "Standard",
                     "description": "Good default validation setup that balance validation coverage and performance.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -100,7 +100,7 @@
                 {
                     "label": "Best Practices",
                     "description": "Provides warnings about potential API misuse but valid usages of the API.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -124,7 +124,7 @@
                 {
                     "label": "Synchronization",
                     "description": "Identify resource access conflicts due to missing or incorrect synchronization operations between actions reading or writing the same regions of memory.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -233,7 +233,8 @@
                         {
                             "key": "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT",
                             "label": "Debug Output",
-                            "description": "Log a txt message using the Windows OutputDebugString function."
+                            "description": "Log a txt message using the Windows OutputDebugString function.",
+                            "platforms": [ "WINDOWS"]
                         },
                         {
                             "key": "VK_DBG_LAYER_ACTION_BREAK",
@@ -261,7 +262,7 @@
                         },
                         {
                             "key": "perf",
-                            "label": "performance",
+                            "label": "Performance",
                             "description": "Report using the API in a way that may cause suboptimal performance."
                         },
                         {
@@ -272,7 +273,8 @@
                         {
                             "key": "debug",
                             "label": "Debug",
-                            "description": "For layer development. Report messages for debugging layer behavior."
+                            "description": "For layer development. Report messages for debugging layer behavior.",
+                            "view": "HIDDEN"
                         }
                     ],
                     "default": [
@@ -334,7 +336,7 @@
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",
-                            "label": "Shaders",
+                            "label": "Shader Validation",
                             "description": "Shader checks. These checks can be CPU intensive during application start up, especially if Shader Validation Caching is also disabled.",
                             "view": "ADVANCED"
                         },
@@ -347,7 +349,7 @@
                         {
                             "key": "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",
                             "label": "Image Layout",
-                            "description": "Check that layout of each image subresource is correct whenever it is used a command buffer. These checks are very CPU intensive for some applications.",
+                            "description": "Check that the layout of each image subresource is correct whenever it is used by a command buffer. These checks are very CPU intensive for some applications.",
                             "view": "ADVANCED"
                         },
                         {
@@ -384,7 +386,7 @@
                             "description": "This feature reports resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.",
                             "url": "${LUNARG_SDK}/synchronization_usage.html",
                             "status": "STABLE",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",
@@ -501,13 +503,13 @@
                             "label": "Best Practices",
                             "description": "Activating this feature enables the output of warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
                             "url": "${LUNARG_SDK}/best_practices.html",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",
                             "label": "ARM-specific best practices",
                             "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         }
                     ],
                     "default": []
