@@ -2220,20 +2220,17 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
                                                          VkImage* pSwapchainImages) const {
     bool skip = false;
 
-    auto swapchain_state_itr = swapchain_bp_state_map.find(swapchain);
+    const auto* swapchain_state = static_cast<SWAPCHAIN_STATE_BP*>(Get<SWAPCHAIN_NODE>(swapchain));
 
-    if ((swapchain_state_itr != swapchain_bp_state_map.cend()) && pSwapchainImages) {
+    if (swapchain_state && pSwapchainImages) {
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
-        if (swapchain_state_itr->second.vkGetSwapchainImagesKHRState == UNCALLED) {
+        if (swapchain_state->vkGetSwapchainImagesKHRState == UNCALLED) {
             skip |=
                 LogWarning(device, kVUID_Core_Swapchain_PriorCount,
                            "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImageCount; but no prior positive value has "
                            "been seen for pSwapchainImages.");
         }
-    }
 
-    const auto swapchain_state = GetSwapchainState(swapchain);
-    if (swapchain_state && pSwapchainImages) {
         if (*pSwapchainImageCount > swapchain_state->get_swapchain_image_count) {
             skip |= LogWarning(
                 device, kVUID_BestPractices_Swapchain_InvalidCount,
@@ -2956,32 +2953,13 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
     }
 }
 
-void BestPractices::ManualPostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                                           const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
-                                                           VkResult result) {
-    if (VK_SUCCESS == result) {
-        swapchain_bp_state_map.emplace(*pSwapchain, SWAPCHAIN_STATE_BP{});
-    }
-}
-
-void BestPractices::PostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                      const VkAllocationCallbacks* pAllocator) {
-    ValidationStateTracker::PostCallRecordDestroySwapchainKHR(device, swapchain, pAllocator);
-    auto swapchain_state_itr = swapchain_bp_state_map.find(swapchain);
-    if (swapchain_state_itr != swapchain_bp_state_map.cend()) {
-        swapchain_bp_state_map.erase(swapchain_state_itr);
-    }
-}
-
 void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                               uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
                                                               VkResult result) {
-    auto swapchain_state_itr = swapchain_bp_state_map.find(swapchain);
-    assert(swapchain_state_itr != swapchain_bp_state_map.cend());
-    auto& swapchain_state = swapchain_state_itr->second;
-    if (pSwapchainImages || *pSwapchainImageCount) {
-        if (swapchain_state.vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
-            swapchain_state.vkGetSwapchainImagesKHRState = QUERY_DETAILS;
+    auto* swapchain_state = static_cast<SWAPCHAIN_STATE_BP*>(Get<SWAPCHAIN_NODE>(swapchain));
+    if (swapchain_state && (pSwapchainImages || *pSwapchainImageCount)) {
+        if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
+            swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
         }
     }
 }
