@@ -28,10 +28,24 @@ struct GpuVuidsCmdDraw : GpuVuid {
     }
 };
 
+struct GpuVuidsCmdDrawMultiEXT : GpuVuid {
+    GpuVuidsCmdDrawMultiEXT() : GpuVuid() {
+        uniform_access_oob = "VUID-vkCmdDrawMultiEXT-None-02705";
+        storage_access_oob = "VUID-vkCmdDrawMultiEXT-None-02706";
+    }
+};
+
 struct GpuVuidsCmdDrawIndexed : GpuVuid {
     GpuVuidsCmdDrawIndexed() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndexed-None-02705";
         storage_access_oob = "VUID-vkCmdDrawIndexed-None-02706";
+    }
+};
+
+struct GpuVuidsCmdDrawMultiIndexedEXT : GpuVuid {
+    GpuVuidsCmdDrawMultiIndexedEXT() : GpuVuid() {
+        uniform_access_oob = "VUID-vkCmdDrawMultiIndexedEXT-None-02705";
+        storage_access_oob = "VUID-vkCmdDrawMultiIndexedEXT-None-02706";
     }
 };
 
@@ -144,7 +158,9 @@ struct GpuVuidsCmdDispatchBase : GpuVuid {
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
 static const std::map<CMD_TYPE, GpuVuid> gpu_vuid = {
     {CMD_DRAW, GpuVuidsCmdDraw()},
+    {CMD_DRAWMULTIEXT, GpuVuidsCmdDrawMultiEXT()},
     {CMD_DRAWINDEXED, GpuVuidsCmdDrawIndexed()},
+    {CMD_DRAWMULTIINDEXEDEXT, GpuVuidsCmdDrawMultiIndexedEXT()},
     {CMD_DRAWINDIRECT, GpuVuidsCmdDrawIndirect()},
     {CMD_DRAWINDEXEDINDIRECT, GpuVuidsCmdDrawIndexedIndirect()},
     {CMD_DISPATCH, GpuVuidsCmdDispatch()},

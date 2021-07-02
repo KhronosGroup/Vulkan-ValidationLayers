@@ -5144,11 +5144,26 @@ void ValidationStateTracker::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer
     UpdateStateCmdDrawType(cb_state, CMD_DRAW, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDraw()");
 }
 
+void ValidationStateTracker::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                           const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
+                                                           uint32_t firstInstance, uint32_t stride) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    UpdateStateCmdDrawType(cb_state, CMD_DRAWMULTIEXT, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawMultiEXT()");
+}
+
 void ValidationStateTracker::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount,
                                                           uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                                                           uint32_t firstInstance) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawType(cb_state, CMD_DRAWINDEXED, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexed()");
+}
+
+void ValidationStateTracker::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                                                  const VkMultiDrawIndexedInfoEXT *pIndexInfo,
+                                                                  uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
+                                                                  const int32_t *pVertexOffset) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    UpdateStateCmdDrawType(cb_state, CMD_DRAWMULTIINDEXEDEXT, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawMultiIndexedEXT()");
 }
 
 void ValidationStateTracker::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
