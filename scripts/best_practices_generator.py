@@ -119,7 +119,6 @@ class BestPracticesOutputGenerator(OutputGenerator):
             'vkGetPhysicalDeviceSurfaceFormatsKHR',
             'vkGetPhysicalDeviceSurfaceFormats2KHR',
             'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
-            'vkCreateSwapchainKHR',
             'vkGetSwapchainImagesKHR',
             'vkEnumeratePhysicalDevices',
             'vkCreateDevice',

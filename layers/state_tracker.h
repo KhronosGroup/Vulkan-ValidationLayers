@@ -1132,6 +1132,8 @@ class ValidationStateTracker : public ValidationObject {
     void RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                    VkSamplerYcbcrConversion ycbcr_conversion,
                                                    SAMPLER_YCBCR_CONVERSION_STATE* ycbcr_state);
+    virtual std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
+                                                                 VkSwapchainKHR swapchain);
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
                                     SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
     void RecordDestroySamplerYcbcrConversionState(VkSamplerYcbcrConversion ycbcr_conversion);

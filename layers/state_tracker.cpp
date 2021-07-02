@@ -4323,7 +4323,7 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
                                                         VkSwapchainKHR *pSwapchain, SURFACE_STATE *surface_state,
                                                         SWAPCHAIN_NODE *old_swapchain_state) {
     if (VK_SUCCESS == result) {
-        auto swapchain_state = std::make_shared<SWAPCHAIN_NODE>(pCreateInfo, *pSwapchain);
+        auto swapchain_state = CreateSwapchainState(pCreateInfo, *pSwapchain);
         if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
             VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
             swapchain_state->shared_presentable = true;
@@ -5700,4 +5700,9 @@ void ValidationStateTracker::PostCallRecordGetBufferDeviceAddressKHR(VkDevice de
 void ValidationStateTracker::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                                      VkDeviceAddress address) {
     RecordGetBufferDeviceAddress(pInfo, address);
+}
+
+std::shared_ptr<SWAPCHAIN_NODE> ValidationStateTracker::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
+                                                                             VkSwapchainKHR swapchain) {
+    return std::make_shared<SWAPCHAIN_NODE>(create_info, swapchain);
 }

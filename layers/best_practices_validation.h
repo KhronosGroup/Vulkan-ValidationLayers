@@ -21,6 +21,7 @@
 
 #include "chassis.h"
 #include "state_tracker.h"
+#include "image_state.h"
 #include <string>
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
@@ -98,7 +99,10 @@ struct PHYSICAL_DEVICE_STATE_BP {
     CALL_STATE vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = UNCALLED;
 };
 
-struct SWAPCHAIN_STATE_BP {
+class SWAPCHAIN_STATE_BP : public SWAPCHAIN_NODE {
+  public:
+    SWAPCHAIN_STATE_BP(const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR swapchain)
+        : SWAPCHAIN_NODE(pCreateInfo, swapchain) {}
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
 };
 
@@ -442,13 +446,6 @@ class BestPractices : public ValidationStateTracker {
     void ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                         VkDisplayPlanePropertiesKHR* pProperties, VkResult result);
 
-    void ManualPostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
-                                                VkResult result);
-
-    void PostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                           const VkAllocationCallbacks* pAllocator) override;
-
     void ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                    VkImage* pSwapchainImages, VkResult result);
 
@@ -461,6 +458,11 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) override;
 
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) override;
+
+    std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
+                                                         VkSwapchainKHR swapchain) final {
+        return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<SWAPCHAIN_STATE_BP>(create_info, swapchain));
+    }
 
 // Include code-generated functions
 #include "best_practices.h"
