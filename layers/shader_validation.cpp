@@ -832,6 +832,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
     // XXX TODO: Would be nice to rewrite this to use CollectInterfaceByLocation (or something similar),
     // but that doesn't include builtins.
+    // When rewritten, using the CreatePipelineExceedVertexMaxComponentsWithBuiltins test it would be nice to also let the user know
+    // how many components were from builtins as it might not be obvious
     for (auto &var : variables) {
         // Check if the variable is a patch. Patches can also be members of blocks,
         // but if they are then the top-level arrayness has already been stripped

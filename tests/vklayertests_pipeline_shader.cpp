@@ -4785,6 +4785,167 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "does not match fragment shader output type");
 }
 
+TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
+    TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        printf("%s Failed to device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxVertexOutputComponents = 128;
+    props.limits.maxFragmentInputComponents = 128;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // vec4 == 4 components
+    // This gives 124 which is just below the set max limit
+    const uint32_t numVec4 = 31;
+
+    std::string vsSourceStr =
+        "#version 450\n"
+        "layout(location = 0) out block {\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        vsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
+    }
+    vsSourceStr +=
+        "} outVs;\n"
+        "\n"
+        "void main() {\n"
+        "    vec4 x = vec4(1.0);\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        vsSourceStr += "outVs.v" + std::to_string(i) + " = x;\n";
+    }
+
+    // GLSL is defined to have a struct for the vertex shader built-in:
+    //
+    //    out gl_PerVertex {
+    //        vec4 gl_Position;
+    //        float gl_PointSize;
+    //        float gl_ClipDistance[];
+    //        float gl_CullDistance[];
+    //    } gl_out[];
+    //
+    // by including gl_Position here 7 extra vertex input components are added pushing it over the 128
+    // 124 + 7 > 128 limit
+    vsSourceStr += "    gl_Position = x;\n";
+    vsSourceStr += "}";
+
+    std::string fsSourceStr =
+        "#version 450\n"
+        "layout(location = 0) in block {\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        fsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
+    }
+    fsSourceStr +=
+        "} inPs;\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "\n"
+        "void main(){\n"
+        "    color = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+
+    // maxFragmentInputComponents is not reached because GLSL should not be including any input fragment stage built-ins by default
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents");
+}
+
+TEST_F(VkLayerTest, CreatePipelineExceedFragmentMaxComponentsWithBuiltins) {
+    TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpDecorate built-ins");
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        printf("%s Failed to device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxVertexOutputComponents = 128;
+    props.limits.maxFragmentInputComponents = 128;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // vec4 == 4 components
+    // This gives 128 which is the max limit
+    const uint32_t numVec4 = 33;
+
+    std::string vsSourceStr =
+        "#version 450\n"
+        "layout(location = 0) out block {\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        vsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
+    }
+    vsSourceStr +=
+        "} outVs;\n"
+        "\n"
+        "void main() {\n"
+        "    vec4 x = vec4(1.0);\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        vsSourceStr += "outVs.v" + std::to_string(i) + " = x;\n";
+    }
+    vsSourceStr += "}";
+
+    std::string fsSourceStr =
+        "#version 450\n"
+        "layout(location = 0) in block {\n";
+    for (uint32_t i = 0; i < numVec4; i++) {
+        fsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
+    }
+    // By added gl_PointCoord it adds 2 more components to the fragment input stage
+    fsSourceStr +=
+        "} inPs;\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "\n"
+        "void main(){\n"
+        "    color = vec4(1) * gl_PointCoord.x;\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+
+    // maxVertexOutputComponents is not reached because GLSL should not be including any output vertex stage built-ins
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      vector<string>{"Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents",
+                                                     "Fragment shader exceeds VkPhysicalDeviceLimits::maxFragmentInputComponents"});
+}
+
 TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
     TEST_DESCRIPTION(
         "Test that an error is produced when the number of output components from the vertex stage exceeds the device limit");
