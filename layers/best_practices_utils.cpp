@@ -1606,7 +1606,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
             auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
             IMAGE_VIEW_STATE* image_view = nullptr;
 
-            if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
+            if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
                 if (rpabi) {
                     image_view = GetImageViewState(rpabi->pAttachments[att]);
@@ -1636,7 +1636,7 @@ void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffe
             auto framebuffer = GetFramebufferState(pRenderPassBegin->framebuffer);
 
             IMAGE_VIEW_STATE* image_view = nullptr;
-            if (rp_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
+            if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
                 const VkRenderPassAttachmentBeginInfo* rpabi = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
                 if (rpabi) {
                     image_view = GetImageViewState(rpabi->pAttachments[att]);
