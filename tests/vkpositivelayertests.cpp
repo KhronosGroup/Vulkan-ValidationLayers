@@ -3599,6 +3599,97 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithFeature) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature) {
+    TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.1 before samplerMirrorClampToEdge feature was added");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() != VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1 exactly, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature12) {
+    TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.2 using the extension");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithFeature) {
+    TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.2 with feature bit enabled");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    features12.samplerMirrorClampToEdge = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
+
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (features12.samplerMirrorClampToEdge != VK_TRUE) {
+        printf("samplerMirrorClampToEdge not supported, skipping test\n");
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     // Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive
     // We previously had a bug where dynamic offset of inactive bindings was still being used
@@ -10457,7 +10548,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     }
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    
+
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s This test requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
