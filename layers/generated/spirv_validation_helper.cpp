@@ -592,7 +592,9 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(SHADER_MODULE_STATE con
                     has_support = true;
                 }
             } else if (it->second.extension) {
-                if (device_extensions.*(it->second.extension)) {
+                // kEnabledByApiLevel is not valid as some extension are promoted with feature bits to be used.
+                // If the new Api Level gives support, it will be caught in the "it->second.version" check instead.
+                if (device_extensions.*(it->second.extension) == kEnabledByCreateinfo) {
                     has_support = true;
                 }
             } else if (it->second.property) {
