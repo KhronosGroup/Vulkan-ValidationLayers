@@ -10047,6 +10047,61 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
     vk::DestroySampler(device(), sampler, nullptr);
 }
 
+TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled10) {
+    TEST_DESCRIPTION("Validation using DrawParameters for Vulkan 1.0 without the shaderDrawParameters feature enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() > VK_API_VERSION_1_0) {
+        printf("%s Tests requires Vulkan 1.0 only, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    char const *vsSource =
+        "#version 460\n"
+        "void main(){\n"
+        "   gl_Position = vec4(float(gl_BaseVertex));\n"
+        "}\n";
+    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                          vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-04147",    // Extension not enabled
+                                                         "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // The capability not valid
+    }
+}
+
+TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled11) {
+    TEST_DESCRIPTION("Validation using DrawParameters for Vulkan 1.1 without the shaderDrawParameters feature enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    char const *vsSource =
+        "#version 460\n"
+        "void main(){\n"
+        "   gl_Position = vec4(float(gl_BaseVertex));\n"
+        "}\n";
+    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+
+    // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, 3)) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    }
+}
+
 TEST_F(VkLayerTest, ShaderFloatControl) {
     TEST_DESCRIPTION("Test VK_KHR_float_controls");
 
