@@ -3259,18 +3259,6 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                          pCreateInfo->borderColor, "VUID-VkSamplerCreateInfo-addressModeU-01078");
         }
 
-        // If any of addressModeU, addressModeV or addressModeW are VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE, the
-        // VK_KHR_sampler_mirror_clamp_to_edge extension must be enabled
-        if (!device_extensions.vk_khr_sampler_mirror_clamp_to_edge &&
-            ((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE) ||
-             (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE) ||
-             (pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE))) {
-            skip |=
-                LogError(device, "VUID-VkSamplerCreateInfo-addressModeU-01079",
-                         "vkCreateSampler(): A VkSamplerAddressMode value is set to VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE "
-                         "but the VK_KHR_sampler_mirror_clamp_to_edge extension has not been enabled.");
-        }
-
         // Checks for the IMG cubic filtering extension
         if (device_extensions.vk_img_filter_cubic) {
             if ((pCreateInfo->anisotropyEnable == VK_TRUE) &&
