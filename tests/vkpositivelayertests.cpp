@@ -3423,6 +3423,127 @@ TEST_F(VkPositiveLayerTest, QueueSubmitSemaphoresAndLayoutTracking) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature) {
+    TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.0 before shaderDrawParameters feature was added");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        printf("%s Tests requires Vulkan 1.0 exactly, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    char const *vsSource =
+        "#version 460\n"
+        "void main(){\n"
+        "   gl_Position = vec4(float(gl_BaseVertex));\n"
+        "}\n";
+    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
+    TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.1 using the extension");
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource =
+        "#version 460\n"
+        "void main(){\n"
+        "   gl_Position = vec4(float(gl_BaseVertex));\n"
+        "}\n";
+    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+
+    // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, 3)) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
+    TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.2 with feature bit enabled");
+    m_errorMonitor->ExpectSuccess();
+
+    // use 1.2 to get the feature bit in VkPhysicalDeviceVulkan11Features
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    features11.shaderDrawParameters = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (features11.shaderDrawParameters != VK_TRUE) {
+        printf("shaderDrawParameters not supported, skipping test\n");
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource =
+        "#version 460\n"
+        "void main(){\n"
+        "   gl_Position = vec4(float(gl_BaseVertex));\n"
+        "}\n";
+    VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
+
+    // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
+    if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource, false, 3)) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.1 before drawIndirectCount feature was added");
     m_errorMonitor->ExpectSuccess();
