@@ -276,7 +276,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.structMembers = []                           # List of StructMemberData records for all Vulkan structs
         self.validatedStructs = dict()                    # Map of structs type names to generated validation code for that struct type
         self.enumRanges = set()                           # Set of enum names
-        self.enumValueLists = ''                          # String containing enumerated type map definitions
+        self.enum_values_definitions = dict()             # [enum, string] containing enumerated type map definitions
+        self.flag_values_definitions = dict()             # [flag, string] containing flag type map definitions
         self.stype_version_dict = dict()                  # String containing structtype to version map data
         self.flags = set()                                # Map of flags typenames
         self.flagBits = dict()                            # Map of flag bits typename to list of values
@@ -293,7 +294,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.source_file = False                          # Source file generation flag
         self.instance_extension_list = ''                 # List of instance extension name defines
         self.device_extension_list = ''                   # List of device extension name defines
-        self.returnedonly_structs = []
+        self.returnedonly_structs = []                    # List of structs with 'returnonly' attribute
+        self.called_types = set()                         # Set of types called via function/struct - not in list == app never passes in to validate
         # Named tuples to store struct and command data
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
                                                         'isconst', 'isoptional', 'iscount', 'noautovalidity',
@@ -426,7 +428,21 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if self.source_file:
             # C-specific
             self.newline()
-            write(self.enumValueLists, file=self.outFile)
+
+            # Don't need flag/enum lists if app can never call it to be validated
+            # But need to save everything as not all information is known until endFile()
+            for flag, string in self.flag_values_definitions.items():
+                if flag == 'VkGeometryInstanceFlagsKHR':
+                    # only called in VkAccelerationStructureInstanceKHR which is never called anywhere explicitly
+                    continue
+                flagBits = flag.replace('Flags', 'FlagBits')
+                if flag in self.called_types or flagBits in self.called_types:
+                    write(string, file=self.outFile)
+
+            for enum, string in self.enum_values_definitions.items():
+                if enum in self.called_types:
+                    write(string, file=self.outFile)
+
             self.newline()
             self.newline()
 
@@ -632,17 +648,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             # Write the declaration for the HeaderVersion
             if self.headerVersion:
                 write('const uint32_t GeneratedVulkanHeaderVersion = {};'.format(self.headerVersion), file=self.outFile)
-                self.newline()
             # Write the declarations for the VkFlags values combining all flag bits
             for flag in sorted(self.newFlags):
                 flagBits = flag.replace('Flags', 'FlagBits')
                 if flagBits in self.flagBits:
                     bits = self.flagBits[flagBits]
-                    decl = 'const DECORATE_UNUSED {} All{} = {}'.format(flag, flagBits, bits[0])
+                    decl = 'const {} All{} = {}'.format(flag, flagBits, bits[0])
                     for bit in bits[1:]:
                         decl += '|' + bit
                     decl += ';'
-                    write(decl, file=self.outFile)
+                    self.flag_values_definitions[flag] = decl
             endif = '\n'
             if (self.featureExtraProtect is not None):
                 endif = '#endif // %s\n' % self.featureExtraProtect
@@ -695,6 +710,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         #
         # Generate member info
         membersInfo = []
+        returned_only = typeinfo.elem.attrib.get('returnedonly') is not None
         for member in members:
             # Get the member's type and name
             info = self.getTypeNameTuple(member)
@@ -702,6 +718,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             name = info[1]
             stypeValue = ''
             cdecl = self.makeCParamDecl(member, 0)
+            ispointer = self.paramIsPointer(member)
+            isconst = True if 'const' in cdecl else False
 
             # Store pointer/array/string info -- Check for parameter name in lens set
             iscount = False
@@ -717,13 +735,25 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             noautovalidity = False
             if (member.attrib.get('noautovalidity') is not None) or ((typeName in self.structMemberBlacklist) and (name in self.structMemberBlacklist[typeName])):
                 noautovalidity = True
+
+            # Some types are marked as noautovalidity, but stateless_validation.h will still want them for manual validation
+            noautovalidity_type_exceptions = [
+                "VkQueryPipelineStatisticFlags",
+                "VkBorderColor"
+            ]
+            # Store all types that are from incoming calls if auto validity
+            # non-const pointers don't have auto gen code as used for return values
+            if (noautovalidity == False) or (type in noautovalidity_type_exceptions):
+                if not returned_only and (not ispointer or isconst):
+                    self.called_types.add(type)
+
             structextends = False
             membersInfo.append(self.CommandParam(type=type, name=name,
-                                                ispointer=self.paramIsPointer(member),
+                                                ispointer=ispointer,
                                                 isstaticarray=isstaticarray,
                                                 isbool=True if type == 'VkBool32' else False,
                                                 israngedenum=True if type in self.enumRanges else False,
-                                                isconst=True if 'const' in cdecl else False,
+                                                isconst=isconst,
                                                 isoptional=isoptional,
                                                 iscount=iscount,
                                                 noautovalidity=noautovalidity,
@@ -736,7 +766,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             self.structextends_list.append(typeName)
         # Returnedonly structs should have most of their members ignored -- on entry, we only care about validating the sType and
         # pNext members. Everything else will be overwritten by the callee.
-        if typeinfo.elem.attrib.get('returnedonly') is not None:
+        if returned_only:
             self.returnedonly_structs.append(typeName)
             membersInfo = [m for m in membersInfo if m.name in ('sType', 'pNext')]
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo))
@@ -777,7 +807,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 self.enumRanges.add(groupName)
                 # Create definition for a list containing valid enum values for this enumerated type
                 if self.featureExtraProtect is not None:
-                    enum_entry = '\n#ifdef %s\n' % self.featureExtraProtect
+                    enum_entry = '#ifdef %s\n' % self.featureExtraProtect
                 else:
                     enum_entry = ''
                 enum_entry += 'const std::vector<%s> All%sEnums = {' % (groupName, groupName)
@@ -785,10 +815,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     name = enum.get('name')
                     if name is not None and enum.get('supported') != 'disabled':
                         enum_entry += '%s, ' % name
-                enum_entry += '};\n'
+                enum_entry += '};'
                 if self.featureExtraProtect is not None:
-                    enum_entry += '#endif // %s\n' % self.featureExtraProtect
-                self.enumValueLists += enum_entry
+                    enum_entry += '\n#endif // %s' % self.featureExtraProtect
+                self.enum_values_definitions[groupName] = enum_entry
     #
     # Capture command parameter info to be used for param check code generation.
     def genCmd(self, cmdinfo, name, alias):
@@ -826,16 +856,21 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 for param in params:
                     paramInfo = self.getTypeNameTuple(param)
                     cdecl = self.makeCParamDecl(param, 0)
+                    ispointer = self.paramIsPointer(param)
+                    isconst = True if 'const' in cdecl else False
+                    # non-const pointers don't have auto gen code as used for return values
+                    if not ispointer or isconst:
+                        self.called_types.add(paramInfo[0])
                     # Check for parameter name in lens set
                     iscount = False
                     if paramInfo[1] in lens:
                         iscount = True
                     paramsInfo.append(self.CommandParam(type=paramInfo[0], name=paramInfo[1],
-                                                        ispointer=self.paramIsPointer(param),
+                                                        ispointer=ispointer,
                                                         isstaticarray=self.paramIsStaticArray(param),
                                                         isbool=True if paramInfo[0] == 'VkBool32' else False,
                                                         israngedenum=True if paramInfo[0] in self.enumRanges else False,
-                                                        isconst=True if 'const' in cdecl else False,
+                                                        isconst=isconst,
                                                         isoptional=self.paramIsOptional(param),
                                                         iscount=iscount,
                                                         noautovalidity=True if param.attrib.get('noautovalidity') is not None else False,
