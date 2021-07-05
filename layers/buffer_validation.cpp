@@ -651,48 +651,56 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
             }
 
-            // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
-            // in common with the non-const version.)
-            const ImageSubresourceLayoutMap *subresource_map = (attachment_initial_layout != VK_IMAGE_LAYOUT_UNDEFINED)
-                                                                   ? const_p_cb->GetImageSubresourceLayoutMap(image)
-                                                                   : nullptr;
+            const ImageSubresourceLayoutMap *subresource_map = nullptr;
+            bool has_queried_map = false;
+            bool subres_skip = false;
 
-            if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
-                bool subres_skip = false;
+            for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
+                VkImageAspectFlags test_aspect = 1u << aspect_index;
+                if ((view_state->normalized_subresource_range.aspectMask & test_aspect) == 0) {
+                    continue;
+                }
 
-                for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
-                    VkImageAspectFlags test_aspect = 1u << aspect_index;
-                    if ((view_state->normalized_subresource_range.aspectMask & test_aspect) == 0) {
-                        continue;
+                // Allow for differing depth and stencil layouts
+                VkImageLayout check_layout = attachment_initial_layout;
+                if (test_aspect == VK_IMAGE_ASPECT_STENCIL_BIT) {
+                    check_layout = attachment_stencil_initial_layout;
+                }
+
+                if (check_layout != VK_IMAGE_LAYOUT_UNDEFINED) {  // If no layout information for image yet, will be checked at QueueSubmit time
+                    if (!has_queried_map) {
+                        // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
+                        // in common with the non-const version.)
+                        // The lookup is expensive, so cache it.
+                        subresource_map = const_p_cb->GetImageSubresourceLayoutMap(image);
+                        has_queried_map = true;
                     }
 
-                    auto normalized_range = view_state->normalized_subresource_range;
-                    normalized_range.aspectMask = test_aspect;
-                    auto pos = subresource_map->Find(normalized_range);
-                    LayoutUseCheckAndMessage layout_check(subresource_map, test_aspect);
+                    if (subresource_map) {
+                        auto normalized_range = view_state->normalized_subresource_range;
+                        normalized_range.aspectMask = test_aspect;
+                        auto pos = subresource_map->Find(normalized_range);
+                        LayoutUseCheckAndMessage layout_check(subresource_map, test_aspect);
 
-                    // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to the next "constant value" range
-                    for (; !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
-                        const VkImageSubresource &subres = pos->subresource;
+                        // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to the next "constant value" range
+                        for (; !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
+                            const VkImageSubresource &subres = pos->subresource;
 
-                        // Allow for differing depth and stencil layouts
-                        VkImageLayout check_layout = attachment_initial_layout;
-                        if (test_aspect == VK_IMAGE_ASPECT_STENCIL_BIT) check_layout = attachment_stencil_initial_layout;
-
-                        if (!layout_check.Check(subres, check_layout, pos->current_layout, pos->initial_layout)) {
-                            subres_skip |= LogError(
-                                device, kVUID_Core_DrawState_InvalidRenderpass,
-                                "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
-                                "and the %s layout of the attachment is %s. The layouts must match, or the render "
-                                "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
-                                i, string_VkImageLayout(check_layout), layout_check.message,
-                                string_VkImageLayout(layout_check.layout));
+                            if (!layout_check.Check(subres, check_layout, pos->current_layout, pos->initial_layout)) {
+                                subres_skip |= LogError(
+                                    device, kVUID_Core_DrawState_InvalidRenderpass,
+                                    "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
+                                    "and the %s layout of the attachment is %s. The layouts must match, or the render "
+                                    "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
+                                    i, string_VkImageLayout(check_layout), layout_check.message,
+                                    string_VkImageLayout(layout_check.layout));
+                            }
                         }
                     }
                 }
-
-                skip |= subres_skip;
             }
+
+            skip |= subres_skip;
 
             ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, image, image_view,
                                                                  framebuffer, render_pass, i, "initial layout");
