@@ -10399,6 +10399,184 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
+    TEST_DESCRIPTION("Test that separate depth stencil layouts are tracked correctly.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+        return;
+    }
+
+    VkPhysicalDeviceFeatures features = {};
+    VkPhysicalDeviceFeatures2 features2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_features =
+        { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES };
+    features2.pNext = &separate_features;
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!separate_features.separateDepthStencilLayouts) {
+        printf("separateDepthStencilLayouts feature not supported, skipping tests\n");
+        return;
+    }
+
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    ASSERT_NO_FATAL_FAILURE(InitState(&features, &features2));
+
+    VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
+    VkFormatProperties props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), ds_format, &props);
+    if ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+        ds_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        vk::GetPhysicalDeviceFormatProperties(gpu(), ds_format, &props);
+        ASSERT_TRUE((props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0);
+    }
+
+    auto image_ci = vk_testing::Image::create_info();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.extent.width = 64;
+    image_ci.extent.height = 64;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 6;
+    image_ci.format = ds_format;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    vk_testing::Image image;
+    image.init(*m_device, image_ci);
+    m_commandBuffer->begin();
+    const auto depth_range = image.subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT);
+    const auto stencil_range = image.subresource_range(VK_IMAGE_ASPECT_STENCIL_BIT);
+    const auto depth_stencil_range = image.subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    vk_testing::ImageView view;
+    VkImageViewCreateInfo view_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+    view_info.image = image.handle();
+    view_info.subresourceRange = depth_stencil_range;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = ds_format;
+    view.init(*m_device, view_info);
+
+    std::vector<VkImageMemoryBarrier> barriers;
+
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                  depth_stencil_range));
+
+    // Test that we can transition aspects separately and use specific layouts.
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                  VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                                                  depth_range));
+
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+                                                  VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
+                                                  stencil_range));
+
+    // Test that transition from UNDEFINED on depth aspect does not clobber stencil layout.
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                  VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                  depth_range));
+
+    // Test that we can transition aspects separately and use combined layouts. (Only care about the aspect in question).
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                                  depth_range));
+
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                  stencil_range));
+
+    // Test that we can transition back again with combined layout.
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
+                                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                  depth_stencil_range));
+
+    VkRenderPassBeginInfo rp_begin_info = { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+    VkRenderPassCreateInfo2 rp2 = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2 };
+    VkAttachmentDescription2 desc = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2 };
+    VkSubpassDescription2 sub = { VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2 };
+    VkAttachmentReference2 att = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 };
+    VkAttachmentDescriptionStencilLayout stencil_desc = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT };
+    VkAttachmentReferenceStencilLayout stencil_att = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
+    stencil_desc.stencilInitialLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    stencil_desc.stencilFinalLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+    stencil_att.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+
+    desc.format = ds_format;
+    desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+    desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+    desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    desc.pNext = &stencil_desc;
+
+    att.layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+    att.attachment = 0;
+    att.pNext = &stencil_att;
+
+    sub.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sub.pDepthStencilAttachment = &att;
+    rp2.subpassCount = 1;
+    rp2.pSubpasses = &sub;
+    rp2.attachmentCount = 1;
+    rp2.pAttachments = &desc;
+
+    VkRenderPass render_pass_separate{};
+    VkFramebuffer framebuffer_separate{};
+    VkRenderPass render_pass_combined{};
+    VkFramebuffer framebuffer_combined{};
+
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device(), "vkCreateRenderPass2KHR");
+
+    vkCreateRenderPass2KHR(device(), &rp2, nullptr, &render_pass_separate);
+
+    desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    desc.finalLayout = desc.initialLayout;
+    desc.pNext = nullptr;
+    att.layout = desc.initialLayout;
+    att.pNext = nullptr;
+
+    vkCreateRenderPass2KHR(device(), &rp2, nullptr, &render_pass_combined);
+
+    VkFramebufferCreateInfo fb_info = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+    fb_info.renderPass = render_pass_separate;
+    fb_info.width = 1;
+    fb_info.height = 1;
+    fb_info.layers = 1;
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &view.handle();
+    vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer_separate);
+
+    fb_info.renderPass = render_pass_combined;
+    vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer_combined);
+
+    for (auto& barrier : barriers) {
+        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    rp_begin_info.renderPass = render_pass_separate;
+    rp_begin_info.framebuffer = framebuffer_separate;
+    rp_begin_info.renderArea.extent = { 1, 1 };
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+
+    rp_begin_info.renderPass = render_pass_combined;
+    rp_begin_info.framebuffer = framebuffer_combined;
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, SubresourceLayout) {
     ASSERT_NO_FATAL_FAILURE(Init());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
