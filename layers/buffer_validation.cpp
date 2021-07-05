@@ -4383,10 +4383,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
             if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (image_layout != initial_layout) {
-                // Need to look up the inital layout *state* to get a bit more information
-                const auto *initial_layout_state = subres_map->GetSubresourceInitialLayoutState(pos->first.begin);
-                assert(initial_layout_state);  // There's no way we should have an initial layout without matching state...
-                bool matches = ImageLayoutMatches(initial_layout_state->aspect_mask, image_layout, initial_layout);
+                const auto aspect_mask = image_state->subresource_encoder.Decode(intersected_range.begin).aspectMask;
+                bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
                 if (!matches) {
                     // We can report all the errors for the intersected range directly
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
