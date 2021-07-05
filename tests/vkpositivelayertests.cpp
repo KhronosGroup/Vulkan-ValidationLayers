@@ -10426,7 +10426,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
 
     m_errorMonitor->VerifyNotFound();
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    ASSERT_NO_FATAL_FAILURE(InitState(&features, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(&features, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
     VkFormatProperties props;
@@ -10448,7 +10448,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     vk_testing::Image image;
     image.init(*m_device, image_ci);
-    m_commandBuffer->begin();
+
     const auto depth_range = image.subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT);
     const auto stencil_range = image.subresource_range(VK_IMAGE_ASPECT_STENCIL_BIT);
     const auto depth_stencil_range = image.subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -10463,7 +10463,27 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
 
     std::vector<VkImageMemoryBarrier> barriers;
 
-    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+    {
+        m_commandBuffer->begin();
+        auto depth_barrier = image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                        depth_range);
+        auto stencil_barrier = image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                          VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
+                                                          stencil_range);
+        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &depth_barrier);
+        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &stencil_barrier);
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer(false);
+        m_commandBuffer->reset();
+    }
+
+    m_commandBuffer->begin();
+
+    // Test that we handle initial layout in command buffer.
+    barriers.push_back(image.image_memory_barrier(0, 0, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
                                                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                                   depth_stencil_range));
 
@@ -10575,6 +10595,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 
     m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyNotFound();
 }
 
