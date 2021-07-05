@@ -198,18 +198,34 @@ static VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &s
     return subresource_range;
 }
 
-static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
-    return (layout == non_normal) ? normal : layout;
-}
-
 static VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
-    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL);
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+            return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+            return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+
+        default:
+            return layout;
+    }
 }
 
 static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
-    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL);
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+            return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+            return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+
+        default:
+            return layout;
+    }
 }
 
 static VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_mask, VkImageLayout layout) {
@@ -244,8 +260,12 @@ static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayo
         b = NormalizeSynchronization2Layout(aspect_mask, b);
         matches = (a == b);
         if (!matches) {
-            // Relaxed rules when referencing *only* the depth or stencil aspects
-            if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+            // Relaxed rules when referencing *only* the depth or stencil aspects.
+            // When accessing both, normalize layouts for aspects separately.
+            if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b) &&
+                          NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
+            } else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
                 matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
             } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
                 matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
@@ -638,25 +658,36 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                                                                    : nullptr;
 
             if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
-                LayoutUseCheckAndMessage layout_check(subresource_map);
                 bool subres_skip = false;
-                auto pos = subresource_map->Find(view_state->normalized_subresource_range);
-                // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
-                // the next "constant value" range
-                for (; !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
-                    const VkImageSubresource &subres = pos->subresource;
 
-                    // Allow for differing depth and stencil layouts
-                    VkImageLayout check_layout = attachment_initial_layout;
-                    if (subres.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) check_layout = attachment_stencil_initial_layout;
+                for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
+                    VkImageAspectFlags test_aspect = 1u << aspect_index;
+                    if ((view_state->normalized_subresource_range.aspectMask & test_aspect) == 0) {
+                        continue;
+                    }
 
-                    if (!layout_check.Check(subres, check_layout, pos->current_layout, pos->initial_layout)) {
-                        subres_skip |= LogError(
-                            device, kVUID_Core_DrawState_InvalidRenderpass,
-                            "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
-                            "and the %s layout of the attachment is %s. The layouts must match, or the render "
-                            "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
-                            i, string_VkImageLayout(check_layout), layout_check.message, string_VkImageLayout(layout_check.layout));
+                    auto normalized_range = view_state->normalized_subresource_range;
+                    normalized_range.aspectMask = test_aspect;
+                    auto pos = subresource_map->Find(normalized_range);
+                    LayoutUseCheckAndMessage layout_check(subresource_map, test_aspect);
+
+                    // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to the next "constant value" range
+                    for (; !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
+                        const VkImageSubresource &subres = pos->subresource;
+
+                        // Allow for differing depth and stencil layouts
+                        VkImageLayout check_layout = attachment_initial_layout;
+                        if (test_aspect == VK_IMAGE_ASPECT_STENCIL_BIT) check_layout = attachment_stencil_initial_layout;
+
+                        if (!layout_check.Check(subres, check_layout, pos->current_layout, pos->initial_layout)) {
+                            subres_skip |= LogError(
+                                device, kVUID_Core_DrawState_InvalidRenderpass,
+                                "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
+                                "and the %s layout of the attachment is %s. The layouts must match, or the render "
+                                "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
+                                i, string_VkImageLayout(check_layout), layout_check.message,
+                                string_VkImageLayout(layout_check.layout));
+                        }
                     }
                 }
 
@@ -977,23 +1008,35 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 // subresource.
             } else if (subresource_map && !QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
                 bool subres_skip = false;
-                LayoutUseCheckAndMessage layout_check(subresource_map);
-                auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
-                // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
-                // the next "constant value" range
-                for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
-                    const auto &value = *pos;
-                    auto old_layout =
-                        NormalizeSynchronization2Layout(img_barrier.subresourceRange.aspectMask, img_barrier.oldLayout);
-                    if (!layout_check.Check(value.subresource, old_layout, value.current_layout, value.initial_layout)) {
-                        const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
-                        subres_skip = LogError(cb_state->commandBuffer(), vuid,
-                                               "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
-                                               "%s layout is %s.",
-                                               loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
-                                               value.subresource.aspectMask, value.subresource.mipLevel,
-                                               value.subresource.arrayLayer, string_VkImageLayout(img_barrier.oldLayout),
-                                               layout_check.message, string_VkImageLayout(layout_check.layout));
+
+                // Validate aspects in isolation.
+                // This is required when handling separate depth-stencil layouts.
+                for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
+                    VkImageAspectFlags test_aspect = 1u << aspect_index;
+                    if ((img_barrier.subresourceRange.aspectMask & test_aspect) == 0) {
+                        continue;
+                    }
+
+                    LayoutUseCheckAndMessage layout_check(subresource_map, test_aspect);
+                    auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
+                    normalized_isr.aspectMask = test_aspect;
+
+                    // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to the next "constant value" range
+                    for (auto pos = subresource_map->Find(normalized_isr); !(pos.AtEnd()) && !subres_skip; pos.IncrementInterval()) {
+                        const auto &value = *pos;
+                        auto old_layout =
+                            NormalizeSynchronization2Layout(test_aspect, img_barrier.oldLayout);
+                        if (!layout_check.Check(value.subresource, old_layout, value.current_layout, value.initial_layout)) {
+                            const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
+                            subres_skip =
+                                LogError(cb_state->commandBuffer(), vuid,
+                                         "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
+                                         "%s layout is %s.",
+                                         loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                         value.subresource.aspectMask, value.subresource.mipLevel, value.subresource.arrayLayer,
+                                         string_VkImageLayout(img_barrier.oldLayout), layout_check.message,
+                                         string_VkImageLayout(layout_check.layout));
+                        }
                     }
                 }
                 skip |= subres_skip;
