@@ -10502,9 +10502,10 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     VkAttachmentReference2 att = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 };
     VkAttachmentDescriptionStencilLayout stencil_desc = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT };
     VkAttachmentReferenceStencilLayout stencil_att = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT };
-    stencil_desc.stencilInitialLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    // Test that we can discard stencil layout.
+    stencil_desc.stencilInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     stencil_desc.stencilFinalLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
-    stencil_att.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+    stencil_att.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
 
     desc.format = ds_format;
     desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
