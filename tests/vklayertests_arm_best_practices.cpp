@@ -1464,12 +1464,22 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     InitState();
 
-    auto ds = CreateImage(VK_FORMAT_D32_SFLOAT_S8_UINT, 64, 64,
+    // One of these formats must be supported.
+    VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), ds_format, &format_props);
+    if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+        ds_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        vk::GetPhysicalDeviceFormatProperties(gpu(), ds_format, &format_props);
+        ASSERT_TRUE((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0);
+    }
+
+    auto ds = CreateImage(ds_format, 64, 64,
                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     m_clear_via_load_op = true;
-    m_depth_stencil_fmt = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    auto ds_view = ds->targetView(VK_FORMAT_D32_SFLOAT_S8_UINT,
+    m_depth_stencil_fmt = ds_format;
+    auto ds_view = ds->targetView(ds_format,
                                   VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
 
