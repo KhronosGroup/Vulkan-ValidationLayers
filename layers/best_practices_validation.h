@@ -463,6 +463,15 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
                                          uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers) override;
 
+    void PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                          const VkClearAttachment* pClearAttachments,
+                                          uint32_t rectCount, const VkClearRect *pRects) override;
+
+    bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                           const VkCommandBuffer* pCommandBuffers) const override;
+    void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                         const VkCommandBuffer* pCommandBuffers) override;
+
     std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                          VkSwapchainKHR swapchain) final {
         return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<SWAPCHAIN_STATE_BP>(create_info, swapchain));
@@ -521,6 +530,22 @@ class BestPractices : public ValidationStateTracker {
         bool depthEqualComparison = false;
         uint32_t numDrawCallsDepthOnly = 0;
         uint32_t numDrawCallsDepthEqualCompare = 0;
+
+        // For secondaries, we need to keep this around for execute commands.
+        struct ClearInfo {
+            uint32_t framebufferAttachment;
+            uint32_t colorAttachment;
+            VkImageAspectFlags aspects;
+            std::vector<VkClearRect> rects;
+        };
+
+        struct AttachmentInfo {
+            uint32_t framebufferAttachment;
+            VkImageAspectFlags aspects;
+        };
+
+        std::vector<ClearInfo> earlyClearAttachments;
+        std::vector<AttachmentInfo> touchesAttachments;
     };
 
     // used to track heuristic data per command buffer
@@ -547,4 +572,14 @@ class BestPractices : public ValidationStateTracker {
     std::unordered_map<VkImage, IMAGE_STATE_BP> imageUsageMap;
 
     void AddDeferredQueueOperations(CMD_BUFFER_STATE* cb);
+
+    void RecordAttachmentClearAttachments(CMD_BUFFER_STATE* cmd_state, RenderPassState& state,
+                                          uint32_t fb_attachment, uint32_t color_attachment,
+                                          VkImageAspectFlags aspects,
+                                          uint32_t rectCount, const VkClearRect *pRects);
+    void RecordAttachmentAccess(RenderPassState& state, uint32_t attachment, VkImageAspectFlags aspects);
+    bool ClearAttachmentsIsFullClear(const CMD_BUFFER_STATE* cmd, uint32_t rectCount, const VkClearRect* pRects) const;
+    bool ValidateClearAttachment(VkCommandBuffer commandBuffer, const CMD_BUFFER_STATE* cmd,
+                                 uint32_t fb_attachment, uint32_t color_attachment,
+                                 VkImageAspectFlags aspects, bool secondary) const;
 };
