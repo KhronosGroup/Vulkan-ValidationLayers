@@ -7767,6 +7767,21 @@ void ThreadSafety::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+void ThreadSafety::PreCallRecordGetMemoryRemoteAddressNV(
+    VkDevice                                    device,
+    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    VkRemoteAddressNV*                          pAddress) {
+    StartReadObjectParentInstance(device, "vkGetMemoryRemoteAddressNV");
+}
+
+void ThreadSafety::PostCallRecordGetMemoryRemoteAddressNV(
+    VkDevice                                    device,
+    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    VkRemoteAddressNV*                          pAddress,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetMemoryRemoteAddressNV");
+}
+
 void ThreadSafety::PreCallRecordCmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    patchControlPoints) {

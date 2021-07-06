@@ -4956,6 +4956,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INF
 };
 
 #endif // VK_USE_PLATFORM_FUCHSIA
+// Map type VkMemoryGetRemoteAddressInfoNV to id VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV
+template <> struct LvlTypeMap<VkMemoryGetRemoteAddressInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV> {
+    typedef VkMemoryGetRemoteAddressInfoNV Type;
+};
+
+// Map type VkPhysicalDeviceExternalMemoryRDMAFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceExternalMemoryRDMAFeaturesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV> {
+    typedef VkPhysicalDeviceExternalMemoryRDMAFeaturesNV Type;
+};
+
 // Map type VkPhysicalDeviceExtendedDynamicState2FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;

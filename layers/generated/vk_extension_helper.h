@@ -527,6 +527,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_device_diagnostics_config{kNotEnabled};
     ExtEnabled vk_nv_device_generated_commands{kNotEnabled};
     ExtEnabled vk_nv_external_memory{kNotEnabled};
+    ExtEnabled vk_nv_external_memory_rdma{kNotEnabled};
     ExtEnabled vk_nv_external_memory_win32{kNotEnabled};
     ExtEnabled vk_nv_fill_rectangle{kNotEnabled};
     ExtEnabled vk_nv_fragment_coverage_to_color{kNotEnabled};
@@ -958,6 +959,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
             {VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_memory, {{
                            {&DeviceExtensions::vk_nv_external_memory_capabilities, VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}}})},
+            {VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_memory_rdma, {{
+                           {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             {VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_memory_win32, {{
                            {&DeviceExtensions::vk_nv_external_memory, VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
@@ -1333,6 +1336,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
     VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME,
     VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME,
+    VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
 #endif

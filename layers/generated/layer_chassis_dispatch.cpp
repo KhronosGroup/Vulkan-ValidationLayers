@@ -8594,6 +8594,29 @@ VkResult DispatchGetSemaphoreZirconHandleFUCHSIA(
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+VkResult DispatchGetMemoryRemoteAddressNV(
+    VkDevice                                    device,
+    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    VkRemoteAddressNV*                          pAddress)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
+    safe_VkMemoryGetRemoteAddressInfoNV var_local_getMemoryRemoteAddressInfo;
+    safe_VkMemoryGetRemoteAddressInfoNV *local_getMemoryRemoteAddressInfo = NULL;
+    {
+        if (getMemoryRemoteAddressInfo) {
+            local_getMemoryRemoteAddressInfo = &var_local_getMemoryRemoteAddressInfo;
+            local_getMemoryRemoteAddressInfo->initialize(getMemoryRemoteAddressInfo);
+            if (getMemoryRemoteAddressInfo->memory) {
+                local_getMemoryRemoteAddressInfo->memory = layer_data->Unwrap(getMemoryRemoteAddressInfo->memory);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetMemoryRemoteAddressNV(device, (const VkMemoryGetRemoteAddressInfoNV*)local_getMemoryRemoteAddressInfo, pAddress);
+
+    return result;
+}
+
 void DispatchCmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    patchControlPoints)

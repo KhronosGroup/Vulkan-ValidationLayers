@@ -554,6 +554,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID";
         case VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR";
+        case VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV:
+            return "VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV";
         case VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR:
             return "VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR";
         case VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA:
@@ -670,6 +672,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2:
@@ -1653,6 +1657,17 @@ static inline const char* string_VkObjectType(VkObjectType input_value)
     }
 }
 
+static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHeaderVersion input_value)
+{
+    switch (input_value)
+    {
+        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
+            return "VK_PIPELINE_CACHE_HEADER_VERSION_ONE";
+        default:
+            return "Unhandled VkPipelineCacheHeaderVersion";
+    }
+}
+
 static inline const char* string_VkVendorId(VkVendorId input_value)
 {
     switch (input_value)
@@ -1671,17 +1686,6 @@ static inline const char* string_VkVendorId(VkVendorId input_value)
             return "VK_VENDOR_ID_VSI";
         default:
             return "Unhandled VkVendorId";
-    }
-}
-
-static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHeaderVersion input_value)
-{
-    switch (input_value)
-    {
-        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
-            return "VK_PIPELINE_CACHE_HEADER_VERSION_ONE";
-        default:
-            return "Unhandled VkPipelineCacheHeaderVersion";
     }
 }
 
@@ -2555,6 +2559,8 @@ static inline const char* string_VkMemoryPropertyFlagBits(VkMemoryPropertyFlagBi
             return "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT";
         case VK_MEMORY_PROPERTY_PROTECTED_BIT:
             return "VK_MEMORY_PROPERTY_PROTECTED_BIT";
+        case VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV:
+            return "VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV";
         default:
             return "Unhandled VkMemoryPropertyFlagBits";
     }
@@ -4651,6 +4657,8 @@ static inline const char* string_VkExternalMemoryHandleTypeFlagBits(VkExternalMe
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT";
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT";
+        case VK_EXTERNAL_MEMORY_HANDLE_TYPE_RDMA_ADDRESS_BIT_NV:
+            return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_RDMA_ADDRESS_BIT_NV";
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ZIRCON_VMO_BIT_FUCHSIA:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ZIRCON_VMO_BIT_FUCHSIA";
         default:
@@ -5698,6 +5706,8 @@ static inline const char* string_VkExternalMemoryHandleTypeFlagBitsKHR(VkExterna
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT";
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT";
+        case VK_EXTERNAL_MEMORY_HANDLE_TYPE_RDMA_ADDRESS_BIT_NV:
+            return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_RDMA_ADDRESS_BIT_NV";
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ZIRCON_VMO_BIT_FUCHSIA:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ZIRCON_VMO_BIT_FUCHSIA";
         default:

@@ -1060,6 +1060,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPreCallRecordGetSemaphoreZirconHandleFUCHSIA,
     InterceptIdPostCallRecordGetSemaphoreZirconHandleFUCHSIA,
+    InterceptIdPreCallValidateGetMemoryRemoteAddressNV,
+    InterceptIdPreCallRecordGetMemoryRemoteAddressNV,
+    InterceptIdPostCallRecordGetMemoryRemoteAddressNV,
     InterceptIdPreCallValidateCmdSetPatchControlPointsEXT,
     InterceptIdPreCallRecordCmdSetPatchControlPointsEXT,
     InterceptIdPostCallRecordCmdSetPatchControlPointsEXT,
@@ -2346,6 +2349,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetSemaphoreZirconHandleFUCHSIA);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetSemaphoreZirconHandleFUCHSIA);
 #endif
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryRemoteAddressNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryRemoteAddressNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryRemoteAddressNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPatchControlPointsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPatchControlPointsEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPatchControlPointsEXT);

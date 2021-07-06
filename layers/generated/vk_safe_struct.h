@@ -9625,6 +9625,37 @@ struct safe_VkSemaphoreGetZirconHandleInfoFUCHSIA {
 };
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+struct safe_VkMemoryGetRemoteAddressInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkDeviceMemory memory;
+    VkExternalMemoryHandleTypeFlagBits handleType;
+    safe_VkMemoryGetRemoteAddressInfoNV(const VkMemoryGetRemoteAddressInfoNV* in_struct);
+    safe_VkMemoryGetRemoteAddressInfoNV(const safe_VkMemoryGetRemoteAddressInfoNV& copy_src);
+    safe_VkMemoryGetRemoteAddressInfoNV& operator=(const safe_VkMemoryGetRemoteAddressInfoNV& copy_src);
+    safe_VkMemoryGetRemoteAddressInfoNV();
+    ~safe_VkMemoryGetRemoteAddressInfoNV();
+    void initialize(const VkMemoryGetRemoteAddressInfoNV* in_struct);
+    void initialize(const safe_VkMemoryGetRemoteAddressInfoNV* copy_src);
+    VkMemoryGetRemoteAddressInfoNV *ptr() { return reinterpret_cast<VkMemoryGetRemoteAddressInfoNV *>(this); }
+    VkMemoryGetRemoteAddressInfoNV const *ptr() const { return reinterpret_cast<VkMemoryGetRemoteAddressInfoNV const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 externalMemoryRDMA;
+    safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV(const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* in_struct);
+    safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& operator=(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV();
+    ~safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV();
+    void initialize(const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* copy_src);
+    VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceExternalMemoryRDMAFeaturesNV *>(this); }
+    VkPhysicalDeviceExternalMemoryRDMAFeaturesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceExternalMemoryRDMAFeaturesNV const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT {
     VkStructureType sType;
     void* pNext;
