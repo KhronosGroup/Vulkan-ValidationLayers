@@ -7359,6 +7359,22 @@ void CoreChecksOptickInstrumented::PostCallRecordGetSemaphoreZirconHandleFUCHSIA
 }
 
 #endif // VK_USE_PLATFORM_FUCHSIA
+bool CoreChecksOptickInstrumented::PreCallValidateGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* getMemoryRemoteAddressInfo, VkRemoteAddressNV* pAddress) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* getMemoryRemoteAddressInfo, VkRemoteAddressNV* pAddress) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* getMemoryRemoteAddressInfo, VkRemoteAddressNV* pAddress, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress, result);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints);

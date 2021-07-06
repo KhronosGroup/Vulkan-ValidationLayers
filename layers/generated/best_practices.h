@@ -1695,6 +1695,13 @@ void PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
 
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+void PostCallRecordGetMemoryRemoteAddressNV(
+    VkDevice                                    device,
+    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    VkRemoteAddressNV*                          pAddress,
+    VkResult                                    result) override;
+
+
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 void PostCallRecordCreateScreenSurfaceQNX(

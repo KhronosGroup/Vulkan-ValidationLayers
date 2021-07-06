@@ -2928,6 +2928,19 @@ void BestPractices::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
 
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+void BestPractices::PostCallRecordGetMemoryRemoteAddressNV(
+    VkDevice                                    device,
+    const VkMemoryGetRemoteAddressInfoNV*       getMemoryRemoteAddressInfo,
+    VkRemoteAddressNV*                          pAddress,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetMemoryRemoteAddressNV(device, getMemoryRemoteAddressInfo, pAddress, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_INVALID_EXTERNAL_HANDLE};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkGetMemoryRemoteAddressNV", result, error_codes, success_codes);
+    }
+}
+
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 void BestPractices::PostCallRecordCreateScreenSurfaceQNX(
