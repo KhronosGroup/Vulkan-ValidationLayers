@@ -5231,8 +5231,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) const {
     return cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
-        this, pCreateInfo, IsExtEnabled(device_extensions.vk_khr_push_descriptor), phys_dev_ext_props.max_push_descriptors,
-        IsExtEnabled(device_extensions.vk_ext_descriptor_indexing), &enabled_features.core12,
+        this, pCreateInfo, phys_dev_ext_props.max_push_descriptors, &enabled_features.core12,
         &enabled_features.inline_uniform_block, &phys_dev_ext_props.inline_uniform_block_props, &device_extensions);
 }
 
@@ -12899,15 +12898,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // Validate state for shared presentable case
     if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
         VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
-        if (!device_extensions.vk_khr_shared_presentable_image) {
-            if (LogError(
-                    device, kVUID_Core_DrawState_ExtensionNotEnabled,
-                    "%s called with presentMode %s which requires the VK_KHR_shared_presentable_image extension, which has not "
-                    "been enabled.",
-                    func_name, string_VkPresentModeKHR(pCreateInfo->presentMode))) {
-                return true;
-            }
-        } else if (pCreateInfo->minImageCount != 1) {
+        if (pCreateInfo->minImageCount != 1) {
             if (LogError(
                     device, "VUID-VkSwapchainCreateInfoKHR-minImageCount-01383",
                     "%s called with presentMode %s, but minImageCount value is %d. For shared presentable image, minImageCount "

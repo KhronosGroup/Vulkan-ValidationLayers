@@ -277,6 +277,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.validatedStructs = dict()                    # Map of structs type names to generated validation code for that struct type
         self.enumRanges = set()                           # Set of enum names
         self.enumValueLists = ''                          # String containing enumerated type map definitions
+        self.enum_extended = dict()                      # Mapping of extended enums with version and extension info
         self.stype_version_dict = dict()                  # String containing structtype to version map data
         self.flags = set()                                # Map of flags typenames
         self.flagBits = dict()                            # Map of flag bits typename to list of values
@@ -293,6 +294,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.source_file = False                          # Source file generation flag
         self.instance_extension_list = ''                 # List of instance extension name defines
         self.device_extension_list = ''                   # List of device extension name defines
+        self.extension_dict = dict()                      # Dict of device extension name values to define
         self.returnedonly_structs = []
         # Named tuples to store struct and command data
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
@@ -371,26 +373,57 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             s = self.GenerateCopyright()
             write(s, file=self.outFile)
 
-        if self.header_file:
-            return
-
         stype_map = ''
         stype_version_dict = dict()
         # Create contents of Structs->API version unordered map
+        # Build extended enum mapping while looping both features and extension
+        # Both maps are created here instead of beginFeature() as not all entries are known then
         root = self.registry.reg
         for node in root.findall('feature'):
             version_name = node.get('name')
             version_name = version_name.replace('VK_', 'VK_API_')
             for enum_item in node.iter('enum'):
-                if enum_item.get('extends') == "VkStructureType":
-                    struct_type_id = enum_item.get('name')
-                    self.stype_version_dict[struct_type_id] = version_name
+                alias = enum_item.get('alias')
+                extends = enum_item.get('extends')
+                extended_name = enum_item.get('name')
+                # VkResult is a read only enum and not something to validate from application
+                if extends is None or extends == 'VkResult':
+                    continue
+                elif extends == "VkStructureType":
+                    self.stype_version_dict[extended_name] = version_name
+                else:
+                    if alias is not None:
+                        extended_name = alias
+                    # init nested dict as needed
+                    if self.enum_extended.get(extends) is None:
+                        self.enum_extended[extends] = dict()
+                    if self.enum_extended[extends].get(extended_name) is None:
+                        self.enum_extended[extends][extended_name] = []
+                    self.enum_extended[extends][extended_name].append({"version" : node.get('name')})
         for extensions in root.findall('extensions'):
             for extension in extensions.findall('extension'):
-                for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
+                for entry in extension.iterfind('require/enum'):
                     alias = entry.get('alias')
-                    if alias is not None and (entry.get('comment') is None or 'typo' not in entry.get('comment')):
-                        self.stype_version_dict[alias] = extension.get('name')
+                    extends = entry.get('extends')
+                    # VkResult is a read only enum and not something to validate from application
+                    if extends is None or extension.get('supported') == 'disabled' or extends == 'VkResult':
+                        continue
+                    elif extends == "VkStructureType":
+                        if alias is not None and (entry.get('comment') is None or 'typo' not in entry.get('comment')):
+                            self.stype_version_dict[alias] = extension.get('name')
+                    else:
+                        extended_name = entry.get('name')
+                        if alias is not None:
+                            extended_name = alias
+                        # init nested dict as needed
+                        if self.enum_extended.get(extends) is None:
+                            self.enum_extended[extends] = dict()
+                        if self.enum_extended[extends].get(extended_name) is None:
+                            self.enum_extended[extends][extended_name] = []
+                        self.enum_extended[extends][extended_name].append({"extension" : extension.get('name')})
+
+        if self.header_file:
+            return
 
         # Build map of structure type names to VkStructureType enum values
         # Find all types of category "struct"
@@ -457,6 +490,63 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             api_func += '    return skip;\n'
             api_func += '}\n'
             write(api_func, file=self.outFile)
+
+            # Create a function for each extened enum to be check in individual api call functions
+            extended_func = ''
+            for extends in self.enum_extended:
+                isBitField = False
+                if 'FlagBits' in extends:
+                    isBitField = True
+
+                func_name = extends.replace('FlagBits', 'Flags')
+                extended_func += 'bool StatelessValidation::Validate%s(const char *api_name, const ParameterName &parameter_name, %s value, const char *vuid) const {\n' % (func_name[2:], func_name)
+                extended_func += '    bool skip = false;\n'
+
+                # fast return if can see no using an extended value
+                if isBitField:
+                    extended_func += '    if ((value & AllExtended%s) == 0) { return skip; }\n' % (extends)
+                else:
+                    extended_func += '    if (std::find(AllExtended%sEnums.begin(), AllExtended%sEnums.end(), value) == AllExtended%sEnums.end()) { return skip; }\n' % (extends, extends, extends)
+
+                for enum, requirements in self.enum_extended[extends].items():
+                    condition = ''
+                    if isBitField:
+                        condition = '((value & %s) != 0)' % (enum)
+                    else:
+                        condition = '(value == %s)' % (enum)
+                    error_message = '%s which requires ' %  (enum)
+
+                    for count, requirement in enumerate(requirements):
+                        if count != 0:
+                            error_message += " or "
+                        if 'version' in requirement:
+                            condition += ' && (api_version < %s)' % (requirement['version'])
+                            error_message += requirement['version']
+                        elif 'extension' in requirement:
+                            table_type = ''
+                            ext_name = requirement['extension']
+                            # TODO - get 'removeExtensions' passed here to check
+                            if ext_name == 'VK_HUAWEI_subpass_shading':
+                                continue
+
+                            ext_name_define = self.extension_dict[ext_name]
+                            if ext_name_define in self.instance_extension_list:
+                                table_type = 'instance'
+                            elif ext_name_define in self.device_extension_list:
+                                table_type = 'device'
+                            else:
+                                print("Error in parameter_validation_generator.py CodeGen - can't find %s." % (ext_name_define))
+                            condition += ' && (!%s_extensions.%s)' % (table_type, ext_name_define[:-15].lower())
+                            error_message += ext_name
+
+                    extended_func += '    if (%s) {\n' % (condition)
+                    extended_func += '        skip |= LogError(device, vuid,\n'
+                    extended_func += '                    "%s: value of %s contains enum ' + error_message + '.",\n'
+                    extended_func += '                    api_name, parameter_name.get_name().c_str());\n'
+                    extended_func += '    }\n'
+                extended_func += '    return skip;\n'
+                extended_func += '}\n\n'
+            write(extended_func, file=self.outFile)
 
             pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,\n'
             pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid) const {\n'
@@ -555,6 +645,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write(commands_text, file=self.outFile)
             self.newline()
         if self.header_file:
+            for extends in self.enum_extended:
+                func_name = extends.replace('FlagBits', 'Flags')
+                extended_func = 'bool Validate%s(const char *api_name, const ParameterName &parameter_name, %s value, const char *vuid) const;' % (func_name[2:], func_name)
+                write(extended_func, file=self.outFile)
+            write('', file=self.outFile) # newline
             # Output declarations and record intercepted procedures
             write('\n'.join(self.declarations), file=self.outFile)
         # Finish processing in superclass
@@ -604,12 +699,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if interface.tag == 'extension':
             name_elem = interface[0][1]
             name_definition = name_elem.get('name')
-            if 'EXTENSION_NAME' not in name_definition:
+            # Save value because trying to turn the value back into the define later is not straight forward/consistent
+            name_value = name_elem.get('value')
+            if 'EXTENSION_NAME' not in name_definition or name_value is None:
                 print("Error in vk.xml file -- extension name is not available")
             if interface.get('type') == 'instance':
                 self.instance_extension_list += '%s, ' % name_definition
             else:
                 self.device_extension_list += '%s, ' % name_definition
+            self.extension_dict[name_value.replace('"','')] = name_definition
 
     #
     # Called at the end of each extension (feature)
@@ -643,6 +741,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         decl += '|' + bit
                     decl += ';'
                     write(decl, file=self.outFile)
+
+                    # Same thing, but for only extended bits
+                    if flagBits in self.enum_extended:
+                        bits = [x for x in self.enum_extended[flagBits]]
+                        decl = 'const DECORATE_UNUSED {} AllExtended{} = {}'.format(flag, flagBits, bits[0])
+                        for bit in bits[1:]:
+                            decl += '|' + bit
+                        decl += ';'
+                        write(decl, file=self.outFile)
             endif = '\n'
             if (self.featureExtraProtect is not None):
                 endif = '#endif // %s\n' % self.featureExtraProtect
@@ -776,10 +883,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             if isEnum:
                 self.enumRanges.add(groupName)
                 # Create definition for a list containing valid enum values for this enumerated type
+                enum_entry = ''
                 if self.featureExtraProtect is not None:
-                    enum_entry = '\n#ifdef %s\n' % self.featureExtraProtect
-                else:
-                    enum_entry = ''
+                    enum_entry += '\n#ifdef %s\n' % self.featureExtraProtect
                 enum_entry += 'const std::vector<%s> All%sEnums = {' % (groupName, groupName)
                 for enum in groupElem:
                     name = enum.get('name')
@@ -789,6 +895,21 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 if self.featureExtraProtect is not None:
                     enum_entry += '#endif // %s\n' % self.featureExtraProtect
                 self.enumValueLists += enum_entry
+
+                # Same thing, but for only extended bits
+                if groupName in self.enum_extended:
+                    enum_entry = ''
+                    if self.featureExtraProtect is not None:
+                        enum_entry += '\n#ifdef %s\n' % self.featureExtraProtect
+                    enum_entry += 'const std::vector<%s> AllExtended%sEnums = {' % (groupName, groupName)
+                    enums = [x for x in self.enum_extended[groupName]]
+                    for enum in enums:
+                        enum_entry += '%s, ' % enum
+                    enum_entry += '};\n'
+                    if self.featureExtraProtect is not None:
+                        enum_entry += '#endif // %s\n' % self.featureExtraProtect
+                    self.enumValueLists += enum_entry
+
     #
     # Capture command parameter info to be used for param check code generation.
     def genCmd(self, cmdinfo, name, alias):
@@ -1420,12 +1541,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         allFlagsName = 'All' + flagBitsName
                         zeroVuidArg = '' if value.isoptional else ', ' + zeroVuid
                         usedLines.append('skip |= validate_flags("{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, {}{});\n'.format(funcName, valueDisplayName, flagBitsName, allFlagsName, value.name, flagsType, invalidVuid, zeroVuidArg, pf=valuePrefix, **postProcSpec))
+                        if flagBitsName in self.enum_extended:
+                            usedLines.append('skip |= Validate{}("{}", {ppp}"{}"{pps}, {pf}{}, {});\n'.format(value.type.replace('FlagBits', 'Flags')[2:], funcName, valueDisplayName, value.name, invalidVuid, pf=valuePrefix, **postProcSpec))
                     elif value.isbool:
                         usedLines.append('skip |= validate_bool32("{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
                     elif value.israngedenum:
                         vuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
                         enum_value_list = 'All%sEnums' % value.type
                         usedLines.append('skip |= validate_ranged_enum("{}", {ppp}"{}"{pps}, "{}", {}, {}{}, {});\n'.format(funcName, valueDisplayName, value.type, enum_value_list, valuePrefix, value.name, vuid, **postProcSpec))
+                        if value.type in self.enum_extended:
+                            usedLines.append('skip |= Validate{}("{}", {ppp}"{}"{pps}, {pf}{}, {});\n'.format(value.type[2:], funcName, valueDisplayName, value.name, vuid, pf=valuePrefix, **postProcSpec))
                     # If this is a struct, see if it contains members that need to be checked
                     if value.type in self.validatedStructs:
                         memberNamePrefix = '{}{}.'.format(valuePrefix, value.name)

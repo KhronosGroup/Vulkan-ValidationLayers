@@ -7390,13 +7390,7 @@ TEST_F(VkLayerTest, PushDescriptorSetLayoutWithoutExtension) {
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
-    std::string error = "Attempted to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR in ";
-    error = error + "VkDescriptorSetLayoutCreateInfo::flags but its required extension ";
-    error = error + VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME;
-    error = error + " has not been enabled.";
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error.c_str());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-00281");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
@@ -7407,15 +7401,16 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
     TEST_DESCRIPTION("Create an update_after_bind set layout without loading the needed extension.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    // Extension was promoted in 1.2
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
+        printf("%s test requires Vulkan 1.1 or lower, skipping test\n", kSkipPrefix);
+        return;
+    }
+
     auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
 
-    std::string error = "Attemped to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT in ";
-    error = error + "VkDescriptorSetLayoutCreateInfo::flags but its required extension ";
-    error = error + VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
-    error = error + " has not been enabled.";
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, error.c_str());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
