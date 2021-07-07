@@ -30,7 +30,8 @@
 
 class BUFFER_STATE : public BINDABLE {
   public:
-    VkBufferCreateInfo createInfo;
+    const safe_VkBufferCreateInfo safe_create_info;
+    const VkBufferCreateInfo &createInfo;
     VkDeviceAddress deviceAddress;
     VkMemoryRequirements requirements;
     bool memory_requirements_checked;
@@ -38,30 +39,15 @@ class BUFFER_STATE : public BINDABLE {
     BUFFER_STATE(VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
         : BINDABLE(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                    (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
-          createInfo(*pCreateInfo),
+          safe_create_info(pCreateInfo),
+          createInfo(*safe_create_info.ptr()),
           deviceAddress(0),
           requirements(),
-          memory_requirements_checked(false) {
-        if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
-            uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
-            for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
-                pQueueFamilyIndices[i] = pCreateInfo->pQueueFamilyIndices[i];
-            }
-            createInfo.pQueueFamilyIndices = pQueueFamilyIndices;
-        }
-    }
+          memory_requirements_checked(false) {}
 
     BUFFER_STATE(BUFFER_STATE const &rh_obj) = delete;
 
     VkBuffer buffer() const { return handle_.Cast<VkBuffer>(); }
-
-    ~BUFFER_STATE() {
-        if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
-            delete[] createInfo.pQueueFamilyIndices;
-            createInfo.pQueueFamilyIndices = nullptr;
-        }
-        Destroy();
-    };
 
   private:
     static inline VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkBufferCreateInfo *pCreateInfo) {
@@ -72,11 +58,13 @@ class BUFFER_STATE : public BINDABLE {
 
 class BUFFER_VIEW_STATE : public BASE_NODE {
   public:
-    VkBufferViewCreateInfo create_info;
+    const VkBufferViewCreateInfo create_info;
     std::shared_ptr<BUFFER_STATE> buffer_state;
-    VkFormatFeatureFlags format_features;
-    BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci)
-        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf) {
+    const VkFormatFeatureFlags format_features;
+
+    BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
+                      VkFormatFeatureFlags ff)
+        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf), format_features(ff) {
         if (buffer_state) {
             buffer_state->AddParent(this);
         }
@@ -94,6 +82,7 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
     void Destroy() override {
         if (buffer_state) {
             buffer_state->RemoveParent(this);
+            buffer_state = nullptr;
         }
         BASE_NODE::Destroy();
     }

@@ -354,7 +354,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
                                                         const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                                         VkResult result) {
     if (result != VK_SUCCESS) return;
-    // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
+
     auto buffer_state = std::make_shared<BUFFER_STATE>(*pBuffer, pCreateInfo);
 
     // Get a set of requirements in the case the app does not
@@ -367,14 +367,14 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
                                                             const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
                                                             VkResult result) {
     if (result != VK_SUCCESS) return;
+
     auto buffer_state = GetBufferShared(pCreateInfo->buffer);
-    auto buffer_view_state = std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo);
 
     VkFormatProperties format_properties;
     DispatchGetPhysicalDeviceFormatProperties(physical_device, pCreateInfo->format, &format_properties);
-    buffer_view_state->format_features = format_properties.bufferFeatures;
 
-    bufferViewMap.emplace(*pView, std::move(buffer_view_state));
+    bufferViewMap[*pView] =
+        std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo, format_properties.bufferFeatures);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
