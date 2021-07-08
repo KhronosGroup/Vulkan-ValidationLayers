@@ -233,8 +233,8 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
 
     m_commandBuffer->begin();
 
-    auto* secondary_full_clear = new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    auto* secondary_small_clear = new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_full_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_small_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBufferBeginInfo begin_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT |
                        VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
@@ -268,27 +268,24 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     }
     m_commandBuffer->EndRenderPass();
 
-    secondary_small_clear->begin(&begin_info);
-    secondary_full_clear->begin(&begin_info);
-    vk::CmdClearAttachments(secondary_small_clear->handle(), 1, &color_attachment, 1, &clear_rect_small);
-    vk::CmdClearAttachments(secondary_full_clear->handle(), 1, &color_attachment, 1, &clear_rect);
-    secondary_small_clear->end();
-    secondary_full_clear->end();
+    secondary_small_clear.begin(&begin_info);
+    secondary_full_clear.begin(&begin_info);
+    vk::CmdClearAttachments(secondary_small_clear.handle(), 1, &color_attachment, 1, &clear_rect_small);
+    vk::CmdClearAttachments(secondary_full_clear.handle(), 1, &color_attachment, 1, &clear_rect);
+    secondary_small_clear.end();
+    secondary_full_clear.end();
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     {
         // Small clears which don't cover the render area should not trigger the warning.
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_small_clear->handle());
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_small_clear.handle());
         m_errorMonitor->VerifyNotFound();
         // Call for full-sized FB Color attachment prior to issuing a Draw
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_full_clear->handle());
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_full_clear.handle());
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->EndRenderPass();
-
-    delete secondary_small_clear;
-    delete secondary_full_clear;
 }
 
 TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
@@ -749,32 +746,32 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     inherit_info.subpass = 0;
     inherit_info.renderPass = m_renderPassBeginInfo.renderPass;
 
-    auto* secondary_clear = new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    auto* secondary_draw_masked = new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    auto* secondary_draw_write = new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_draw_masked(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_draw_write(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    secondary_clear->begin(&begin_info);
-    secondary_draw_masked->begin(&begin_info);
-    secondary_draw_write->begin(&begin_info);
+    secondary_clear.begin(&begin_info);
+    secondary_draw_masked.begin(&begin_info);
+    secondary_draw_write.begin(&begin_info);
 
-    vk::CmdClearAttachments(secondary_clear->handle(), 1, &color_attachment, 1, &clear_rect);
+    vk::CmdClearAttachments(secondary_clear.handle(), 1, &color_attachment, 1, &clear_rect);
 
-    vk::CmdBindPipeline(secondary_draw_masked->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_masked.pipeline_);
-    secondary_draw_masked->Draw(1, 0, 0, 0);
+    vk::CmdBindPipeline(secondary_draw_masked.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_masked.pipeline_);
+    secondary_draw_masked.Draw(1, 0, 0, 0);
 
-    vk::CmdBindPipeline(secondary_draw_write->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_writes.pipeline_);
-    secondary_draw_write->Draw(1, 0, 0, 0);
+    vk::CmdBindPipeline(secondary_draw_write.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_writes.pipeline_);
+    secondary_draw_write.Draw(1, 0, 0, 0);
 
-    secondary_clear->end();
-    secondary_draw_masked->end();
-    secondary_draw_write->end();
+    secondary_clear.end();
+    secondary_draw_masked.end();
+    secondary_draw_write.end();
 
     // Plain clear after load.
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
     {
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear->handle());
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear.handle());
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->EndRenderPass();
@@ -783,8 +780,8 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
     {
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_masked->handle());
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear->handle());
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_masked.handle());
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear.handle());
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->EndRenderPass();
@@ -792,15 +789,11 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     // Test that an actual write will not trigger the clear warning
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     {
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_write->handle());
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear->handle());
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_write.handle());
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear.handle());
         m_errorMonitor->VerifyNotFound();
     }
     m_commandBuffer->EndRenderPass();
-
-    delete secondary_clear;
-    delete secondary_draw_write;
-    delete secondary_draw_masked;
 }
 
 TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
