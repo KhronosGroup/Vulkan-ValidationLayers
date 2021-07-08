@@ -50,33 +50,55 @@ struct less<SamplerUsedByImage> {
 
 class SAMPLER_STATE : public BASE_NODE {
   public:
-    VkSamplerCreateInfo createInfo;
-    VkSamplerYcbcrConversion samplerConversion = VK_NULL_HANDLE;
-    VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo = {};
+    const VkSamplerCreateInfo createInfo;
+    const VkSamplerYcbcrConversion samplerConversion;
+    const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
     SAMPLER_STATE(const VkSampler *ps, const VkSamplerCreateInfo *pci)
-        : BASE_NODE(*ps, kVulkanObjectTypeSampler), createInfo(*pci) {
-        auto *conversionInfo = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pci->pNext);
-        if (conversionInfo) samplerConversion = conversionInfo->conversion;
-        auto cbci = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
-        if (cbci) customCreateInfo = *cbci;
-    }
+        : BASE_NODE(*ps, kVulkanObjectTypeSampler),
+          createInfo(*pci),
+          samplerConversion(GetConversion(pci)),
+          customCreateInfo(GetCustomCreateInfo(pci)) {}
 
     VkSampler sampler() const { return handle_.Cast<VkSampler>(); }
+
+  private:
+    static inline VkSamplerYcbcrConversion GetConversion(const VkSamplerCreateInfo *pci) {
+        auto *conversionInfo = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pci->pNext);
+        return conversionInfo ? conversionInfo->conversion : VK_NULL_HANDLE;
+    }
+    static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo *pci) {
+        VkSamplerCustomBorderColorCreateInfoEXT result{};
+        auto cbci = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
+        if (cbci) result = *cbci;
+        return result;
+    }
 };
 
 class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
   public:
-    VkFormatFeatureFlags format_features;
-    VkFormat format;
-    VkFilter chromaFilter;
+    const VkFormatFeatureFlags format_features;
+    const VkFormat format;
+    const VkFilter chromaFilter;
+    const uint64_t external_format;
 
     SAMPLER_YCBCR_CONVERSION_STATE(VkSamplerYcbcrConversion ycbcr, const VkSamplerYcbcrConversionCreateInfo *info,
                                    VkFormatFeatureFlags features)
         : BASE_NODE(ycbcr, kVulkanObjectTypeSamplerYcbcrConversion),
           format_features(features),
           format(info->format),
-          chromaFilter(info->chromaFilter) {}
+          chromaFilter(info->chromaFilter),
+          external_format(GetExternalFormat(info)) {}
 
     VkSamplerYcbcrConversion ycbcr_conversion() const { return handle_.Cast<VkSamplerYcbcrConversion>(); }
+
+  private:
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    uint64_t GetExternalFormat(const VkSamplerYcbcrConversionCreateInfo *info) {
+        const VkExternalFormatANDROID *ext_format_android = LvlFindInChain<VkExternalFormatANDROID>(info->pNext);
+        return ext_format_android ? ext_format_android->externalFormat : 0;
+    }
+#else
+    uint64_t GetExternalFormat(const VkSamplerYcbcrConversionCreateInfo *info) { return 0; }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 };

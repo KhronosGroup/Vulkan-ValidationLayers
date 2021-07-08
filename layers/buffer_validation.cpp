@@ -1706,10 +1706,10 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         uint64_t external_format = 0;
         const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
         if (ycbcr_conv_info != nullptr) {
-            VkSamplerYcbcrConversion conv_handle = ycbcr_conv_info->conversion;
-            if (ycbcr_conversion_ahb_fmt_map.find(conv_handle) != ycbcr_conversion_ahb_fmt_map.end()) {
+            auto ycbcr_state = GetSamplerYcbcrConversionState(ycbcr_conv_info->conversion);
+            if (ycbcr_state) {
                 conv_found = true;
-                external_format = ycbcr_conversion_ahb_fmt_map.at(conv_handle);
+                external_format = ycbcr_state->external_format;
             }
         }
         if ((!conv_found) || (external_format != image_state->ahb_format)) {
