@@ -232,6 +232,41 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // Main thing we care about for this test is that the VkImage obj we're
+    // clearing matches Color Attachment of FB
+    //  Also pass down other dummy params to keep driver and paramchecker happy
+    VkClearAttachment color_attachment;
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 1.0;
+    color_attachment.clearValue.color.float32[1] = 1.0;
+    color_attachment.clearValue.color.float32[2] = 1.0;
+    color_attachment.clearValue.color.float32[3] = 1.0;
+    color_attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+
+    // Call for full-sized FB Color attachment prior to issuing a Draw
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
+
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
+    TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments with secondary command buffers");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
+        printf("%s Test CmdClearAttachmentTestSecondary is unstable on ShieldTV, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
 
     VkCommandBufferObj secondary_full_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBufferObj secondary_small_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
