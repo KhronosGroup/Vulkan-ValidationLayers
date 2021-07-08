@@ -42,8 +42,8 @@ uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t l
 
 class IMAGE_STATE : public BINDABLE {
   public:
-    safe_VkImageCreateInfo safe_create_info;
-    VkImageCreateInfo &createInfo;
+    const safe_VkImageCreateInfo safe_create_info;
+    const VkImageCreateInfo &createInfo;
     bool valid;               // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEMORY_STATE
     bool acquired;            // If this is a swapchain image, has it been acquired by the app.
     bool shared_presentable;  // True for a front-buffered swapchain image
@@ -51,15 +51,14 @@ class IMAGE_STATE : public BINDABLE {
     bool get_sparse_reqs_called;         // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_required;       // Track if sparse metadata aspect is required for this image
     bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
-    bool has_ahb_format;                 // True if image was created with an external Android format
-    bool is_swapchain_image;             // True if image is a swapchain image
-    uint64_t ahb_format;                 // External Android format, if provided
-    VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
-    VkSwapchainKHR create_from_swapchain;
+    const bool is_swapchain_image;       // True if image is a swapchain image
+    const uint64_t ahb_format;           // External Android format, if provided
+    const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
+    const VkSwapchainKHR create_from_swapchain;
     VkSwapchainKHR bind_swapchain;
     uint32_t bind_swapchain_imageIndex;
     image_layout_map::Encoder range_encoder;
-    VkFormatFeatureFlags format_features = 0;
+    const VkFormatFeatureFlags format_features;
     // Need to memory requirments for each plane if image is disjoint
     bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
     static const int MAX_PLANES = 3;
@@ -72,12 +71,16 @@ class IMAGE_STATE : public BINDABLE {
     VkDeviceSize swapchain_fake_address;  // Needed for swapchain syncval, since there is no VkDeviceMemory::fake_base_address
 
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
-    IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo);
+    layer_data::unordered_set<IMAGE_STATE *> aliasing_images;
+
+    IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags features);
+    IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                VkFormatFeatureFlags features);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
 
     VkImage image() const { return handle_.Cast<VkImage>(); }
 
-    layer_data::unordered_set<IMAGE_STATE *> aliasing_images;
+    bool HasAHBFormat() const { return ahb_format != 0; }
     bool IsCompatibleAliasing(IMAGE_STATE *other_image_state) const;
 
     bool IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const;
@@ -121,12 +124,10 @@ class IMAGE_STATE : public BINDABLE {
     }
 
     ~IMAGE_STATE() {
-        if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
-            delete[] createInfo.pQueueFamilyIndices;
-            createInfo.pQueueFamilyIndices = nullptr;
+        if (!Destroyed()) {
+            Destroy();
         }
-        Destroy();
-    };
+    }
 
     void Destroy() override;
 
@@ -144,31 +145,32 @@ class IMAGE_STATE : public BINDABLE {
 
 class IMAGE_VIEW_STATE : public BASE_NODE {
   public:
-    VkImageViewCreateInfo create_info;
+    const VkImageViewCreateInfo create_info;
     const VkImageSubresourceRange normalized_subresource_range;
     const image_layout_map::RangeGenerator range_generator;
-    VkSampleCountFlagBits samples;
-    unsigned descriptor_format_bits;
-    VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
-    VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
-    VkFormatFeatureFlags format_features;
-    VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
+    const VkSampleCountFlagBits samples;
+    const unsigned descriptor_format_bits;
+    const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
+    const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
+    const VkFormatFeatureFlags format_features;
+    const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
     std::shared_ptr<IMAGE_STATE> image_state;
-    IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
+
+    IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
+                     VkFormatFeatureFlags ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
 
     VkImageView image_view() const { return handle_.Cast<VkImageView>(); }
 
-    virtual ~IMAGE_VIEW_STATE() { Destroy(); }
+    virtual ~IMAGE_VIEW_STATE() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
 
     bool OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const;
 
-    void Destroy() override {
-        if (image_state) {
-            image_state->RemoveParent(this);
-        }
-        BASE_NODE::Destroy();
-    }
+    void Destroy() override;
 };
 
 struct SWAPCHAIN_IMAGE {
@@ -180,11 +182,79 @@ class SWAPCHAIN_NODE : public BASE_NODE {
   public:
     safe_VkSwapchainCreateInfoKHR createInfo;
     std::vector<SWAPCHAIN_IMAGE> images;
-    bool retired = false;
-    bool shared_presentable = false;
-    uint32_t get_swapchain_image_count = 0;
-    SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
-        : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR), createInfo(pCreateInfo) {}
+    bool retired;
+    const bool shared_presentable;
+    uint32_t get_swapchain_image_count;
+    const VkImageCreateInfo image_create_info;
+
+    SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain);
+
+    ~SWAPCHAIN_NODE() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
 
     VkSwapchainKHR swapchain() const { return handle_.Cast<VkSwapchainKHR>(); }
+
+    void PresentImage(uint32_t image_index);
+
+    void AcquireImage(uint32_t image_index);
+
+    void Destroy() override;
+
+  protected:
+    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override;
+};
+
+struct GpuQueue {
+    VkPhysicalDevice gpu;
+    uint32_t queue_family_index;
+};
+
+inline bool operator==(GpuQueue const &lhs, GpuQueue const &rhs) {
+    return (lhs.gpu == rhs.gpu && lhs.queue_family_index == rhs.queue_family_index);
+}
+
+namespace std {
+template <>
+struct hash<GpuQueue> {
+    size_t operator()(GpuQueue gq) const throw() {
+        return hash<uint64_t>()((uint64_t)(gq.gpu)) ^ hash<uint32_t>()(gq.queue_family_index);
+    }
+};
+}  // namespace std
+
+class SURFACE_STATE : public BASE_NODE {
+  public:
+    std::shared_ptr<SWAPCHAIN_NODE> swapchain;
+    layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
+
+    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
+
+    ~SURFACE_STATE() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
+
+    VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
+
+    void Destroy() override {
+        if (swapchain) {
+            swapchain->RemoveParent(this);
+            swapchain = nullptr;
+        }
+        BASE_NODE::Destroy();
+    }
+
+    VkImageCreateInfo GetImageCreateInfo() const;
+
+  protected:
+    void NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) override {
+        BASE_NODE::NotifyInvalidate(invalid_handles, unlink);
+        if (unlink) {
+            swapchain = nullptr;
+        }
+    }
 };

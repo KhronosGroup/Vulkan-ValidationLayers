@@ -94,11 +94,25 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
 }
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkImageCreateInfo *pCreateInfo) {
-    auto *external_memory_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+    const auto *external_memory_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
-IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo)
+static VkSwapchainKHR GetSwapchain(const VkImageCreateInfo *pCreateInfo) {
+    const auto *swapchain_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    return swapchain_info ? swapchain_info->swapchain : VK_NULL_HANDLE;
+}
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+static uint64_t GetExternalFormat(const VkImageCreateInfo *info) {
+    const VkExternalFormatANDROID *ext_format_android = LvlFindInChain<VkExternalFormatANDROID>(info->pNext);
+    return ext_format_android ? ext_format_android->externalFormat : 0;
+}
+#else
+static uint64_t GetExternalFormat(const VkImageCreateInfo *info) { return 0; }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags ff)
     : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -110,29 +124,53 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       get_sparse_reqs_called(false),
       sparse_metadata_required(false),
       sparse_metadata_bound(false),
-      has_ahb_format(false),
-      is_swapchain_image(false),
-      ahb_format(0),
-      full_range{MakeImageFullRange(createInfo)},
-      create_from_swapchain(VK_NULL_HANDLE),
+      is_swapchain_image(GetSwapchain(pCreateInfo) != VK_NULL_HANDLE),
+      ahb_format(GetExternalFormat(pCreateInfo)),
+      full_range{MakeImageFullRange(*pCreateInfo)},
+      create_from_swapchain(GetSwapchain(pCreateInfo)),
       bind_swapchain(VK_NULL_HANDLE),
       bind_swapchain_imageIndex(0),
       range_encoder(full_range),
-      disjoint(false),
+      format_features(ff),
+      disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements{},
       memory_requirements_checked{{false, false, false}},
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
       swapchain_fake_address(0U),
+      sparse_requirements{} {}
+
+IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+                         uint32_t swapchain_index, VkFormatFeatureFlags ff)
+    : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
+      safe_create_info(pCreateInfo),
+      createInfo(*safe_create_info.ptr()),
+      valid(false),
+      acquired(false),
+      shared_presentable(false),
+      layout_locked(false),
+      get_sparse_reqs_called(false),
+      sparse_metadata_required(false),
+      sparse_metadata_bound(false),
+      is_swapchain_image(true),
+      ahb_format(GetExternalFormat(pCreateInfo)),
+      full_range{MakeImageFullRange(*pCreateInfo)},
+      create_from_swapchain(swapchain),
+      bind_swapchain(swapchain),
+      bind_swapchain_imageIndex(swapchain_index),
+      range_encoder(full_range),
+      format_features(ff),
+      disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
+      memory_requirements_checked{false, false, false},
+      subresource_encoder(full_range),
+      fragment_encoder(nullptr),
+      store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
+      swapchain_fake_address(0U),
       sparse_requirements{} {
-    if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
-        uint32_t *queue_family_indices = new uint32_t[createInfo.queueFamilyIndexCount];
-        for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
-            queue_family_indices[i] = pCreateInfo->pQueueFamilyIndices[i];
-        }
-        createInfo.pQueueFamilyIndices = queue_family_indices;
-    }
+    fragment_encoder =
+        std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 }
 
 void IMAGE_STATE::Destroy() {
@@ -244,33 +282,135 @@ VkExtent3D IMAGE_STATE::GetSubresourceExtent(const VkImageSubresourceLayers &sub
     return extent;
 }
 
-IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci)
+static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo *ci) {
+    auto *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(ci->pNext);
+    return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;
+}
+
+static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo *ci, const IMAGE_STATE &image_state) {
+    auto usage_create_info = LvlFindInChain<VkImageViewUsageCreateInfo>(ci->pNext);
+    return (usage_create_info) ? usage_create_info->usage : image_state.createInfo.usage;
+}
+
+IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
+                                   VkFormatFeatureFlags ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
       create_info(*ci),
       normalized_subresource_range(::NormalizeSubresourceRange(im->createInfo, ci->subresourceRange)),
       range_generator(im->subresource_encoder, normalized_subresource_range),
-      samplerConversion(VK_NULL_HANDLE),
+      samples(im->createInfo.samples),
+      // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
+      // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter. As a Sampler Ycbcr
+      // conversion must be used the shader type is always float.
+      descriptor_format_bits(im->HasAHBFormat() ? static_cast<unsigned>(DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT)
+                                                : DescriptorRequirementsBitsFromFormat(ci->format)),
+      samplerConversion(GetSamplerConversion(ci)),
+      filter_cubic_props(cubic_props),
+      format_features(ff),
+      inherited_usage(GetInheritedUsage(ci, *im)),
       image_state(im) {
-    auto *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
-    if (conversion_info) samplerConversion = conversion_info->conversion;
+    image_state->AddParent(this);
+}
+
+void IMAGE_VIEW_STATE::Destroy() {
     if (image_state) {
-        // A light normalization of the createInfo range
-        auto &sub_res_range = create_info.subresourceRange;
-        sub_res_range.levelCount = ResolveRemainingLevels(&sub_res_range, image_state->createInfo.mipLevels);
-        sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
+        image_state->RemoveParent(this);
+        image_state = nullptr;
+    }
+    BASE_NODE::Destroy();
+}
 
-        // Cache a full normalization (for "full image/whole image" comparisons)
-        // normalized_subresource_range = NormalizeSubresourceRange(*image_state, ci->subresourceRange);
-        samples = image_state->createInfo.samples;
+static VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.pNext = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+    image_ci.flags = 0;  // to be updated below
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = pCreateInfo->imageFormat;
+    image_ci.extent.width = pCreateInfo->imageExtent.width;
+    image_ci.extent.height = pCreateInfo->imageExtent.height;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = pCreateInfo->imageArrayLayers;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = pCreateInfo->imageUsage;
+    image_ci.sharingMode = pCreateInfo->imageSharingMode;
+    image_ci.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
+    image_ci.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-        if (image_state->has_ahb_format) {
-            // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
-            // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter. As a Sampler Ycbcr
-            // conversion must be used the shader type is always float.
-            descriptor_format_bits = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
-        } else {
-            descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
+        image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+    }
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
+        image_ci.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
+    }
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
+        image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
+    }
+    return image_ci;
+}
+
+SWAPCHAIN_NODE::SWAPCHAIN_NODE(const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR swapchain)
+    : BASE_NODE(swapchain, kVulkanObjectTypeSwapchainKHR),
+      createInfo(pCreateInfo),
+      images(),
+      retired(false),
+      shared_presentable(VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
+                         VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode),
+      get_swapchain_image_count(0),
+      image_create_info(GetImageCreateInfo(pCreateInfo)) {}
+
+void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
+    if (image_index >= images.size()) return;
+
+    IMAGE_STATE *image_state = images[image_index].image_state;
+    if (image_state) {
+        image_state->acquired = false;
+        if (image_state->shared_presentable) {
+            image_state->layout_locked = true;
         }
-        image_state->AddParent(this);
+    }
+}
+
+void SWAPCHAIN_NODE::AcquireImage(uint32_t image_index) {
+    if (image_index >= images.size()) return;
+
+    IMAGE_STATE *image_state = images[image_index].image_state;
+    if (image_state) {
+        image_state->acquired = true;
+        image_state->shared_presentable = shared_presentable;
+    }
+}
+
+void SWAPCHAIN_NODE::Destroy() {
+    for (auto &swapchain_image : images) {
+        // TODO: missing validation that the bound images are empty (except for image_state above)
+        // Clean up the aliases and the bound_images *before* erasing the image_state.
+        // TODO: RemoveAliasingImages(swapchain_image.bound_images);
+        for (auto &image : swapchain_image.bound_images) {
+            image->RemoveParent(this);
+            image->Destroy();
+        }
+        swapchain_image.bound_images.clear();
+        // TODO: imageMap.erase(swapchain_image.image_state->image());
+        swapchain_image.image_state = nullptr;
+    }
+    BASE_NODE::Destroy();
+}
+
+void SWAPCHAIN_NODE::NotifyInvalidate(const LogObjectList &invalid_handles, bool unlink) {
+    BASE_NODE::NotifyInvalidate(invalid_handles, unlink);
+    if (unlink) {
+        auto &immediate_child = invalid_handles.object_list.back();
+        if (immediate_child.type == kVulkanObjectTypeImage) {
+            IMAGE_STATE *invalid_image = static_cast<IMAGE_STATE *>(immediate_child.node);
+            assert(invalid_image);
+            auto &swapchain_image = images[invalid_image->bind_swapchain_imageIndex];
+            swapchain_image.bound_images.erase(invalid_image);
+            if (swapchain_image.image_state == invalid_image) {
+                swapchain_image.image_state = nullptr;
+            }
+        }
     }
 }

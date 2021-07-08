@@ -1693,7 +1693,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
     bool skip = false;
     const IMAGE_STATE *image_state = GetImageState(create_info->image);
 
-    if (image_state->has_ahb_format) {
+    if (image_state->HasAHBFormat()) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
             skip |= LogError(create_info->image, "VUID-VkImageViewCreateInfo-image-02399",
                              "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
@@ -3447,7 +3447,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
         if (image_view_state) {
             // The layers specified by a given element of pRects must be contained within every attachment that
             // pAttachments refers to
-            const auto attachment_layer_count = image_view_state->create_info.subresourceRange.layerCount;
+            const auto attachment_layer_count = image_view_state->normalized_subresource_range.layerCount;
             if ((clear_rects[j].baseArrayLayer >= attachment_layer_count) ||
                 (clear_rects[j].baseArrayLayer + clear_rects[j].layerCount > attachment_layer_count)) {
                 skip |= LogError(command_buffer, "VUID-vkCmdClearAttachments-pRects-00017",
@@ -4528,7 +4528,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state,
     const VkFormatFeatureFlags image_format_features = image_state->format_features;
     if ((image_format_features & desired) != desired) {
         // Same error, but more details if it was an AHB external format
-        if (image_state->has_ahb_format == true) {
+        if (image_state->HasAHBFormat()) {
             skip |= LogError(image_state->image(), vuid,
                              "In %s, VkFormatFeatureFlags (0x%08X) does not support required feature %s for the external format "
                              "found in VkAndroidHardwareBufferFormatPropertiesANDROID::formatFeatures used by %s.",
@@ -5473,7 +5473,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE *image_state,
     VkFormatFeatureFlags tiling_features = VK_FORMAT_FEATURE_FLAG_BITS_MAX_ENUM;
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
 
-    if (image_state->has_ahb_format == true) {
+    if (image_state->HasAHBFormat()) {
         // AHB image view and image share same feature sets
         tiling_features = image_state->format_features;
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {

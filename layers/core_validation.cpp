@@ -6219,7 +6219,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
             // XXX TODO: While the VUID says "each subresource", only the base mip level is
             // actually used. Since we don't have an existing convenience function to iterate
             // over all mip levels, just don't bother with non-base levels.
-            const VkImageSubresourceRange &range = view_state->create_info.subresourceRange;
+            const VkImageSubresourceRange &range = view_state->normalized_subresource_range;
             VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
 
             if (image_state) {
@@ -8634,6 +8634,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u is not a valid VkImageView.", i);
                     } else {
                         auto &ivci = view_state->create_info;
+                        auto &subresource_range = view_state->normalized_subresource_range;
                         if (ivci.format != rpci->pAttachments[i].format) {
                             skip |= LogError(
                                 pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-pAttachments-00880",
@@ -8660,14 +8661,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                              "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
 
                         // Verify that view only has a single mip level
-                        if (ivci.subresourceRange.levelCount != 1) {
+                        if (subresource_range.levelCount != 1) {
                             skip |= LogError(
                                 device, "VUID-VkFramebufferCreateInfo-pAttachments-00883",
                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has mip levelCount of %u but "
                                 "only a single mip level (levelCount ==  1) is allowed when creating a Framebuffer.",
-                                i, ivci.subresourceRange.levelCount);
+                                i, subresource_range.levelCount);
                         }
-                        const uint32_t mip_level = ivci.subresourceRange.baseMipLevel;
+                        const uint32_t mip_level = subresource_range.baseMipLevel;
                         uint32_t mip_width = max(1u, ici->extent.width >> mip_level);
                         uint32_t mip_height = max(1u, ici->extent.height >> mip_level);
                         bool used_as_input_color_resolve_depth_stencil_attachment = false;
@@ -8704,12 +8705,12 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             }
 
                             if (used_as_input_color_resolve_depth_stencil_attachment) {
-                                if (ivci.subresourceRange.layerCount <= highest_view_bit) {
+                                if (subresource_range.layerCount <= highest_view_bit) {
                                     skip |= LogError(
                                         device, "VUID-VkFramebufferCreateInfo-renderPass-04536",
                                         "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
                                         "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
-                                        i, ivci.subresourceRange.layerCount, highest_view_bit, j);
+                                        i, subresource_range.layerCount, highest_view_bit, j);
                                 }
                             }
 
@@ -8727,7 +8728,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                          "width (%u) and the "
                                                          "specified shading rate texel width (%u) are smaller than the "
                                                          "corresponding framebuffer width (%u).",
-                                                         i, ivci.subresourceRange.baseMipLevel, j, mip_width,
+                                                         i, subresource_range.baseMipLevel, j, mip_width,
                                                          fsr_attachment->shadingRateAttachmentTexelSize.width, pCreateInfo->width);
                                     }
                                     if ((mip_height * fsr_attachment->shadingRateAttachmentTexelSize.height) <
@@ -8740,18 +8741,18 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                      "height (%u) and the "
                                                      "specified shading rate texel height (%u) are smaller than the corresponding "
                                                      "framebuffer height (%u).",
-                                                     i, ivci.subresourceRange.baseMipLevel, j, mip_height,
+                                                     i, subresource_range.baseMipLevel, j, mip_height,
                                                      fsr_attachment->shadingRateAttachmentTexelSize.height, pCreateInfo->height);
                                     }
                                     if (highest_view_bit != 0) {
                                         fsr_non_zero_viewmasks = true;
                                     }
-                                    if (ivci.subresourceRange.layerCount <= highest_view_bit) {
+                                    if (subresource_range.layerCount <= highest_view_bit) {
                                         skip |= LogError(
                                             device, "VUID-VkFramebufferCreateInfo-flags-04537",
                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
                                             "less than or equal to the highest bit in the view mask (%u) of subpass %u.",
-                                            i, ivci.subresourceRange.layerCount, highest_view_bit, j);
+                                            i, subresource_range.layerCount, highest_view_bit, j);
                                     }
                                 }
                             }
@@ -8775,7 +8776,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                         "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
                                         "attachment #%u, framebuffer:\n"
                                         "width: %u, the ceiling value: %u\n",
-                                        i, ivci.subresourceRange.baseMipLevel, i, i, mip_width, ceiling_width);
+                                        i, subresource_range.baseMipLevel, i, i, mip_width, ceiling_width);
                                 }
                                 uint32_t ceiling_height = static_cast<uint32_t>(ceil(
                                     static_cast<float>(pCreateInfo->height) /
@@ -8791,7 +8792,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                         "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
                                         "attachment #%u, framebuffer:\n"
                                         "height: %u, the ceiling value: %u\n",
-                                        i, ivci.subresourceRange.baseMipLevel, i, i, mip_height, ceiling_height);
+                                        i, subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
                                 }
                             }
                         }
@@ -8809,22 +8810,22 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                  "height (%u) smaller than the corresponding framebuffer height (%u).",
                                                  i, mip_level, mip_height, pCreateInfo->height);
                             }
-                            if (ivci.subresourceRange.layerCount < pCreateInfo->layers) {
+                            if (subresource_range.layerCount < pCreateInfo->layers) {
                                 skip |=
                                     LogError(device, "VUID-VkFramebufferCreateInfo-flags-04535",
                                              "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
                                              "smaller than the corresponding framebuffer layer count (%u).",
-                                             i, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                                             i, subresource_range.layerCount, pCreateInfo->layers);
                             }
                         }
 
                         if (used_as_fragment_shading_rate_attachment && !fsr_non_zero_viewmasks) {
-                            if (ivci.subresourceRange.layerCount != 1 && ivci.subresourceRange.layerCount < pCreateInfo->layers) {
+                            if (subresource_range.layerCount != 1 && subresource_range.layerCount < pCreateInfo->layers) {
                                 skip |=
                                     LogError(device, "VUID-VkFramebufferCreateInfo-flags-04538",
                                              "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
                                              "smaller than the corresponding framebuffer layer count (%u).",
-                                             i, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                                             i, subresource_range.layerCount, pCreateInfo->layers);
                             }
                         }
 
@@ -10835,6 +10836,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                 for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
                     const auto image_view_state = GetImageViewState(render_pass_attachment_begin_info->pAttachments[i]);
                     const VkImageViewCreateInfo *image_view_create_info = &image_view_state->create_info;
+                    const auto &subresource_range = image_view_state->normalized_subresource_range;
                     const VkFramebufferAttachmentImageInfo *framebuffer_attachment_image_info =
                         &framebuffer_attachments_create_info->pAttachmentImageInfos[i];
                     const VkImageCreateInfo *image_create_info = &GetImageState(image_view_create_info->image)->createInfo;
@@ -10863,7 +10865,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                         }
                     }
 
-                    uint32_t view_width = image_create_info->extent.width >> image_view_create_info->subresourceRange.baseMipLevel;
+                    uint32_t view_width = image_create_info->extent.width >> subresource_range.baseMipLevel;
                     if (framebuffer_attachment_image_info->width != view_width) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03211",
                                          "%s: Image view #%u created from an image subresource with width set as %u, "
@@ -10871,8 +10873,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          func_name, i, view_width, i, framebuffer_attachment_image_info->width);
                     }
 
-                    uint32_t view_height =
-                        image_create_info->extent.height >> image_view_create_info->subresourceRange.baseMipLevel;
+                    uint32_t view_height = image_create_info->extent.height >> subresource_range.baseMipLevel;
                     if (framebuffer_attachment_image_info->height != view_height) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03212",
                                          "%s: Image view #%u created from an image subresource with height set as %u, "
@@ -10880,12 +10881,12 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          func_name, i, view_height, i, framebuffer_attachment_image_info->height);
                     }
 
-                    if (framebuffer_attachment_image_info->layerCount != image_view_create_info->subresourceRange.layerCount) {
-                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03213",
-                                         "%s: Image view #%u created with a subresource range with a layerCount of %u, "
-                                         "but image info #%u used to create the framebuffer had layerCount set as %u",
-                                         func_name, i, image_view_create_info->subresourceRange.layerCount, i,
-                                         framebuffer_attachment_image_info->layerCount);
+                    if (framebuffer_attachment_image_info->layerCount != subresource_range.layerCount) {
+                        skip |=
+                            LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03213",
+                                     "%s: Image view #%u created with a subresource range with a layerCount of %u, "
+                                     "but image info #%u used to create the framebuffer had layerCount set as %u",
+                                     func_name, i, subresource_range.layerCount, i, framebuffer_attachment_image_info->layerCount);
                     }
 
                     const VkImageFormatListCreateInfo *image_format_list_create_info =
@@ -10934,11 +10935,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          string_VkSampleCountFlagBits(render_pass_create_info->pAttachments[i].samples));
                     }
 
-                    if (image_view_create_info->subresourceRange.levelCount != 1) {
+                    if (subresource_range.levelCount != 1) {
                         skip |= LogError(render_pass_attachment_begin_info->pAttachments[i],
                                          "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218",
                                          "%s: Image view #%u created with multiple (%u) mip levels.", func_name, i,
-                                         image_view_create_info->subresourceRange.levelCount);
+                                         subresource_range.levelCount);
                     }
 
                     if (IsIdentitySwizzle(image_view_create_info->components) == false) {
