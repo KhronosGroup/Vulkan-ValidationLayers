@@ -1079,7 +1079,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
 
         // Verify if attachments are used in DescriptorSet
         if (attachments && attachments->size() > 0 && subpasses && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-            bool ds_aspect = (image_view_state->create_info.subresourceRange.aspectMask &
+            bool ds_aspect = (image_view_state->normalized_subresource_range.aspectMask &
                               (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
                                  ? true
                                  : false;
@@ -2011,7 +2011,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     // Note that when an imageview is created, we validated that memory is bound so no need to re-check here
     // Validate that imageLayout is compatible with aspect_mask and image format
     //  and validate that image usage bits are correct for given usage
-    VkImageAspectFlags aspect_mask = iv_state->create_info.subresourceRange.aspectMask;
+    VkImageAspectFlags aspect_mask = iv_state->normalized_subresource_range.aspectMask;
     VkImage image = iv_state->create_info.image;
     VkFormat format = VK_FORMAT_MAX_ENUM;
     VkImageUsageFlags usage = 0;

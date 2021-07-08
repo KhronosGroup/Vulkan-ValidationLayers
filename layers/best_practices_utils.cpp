@@ -1513,7 +1513,8 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
 void BestPractices::QueueValidateImageView(QueueCallbacks &funcs, const char* function_name,
                                            IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage) {
     if (view) {
-        QueueValidateImage(funcs, function_name, GetImageUsageState(view->create_info.image), usage, view->create_info.subresourceRange);
+        QueueValidateImage(funcs, function_name, GetImageUsageState(view->create_info.image), usage,
+                           view->normalized_subresource_range);
     }
 }
 

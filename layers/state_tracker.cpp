@@ -122,57 +122,53 @@ VkFormatFeatureFlags ValidationStateTracker::GetExternalFormatFeaturesANDROID(co
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-void AddImageStateProps(IMAGE_STATE &image_state, const VkDevice device, const VkPhysicalDevice physical_device) {
+VkFormatFeatureFlags GetImageFormatFeatures(VkPhysicalDevice physical_device, VkDevice device, VkImage image, VkFormat format,
+                                            VkImageTiling tiling) {
+    VkFormatFeatureFlags format_features = 0;
     // Add feature support according to Image Format Features (vkspec.html#resources-image-format-features)
     // if format is AHB external format then the features are already set
-    if (image_state.has_ahb_format == false) {
-        const VkImageTiling image_tiling = image_state.createInfo.tiling;
-        const VkFormat image_format = image_state.createInfo.format;
-        if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {
-                VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT, nullptr};
-            DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
+    if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
+                                                                       nullptr};
+        DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_properties);
 
-            VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
-            VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
-                                                                        nullptr};
-            format_properties_2.pNext = (void *)&drm_properties_list;
-            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
-            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-            drm_properties.resize(drm_properties_list.drmFormatModifierCount);
-            drm_properties_list.pDrmFormatModifierProperties = &drm_properties[0];
-            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
+        VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
+        VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
+                                                                    nullptr};
+        format_properties_2.pNext = (void *)&drm_properties_list;
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &format_properties_2);
+        std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
+        drm_properties.resize(drm_properties_list.drmFormatModifierCount);
+        drm_properties_list.pDrmFormatModifierProperties = &drm_properties[0];
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &format_properties_2);
 
-            for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
-                if (drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier ==
-                    drm_format_properties.drmFormatModifier) {
-                    image_state.format_features =
-                        drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
-                    break;
-                }
+        for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
+            if (drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
+                format_features = drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                break;
             }
-        } else {
-            VkFormatProperties format_properties;
-            DispatchGetPhysicalDeviceFormatProperties(physical_device, image_format, &format_properties);
-            image_state.format_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
-                                                                                   : format_properties.optimalTilingFeatures;
         }
+    } else {
+        VkFormatProperties format_properties;
+        DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
+        format_features =
+            (tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures : format_properties.optimalTilingFeatures;
     }
+    return format_features;
 }
 
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto is_node = std::make_shared<IMAGE_STATE>(device, *pImage, pCreateInfo);
-    is_node->disjoint = ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0);
+    VkFormatFeatureFlags format_features = 0;
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        is_node->format_features = GetExternalFormatFeaturesANDROID(pCreateInfo);
+        format_features = GetExternalFormatFeaturesANDROID(pCreateInfo);
     }
-    const auto swapchain_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
-    if (swapchain_info) {
-        is_node->create_from_swapchain = swapchain_info->swapchain;
+    if (format_features == 0) {
+        format_features = GetImageFormatFeatures(physical_device, device, *pImage, pCreateInfo->format, pCreateInfo->tiling);
     }
 
+    auto is_node = std::make_shared<IMAGE_STATE>(device, *pImage, pCreateInfo, format_features);
     // Record the memory requirements in case they won't be queried
     // External AHB memory can't be queried until after memory is bound
     if (is_node->IsExternalAHB() == false) {
@@ -204,21 +200,14 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
         }
     }
 
-    AddImageStateProps(*is_node, device, physical_device);
-
-    imageMap.emplace(*pImage, std::move(is_node));
+    imageMap[*pImage] = std::move(is_node);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     if (!image) return;
     IMAGE_STATE *image_state = GetImageState(image);
-    // Clean up memory mapping, bindings and range references for image
-    if (image_state->bind_swapchain) {
-        auto swapchain = GetSwapchainState(image_state->bind_swapchain);
-        if (swapchain) {
-            swapchain->images[image_state->bind_swapchain_imageIndex].bound_images.erase(image_state);
-        }
-    }
+    if (!image_state) return;
+
     image_state->Destroy();
     imageMap.erase(image);
 }
@@ -362,56 +351,18 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
                                                            VkResult result) {
     if (result != VK_SUCCESS) return;
     auto image_state = GetImageShared(pCreateInfo->image);
-    auto image_view_state = std::make_shared<IMAGE_VIEW_STATE>(image_state, *pView, pCreateInfo);
 
-    // Add feature support according to Image View Format Features (vkspec.html#resources-image-view-format-features)
-    const VkImageTiling image_tiling = image_state->createInfo.tiling;
-    const VkFormat image_view_format = pCreateInfo->format;
-    if (image_state->has_ahb_format == true) {
+    VkFormatFeatureFlags format_features = 0;
+    if (image_state->HasAHBFormat() == true) {
         // The ImageView uses same Image's format feature since they share same AHB
-        image_view_state->format_features = image_state->format_features;
-    } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
-        assert(device_extensions.vk_ext_image_drm_format_modifier);
-        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
-                                                                       nullptr};
-        DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state->image(), &drm_format_properties);
-
-        VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
-        VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
-                                                                    nullptr};
-        format_properties_2.pNext = (void *)&drm_properties_list;
-
-        // First call is to get the number of modifiers compatible with the queried format
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_view_format, &format_properties_2);
-
-        std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-        drm_properties.resize(drm_properties_list.drmFormatModifierCount);
-        drm_properties_list.pDrmFormatModifierProperties = drm_properties.data();
-
-        // Second call, now with an allocated array in pDrmFormatModifierProperties, is to get the modifiers
-        // compatible with the queried format
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_view_format, &format_properties_2);
-
-        for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
-            if (drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
-                image_view_state->format_features |=
-                    drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
-                break;
-            }
-        }
+        format_features = image_state->format_features;
     } else {
-        VkFormatProperties format_properties;
-        DispatchGetPhysicalDeviceFormatProperties(physical_device, image_view_format, &format_properties);
-        image_view_state->format_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
-                                                                                     : format_properties.optimalTilingFeatures;
+        format_features = GetImageFormatFeatures(physical_device, device, image_state->image(), pCreateInfo->format,
+                                                 image_state->createInfo.tiling);
     }
 
-    auto usage_create_info = LvlFindInChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
-    image_view_state->inherited_usage = (usage_create_info) ? usage_create_info->usage : image_state->createInfo.usage;
-
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
-    image_view_state->filter_cubic_props = LvlInitStruct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
+    auto filter_cubic_props = LvlInitStruct<VkFilterCubicImageViewImageFormatPropertiesEXT>();
     if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
         auto imageview_format_info = LvlInitStruct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
         imageview_format_info.imageViewType = pCreateInfo->viewType;
@@ -419,14 +370,17 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         image_format_info.type = image_state->createInfo.imageType;
         image_format_info.format = image_state->createInfo.format;
         image_format_info.tiling = image_state->createInfo.tiling;
-        image_format_info.usage = image_view_state->inherited_usage;
+        auto usage_create_info = LvlFindInChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
+        image_format_info.usage = usage_create_info ? usage_create_info->usage : image_state->createInfo.usage;
         image_format_info.flags = image_state->createInfo.flags;
 
-        auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>(&image_view_state->filter_cubic_props);
+        auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>(&filter_cubic_props);
 
         DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
     }
-    imageViewMap.emplace(*pView, std::move(image_view_state));
+
+    imageViewMap[*pView] =
+        std::make_shared<IMAGE_VIEW_STATE>(image_state, *pView, pCreateInfo, format_features, filter_cubic_props);
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -560,16 +514,6 @@ const QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) const {
         return nullptr;
     }
     return &it->second;
-}
-
-void ValidationStateTracker::RemoveAliasingImages(const layer_data::unordered_set<IMAGE_STATE *> &bound_images) {
-    // This is one way clear. Because the bound_images include cross references, the one way clear loop could clear the whole
-    // reference. It doesn't need two ways clear.
-    for (auto *bound_image : bound_images) {
-        if (bound_image) {
-            bound_image->aliasing_images.clear();
-        }
-    }
 }
 
 const PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState(VkPhysicalDevice phys) const {
@@ -4141,6 +4085,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
                     image_state->swapchain_fake_address = (*swap_image.bound_images.cbegin())->swapchain_fake_address;
                 }
                 swap_image.bound_images.emplace(image_state);
+                image_state->AddParent(swapchain);
                 image_state->bind_swapchain = swapchain_info->swapchain;
                 image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
 
@@ -4303,19 +4248,19 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
                                                         VkSwapchainKHR *pSwapchain, SURFACE_STATE *surface_state,
                                                         SWAPCHAIN_NODE *old_swapchain_state) {
     if (VK_SUCCESS == result) {
-        auto swapchain_state = CreateSwapchainState(pCreateInfo, *pSwapchain);
-        if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
-            VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
-            swapchain_state->shared_presentable = true;
+        if (surface_state->swapchain) {
+            surface_state->swapchain->RemoveParent(surface_state);
         }
-        surface_state->swapchain = swapchain_state.get();
-        swapchainMap[*pSwapchain] = std::move(swapchain_state);
+        surface_state->swapchain = CreateSwapchainState(pCreateInfo, *pSwapchain);
+        surface_state->swapchain->AddParent(surface_state);
+        swapchainMap[*pSwapchain] = surface_state->swapchain;
     } else {
         surface_state->swapchain = nullptr;
     }
     // Spec requires that even if CreateSwapchainKHR fails, oldSwapchain is retired
     if (old_swapchain_state) {
         old_swapchain_state->retired = true;
+        old_swapchain_state->RemoveParent(surface_state);
     }
     return;
 }
@@ -4332,27 +4277,16 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
                                                               const VkAllocationCallbacks *pAllocator) {
     if (!swapchain) return;
     auto swapchain_data = GetSwapchainState(swapchain);
-    if (swapchain_data) {
-        for (auto &swapchain_image : swapchain_data->images) {
-            // TODO: missing validation that the bound images are empty (except for image_state above)
-            // Clean up the aliases and the bound_images *before* erasing the image_state.
-			RemoveAliasingImages(swapchain_image.bound_images);
-            swapchain_image.bound_images.clear();
+    if (!swapchain_data) return;
 
-            if (swapchain_image.image_state) {
-                swapchain_image.image_state->Destroy();
-                imageMap.erase(swapchain_image.image_state->image());
-                swapchain_image.image_state = nullptr;
-            }
+    for (auto &swapchain_image : swapchain_data->images) {
+        for (auto *image : swapchain_image.bound_images) {
+            imageMap.erase(image->image());
         }
-
-        auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
-        if (surface_state) {
-            if (surface_state->swapchain == swapchain_data) surface_state->swapchain = nullptr;
-        }
-        swapchain_data->Destroy();
-        swapchainMap.erase(swapchain);
     }
+
+    swapchain_data->Destroy();
+    swapchainMap.erase(swapchain);
 }
 
 void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
@@ -4381,14 +4315,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
         // Mark the image as having been released to the WSI
         auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
-        if (swapchain_data && (swapchain_data->images.size() > pPresentInfo->pImageIndices[i])) {
-            IMAGE_STATE *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state;
-            if (image_state) {
-                image_state->acquired = false;
-                if (image_state->shared_presentable) {
-                    image_state->layout_locked = true;
-                }
-            }
+        if (swapchain_data) {
+            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i]);
         }
     }
     // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP (and
@@ -4428,12 +4356,8 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
 
     // Mark the image as acquired.
     auto swapchain_data = GetSwapchainState(swapchain);
-    if (swapchain_data && (swapchain_data->images.size() > *pImageIndex)) {
-        IMAGE_STATE *image_state = swapchain_data->images[*pImageIndex].image_state;
-        if (image_state) {
-            image_state->acquired = true;
-            image_state->shared_presentable = swapchain_data->shared_presentable;
-        }
+    if (swapchain_data) {
+        swapchain_data->AcquireImage(*pImageIndex);
     }
 }
 
@@ -5410,47 +5334,12 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             SWAPCHAIN_IMAGE &swapchain_image = swapchain_state->images[i];
             if (swapchain_image.image_state) continue;  // Already retrieved this.
 
-            // Add imageMap entries for each swapchain image
-            auto image_ci = LvlInitStruct<VkImageCreateInfo>();
-            image_ci.pNext = LvlFindInChain<VkImageFormatListCreateInfo>(swapchain_state->createInfo.pNext);
-            image_ci.flags = 0;        // to be updated below
-            image_ci.imageType = VK_IMAGE_TYPE_2D;
-            image_ci.format = swapchain_state->createInfo.imageFormat;
-            image_ci.extent.width = swapchain_state->createInfo.imageExtent.width;
-            image_ci.extent.height = swapchain_state->createInfo.imageExtent.height;
-            image_ci.extent.depth = 1;
-            image_ci.mipLevels = 1;
-            image_ci.arrayLayers = swapchain_state->createInfo.imageArrayLayers;
-            image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-            image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-            image_ci.usage = swapchain_state->createInfo.imageUsage;
-            image_ci.sharingMode = swapchain_state->createInfo.imageSharingMode;
-            image_ci.queueFamilyIndexCount = swapchain_state->createInfo.queueFamilyIndexCount;
-            image_ci.pQueueFamilyIndices = swapchain_state->createInfo.pQueueFamilyIndices;
-            image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            auto format_features =
+                GetImageFormatFeatures(physical_device, device, pSwapchainImages[i], swapchain_state->image_create_info.format,
+                                       swapchain_state->image_create_info.tiling);
 
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
-                image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
-            }
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
-                image_ci.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
-            }
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
-                image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
-            }
-
-            imageMap[pSwapchainImages[i]] = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], &image_ci);
-            auto *image_state = imageMap[pSwapchainImages[i]].get();
-            assert(image_state);
-            image_state->valid = false;
-            image_state->create_from_swapchain = swapchain;
-            image_state->bind_swapchain = swapchain;
-            image_state->bind_swapchain_imageIndex = i;
-            image_state->is_swapchain_image = true;
-
-            // Since swapchains can't be linear, we can create an encoder here, and SyncValNeeds a fake_base_address
-            image_state->fragment_encoder = std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(
-                new subresource_adapter::ImageRangeEncoder(*image_state));
+            auto image_state = std::make_shared<IMAGE_STATE>(device, pSwapchainImages[i], &swapchain_state->image_create_info,
+                                                             swapchain, i, format_features);
 
             if (swapchain_image.bound_images.empty()) {
                 // First time "bind" allocates
@@ -5464,10 +5353,11 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
                 }
             }
 
-            swapchain_image.image_state = image_state;  // Don't move, it's already a reference to the imageMap
-            swapchain_image.bound_images.emplace(image_state);
+            swapchain_image.image_state = image_state.get();
+            swapchain_image.bound_images.emplace(image_state.get());
 
-            AddImageStateProps(*image_state, device, physical_device);
+            image_state->AddParent(swapchain_state);
+            imageMap[pSwapchainImages[i]] = std::move(image_state);
         }
     }
 

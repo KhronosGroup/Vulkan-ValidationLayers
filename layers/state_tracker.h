@@ -66,6 +66,8 @@ class RENDER_PASS_STATE;
 class SAMPLER_STATE;
 class SAMPLER_YCBCR_CONVERSION_STATE;
 class EVENT_STATE;
+class SWAPCHAIN_NODE;
+class SURFACE_STATE;
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 enum CopyCommandVersion { COPY_COMMAND_VERSION_1 = 0, COPY_COMMAND_VERSION_2 = 1 };
@@ -265,8 +267,6 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, accelerationStructureMap_khr)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map)
-
-    static void RemoveAliasingImages(const layer_data::unordered_set<IMAGE_STATE*>& bound_images);
 
   public:
     template <typename State>

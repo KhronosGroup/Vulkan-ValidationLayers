@@ -106,36 +106,6 @@ class PHYSICAL_DEVICE_STATE {
     bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
 };
 
-struct GpuQueue {
-    VkPhysicalDevice gpu;
-    uint32_t queue_family_index;
-};
-
-inline bool operator==(GpuQueue const& lhs, GpuQueue const& rhs) {
-    return (lhs.gpu == rhs.gpu && lhs.queue_family_index == rhs.queue_family_index);
-}
-
-namespace std {
-template <>
-struct hash<GpuQueue> {
-    size_t operator()(GpuQueue gq) const throw() {
-        return hash<uint64_t>()((uint64_t)(gq.gpu)) ^ hash<uint32_t>()(gq.queue_family_index);
-    }
-};
-}  // namespace std
-
-class SWAPCHAIN_NODE;
-
-class SURFACE_STATE : public BASE_NODE {
-  public:
-    SWAPCHAIN_NODE* swapchain = nullptr;
-    layer_data::unordered_map<GpuQueue, bool> gpu_queue_support;
-
-    SURFACE_STATE(VkSurfaceKHR s) : BASE_NODE(s, kVulkanObjectTypeSurfaceKHR) {}
-
-    VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
-};
-
 class DISPLAY_MODE_STATE : public BASE_NODE {
   public:
     VkPhysicalDevice physical_device;
