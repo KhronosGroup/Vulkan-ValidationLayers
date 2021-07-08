@@ -90,36 +90,19 @@ std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::Get
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This could also move into a seperate core_validation_android.cpp file... ?
 
-void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
+template <typename CreateInfo>
+VkFormatFeatureFlags ValidationStateTracker::GetExternalFormatFeaturesANDROID(const CreateInfo *create_info) const {
+    VkFormatFeatureFlags format_features = 0;
     const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
-        is_node->has_ahb_format = true;
-        is_node->ahb_format = ext_fmt_android->externalFormat;
         // VUID 01894 will catch if not found in map
         auto it = ahb_ext_formats_map.find(ext_fmt_android->externalFormat);
         if (it != ahb_ext_formats_map.end()) {
-            is_node->format_features = it->second;
+            format_features = it->second;
         }
     }
+    return format_features;
 }
-
-void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                                       VkSamplerYcbcrConversion ycbcr_conversion,
-                                                                       SAMPLER_YCBCR_CONVERSION_STATE *ycbcr_state) {
-    const VkExternalFormatANDROID *ext_format_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
-    if (ext_format_android && (0 != ext_format_android->externalFormat)) {
-        ycbcr_conversion_ahb_fmt_map.emplace(ycbcr_conversion, ext_format_android->externalFormat);
-        // VUID 01894 will catch if not found in map
-        auto it = ahb_ext_formats_map.find(ext_format_android->externalFormat);
-        if (it != ahb_ext_formats_map.end()) {
-            ycbcr_state->format_features = it->second;
-        }
-    }
-};
-
-void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion) {
-    ycbcr_conversion_ahb_fmt_map.erase(ycbcr_conversion);
-};
 
 void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice device, const struct AHardwareBuffer *buffer, VkAndroidHardwareBufferPropertiesANDROID *pProperties, VkResult result) {
@@ -132,13 +115,10 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
 
 #else
 
-void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
-
-void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                                       VkSamplerYcbcrConversion ycbcr_conversion,
-                                                                       SAMPLER_YCBCR_CONVERSION_STATE *ycbcr_state){};
-
-void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion){};
+template <typename CreateInfo>
+VkFormatFeatureFlags ValidationStateTracker::GetExternalFormatFeaturesANDROID(const CreateInfo *create_info) const {
+    return 0;
+}
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -186,7 +166,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
     auto is_node = std::make_shared<IMAGE_STATE>(device, *pImage, pCreateInfo);
     is_node->disjoint = ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0);
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordCreateImageANDROID(pCreateInfo, is_node.get());
+        is_node->format_features = GetExternalFormatFeaturesANDROID(pCreateInfo);
     }
     const auto swapchain_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     if (swapchain_info) {
@@ -4982,13 +4962,17 @@ void ValidationStateTracker::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer
 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                                      VkSamplerYcbcrConversion ycbcr_conversion) {
-    auto ycbcr_state = std::make_shared<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion, create_info,
-                                                                        GetPotentialFormatFeatures(create_info->format));
-    // If format is VK_FORMAT_UNDEFINED, format_features will be set by external AHB features
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordCreateSamplerYcbcrConversionANDROID(create_info, ycbcr_conversion, ycbcr_state.get());
+    VkFormatFeatureFlags format_features = 0;
+
+    if (create_info->format != VK_FORMAT_UNDEFINED) {
+        format_features = GetPotentialFormatFeatures(create_info->format);
+    } else if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+        // If format is VK_FORMAT_UNDEFINED, format_features will be set by external AHB features
+        format_features = GetExternalFormatFeaturesANDROID(create_info);
     }
-    samplerYcbcrConversionMap[ycbcr_conversion] = std::move(ycbcr_state);
+
+    samplerYcbcrConversionMap[ycbcr_conversion] =
+        std::make_shared<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion, create_info, format_features);
 }
 
 void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device,
@@ -5010,10 +4994,6 @@ void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDev
 }
 
 void ValidationStateTracker::RecordDestroySamplerYcbcrConversionState(VkSamplerYcbcrConversion ycbcr_conversion) {
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordDestroySamplerYcbcrConversionANDROID(ycbcr_conversion);
-    }
-
     auto ycbcr_state = GetSamplerYcbcrConversionState(ycbcr_conversion);
     ycbcr_state->Destroy();
     samplerYcbcrConversionMap.erase(ycbcr_conversion);
