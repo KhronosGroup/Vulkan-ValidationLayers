@@ -13597,3 +13597,56 @@ TEST_F(VkPositiveLayerTest, RenderPassInputResolve) {
 
     PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported);
 }
+
+TEST_F(VkPositiveLayerTest, SpecializationUnused) {
+    TEST_DESCRIPTION("Make sure an unused spec constant is valid to us");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // layout (constant_id = 2) const int a = 3;
+    std::string cs_src = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpDecorate %a SpecId 2
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+          %a = OpSpecConstant %int 3
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    VkSpecializationMapEntry entries[4] = {
+        {0, 0, 0},  // usued
+        {1, 0, 1},  // usued
+        {2, 0, 4},  // OpTypeInt 32
+        {3, 0, 4},  // usued
+    };
+
+    int32_t data = 0;
+    VkSpecializationInfo specialization_info = {
+        4,
+        entries,
+        1 * sizeof(decltype(data)),
+        &data,
+    };
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", &specialization_info));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+
+    // Even if the ID is never seen in VkSpecializationMapEntry the OpSpecConstant will use the default and still is valid
+    specialization_info.mapEntryCount = 1;
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+
+    // try another random unused value other than zero
+    entries[0].constantID = 100;
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+}
