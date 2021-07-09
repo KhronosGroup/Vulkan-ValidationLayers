@@ -4229,14 +4229,14 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
     ASSERT_VK_SUCCESS(err);
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = imageLoad(s, 0);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;
+        layout(location=0) out vec4 x;
+        void main(){
+           x = imageLoad(s, 0);
+        }
+    )glsl";
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     CreatePipelineHelper pipe(*this);

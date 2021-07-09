@@ -1892,12 +1892,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Vertex shader using viewport array capability
-    char const *vsSource =
-        "#version 450\n"
-        "#extension GL_ARB_shader_viewport_layer_array : enable\n"
-        "void main() {\n"
-        "    gl_ViewportIndex = 1;\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_viewport_layer_array : enable
+        void main() {
+            gl_ViewportIndex = 1;
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
@@ -1933,12 +1934,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Vertex shader using viewport array capability
-    char const *vsSource =
-        "#version 450\n"
-        "#extension GL_ARB_shader_viewport_layer_array : enable\n"
-        "void main() {\n"
-        "    gl_ViewportIndex = 1;\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_viewport_layer_array : enable
+        void main() {
+            gl_ViewportIndex = 1;
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
@@ -1959,11 +1961,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotWrittenButMasked) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        void main() {}
+    )glsl";
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -2847,15 +2848,15 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     const VkDescriptorSetLayoutObj push_ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
 
     // Create PSO
-    char const fsSource[] =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0) layout(binding=2) uniform foo1 { float x; } bar1;\n"
-        "layout(set=1) layout(binding=2) uniform foo2 { float y; } bar2;\n"
-        "void main(){\n"
-        "   x = vec4(bar1.x) + vec4(bar2.y);\n"
-        "}\n";
+    char const fsSource[] = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        layout(set=0) layout(binding=2) uniform foo1 { float x; } bar1;
+        layout(set=1) layout(binding=2) uniform foo2 { float y; } bar2;
+        void main(){
+           x = vec4(bar1.x) + vec4(bar2.y);
+        }
+    )glsl";
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
     CreatePipelineHelper pipe(*this);
@@ -3001,7 +3002,8 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
                 gl_Position = vec4(0.0);
             else
                 gl_Position = vec4(readit.val);
-        })glsl";
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, shader_source, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkPipelineObj pipe(m_device);
@@ -3094,14 +3096,14 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &push_ds_layout, &ds_layout});
         ASSERT_TRUE(pipeline_layout.initialized());
 
-        char const *fsSource =
-            "#version 450\n"
-            "\n"
-            "layout(location=0) out vec4 x;\n"
-            "layout(set=2) layout(binding=0) uniform foo { vec4 y; } bar;\n"
-            "void main(){\n"
-            "   x = bar.y;\n"
-            "}\n";
+        char const *fsSource = R"glsl(
+            #version 450
+            layout(location=0) out vec4 x;
+            layout(set=2) layout(binding=0) uniform foo { vec4 y; } bar;
+            void main(){
+               x = bar.y;
+            }
+        )glsl";
 
         VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -3134,14 +3136,14 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
             vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-        char const *fsSource =
-            "#version 450\n"
-            "\n"
-            "layout(location=0) out vec4 x;\n"
-            "layout(set=3) layout(binding=0) uniform foo { vec4 y; } bar;\n"
-            "void main(){\n"
-            "   x = bar.y;\n"
-            "}\n";
+        char const *fsSource = R"glsl(
+            #version 450
+            layout(location=0) out vec4 x;
+            layout(set=3) layout(binding=0) uniform foo { vec4 y; } bar;
+            void main(){
+               x = bar.y;
+            }
+        )glsl";
 
         VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -3442,11 +3444,12 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature) {
         return;
     }
 
-    char const *vsSource =
-        "#version 460\n"
-        "void main(){\n"
-        "   gl_Position = vec4(float(gl_BaseVertex));\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 460
+        void main(){
+           gl_Position = vec4(float(gl_BaseVertex));
+        }
+    )glsl";
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     if (VK_SUCCESS == vs.InitFromGLSLTry(*this, vsSource)) {
@@ -3480,11 +3483,12 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 460\n"
-        "void main(){\n"
-        "   gl_Position = vec4(float(gl_BaseVertex));\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 460
+        void main(){
+           gl_Position = vec4(float(gl_BaseVertex));
+        }
+    )glsl";
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
@@ -3526,11 +3530,12 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 460\n"
-        "void main(){\n"
-        "   gl_Position = vec4(float(gl_BaseVertex));\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 460
+        void main(){
+           gl_Position = vec4(float(gl_BaseVertex));
+        }
+    )glsl";
     VkShaderObj vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
@@ -3878,15 +3883,15 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Create PSO to be used for draw-time errors below
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0) layout(binding=0) uniform foo1 { int x; int y; } bar1;\n"
-        "layout(set=0) layout(binding=2) uniform foo2 { int x; int y; } bar2;\n"
-        "void main(){\n"
-        "   x = vec4(bar1.y) + vec4(bar2.y);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        layout(set=0) layout(binding=0) uniform foo1 { int x; int y; } bar1;
+        layout(set=0) layout(binding=2) uniform foo2 { int x; int y; } bar2;
+        void main(){
+           x = vec4(bar1.y) + vec4(bar2.y);
+        }
+    )glsl";
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
@@ -6085,13 +6090,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
         input_attribs[i].location = i;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) in mat2x4 x;\n"
-        "void main(){\n"
-        "   gl_Position = x[0] + x[1];\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) in mat2x4 x;
+        void main(){
+           gl_Position = x[0] + x[1];
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -6126,13 +6131,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
         input_attribs[i].location = i;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) in vec4 x[2];\n"
-        "void main(){\n"
-        "   gl_Position = x[0] + x[1];\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x[2];
+        void main(){
+           gl_Position = x[0] + x[1];
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -6171,29 +6176,29 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
         input_attribs[i].location = i;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) in vec4 x;\n"
-        "layout(location=1) in vec3 y1;\n"
-        "layout(location=1, component=3) in float y2;\n"
-        "layout(location=2) in vec4 z;\n"
-        "void main(){\n"
-        "   gl_Position = x + vec4(y1, y2) + z;\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0, component=0) out float color0;\n"
-        "layout(location=0, component=1) out float color1;\n"
-        "layout(location=0, component=2) out float color2;\n"
-        "layout(location=0, component=3) out float color3;\n"
-        "layout(location=1, component=0) out vec2 second_color0;\n"
-        "layout(location=1, component=2) out vec2 second_color1;\n"
-        "void main(){\n"
-        "   color0 = float(1);\n"
-        "   second_color0 = vec2(1);\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        layout(location=1) in vec3 y1;
+        layout(location=1, component=3) in float y2;
+        layout(location=2) in vec4 z;
+        void main(){
+           gl_Position = x + vec4(y1, y2) + z;
+        }
+    )glsl";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0, component=0) out float color0;
+        layout(location=0, component=1) out float color1;
+        layout(location=0, component=2) out float color2;
+        layout(location=0, component=3) out float color3;
+        layout(location=1, component=0) out vec2 second_color0;
+        layout(location=1, component=2) out vec2 second_color1;
+        void main(){
+           color0 = float(1);
+           second_color0 = vec2(1);
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -6278,25 +6283,26 @@ TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "layout(location=0) out vec3 x;\n"
-        "layout(location=1) out ivec3 y;\n"
-        "layout(location=2) out vec3 z;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(0);\n"
-        "   x = vec3(0); y = ivec3(0); z = vec3(0);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "layout(location=0) in float x;\n"
-        "layout(location=1) flat in int y;\n"
-        "layout(location=2) in vec2 z;\n"
-        "void main(){\n"
-        "   color = vec4(1 + x + y + z.x);\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec3 x;
+        layout(location=1) out ivec3 y;
+        layout(location=2) out vec3 z;
+        void main(){
+           gl_Position = vec4(0);
+           x = vec3(0); y = ivec3(0); z = vec3(0);
+        }
+    )glsl";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 color;
+        layout(location=0) in float x;
+        layout(location=1) flat in int y;
+        layout(location=2) in vec2 z;
+        void main(){
+           color = vec4(1 + x + y + z.x);
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -6322,23 +6328,25 @@ TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
         return;
     }
 
-    char const *tcsSource =
-        "#version 450\n"
-        "layout(location=0) out int x[];\n"
-        "layout(vertices=3) out;\n"
-        "void main(){\n"
-        "   gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;\n"
-        "   gl_TessLevelInner[0] = 1;\n"
-        "   x[gl_InvocationID] = gl_InvocationID;\n"
-        "}\n";
-    char const *tesSource =
-        "#version 450\n"
-        "layout(triangles, equal_spacing, cw) in;\n"
-        "layout(location=0) in int x[];\n"
-        "void main(){\n"
-        "   gl_Position.xyz = gl_TessCoord;\n"
-        "   gl_Position.w = x[0] + x[1] + x[2];\n"
-        "}\n";
+    char const *tcsSource = R"glsl(
+        #version 450
+        layout(location=0) out int x[];
+        layout(vertices=3) out;
+        void main(){
+           gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
+           gl_TessLevelInner[0] = 1;
+           x[gl_InvocationID] = gl_InvocationID;
+        }
+    )glsl";
+    char const *tesSource = R"glsl(
+        #version 450
+        layout(triangles, equal_spacing, cw) in;
+        layout(location=0) in int x[];
+        void main(){
+           gl_Position.xyz = gl_TessCoord;
+           gl_Position.w = x[0] + x[1] + x[2];
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
@@ -6374,15 +6382,16 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
         return;
     }
 
-    char const *gsSource =
-        "#version 450\n"
-        "layout(triangles) in;\n"
-        "layout(triangle_strip, max_vertices=3) out;\n"
-        "layout(location=0) in VertexData { vec4 x; } gs_in[];\n"
-        "void main() {\n"
-        "   gl_Position = gs_in[0].x;\n"
-        "   EmitVertex();\n"
-        "}\n";
+    char const *gsSource = R"glsl(
+        #version 450
+        layout(triangles) in;
+        layout(triangle_strip, max_vertices=3) out;
+        layout(location=0) in VertexData { vec4 x; } gs_in[];
+        void main() {
+           gl_Position = gs_in[0].x;
+           EmitVertex();
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
@@ -6441,13 +6450,13 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
     input_attribs[3].offset = 96;
     input_attribs[3].format = VK_FORMAT_R64G64B64A64_SFLOAT;
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) in dmat4 x;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(x[0][0]);\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) in dmat4 x;
+        void main(){
+           gl_Position = vec4(x[0][0]);
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -6470,14 +6479,14 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentPositive) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main() {\n"
-        "   color = subpassLoad(x);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(x);
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -6532,14 +6541,14 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineMissingDescriptorUnusedPositive
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    char const *csSource =
-        "#version 450\n"
-        "\n"
-        "layout(local_size_x=1) in;\n"
-        "layout(set=0, binding=0) buffer block { vec4 x; };\n"
-        "void main(){\n"
-        "   // x is not used.\n"
-        "}\n";
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=1) in;
+        layout(set=0, binding=0) buffer block { vec4 x; };
+        void main(){
+           // x is not used.
+        }
+    )glsl";
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -6588,14 +6597,14 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineFragmentShadingRate) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &device_features));
 
-    char const *csSource =
-        "#version 450\n"
-        "\n"
-        "layout(local_size_x=1) in;\n"
-        "layout(set=0, binding=0) buffer block { vec4 x; };\n"
-        "void main(){\n"
-        "   // x is not used.\n"
-        "}\n";
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=1) in;
+        layout(set=0, binding=0) buffer block { vec4 x; };
+        void main(){
+           // x is not used.
+        }
+    )glsl";
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -6619,16 +6628,16 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsS
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    char const *csSource =
-        "#version 450\n"
-        "\n"
-        "layout(local_size_x=1) in;\n"
-        "layout(set=0, binding=0) uniform sampler s;\n"
-        "layout(set=0, binding=1) uniform texture2D t;\n"
-        "layout(set=0, binding=2) buffer block { vec4 x; };\n"
-        "void main() {\n"
-        "   x = texture(sampler2D(t, s), vec2(0));\n"
-        "}\n";
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=1) in;
+        layout(set=0, binding=0) uniform sampler s;
+        layout(set=0, binding=1) uniform texture2D t;
+        layout(set=0, binding=2) buffer block { vec4 x; };
+        void main() {
+           x = texture(sampler2D(t, s), vec2(0));
+        }
+    )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.dsl_bindings_.resize(bindings.size());
@@ -6654,16 +6663,16 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsI
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    char const *csSource =
-        "#version 450\n"
-        "\n"
-        "layout(local_size_x=1) in;\n"
-        "layout(set=0, binding=0) uniform texture2D t;\n"
-        "layout(set=0, binding=1) uniform sampler s;\n"
-        "layout(set=0, binding=2) buffer block { vec4 x; };\n"
-        "void main() {\n"
-        "   x = texture(sampler2D(t, s), vec2(0));\n"
-        "}\n";
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=1) in;
+        layout(set=0, binding=0) uniform texture2D t;
+        layout(set=0, binding=1) uniform sampler s;
+        layout(set=0, binding=2) buffer block { vec4 x; };
+        void main() {
+           x = texture(sampler2D(t, s), vec2(0));
+        }
+    )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.dsl_bindings_.resize(bindings.size());
@@ -6689,16 +6698,16 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsB
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    char const *csSource =
-        "#version 450\n"
-        "\n"
-        "layout(local_size_x=1) in;\n"
-        "layout(set=0, binding=0) uniform texture2D t;\n"
-        "layout(set=0, binding=0) uniform sampler s;  // both binding 0!\n"
-        "layout(set=0, binding=1) buffer block { vec4 x; };\n"
-        "void main() {\n"
-        "   x = texture(sampler2D(t, s), vec2(0));\n"
-        "}\n";
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=1) in;
+        layout(set=0, binding=0) uniform texture2D t;
+        layout(set=0, binding=0) uniform sampler s;  // both binding 0!
+        layout(set=0, binding=1) buffer block { vec4 x; };
+        void main() {
+           x = texture(sampler2D(t, s), vec2(0));
+        }
+    )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.dsl_bindings_.resize(bindings.size());
@@ -8513,7 +8522,7 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char tcs_src[] = R"(
+    const char tcs_src[] = R"glsl(
         #version 450
         layout(vertices = 3) out;
 
@@ -8524,7 +8533,8 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
             gl_TessLevelInner[0] = 3.0f;
 
             gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-        })";
+        }
+    )glsl";
 
     // Create tessellation control and fragment shader here since they will not be
     // modified by the different test cases.
@@ -8706,13 +8716,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttachmentUnused) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = vec4(1);\n"  // attachment is unused
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        void main(){
+           x = vec4(1);  // attachment is unused
+        }
+    )glsl";
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkAttachmentReference const color_attachments[1]{{VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
@@ -9216,7 +9226,7 @@ TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const char vs_src[] = R"(
+    const char vs_src[] = R"glsl(
         #version 450
         layout(location=0) out vec4  fragColor;
 
@@ -9228,9 +9238,10 @@ TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
         {
             gl_Position = vec4(pos[gl_VertexIndex % 3], 0.0f, 1.0f);
             fragColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-        })";
+        }
+    )glsl";
 
-    const char fs_src[] = R"(
+    const char fs_src[] = R"glsl(
         #version 450
         #extension GL_NV_sample_mask_override_coverage : require
 
@@ -9243,7 +9254,8 @@ TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
         {
             gl_SampleMask[0] = 0xff;
             outColor = fragColor;
-        })";
+        }
+    )glsl";
 
     m_errorMonitor->ExpectSuccess();
 
@@ -9551,7 +9563,7 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char vs_src[] = R"(
+    const char vs_src[] = R"glsl(
         #version 450
 
         out gl_PerVertex {
@@ -9573,9 +9585,10 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
         {
             vertexColor = colors[gl_VertexIndex % 3];
             gl_Position = vec4(positions[gl_VertexIndex % 3], 0.0, 1.0);
-        })";
+        }
+    )glsl";
 
-    const char gs_src[] = R"(
+    const char gs_src[] = R"glsl(
         #version 450
         #extension GL_NV_geometry_shader_passthrough: require
 
@@ -9588,9 +9601,10 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
         void main()
         {
            gl_Layer = 0;
-        })";
+        }
+    )glsl";
 
-    const char fs_src[] = R"(
+    const char fs_src[] = R"glsl(
         #version 450
 
         layout(location = 0) in ColorBlock {vec4 vertexColor;};
@@ -9598,7 +9612,8 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
 
         void main() {
             outColor = vertexColor;
-        })";
+        }
+    )glsl";
 
     m_errorMonitor->ExpectSuccess();
 
@@ -9857,22 +9872,22 @@ TEST_F(VkPositiveLayerTest, CreatePipelineOverlappingPushConstantRange) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *const vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(push_constant, std430) uniform foo { float x[8]; } constants;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(constants.x[0]);\n"
-        "}\n";
+    char const *const vsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x[8]; } constants;
+        void main(){
+           gl_Position = vec4(constants.x[0]);
+        }
+    )glsl";
 
-    char const *const fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(push_constant, std430) uniform foo { float x[4]; } constants;\n"
-        "layout(location=0) out vec4 o;\n"
-        "void main(){\n"
-        "   o = vec4(constants.x[0]);\n"
-        "}\n";
+    char const *const fsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x[4]; } constants;
+        layout(location=0) out vec4 o;
+        void main(){
+           o = vec4(constants.x[0]);
+        }
+    )glsl";
 
     VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj const fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -10120,12 +10135,13 @@ TEST_F(VkPositiveLayerTest, PushConstantsCompatibilityGraphicsOnly) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     m_errorMonitor->ExpectSuccess();
 
-    char const *const vsSource =
-        "#version 450\n"
-        "layout(push_constant, std430) uniform foo { float x[16]; } constants;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(constants.x[4]);\n"
-        "}\n";
+    char const *const vsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x[16]; } constants;
+        void main(){
+           gl_Position = vec4(constants.x[4]);
+        }
+    )glsl";
 
     VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj const fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -10269,18 +10285,20 @@ TEST_F(VkPositiveLayerTest, PushConstantsStaticallyUnused) {
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
 
-    char const *vsSourceUnused =
-        "#version 450\n"
-        "layout(push_constant, std430) uniform foo { float x; } consts;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1.0);\n"
-        "}\n";
+    char const *vsSourceUnused = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x; } consts;
+        void main(){
+           gl_Position = vec4(1.0);
+        }
+    )glsl";
 
-    char const *vsSourceEmpty =
-        "#version 450\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1.0);\n"
-        "}\n";
+    char const *vsSourceEmpty = R"glsl(
+        #version 450
+        void main(){
+           gl_Position = vec4(1.0);
+        }
+    )glsl";
 
     VkShaderObj vsUnused(m_device, vsSourceUnused, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj vsEmpty(m_device, vsSourceEmpty, VK_SHADER_STAGE_VERTEX_BIT, this);
@@ -11632,15 +11650,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
     // 8 bit int test (not 8 bit float support in Vulkan)
     if ((support_8_bit == true) && (float_16_int_8_features.shaderInt8 == VK_TRUE)) {
         if (storage_8_bit_features.storageBuffer8BitAccess == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_8bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int8: enable\n"
-                "layout(set = 0, binding = 0) buffer SSBO { int8_t x; } data;\n"
-                "void main(){\n"
-                "   int8_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_8bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+                layout(set = 0, binding = 0) buffer SSBO { int8_t x; } data;
+                void main(){
+                   int8_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11651,15 +11670,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_8_bit_features.uniformAndStorageBuffer8BitAccess == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_8bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int8: enable\n"
-                "layout(set = 0, binding = 0) uniform UBO { int8_t x; } data;\n"
-                "void main(){\n"
-                "   int8_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_8bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+                layout(set = 0, binding = 0) uniform UBO { int8_t x; } data;
+                void main(){
+                   int8_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11670,15 +11690,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_8_bit_features.storagePushConstant8 == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_8bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int8: enable\n"
-                "layout(push_constant) uniform PushConstant { int8_t x; } data;\n"
-                "void main(){\n"
-                "   int8_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_8bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+                layout(push_constant) uniform PushConstant { int8_t x; } data;
+                void main(){
+                   int8_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
@@ -11695,15 +11716,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
     // 16 bit float tests
     if ((support_16_bit == true) && (float_16_int_8_features.shaderFloat16 == VK_TRUE)) {
         if (storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
-                "layout(set = 0, binding = 0) buffer SSBO { float16_t x; } data;\n"
-                "void main(){\n"
-                "   float16_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(set = 0, binding = 0) buffer SSBO { float16_t x; } data;
+                void main(){
+                   float16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11714,15 +11736,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
-                "layout(set = 0, binding = 0) uniform UBO { float16_t x; } data;\n"
-                "void main(){\n"
-                "   float16_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(set = 0, binding = 0) uniform UBO { float16_t x; } data;
+                void main(){
+                   float16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11733,15 +11756,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
-                "layout(push_constant) uniform PushConstant { float16_t x; } data;\n"
-                "void main(){\n"
-                "   float16_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(push_constant) uniform PushConstant { float16_t x; } data;
+                void main(){
+                   float16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
@@ -11755,27 +11779,29 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
-                "layout(location = 0) out float16_t outData;\n"
-                "void main(){\n"
-                "   outData = float16_t(1);\n"
-                "   gl_Position = vec4(0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(location = 0) out float16_t outData;
+                void main(){
+                   outData = float16_t(1);
+                   gl_Position = vec4(0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             // Need to match in/out
-            char const *fsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable\n"
-                "layout(location = 0) in float16_t x;\n"
-                "layout(location = 0) out vec4 uFragColor;\n"
-                "void main(){\n"
-                "   uFragColor = vec4(0,1,0,1);\n"
-                "}\n";
+            char const *fsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(location = 0) in float16_t x;
+                layout(location = 0) out vec4 uFragColor;
+                void main(){
+                   uFragColor = vec4(0,1,0,1);
+                }
+            )glsl";
             VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11788,15 +11814,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
     // 16 bit int tests
     if ((support_16_bit == true) && (features2.features.shaderInt16 == VK_TRUE)) {
         if (storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
-                "layout(set = 0, binding = 0) buffer SSBO { int16_t x; } data;\n"
-                "void main(){\n"
-                "   int16_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(set = 0, binding = 0) buffer SSBO { int16_t x; } data;
+                void main(){
+                   int16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11807,15 +11834,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
-                "layout(set = 0, binding = 0) uniform UBO { int16_t x; } data;\n"
-                "void main(){\n"
-                "   int16_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(set = 0, binding = 0) uniform UBO { int16_t x; } data;
+                void main(){
+                   int16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11826,15 +11854,16 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
-                "layout(push_constant) uniform PushConstant { int16_t x; } data;\n"
-                "void main(){\n"
-                "   int16_t a = data.x + data.x;\n"
-                "   gl_Position = vec4(float(a) * 0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(push_constant) uniform PushConstant { int16_t x; } data;
+                void main(){
+                   int16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
@@ -11848,27 +11877,29 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         }
 
         if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
-            char const *vsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
-                "layout(location = 0) out int16_t outData;\n"
-                "void main(){\n"
-                "   outData = int16_t(1);\n"
-                "   gl_Position = vec4(0.0);\n"
-                "}\n";
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(location = 0) out int16_t outData;
+                void main(){
+                   outData = int16_t(1);
+                   gl_Position = vec4(0.0);
+                }
+            )glsl";
             VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
             // Need to match in/out
-            char const *fsSource =
-                "#version 450\n"
-                "#extension GL_EXT_shader_16bit_storage: enable\n"
-                "#extension GL_EXT_shader_explicit_arithmetic_types_int16: enable\n"
-                "layout(location = 0) flat in int16_t x;\n"
-                "layout(location = 0) out vec4 uFragColor;\n"
-                "void main(){\n"
-                "   uFragColor = vec4(0,1,0,1);\n"
-                "}\n";
+            char const *fsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(location = 0) flat in int16_t x;
+                layout(location = 0) out vec4 uFragColor;
+                void main(){
+                   uFragColor = vec4(0,1,0,1);
+                }
+            )glsl";
             VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -11916,23 +11947,25 @@ TEST_F(VkPositiveLayerTest, ReadShaderClock) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Device scope using GL_EXT_shader_realtime_clock
-    char const *vsSourceDevice =
-        "#version 450\n"
-        "#extension GL_EXT_shader_realtime_clock: enable\n"
-        "void main(){\n"
-        "   uvec2 a = clockRealtime2x32EXT();\n"
-        "   gl_Position = vec4(float(a.x) * 0.0);\n"
-        "}\n";
+    char const *vsSourceDevice = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_realtime_clock: enable
+        void main(){
+           uvec2 a = clockRealtime2x32EXT();
+           gl_Position = vec4(float(a.x) * 0.0);
+        }
+    )glsl";
     VkShaderObj vs_device(m_device, vsSourceDevice, VK_SHADER_STAGE_VERTEX_BIT, this);
 
     // Subgroup scope using ARB_shader_clock
-    char const *vsSourceScope =
-        "#version 450\n"
-        "#extension GL_ARB_shader_clock: enable\n"
-        "void main(){\n"
-        "   uvec2 a = clock2x32ARB();\n"
-        "   gl_Position = vec4(float(a.x) * 0.0);\n"
-        "}\n";
+    char const *vsSourceScope = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_clock: enable
+        void main(){
+           uvec2 a = clock2x32ARB();
+           gl_Position = vec4(float(a.x) * 0.0);
+        }
+    )glsl";
     VkShaderObj vs_subgroup(m_device, vsSourceScope, VK_SHADER_STAGE_VERTEX_BIT, this);
 
     if (shader_clock_features.shaderDeviceClock == VK_TRUE) {

@@ -1972,48 +1972,49 @@ void CreateNVRayTracingPipelineHelper::InitPipelineLayoutInfo() {
 }
 
 void CreateNVRayTracingPipelineHelper::InitShaderInfo() {  // DONE
-    static const char rayGenShaderText[] =
-        "#version 460 core                                                \n"
-        "#extension GL_NV_ray_tracing : require                           \n"
-        "layout(set = 0, binding = 0, rgba8) uniform image2D image;       \n"
-        "layout(set = 0, binding = 1) uniform accelerationStructureNV as; \n"
-        "                                                                 \n"
-        "layout(location = 0) rayPayloadNV float payload;                 \n"
-        "                                                                 \n"
-        "void main()                                                      \n"
-        "{                                                                \n"
-        "   vec4 col = vec4(0, 0, 0, 1);                                  \n"
-        "                                                                 \n"
-        "   vec3 origin = vec3(float(gl_LaunchIDNV.x)/float(gl_LaunchSizeNV.x), "
-        "float(gl_LaunchIDNV.y)/float(gl_LaunchSizeNV.y), "
-        "1.0); \n"
-        "   vec3 dir = vec3(0.0, 0.0, -1.0);                              \n"
-        "                                                                 \n"
-        "   payload = 0.5;                                                \n"
-        "   traceNV(as, gl_RayFlagsCullBackFacingTrianglesNV, 0xff, 0, 1, 0, origin, 0.0, dir, 1000.0, 0); \n"
-        "                                                                 \n"
-        "   col.y = payload;                                              \n"
-        "                                                                 \n"
-        "   imageStore(image, ivec2(gl_LaunchIDNV.xy), col);              \n"
-        "}\n";
+    static const char rayGenShaderText[] = R"glsl(
+        #version 460 core
+        #extension GL_NV_ray_tracing : require
+        layout(set = 0, binding = 0, rgba8) uniform image2D image;
+        layout(set = 0, binding = 1) uniform accelerationStructureNV as;
 
-    static char const closestHitShaderText[] =
-        "#version 460 core                              \n"
-        "#extension GL_NV_ray_tracing : require         \n"
-        "layout(location = 0) rayPayloadInNV float hitValue;             \n"
-        "                                               \n"
-        "void main() {                                  \n"
-        "    hitValue = 1.0;                            \n"
-        "}                                              \n";
+        layout(location = 0) rayPayloadNV float payload;
 
-    static char const missShaderText[] =
-        "#version 460 core                              \n"
-        "#extension GL_NV_ray_tracing : require         \n"
-        "layout(location = 0) rayPayloadInNV float hitValue; \n"
-        "                                               \n"
-        "void main() {                                  \n"
-        "    hitValue = 0.0;                            \n"
-        "}                                              \n";
+        void main()
+        {
+           vec4 col = vec4(0, 0, 0, 1);
+
+           vec3 origin = vec3(float(gl_LaunchIDNV.x)/float(gl_LaunchSizeNV.x), float(gl_LaunchIDNV.y)/float(gl_LaunchSizeNV.y), 1.0);
+           vec3 dir = vec3(0.0, 0.0, -1.0);
+
+           payload = 0.5;
+           traceNV(as, gl_RayFlagsCullBackFacingTrianglesNV, 0xff, 0, 1, 0, origin, 0.0, dir, 1000.0, 0);
+
+           col.y = payload;
+
+           imageStore(image, ivec2(gl_LaunchIDNV.xy), col);
+        }
+    )glsl";
+
+    static char const closestHitShaderText[] = R"glsl(
+        #version 460 core
+        #extension GL_NV_ray_tracing : require
+        layout(location = 0) rayPayloadInNV float hitValue;
+
+        void main() {
+            hitValue = 1.0;
+        }
+    )glsl";
+
+    static char const missShaderText[] = R"glsl(
+        #version 460 core
+        #extension GL_NV_ray_tracing : require
+        layout(location = 0) rayPayloadInNV float hitValue;
+
+        void main() {
+            hitValue = 0.0;
+        }
+    )glsl";
 
     rgs_.reset(new VkShaderObj(layer_test_.DeviceObj(), rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV, &layer_test_));
     chs_.reset(new VkShaderObj(layer_test_.DeviceObj(), closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, &layer_test_));

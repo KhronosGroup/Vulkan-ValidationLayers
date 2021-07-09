@@ -89,80 +89,92 @@ enum BsoFailSelect {
     BsoFailLineStipple,
 };
 
-static const char bindStateMinimalShaderText[] = "#version 450\nvoid main() {}\n";
+static const char bindStateMinimalShaderText[] = R"glsl(
+    #version 450
+    void main() {}
+)glsl";
 
-static const char bindStateVertShaderText[] =
-    "#version 450\n"
-    "void main() {\n"
-    "   gl_Position = vec4(1);\n"
-    "}\n";
+static const char bindStateVertShaderText[] = R"glsl(
+    #version 450
+    void main() {
+       gl_Position = vec4(1);
+    }
+)glsl";
 
-static const char bindStateVertPointSizeShaderText[] =
-    "#version 450\n"
-    "out gl_PerVertex {\n"
-    "    vec4 gl_Position;\n"
-    "    float gl_PointSize;\n"
-    "};\n"
-    "void main() {\n"
-    "    gl_Position = vec4(1);\n"
-    "    gl_PointSize = 1.0;\n"
-    "}\n";
+static const char bindStateVertPointSizeShaderText[] = R"glsl(
+    #version 450
+    out gl_PerVertex {
+        vec4 gl_Position;
+        float gl_PointSize;
+    };
+    void main() {
+        gl_Position = vec4(1);
+        gl_PointSize = 1.0;
+    }
+)glsl";
 
-static char const bindStateGeomShaderText[] =
-    "#version 450\n"
-    "layout(triangles) in;\n"
-    "layout(triangle_strip, max_vertices=3) out;\n"
-    "void main() {\n"
-    "   gl_Position = vec4(1);\n"
-    "   EmitVertex();\n"
-    "}\n";
+static char const bindStateGeomShaderText[] = R"glsl(
+    #version 450
+    layout(triangles) in;
+    layout(triangle_strip, max_vertices=3) out;
+    void main() {
+       gl_Position = vec4(1);
+       EmitVertex();
+    }
+)glsl";
 
-static char const bindStateGeomPointSizeShaderText[] =
-    "#version 450\n"
-    "layout (points) in;\n"
-    "layout (points) out;\n"
-    "layout (max_vertices = 1) out;\n"
-    "void main() {\n"
-    "   gl_Position = vec4(1);\n"
-    "   gl_PointSize = 1.0;\n"
-    "   EmitVertex();\n"
-    "}\n";
+static char const bindStateGeomPointSizeShaderText[] = R"glsl(
+    #version 450
+    layout (points) in;
+    layout (points) out;
+    layout (max_vertices = 1) out;
+    void main() {
+       gl_Position = vec4(1);
+       gl_PointSize = 1.0;
+       EmitVertex();
+    }
+)glsl";
 
-static const char bindStateTscShaderText[] =
-    "#version 450\n"
-    "layout(vertices=3) out;\n"
-    "void main() {\n"
-    "   gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;\n"
-    "   gl_TessLevelInner[0] = 1;\n"
-    "}\n";
+static const char bindStateTscShaderText[] = R"glsl(
+    #version 450
+    layout(vertices=3) out;
+    void main() {
+       gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
+       gl_TessLevelInner[0] = 1;
+    }
+)glsl";
 
-static const char bindStateTeshaderText[] =
-    "#version 450\n"
-    "layout(triangles, equal_spacing, cw) in;\n"
-    "void main() { gl_Position = vec4(1); }\n";
+static const char bindStateTeshaderText[] = R"glsl(
+    #version 450
+    layout(triangles, equal_spacing, cw) in;
+    void main() { gl_Position = vec4(1); }
+)glsl";
 
-static const char bindStateFragShaderText[] =
-    "#version 450\n"
-    "layout(location = 0) out vec4 uFragColor;\n"
-    "void main(){\n"
-    "   uFragColor = vec4(0,1,0,1);\n"
-    "}\n";
+static const char bindStateFragShaderText[] = R"glsl(
+    #version 450
+    layout(location = 0) out vec4 uFragColor;
+    void main(){
+       uFragColor = vec4(0,1,0,1);
+    }
+)glsl";
 
-static const char bindStateFragSamplerShaderText[] =
-    "#version 450\n"
-    "layout(set=0, binding=0) uniform sampler2D s;\n"
-    "layout(location=0) out vec4 x;\n"
-    "void main(){\n"
-    "   x = texture(s, vec2(1));\n"
-    "}\n";
+static const char bindStateFragSamplerShaderText[] = R"glsl(
+    #version 450
+    layout(set=0, binding=0) uniform sampler2D s;
+    layout(location=0) out vec4 x;
+    void main(){
+       x = texture(s, vec2(1));
+    }
+)glsl";
 
-static const char bindStateFragUniformShaderText[] =
-    "#version 450\n"
-    "layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;\n"
-    "layout(location=0) out vec4 x;\n"
-    "void main(){\n"
-    "   x = vec4(bar.y);\n"
-    "}\n";
+static const char bindStateFragUniformShaderText[] = R"glsl(
+    #version 450
+    layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;
+    layout(location=0) out vec4 x;
+    void main(){
+       x = vec4(bar.y);
+    }
+)glsl";
 
 // Static arrays helper
 template <class ElementT, size_t array_size>

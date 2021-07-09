@@ -1114,17 +1114,16 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
     input_attribs[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     input_attribs[2].offset = offsetof(VboEntry, input2);
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location = 0) in vec2 input0;"
-        "layout(location = 1) in vec4 input1;"
-        "layout(location = 2) in vec4 input2;"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = input1 + input2;\n"
-        "   gl_Position.xy += input0;\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0) in vec2 input0;
+        layout(location = 1) in vec4 input1;
+        layout(location = 2) in vec4 input2;
+        void main(){
+           gl_Position = input1 + input2;
+           gl_Position.xy += input0;
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -1308,14 +1307,14 @@ TEST_F(VkLayerTest, DrawTimeImageViewTypeMismatchWithPipeline) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(set=0, binding=0) uniform sampler3D s;\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main() {\n"
-        "   color = texture(s, vec3(0));\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform sampler3D s;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = texture(s, vec3(0));
+        }
+    )glsl";
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
@@ -1364,14 +1363,14 @@ TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(set=0, binding=0) uniform sampler2DMS s;\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main() {\n"
-        "   color = texelFetch(s, ivec2(0), 0);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform sampler2DMS s;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = texelFetch(s, ivec2(0), 0);
+        }
+    )glsl";
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
@@ -1419,14 +1418,14 @@ TEST_F(VkLayerTest, DrawTimeImageComponentTypeMismatchWithPipeline) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(set=0, binding=0) uniform isampler2D s;\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main() {\n"
-        "   color = texelFetch(s, ivec2(0), 0);\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform isampler2D s;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = texelFetch(s, ivec2(0), 0);
+        }
+    )glsl";
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
@@ -6616,33 +6615,35 @@ TEST_F(VkLayerTest, MeshShaderNV) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    static const char vertShaderText[] =
-        "#version 450\n"
-        "vec2 vertices[3];\n"
-        "void main() {\n"
-        "      vertices[0] = vec2(-1.0, -1.0);\n"
-        "      vertices[1] = vec2( 1.0, -1.0);\n"
-        "      vertices[2] = vec2( 0.0,  1.0);\n"
-        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "   gl_PointSize = 1.0f;\n"
-        "}\n";
+    static const char vertShaderText[] = R"glsl(
+        #version 450
+        vec2 vertices[3];
+        void main() {
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           gl_PointSize = 1.0f;
+        }
+    )glsl";
 
-    static const char meshShaderText[] =
-        "#version 450\n"
-        "#extension GL_NV_mesh_shader : require\n"
-        "layout(local_size_x = 1) in;\n"
-        "layout(max_vertices = 3) out;\n"
-        "layout(max_primitives = 1) out;\n"
-        "layout(triangles) out;\n"
-        "void main() {\n"
-        "      gl_MeshVerticesNV[0].gl_Position = vec4(-1.0, -1.0, 0, 1);\n"
-        "      gl_MeshVerticesNV[1].gl_Position = vec4( 1.0, -1.0, 0, 1);\n"
-        "      gl_MeshVerticesNV[2].gl_Position = vec4( 0.0,  1.0, 0, 1);\n"
-        "      gl_PrimitiveIndicesNV[0] = 0;\n"
-        "      gl_PrimitiveIndicesNV[1] = 1;\n"
-        "      gl_PrimitiveIndicesNV[2] = 2;\n"
-        "      gl_PrimitiveCountNV = 1;\n"
-        "}\n";
+    static const char meshShaderText[] = R"glsl(
+        #version 450
+        #extension GL_NV_mesh_shader : require
+        layout(local_size_x = 1) in;
+        layout(max_vertices = 3) out;
+        layout(max_primitives = 1) out;
+        layout(triangles) out;
+        void main() {
+              gl_MeshVerticesNV[0].gl_Position = vec4(-1.0, -1.0, 0, 1);
+              gl_MeshVerticesNV[1].gl_Position = vec4( 1.0, -1.0, 0, 1);
+              gl_MeshVerticesNV[2].gl_Position = vec4( 0.0,  1.0, 0, 1);
+              gl_PrimitiveIndicesNV[0] = 0;
+              gl_PrimitiveIndicesNV[1] = 1;
+              gl_PrimitiveIndicesNV[2] = 2;
+              gl_PrimitiveCountNV = 1;
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, vertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj ms(m_device, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, this);
@@ -6826,7 +6827,7 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
     auto vkCmdSetViewportWScalingNV =
         reinterpret_cast<PFN_vkCmdSetViewportWScalingNV>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWScalingNV"));
 
-    const char vs_src[] = R"(
+    const char vs_src[] = R"glsl(
         #version 450
         const vec2 positions[] = { vec2(-1.0f,  1.0f),
                                    vec2( 1.0f,  1.0f),
@@ -6838,15 +6839,17 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
 
         void main() {
             gl_Position = vec4(positions[gl_VertexIndex % 4], 0.0f, 1.0f);
-        })";
+        }
+    )glsl";
 
-    const char fs_src[] = R"(
+    const char fs_src[] = R"glsl(
         #version 450
         layout(location = 0) out vec4 outColor;
 
         void main() {
             outColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-        })";
+        }
+    )glsl";
 
     const std::vector<VkViewport> vp = {
         {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}};
@@ -7793,15 +7796,16 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
                                               {VK_IMAGE_ASPECT_COLOR_BIT, 1, {m_clear_color}}};
     VkClearRect clear_rect[2] = {{render_area, 0, 1}, {render_area, 0, 1}};
 
-    const char fsSource[] =
-        "#version 450\n"
-        "layout(set=0, binding=0) uniform foo { int x; int y; } bar;\n"
-        "layout(set=0, binding=1, rgba8) uniform image2D si1;\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = vec4(bar.y);\n"
-        "   imageStore(si1, ivec2(0), vec4(0));\n"
-        "}\n";
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform foo { int x; int y; } bar;
+        layout(set=0, binding=1, rgba8) uniform image2D si1;
+        layout(location=0) out vec4 x;
+        void main(){
+           x = vec4(bar.y);
+           imageStore(si1, ivec2(0), vec4(0));
+        }
+    )glsl";
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     CreatePipelineHelper g_pipe(*this);
@@ -8066,20 +8070,21 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     VkBufferView buffer_view;
     vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
 
-    char const *fsSource =
-        "#version 450\n"
-        "layout(set=0, binding=3, r32f) uniform image2D si0;\n "
-        "layout(set=0, binding=2, r32f) uniform image2D si1[2];\n "
-        "layout(set = 0, binding = 1, r32f) uniform imageBuffer stb2;\n"
-        "layout(set = 0, binding = 0, r32f) uniform imageBuffer stb3[2];\n"
-        "void main() {\n"
-        "      imageAtomicExchange(si0, ivec2(0), 1);\n"
-        "      imageAtomicExchange(si1[0], ivec2(0), 1);\n "
-        "      imageAtomicExchange(si1[1], ivec2(0), 1);\n "
-        "      imageAtomicExchange(stb2, 0, 1);\n"
-        "      imageAtomicExchange(stb3[0], 0, 1);\n "
-        "      imageAtomicExchange(stb3[1], 0, 1);\n "
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set=0, binding=3, r32f) uniform image2D si0;
+        layout(set=0, binding=2, r32f) uniform image2D si1[2];
+        layout(set = 0, binding = 1, r32f) uniform imageBuffer stb2;
+        layout(set = 0, binding = 0, r32f) uniform imageBuffer stb3[2];
+        void main() {
+              imageAtomicExchange(si0, ivec2(0), 1);
+              imageAtomicExchange(si1[0], ivec2(0), 1);
+              imageAtomicExchange(si1[1], ivec2(0), 1);
+              imageAtomicExchange(stb2, 0, 1);
+              imageAtomicExchange(stb3[0], 0, 1);
+              imageAtomicExchange(stb3[1], 0, 1);
+        }
+    )glsl";
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -8129,49 +8134,49 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // push constant range: 0-99
-    char const *const vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(push_constant, std430) uniform foo {\n"
-        "   bool b;\n"
-        "   float f2[3];\n"
-        "   vec3 v;\n"
-        "   vec4 v2[2];\n"
-        "   mat3 m;\n"
-        "} constants;\n"
-        "void func1( float f ){\n"
-        // use the whole v2[1]. byte: 48-63.
-        "   vec2 v2 = constants.v2[1].yz;\n"
-        "}\n"
-        "void main(){\n"
-        // use only v2[0].z. byte: 40-43.
-        "   func1( constants.v2[0].z);\n"
-        // index of m is variable. The all m is used. byte: 64-99.
-        "   for(int i=1;i<2;++i) {\n"
-        "      vec3 v3 = constants.m[i]; \n"
-        "   }\n"
-        "}\n";
+    char const *const vsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo {
+           bool b;
+           float f2[3];
+           vec3 v;
+           vec4 v2[2];
+           mat3 m;
+        } constants;
+        void func1( float f ){
+           // use the whole v2[1]. byte: 48-63.
+           vec2 v2 = constants.v2[1].yz;
+        }
+        void main(){
+            // use only v2[0].z. byte: 40-43.
+            func1( constants.v2[0].z);
+            // index of m is variable. The all m is used. byte: 64-99.
+            for(int i=1;i<2;++i) {
+                vec3 v3 = constants.m[i];
+            }
+        }
+    )glsl";
 
     // push constant range: 0 - 95
-    char const *const fsSource =
-        "#version 450\n"
-        "\n"
-        "struct foo1{\n"
-        "   int i[4];"
-        "}f;\n"
-        "layout(push_constant, std430) uniform foo {\n"
-        "   float x[2][2][2];\n"
-        "   foo1 s;\n"
-        "   foo1 ss[3];\n"
-        "} constants;\n"
-        "void main(){\n"
-        // use s. byte: 32-47.
-        "   f = constants.s;\n"
-        // use every i[3] in ss. byte: 60-63, 76-79, 92-95.
-        "   for(int i=1;i<2;++i) {\n"
-        "      int ii = constants.ss[i].i[3]; \n"
-        "   }\n"
-        "}\n";
+    char const *const fsSource = R"glsl(
+        #version 450
+        struct foo1{
+           int i[4];
+        }f;
+        layout(push_constant, std430) uniform foo {
+           float x[2][2][2];
+           foo1 s;
+           foo1 ss[3];
+        } constants;
+        void main(){
+            // use s. byte: 32-47.
+            f = constants.s;
+            // use every i[3] in ss. byte: 60-63, 76-79, 92-95.
+            for(int i=1;i<2;++i) {
+                int ii = constants.ss[i].i[3];
+            }
+        }
+    )glsl";
 
     VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj const fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -8962,12 +8967,13 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDy
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "#extension GL_EXT_fragment_shading_rate : enable\n"
-        "void main() {\n"
-        "      gl_PrimitiveShadingRateEXT = gl_ShadingRateFlag4VerticalPixelsEXT | gl_ShadingRateFlag4HorizontalPixelsEXT;\n"
-        "}\n";
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_fragment_shading_rate : enable
+        void main() {
+            gl_PrimitiveShadingRateEXT = gl_ShadingRateFlag4VerticalPixelsEXT | gl_ShadingRateFlag4HorizontalPixelsEXT;
+        }
+    )glsl";
 
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
