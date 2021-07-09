@@ -1592,7 +1592,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    const std::string cs_source = R"glsl(#version 450
+    const std::string cs_source = R"glsl(
+        #version 450
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
         layout(push_constant) uniform PushConstants { uint value; } push_constant;

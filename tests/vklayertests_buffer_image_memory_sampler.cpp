@@ -4424,14 +4424,14 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
         descriptor_set.WriteDescriptorBufferView(0, view);
         descriptor_set.UpdateDescriptorSets();
 
-        char const *fsSource =
-            "#version 450\n"
-            "\n"
-            "layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;\n"
-            "layout(location=0) out vec4 x;\n"
-            "void main(){\n"
-            "   x = imageLoad(s, 0);\n"
-            "}\n";
+        char const *fsSource = R"glsl(
+            #version 450
+            layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;
+            layout(location=0) out vec4 x;
+            void main(){
+               x = imageLoad(s, 0);
+            }
+        )glsl";
         VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
@@ -9857,21 +9857,23 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
         }
     }
 
-    const char bindStateFragiSamplerShaderText[] =
-        "#version 450\n"
-        "layout(set=0, binding=0) uniform isampler2D s;\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = texture(s, vec2(1));\n"
-        "}\n";
+    const char bindStateFragiSamplerShaderText[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform isampler2D s;
+        layout(location=0) out vec4 x;
+        void main(){
+           x = texture(s, vec2(1));
+        }
+    )glsl";
 
-    const char bindStateFraguSamplerShaderText[] =
-        "#version 450\n"
-        "layout(set=0, binding=0) uniform usampler2D s;\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = texture(s, vec2(1));\n"
-        "}\n";
+    const char bindStateFraguSamplerShaderText[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform usampler2D s;
+        layout(location=0) out vec4 x;
+        void main(){
+           x = texture(s, vec2(1));
+        }
+    )glsl";
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -12908,14 +12910,14 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     descriptor_writes[0].pImageInfo = &img_info;
 
     vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(set=0, binding=0) uniform sampler2D s;\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = texture(s, vec2(1));\n"
-        "}\n";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform sampler2D s;
+        layout(location=0) out vec4 x;
+        void main(){
+           x = texture(s, vec2(1));
+        }
+    )glsl";
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
     VkPipelineObj pipe(m_device);
@@ -13272,39 +13274,41 @@ TEST_F(VkLayerTest, VerityUnnormalizedCoordinatesSampler) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     m_errorMonitor->ExpectSuccess();
 
-    const char vsSource[] =
-        "#version 450\n"
+    const char vsSource[] = R"glsl(
+        #version 450
         // VK_DESCRIPTOR_TYPE_SAMPLER
-        "layout(set = 0, binding = 1) uniform sampler s1;\n"
+        layout(set = 0, binding = 1) uniform sampler s1;
 
         // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-        "layout(set = 0, binding = 2) uniform texture2D si2;\n"
-        "layout(set = 0, binding = 3) uniform texture3D si3[2];\n"
+        layout(set = 0, binding = 2) uniform texture2D si2;
+        layout(set = 0, binding = 3) uniform texture3D si3[2];
 
         // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-        "layout(set = 0, binding = 4) uniform sampler3D ci4;\n"
-        "layout(set = 0, binding = 5) uniform sampler2D ci5[2];\n"
+        layout(set = 0, binding = 4) uniform sampler3D ci4;
+        layout(set = 0, binding = 5) uniform sampler2D ci5[2];
 
-        "void main() {\n"
-        "   vec4 x = texture(sampler2D(si2, s1), vec2(0));\n"
-        "   x = texture(sampler3D(si3[1], s1), vec3(0));\n"
-        "   x = texture(ci4, vec3(0));\n"
-        "   x = texture(ci5[1], vec2(0));\n"
-        "}\n";
+        void main() {
+           vec4 x = texture(sampler2D(si2, s1), vec2(0));
+           x = texture(sampler3D(si3[1], s1), vec3(0));
+           x = texture(ci4, vec3(0));
+           x = texture(ci5[1], vec2(0));
+        }
+    )glsl";
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
-    const char fsSource[] =
-        "#version 450\n"
-        "layout (set = 0, binding = 5) uniform sampler2D tex[2];\n"
-        "layout (set = 0, binding = 6) uniform sampler2DShadow tex_dep[2];\n"
-        "void main() {\n"
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout (set = 0, binding = 5) uniform sampler2D tex[2];
+        layout (set = 0, binding = 6) uniform sampler2DShadow tex_dep[2];
+        void main() {
         // sampler uses OpImageSample* or OpImageSparseSample* instructions with ImplicitLod, Dref or Proj in their name to cause
         // DesiredFailure.
-        "   float f = texture(tex_dep[0], vec3(0));\n"
+           float f = texture(tex_dep[0], vec3(0));
         // sampler uses OpImageSample* or OpImageSparseSample* instructions that incudes a bias or offset to cause
         // DesiredFailure.
-        "   vec4 x = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));\n"
-        "}\n";
+           vec4 x = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
+        }
+    )glsl";
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     CreatePipelineHelper g_pipe(*this);

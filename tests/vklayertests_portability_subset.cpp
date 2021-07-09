@@ -636,7 +636,8 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use isolines in the TES shader when not available
     {
-        static const char *tes_source = R"glsl(#version 450
+        static const char *tes_source = R"glsl(
+            #version 450
             layout(isolines, equal_spacing, cw) in;
             void main() {
                 gl_Position = vec4(1);
@@ -651,7 +652,8 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use point_mode in the TES shader when not available
     {
-        static const char *tes_source = R"glsl(#version 450
+        static const char *tes_source = R"glsl(
+            #version 450
             layout(triangles, point_mode) in;
             void main() {
                 gl_Position = vec4(1);
@@ -671,14 +673,16 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use interpolation functions when not supported
     {
-        static const char *vs_source = R"glsl(#version 450
+        static const char *vs_source = R"glsl(
+            #version 450
             layout(location = 0) out vec4 c;
             void main() {
                 c = vec4(1);
                 gl_Position = vec4(1);
             }
         )glsl";
-        static const char *fs_source = R"glsl(#version 450
+        static const char *fs_source = R"glsl(
+            #version 450
             layout(location = 0) in vec4 c;
             layout(location = 0) out vec4 frag_out;
             void main() {
