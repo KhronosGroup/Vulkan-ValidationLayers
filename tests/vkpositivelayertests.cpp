@@ -11010,7 +11010,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
                                                      VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR,
                                                      renderPass,
                                                      1,
-                                                     nullptr,
+                                                     reinterpret_cast<const VkImageView *>(1),
                                                      attachmentWidth,
                                                      attachmentHeight,
                                                      1};
