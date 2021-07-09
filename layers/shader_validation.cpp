@@ -1758,15 +1758,38 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         id_value_map.reserve(specialization_info->mapEntryCount);
         for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
             auto const &map_entry = specialization_info->pMapEntries[i];
+            auto itr = module->spec_const_map.find(map_entry.constantID);
+            // "If a constantID value is not a specialization constant ID used in the shader, that map entry does not affect the
+            // behavior of the pipeline."
+            if (itr != module->spec_const_map.cend()) {
+                // Make sure map_entry.size matches the spec constant's size
+                uint32_t spec_const_size = decoration_set::kInvalidValue;
+                const auto def_ins = module->get_def(itr->second);
+                const auto type_ins = module->get_def(def_ins.word(1));
+                // Specialization constants can only be of type bool, scalar integer, or scalar floating point
+                switch (type_ins.opcode()) {
+                    case spv::OpTypeBool:
+                        // "If the specialization constant is of type boolean, size must be the byte size of VkBool32"
+                        spec_const_size = sizeof(VkBool32);
+                        break;
+                    case spv::OpTypeInt:
+                    case spv::OpTypeFloat:
+                        spec_const_size = type_ins.word(2) / 8;
+                        break;
+                    default:
+                        // spirv-val should catch if SpecId is not used on a OpSpecConstantTrue/OpSpecConstantFalse/OpSpecConstant
+                        // and OpSpecConstant is validated to be a OpTypeInt or OpTypeFloat
+                        break;
+                }
 
-            // Make sure map_entry.size matches the spec constant's size
-            const uint32_t spec_const_size = module->GetSpecConstantByteSize(map_entry.constantID);
-            if (map_entry.size != spec_const_size) {
-                skip |= LogError(device, "VUID-VkSpecializationMapEntry-constantID-00776",
+                if (map_entry.size != spec_const_size) {
+                    skip |=
+                        LogError(device, "VUID-VkSpecializationMapEntry-constantID-00776",
                                  "Specialization constant (ID = %" PRIu32 ", entry = %" PRIu32
                                  ") has invalid size %zu in shader module %s. Expected size is %" PRIu32 " from shader definition.",
                                  map_entry.constantID, i, map_entry.size,
                                  report_data->FormatHandle(module->vk_shader_module()).c_str(), spec_const_size);
+                }
             }
 
             if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {

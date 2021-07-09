@@ -289,8 +289,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::vector<uint32_t> CollectBuiltinBlockMembers(spirv_inst_iter entrypoint, uint32_t storageClass) const;
     std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
-
-    uint32_t GetSpecConstantByteSize(uint32_t const_id) const;
 };
 
 // TODO - Most things below are agnostic of even the shader module and more of pure SPIR-V utils
