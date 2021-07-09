@@ -1536,6 +1536,14 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '    }\n'
                     '    else\n'
                     '        pScissors = NULL;\n',
+                # VkFrameBufferCreateInfo is special case because its pAttachments pointer may be non-null but ignored
+                'VkFramebufferCreateInfo' :
+                    '    if (attachmentCount && in_struct->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {\n'
+                    '        pAttachments = new VkImageView[attachmentCount];\n'
+                    '        for (uint32_t i = 0; i < attachmentCount; ++i) {\n'
+                    '            pAttachments[i] = in_struct->pAttachments[i];\n'
+                    '        }\n'
+                    '    }\n',
                 # VkDescriptorSetLayoutBinding is special case because its pImmutableSamplers pointer may be non-null but ignored
                 'VkDescriptorSetLayoutBinding' :
                     '    const bool sampler_type = in_struct->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER || in_struct->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;\n'
@@ -1634,6 +1642,14 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '    }\n'
                     '    else\n'
                     '        pScissors = NULL;\n',
+                'VkFramebufferCreateInfo' :
+                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
+                    '    if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {\n'
+                    '        pAttachments = new VkImageView[attachmentCount];\n'
+                    '        for (uint32_t i = 0; i < attachmentCount; ++i) {\n'
+                    '            pAttachments[i] = copy_src.pAttachments[i];\n'
+                    '        }\n'
+                    '    }\n',
                 'VkAccelerationStructureBuildGeometryInfoKHR':
                     '    if (geometryCount) {\n'
                     '        if ( copy_src.ppGeometries) {\n'
