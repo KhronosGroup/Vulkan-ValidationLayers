@@ -5123,7 +5123,7 @@ safe_VkFramebufferCreateInfo::safe_VkFramebufferCreateInfo(const VkFramebufferCr
     layers(in_struct->layers)
 {
     pNext = SafePnextCopy(in_struct->pNext);
-    if (attachmentCount && in_struct->pAttachments) {
+    if (attachmentCount && in_struct->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
         for (uint32_t i = 0; i < attachmentCount; ++i) {
             pAttachments[i] = in_struct->pAttachments[i];
@@ -5148,7 +5148,7 @@ safe_VkFramebufferCreateInfo::safe_VkFramebufferCreateInfo(const safe_VkFramebuf
     height = copy_src.height;
     layers = copy_src.layers;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (attachmentCount && copy_src.pAttachments) {
+    if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
         for (uint32_t i = 0; i < attachmentCount; ++i) {
             pAttachments[i] = copy_src.pAttachments[i];
@@ -5174,7 +5174,7 @@ safe_VkFramebufferCreateInfo& safe_VkFramebufferCreateInfo::operator=(const safe
     height = copy_src.height;
     layers = copy_src.layers;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (attachmentCount && copy_src.pAttachments) {
+    if (attachmentCount && copy_src.pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
         for (uint32_t i = 0; i < attachmentCount; ++i) {
             pAttachments[i] = copy_src.pAttachments[i];
@@ -5203,7 +5203,7 @@ void safe_VkFramebufferCreateInfo::initialize(const VkFramebufferCreateInfo* in_
     height = in_struct->height;
     layers = in_struct->layers;
     pNext = SafePnextCopy(in_struct->pNext);
-    if (attachmentCount && in_struct->pAttachments) {
+    if (attachmentCount && in_struct->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
         for (uint32_t i = 0; i < attachmentCount; ++i) {
             pAttachments[i] = in_struct->pAttachments[i];
@@ -5222,7 +5222,7 @@ void safe_VkFramebufferCreateInfo::initialize(const safe_VkFramebufferCreateInfo
     height = copy_src->height;
     layers = copy_src->layers;
     pNext = SafePnextCopy(copy_src->pNext);
-    if (attachmentCount && copy_src->pAttachments) {
+    if (attachmentCount && copy_src->pAttachments && !(flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         pAttachments = new VkImageView[attachmentCount];
         for (uint32_t i = 0; i < attachmentCount; ++i) {
             pAttachments[i] = copy_src->pAttachments[i];
