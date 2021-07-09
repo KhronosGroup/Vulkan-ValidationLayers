@@ -712,6 +712,46 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
+
+    // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-redundant-store");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-redundant-clear");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-inefficient-clear");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkClearAttachment color_attachment;
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 1.0;
+    color_attachment.clearValue.color.float32[1] = 1.0;
+    color_attachment.clearValue.color.float32[2] = 1.0;
+    color_attachment.clearValue.color.float32[3] = 1.0;
+    color_attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
+    TEST_DESCRIPTION("Test for clearing attachments after load with secondary command buffers");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
+        printf("%s Test CmdClearAttachmentAfterLoadSecondary is unstable on ShieldTV, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-redundant-store");
