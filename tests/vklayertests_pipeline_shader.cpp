@@ -11035,7 +11035,7 @@ TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, SpecializationInvalidSize) {
+TEST_F(VkLayerTest, SpecializationInvalidSizeZero) {
     TEST_DESCRIPTION("Make sure an error is logged when a specialization map entry's size is 0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
