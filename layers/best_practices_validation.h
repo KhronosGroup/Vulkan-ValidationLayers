@@ -49,6 +49,15 @@ struct DeprecationData {
     std::string target;
 };
 
+struct SpecialUseVUIDs
+{
+    const char* cadsupport;
+    const char* d3demulation;
+    const char* devtools;
+    const char* debugging;
+    const char* glemulation;
+};
+
 typedef enum {
     kBPVendorArm = 0x00000001,
 } BPVendorFlagBits;
@@ -141,7 +150,7 @@ class BestPractices : public ValidationStateTracker {
 
     bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version, const char* vuid) const;
 
-    bool ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const char* vuid) const;
+    bool ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const SpecialUseVUIDs& special_use_vuids) const;
 
     bool PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
