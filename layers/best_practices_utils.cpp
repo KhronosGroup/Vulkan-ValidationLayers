@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
+﻿/* Copyright (c) 2015-2021 The Khronos Group Inc.
  * Copyright (c) 2015-2021 Valve Corporation
  * Copyright (c) 2015-2021 LunarG, Inc.
  *
@@ -37,6 +37,22 @@ struct VendorSpecificInfo {
 
 const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {
     {kBPVendorArm, {vendor_specific_arm, "Arm"}},
+};
+
+const SpecialUseVUIDs kSpecialUseInstanceVUIDs {
+    kVUID_BestPractices_CreateInstance_SpecialUseExtension_CADSupport,
+    kVUID_BestPractices_CreateInstance_SpecialUseExtension_D3DEmulation,
+    kVUID_BestPractices_CreateInstance_SpecialUseExtension_DevTools,
+    kVUID_BestPractices_CreateInstance_SpecialUseExtension_Debugging,
+    kVUID_BestPractices_CreateInstance_SpecialUseExtension_GLEmulation,
+};
+
+const SpecialUseVUIDs kSpecialUseDeviceVUIDs {
+    kVUID_BestPractices_CreateDevice_SpecialUseExtension_CADSupport,
+    kVUID_BestPractices_CreateDevice_SpecialUseExtension_D3DEmulation,
+    kVUID_BestPractices_CreateDevice_SpecialUseExtension_DevTools,
+    kVUID_BestPractices_CreateDevice_SpecialUseExtension_Debugging,
+    kVUID_BestPractices_CreateDevice_SpecialUseExtension_GLEmulation,
 };
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
@@ -121,34 +137,37 @@ bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const cha
     return skip;
 }
 
-bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const char* vuid) const {
+bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const char* extension_name, const SpecialUseVUIDs& special_use_vuids) const
+{
     bool skip = false;
     auto dep_info_it = special_use_extensions.find(extension_name);
 
     if (dep_info_it != special_use_extensions.end()) {
-        auto special_uses = dep_info_it->second;
-        std::string message("is intended to support the following uses: ");
+        const char* const format = "%s(): Attempting to enable extension %s, but this extension is intended to support %s "
+                                   "and it is strongly recommended that it be otherwise avoided.";
+        auto& special_uses = dep_info_it->second;
+        
         if (special_uses.find("cadsupport") != std::string::npos) {
-            message.append("specialized functionality used by CAD/CAM applications, ");
+            skip |= LogWarning(instance, special_use_vuids.cadsupport, format, api_name, extension_name, 
+                "specialized functionality used by CAD/CAM applications");
         }
         if (special_uses.find("d3demulation") != std::string::npos) {
-            message.append("D3D emulation layers, and applications ported from D3D, by adding functionality specific to D3D, ");
+            skip |= LogWarning(instance, special_use_vuids.d3demulation, format, api_name, extension_name,
+                "D3D emulation layers, and applications ported from D3D, by adding functionality specific to D3D");
         }
         if (special_uses.find("devtools") != std::string::npos) {
-            message.append(" developer tools such as capture-replay libraries, ");
+            skip |= LogWarning(instance, special_use_vuids.devtools, format, api_name, extension_name,
+                "developer tools such as capture-replay libraries");
         }
         if (special_uses.find("debugging") != std::string::npos) {
-            message.append("use by applications when debugging, ");
+            skip |= LogWarning(instance, special_use_vuids.debugging, format, api_name, extension_name,
+                "use by applications when debugging");
         }
         if (special_uses.find("glemulation") != std::string::npos) {
-            message.append(
+            skip |= LogWarning(instance, special_use_vuids.glemulation, format, api_name, extension_name,
                 "OpenGL and/or OpenGL ES emulation layers, and applications ported from those APIs, by adding functionality "
-                "specific to those APIs, ");
+                "specific to those APIs");
         }
-        message.append("and it is strongly recommended that they be otherwise avoided");
-
-        skip |= LogWarning(instance, vuid, "%s(): Attempting to enable extension %s, but this extension %s.", api_name,
-                           extension_name, message.c_str());
     }
     return skip;
 }
@@ -167,8 +186,7 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
             (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
         skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i], specified_version,
                                              kVUID_BestPractices_CreateInstance_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
-                                             kVUID_BestPractices_CreateInstance_SpecialUseExtension);
+        skip |= ValidateSpecialUseExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseInstanceVUIDs);
     }
 
     return skip;
@@ -212,8 +230,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         }
         skip |= ValidateDeprecatedExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], instance_api_version,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
-                                             kVUID_BestPractices_CreateDevice_SpecialUseExtension);
+        skip |= ValidateSpecialUseExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseDeviceVUIDs);
     }
 
     const auto bp_pd_state = GetPhysicalDeviceStateBP(physicalDevice);

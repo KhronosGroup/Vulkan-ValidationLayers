@@ -114,7 +114,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
 
     // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension");
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging");
     VkInstance dummy;
     auto features = features_;
     auto ici = GetInstanceCreateInfo();
@@ -219,7 +219,7 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     dev_info.enabledExtensionCount = m_device_extension_names.size();
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-d3demulation");
     vk::CreateDevice(this->gpu(), &dev_info, NULL, &local_device);
     m_errorMonitor->VerifyFound();
 }

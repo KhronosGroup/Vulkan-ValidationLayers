@@ -36,10 +36,26 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_Deprecated
     "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_DeprecatedExtension =
     "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_SpecialUseExtension =
-    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_SpecialUseExtension =
-    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_SpecialUseExtension_CADSupport =
+    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-cadsupport";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_SpecialUseExtension_D3DEmulation =
+    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-d3demulation";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_SpecialUseExtension_DevTools =
+    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-devtools";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_SpecialUseExtension_Debugging =
+    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-debugging";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_SpecialUseExtension_GLEmulation =
+    "UNASSIGNED-BestPractices-vkCreateInstance-specialuse-extension-glemulation";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_SpecialUseExtension_CADSupport =
+    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-cadsupport";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_SpecialUseExtension_D3DEmulation =
+    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-d3demulation";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_SpecialUseExtension_DevTools =
+    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-devtools";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_SpecialUseExtension_Debugging =
+    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-debugging";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_SpecialUseExtension_GLEmulation =
+    "UNASSIGNED-BestPractices-vkCreateDevice-specialuse-extension-glemulation";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_API_Mismatch =
     "UNASSIGNED-BestPractices-vkCreateDevice-API-version-mismatch";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SharingModeExclusive =
