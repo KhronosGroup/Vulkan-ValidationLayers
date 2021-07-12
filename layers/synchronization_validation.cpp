@@ -5632,105 +5632,103 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
     assert(events_context);
     size_t barrier_set_index = 0;
     size_t barrier_set_incr = (barriers_.size() == 1) ? 0 : 1;
-    for (size_t event_index = 0; event_index < events_.size(); event_index++)
-        for (const auto &event : events_) {
-            const auto *sync_event = events_context->Get(event.get());
-            const auto &barrier_set = barriers_[barrier_set_index];
-            if (!sync_event) {
-                // NOTE PHASE2: This is where we'll need queue submit time validation to come back and check the srcStageMask bits
-                //              or solve this with replay creating the SyncEventState in the queue context... also this will be a
-                //              new validation error... wait without previously submitted set event...
-                events_not_found = true;  // Demote "extra_stage_bits" error to warning, to avoid false positives at *record time*
-                barrier_set_index += barrier_set_incr;
-                continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
-            }
-            const auto event_handle = sync_event->event->event();
-            // TODO add "destroyed" checks
-
-            barrier_mask_params |= barrier_set.src_exec_scope.mask_param;
-            const auto &src_exec_scope = barrier_set.src_exec_scope;
-            event_stage_masks |= sync_event->scope.mask_param;
-            const auto ignore_reason = sync_event->IsIgnoredByWait(cmd_, src_exec_scope.mask_param);
-            if (ignore_reason) {
-                switch (ignore_reason) {
-                    case SyncEventState::ResetWaitRace:
-                    case SyncEventState::Reset2WaitRace: {
-                        // Four permuations of Reset and Wait calls...
-                        const char *vuid =
-                            (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent-event-03834" : "VUID-vkCmdResetEvent-event-03835";
-                        if (ignore_reason == SyncEventState::Reset2WaitRace) {
-                            vuid =
-                                (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent2KHR-event-03831" : "VUID-vkCmdResetEvent2KHR-event-03832";
-                        }
-                        const char *const message =
-                            "%s: %s %s operation following %s without intervening execution barrier, may cause race condition. %s";
-                        skip |= sync_state.LogError(event_handle, vuid, message, CmdName(),
-                                                    sync_state.report_data->FormatHandle(event_handle).c_str(), CmdName(),
-                                                    CommandTypeString(sync_event->last_command), ignored);
-                        break;
-                    }
-                    case SyncEventState::SetRace: {
-                        // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
-                        // this event
-                        const char *const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
-                        const char *const message =
-                            "%s: %s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
-                        const char *const reason = "First synchronization scope is undefined.";
-                        skip |= sync_state.LogError(event_handle, vuid, message, CmdName(),
-                                                    sync_state.report_data->FormatHandle(event_handle).c_str(),
-                                                    CommandTypeString(sync_event->last_command), reason, ignored);
-                        break;
-                    }
-                    case SyncEventState::MissingStageBits: {
-                        const auto missing_bits = sync_event->scope.mask_param & ~src_exec_scope.mask_param;
-                        // Issue error message that event waited for is not in wait events scope
-                        const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
-                        const char *const message =
-                            "%s: %s stageMask %" PRIx64 " includes bits not present in srcStageMask 0x%" PRIx64
-                            ". Bits missing from srcStageMask %s. %s";
-                        skip |= sync_state.LogError(event_handle, vuid, message, CmdName(),
-                                                    sync_state.report_data->FormatHandle(event_handle).c_str(),
-                                                    sync_event->scope.mask_param, src_exec_scope.mask_param,
-                                                    sync_utils::StringPipelineStageFlags(missing_bits).c_str(), ignored);
-                        break;
-                    }
-                    case SyncEventState::SetVsWait2: {
-                        skip |= sync_state.LogError(event_handle, "VUID-vkCmdWaitEvents2KHR-pEvents-03837",
-                                                    "%s: Follows set of %s by %s. Disallowed.", CmdName(),
-                                                    sync_state.report_data->FormatHandle(event_handle).c_str(),
-                                                    CommandTypeString(sync_event->last_command));
-                        break;
-                    }
-                    default:
-                        assert(ignore_reason == SyncEventState::NotIgnored);
-                }
-            } else if (barrier_set.image_memory_barriers.size()) {
-                const auto &image_memory_barriers = barrier_set.image_memory_barriers;
-                const auto *context = cb_context.GetCurrentAccessContext();
-                assert(context);
-                for (const auto &image_memory_barrier : image_memory_barriers) {
-                    if (image_memory_barrier.old_layout == image_memory_barrier.new_layout) continue;
-                    const auto *image_state = image_memory_barrier.image.get();
-                    if (!image_state) continue;
-                    const auto &subresource_range = image_memory_barrier.range;
-                    const auto &src_access_scope = image_memory_barrier.barrier.src_access_scope;
-                    const auto hazard =
-                        context->DetectImageBarrierHazard(*image_state, sync_event->scope.exec_scope, src_access_scope,
-                                                          subresource_range, *sync_event, AccessContext::DetectOptions::kDetectAll);
-                    if (hazard.hazard) {
-                        skip |= sync_state.LogError(image_state->image(), string_SyncHazardVUID(hazard.hazard),
-                                                    "%s: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.", CmdName(),
-                                                    string_SyncHazard(hazard.hazard), image_memory_barrier.index,
-                                                    sync_state.report_data->FormatHandle(image_state->image()).c_str(),
-                                                    cb_context.FormatUsage(hazard).c_str());
-                        break;
-                    }
-                }
-            }
-            // TODO:  Add infrastructure for checking pDependencyInfo's vs. CmdSetEvent2 VUID - vkCmdWaitEvents2KHR - pEvents -
-            // 03839
+    for (const auto &event : events_) {
+        const auto *sync_event = events_context->Get(event.get());
+        const auto &barrier_set = barriers_[barrier_set_index];
+        if (!sync_event) {
+            // NOTE PHASE2: This is where we'll need queue submit time validation to come back and check the srcStageMask bits
+            //              or solve this with replay creating the SyncEventState in the queue context... also this will be a
+            //              new validation error... wait without previously submitted set event...
+            events_not_found = true;  // Demote "extra_stage_bits" error to warning, to avoid false positives at *record time*
             barrier_set_index += barrier_set_incr;
+            continue;  // Core, Lifetimes, or Param check needs to catch invalid events.
         }
+        const auto event_handle = sync_event->event->event();
+        // TODO add "destroyed" checks
+
+        barrier_mask_params |= barrier_set.src_exec_scope.mask_param;
+        const auto &src_exec_scope = barrier_set.src_exec_scope;
+        event_stage_masks |= sync_event->scope.mask_param;
+        const auto ignore_reason = sync_event->IsIgnoredByWait(cmd_, src_exec_scope.mask_param);
+        if (ignore_reason) {
+            switch (ignore_reason) {
+                case SyncEventState::ResetWaitRace:
+                case SyncEventState::Reset2WaitRace: {
+                    // Four permuations of Reset and Wait calls...
+                    const char *vuid =
+                        (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent-event-03834" : "VUID-vkCmdResetEvent-event-03835";
+                    if (ignore_reason == SyncEventState::Reset2WaitRace) {
+                        vuid = (cmd_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent2KHR-event-03831"
+                                                        : "VUID-vkCmdResetEvent2KHR-event-03832";
+                    }
+                    const char *const message =
+                        "%s: %s %s operation following %s without intervening execution barrier, may cause race condition. %s";
+                    skip |= sync_state.LogError(event_handle, vuid, message, CmdName(),
+                                                sync_state.report_data->FormatHandle(event_handle).c_str(), CmdName(),
+                                                CommandTypeString(sync_event->last_command), ignored);
+                    break;
+                }
+                case SyncEventState::SetRace: {
+                    // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
+                    // this event
+                    const char *const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
+                    const char *const message =
+                        "%s: %s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
+                    const char *const reason = "First synchronization scope is undefined.";
+                    skip |= sync_state.LogError(event_handle, vuid, message, CmdName(),
+                                                sync_state.report_data->FormatHandle(event_handle).c_str(),
+                                                CommandTypeString(sync_event->last_command), reason, ignored);
+                    break;
+                }
+                case SyncEventState::MissingStageBits: {
+                    const auto missing_bits = sync_event->scope.mask_param & ~src_exec_scope.mask_param;
+                    // Issue error message that event waited for is not in wait events scope
+                    const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
+                    const char *const message = "%s: %s stageMask %" PRIx64 " includes bits not present in srcStageMask 0x%" PRIx64
+                                                ". Bits missing from srcStageMask %s. %s";
+                    skip |= sync_state.LogError(event_handle, vuid, message, CmdName(),
+                                                sync_state.report_data->FormatHandle(event_handle).c_str(),
+                                                sync_event->scope.mask_param, src_exec_scope.mask_param,
+                                                sync_utils::StringPipelineStageFlags(missing_bits).c_str(), ignored);
+                    break;
+                }
+                case SyncEventState::SetVsWait2: {
+                    skip |= sync_state.LogError(event_handle, "VUID-vkCmdWaitEvents2KHR-pEvents-03837",
+                                                "%s: Follows set of %s by %s. Disallowed.", CmdName(),
+                                                sync_state.report_data->FormatHandle(event_handle).c_str(),
+                                                CommandTypeString(sync_event->last_command));
+                    break;
+                }
+                default:
+                    assert(ignore_reason == SyncEventState::NotIgnored);
+            }
+        } else if (barrier_set.image_memory_barriers.size()) {
+            const auto &image_memory_barriers = barrier_set.image_memory_barriers;
+            const auto *context = cb_context.GetCurrentAccessContext();
+            assert(context);
+            for (const auto &image_memory_barrier : image_memory_barriers) {
+                if (image_memory_barrier.old_layout == image_memory_barrier.new_layout) continue;
+                const auto *image_state = image_memory_barrier.image.get();
+                if (!image_state) continue;
+                const auto &subresource_range = image_memory_barrier.range;
+                const auto &src_access_scope = image_memory_barrier.barrier.src_access_scope;
+                const auto hazard =
+                    context->DetectImageBarrierHazard(*image_state, sync_event->scope.exec_scope, src_access_scope,
+                                                      subresource_range, *sync_event, AccessContext::DetectOptions::kDetectAll);
+                if (hazard.hazard) {
+                    skip |= sync_state.LogError(image_state->image(), string_SyncHazardVUID(hazard.hazard),
+                                                "%s: Hazard %s for image barrier %" PRIu32 " %s. Access info %s.", CmdName(),
+                                                string_SyncHazard(hazard.hazard), image_memory_barrier.index,
+                                                sync_state.report_data->FormatHandle(image_state->image()).c_str(),
+                                                cb_context.FormatUsage(hazard).c_str());
+                    break;
+                }
+            }
+        }
+        // TODO:  Add infrastructure for checking pDependencyInfo's vs. CmdSetEvent2 VUID - vkCmdWaitEvents2KHR - pEvents -
+        // 03839
+        barrier_set_index += barrier_set_incr;
+    }
 
     // Note that we can't check for HOST in pEvents as we don't track that set event type
     const auto extra_stage_bits = (barrier_mask_params & ~VK_PIPELINE_STAGE_2_HOST_BIT_KHR) & ~event_stage_masks;
