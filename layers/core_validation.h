@@ -433,13 +433,13 @@ class CoreChecks : public ValidationStateTracker {
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const BindingReqMap& bindings,
                            const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node,
-                           const std::vector<IMAGE_VIEW_STATE*>* attachments, const std::vector<SUBPASS_INFO>& subpasses,
+                           const std::vector<IMAGE_VIEW_STATE*>* attachments, const std::vector<SUBPASS_INFO>* subpasses,
                            const char* caller, const DrawDispatchVuid& vuids) const;
     bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets,
                                           const std::pair<const uint32_t, DescriptorRequirement>& binding_info,
                                           VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*>* attachments,
-                                          const std::vector<SUBPASS_INFO>& subpasses, bool record_time_validate, const char* caller,
+                                          const std::vector<SUBPASS_INFO>* subpasses, bool record_time_validate, const char* caller,
                                           const DrawDispatchVuid& vuids,
                                           layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
 
@@ -454,7 +454,7 @@ class CoreChecks : public ValidationStateTracker {
                                  const cvdescriptorset::ImageDescriptor& image_descriptor,
                                  const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index,
                                  bool record_time_validate, const std::vector<IMAGE_VIEW_STATE*>* attachments,
-                                 const std::vector<SUBPASS_INFO>& subpasses, VkFramebuffer framebuffer,
+                                 const std::vector<SUBPASS_INFO>* subpasses, VkFramebuffer framebuffer,
                                  VkDescriptorType descriptor_type,
                                  layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
 
@@ -1588,4 +1588,3 @@ class CoreChecks : public ValidationStateTracker {
                                                                     Display* dpy, VisualID visualID) const override;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 };  // Class CoreChecks
-

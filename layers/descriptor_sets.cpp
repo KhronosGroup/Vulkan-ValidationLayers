@@ -771,7 +771,7 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 // Return true if state is acceptable, or false and write an error message into error string
 bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const BindingReqMap &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
-                                   const std::vector<IMAGE_VIEW_STATE *> *attachments, const std::vector<SUBPASS_INFO> &subpasses,
+                                   const std::vector<IMAGE_VIEW_STATE *> *attachments, const std::vector<SUBPASS_INFO> *subpasses,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
     layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
     if (descriptor_set->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
@@ -809,7 +809,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                                   const std::vector<uint32_t> &dynamic_offsets,
                                                   const std::pair<const uint32_t, DescriptorRequirement> &binding_info,
                                                   VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE *> *attachments,
-                                                  const std::vector<SUBPASS_INFO> &subpasses, bool record_time_validate,
+                                                  const std::vector<SUBPASS_INFO> *subpasses, bool record_time_validate,
                                                   const char *caller, const DrawDispatchVuid &vuids,
                                                   layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
@@ -944,7 +944,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                                          const cvdescriptorset::ImageDescriptor &image_descriptor,
                                          const std::pair<const uint32_t, DescriptorRequirement> &binding_info, uint32_t index,
                                          bool record_time_validate, const std::vector<IMAGE_VIEW_STATE *> *attachments,
-                                         const std::vector<SUBPASS_INFO> &subpasses, VkFramebuffer framebuffer,
+                                         const std::vector<SUBPASS_INFO> *subpasses, VkFramebuffer framebuffer,
                                          VkDescriptorType descriptor_type,
                                          layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> &checked_layouts) const {
     std::vector<const SAMPLER_STATE *> sampler_states;
@@ -1078,28 +1078,29 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
         }
 
         // Verify if attachments are used in DescriptorSet
-        if (attachments && attachments->size() > 0 && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+        if (attachments && attachments->size() > 0 && subpasses && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
             bool ds_aspect = (image_view_state->create_info.subresourceRange.aspectMask &
                               (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
                                  ? true
                                  : false;
             uint32_t att_index = 0;
             for (const auto &view_state : *attachments) {
-                if (!subpasses[att_index].used || !view_state || view_state->Destroyed()) {
+                const SUBPASS_INFO& subpass = (*subpasses)[att_index];
+                if (!subpass.used || !view_state || view_state->Destroyed()) {
                     continue;
                 }
-                if (ds_aspect && subpasses[att_index].usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+                if (ds_aspect && subpass.usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
                     if ((image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                          image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
                          image_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) &&
-                        (subpasses[att_index].layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
-                         subpasses[att_index].layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                         subpasses[att_index].layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL)) {
+                        (subpass.layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
+                         subpass.layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
+                         subpass.layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL)) {
                         continue;
                     }
                     if ((image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL &&
-                         subpasses[att_index].layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) ||
-                        (subpasses[att_index].layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL &&
+                         subpass.layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) ||
+                        (subpass.layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL &&
                          image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)) {
                         continue;
                     }
