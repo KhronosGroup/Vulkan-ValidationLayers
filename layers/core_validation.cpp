@@ -1150,11 +1150,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                         layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     result |=
                         ValidateDrawState(descriptor_set, delta_reqs, state.per_set[set_index].dynamicOffsets, cb_node,
-                                          cb_node->active_attachments.get(), *cb_node->active_subpasses.get(), function, vuid);
+                                          cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
                 } else {
                     result |=
                         ValidateDrawState(descriptor_set, binding_req_map, state.per_set[set_index].dynamicOffsets, cb_node,
-                                          cb_node->active_attachments.get(), *cb_node->active_subpasses.get(), function, vuid);
+                                          cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
                 }
             }
         }
@@ -3141,7 +3141,7 @@ struct CommandBufferSubmitState {
                     }
                     skip |= core->ValidateDescriptorSetBindingData(
                         cb_node, set_node, dynamic_offsets, binding_info, cmd_info.framebuffer, cmd_info.attachments.get(),
-                        *cmd_info.subpasses.get(), record_time_validate, function.c_str(),
+                        cmd_info.subpasses.get(), record_time_validate, function.c_str(),
                         core->GetDrawDispatchVuid(cmd_info.cmd_type), checked_layouts);
                 }
             }
