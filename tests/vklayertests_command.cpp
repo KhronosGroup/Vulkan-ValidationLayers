@@ -9008,3 +9008,21 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDy
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, InvalidCmdUpdateBufferSize) {
+    TEST_DESCRIPTION("Update buffer with invalid dataSize");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    uint32_t update_data[4] = {0, 0, 0, 0};
+    VkDeviceSize dataSize = sizeof(uint32_t) * 4;
+    VkMemoryPropertyFlags reqs = 0;
+    VkBufferObj buffer;
+    buffer.init_as_src_and_dst(*m_device, dataSize, reqs);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-dataSize-00033");
+    m_commandBuffer->begin();
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), sizeof(uint32_t), dataSize, (void *)update_data);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
