@@ -1906,8 +1906,14 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
             }
 
             if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
-                auto entry = id_value_map.emplace(map_entry.constantID, std::vector<uint32_t>(map_entry.size > 4 ? 2 : 1));
-                memcpy(entry.first->second.data(), specialization_data + map_entry.offset, map_entry.size);
+                // Allocate enough room for ceil(map_entry.size / 4) to store entries
+                std::vector<uint32_t> entry_data((map_entry.size + 4 - 1) / 4, 0);
+                uint8_t *out_p = reinterpret_cast<uint8_t *>(entry_data.data());
+                const uint8_t *const start_in_p = specialization_data + map_entry.offset;
+                const uint8_t *const end_in_p = start_in_p + map_entry.size;
+
+                std::copy(start_in_p, end_in_p, out_p);
+                id_value_map.emplace(map_entry.constantID, std::move(entry_data));
             }
         }
 
@@ -1924,8 +1930,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
         optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
         std::vector<uint32_t> specialized_spirv;
-        auto const optimized =
-            optimizer.Run(module->words.data(), module->words.size(), &specialized_spirv, spvtools::ValidatorOptions(), true);
+        auto const optimized = optimizer.Run(module->words.data(), module->words.size(), &specialized_spirv);
         assert(optimized == true);
 
         if (optimized) {
