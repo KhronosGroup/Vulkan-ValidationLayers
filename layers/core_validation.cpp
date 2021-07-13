@@ -7251,6 +7251,13 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
         ValidateProtectedBuffer(cb_state, dst_buffer_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
     skip |=
         ValidateUnprotectedBuffer(cb_state, dst_buffer_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
+    if (dataSize > dst_buffer_state->createInfo.size - dstOffset) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdUpdateBuffer-dataSize-00033",
+                         "vkCmdUpdateBuffer() dataSize (0x%" PRIxLEAST64 ") is not less than the size (0x%" PRIxLEAST64
+                         ") of buffer (%s) minus dstOffset (0x%" PRIxLEAST64 ").",
+                         dataSize, dst_buffer_state->createInfo.size, report_data->FormatHandle(dst_buffer_state->buffer()).c_str(),
+                         dstOffset);
+    }
     return skip;
 }
 
