@@ -1877,6 +1877,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          pCreateInfo->extent.height, device_limits->maxFramebufferHeight);
     }
 
+    VkImageCreateFlags sparseFlags =
+        VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
+    if ((pCreateInfo->flags & sparseFlags) && (pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
+        skip |= LogError(
+            device, "VUID-VkImageCreateInfo-None-01925",
+            "vkCreateImage(): images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set");
+    }
+
     if (device_extensions.vk_ext_fragment_density_map || device_extensions.vk_ext_fragment_density_map_2) {
         uint32_t ceiling_width = static_cast<uint32_t>(ceil(
             static_cast<float>(device_limits->maxFramebufferWidth) /
