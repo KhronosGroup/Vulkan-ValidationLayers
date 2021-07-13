@@ -884,8 +884,10 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
         ValidateCmdDrawInstance(commandBuffer, instanceCount, firstInstance, CMD_DRAWMULTIINDEXEDEXT, "vkCmdDrawMultiIndexedEXT()");
     skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIINDEXEDEXT,
                                 "vkCmdDrawMultiIndexedEXT()");
+    const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
     for (uint32_t i = 0; i < drawCount; i++) {
-        skip |= ValidateCmdDrawIndexedBufferSize(commandBuffer, pIndexInfo[i].indexCount, pIndexInfo[i].firstIndex,
+        const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(info_bytes + i * stride);
+        skip |= ValidateCmdDrawIndexedBufferSize(commandBuffer, info_ptr->indexCount, info_ptr->firstIndex,
                                                  "vkCmdDrawMultiIndexedEXT()", "VUID-vkCmdDrawMultiIndexedEXT-firstIndex-04938");
     }
     return skip;
