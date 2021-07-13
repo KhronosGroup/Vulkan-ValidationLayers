@@ -231,6 +231,18 @@ void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
     }
 }
 
+void GpuAssisted::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, VkResult result) {
+    ValidationStateTracker::PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, result);
+    if (pCreateInfo) {
+        const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
+        if (opaque_capture_address) {
+            // Validate against the size requested when the buffer was created
+            buffer_map[opaque_capture_address->opaqueCaptureAddress] = pCreateInfo->size;
+        }
+    }
+}
+
 // Turn on necessary device features.
 void GpuAssisted::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
