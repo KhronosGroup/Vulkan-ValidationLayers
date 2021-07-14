@@ -2360,6 +2360,30 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                     }
 
+                    if (!has_dynamic_scissor && viewport_state.pScissors) {
+                        for (uint32_t scissor_i = 0; scissor_i < viewport_state.scissorCount; ++scissor_i) {
+                            const auto &scissor = viewport_state.pScissors[scissor_i];
+                            const int64_t x_sum =
+                                static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
+                            if (x_sum > std::numeric_limits<int32_t>::max()) {
+                                skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-offset-02822",
+                                                 "vkCreateGraphicsPipelines: offset.x + extent.width (=%" PRIi32 " + %" PRIu32
+                                                 " = %" PRIi64 ") of pCreateInfos[%" PRIu32 "].pViewportState->pScissors[%" PRIu32
+                                                 "] will overflow int32_t.",
+                                                 scissor.offset.x, scissor.extent.width, x_sum, i, scissor_i);
+                            }
+                            const int64_t y_sum =
+                                static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
+                            if (y_sum > std::numeric_limits<int32_t>::max()) {
+                                skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-offset-02823",
+                                                 "vkCreateGraphicsPipelines: offset.y + extent.height (=%" PRIi32 " + %" PRIu32
+                                                 " = %" PRIi64 ") of pCreateInfos[%" PRIu32 "].pViewportState->pScissors[%" PRIu32
+                                                 "] will overflow int32_t.",
+                                                 scissor.offset.y, scissor.extent.height, y_sum, i, scissor_i);
+                            }
+                        }
+                    }
+
                     if (exclusive_scissor_struct && exclusive_scissor_struct->exclusiveScissorCount > device_limits.maxViewports) {
                         skip |=
                             LogError(device, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028",
