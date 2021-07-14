@@ -6607,7 +6607,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     VkImageViewCreateInfo ivci = {};
     ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_B8G8R8A8_UNORM;
     ivci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                        VK_COMPONENT_SWIZZLE_IDENTITY};

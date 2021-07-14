@@ -10687,7 +10687,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     VkImageViewCreateInfo view_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
     view_info.image = image.handle();
     view_info.subresourceRange = depth_stencil_range;
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     view_info.format = ds_format;
     view.init(*m_device, view_info);
 

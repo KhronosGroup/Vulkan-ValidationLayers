@@ -5580,6 +5580,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         VkImageAspectFlags aspect_mask = pCreateInfo->subresourceRange.aspectMask;
         VkImageType image_type = image_state->createInfo.imageType;
         VkImageViewType view_type = pCreateInfo->viewType;
+        uint32_t layer_count = pCreateInfo->subresourceRange.layerCount;
 
         // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
         auto chained_ivuci_struct = LvlFindInChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
@@ -5706,6 +5707,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // Validate correct image aspect bits for desired formats and format consistency
         skip |= ValidateImageAspectMask(image_state->image(), image_format, aspect_mask, "vkCreateImageView()");
 
+        // Valdiate Image/ImageView type compatibility #resources-image-views-compatibility
         switch (image_type) {
             case VK_IMAGE_TYPE_1D:
                 if (view_type != VK_IMAGE_VIEW_TYPE_1D && view_type != VK_IMAGE_VIEW_TYPE_1D_ARRAY) {
@@ -5795,26 +5797,39 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
         if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
             !phys_dev_ext_props.fragment_shading_rate_props.layeredShadingRateAttachments &&
-            image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR &&
-            pCreateInfo->subresourceRange.layerCount != 1) {
+            image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR && layer_count != 1) {
             skip |= LogError(device, "VUID-VkImageViewCreateInfo-usage-04551",
                              "vkCreateImageView(): subresourceRange.layerCount is %u for a shading rate attachment image view.",
-                             pCreateInfo->subresourceRange.layerCount);
+                             layer_count);
         }
 
-        if (pCreateInfo->subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-            if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE &&
-                image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer != 6) {
+        if (layer_count == VK_REMAINING_ARRAY_LAYERS) {
+            const uint32_t remaining_layers = image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer;
+            if (view_type == VK_IMAGE_VIEW_TYPE_CUBE && remaining_layers != 6) {
                 skip |= LogError(device, "VUID-VkImageViewCreateInfo-viewType-02962",
                                  "vkCreateImageView(): subresourceRange.layerCount VK_REMAINING_ARRAY_LAYERS=(%d) must be 6",
-                                 image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer);
+                                 remaining_layers);
             }
-            if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY &&
-                ((image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer) % 6) != 0) {
+            if (view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && ((remaining_layers) % 6) != 0) {
                 skip |= LogError(
                     device, "VUID-VkImageViewCreateInfo-viewType-02963",
                     "vkCreateImageView(): subresourceRange.layerCount VK_REMAINING_ARRAY_LAYERS=(%d) must be a multiple of 6",
-                    image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer);
+                    remaining_layers);
+            }
+            if ((remaining_layers != 1) && ((view_type == VK_IMAGE_VIEW_TYPE_1D) || (view_type == VK_IMAGE_VIEW_TYPE_2D) ||
+                                            (view_type == VK_IMAGE_VIEW_TYPE_3D))) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-imageViewType-04974",
+                                 "vkCreateImageView(): Using pCreateInfo->viewType %s and the subresourceRange.layerCount "
+                                 "VK_REMAINING_ARRAY_LAYERS=(%d) and must 1 (try looking into VK_IMAGE_VIEW_TYPE_*_ARRAY).",
+                                 string_VkImageViewType(view_type), remaining_layers);
+            }
+        } else {
+            if ((layer_count != 1) && ((view_type == VK_IMAGE_VIEW_TYPE_1D) || (view_type == VK_IMAGE_VIEW_TYPE_2D) ||
+                                       (view_type == VK_IMAGE_VIEW_TYPE_3D))) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-imageViewType-04973",
+                                 "vkCreateImageView(): Using pCreateInfo->viewType %s and the subresourceRange.layerCount is %d "
+                                 "and must 1 (try looking into VK_IMAGE_VIEW_TYPE_*_ARRAY).",
+                                 string_VkImageViewType(view_type), layer_count);
             }
         }
 
@@ -5860,14 +5875,12 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
         if (device_extensions.vk_ext_fragment_density_map_2) {
             if ((image_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) && (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) &&
-                (pCreateInfo->subresourceRange.layerCount >
-                 phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers)) {
+                (layer_count > phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers)) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-03569",
                                  "vkCreateImageView(): If image was created with flags containing "
                                  "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT and usage containing VK_IMAGE_USAGE_SAMPLED_BIT "
                                  "subresourceRange.layerCount (%d) must: be less than or equal to maxSubsampledArrayLayers (%d)",
-                                 pCreateInfo->subresourceRange.layerCount,
-                                 phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers);
+                                 layer_count, phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers);
             }
         }
 
