@@ -1750,3 +1750,177 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
     present.swapchainCount = 1;
     vk::QueuePresentKHR(m_device->m_queue, &present);
 }
+
+TEST_F(VkLayerTest, PresentIdWait) {
+    TEST_DESCRIPTION("Test present wait extension");
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    auto present_id_features = LvlInitStruct<VkPhysicalDevicePresentIdFeaturesKHR>();
+    auto present_wait_features = LvlInitStruct<VkPhysicalDevicePresentWaitFeaturesKHR>(&present_id_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&present_wait_features);
+    m_device_extension_names.push_back(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    bool retval = InitFrameworkAndRetrieveFeatures(features2);
+    if (!retval) {
+        printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!present_id_features.presentId || !present_wait_features.presentWait) {
+        printf("%s presentWait feature is not available, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_TRUE(InitSwapchain());
+    VkSurfaceKHR surface2;
+    VkSwapchainKHR swapchain2;
+    InitSurface(m_width, m_height, surface2);
+    InitSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2);
+
+    auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
+    assert(vkWaitForPresentKHR != nullptr);
+
+    uint32_t image_count, image_count2;
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
+    vk::GetSwapchainImagesKHR(device(), swapchain2, &image_count2, nullptr);
+    std::vector<VkImage> images(image_count);
+    std::vector<VkImage> images2(image_count2);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+    vk::GetSwapchainImagesKHR(device(), swapchain2, &image_count2, images2.data());
+
+    uint32_t image_indices[2];
+    VkFenceObj fence, fence2;
+    fence.init(*m_device, VkFenceObj::create_info());
+    fence2.init(*m_device, VkFenceObj::create_info());
+    VkFence fence_handles[2];
+    fence_handles[0] = fence.handle();
+    fence_handles[1] = fence2.handle();
+
+    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
+    vk::AcquireNextImageKHR(device(), swapchain2, UINT64_MAX, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
+    vk::WaitForFences(device(), 2, fence_handles, true, UINT64_MAX);
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images2[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    VkSwapchainKHR swap_chains[2] = {m_swapchain, swapchain2};
+    uint64_t present_ids[2] = {};
+    present_ids[0] = 4;  // Try setting 3 later
+    VkPresentIdKHR present_id = LvlInitStruct<VkPresentIdKHR>();
+    present_id.swapchainCount = 2;
+    present_id.pPresentIds = present_ids;
+    VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>(&present_id);
+    present.pSwapchains = swap_chains;
+    present.pImageIndices = image_indices;
+    present.swapchainCount = 2;
+
+    // Submit a clean present to establish presentIds
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+
+    vk::ResetFences(device(), 2, fence_handles);
+    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
+    vk::AcquireNextImageKHR(device(), swapchain2, UINT64_MAX, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
+    vk::WaitForFences(device(), 2, fence_handles, true, UINT64_MAX);
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_indices[0]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images2[image_indices[1]], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    // presentIds[0] = 3 (smaller than 4), presentIds[1] = 5 (wait for this after swapchain 2 is retired)
+    present_ids[0] = 3;
+    present_ids[1] = 5;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentIdKHR-presentIds-04999");
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    // Errors should prevent previous and future vkQueuePresents from actually happening so ok to re-use images
+    present_id.swapchainCount = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentIdKHR-swapchainCount-arraylength");
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    present_id.swapchainCount = 1;
+    present_ids[0] = 5;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentIdKHR-swapchainCount-04998");
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    VkSwapchainKHR swapchain3;
+    // Retire swapchain2
+    InitSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain3, swapchain2);
+    present_id.swapchainCount = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-swapchain-04997");
+    vkWaitForPresentKHR(device(), swapchain2, 5, UINT64_MAX);
+    m_errorMonitor->VerifyFound();
+
+    DestroySwapchain();
+    vk::DestroySwapchainKHR(m_device->device(), swapchain2, nullptr);
+    vk::DestroySwapchainKHR(m_device->device(), swapchain3, nullptr);
+    vk::DestroySurfaceKHR(instance(), surface2, nullptr);
+}
+
+TEST_F(VkLayerTest, PresentIdWaitFeatures) {
+    TEST_DESCRIPTION("Test present wait extension");
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    m_device_extension_names.push_back(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    bool retval = InitFrameworkAndRetrieveFeatures(features2);
+    if (!retval) {
+        printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_TRUE(InitSwapchain());
+
+    auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
+    assert(vkWaitForPresentKHR != nullptr);
+
+    uint32_t image_count;
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
+    std::vector<VkImage> images(image_count);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+
+    uint32_t image_index;
+    VkFenceObj fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence.handle(), &image_index);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, UINT64_MAX);
+
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    uint64_t present_id_index = 1;
+    VkPresentIdKHR present_id = LvlInitStruct<VkPresentIdKHR>();
+    present_id.swapchainCount = 1;
+    present_id.pPresentIds = &present_id_index;
+
+    VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>(&present_id);
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    present.swapchainCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-VkPresentIdKHR");
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-VkPresentWaitKHR");
+    vkWaitForPresentKHR(device(), m_swapchain, 1, UINT64_MAX);
+    m_errorMonitor->VerifyFound();
+
+    DestroySwapchain();
+}
