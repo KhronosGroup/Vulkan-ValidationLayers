@@ -645,7 +645,9 @@ void VkRenderFramework::InitViewport(float width, float height) {
 
 void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
 
-bool VkRenderFramework::InitSurface() { return InitSurface(m_width, m_height); }
+bool VkRenderFramework::InitSurface() { return InitSurface(m_width, m_height, m_surface); }
+
+bool VkRenderFramework::InitSurface(float width, float height) { return InitSurface(width, height, m_surface); }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -653,7 +655,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool VkRenderFramework::InitSurface(float width, float height) {
+bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &surface) {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     HINSTANCE window_instance = GetModuleHandle(nullptr);
     const char class_name[] = "test";
@@ -669,7 +671,7 @@ bool VkRenderFramework::InitSurface(float width, float height) {
     surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surface_create_info.hinstance = window_instance;
     surface_create_info.hwnd = window;
-    VkResult err = vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    VkResult err = vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
     if (err != VK_SUCCESS) return false;
 #endif
 
@@ -761,6 +763,12 @@ bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTra
 
 bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
                                       VkSurfaceTransformFlagBitsKHR preTransform) {
+    return InitSwapchain(surface, imageUsage, preTransform, m_swapchain);
+}
+
+bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
+                                      VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain,
+                                      VkSwapchainKHR oldSwapchain) {
     InitSwapchainInfo();
 
     VkBool32 supported;
@@ -785,17 +793,17 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
     swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
-    swapchain_create_info.oldSwapchain = 0;
+    swapchain_create_info.oldSwapchain = oldSwapchain;
 
-    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
     if (err != VK_SUCCESS) {
         return false;
     }
     uint32_t imageCount = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &imageCount, nullptr);
+    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
     vector<VkImage> swapchainImages;
     swapchainImages.resize(imageCount);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &imageCount, swapchainImages.data());
+    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, swapchainImages.data());
     return true;
 }
 
