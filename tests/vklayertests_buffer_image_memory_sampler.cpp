@@ -9241,6 +9241,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
                 VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
                 img_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
                 img_view_info.subresourceRange = range;
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-imageViewType-04973");
                 CreateImageViewTest(*this, &img_view_info, layer_count_vuid);
             }
             // invalid base layer
@@ -9271,13 +9272,13 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
                 img_view_info.subresourceRange = range;
                 CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-04970");
             }
-            // first mip, all layers (should be invalid?)
+            // first mip, all layers (invalid)
             {
                 const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 8};
                 VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
                 img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
                 img_view_info.subresourceRange = range;
-                CreateImageViewTest(*this, &img_view_info);
+                CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-imageViewType-04973");
             }
             // mip 3, 8 layers (invalid)
             {
@@ -9285,6 +9286,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
                 VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
                 img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
                 img_view_info.subresourceRange = range;
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-imageViewType-04973");
                 CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
             }
             // mip 3, layer 7 (invalid)
